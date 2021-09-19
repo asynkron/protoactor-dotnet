@@ -39,7 +39,7 @@ namespace Proto.Persistence.Sqlite
         {
             using var connection = new SqliteConnection(ConnectionString);
 
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
 
             using var deleteCommand = CreateCommand(
                 connection,
@@ -48,14 +48,14 @@ namespace Proto.Persistence.Sqlite
                 ("$inclusiveToIndex", inclusiveToIndex)
             );
 
-            await deleteCommand.ExecuteNonQueryAsync();
+            await deleteCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
         public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
         {
             using var connection = new SqliteConnection(ConnectionString);
 
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
 
             using var deleteCommand = CreateCommand(
                 connection,
@@ -64,14 +64,14 @@ namespace Proto.Persistence.Sqlite
                 ("$inclusiveToIndex", inclusiveToIndex)
             );
 
-            await deleteCommand.ExecuteNonQueryAsync();
+            await deleteCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
         public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
             using var connection = new SqliteConnection(ConnectionString);
 
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
 
             using var selectCommand = CreateCommand(
                 connection,
@@ -83,9 +83,9 @@ namespace Proto.Persistence.Sqlite
 
             var indexes = new List<long>();
 
-            using var reader = await selectCommand.ExecuteReaderAsync();
+            using var reader = await selectCommand.ExecuteReaderAsync().ConfigureAwait(false);
 
-            while (await reader.ReadAsync())
+            while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 indexes.Add(Convert.ToInt64(reader["EventIndex"]));
 
@@ -102,7 +102,7 @@ namespace Proto.Persistence.Sqlite
 
             using var connection = new SqliteConnection(ConnectionString);
 
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
 
             using var selectCommand = CreateCommand(
                 connection,
@@ -110,9 +110,9 @@ namespace Proto.Persistence.Sqlite
                 ("$ActorName", actorName)
             );
 
-            using var reader = await selectCommand.ExecuteReaderAsync();
+            using var reader = await selectCommand.ExecuteReaderAsync().ConfigureAwait(false);
 
-            while (await reader.ReadAsync())
+            while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 snapshot = JsonConvert.DeserializeObject<object>(reader["SnapshotData"].ToString(), AutoTypeSettings);
                 index = Convert.ToInt64(reader["SnapshotIndex"]);
@@ -129,7 +129,7 @@ namespace Proto.Persistence.Sqlite
 
             using var connection = new SqliteConnection(ConnectionString);
 
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
 
             using var insertCommand = CreateCommand(
                 connection,
@@ -140,7 +140,7 @@ namespace Proto.Persistence.Sqlite
                 ("$EventData", item.EventData)
             );
 
-            await insertCommand.ExecuteNonQueryAsync();
+            await insertCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
 
             return index++;
         }
@@ -153,7 +153,7 @@ namespace Proto.Persistence.Sqlite
 
             using var connection = new SqliteConnection(ConnectionString);
 
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
 
             using var insertCommand = CreateCommand(
                 connection,
@@ -164,7 +164,7 @@ namespace Proto.Persistence.Sqlite
                 ("$SnapshotData", item.SnapshotData)
             );
 
-            await insertCommand.ExecuteNonQueryAsync();
+            await insertCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
         private static SqliteCommand CreateCommand(SqliteConnection connection, string command, params (string Name, object Value)[] parameters)

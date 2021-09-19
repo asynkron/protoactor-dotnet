@@ -97,7 +97,7 @@ namespace Proto
                 this,
                 dispatcher ?? Dispatchers.SynchronousDispatcher,
                 async x => {
-                    await channel.Writer.WriteAsync(x);
+                    await channel.Writer.WriteAsync(x).ConfigureAwait(false);
                 }
             );
             _subscriptions.TryAdd(sub.Id, sub);

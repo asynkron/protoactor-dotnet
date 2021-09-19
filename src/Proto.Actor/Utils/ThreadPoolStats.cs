@@ -19,13 +19,13 @@ namespace Proto.Utils
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(interval, cancellationToken);
+                await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
                 var t1 = DateTime.UtcNow;
                 var t2 = await Task.Run(async () => {
                         await Task.Yield();
                         return DateTime.UtcNow;
                     }, cancellationToken
-                );
+                ).ConfigureAwait(false);
 
                 var delta = t2 - t1;
                 callback(delta);

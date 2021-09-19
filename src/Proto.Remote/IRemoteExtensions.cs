@@ -37,7 +37,7 @@ namespace Proto.Remote
                     Kind = kind,
                     Name = name
                 }, timeout
-            );
+            ).ConfigureAwait(false);
 
             return res;
 

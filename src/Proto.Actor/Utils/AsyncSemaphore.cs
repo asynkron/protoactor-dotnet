@@ -20,12 +20,12 @@ namespace Proto.Utils
 
         public async Task<T> WaitAsync<T>(Func<Task<T>> producer)
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync().ConfigureAwait(false);
 
             try
             {
                 var task = producer();
-                var result = await task;
+                var result = await task.ConfigureAwait(false);
                 return result;
             }
             finally
@@ -36,12 +36,12 @@ namespace Proto.Utils
 
         public async Task WaitAsync(Func<Task> producer)
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync().ConfigureAwait(false);
 
             try
             {
                 var task = producer();
-                await task;
+                await task.ConfigureAwait(false);
             }
             finally
             {
@@ -58,7 +58,7 @@ namespace Proto.Utils
                     try
                     {
                         var task = producer();
-                        await task;
+                        await task.ConfigureAwait(false);
                     }
                     finally
                     {

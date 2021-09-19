@@ -116,7 +116,7 @@ namespace Proto.Remote
                 _system.Root.StopAsync(endpoint).ContinueWith(async _ => {
                         if (_remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _terminatedConnections.TryAdd(evt.Address, endpoint))
                         {
-                            await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value, CancellationToken);
+                            await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value, CancellationToken).ConfigureAwait(false);
                             _terminatedConnections.TryRemove(evt.Address, out var _);
                         }
                     }, CancellationToken

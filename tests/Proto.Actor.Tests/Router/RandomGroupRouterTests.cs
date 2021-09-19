@@ -21,9 +21,9 @@ namespace Proto.Router.Tests
             ActorSystem.Root.Send(router, "2");
             ActorSystem.Root.Send(router, "3");
 
-            Assert.Equal("2", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
-            Assert.Equal("3", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));
-            Assert.Equal("1", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
+            Assert.Equal("2", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+            Assert.Equal("3", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+            Assert.Equal("1", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
         }
 
         [Fact]
@@ -32,7 +32,7 @@ namespace Proto.Router.Tests
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(ActorSystem);
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
-            await Task.Delay(500);
+            await Task.Delay(500).ConfigureAwait(false);
             ActorSystem.Root.Send(router, "1");
             ActorSystem.Root.Send(router, "2");
             ActorSystem.Root.Send(router, "3");
@@ -40,10 +40,10 @@ namespace Proto.Router.Tests
 
             // results are random! (but consistent due to seeding) As MyTestActor only stores the most
             // recent message, "1" is overwritten by a subsequent message. 
-            Assert.Equal("2", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
-            Assert.Null(await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));
-            Assert.Equal("3", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
-            Assert.Equal("4", await ActorSystem.Root.RequestAsync<string>(routee4, "received?", _timeout));
+            Assert.Equal("2", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+            Assert.Null(await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+            Assert.Equal("3", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
+            Assert.Equal("4", await ActorSystem.Root.RequestAsync<string>(routee4, "received?", _timeout).ConfigureAwait(false));
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Proto.Router.Tests
                 ActorSystem.Root.Send(router, i.ToString());
             }
 
-            Assert.Null(await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
+            Assert.Null(await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
         }
 
         [Fact]
@@ -68,7 +68,7 @@ namespace Proto.Router.Tests
 
             ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
 
-            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
             Assert.DoesNotContain(routee1, routees.Pids);
             Assert.Contains(routee2, routees.Pids);
             Assert.Contains(routee3, routees.Pids);
@@ -81,7 +81,7 @@ namespace Proto.Router.Tests
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
             ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
 
-            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
             Assert.Contains(routee1, routees.Pids);
             Assert.Contains(routee2, routees.Pids);
             Assert.Contains(routee3, routees.Pids);
@@ -95,9 +95,9 @@ namespace Proto.Router.Tests
 
             ActorSystem.Root.Send(router, new RouterBroadcastMessage("hello"));
 
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
+            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
         }
 
         private (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees(ActorSystem system)

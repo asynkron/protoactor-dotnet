@@ -23,7 +23,7 @@ namespace Proto.Cluster.AmazonECS
                 {
                     Cluster = ecsClusterName
                 }
-            );
+            ).ConfigureAwait(false);
             
             var instanceArns = allTasks.TaskArns;
 
@@ -37,7 +37,7 @@ namespace Proto.Cluster.AmazonECS
                     Include = {"TAGS"},
                     Tasks = instanceArns,
                 }
-            );
+            ).ConfigureAwait(false);
             
             var members = new List<Member>();
             foreach (var task in describedTasks.Tasks)
@@ -83,7 +83,7 @@ namespace Proto.Cluster.AmazonECS
             {
                 ResourceArn = resourceArn,
                 Tags = tags,
-            });
+            }).ConfigureAwait(false);
         }
     }
 }

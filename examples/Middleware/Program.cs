@@ -36,7 +36,7 @@ namespace Middleware
                     Console.WriteLine(" 1 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
                     Console.WriteLine(" 1 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
                     Console.WriteLine(" 1 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
-                    await next(c, target, newEnvelope);
+                    await next(c, target, newEnvelope).ConfigureAwait(false);
                     //this line might look confusing at first when reading the console output
                     //it looks like this finishes before the actor receive middleware kicks in
                     //which is exactly what it does, due to the actor mailbox.
@@ -74,11 +74,11 @@ namespace Middleware
                             Console.WriteLine("  2 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
                             Console.WriteLine("  2 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
                             Console.WriteLine("  2 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
-                            await next(context, newEnvelope);
+                            await next(context, newEnvelope).ConfigureAwait(false);
                             Console.WriteLine("  2 Exit Actor ReceiverMiddleware");
                         }
                         else
-                            await next(context, envelope);
+                            await next(context, envelope).ConfigureAwait(false);
                     }
                 ).WithSenderMiddleware(next => async (context, target, envelope) => {
                         var newEnvelope = envelope
@@ -90,7 +90,7 @@ namespace Middleware
                         Console.WriteLine("    4 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
                         Console.WriteLine("    4 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
                         Console.WriteLine("    4 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
-                        await next(context, target, envelope);
+                        await next(context, target, envelope).ConfigureAwait(false);
                         Console.WriteLine("    4 Exit Actor SenderMiddleware");
                     }
                 );

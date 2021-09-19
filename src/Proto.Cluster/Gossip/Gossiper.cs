@@ -42,7 +42,7 @@ namespace Proto.Cluster.Gossip
         {
             _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
 
-            var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
+            var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key)).ConfigureAwait(false);
 
             var dict = res.State;
             var typed = ImmutableDictionary<string, T>.Empty;
@@ -85,9 +85,9 @@ namespace Proto.Cluster.Gossip
             {
                 try
                 {
-                    await Task.Delay((int)_cluster.Config.GossipInterval.TotalMilliseconds);
+                    await Task.Delay((int)_cluster.Config.GossipInterval.TotalMilliseconds).ConfigureAwait(false);
                     SetState("heartbeat", new MemberHeartbeat());
-                    await SendStateAsync();
+                    await SendStateAsync().ConfigureAwait(false);
                     
                 }
                 catch (Exception x)
@@ -109,7 +109,7 @@ namespace Proto.Cluster.Gossip
 
             try
             {
-                await _context.RequestAsync<SendGossipStateResponse>(_pid, new SendGossipStateRequest(), CancellationTokens.WithTimeout(5000));
+                await _context.RequestAsync<SendGossipStateResponse>(_pid, new SendGossipStateRequest(), CancellationTokens.WithTimeout(5000)).ConfigureAwait(false);
             }
             catch (DeadLetterException)
             {

@@ -37,7 +37,7 @@ namespace Proto.Mailbox.Tests
 
             var pid = system.Root.Spawn(props);
             system.Root.Send(pid, batch);
-            await system.Root.PoisonAsync(pid);
+            await system.Root.PoisonAsync(pid).ConfigureAwait(false);
 
             var expected = new[] {"hello", "world", "batch"};
             messages.Should().ContainInOrder(expected);

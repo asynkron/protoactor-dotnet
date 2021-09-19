@@ -39,15 +39,15 @@ namespace Proto.Remote.Tests
 
         public virtual async Task InitializeAsync()
         {
-            await ServerRemote.StartAsync();
-            await Remote.StartAsync();
+            await ServerRemote.StartAsync().ConfigureAwait(false);
+            await Remote.StartAsync().ConfigureAwait(false);
             ServerRemote.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
         }
 
         public virtual async Task DisposeAsync()
         {
-            await Remote.ShutdownAsync();
-            await ServerRemote.ShutdownAsync();
+            await Remote.ShutdownAsync().ConfigureAwait(false);
+            await ServerRemote.ShutdownAsync().ConfigureAwait(false);
         }
 
         protected static TRemoteConfig ConfigureServerRemoteConfig<TRemoteConfig>(TRemoteConfig serverRemoteConfig)

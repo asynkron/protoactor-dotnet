@@ -126,7 +126,7 @@ namespace Proto.Remote.GrpcNet
                     {
                         _endpointManager.Stop();
                         if (_host is not null)
-                            await _host.StopAsync();
+                            await _host.StopAsync().ConfigureAwait(false);
                     }
                 }
 

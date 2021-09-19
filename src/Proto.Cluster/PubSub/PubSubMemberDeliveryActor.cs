@@ -23,7 +23,7 @@ namespace Proto.Cluster.PubSub
                         .Select(sub => DeliverBatch(context, topicBatch, sub));
                 
                 //wait for completion
-                await Task.WhenAll(tasks);
+                await Task.WhenAll(tasks).ConfigureAwait(false);
                 
                 context.Respond(new PublishResponse());
             }

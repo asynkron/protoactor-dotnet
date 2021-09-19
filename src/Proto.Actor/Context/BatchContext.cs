@@ -35,7 +35,7 @@ namespace Proto.Context
             ct.ThrowIfCancellationRequested();
             _context.Send(target, messageEnvelope);
             var task = ct == default || ct == _ct ? future.Task : future.GetTask(ct);
-            var result = await task;
+            var result = await task.ConfigureAwait(false);
 
             switch (result)
             {

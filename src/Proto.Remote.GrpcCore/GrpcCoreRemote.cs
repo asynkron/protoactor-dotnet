@@ -92,9 +92,9 @@ namespace Proto.Remote.GrpcCore
                 if (graceful)
                 {
                     _endpointManager.Stop();
-                    await _server.KillAsync();
+                    await _server.KillAsync().ConfigureAwait(false);
                 }
-                else await _server.KillAsync();
+                else await _server.KillAsync().ConfigureAwait(false);
 
                 Logger.LogInformation(
                     "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
@@ -107,7 +107,7 @@ namespace Proto.Remote.GrpcCore
                     ex, "Proto.Actor server stopped on {Address} with error: {Message}",
                     System.Address, ex.Message
                 );
-                await _server.KillAsync();
+                await _server.KillAsync().ConfigureAwait(false);
             }
         }
     }

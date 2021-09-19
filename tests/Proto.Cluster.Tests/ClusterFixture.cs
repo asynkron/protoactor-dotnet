@@ -81,7 +81,7 @@ namespace Proto.Cluster.Tests
         /// <exception cref="ArgumentException"></exception>
         public async Task<Cluster> SpawnNode()
         {
-            var newMember = await SpawnClusterMember(_configure);
+            var newMember = await SpawnClusterMember(_configure).ConfigureAwait(false);
             Members.Add(newMember);
             return newMember;
         }
@@ -94,7 +94,7 @@ namespace Proto.Cluster.Tests
         ) => (await Task.WhenAll(
             Enumerable.Range(0, count)
                 .Select(_ => SpawnClusterMember(configure))
-        )).ToList();
+        ).ConfigureAwait(false)).ToList();
 
         protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure)
         {
@@ -119,7 +119,7 @@ namespace Proto.Cluster.Tests
 
             var cluster = new Cluster(system, config);
 
-            await cluster.StartMemberAsync();
+            await cluster.StartMemberAsync().ConfigureAwait(false);
             return cluster;
         }
 
@@ -190,7 +190,7 @@ namespace Proto.Cluster.Tests
 
         protected override async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig> configure)
         {
-            var cluster = await base.SpawnClusterMember(configure);
+            var cluster = await base.SpawnClusterMember(configure).ConfigureAwait(false);
             return cluster.WithPidCacheInvalidation();
         }
     }

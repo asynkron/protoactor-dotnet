@@ -85,19 +85,19 @@ namespace Proto.Cluster
 
         public async Task StartMemberAsync()
         {
-            await BeginStartAsync(false);
+            await BeginStartAsync(false).ConfigureAwait(false);
             //gossiper must be started whenever any topology events starts flowing
-            await Gossip.StartAsync();
-            await Provider.StartMemberAsync(this);
+            await Gossip.StartAsync().ConfigureAwait(false);
+            await Provider.StartMemberAsync(this).ConfigureAwait(false);
             Logger.LogInformation("Started as cluster member");
-            await MemberList.Started;
+            await MemberList.Started.ConfigureAwait(false);
             Logger.LogInformation("I see myself");
         }
 
         public async Task StartClientAsync()
         {
-            await BeginStartAsync(true);
-            await Provider.StartClientAsync(this);
+            await BeginStartAsync(true).ConfigureAwait(false);
+            await Provider.StartClientAsync(this).ConfigureAwait(false);
 
             Logger.LogInformation("Started as cluster client");
         }
@@ -111,16 +111,16 @@ namespace Proto.Cluster
 
             Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
 
-            await Remote.StartAsync();
+            await Remote.StartAsync().ConfigureAwait(false);
 
             Logger.LogInformation("Starting");
             MemberList = new MemberList(this);
             ClusterContext = Config.ClusterContextProducer(this);
 
             var kinds = GetClusterKinds();
-            await IdentityLookup.SetupAsync(this, kinds, client);
+            await IdentityLookup.SetupAsync(this, kinds, client).ConfigureAwait(false);
             InitIdentityProxy();
-            await PubSub.StartAsync();
+            await PubSub.StartAsync().ConfigureAwait(false);
         }
 
         private void InitClusterKinds()
@@ -136,13 +136,13 @@ namespace Proto.Cluster
 
         public async Task ShutdownAsync(bool graceful = true)
         {
-            await System.ShutdownAsync();
+            await System.ShutdownAsync().ConfigureAwait(false);
             Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 
-            await Gossip.ShutdownAsync();
-            if (graceful) await IdentityLookup!.ShutdownAsync();
-            await Config!.ClusterProvider.ShutdownAsync(graceful);
-            await Remote.ShutdownAsync(graceful);
+            await Gossip.ShutdownAsync().ConfigureAwait(false);
+            if (graceful) await IdentityLookup!.ShutdownAsync().ConfigureAwait(false);
+            await Config!.ClusterProvider.ShutdownAsync(graceful).ConfigureAwait(false);
+            await Remote.ShutdownAsync(graceful).ConfigureAwait(false);
 
             Logger.LogInformation("Stopped Cluster {Id}", System.Id);
         }

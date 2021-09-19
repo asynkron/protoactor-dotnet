@@ -40,6 +40,6 @@ public class MailboxBenchmark
             context.Send(pid, i);
         }
 
-        await context.RequestAsync<string>(pid, "stop");
+        await context.RequestAsync<string>(pid, "stop").ConfigureAwait(false);
     }
 }

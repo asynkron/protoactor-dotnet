@@ -26,13 +26,13 @@ namespace Proto.Cluster.Tests
         {
             const string id = "1";
 
-            var remoteMember = await GetRemoteMemberFromActivation(id);
+            var remoteMember = await GetRemoteMemberFromActivation(id).ConfigureAwait(false);
             var cachedPid = GetFromPidCache(remoteMember, id);
 
             cachedPid.Should().NotBeNull();
-            await remoteMember.RequestAsync<object>(id, EchoActor.Kind, new Die(), CancellationToken.None);
+            await remoteMember.RequestAsync<object>(id, EchoActor.Kind, new Die(), CancellationToken.None).ConfigureAwait(false);
 
-            await Task.Delay(1000); // PidCache is asynchronously cleared, allow the system to purge it
+            await Task.Delay(1000).ConfigureAwait(false); // PidCache is asynchronously cleared, allow the system to purge it
 
             var cachedPidAfterStopping = GetFromPidCache(remoteMember, id);
 
@@ -54,7 +54,7 @@ namespace Proto.Cluster.Tests
         {
             foreach (var member in Members)
             {
-                var response = await member.RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), CancellationToken.None);
+                var response = await member.RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), CancellationToken.None).ConfigureAwait(false);
 
                 // Get the first member which does not have the activation local to it.
                 if (!response.Address.Equals(member.System.Address, StringComparison.OrdinalIgnoreCase)) return member;

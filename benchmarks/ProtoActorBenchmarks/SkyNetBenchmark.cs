@@ -93,7 +93,7 @@ namespace ProtoActorBenchmarks
                         );
                     }
 
-                    await Task.WhenAll(tasks);
+                    await Task.WhenAll(tasks).ConfigureAwait(false);
                     var tot = 0L;
 
                     for (var i = 0; i < tasks.Length; i++)

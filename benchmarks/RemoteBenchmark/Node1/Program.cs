@@ -79,7 +79,7 @@ class Program
             remote = new GrpcNetRemote(system, remoteConfig);
         }
 
-        await remote.StartAsync();
+        await remote.StartAsync().ConfigureAwait(false);
 
         var messageCount = 1000000;
         var cancellationTokenSource = new CancellationTokenSource();
@@ -94,14 +94,14 @@ class Program
                     try
                     {
                         var actorPidResponse =
-                            await remote.SpawnAsync($"{remoteAddress}:12000", "echo", TimeSpan.FromSeconds(1));
+                            await remote.SpawnAsync($"{remoteAddress}:12000", "echo", TimeSpan.FromSeconds(1)).ConfigureAwait(false);
 
                         if (actorPidResponse.StatusCode == (int) ResponseStatusCode.OK)
                         {
                             var remotePid = actorPidResponse.Pid;
                             await context.RequestAsync<Start>(remotePid, new StartRemote {Sender = pid},
                                 TimeSpan.FromSeconds(1)
-                            );
+                            ).ConfigureAwait(false);
                             var stopWatch = new Stopwatch();
                             stopWatch.Start();
                             Console.WriteLine("Starting to send");
@@ -116,7 +116,7 @@ class Program
                                 CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token,
                                     new CancellationTokenSource(2000).Token
                                 );
-                            await semaphore.WaitAsync(linkedTokenSource.Token);
+                            await semaphore.WaitAsync(linkedTokenSource.Token).ConfigureAwait(false);
                             stopWatch.Stop();
                             var elapsed = stopWatch.Elapsed;
                             Console.WriteLine("Elapsed {0}", elapsed);
@@ -124,30 +124,30 @@ class Program
                             var t = messageCount * 2.0 / elapsed.TotalMilliseconds * 1000;
                             Console.Clear();
                             Console.WriteLine("Throughput {0} msg / sec", t);
-                            await context.StopAsync(remotePid);
+                            await context.StopAsync(remotePid).ConfigureAwait(false);
                         }
                     }
                     catch (OperationCanceledException)
                     {
-                        await Task.Delay(1000);
+                        await Task.Delay(1000).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
                         logger?.LogError(e, "Error");
-                        await Task.Delay(5000);
+                        await Task.Delay(5000).ConfigureAwait(false);
                     }
 
-                    await context.PoisonAsync(pid);
+                    await context.PoisonAsync(pid).ConfigureAwait(false);
                 }
             }, cancellationTokenSource.Token
         );
 
         Console.ReadLine();
         cancellationTokenSource.Cancel();
-        await Task.Delay(1000);
+        await Task.Delay(1000).ConfigureAwait(false);
         Console.WriteLine("Press enter to quit");
         Console.ReadLine();
-        await remote.ShutdownAsync();
+        await remote.ShutdownAsync().ConfigureAwait(false);
     }
 
     public class LocalActor : IActor

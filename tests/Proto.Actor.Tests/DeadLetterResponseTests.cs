@@ -22,9 +22,9 @@ namespace Proto.Tests
             var echoPid = System.Root.Spawn(EchoProps);
 
             const string message = "hello";
-            var response = await Context.RequestAsync<string>(echoPid, message);
+            var response = await Context.RequestAsync<string>(echoPid, message).ConfigureAwait(false);
             response.Should().Be(message);
-            await Context.PoisonAsync(echoPid);
+            await Context.PoisonAsync(echoPid).ConfigureAwait(false);
 
             Context.Invoking(context => context.RequestAsync<string>(echoPid, message)).Should()
                 .ThrowExactly<DeadLetterException>();
@@ -37,7 +37,7 @@ namespace Proto.Tests
 
             var pid = Context.Spawn(validationActor);
 
-            var response = await Context.RequestAsync<string>(pid, "Validate");
+            var response = await Context.RequestAsync<string>(pid, "Validate").ConfigureAwait(false);
 
             response.Should().Be("Validated");
         }
@@ -54,7 +54,7 @@ namespace Proto.Tests
                     case "Validate":
                         _sender = context.Sender;
                         _deadLetterTarget = context.Spawn(EchoProps);
-                        await context.PoisonAsync(_deadLetterTarget);
+                        await context.PoisonAsync(_deadLetterTarget).ConfigureAwait(false);
                         context.Request(_deadLetterTarget, "One dead letter please");
                         break;
                     case DeadLetterResponse response: {

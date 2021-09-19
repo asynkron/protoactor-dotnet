@@ -29,9 +29,9 @@ namespace KafkaVirtualActorIngress
                 .WithCluster(clusterConfig);
 
             var cluster = system.Cluster();
-            await cluster.StartMemberAsync();
+            await cluster.StartMemberAsync().ConfigureAwait(false);
 
-            await RunKafkaConsumeLoop(cluster);
+            await RunKafkaConsumeLoop(cluster).ConfigureAwait(false);
         }
 
         private static async Task RunKafkaConsumeLoop(Cluster cluster)
@@ -60,7 +60,7 @@ namespace KafkaVirtualActorIngress
                 }
 
                 //await response form all actors
-                await Task.WhenAll(tasks);
+                await Task.WhenAll(tasks).ConfigureAwait(false);
                 //TODO: commit back to Kafka that all messages succeeded
                 sw.Stop();
                 var tps = 1000.0 / sw.Elapsed.TotalMilliseconds * tasks.Count;

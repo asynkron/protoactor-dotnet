@@ -166,7 +166,7 @@ namespace Proto.Cluster.Gossip
                 }, CancellationTokens.WithTimeout(_gossipRequestTimeout)
             );
 
-            context.ReenterAfter(t, async task => await GossipReenter(context, task, pendingOffsets));
+            context.ReenterAfter(t, async task => await GossipReenter(context, task, pendingOffsets).ConfigureAwait(false));
         }
 
         private async Task GossipReenter(IContext context, Task<GossipResponse> task, ImmutableDictionary<string, long> pendingOffsets)
@@ -174,7 +174,7 @@ namespace Proto.Cluster.Gossip
             var logger = context.Logger();
             try
             {
-                await task;
+                await task.ConfigureAwait(false);
 
                 foreach (var (key, sequenceNumber) in pendingOffsets)
                 {

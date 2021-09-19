@@ -66,7 +66,7 @@ namespace Proto.Cluster.Partition
 
         private async Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
-            await Retry.Try(() => OnClusterTopologyInner(msg, context), onError: OnError, onFailed: OnFailed, ignoreFailure:true);
+            await Retry.Try(() => OnClusterTopologyInner(msg, context), onError: OnError, onFailed: OnFailed, ignoreFailure:true).ConfigureAwait(false);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to handle topology change");
 
@@ -105,7 +105,7 @@ namespace Proto.Cluster.Partition
                 Logger.LogDebug("Requesting ownerships");
 
                 //built in timeout on each request above
-                var responses = await Task.WhenAll(requests);
+                var responses = await Task.WhenAll(requests).ConfigureAwait(false);
                 Logger.LogDebug("Got ownerships {EventId}", _topologyHash);
 
                 foreach (var response in responses)
@@ -142,7 +142,7 @@ namespace Proto.Cluster.Partition
             {
                 var res = await context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg,
                     CancellationTokens.WithTimeout(_identityHandoverTimeout)
-                );
+                ).ConfigureAwait(false);
                 return res;
             }
             catch
@@ -269,7 +269,7 @@ namespace Proto.Cluster.Partition
                 async rst => {
                     try
                     {
-                        var response = await rst;
+                        var response = await rst.ConfigureAwait(false);
                         if (_config.DeveloperLogging)
                             Console.Write("R"); //reentered
                         
@@ -319,7 +319,7 @@ namespace Proto.Cluster.Partition
                 var timeout = _cluster.Config!.TimeoutTimespan;
                 var activatorPid = PartitionManager.RemotePartitionPlacementActor(activatorAddress);
 
-                var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activatorPid, req, timeout);
+                var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activatorPid, req, timeout).ConfigureAwait(false);
                 return res;
             }
             catch

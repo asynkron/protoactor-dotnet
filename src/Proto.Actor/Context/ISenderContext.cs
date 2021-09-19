@@ -122,7 +122,7 @@ namespace Proto
         )
         {
             var request = headers is null ? message : MessageEnvelope.Wrap(message, headers);
-            var result = await self.RequestAsync<MessageEnvelope>(target, request, cancellationToken);
+            var result = await self.RequestAsync<MessageEnvelope>(target, request, cancellationToken).ConfigureAwait(false);
 
             var messageResult = MessageEnvelope.UnwrapMessage(result);
 
@@ -143,7 +143,7 @@ namespace Proto
             using var future = self.GetFuture();
             var messageEnvelope = message is MessageEnvelope envelope ? envelope.WithSender(future.Pid) : new MessageEnvelope(message, future.Pid);
             self.Send(target, messageEnvelope);
-            var result = await future.GetTask(cancellationToken);
+            var result = await future.GetTask(cancellationToken).ConfigureAwait(false);
 
             var messageResult = MessageEnvelope.UnwrapMessage(result);
 

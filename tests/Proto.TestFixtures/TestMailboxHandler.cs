@@ -22,13 +22,13 @@ namespace Proto.TestFixtures
         public async void Schedule(Func<Task> runner)
         {
             var waitingTaskExists = _taskCompletionQueue.TryDequeue(out var onScheduleCompleted);
-            await runner();
+            await runner().ConfigureAwait(false);
             if (waitingTaskExists) onScheduleCompleted.SetResult(0);
         }
 
-        public async ValueTask InvokeSystemMessageAsync(object msg) => await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
+        public async ValueTask InvokeSystemMessageAsync(object msg) => await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task.ConfigureAwait(false);
 
-        public async ValueTask InvokeUserMessageAsync(object msg) => await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
+        public async ValueTask InvokeUserMessageAsync(object msg) => await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task.ConfigureAwait(false);
 
         public void EscalateFailure(Exception reason, object message)
         {

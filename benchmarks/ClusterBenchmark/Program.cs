@@ -40,7 +40,7 @@ namespace ClusterExperiment1
             {
                 // InteractiveOutput = args[0] == "1";
 
-                var worker = await Configuration.SpawnMember();
+                var worker = await Configuration.SpawnMember().ConfigureAwait(false);
                 AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
                 Thread.Sleep(Timeout.Infinite);
                 
@@ -140,7 +140,7 @@ namespace ClusterExperiment1
                 "3" => RunWorkers(() => new RunMemberExternalProcGraceful(), run),
                 "4" => RunWorkers(() => new RunMemberExternalProc(), run),
                 _   => throw new ArgumentOutOfRangeException()
-            });
+            }).ConfigureAwait(false);
 
             var tps = requestCount / elapsed.TotalMilliseconds * 1000;
             Console.WriteLine();
@@ -161,7 +161,7 @@ namespace ClusterExperiment1
 
             _ = SafeTask.Run(async () => {
                     var semaphore = new AsyncSemaphore(50);
-                    var cluster = await Configuration.SpawnClient();
+                    var cluster = await Configuration.SpawnClient().ConfigureAwait(false);
                     var rnd = new Random();
 
                     while (true)
@@ -184,7 +184,7 @@ namespace ClusterExperiment1
 
             try
             {
-                var x = await cluster.RequestAsync<object>(id, Request, context, cancellationToken);
+                var x = await cluster.RequestAsync<object>(id, Request, context, cancellationToken).ConfigureAwait(false);
 
                 if (x != null)
                 {
@@ -228,7 +228,7 @@ namespace ClusterExperiment1
 
             try
             {
-                var x = await cluster.RequestAsync<object>(id, "hello", Request, context, cancellationToken);
+                var x = await cluster.RequestAsync<object>(id, "hello", Request, context, cancellationToken).ConfigureAwait(false);
 
                 if (x != null)
                 {
@@ -275,7 +275,7 @@ namespace ClusterExperiment1
             var logger = Log.CreateLogger(nameof(Program));
 
             _ = SafeTask.Run(async () => {
-                    var cluster = await Configuration.SpawnClient();
+                    var cluster = await Configuration.SpawnClient().ConfigureAwait(false);
                     var rnd = new Random();
                     var semaphore = new AsyncSemaphore(5);
 
@@ -303,7 +303,7 @@ namespace ClusterExperiment1
                         requests.Add(request);
                     }
 
-                    await Task.WhenAll(requests);
+                    await Task.WhenAll(requests).ConfigureAwait(false);
                 }
                 catch (Exception x)
                 {
@@ -317,18 +317,18 @@ namespace ClusterExperiment1
             var logger = Log.CreateLogger(nameof(Program));
 
             _ = SafeTask.Run(async () => {
-                    var cluster = await Configuration.SpawnClient();
+                    var cluster = await Configuration.SpawnClient().ConfigureAwait(false);
                     var rnd = new Random();
 
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
                         var ct = CancellationTokens.WithTimeout(20_000);
-                        var res = await SendRequest(cluster, id, ct);
+                        var res = await SendRequest(cluster, id, ct).ConfigureAwait(false);
 
                         if (!res)
                         {
-                            var pid = await cluster.GetAsync(ClusterIdentity.Create(id,"hello"),CancellationTokens.FromSeconds(10));
+                            var pid = await cluster.GetAsync(ClusterIdentity.Create(id,"hello"),CancellationTokens.FromSeconds(10)).ConfigureAwait(false);
 
                             if (pid != null)
                             {
@@ -349,14 +349,14 @@ namespace ClusterExperiment1
             var logger = Log.CreateLogger(nameof(Program));
 
             _ = SafeTask.Run(async () => {
-                    var cluster = await Configuration.SpawnClient();
+                    var cluster = await Configuration.SpawnClient().ConfigureAwait(false);
                     var rnd = new Random();
 
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
                         var ct = CancellationTokens.WithTimeout(20_000);
-                        await SendRequest(cluster, id, ct);
+                        await SendRequest(cluster, id, ct).ConfigureAwait(false);
                     }
                 }
             );
@@ -369,20 +369,20 @@ namespace ClusterExperiment1
             for (var i = 0; i < memberCount; i++)
             {
                 var p = memberFactory();
-                await p.Start();
-                await Task.Delay(500);
+                await p.Start().ConfigureAwait(false);
+                await Task.Delay(500).ConfigureAwait(false);
                 Console.WriteLine("Worker started...");
                 followers.Add(p);
             }
 
-            await Task.Delay(15000);
+            await Task.Delay(15000).ConfigureAwait(false);
 
             startClient();
             Console.WriteLine("Client started...");
 
             var sw = Stopwatch.StartNew();
 
-            await Task.Delay(killTimeoutSeconds * 1000);
+            await Task.Delay(killTimeoutSeconds * 1000).ConfigureAwait(false);
             bool first = true;
 
             foreach (var t in followers)
@@ -393,7 +393,7 @@ namespace ClusterExperiment1
                 }
                 else
                 {
-                    await Task.Delay(killTimeoutSeconds * 1000);
+                    await Task.Delay(killTimeoutSeconds * 1000).ConfigureAwait(false);
                 }
 
                 Console.WriteLine("Stopping node...");

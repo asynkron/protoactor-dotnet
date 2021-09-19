@@ -37,7 +37,7 @@ namespace Proto.Cluster.Tests
                     context.Respond(pong);
                     break;
                 case SlowPing ping:
-                    await Task.Delay(ping.DelayMs);
+                    await Task.Delay(ping.DelayMs).ConfigureAwait(false);
                     var slowPong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
                     Logger.LogDebug("Received SlowPing, replying Pong after {Delay} ms: {@Pong}", ping.DelayMs, slowPong);
                     context.Respond(slowPong);

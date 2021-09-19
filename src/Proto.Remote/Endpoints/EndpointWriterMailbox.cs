@@ -111,13 +111,13 @@ namespace Proto.Remote
                     {
                         case EndpointErrorEvent e:
                             if (!_suspended) // Since it's already stopped, there is no need to throw the error
-                                await _invoker!.InvokeUserMessageAsync(sys);
+                                await _invoker!.InvokeUserMessageAsync(sys).ConfigureAwait(false);
                             break;
                         case EndpointConnectedEvent:
                             //endpoint connected event is not a real system message, do not pass it to the invoker
                             break;
                         default:
-                            await _invoker!.InvokeSystemMessageAsync(sys);
+                            await _invoker!.InvokeSystemMessageAsync(sys).ConfigureAwait(false);
                             break;
                     }
 
@@ -181,7 +181,7 @@ namespace Proto.Remote
                             case RemoteWatch _:
                             case RemoteUnwatch _:
                             case RemoteTerminate _:
-                                await _invoker!.InvokeUserMessageAsync(msg);
+                                await _invoker!.InvokeUserMessageAsync(msg).ConfigureAwait(false);
                                 continue;
                         }
                         
@@ -197,7 +197,7 @@ namespace Proto.Remote
                         m = batch;
                         // Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
                         _system.Logger()?.LogDebug("EndpointWriter Sending batch {Batch}", batch);
-                        await _invoker!.InvokeUserMessageAsync(batch);
+                        await _invoker!.InvokeUserMessageAsync(batch).ConfigureAwait(false);
                     }
                 }
             }

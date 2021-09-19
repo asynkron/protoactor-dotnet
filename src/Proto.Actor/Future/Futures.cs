@@ -68,12 +68,12 @@ namespace Proto.Future
             {
                 if (cancellationToken == default)
                 {
-                    return await _tcs.Task;
+                    return await _tcs.Task.ConfigureAwait(false);
                 }
 
-                await using (cancellationToken.Register(() => _tcs.TrySetCanceled()))
+                await using (cancellationToken.Register(() => _tcs.TrySetCanceled()).ConfigureAwait(false))
                 {
-                    return await _tcs.Task;
+                    return await _tcs.Task.ConfigureAwait(false);
                 }
             }
             catch

@@ -63,7 +63,7 @@ namespace Proto.Cluster.Kubernetes
             _kinds = kinds;
             _address = host + ":" + port;
             StartClusterMonitor();
-            await RegisterMemberAsync();
+            await RegisterMemberAsync().ConfigureAwait(false);
             MonitorMemberStatusChanges();
         }
 
@@ -85,13 +85,13 @@ namespace Proto.Cluster.Kubernetes
 
         public async Task ShutdownAsync(bool graceful)
         {
-            await DeregisterMemberAsync(_cluster);
-            await _cluster.System.Root.StopAsync(_clusterMonitor);
+            await DeregisterMemberAsync(_cluster).ConfigureAwait(false);
+            await _cluster.System.Root.StopAsync(_clusterMonitor).ConfigureAwait(false);
         }
 
         public async Task RegisterMemberAsync()
         {
-            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
+            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever).ConfigureAwait(false);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
 
@@ -102,7 +102,7 @@ namespace Proto.Cluster.Kubernetes
         {
             Logger.LogInformation("[Cluster][KubernetesProvider] Registering service {PodName} on {PodIp}", _podName, _address);
 
-            var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
+            var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace()).ConfigureAwait(false);
             if (pod is null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
 
             Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: " + pod.Namespace());
@@ -132,7 +132,7 @@ namespace Proto.Cluster.Kubernetes
 
             try
             {
-                await _kubernetes.ReplacePodLabels(_podName, KubernetesExtensions.GetKubeNamespace(), labels);
+                await _kubernetes.ReplacePodLabels(_podName, KubernetesExtensions.GetKubeNamespace(), labels).ConfigureAwait(false);
             }
             catch (HttpOperationException e)
             {
@@ -165,7 +165,7 @@ namespace Proto.Cluster.Kubernetes
 
         public async Task DeregisterMemberAsync(Cluster cluster)
         {
-            await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed);
+            await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to deregister service");
 
@@ -178,7 +178,7 @@ namespace Proto.Cluster.Kubernetes
 
             var kubeNamespace = KubernetesExtensions.GetKubeNamespace();
 
-            var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
+            var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace).ConfigureAwait(false);
 
             foreach (var kind in _kinds)
             {
@@ -195,7 +195,7 @@ namespace Proto.Cluster.Kubernetes
 
             pod.SetLabel(LabelCluster, null);
 
-            await _kubernetes.ReplacePodLabels(_podName, kubeNamespace, pod.Labels());
+            await _kubernetes.ReplacePodLabels(_podName, kubeNamespace, pod.Labels()).ConfigureAwait(false);
 
             cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
         }

@@ -19,7 +19,7 @@ namespace Proto
         {
             try
             {
-                await Task.Run(body, cancellationToken);
+                await Task.Run(body, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception x)
             {

@@ -36,7 +36,7 @@ namespace LifecycleEvents
 
             //StopAsync. Stop instantly kills actor
             //Poison lets it process any waiting messages first
-            await system.Root.PoisonAsync(actor);
+            await system.Root.PoisonAsync(actor).ConfigureAwait(false);
         }
 
         private class ChildActor : IActor

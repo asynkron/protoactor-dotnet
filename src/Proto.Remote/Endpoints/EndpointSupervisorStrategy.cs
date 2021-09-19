@@ -58,7 +58,7 @@ namespace Proto.Remote
                 var duration = TimeSpan.FromMilliseconds(backoff + noise);
 
                 _ = SafeTask.Run(async () => {
-                        await Task.Delay(duration);
+                        await Task.Delay(duration).ConfigureAwait(false);
 
                         if (reason is RpcException rpc && rpc.StatusCode == StatusCode.Unavailable)
                         {

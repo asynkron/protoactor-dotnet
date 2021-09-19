@@ -79,7 +79,7 @@ namespace Proto.Cluster.Consul
             var (host, port) = cluster.System.GetAddress();
             var kinds = cluster.GetClusterKinds();
             SetState(cluster, cluster.Config.ClusterName, host, port, kinds, cluster.MemberList);
-            await RegisterMemberAsync();
+            await RegisterMemberAsync().ConfigureAwait(false);
             StartUpdateTtlLoop();
             StartMonitorMemberStatusChangesLoop();
             //   StartLeaderElectionLoop();
@@ -103,7 +103,7 @@ namespace Proto.Cluster.Consul
 
             if (graceful)
             {
-                await DeregisterServiceAsync();
+                await DeregisterServiceAsync().ConfigureAwait(false);
                 _deregistered = true;
             }
 
@@ -143,7 +143,7 @@ namespace Proto.Cluster.Consul
                                     WaitTime = _blockingWaitTime
                                 }
                                 , _cluster.System.Shutdown
-                            );
+                            ).ConfigureAwait(false);
                             if (_deregistered) break;
 
                             _logger.LogDebug("Got status updates from Consul");
@@ -166,7 +166,7 @@ namespace Proto.Cluster.Consul
                                 _logger.LogError(x, "Consul Monitor failed");
 
                                 //just backoff and try again
-                                await Task.Delay(2000);
+                                await Task.Delay(2000).ConfigureAwait(false);
                             }
                         }
                     }
@@ -193,8 +193,8 @@ namespace Proto.Cluster.Consul
                 {
                     try
                     {
-                        await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");
-                        await Task.Delay(_refreshTtl, _cluster.System.Shutdown);
+                        await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "").ConfigureAwait(false);
+                        await Task.Delay(_refreshTtl, _cluster.System.Shutdown).ConfigureAwait(false);
                     }
                     catch (Exception x)
                     {
@@ -230,13 +230,13 @@ namespace Proto.Cluster.Consul
                     {"id", _cluster.System.Id}
                 }
             };
-            await _client.Agent.ServiceRegister(s);
+            await _client.Agent.ServiceRegister(s).ConfigureAwait(false);
         }
 
         //unregister this cluster from consul
         private async Task DeregisterServiceAsync()
         {
-            await _client.Agent.ServiceDeregister(_consulServiceInstanceId);
+            await _client.Agent.ServiceDeregister(_consulServiceInstanceId).ConfigureAwait(false);
             _logger.LogInformation("Deregistered service");
         }
 

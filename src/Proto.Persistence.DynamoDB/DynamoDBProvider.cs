@@ -44,7 +44,7 @@ namespace Proto.Persistence.DynamoDB
 
             while (true)
             {
-                var results = await query.GetNextSetAsync();
+                var results = await query.GetNextSetAsync().ConfigureAwait(false);
 
                 foreach (var doc in results)
                 {
@@ -72,7 +72,7 @@ namespace Proto.Persistence.DynamoDB
             var config = new QueryOperationConfig {ConsistentRead = true, BackwardSearch = true, Limit = 1};
             config.Filter.AddCondition(_options.SnapshotsTableHashKey, QueryOperator.Equal, actorName);
             var query = _snapshotsTable.Query(config);
-            var results = await query.GetNextSetAsync();
+            var results = await query.GetNextSetAsync().ConfigureAwait(false);
             var doc = results.FirstOrDefault();
 
             if (doc == null) return (null, 0);
@@ -100,7 +100,7 @@ namespace Proto.Persistence.DynamoDB
                 {_options.EventsTableDataTypeKey, dataType.AssemblyQualifiedNameSimple()}
             };
 
-            await _eventsTable.PutItemAsync(doc);
+            await _eventsTable.PutItemAsync(doc).ConfigureAwait(false);
 
             return index++;
         }
@@ -117,7 +117,7 @@ namespace Proto.Persistence.DynamoDB
                 {_options.SnapshotsTableDataKey, data},
                 {_options.SnapshotsTableDataTypeKey, dataType.AssemblyQualifiedNameSimple()}
             };
-            await _snapshotsTable.PutItemAsync(doc);
+            await _snapshotsTable.PutItemAsync(doc).ConfigureAwait(false);
         }
 
         public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
@@ -132,13 +132,13 @@ namespace Proto.Persistence.DynamoDB
 
                 if (++writeCount >= 25) // 25 is max
                 {
-                    await write.ExecuteAsync();
+                    await write.ExecuteAsync().ConfigureAwait(false);
                     write = _eventsTable.CreateBatchWrite();
                     writeCount = 0;
                 }
             }
 
-            if (writeCount > 0) await write.ExecuteAsync();
+            if (writeCount > 0) await write.ExecuteAsync().ConfigureAwait(false);
         }
 
         public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
@@ -154,7 +154,7 @@ namespace Proto.Persistence.DynamoDB
 
             while (true)
             {
-                var results = await query.GetNextSetAsync();
+                var results = await query.GetNextSetAsync().ConfigureAwait(false);
 
                 foreach (var doc in results)
                 {
@@ -162,7 +162,7 @@ namespace Proto.Persistence.DynamoDB
 
                     if (++writeCount >= 25) // 25 is max
                     {
-                        await write.ExecuteAsync();
+                        await write.ExecuteAsync().ConfigureAwait(false);
                         write = _snapshotsTable.CreateBatchWrite();
                         writeCount = 0;
                     }
@@ -171,7 +171,7 @@ namespace Proto.Persistence.DynamoDB
                 if (query.IsDone) break;
             }
 
-            if (writeCount > 0) await write.ExecuteAsync();
+            if (writeCount > 0) await write.ExecuteAsync().ConfigureAwait(false);
         }
 
         #region IDisposable Support

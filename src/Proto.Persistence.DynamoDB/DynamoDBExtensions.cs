@@ -68,17 +68,17 @@ namespace Proto.Persistence.DynamoDB
             int writeCapacityUnits
         )
         {
-            var existingTable = await dynamoDB.IsTableCreated(tableName, true);
+            var existingTable = await dynamoDB.IsTableCreated(tableName, true).ConfigureAwait(false);
 
             if (existingTable.Created) CheckTableKeys(existingTable.TableDesc, partitionKey, sortKey);
             else
             {
-                var res = await dynamoDB.CreateTable(tableName, partitionKey, sortKey, readCapacityUnits, writeCapacityUnits);
+                var res = await dynamoDB.CreateTable(tableName, partitionKey, sortKey, readCapacityUnits, writeCapacityUnits).ConfigureAwait(false);
 
                 if (res.TableStatus != "ACTIVE")
                 {
-                    await Task.Delay(2000);
-                    await dynamoDB.IsTableCreated(tableName, false);
+                    await Task.Delay(2000).ConfigureAwait(false);
+                    await dynamoDB.IsTableCreated(tableName, false).ConfigureAwait(false);
                 }
             }
         }
@@ -93,12 +93,12 @@ namespace Proto.Persistence.DynamoDB
 
             do
             {
-                var (created, tableDesc, shouldRetry) = await TryCheckTable();
+                var (created, tableDesc, shouldRetry) = await TryCheckTable().ConfigureAwait(false);
 
                 if (!shouldRetry)
                     return (created, tableDesc);
 
-                await Task.Delay(2000); // Wait 2 seconds.
+                await Task.Delay(2000).ConfigureAwait(false); // Wait 2 seconds.
             } while (retry-- > 0);
 
             // We've been waiting for 20s already. Lets throw exception.
@@ -110,7 +110,7 @@ namespace Proto.Persistence.DynamoDB
                 {
                     var res = await dynamoDB.DescribeTableAsync(
                         new DescribeTableRequest {TableName = tableName}
-                    );
+                    ).ConfigureAwait(false);
 
                     return res.Table.TableStatus.Value switch
                     {
@@ -173,7 +173,7 @@ namespace Proto.Persistence.DynamoDB
                 TableName = tableName
             };
 
-            var response = await dynamoDB.CreateTableAsync(request);
+            var response = await dynamoDB.CreateTableAsync(request).ConfigureAwait(false);
 
             return response.TableDescription;
         }

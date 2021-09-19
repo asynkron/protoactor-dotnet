@@ -43,7 +43,7 @@ namespace Proto.Cluster.PubSub
 
                     if (batch.Envelopes.Count < _batchSize) continue;
                     
-                    await PublishBatch(batch);
+                    await PublishBatch(batch).ConfigureAwait(false);
                     batch = new ProducerBatchMessage();
                     
                 }
@@ -51,11 +51,11 @@ namespace Proto.Cluster.PubSub
                 {
                     if (batch.Envelopes.Count > 0)
                     {
-                        await PublishBatch(batch);
+                        await PublishBatch(batch).ConfigureAwait(false);
                         batch = new ProducerBatchMessage();
                     }
 
-                    await _publisherChannel.Reader.WaitToReadAsync();
+                    await _publisherChannel.Reader.WaitToReadAsync().ConfigureAwait(false);
                 }
             }
         }
@@ -63,7 +63,7 @@ namespace Proto.Cluster.PubSub
         public async Task PublishBatch(ProducerBatchMessage batch)
         {
             //TODO: retries etc...
-            await _cluster.RequestAsync<PublishResponse>(_topic, "topic", batch, CancellationTokens.FromSeconds(5));
+            await _cluster.RequestAsync<PublishResponse>(_topic, "topic", batch, CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
 
             foreach (var tcs in batch.DeliveryReports)
             {

@@ -26,7 +26,7 @@ namespace Proto.Cluster.PubSub
                     }
                 }
             }, CancellationToken.None
-        );
+        ).ConfigureAwait(false);
 
         //Subscribe PID
         public static async Task Subscribe(this Cluster cluster,  string topic, PID subscriber) => _ = await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
@@ -36,7 +36,7 @@ namespace Proto.Cluster.PubSub
                     Pid = subscriber
                 }
             }, CancellationToken.None
-        );
+        ).ConfigureAwait(false);
 
         //Subscribe Receive function, ad-hoc actor
         public static Task Subscribe(this Cluster cluster, string topic, Receive receive)

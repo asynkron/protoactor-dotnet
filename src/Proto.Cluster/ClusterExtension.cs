@@ -58,7 +58,7 @@ namespace Proto.Cluster
                 MessageEnvelope startEnvelope
             )
             {
-                await baseReceive(ctx, startEnvelope);
+                await baseReceive(ctx, startEnvelope).ConfigureAwait(false);
                 var identity = ctx.Get<ClusterIdentity>();
                 var cluster = ctx.System.Cluster();
 #pragma warning disable 618
@@ -68,7 +68,7 @@ namespace Proto.Cluster
                 var count = clusterKind.Inc();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
                     .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterKind.Name});
-                await baseReceive(ctx, grainInitEnvelope);
+                await baseReceive(ctx, grainInitEnvelope).ConfigureAwait(false);
             }
 
             async Task HandleStopped(
@@ -81,7 +81,7 @@ namespace Proto.Cluster
                 var cluster = ctx.System.Cluster();
                 cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
                     .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterKind.Name});
-                await baseReceive(ctx, stopEnvelope);
+                await baseReceive(ctx, stopEnvelope).ConfigureAwait(false);
             }
         }
 

@@ -19,7 +19,7 @@ namespace Proto.Persistence.Marten
                 .Where(x => x.ActorName == actorName)
                 .Where(x => x.Index >= indexStart && x.Index <= indexEnd)
                 .OrderBy(x => x.Index)
-                .ToListAsync();
+                .ToListAsync().ConfigureAwait(false);
 
             foreach (var @event in events)
             {
@@ -36,7 +36,7 @@ namespace Proto.Persistence.Marten
             var snapshot = await session.Query<Snapshot>()
                 .Where(x => x.ActorName == actorName)
                 .OrderByDescending(x => x.Index)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync().ConfigureAwait(false);
 
             return snapshot != null ? (snapshot.Data, snapshot.Index) : (null, 0);
         }
@@ -47,7 +47,7 @@ namespace Proto.Persistence.Marten
 
             session.Store(new Event(actorName, index, @event));
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync().ConfigureAwait(false);
 
             return index++;
         }
@@ -58,7 +58,7 @@ namespace Proto.Persistence.Marten
 
             session.Store(new Snapshot(actorName, index, snapshot));
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync().ConfigureAwait(false);
         }
 
         public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
@@ -70,7 +70,7 @@ namespace Proto.Persistence.Marten
                 x.Index <= inclusiveToIndex
             );
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync().ConfigureAwait(false);
         }
 
         public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
@@ -82,7 +82,7 @@ namespace Proto.Persistence.Marten
                 x.Index <= inclusiveToIndex
             );
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync().ConfigureAwait(false);
         }
     }
 }

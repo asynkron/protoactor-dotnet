@@ -58,14 +58,14 @@ namespace Proto.Deduplication
                     return;
                 }
 
-                await continuation();
+                await continuation().ConfigureAwait(false);
                 CleanIfNeeded(cutoff, now);
                 _lastCheck = now;
                 Add(key!, now);
                 return;
             }
 
-            await continuation();
+            await continuation().ConfigureAwait(false);
         }
 
         private bool IsDuplicate(T key, long cutoff)

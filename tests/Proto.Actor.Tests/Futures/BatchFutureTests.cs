@@ -28,7 +28,7 @@ namespace Proto.Tests
 
             Context.Request(pid, "hello", future.Pid);
 
-            var reply = await future.Task;
+            var reply = await future.Task.ConfigureAwait(false);
             reply.Should().Be("hey");
         }
 
@@ -47,7 +47,7 @@ namespace Proto.Tests
 
             Context.Request(pid, "hello", future.Pid);
 
-            var reply = await future.Task;
+            var reply = await future.Task.ConfigureAwait(false);
             reply.Should().BeNull();
         }
 
@@ -72,7 +72,7 @@ namespace Proto.Tests
                 futures[i] = future;
             }
 
-            var replies = await Task.WhenAll(futures.Select(future => future.Task));
+            var replies = await Task.WhenAll(futures.Select(future => future.Task)).ConfigureAwait(false);
 
             replies.Should().BeInAscendingOrder().And.HaveCount(batchSize);
         }
@@ -83,7 +83,7 @@ namespace Proto.Tests
             var pid = Context.Spawn(Props.FromFunc(async ctx => {
                         if (ctx.Sender is not null)
                         {
-                            await Task.Delay(1);
+                            await Task.Delay(1).ConfigureAwait(false);
                             ctx.Respond(ctx.Message!);
                         }
                     }
@@ -101,7 +101,7 @@ namespace Proto.Tests
                 Context.Request(pid, i, future.Pid);
             }
 
-            futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }
+            futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)).ConfigureAwait(false); }
             ).Should().Throw<TimeoutException>();
         }
 
@@ -126,7 +126,7 @@ namespace Proto.Tests
                 tasks[i] = batchContext.RequestAsync<object>(pid, i, cancellationToken);
             }
 
-            var replies = await Task.WhenAll(tasks);
+            var replies = await Task.WhenAll(tasks).ConfigureAwait(false);
 
             replies.Should().BeInAscendingOrder().And.HaveCount(1000);
         }

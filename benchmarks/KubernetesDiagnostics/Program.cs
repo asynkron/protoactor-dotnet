@@ -97,7 +97,7 @@ namespace KubernetesDiagnostics
 
             await system
                 .Cluster()
-                .StartMemberAsync();
+                .StartMemberAsync().ConfigureAwait(false);
 
             var props = Props.FromFunc(ctx => Task.CompletedTask);
             system.Root.SpawnNamed(props, "dummy");
@@ -105,7 +105,7 @@ namespace KubernetesDiagnostics
 
             while (true)
             {
-                var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
+                var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
 
                 var m = system.Cluster().MemberList.GetAllMembers();
                 var hash = Member.TopologyHash(m);
@@ -118,7 +118,7 @@ namespace KubernetesDiagnostics
 
                     try
                     {
-                        var t = await system.Root.RequestAsync<Touched>(pid, new Touch(), CancellationTokens.FromSeconds(1));
+                        var t = await system.Root.RequestAsync<Touched>(pid, new Touch(), CancellationTokens.FromSeconds(1)).ConfigureAwait(false);
 
                         if (t != null)
                         {
@@ -135,7 +135,7 @@ namespace KubernetesDiagnostics
                     }
                 }
 
-                await Task.Delay(3000);
+                await Task.Delay(3000).ConfigureAwait(false);
             }
         }
 

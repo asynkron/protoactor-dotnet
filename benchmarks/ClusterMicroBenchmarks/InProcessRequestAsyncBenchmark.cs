@@ -59,7 +59,7 @@ namespace ClusterMicroBenchmarks
                 tasks[i] = System.Root.RequestAsync<object>(pid, 1, cancellationToken);
             }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         [Benchmark]
@@ -80,7 +80,7 @@ namespace ClusterMicroBenchmarks
 
             try
             {
-                await Task.WhenAll(futures.Select(f => f.Task));
+                await Task.WhenAll(futures.Select(f => f.Task)).ConfigureAwait(false);
             }
             finally
             {
@@ -103,7 +103,7 @@ namespace ClusterMicroBenchmarks
                 tasks[i] = batch.RequestAsync<object>(pid, 1, cancellationToken);
             }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
     }
 }

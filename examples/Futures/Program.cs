@@ -21,7 +21,7 @@ namespace Futures
             );
             var pid = context.Spawn(props);
 
-            var reply = await context.RequestAsync<object>(pid, "hello");
+            var reply = await context.RequestAsync<object>(pid, "hello").ConfigureAwait(false);
             Console.WriteLine(reply);
             Console.ReadLine();
         }

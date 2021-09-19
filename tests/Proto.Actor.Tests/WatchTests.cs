@@ -44,12 +44,12 @@ namespace Proto.Tests
                 )
             );
 
-            await Task.Delay(1000);
+            await Task.Delay(1000).ConfigureAwait(false);
             Assert.Equal(1, counter);
         }
 
         [Fact]
-        public async void CanWatchLocalActors()
+        public async Task CanWatchLocalActors()
         {
             var watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
                 .WithMailbox(() => new TestMailbox())
@@ -58,8 +58,8 @@ namespace Proto.Tests
                 .WithMailbox(() => new TestMailbox())
             );
 
-            await Context.StopAsync(watchee);
-            var terminatedMessageReceived = await Context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
+            await Context.StopAsync(watchee).ConfigureAwait(false);
+            var terminatedMessageReceived = await Context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
             Assert.True(terminatedMessageReceived);
         }
 

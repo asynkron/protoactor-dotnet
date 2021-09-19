@@ -18,7 +18,7 @@ namespace Proto
         {
             var sw = Stopwatch.StartNew();
             var t = factory();
-            var res = await t;
+            var res = await t.ConfigureAwait(false);
             sw.Stop();
             histogram.Observe(sw, labels);
 
@@ -29,7 +29,7 @@ namespace Proto
         {
             var sw = Stopwatch.StartNew();
             var t = factory();
-            await t;
+            await t.ConfigureAwait(false);
             sw.Stop();
             histogram.Observe(sw, labels);
         }

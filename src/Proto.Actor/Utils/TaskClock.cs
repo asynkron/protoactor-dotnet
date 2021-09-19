@@ -31,7 +31,7 @@ namespace Proto.Utils
                         try
                         {
                             CurrentBucket = Task.Delay(_bucketSize, _ct);
-                            await Task.Delay(_updateInterval, _ct);
+                            await Task.Delay(_updateInterval, _ct).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {

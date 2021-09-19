@@ -47,7 +47,7 @@ namespace Proto.Channels
                     _channel.Writer.Complete();
                     break;
                 case T typed:
-                    await _channel.Writer.WriteAsync(typed);
+                    await _channel.Writer.WriteAsync(typed).ConfigureAwait(false);
                     break;
             }
         }

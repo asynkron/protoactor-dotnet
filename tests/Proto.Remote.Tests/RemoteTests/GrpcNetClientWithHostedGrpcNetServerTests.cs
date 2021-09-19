@@ -29,8 +29,8 @@ namespace Proto.Remote.Tests
 
             public override async Task DisposeAsync()
             {
-                await Remote.ShutdownAsync();
-                await _serverHost.StopAsync();
+                await Remote.ShutdownAsync().ConfigureAwait(false);
+                await _serverHost.StopAsync().ConfigureAwait(false);
                 _serverHost.Dispose();
             }
         }

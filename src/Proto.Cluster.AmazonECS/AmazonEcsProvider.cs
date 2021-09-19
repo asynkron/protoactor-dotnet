@@ -53,7 +53,7 @@ namespace Proto.Cluster.AmazonECS
             _kinds = kinds;
             _address = host + ":" + port;
             StartClusterMonitor();
-            await RegisterMemberAsync();
+            await RegisterMemberAsync().ConfigureAwait(false);
         }
 
         public Task StartClientAsync(Cluster cluster)
@@ -71,11 +71,11 @@ namespace Proto.Cluster.AmazonECS
             return Task.CompletedTask;
         }
 
-        public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync();
+        public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync().ConfigureAwait(false);
 
         public async Task RegisterMemberAsync()
         {
-            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
+            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever).ConfigureAwait(false);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
 
@@ -101,7 +101,7 @@ namespace Proto.Cluster.AmazonECS
 
             try
             {
-                await _client.UpdateMetadata(_taskArn, tags);
+                await _client.UpdateMetadata(_taskArn, tags).ConfigureAwait(false);
             }
             catch (Exception x)
             {
@@ -119,7 +119,7 @@ namespace Proto.Cluster.AmazonECS
 
                         try
                         {
-                            var members = await _client.GetMembers(_ecsClusterName);
+                            var members = await _client.GetMembers(_ecsClusterName).ConfigureAwait(false);
 
 
                             if (members != null)
@@ -137,7 +137,7 @@ namespace Proto.Cluster.AmazonECS
                             Logger.LogError(x, "Failed to get members from ECS");
                         }
 
-                        await Task.Delay(_config.PollIntervalSeconds);
+                        await Task.Delay(_config.PollIntervalSeconds).ConfigureAwait(false);
                     }
                 }
             );
@@ -145,7 +145,7 @@ namespace Proto.Cluster.AmazonECS
 
         public async Task DeregisterMemberAsync()
         {
-            await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed);
+            await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to deregister service");
 
@@ -155,7 +155,7 @@ namespace Proto.Cluster.AmazonECS
         private async Task DeregisterMemberInner()
         {
             Logger.LogInformation("[Cluster][AmazonEcsProvider] Unregistering service {PodName} on {PodIp}", _taskArn, _address);
-            await _client.UpdateMetadata(_taskArn, new Dictionary<string, string>());
+            await _client.UpdateMetadata(_taskArn, new Dictionary<string, string>()).ConfigureAwait(false);
         }
     }
 }

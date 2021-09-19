@@ -113,12 +113,12 @@ namespace Proto.Cluster.Identity
                 {
                     try
                     {
-                        var activation = await _storage.TryGetExistingActivation(clusterIdentity, CancellationTokens.WithTimeout(_cluster.Config!.ActorActivationTimeout));
+                        var activation = await _storage.TryGetExistingActivation(clusterIdentity, CancellationTokens.WithTimeout(_cluster.Config!.ActorActivationTimeout)).ConfigureAwait(false);
 
                         //we got an existing activation, use this
                         if (activation != null)
                         {
-                            var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
+                            var existingPid = await ValidateAndMapToPid(clusterIdentity, activation).ConfigureAwait(false);
                             if (existingPid != null) return existingPid;
                         }
 
@@ -129,14 +129,14 @@ namespace Proto.Cluster.Identity
                         if (activator == null) return null;
 
                         //try to acquire global lock
-                        spawnLock ??= await TryAcquireLock(clusterIdentity);
+                        spawnLock ??= await TryAcquireLock(clusterIdentity).ConfigureAwait(false);
 
                         //we didn't get the lock, wait for activation to complete
-                        if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(_cluster.Config!.ActorActivationTimeout));
+                        if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.WithTimeout(_cluster.Config!.ActorActivationTimeout)).ConfigureAwait(false);
                         else
                         {
                             //we have the lock, spawn and return
-                            (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(_cluster.Config!.ActorSpawnTimeout));
+                            (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.WithTimeout(_cluster.Config!.ActorSpawnTimeout)).ConfigureAwait(false);
                         }
                     }
                     catch (OperationCanceledException e)
@@ -146,7 +146,7 @@ namespace Proto.Cluster.Identity
                         if (_shouldThrottle().IsOpen())
                             _logger.LogWarning(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
 
-                        await Task.Delay(tries * 20);
+                        await Task.Delay(tries * 20).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -155,7 +155,7 @@ namespace Proto.Cluster.Identity
                         if (_shouldThrottle().IsOpen())
                             _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
 
-                        await Task.Delay(tries * 20);
+                        await Task.Delay(tries * 20).ConfigureAwait(false);
                     }
                 }
 
@@ -178,11 +178,11 @@ namespace Proto.Cluster.Identity
         {
             async Task<PID?> Inner()
             {
-                var activation = await _storage.WaitForActivation(clusterIdentity, ct);
+                var activation = await _storage.WaitForActivation(clusterIdentity, ct).ConfigureAwait(false);
                 var res = await ValidateAndMapToPid(
                     clusterIdentity,
                     activation
-                );
+                ).ConfigureAwait(false);
                 return res;
             }
             
@@ -207,7 +207,7 @@ namespace Proto.Cluster.Identity
 
             try
             {
-                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
+                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct).ConfigureAwait(false);
 
                 if (resp.Pid != null)
                 {
@@ -233,7 +233,7 @@ namespace Proto.Cluster.Identity
             }
 
             //Clean up our mess..
-            await _storage.RemoveLock(spawnLock, ct);
+            await _storage.RemoveLock(spawnLock, ct).ConfigureAwait(false);
             return (null, null);
 
         }
@@ -254,7 +254,7 @@ namespace Proto.Cluster.Identity
             }
 
             //let all requests try to remove, but only log on the first occurrence
-            await _storage.RemoveMember(activation.MemberId!, CancellationToken.None);
+            await _storage.RemoveMember(activation.MemberId!, CancellationToken.None).ConfigureAwait(false);
             return null;
         }
     }

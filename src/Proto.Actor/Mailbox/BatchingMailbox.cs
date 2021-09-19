@@ -68,7 +68,7 @@ namespace Proto.Mailbox
                         _                => _suspended
                     };
                     currentMessage = sys;
-                    await _invoker!.InvokeSystemMessageAsync(sys);
+                    await _invoker!.InvokeSystemMessageAsync(sys).ConfigureAwait(false);
                 }
 
                 if (!_suspended)
@@ -85,7 +85,7 @@ namespace Proto.Mailbox
                     if (batch.Count > 0)
                     {
                         currentMessage = batch;
-                        await _invoker!.InvokeUserMessageAsync(new MessageBatch(batch));
+                        await _invoker!.InvokeUserMessageAsync(new MessageBatch(batch)).ConfigureAwait(false);
                     }
                 }
             }

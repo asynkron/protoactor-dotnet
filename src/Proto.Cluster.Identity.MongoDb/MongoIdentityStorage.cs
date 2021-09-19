@@ -28,7 +28,7 @@ namespace Proto.Cluster.Identity.MongoDb
         )
         {
             var requestId = Guid.NewGuid().ToString();
-            var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId, ct);
+            var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId, ct).ConfigureAwait(false);
             return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
         }
 
@@ -38,15 +38,15 @@ namespace Proto.Cluster.Identity.MongoDb
         )
         {
             var key = GetKey(clusterIdentity);
-            var pidLookupEntity = await LookupKey(key, ct);
+            var pidLookupEntity = await LookupKey(key, ct).ConfigureAwait(false);
             var lockId = pidLookupEntity?.LockedBy;
 
             if (lockId != null)
             {
                 //There is an active lock on the pid, spin wait
                 var i = 0;
-                do await Task.Delay(20 * i, ct);
-                while ((pidLookupEntity = await LookupKey(key, ct))?.LockedBy == lockId && ++i < 10);
+                do await Task.Delay(20 * i, ct).ConfigureAwait(false);
+                while ((pidLookupEntity = await LookupKey(key, ct).ConfigureAwait(false))?.LockedBy == lockId && ++i < 10);
             }
 
             //the lookup entity was lost, stale lock maybe?
@@ -65,7 +65,7 @@ namespace Proto.Cluster.Identity.MongoDb
 
             //Stale lock. just delete it and let cluster retry
             // _logger.LogDebug($"Stale lock: {pidLookupEntity.Key}");
-            await RemoveLock(new SpawnLock(lockId!, clusterIdentity), CancellationToken.None);
+            await RemoveLock(new SpawnLock(lockId!, clusterIdentity), CancellationToken.None).ConfigureAwait(false);
             return null;
         }
 
@@ -86,7 +86,7 @@ namespace Proto.Cluster.Identity.MongoDb
                         .Unset(l => l.LockedBy)
                     , new UpdateOptions(), ct
                 )
-            );
+            ).ConfigureAwait(false);
             if (res.MatchedCount != 1)
                 throw new LockNotFoundException($"Failed to store activation of {pid}");
         }
@@ -96,7 +96,7 @@ namespace Proto.Cluster.Identity.MongoDb
             Logger.LogDebug("Removing activation: {ClusterIdentity} {@PID}", clusterIdentity, pid);
 
             var key = GetKey(clusterIdentity);
-            await _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.Key == key && p.UniqueIdentity == pid.Id, ct));
+            await _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.Key == key && p.UniqueIdentity == pid.Id, ct)).ConfigureAwait(false);
         }
 
         public Task RemoveMember(string memberId, CancellationToken ct)
@@ -107,7 +107,7 @@ namespace Proto.Cluster.Identity.MongoDb
             CancellationToken ct
         )
         {
-            var pidLookup = await LookupKey(GetKey(clusterIdentity), ct);
+            var pidLookup = await LookupKey(GetKey(clusterIdentity), ct).ConfigureAwait(false);
             return pidLookup?.Address == null || pidLookup?.UniqueIdentity == null
                 ? null
                 : new StoredActivation(pidLookup.MemberId!,
@@ -142,7 +142,7 @@ namespace Proto.Cluster.Identity.MongoDb
             try
             {
                 //be 100% sure own the lock here
-                await _asyncSemaphore.WaitAsync(() => _pids.InsertOneAsync(lockEntity, new InsertOneOptions(), ct));
+                await _asyncSemaphore.WaitAsync(() => _pids.InsertOneAsync(lockEntity, new InsertOneOptions(), ct)).ConfigureAwait(false);
                 Logger.LogDebug("Got lock on first try for {ClusterIdentity}", clusterIdentity);
                 return true;
             }
@@ -155,7 +155,7 @@ namespace Proto.Cluster.Identity.MongoDb
                             IsUpsert = false
                         }, ct
                     )
-                );
+                ).ConfigureAwait(false);
 
                 //if l.MatchCount == 1, then one document was updated by us, and we should own the lock, no?
                 var gotLock = l.IsAcknowledged && l.ModifiedCount == 1;
@@ -168,7 +168,7 @@ namespace Proto.Cluster.Identity.MongoDb
         {
             try
             {
-                var res = await _asyncSemaphore.WaitAsync(() => _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct));
+                var res = await _asyncSemaphore.WaitAsync(() => _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct)).ConfigureAwait(false);
                 return res;
             }
             catch (MongoConnectionException x)

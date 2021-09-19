@@ -105,7 +105,7 @@ namespace Proto.Remote
                 async () => {
                     try
                     {
-                        await _stream.ResponseStream.MoveNext();
+                        await _stream.ResponseStream.MoveNext().ConfigureAwait(false);
                         Logger.LogDebug("[EndpointActor] {Address} Disconnected", _address);
                         var terminated = new EndpointTerminatedEvent(_address);
                         context.System.EventStream.Publish(terminated);
@@ -144,9 +144,9 @@ namespace Proto.Remote
 
         private async Task ShutDownChannel()
         {
-            if (_stream != null) await _stream.RequestStream.CompleteAsync();
+            if (_stream != null) await _stream.RequestStream.CompleteAsync().ConfigureAwait(false);
 
-            if (_channel != null) await _channel.ShutdownAsync();
+            if (_channel != null) await _channel.ShutdownAsync().ConfigureAwait(false);
         }
 
         private Task EndpointError(EndpointErrorEvent evt) => throw evt.Exception;

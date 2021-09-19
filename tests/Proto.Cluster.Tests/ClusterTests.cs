@@ -37,7 +37,7 @@ namespace Proto.Cluster.Tests
         
             var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))));
         
-            await Task.WhenAny(timeout, consensus);
+            await Task.WhenAny(timeout, consensus).ConfigureAwait(false);
 
             _testOutputHelper.WriteLine(LogStore.ToFormattedString());
             timeout.IsCompleted.Should().BeFalse();
@@ -51,7 +51,7 @@ namespace Proto.Cluster.Tests
             var msg = "Hello-slow-world";
             var response = await Members.First().RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
                 new SlowPing {Message = msg, DelayMs = 5000}, timeout
-            );
+            ).ConfigureAwait(false);
             response.Should().NotBeNull();
             response.Message.Should().Be(msg);
         }
@@ -65,7 +65,7 @@ namespace Proto.Cluster.Tests
             var targetMemberId = targetMember.System.Id;
 
             //make sure we somehow don't already have the expected value in the state of targetMember
-            var initialResponse = await targetMember.Gossip.GetState<PID>("some-state");
+            var initialResponse = await targetMember.Gossip.GetState<PID>("some-state").ConfigureAwait(false);
             initialResponse.TryGetValue(sourceMemberId, out _).Should().BeFalse();
 
             //make sure we are not comparing the same not to itself;
@@ -75,12 +75,12 @@ namespace Proto.Cluster.Tests
 
             sourceMember.Gossip.SetState("some-state", new PID("abc", "def"));
             //allow state to replicate            
-            await stream.FirstAsync(x => x.MemberId == sourceMemberId && x.Key == "some-state");
+            await stream.FirstAsync(x => x.MemberId == sourceMemberId && x.Key == "some-state").ConfigureAwait(false);
 
             //get state from target member
             //it should be noted that the response is a dict of member id for all members,
             //to the state for the given key for each of those members
-            var response = await targetMember.Gossip.GetState<PID>("some-state");
+            var response = await targetMember.Gossip.GetState<PID>("some-state").ConfigureAwait(false);
 
             //get the state for source member
             response.TryGetValue(sourceMemberId, out var value).Should().BeTrue();
@@ -102,21 +102,21 @@ namespace Proto.Cluster.Tests
         {
             var timeout = new CancellationTokenSource(5000).Token;
             var id = CreateIdentity("1");
-            await PingPong(Members[0], id, timeout);
-            await PingPong(Members[1], id, timeout);
+            await PingPong(Members[0], id, timeout).ConfigureAwait(false);
+            await PingPong(Members[1], id, timeout).ConfigureAwait(false);
 
             //Retrieve the node the virtual actor was not spawned on
-            var nodeLocation = await Members[0].RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), timeout);
+            var nodeLocation = await Members[0].RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), timeout).ConfigureAwait(false);
             nodeLocation.Should().NotBeNull("We expect the actor to respond correctly");
             var otherNode = Members.First(node => node.System.Address != nodeLocation.Address);
 
             //Kill it
-            await otherNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout);
+            await otherNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout).ConfigureAwait(false);
 
             var timer = Stopwatch.StartNew();
             // And force it to restart.
             // DeadLetterResponse should be sent to requestAsync, enabling a quick initialization of the new virtual actor
-            await PingPong(otherNode, id, timeout);
+            await PingPong(otherNode, id, timeout).ConfigureAwait(false);
             timer.Stop();
 
             _testOutputHelper.WriteLine("Respawned virtual actor in {0}", timer.Elapsed);
@@ -127,15 +127,15 @@ namespace Proto.Cluster.Tests
         {
             var ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
 
-            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 5000);
+            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 5000).ConfigureAwait(false);
 
             var toBeRemoved = Members.Last();
             _testOutputHelper.WriteLine("Removing node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
-            await ClusterFixture.RemoveNode(toBeRemoved);
+            await ClusterFixture.RemoveNode(toBeRemoved).ConfigureAwait(false);
             _testOutputHelper.WriteLine("Removed node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
-            await ClusterFixture.SpawnNode();
+            await ClusterFixture.SpawnNode().ConfigureAwait(false);
 
-            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 5000);
+            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 5000).ConfigureAwait(false);
 
             _testOutputHelper.WriteLine("All responses OK. Terminating fixture");
         }
@@ -168,7 +168,7 @@ namespace Proto.Cluster.Tests
         {
             var timer = Stopwatch.StartNew();
             var timeout = new CancellationTokenSource(timeoutMs).Token;
-            await Task.WhenAll(nodes.SelectMany(entryNode => actorIds.Select(id => PingPong(entryNode, id, timeout))));
+            await Task.WhenAll(nodes.SelectMany(entryNode => actorIds.Select(id => PingPong(entryNode, id, timeout)))).ConfigureAwait(false);
             _testOutputHelper.WriteLine("Got response from {0} nodes in {1}", nodes.Count(), timer.Elapsed);
         }
 
@@ -183,7 +183,7 @@ namespace Proto.Cluster.Tests
 
             foreach (var id in GetActorIds(actorCount))
             {
-                await PingPong(entryNode, id, timeout);
+                await PingPong(entryNode, id, timeout).ConfigureAwait(false);
             }
 
             timer.Stop();
@@ -200,7 +200,7 @@ namespace Proto.Cluster.Tests
 
             var id = GetActorIds(clientCount).First();
 
-            await Task.WhenAll(Enumerable.Range(0, clientCount).Select(_ => PingPong(entryNode, id, timeout)));
+            await Task.WhenAll(Enumerable.Range(0, clientCount).Select(_ => PingPong(entryNode, id, timeout))).ConfigureAwait(false);
 
             timer.Stop();
             _testOutputHelper.WriteLine($"Spawned 1 actor from {clientCount} clients in {timer.Elapsed}");
@@ -214,7 +214,7 @@ namespace Proto.Cluster.Tests
             var entryNode = Members.First();
 
             var timer = Stopwatch.StartNew();
-            await Task.WhenAll(GetActorIds(actorCount).Select(id => PingPong(entryNode, id, timeout)));
+            await Task.WhenAll(GetActorIds(actorCount).Select(id => PingPong(entryNode, id, timeout))).ConfigureAwait(false);
             timer.Stop();
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
@@ -234,7 +234,7 @@ namespace Proto.Cluster.Tests
                         PingPong(entryNode, id, timeout, EchoActor.Kind2)
                     )
                 )
-            );
+            ).ConfigureAwait(false);
             timer.Stop();
             _testOutputHelper.WriteLine(
                 $"Spawned {actorCount * 2} actors across {Members.Count} nodes in {timer.Elapsed}"
@@ -250,7 +250,7 @@ namespace Proto.Cluster.Tests
             await Task.WhenAll(Members.SelectMany(member =>
                     GetActorIds(actorCount).Select(id => PingPong(member, id, timeout))
                 )
-            );
+            ).ConfigureAwait(false);
             timer.Stop();
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
         }
@@ -267,12 +267,12 @@ namespace Proto.Cluster.Tests
 
             var ids = GetActorIds(actorCount).ToList();
 
-            await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
+            await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout))).ConfigureAwait(false);
             await Task.WhenAll(ids.Select(id =>
                     entryNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout)
                 )
-            );
-            await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
+            ).ConfigureAwait(false);
+            await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout))).ConfigureAwait(false);
             timer.Stop();
             _testOutputHelper.WriteLine(
                 $"Spawned, killed and spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}"
@@ -288,20 +288,20 @@ namespace Proto.Cluster.Tests
 
             await PingAndVerifyLocality(firstNode, timeout, "1:1", firstNode.System.Address,
                 "Local affinity to sending node means that actors should spawn there"
-            );
+            ).ConfigureAwait(false);
             LogProcessCounts();
             await PingAndVerifyLocality(secondNode, timeout, "2:1", firstNode.System.Address,
                 "As the current instances exist on the 'wrong' node, these should respond before being moved"
-            );
+            ).ConfigureAwait(false);
             LogProcessCounts();
 
             _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
-            await Task.Delay(100, timeout);
+            await Task.Delay(100, timeout).ConfigureAwait(false);
             LogProcessCounts();
 
             await PingAndVerifyLocality(secondNode, timeout, "2.2", secondNode.System.Address,
                 "Relocation should be triggered, and the actors should be respawned on the local node"
-            );
+            ).ConfigureAwait(false);
             LogProcessCounts();
 
             void LogProcessCounts() => _testOutputHelper.WriteLine(
@@ -325,7 +325,7 @@ namespace Proto.Cluster.Tests
                             {
                                 RequestId = requestId
                             }, token
-                        );
+                        ).ConfigureAwait(false);
 
                         response.Should().NotBeNull();
 
@@ -335,7 +335,7 @@ namespace Proto.Cluster.Tests
                         }
                     }
                 )
-            );
+            ).ConfigureAwait(false);
         }
 
         private async Task PingPong(
@@ -347,14 +347,14 @@ namespace Proto.Cluster.Tests
         {
             await Task.Yield();
 
-            var response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
+            var response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind).ConfigureAwait(false);
             var tries = 1;
 
             while (response == null && !token.IsCancellationRequested)
             {
-                await Task.Delay(200, token);
+                await Task.Delay(200, token).ConfigureAwait(false);
                 _testOutputHelper.WriteLine($"Retrying ping {kind}/{id}, attempt {++tries}");
-                response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
+                response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind).ConfigureAwait(false);
             }
 
             response.Should().NotBeNull($"We expect a response before timeout on {kind}/{id}");

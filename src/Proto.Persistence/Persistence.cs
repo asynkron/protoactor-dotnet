@@ -117,7 +117,7 @@ namespace Proto.Persistence
         /// <returns></returns>
         public async Task RecoverStateAsync()
         {
-            var (snapshot, lastSnapshotIndex) = await _snapshotStore.GetSnapshotAsync(_actorId);
+            var (snapshot, lastSnapshotIndex) = await _snapshotStore.GetSnapshotAsync(_actorId).ConfigureAwait(false);
 
             if (snapshot is not null && _applySnapshot is not null)
             {
@@ -135,7 +135,7 @@ namespace Proto.Persistence
                     Index++;
                     _applyEvent?.Invoke(new RecoverEvent(@event, Index));
                 }
-            );
+            ).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace Proto.Persistence
                     _applyEvent?.Invoke(new ReplayEvent(@event, Index));
                     Index++;
                 }
-            );
+            ).ConfigureAwait(false);
         }
 
         public async Task PersistEventAsync(object @event)
@@ -166,7 +166,7 @@ namespace Proto.Persistence
 
             var persistedEvent = new PersistedEvent(@event, Index + 1);
 
-            await _eventStore.PersistEventAsync(_actorId, persistedEvent.Index, persistedEvent.Data);
+            await _eventStore.PersistEventAsync(_actorId, persistedEvent.Index, persistedEvent.Data).ConfigureAwait(false);
 
             Index++;
 
@@ -176,14 +176,14 @@ namespace Proto.Persistence
             {
                 var persistedSnapshot = new PersistedSnapshot(_getState(), persistedEvent.Index);
 
-                await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, persistedSnapshot.State);
+                await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, persistedSnapshot.State).ConfigureAwait(false);
             }
         }
 
         public async Task PersistSnapshotAsync(object snapshot)
         {
             var persistedSnapshot = new PersistedSnapshot(snapshot, Index+1);
-            await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, snapshot);
+            await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, snapshot).ConfigureAwait(false);
             Index++;
         }
 

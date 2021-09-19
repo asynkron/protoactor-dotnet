@@ -71,10 +71,10 @@ namespace ActorMetrics
 
                     while (true)
                     {
-                        await Task.Delay(r.Next(1, 2000));
+                        await Task.Delay(r.Next(1, 2000)).ConfigureAwait(false);
                         await system.Cluster().RequestAsync<SomeResponse>($"someactor{r.Next(1, 100)}", "somekind", new SomeRequest(),
                             CancellationTokens.WithTimeout(5000)
-                        );
+                        ).ConfigureAwait(false);
                     }
                 }
             );
@@ -92,7 +92,7 @@ namespace ActorMetrics
             if (context.Message is SomeRequest m)
             {
                 Console.WriteLine("tick..");
-                await Task.Delay(r.Next(50, 500));
+                await Task.Delay(r.Next(50, 500)).ConfigureAwait(false);
                 context.Respond(new SomeResponse());
             }
         }

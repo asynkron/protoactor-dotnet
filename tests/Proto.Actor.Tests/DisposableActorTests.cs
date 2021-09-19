@@ -84,24 +84,24 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public async void WhenActorStopped_DisposeIsCalled()
+        public async Task WhenActorStopped_DisposeIsCalled()
         {
             var disposeCalled = false;
             var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
             var pid = Context.Spawn(props);
-            await Context.StopAsync(pid);
+            await Context.StopAsync(pid).ConfigureAwait(false);
             Assert.True(disposeCalled);
         }
 
         [Fact]
-        public async void WhenActorStopped_DisposeAsyncIsCalled()
+        public async Task WhenActorStopped_DisposeAsyncIsCalled()
         {
             var disposeCalled = false;
             var props = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
             var pid = Context.Spawn(props);
-            await Context.StopAsync(pid);
+            await Context.StopAsync(pid).ConfigureAwait(false);
             Assert.True(disposeCalled);
         }
 

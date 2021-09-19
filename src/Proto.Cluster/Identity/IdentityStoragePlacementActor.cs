@@ -69,7 +69,7 @@ namespace Proto.Cluster.Identity
 
                 try
                 {
-                    await _identityLookup.RemovePidAsync(identity, msg.Who, CancellationToken.None);
+                    await _identityLookup.RemovePidAsync(identity, msg.Who, CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -157,7 +157,7 @@ namespace Proto.Cluster.Identity
                 {
                     await _identityLookup.Storage.StoreActivation(_cluster.System.Id, spawnLock, pid,
                         context.CancellationToken
-                    );
+                    ).ConfigureAwait(false);
                     return true;
                 }
                 catch (LockNotFoundException)
@@ -170,7 +170,7 @@ namespace Proto.Cluster.Identity
                     if (++attempts < PersistenceRetries)
                     {
                         Logger.LogWarning(e, "No entry was updated {@SpawnLock}. Retrying", spawnLock);
-                        await Task.Delay(50);
+                        await Task.Delay(50).ConfigureAwait(false);
                     }
                     else
                     {

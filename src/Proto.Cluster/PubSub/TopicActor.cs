@@ -43,7 +43,7 @@ namespace Proto.Cluster.PubSub
             //when done, respond back here
 
             var pidTasks =  _subscribers.Select(s => GetPid(context, s)).ToList();
-            var subscribers = await Task.WhenAll(pidTasks);
+            var subscribers = await Task.WhenAll(pidTasks).ConfigureAwait(false);
             var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
 
             var acks = 
@@ -55,7 +55,7 @@ namespace Proto.Cluster.PubSub
                         select context.RequestAsync<PublishResponse>(deliveryPid, deliveryMessage)).Cast<Task>()
                 .ToList();
             
-            await Task.WhenAll(acks);
+            await Task.WhenAll(acks).ConfigureAwait(false);
 
             //ack back to producer
             context.Respond(new PublishResponse());
@@ -78,7 +78,7 @@ namespace Proto.Cluster.PubSub
 
         private static async Task<(SubscriberIdentity, PID)> GetClusterIdentityPid(IContext context, SubscriberIdentity s)
         {
-            var pid = await context.Cluster().GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None);
+            var pid = await context.Cluster().GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None).ConfigureAwait(false);
             return (s, pid);
         }
 
@@ -87,7 +87,7 @@ namespace Proto.Cluster.PubSub
         private async Task OnClusterInit(IContext context)
         {
             _topic = context.Get<ClusterIdentity>()!.Identity;
-            var subs = await LoadSubscriptions(_topic);
+            var subs = await LoadSubscriptions(_topic).ConfigureAwait(false);
 
             if (subs?.Subscribers_ is not null)
             {
@@ -100,7 +100,7 @@ namespace Proto.Cluster.PubSub
         private async Task<Subscribers> LoadSubscriptions(string topic)
         { 
             //TODO: cancellation token config?
-            var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None);
+            var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None).ConfigureAwait(false);
             Logger.LogInformation("Topic {Topic} loaded subscriptions {Subscriptions}",_topic,state);
             return state;
         }
@@ -109,14 +109,14 @@ namespace Proto.Cluster.PubSub
         {
             //TODO: cancellation token config?
             Logger.LogInformation("Topic {Topic} saved subscriptions {Subscriptions}",_topic,subs);
-            await _subscriptionStore.SetAsync(topic, subs, CancellationToken.None);
+            await _subscriptionStore.SetAsync(topic, subs, CancellationToken.None).ConfigureAwait(false);
         }
 
         private async Task OnUnsubscribe(IContext context, UnsubscribeRequest unsub)
         {
             _subscribers = _subscribers.Remove(unsub.Subscriber);
             Logger.LogInformation("Topic {Topic} - {Subscriber} unsubscribed",_topic,unsub);
-            await SaveSubscriptions(_topic, new Subscribers() {Subscribers_ = {_subscribers}});
+            await SaveSubscriptions(_topic, new Subscribers() {Subscribers_ = {_subscribers}}).ConfigureAwait(false);
             context.Respond(new UnsubscribeResponse());
         }
 
@@ -124,7 +124,7 @@ namespace Proto.Cluster.PubSub
         {
             _subscribers = _subscribers.Add(sub.Subscriber);
             Logger.LogInformation("Topic {Topic} - {Subscriber} subscribed",_topic,sub);
-            await SaveSubscriptions(_topic, new Subscribers() {Subscribers_ = {_subscribers}});
+            await SaveSubscriptions(_topic, new Subscribers() {Subscribers_ = {_subscribers}}).ConfigureAwait(false);
             context.Respond(new SubscribeResponse());
         }
     }

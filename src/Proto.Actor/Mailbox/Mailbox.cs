@@ -175,7 +175,7 @@ namespace Proto.Mailbox
 
             static async Task Await(DefaultMailbox self, ValueTask task)
             {
-                await task;
+                await task.ConfigureAwait(false);
                 
                 Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
 
@@ -257,7 +257,7 @@ namespace Proto.Mailbox
             {
                 try
                 {
-                    await task;
+                    await task.ConfigureAwait(false);
                     foreach (var t1 in self._stats)
                     {
                         t1.MessageReceived(msg);

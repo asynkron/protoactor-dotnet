@@ -53,7 +53,7 @@ namespace ClusterExperiment1
             //
             // Console.WriteLine("started redis");
 
-            await done;
+            await done.ConfigureAwait(false);
             Console.WriteLine("Exited.......");
         }
     }

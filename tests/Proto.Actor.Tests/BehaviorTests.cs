@@ -14,13 +14,13 @@ namespace Proto.Tests
             var testActorProps = Props.FromProducer(() => new LightBulb());
             var actor = Context.Spawn(testActorProps);
 
-            var response = await Context.RequestAsync<string>(actor, new PressSwitch());
+            var response = await Context.RequestAsync<string>(actor, new PressSwitch()).ConfigureAwait(false);
             Assert.Equal("Turning on", response);
-            response = await Context.RequestAsync<string>(actor, new Touch());
+            response = await Context.RequestAsync<string>(actor, new Touch()).ConfigureAwait(false);
             Assert.Equal("Hot!", response);
-            response = await Context.RequestAsync<string>(actor, new PressSwitch());
+            response = await Context.RequestAsync<string>(actor, new PressSwitch()).ConfigureAwait(false);
             Assert.Equal("Turning off", response);
-            response = await Context.RequestAsync<string>(actor, new Touch());
+            response = await Context.RequestAsync<string>(actor, new Touch()).ConfigureAwait(false);
             Assert.Equal("Cold", response);
         }
 
@@ -29,12 +29,12 @@ namespace Proto.Tests
         {
             var testActorProps = Props.FromProducer(() => new LightBulb());
             var actor = Context.Spawn(testActorProps);
-            var _ = await Context.RequestAsync<string>(actor, new PressSwitch());
-            var response = await Context.RequestAsync<string>(actor, new HitWithHammer());
+            var _ = await Context.RequestAsync<string>(actor, new PressSwitch()).ConfigureAwait(false);
+            var response = await Context.RequestAsync<string>(actor, new HitWithHammer()).ConfigureAwait(false);
             Assert.Equal("Smashed!", response);
-            response = await Context.RequestAsync<string>(actor, new PressSwitch());
+            response = await Context.RequestAsync<string>(actor, new PressSwitch()).ConfigureAwait(false);
             Assert.Equal("Broken", response);
-            response = await Context.RequestAsync<string>(actor, new Touch());
+            response = await Context.RequestAsync<string>(actor, new Touch()).ConfigureAwait(false);
             Assert.Equal("OW!", response);
         }
 
@@ -61,9 +61,9 @@ namespace Proto.Tests
             );
             var pid = SpawnActorFromFunc(behavior.ReceiveAsync);
 
-            var reply = await Context.RequestAsync<string>(pid, "number");
-            var replyAfterPush = await Context.RequestAsync<int>(pid, null!);
-            var replyAfterPop = await Context.RequestAsync<string>(pid, "answertolifetheuniverseandeverything");
+            var reply = await Context.RequestAsync<string>(pid, "number").ConfigureAwait(false);
+            var replyAfterPush = await Context.RequestAsync<int>(pid, null!).ConfigureAwait(false);
+            var replyAfterPop = await Context.RequestAsync<string>(pid, "answertolifetheuniverseandeverything").ConfigureAwait(false);
 
             Assert.Equal("number42answertolifetheuniverseandeverything", $"{reply}{replyAfterPush}{replyAfterPop}");
         }

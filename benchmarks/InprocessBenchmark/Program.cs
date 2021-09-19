@@ -60,7 +60,7 @@ public class Program
                     context.Send(client, new Start(echo));
                 }
 
-                await Task.WhenAll(tasks);
+                await Task.WhenAll(tasks).ConfigureAwait(false);
 
                 sw.Stop();
                 var totalMessages = messageCount * 2 * clientCount;
@@ -69,7 +69,7 @@ public class Program
                     CultureInfo.InvariantCulture
                 );
                 Console.WriteLine($"{clientCount}\t\t\t{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
-                await Task.Delay(2000);
+                await Task.Delay(2000).ConfigureAwait(false);
             }
         }
     }

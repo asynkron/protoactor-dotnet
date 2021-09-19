@@ -29,7 +29,7 @@ namespace Proto.Tests
 
             var poisonTask = Context.PoisonAsync(deadPid);
 
-            await Task.WhenAny(timeout, poisonTask);
+            await Task.WhenAny(timeout, poisonTask).ConfigureAwait(false);
 
             poisonTask.IsCompleted.Should().BeTrue("Or we did not get a response when poisoning a missing pid");
         }
@@ -40,11 +40,11 @@ namespace Proto.Tests
             var pid = Context.Spawn(EchoProps);
 
             const string message = "hello";
-            (await Context.RequestAsync<string>(pid, message)).Should().Be(message);
+            (await Context.RequestAsync<string>(pid, message).ConfigureAwait(false)).Should().Be(message);
 
             var timeout = Task.Delay(1000);
             var poisonTask = Context.PoisonAsync(pid);
-            await Task.WhenAny(timeout, poisonTask);
+            await Task.WhenAny(timeout, poisonTask).ConfigureAwait(false);
 
             poisonTask.IsCompleted.Should().BeTrue("Or we did not get a response when poisoning a live pid");
 

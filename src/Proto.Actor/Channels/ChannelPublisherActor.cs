@@ -18,12 +18,12 @@ namespace Proto.Channels
             var props = Props.FromProducer(() => new ChannelPublisherActor<T>());
             var pid = context.SpawnNamed(props, name);
             _ = Task.Run(async () => {
-                    await foreach (var msg in channel.Reader.ReadAllAsync())
+                    await foreach (var msg in channel.Reader.ReadAllAsync().ConfigureAwait(false))
                     {
                         context.Send(pid, msg!);
                     }
 
-                    await context.PoisonAsync(pid);
+                    await context.PoisonAsync(pid).ConfigureAwait(false);
                 }
             );
             return pid;

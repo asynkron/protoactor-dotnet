@@ -80,7 +80,7 @@ namespace Proto.Persistence.SqlServer
 
             using var command = new SqlCommand(_sqlReadEvents, connection);
 
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
 
             command.Parameters.AddRange(
                 new[]
@@ -93,9 +93,9 @@ namespace Proto.Persistence.SqlServer
 
             long lastIndex = -1;
 
-            var eventReader = await command.ExecuteReaderAsync();
+            var eventReader = await command.ExecuteReaderAsync().ConfigureAwait(false);
 
-            while (await eventReader.ReadAsync())
+            while (await eventReader.ReadAsync().ConfigureAwait(false))
             {
                 lastIndex = (long) eventReader["EventIndex"];
 
@@ -114,13 +114,13 @@ namespace Proto.Persistence.SqlServer
 
             using var command = new SqlCommand(_sqlReadSnapshot, connection);
 
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
 
             command.Parameters.Add(CreateParameter("ActorName", NVarChar, actorName));
 
-            var snapshotReader = await command.ExecuteReaderAsync();
+            var snapshotReader = await command.ExecuteReaderAsync().ConfigureAwait(false);
 
-            while (await snapshotReader.ReadAsync())
+            while (await snapshotReader.ReadAsync().ConfigureAwait(false))
             {
                 snapshotIndex = Convert.ToInt64(snapshotReader["SnapshotIndex"]);
 
@@ -142,7 +142,7 @@ namespace Proto.Persistence.SqlServer
                 CreateParameter("ActorName", NVarChar, item.ActorName),
                 CreateParameter("EventIndex", BigInt, item.EventIndex),
                 CreateParameter("EventData", NVarChar, JsonConvert.SerializeObject(item.EventData, AllTypeSettings))
-            );
+            ).ConfigureAwait(false);
 
             return index++;
         }
@@ -228,7 +228,7 @@ namespace Proto.Persistence.SqlServer
 
             using var command = new SqlCommand(sql, connection);
 
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
 
             using var tx = connection.BeginTransaction();
 
@@ -236,7 +236,7 @@ namespace Proto.Persistence.SqlServer
 
             if (parameters.Length > 0) command.Parameters.AddRange(parameters);
 
-            await command.ExecuteNonQueryAsync();
+            await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 
             tx.Commit();
         }

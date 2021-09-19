@@ -59,7 +59,7 @@ namespace Proto.Cluster
                     if (pid is null)
                     {
                         source = PidSource.Lookup;
-                        pid = await GetPidFromLookup(clusterIdentity, context, ct);
+                        pid = await GetPidFromLookup(clusterIdentity, context, ct).ConfigureAwait(false);
                     }
                     
                     if (context.System.Shutdown.IsCancellationRequested) return default;
@@ -67,7 +67,7 @@ namespace Proto.Cluster
                     if (pid is null)
                     {
                         Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
-                        await Task.Delay(++i * 20, CancellationToken.None);
+                        await Task.Delay(++i * 20, CancellationToken.None).ConfigureAwait(false);
                         continue;
                     }
 
@@ -75,7 +75,7 @@ namespace Proto.Cluster
                     if (lastPid is not null && !pid.Equals(lastPid)) RefreshFuture();
 
                     // Logger.LogDebug("Requesting {ClusterIdentity} - Got PID {Pid} from {Source}", clusterIdentity, pid, source);
-                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, source, context, future);
+                    var (status, res) = await TryRequestAsync<T>(clusterIdentity, message, pid, source, context, future).ConfigureAwait(false);
 
                     switch (status)
                     {
@@ -84,16 +84,16 @@ namespace Proto.Cluster
 
                         case ResponseStatus.Exception:
                             RefreshFuture();
-                            await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
-                            await Task.Delay(++i * 20, CancellationToken.None);
+                            await RemoveFromSource(clusterIdentity, PidSource.Cache, pid).ConfigureAwait(false);
+                            await Task.Delay(++i * 20, CancellationToken.None).ConfigureAwait(false);
                             break;
                         case ResponseStatus.DeadLetter:
                             RefreshFuture();
-                            await RemoveFromSource(clusterIdentity, source, pid);
+                            await RemoveFromSource(clusterIdentity, source, pid).ConfigureAwait(false);
                             break;
                         case ResponseStatus.TimedOut:
                             lastPid = pid;
-                            await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+                            await RemoveFromSource(clusterIdentity, PidSource.Cache, pid).ConfigureAwait(false);
                             break;
                     }
 
@@ -128,7 +128,7 @@ namespace Proto.Cluster
 
         private async ValueTask RemoveFromSource(ClusterIdentity clusterIdentity, PidSource source, PID pid)
         {
-            if (source == PidSource.Lookup) await _identityLookup.RemovePidAsync(clusterIdentity, pid, CancellationToken.None);
+            if (source == PidSource.Lookup) await _identityLookup.RemovePidAsync(clusterIdentity, pid, CancellationToken.None).ConfigureAwait(false);
 
             _pidCache.RemoveByVal(clusterIdentity, pid);
         }
@@ -140,16 +140,16 @@ namespace Proto.Cluster
                 if (!context.System.Metrics.IsNoop)
                 {
                     var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
-                        .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct), context.System.Id, context.System.Address,
+                        .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct).ConfigureAwait(false), context.System.Id, context.System.Address,
                             clusterIdentity.Kind
-                        );
+                        ).ConfigureAwait(false);
 
                     if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
                     return pid;
                 }
                 else
                 {
-                    var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
+                    var pid = await _identityLookup.GetAsync(clusterIdentity, ct).ConfigureAwait(false);
                     if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
                     return pid;
                 }
@@ -179,7 +179,7 @@ namespace Proto.Cluster
             {
                 context.Request(pid, message, future.Pid);
                 var task = future.Task;
-                await Task.WhenAny(task, _clock.CurrentBucket);
+                await Task.WhenAny(task, _clock.CurrentBucket).ConfigureAwait(false);
 
                 if (task.IsCompleted)
                 {

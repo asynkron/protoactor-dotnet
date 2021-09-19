@@ -16,7 +16,7 @@ namespace Proto.Diagnostics
             var tcs = new TaskCompletionSource<string>();
             var request = new ProcessDiagnosticsRequest(tcs);
             pid.SendSystemMessage(system, request);
-            var res = await tcs.Task;
+            var res = await tcs.Task.ConfigureAwait(false);
             return res;
         }
     }

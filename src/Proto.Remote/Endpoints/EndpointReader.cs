@@ -225,7 +225,7 @@ namespace Proto.Remote
                 throw new Exception("RemoteDiagnostics is not enabled");
             }
             
-            var res = await DiagnosticTools.GetDiagnosticsString(_system, request.Pid);
+            var res = await DiagnosticTools.GetDiagnosticsString(_system, request.Pid).ConfigureAwait(false);
             return new GetProcessDiagnosticsResponse()
             {
                 DiagnosticsString = res

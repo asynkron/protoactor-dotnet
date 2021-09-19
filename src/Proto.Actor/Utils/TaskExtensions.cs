@@ -15,11 +15,11 @@ namespace Proto.Utils
         {
             using var timeoutCancellationTokenSource = new CancellationTokenSource();
 
-            var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token));
+            var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token)).ConfigureAwait(false);
             if (completedTask != task) throw new TimeoutException("The operation has timed out.");
 
             timeoutCancellationTokenSource.Cancel();
-            return await task; // Very important in order to propagate exceptions
+            return await task.ConfigureAwait(false); // Very important in order to propagate exceptions
         }
 
        
@@ -34,7 +34,7 @@ namespace Proto.Utils
             {
                 try
                 {
-                    var res = await body();
+                    var res = await body().ConfigureAwait(false);
                     return res;
                 }
                 catch(Exception x)
@@ -48,7 +48,7 @@ namespace Proto.Utils
                     }
 
                     var backoff = Math.Min(i * backoffMilliSeconds, maxBackoffMilliseconds);
-                    await Task.Delay(backoff);
+                    await Task.Delay(backoff).ConfigureAwait(false);
                 }
             }
 
@@ -61,7 +61,7 @@ namespace Proto.Utils
             {
                 try
                 {
-                    await body();
+                    await body().ConfigureAwait(false);
                     return;
                 }
                 catch(Exception x)
@@ -79,7 +79,7 @@ namespace Proto.Utils
                     }
 
                     var backoff = Math.Min(i * backoffMilliSeconds, maxBackoffMilliseconds);
-                    await Task.Delay(backoff);
+                    await Task.Delay(backoff).ConfigureAwait(false);
                 }
             }
 

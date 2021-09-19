@@ -40,17 +40,17 @@ namespace ClusterPubSub
 
             if (runRemote)
             {
-                await RunMember(); //start the subscriber node
+                await RunMember().ConfigureAwait(false); //start the subscriber node
                 
                 await system
                     .Cluster()
-                    .StartClientAsync();
+                    .StartClientAsync().ConfigureAwait(false);
             }
             else
             {
                 await system
                     .Cluster()
-                    .StartMemberAsync();
+                    .StartMemberAsync().ConfigureAwait(false);
             }
 
             var props = Props.FromFunc(ctx => {
@@ -67,7 +67,7 @@ namespace ClusterPubSub
             {
                 var pid1 = system.Root.Spawn(props);
                 //subscribe the pid to the my-topic
-                await system.Cluster().Subscribe("my-topic", pid1);
+                await system.Cluster().Subscribe("my-topic", pid1).ConfigureAwait(false);
             }
 
             //get hold of a producer that can send messages to the my-topic
@@ -89,7 +89,7 @@ namespace ClusterPubSub
             }
 
        
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
             tasks.Clear();
             ;
             
@@ -108,7 +108,7 @@ namespace ClusterPubSub
                 );
             }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
             sw.Stop();
 
             var tps = (messageCount * subscriberCount) / sw.ElapsedMilliseconds * 1000;
@@ -153,7 +153,7 @@ namespace ClusterPubSub
             var system = GetSystem();
             await system
                 .Cluster()
-                .StartMemberAsync();
+                .StartMemberAsync().ConfigureAwait(false);
             
             Console.WriteLine("Started worker node...");
         }

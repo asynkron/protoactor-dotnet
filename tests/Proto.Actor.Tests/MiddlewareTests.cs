@@ -98,11 +98,11 @@ namespace Proto.Tests
                         if (env.Message is string str && str == "start")
                         {
                             logs.Add("middleware");
-                            await next(c, env.WithMessage("middleware"));
+                            await next(c, env.WithMessage("middleware")).ConfigureAwait(false);
                             return;
                         }
 
-                        await next(c, env);
+                        await next(c, env).ConfigureAwait(false);
                     }
                 )
                 .WithMailbox(() => testMailbox)
@@ -134,12 +134,12 @@ namespace Proto.Tests
                     next => async (c, env) => {
                         if (env.Message is string)
                             logs.Add("middleware 1");
-                        await next(c, env);
+                        await next(c, env).ConfigureAwait(false);
                     },
                     next => async (c, env) => {
                         if (env.Message is string)
                             logs.Add("middleware 2");
-                        await next(c, env);
+                        await next(c, env).ConfigureAwait(false);
                     }
                 )
                 .WithMailbox(() => testMailbox);

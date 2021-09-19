@@ -34,7 +34,7 @@ namespace Proto.Tests
 
             Context.Request(pid, "hello", future.Pid);
 
-            var reply = await future.Task;
+            var reply = await future.Task.ConfigureAwait(false);
             reply.Should().Be("hey");
         }
 
@@ -52,7 +52,7 @@ namespace Proto.Tests
 
             Context.Request(pid, "hello", future.Pid);
 
-            var reply = await future.Task;
+            var reply = await future.Task.ConfigureAwait(false);
             reply.Should().BeNull();
         }
 
@@ -75,7 +75,7 @@ namespace Proto.Tests
                 futures[i] = future;
             }
 
-            var replies = await Task.WhenAll(futures.Select(future => future.Task));
+            var replies = await Task.WhenAll(futures.Select(future => future.Task)).ConfigureAwait(false);
 
             replies.Should().BeInAscendingOrder().And.HaveCount(BatchSize);
         }
@@ -86,7 +86,7 @@ namespace Proto.Tests
             var pid = Context.Spawn(Props.FromFunc(async ctx => {
                         if (ctx.Sender is not null)
                         {
-                            await Task.Delay(1);
+                            await Task.Delay(1).ConfigureAwait(false);
                             ctx.Respond(ctx.Message!);
                         }
                     }
@@ -103,7 +103,7 @@ namespace Proto.Tests
                 Context.Request(pid, i, future.Pid);
             }
 
-            futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.GetTask(CancellationTokens.WithTimeout(50)))); }
+            futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.GetTask(CancellationTokens.WithTimeout(50)))).ConfigureAwait(false); }
             ).Should().Throw<TimeoutException>();
         }
     }

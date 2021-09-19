@@ -69,7 +69,7 @@ namespace Proto.Cluster.Identity
                 _logger.LogInformation("{Method}: {Subject} before",
                     method, subject, timer.Elapsed
                 );
-                await call();
+                await call().ConfigureAwait(false);
                 timer.Stop();
                 _logger.LogInformation("{Method}: {Subject} after {Elapsed}",
                     method, subject, timer.Elapsed
@@ -94,7 +94,7 @@ namespace Proto.Cluster.Identity
                 _logger.LogInformation("{Method}: {Subject} before",
                     method, subject
                 );
-                var result = await call();
+                var result = await call().ConfigureAwait(false);
                 timer.Stop();
                 _logger.LogInformation("{Method}: {Subject} after {Elapsed} returned {Result}",
                     method, subject, timer.Elapsed, result

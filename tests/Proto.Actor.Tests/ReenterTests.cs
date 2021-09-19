@@ -31,7 +31,7 @@ namespace Proto.Tests
 
             var pid = Context.Spawn(props);
 
-            var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
+            var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
             Assert.Equal("response", res);
         }
         
@@ -42,7 +42,7 @@ namespace Proto.Tests
                     if (ctx.Message is "reenter")
                     {
                         var task = Task.Run(async () => {
-                                await Task.Delay(100);
+                                await Task.Delay(100).ConfigureAwait(false);
                                 throw new Exception("Failed!");
                             }
                         );
@@ -55,7 +55,7 @@ namespace Proto.Tests
 
             var pid = Context.Spawn(props);
 
-            var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
+            var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
             Assert.Equal("response", res);
         }
 
@@ -93,7 +93,7 @@ namespace Proto.Tests
                 Context.Send(pid, "reenter");
             }
 
-            await Context.PoisonAsync(pid);
+            await Context.PoisonAsync(pid).ConfigureAwait(false);
             Assert.True(correct);
             Assert.Equal(100000, counter);
         }

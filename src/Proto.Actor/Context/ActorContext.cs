@@ -307,7 +307,7 @@ namespace Proto.Context
                 );
 
                 var sw = Stopwatch.StartNew();
-                await self.InternalInvokeUserMessageAsync(msg);
+                await self.InternalInvokeUserMessageAsync(msg).ConfigureAwait(false);
                 sw.Stop();
                 self.System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(sw,
                     new[] {self.System.Id, self.System.Address, self.Actor!.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name}
@@ -371,7 +371,7 @@ namespace Proto.Context
             //static, dont create closure
             static async ValueTask Await(ActorContext self, Task t)
             {
-                await t;
+                await t.ConfigureAwait(false);
                 self._extras?.ResetReceiveTimeoutTimer(self.ReceiveTimeout);
             }
         }
@@ -395,7 +395,7 @@ namespace Proto.Context
         private async ValueTask HandleContinuation(Continuation cont)
         {
             _messageOrEnvelope = cont.Message;
-            await cont.Action();
+            await cont.Action().ConfigureAwait(false);
         }
 
         private ActorContextExtras EnsureExtras()
@@ -467,8 +467,8 @@ namespace Proto.Context
         {
             _state = ContextState.Restarting;
             CancelReceiveTimeout();
-            await InvokeUserMessageAsync(Restarting.Instance);
-            await StopAllChildren();
+            await InvokeUserMessageAsync(Restarting.Instance).ConfigureAwait(false);
+            await StopAllChildren().ConfigureAwait(false);
 
             if (!System.Metrics.IsNoop)
             {
@@ -516,9 +516,9 @@ namespace Proto.Context
             //In the case of a Watchee terminating, this will have no effect, except that the terminate message is
             //passed onto the user message Receive for user level handling
             _extras?.RemoveChild(msg.Who);
-            await InvokeUserMessageAsync(msg);
+            await InvokeUserMessageAsync(msg).ConfigureAwait(false);
 
-            if (_state is ContextState.Stopping or ContextState.Restarting) await TryRestartOrStopAsync();
+            if (_state is ContextState.Stopping or ContextState.Restarting) await TryRestartOrStopAsync().ConfigureAwait(false);
         }
 
         private void HandleRootFailure(Failure failure)
@@ -543,8 +543,8 @@ namespace Proto.Context
 
             static async ValueTask Await(ActorContext self)
             {
-                await self.InvokeUserMessageAsync(Stopping.Instance);
-                await self.StopAllChildren();
+                await self.InvokeUserMessageAsync(Stopping.Instance).ConfigureAwait(false);
+                await self.StopAllChildren().ConfigureAwait(false);
             }
         }
 
@@ -580,9 +580,9 @@ namespace Proto.Context
         {
             System.ProcessRegistry.Remove(Self);
             //This is intentional
-            await InvokeUserMessageAsync(Stopped.Instance);
+            await InvokeUserMessageAsync(Stopped.Instance).ConfigureAwait(false);
 
-            await DisposeActorIfDisposable();
+            await DisposeActorIfDisposable().ConfigureAwait(false);
 
             //Notify watchers
             _extras?.Watchers.SendSystemMessage(Terminated.From(Self, TerminatedReason.Stopped), System);
@@ -595,11 +595,11 @@ namespace Proto.Context
 
         private async ValueTask RestartAsync()
         {
-            await DisposeActorIfDisposable();
+            await DisposeActorIfDisposable().ConfigureAwait(false);
             Actor = IncarnateActor();
             Self.SendSystemMessage(System, ResumeMailbox.Instance);
 
-            await InvokeUserMessageAsync(Started.Instance);
+            await InvokeUserMessageAsync(Started.Instance).ConfigureAwait(false);
 
             if (_extras?.Stash is not null)
             {
@@ -610,7 +610,7 @@ namespace Proto.Context
                 while (currentStash.Any())
                 {
                     var msg = currentStash.Pop();
-                    await InvokeUserMessageAsync(msg);
+                    await InvokeUserMessageAsync(msg).ConfigureAwait(false);
                 }
             }
         }

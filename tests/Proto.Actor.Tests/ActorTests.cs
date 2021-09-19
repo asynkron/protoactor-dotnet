@@ -27,7 +27,7 @@ namespace Proto.Tests
                 }
             );
 
-            var reply = await Context.RequestAsync<object>(pid, "hello");
+            var reply = await Context.RequestAsync<object>(pid, "hello").ConfigureAwait(false);
 
             Assert.Equal("hey", reply);
         }
@@ -38,7 +38,7 @@ namespace Proto.Tests
             //no code...
             var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
 
-            var reply = await Context.RequestAsync<Touched>(pid, new Proto.Touch(), CancellationTokens.FromSeconds(5));
+            var reply = await Context.RequestAsync<Touched>(pid, new Proto.Touch(), CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
 
             Assert.Equal(pid, reply.Who);
         }
@@ -49,7 +49,7 @@ namespace Proto.Tests
             //no code...
             var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
 
-            var reply = await Context.RequestAsync<object>(pid, new MyAutoRespondMessage());
+            var reply = await Context.RequestAsync<object>(pid, new MyAutoRespondMessage()).ConfigureAwait(false);
 
             Assert.Equal("hey", reply);
         }
@@ -61,7 +61,7 @@ namespace Proto.Tests
 
             var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(
                 () => { return Context.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20)); }
-            );
+            ).ConfigureAwait(false);
             Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);
         }
 
@@ -74,7 +74,7 @@ namespace Proto.Tests
                 }
             );
 
-            var reply = await Context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(1000));
+            var reply = await Context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(1000)).ConfigureAwait(false);
 
             Assert.Equal("hey", reply);
         }
@@ -95,7 +95,7 @@ namespace Proto.Tests
 
             Context.Send(pid, "hello");
 
-            await Context.StopAsync(pid);
+            await Context.StopAsync(pid).ConfigureAwait(false);
 
             Assert.Equal(4, messages.Count);
             var msgs = messages.ToArray();
@@ -131,7 +131,7 @@ namespace Proto.Tests
             Context.Send(pid, "hello");
             Context.Send(pid, "hello");
 
-            await Context.PoisonAsync(pid);
+            await Context.PoisonAsync(pid).ConfigureAwait(false);
 
             Assert.Equal(7, messages.Count);
             var msgs = messages.ToArray();
@@ -199,7 +199,7 @@ namespace Proto.Tests
                 }
             );
 
-            var reply = await Context.RequestAsync<object>(forwarder, "hello");
+            var reply = await Context.RequestAsync<object>(forwarder, "hello").ConfigureAwait(false);
 
             Assert.Equal("hey", reply);
         }

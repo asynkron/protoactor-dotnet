@@ -41,7 +41,7 @@ namespace Proto.Tests
             var pid2 = Context.Spawn(Props.FromFunc(async ctx => {
                         if (ctx.Message is string)
                         {
-                            var reply1 = await ctx.RequestAsync<string>(pid1, "");
+                            var reply1 = await ctx.RequestAsync<string>(pid1, "").ConfigureAwait(false);
                             ctx.Respond(ctx.Message + reply1);
                         }
                     }
@@ -84,7 +84,7 @@ namespace Proto.Tests
                 );
 
                 output.WriteLine("Starting");
-                var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(10));
+                var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(10)).ConfigureAwait(false);
                 Assert.Null(reply1);
                 output.WriteLine("got response 1");
                 var reply2 = Context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(10)).Result;
@@ -121,7 +121,7 @@ namespace Proto.Tests
                 );
 
                 output.WriteLine("Starting");
-                var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(2));
+                var reply1 = await Context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(2)).ConfigureAwait(false);
                 Assert.Null(reply1);
                 output.WriteLine("got response 1");
                 var reply2 = Context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(2)).Result;

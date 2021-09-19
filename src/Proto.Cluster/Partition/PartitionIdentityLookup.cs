@@ -55,7 +55,7 @@ namespace Proto.Cluster.Partition
                 if (_config.DeveloperLogging)
                     Console.WriteLine($"Sending Request {req.RequestId}");
                 
-                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);                
+                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct).ConfigureAwait(false);                
 
                 if (resp?.Pid != null) return resp.Pid;
 
@@ -75,7 +75,7 @@ namespace Proto.Cluster.Partition
             {
                 try
                 {
-                    var resp = await _cluster.System.Root.RequestAsync<Touched>(remotePid, new Touch(), CancellationTokens.FromSeconds(2));
+                    var resp = await _cluster.System.Root.RequestAsync<Touched>(remotePid, new Touch(), CancellationTokens.FromSeconds(2)).ConfigureAwait(false);
 
                     if (resp == null)
                     {
