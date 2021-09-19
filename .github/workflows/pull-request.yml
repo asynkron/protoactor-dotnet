@@ -19,24 +19,25 @@ jobs:
 
     strategy:
       matrix:
-        framework: [netcoreapp3.1, net5.0]
+        dotnet:
+          - test: netcoreapp3.1
+            build: n3.1.x
+          - test: net5.0
+            build: 5.0.100
 
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "5.0.100"
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: "3.1.x"
+          dotnet-version: ${{ matrix.dotnet.build }}
 
       - name: Build
-        run: dotnet build ProtoActor.sln -c Release --framework ${{ matrix.framework }}
+        run: dotnet build ProtoActor.sln -c Release
 
-      - name: Run tests ${{ matrix.framework }}
+      - name: Run tests ${{ matrix.dotnet.test }}
         timeout-minutes: 5
         env:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ProtoActor.sln -c Release --framework ${{ matrix.framework }}
+          dotnet test ProtoActor.sln -c Release --framework ${{ matrix.dotnet.test }}
