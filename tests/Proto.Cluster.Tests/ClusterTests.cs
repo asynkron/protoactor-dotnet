@@ -319,6 +319,7 @@ namespace Proto.Cluster.Tests
         {
             _testOutputHelper.WriteLine("Sending requests from " + cluster.System.Address);
 
+            //TODO: this sometimes fails
             await Task.WhenAll(
                 Enumerable.Range(0, 1000).Select(async i => {
                         var response = await cluster.RequestAsync<HereIAm>(CreateIdentity(i.ToString()), EchoActor.LocalAffinityKind, new WhereAreYou
