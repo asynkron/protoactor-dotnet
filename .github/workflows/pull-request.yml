@@ -21,7 +21,7 @@ jobs:
       matrix:
         dotnet:
           - test: netcoreapp3.1
-            build: n3.1.x
+            build: 3.1.x
           - test: net5.0
             build: 5.0.100
 
