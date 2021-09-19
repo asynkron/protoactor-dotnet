@@ -45,6 +45,9 @@ jobs:
 
     strategy:
       matrix:
+        dotnet:
+          - net5.0
+          - netcoreapp3.1
         test:
           - "tests/Proto.Actor.Tests/*.csproj"
           - "tests/Proto.Remote.Tests/*.csproj"
@@ -68,4 +71,4 @@ jobs:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ${{ matrix.test }} -c Release
+          dotnet test ${{ matrix.test }} -c Release -f {{matrix.dotnet}}
