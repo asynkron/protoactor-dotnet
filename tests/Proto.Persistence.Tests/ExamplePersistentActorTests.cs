@@ -12,7 +12,7 @@ namespace Proto.Persistence.Tests
         private static readonly RootContext Context = new(new ActorSystem());
 
         [Fact]
-        public async void EventsAreSavedToPersistence()
+        public async Task EventsAreSavedToPersistence()
         {
             var (pid, _, actorId, providerState) = CreateTestActor();
             Context.Send(pid, new Multiply {Amount = 2});
@@ -25,7 +25,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void SnapshotsAreSavedToPersistence()
+        public async Task SnapshotsAreSavedToPersistence()
         {
             var (pid, _, actorId, providerState) = CreateTestActor();
             Context.Send(pid, new Multiply {Amount = 10});
@@ -36,7 +36,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void EventsCanBeDeleted()
+        public async Task EventsCanBeDeleted()
         {
             var (pid, _, actorId, providerState) = CreateTestActor();
             Context.Send(pid, new Multiply {Amount = 10});
@@ -48,7 +48,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void SnapshotsCanBeDeleted()
+        public async Task SnapshotsCanBeDeleted()
         {
             var (pid, _, actorId, providerState) = CreateTestActor();
             Context.Send(pid, new Multiply {Amount = 10});
@@ -59,7 +59,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void GivenEventsOnly_StateIsRestoredFromEvents()
+        public async Task GivenEventsOnly_StateIsRestoredFromEvents()
         {
             var (pid, props, _, _) = CreateTestActor();
             Context.Send(pid, new Multiply {Amount = 2});
@@ -69,7 +69,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void GivenASnapshotOnly_StateIsRestoredFromTheSnapshot()
+        public async Task GivenASnapshotOnly_StateIsRestoredFromTheSnapshot()
         {
             var (pid, props, actorId, providerState) = CreateTestActor();
             await providerState.PersistSnapshotAsync(actorId, 0, new State {Value = 10});
@@ -78,7 +78,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void GivenEventsThenASnapshot_StateShouldBeRestoredFromTheSnapshot()
+        public async Task GivenEventsThenASnapshot_StateShouldBeRestoredFromTheSnapshot()
         {
             var (pid, props, _, _) = CreateTestActor();
             Context.Send(pid, new Multiply {Amount = 2});
@@ -90,7 +90,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void GivenASnapshotAndSubsequentEvents_StateShouldBeRestoredFromSnapshotAndSubsequentEvents()
+        public async Task GivenASnapshotAndSubsequentEvents_StateShouldBeRestoredFromSnapshotAndSubsequentEvents()
         {
             var (pid, props, _, _) = CreateTestActor();
             Context.Send(pid, new Multiply {Amount = 2});
@@ -104,7 +104,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void GivenMultipleSnapshots_StateIsRestoredFromMostRecentSnapshot()
+        public async Task GivenMultipleSnapshots_StateIsRestoredFromMostRecentSnapshot()
         {
             var (pid, props, actorId, providerState) = CreateTestActor();
 
@@ -118,7 +118,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void GivenMultipleSnapshots_DeleteSnapshotObeysIndex()
+        public async Task GivenMultipleSnapshots_DeleteSnapshotObeysIndex()
         {
             var (pid, props, actorId, providerState) = CreateTestActor();
 
@@ -134,7 +134,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void GivenASnapshotAndEvents_WhenSnapshotDeleted_StateShouldBeRestoredFromEvents()
+        public async Task GivenASnapshotAndEvents_WhenSnapshotDeleted_StateShouldBeRestoredFromEvents()
         {
             var (pid, props, actorId, providerState) = CreateTestActor();
 
@@ -150,7 +150,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void Index_IncrementsOnEventsSaved()
+        public async Task Index_IncrementsOnEventsSaved()
         {
             var (pid, _, _, _) = CreateTestActor();
 
@@ -163,7 +163,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void Index_IsIncrementedByTakingASnapshot()
+        public async Task Index_IsIncrementedByTakingASnapshot()
         {
             var (pid, _, _, _) = CreateTestActor();
 
@@ -175,7 +175,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void Index_IsCorrectAfterRecovery()
+        public async Task Index_IsCorrectAfterRecovery()
         {
             var (pid, props, _, _) = CreateTestActor();
 
@@ -191,7 +191,7 @@ namespace Proto.Persistence.Tests
         }
 
         [Fact]
-        public async void GivenEvents_CanReplayFromStartIndexToEndIndex()
+        public async Task GivenEvents_CanReplayFromStartIndexToEndIndex()
         {
             var (pid, _, actorId, providerState) = CreateTestActor();
 

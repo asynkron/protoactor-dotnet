@@ -49,7 +49,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public async void CanWatchLocalActors()
+        public async Task CanWatchLocalActors()
         {
             var watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
                 .WithMailbox(() => new TestMailbox())
