@@ -15,7 +15,7 @@ namespace Proto.Router.Tests
         private readonly ActorSystem ActorSystem = new();
 
         [Fact]
-        public async void RoundRobinGroupRouter_RouteesReceiveMessagesInRoundRobinStyle()
+        public async Task RoundRobinGroupRouter_RouteesReceiveMessagesInRoundRobinStyle()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
 
@@ -43,7 +43,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RoundRobinGroupRouter_RouteesCanBeRemoved()
+        public async Task RoundRobinGroupRouter_RouteesCanBeRemoved()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
 
@@ -56,7 +56,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RoundRobinGroupRouter_RouteesCanBeAdded()
+        public async Task RoundRobinGroupRouter_RouteesCanBeAdded()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
@@ -70,7 +70,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RoundRobinGroupRouter_RemovedRouteesNoLongerReceiveMessages()
+        public async Task RoundRobinGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
 
@@ -89,7 +89,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RoundRobinGroupRouter_AddedRouteesReceiveMessages()
+        public async Task RoundRobinGroupRouter_AddedRouteesReceiveMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
             var routee4 = ActorSystem.Root.Spawn(MyActorProps);
@@ -107,7 +107,7 @@ namespace Proto.Router.Tests
         }
 
         [Fact]
-        public async void RoundRobinGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
+        public async Task RoundRobinGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(ActorSystem);
 
