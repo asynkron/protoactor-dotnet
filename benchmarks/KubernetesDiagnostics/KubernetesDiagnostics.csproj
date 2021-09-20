@@ -15,7 +15,7 @@
       <PackageReference Include="Proto.Cluster.Kubernetes" Version="0.20.0" />
         <PackageReference Include="Proto.Cluster.Consul" Version="0.24.0" />
       <PackageReference Include="Proto.Remote.GrpcNet" Version="0.22.0" />
-        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.22.0" />
+        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.24.0" />
       <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
     </ItemGroup>
 
