@@ -55,6 +55,7 @@ jobs:
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.Identity.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
+          - "tests/Proto.TestKit.Tests/*.csproj"
 
     steps:
       - uses: actions/checkout@v1
