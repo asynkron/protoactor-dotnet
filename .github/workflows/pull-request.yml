@@ -30,7 +30,7 @@ jobs:
         run: dotnet build ProtoActor.sln -c Release
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     services:
       redis:
@@ -45,6 +45,7 @@ jobs:
 
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
         dotnet:
           - net5.0
           - netcoreapp3.1
