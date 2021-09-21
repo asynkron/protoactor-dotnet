@@ -25,7 +25,7 @@ namespace Proto.Tests
         public async Task PoisonReturnsIfPidDoesNotExist()
         {
             var deadPid = PID.FromAddress(System.Address, "nowhere");
-            var timeout = Task.Delay(1000);
+            var timeout = Task.Delay(2000);
 
             var poisonTask = Context.PoisonAsync(deadPid);
 
@@ -42,7 +42,7 @@ namespace Proto.Tests
             const string message = "hello";
             (await Context.RequestAsync<string>(pid, message)).Should().Be(message);
 
-            var timeout = Task.Delay(1000);
+            var timeout = Task.Delay(2000);
             var poisonTask = Context.PoisonAsync(pid);
             await Task.WhenAny(timeout, poisonTask);
 

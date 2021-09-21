@@ -145,7 +145,9 @@ namespace {{CsNamespace}}
                     await _inner.OnStarted();
                     break;
                 }
+#pragma warning disable 618
                 case ClusterInit _:
+#pragma warning restore 618
                     //Ignored
                     break;
                 case Stopping _:
