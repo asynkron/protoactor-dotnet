@@ -98,9 +98,9 @@ namespace Proto.Cluster.CodeGen
         {
             var importPaths =
                 additionalImportDirsString
-                    .Split(";", StringSplitOptions.RemoveEmptyEntries)
+                    .Split(new[] {";"}, StringSplitOptions.RemoveEmptyEntries)
                     .Select(p => p.Trim())
-                    .Select(p => Path.GetRelativePath(projectDirectory, p))
+                    .Select(p => PathPolyfill.GetRelativePath(projectDirectory, p))
                     .Select(p => new DirectoryInfo(p)).ToArray();
 
             foreach (var importPath in importPaths)
@@ -115,9 +115,9 @@ namespace Proto.Cluster.CodeGen
         {
             var templateFilesArr =
                 templateFilesString
-                    .Split(";", StringSplitOptions.RemoveEmptyEntries)
+                    .Split(new[] {";"}, StringSplitOptions.RemoveEmptyEntries)
                     .Select(p => p.Trim())
-                    .Select(p => Path.GetRelativePath(projectDirectory, p))
+                    .Select(p => PathPolyfill.GetRelativePath(projectDirectory, p))
                     .Select(p => new FileInfo(p))
                     .ToArray();
 

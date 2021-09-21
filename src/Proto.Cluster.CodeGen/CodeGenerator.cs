@@ -103,14 +103,14 @@ namespace Proto.Cluster.CodeGen
             var result = f(ast);
             ctx.WriteLine(result);
 
-            static string RemovePackageName(ReadOnlySpan<char> type)
+            static string RemovePackageName(string type)
             {
                 var index = type.LastIndexOf('.');
-                var res = type[(index + 1)..].ToString();
+                var res = type.Substring(index + 1);
 
                 if (res == "")
                 {
-                    return "MissingName" + type.ToString();
+                    return "MissingName " + type;
                 }
 
                 return res;

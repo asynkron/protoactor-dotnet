@@ -8,14 +8,14 @@
     <VersionPrefix>0.1.0</VersionPrefix>
     <VersionSuffix>build$([System.DateTime]::Now.ToString('yyyyMMdd-HHmm'))</VersionSuffix>
     <LangVersion>9</LangVersion>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <!-- we're targeting .NET Standard 2.0 because Visual Studio uses MSBuild based on .NET Famework, which supports at most .NET Standard 2.0 -->
+    <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   
   <ItemGroup>
     <Content Include="deps\*.dll">
-      <PackagePath>tasks\netstandard2.1</PackagePath>
+      <PackagePath>tasks\$(TargetFramework)</PackagePath>
       <Pack>true</Pack>
     </Content>
   </ItemGroup>
@@ -31,7 +31,7 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.0-beta-20204-02" PrivateAssets="All" />
     <PackageReference Include="protobuf-net" Version="3.0.101" />
     <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
-    
+
     <PackageReference Include="Microsoft.Build.Framework" Version="16.11.0" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.9.0" />
     <!-- Marks all packages as 'local only' so they don't end up in the nuspec. -->
