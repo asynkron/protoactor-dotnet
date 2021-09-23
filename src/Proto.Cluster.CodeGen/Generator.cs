@@ -20,7 +20,7 @@ namespace Proto.Cluster.CodeGen
             
             var inputReader = input.OpenText();
             var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
-            var relativePath = Path.GetRelativePath(rootPath, defaultOutputName);
+            var relativePath = PathPolyfill.GetRelativePath(rootPath, defaultOutputName);
             
             set.Add(relativePath, true, inputReader);
             set.Process();
