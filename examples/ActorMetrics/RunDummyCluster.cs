@@ -73,7 +73,7 @@ namespace ActorMetrics
                     {
                         await Task.Delay(r.Next(1, 2000));
                         await system.Cluster().RequestAsync<SomeResponse>($"someactor{r.Next(1, 100)}", "somekind", new SomeRequest(),
-                            CancellationTokens.WithTimeout(5000)
+                            CancellationTokens.FromSeconds(5)
                         );
                     }
                 }
