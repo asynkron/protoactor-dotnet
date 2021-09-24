@@ -40,6 +40,7 @@ namespace Proto
                 Tokens.TryRemove(seconds, out _);
             }
         }
+        [Obsolete("Use and dispose CancellationTokenSource, or use CancellationTokens.FromSeconds",true)]
         public static CancellationToken WithTimeout(int ms) => new CancellationTokenSource(ms).Token;
         public static CancellationToken WithTimeout(TimeSpan timeSpan) => new CancellationTokenSource(timeSpan).Token;
     }

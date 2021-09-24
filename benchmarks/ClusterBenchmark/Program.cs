@@ -167,7 +167,7 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
-                        semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.WithTimeout(20_000)));
+                        semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.FromSeconds(20)));
                     }
                 }
             );
@@ -323,7 +323,7 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
-                        var ct = CancellationTokens.WithTimeout(20_000);
+                        var ct = CancellationTokens.FromSeconds(20);
                         var res = await SendRequest(cluster, id, ct);
 
                         if (!res)
@@ -355,7 +355,7 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
-                        var ct = CancellationTokens.WithTimeout(20_000);
+                        var ct = CancellationTokens.FromSeconds(20);
                         await SendRequest(cluster, id, ct);
                     }
                 }

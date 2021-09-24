@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Proto.Future;
@@ -103,7 +104,13 @@ namespace Proto.Tests
                 Context.Request(pid, i, future.Pid);
             }
 
-            futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.GetTask(CancellationTokens.WithTimeout(50)))); }
+            
+            futures.Invoking(async f => {
+                    using var cts = new CancellationTokenSource(50);
+                    // ReSharper disable once AccessToDisposedClosure
+                    var tasks = f.Select(future => future.GetTask(cts.Token));
+                    return await Task.WhenAll(tasks);
+                }
             ).Should().Throw<TimeoutException>();
         }
     }

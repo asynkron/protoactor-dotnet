@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Proto.Future;
@@ -22,7 +23,7 @@ namespace Proto.Tests
                 )
             );
 
-            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.WithTimeout(1000));
+            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.FromSeconds(1));
             var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
 
 
@@ -42,7 +43,7 @@ namespace Proto.Tests
                 )
             );
 
-            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.WithTimeout(1000));
+            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.FromSeconds(1));
             var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
 
             Context.Request(pid, "hello", future.Pid);
@@ -62,7 +63,7 @@ namespace Proto.Tests
             );
 
             var batchSize = 1000;
-            using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.WithTimeout(batchSize));
+            using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.FromSeconds(1));
             var futures = new IFuture[batchSize];
 
             for (int i = 0; i < batchSize; i++)
@@ -91,7 +92,8 @@ namespace Proto.Tests
             );
 
             var batchSize = 1000;
-            using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.WithTimeout(50));
+            using var cts = new CancellationTokenSource(50);
+            using var batch = new FutureBatchProcess(System, batchSize, cts.Token);
             var futures = new IFuture[batchSize];
 
             for (int i = 0; i < batchSize; i++)
@@ -116,7 +118,7 @@ namespace Proto.Tests
             );
             const int size = 1000;
 
-            var cancellationToken = CancellationTokens.WithTimeout(1000);
+            var cancellationToken = CancellationTokens.FromSeconds(1);
             using var batchContext = System.Root.CreateBatchContext(size, cancellationToken);
 
             var tasks = new Task<object>[size];

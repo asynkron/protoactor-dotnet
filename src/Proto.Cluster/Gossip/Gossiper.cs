@@ -109,7 +109,7 @@ namespace Proto.Cluster.Gossip
 
             try
             {
-                await _context.RequestAsync<SendGossipStateResponse>(_pid, new SendGossipStateRequest(), CancellationTokens.WithTimeout(5000));
+                await _context.RequestAsync<SendGossipStateResponse>(_pid, new SendGossipStateRequest(), CancellationTokens.FromSeconds(5));
             }
             catch (DeadLetterException)
             {
