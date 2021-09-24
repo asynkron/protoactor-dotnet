@@ -17,12 +17,12 @@ namespace Proto.Cluster.CodeGen
         {
             if (string.IsNullOrEmpty(relativeTo))
             {
-                throw new ArgumentNullException(nameof(relativeTo));
+                throw new ArgumentException("value cannot be null or empty", nameof(relativeTo));
             }
 
             if (string.IsNullOrEmpty(path))
             {
-                throw new ArgumentNullException(nameof(path));
+                throw new ArgumentException("value cannot be null or empty", nameof(path));
             }
 
             var relativeToUri = GetUri(relativeTo);
@@ -43,6 +43,11 @@ namespace Proto.Cluster.CodeGen
             }
 
             relativePath = relativePath.TrimEnd(Path.DirectorySeparatorChar);
+
+            if (relativePath == string.Empty)
+            {
+                relativePath = ".";
+            }
 
             return relativePath;
         }
