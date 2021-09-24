@@ -14,8 +14,11 @@ namespace Proto.Cluster.CodeGen.Tests
     {
         [Theory]
         [InlineData(@"some\other\path")]
+        [InlineData(@"some\other\path\")]
         [InlineData(@".\some\other\path")]
+        [InlineData(@".\some\other\path\")]
         [InlineData(@".\foo\..\some\other\path")]
+        [InlineData(@".\foo\..\some\other\path\")]
         public void CanGetRelativePath(string unadjustedPath)
         {
             var relativeTo = AdjustToCurrentOs(@"root\dir");
@@ -30,6 +33,28 @@ namespace Proto.Cluster.CodeGen.Tests
             relativePath
                 .Should()
                 .Be(Path.GetRelativePath(relativeTo, path));
+        }
+
+        [Theory]
+        [InlineData(@"root\dir")]
+        [InlineData(@"root\dir\")]
+        [InlineData(".")]
+        [InlineData(@".\")]
+        [InlineData(@".\foo\..")]
+        [InlineData(@".\foo\..\")]
+        public void CanGetEmptyRelativePath(string unadjustedPath)
+        {
+            var path = AdjustToCurrentOs(unadjustedPath);
+
+            var relativePath = PathPolyfill.GetRelativePath(path, path);
+
+            relativePath
+                .Should()
+                .Be(".");
+
+            relativePath
+                .Should()
+                .Be(Path.GetRelativePath(path, path));
         }
 
         private static string AdjustToCurrentOs(string path) => path
