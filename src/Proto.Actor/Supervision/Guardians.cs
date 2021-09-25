@@ -55,7 +55,15 @@ namespace Proto
         public void RestartChildren(Exception reason, params PID[] pids) =>
             pids.SendSystemMessage(new Restart(reason), System);
 
-        public void StopChildren(params PID[] pids) => pids.Stop(System);
+        public void StopChildren(params PID[] pids)
+        {
+            if (pids is null!) return;
+
+            foreach (var pid in pids)
+            {
+                System.Root.Stop(pid);
+            }
+        }
 
         public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
 

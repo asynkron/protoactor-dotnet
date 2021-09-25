@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
@@ -11,9 +12,8 @@ namespace Proto
 {
     class HashedConcurrentDictionary : HashedConcurrentDictionary<string, Process>
     {
-        
     }
-    
+
     class HashedConcurrentDictionary<TKey, TValue> :IEnumerable<(TKey key,TValue value)>
     {
         //power of two
@@ -35,7 +35,9 @@ namespace Proto
 
         private Dictionary<TKey,TValue> GetPartition(TKey key)
         {
-            var hash = key!.GetHashCode() & HashMask;
+            if (key == null) throw new ArgumentNullException(nameof(key));
+
+            var hash = key.GetHashCode() & HashMask;
 
             var p = _partitions[hash];
             return p;
