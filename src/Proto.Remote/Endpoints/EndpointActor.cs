@@ -113,21 +113,13 @@ namespace Proto.Remote
                     catch (RpcException x) when (x.StatusCode == StatusCode.Unavailable)
                     {
                         Logger.LogWarning( "[EndpointActor] Lost connection to address {Address}, address is unavailable", _address);
-                        var endpointError = new EndpointErrorEvent
-                        {
-                            Address = _address,
-                            Exception = x
-                        };
+                        var endpointError = new EndpointErrorEvent(_address, x);
                         context.System.EventStream.Publish(endpointError);
                     }
                     catch (Exception x)
                     {
                         Logger.LogError(x, "[EndpointActor] Lost connection to address {Address}", _address);
-                        var endpointError = new EndpointErrorEvent
-                        {
-                            Address = _address,
-                            Exception = x
-                        };
+                        var endpointError = new EndpointErrorEvent(_address, x);
                         context.System.EventStream.Publish(endpointError);
                     }
                 }
@@ -220,11 +212,11 @@ namespace Proto.Remote
             return Task.CompletedTask;
         }
 
-        public void RemoteDeliver(IContext context, PID pid, object msg)
+        private void RemoteDeliver(ISenderContext context, PID pid, object msg)
         {
             var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
-            var env = new RemoteDeliver(header!, message, pid, sender!);
-            context.Send(context.Self!, env);
+            var env = new RemoteDeliver(header, message, pid, sender);
+            context.Send(context.Self, env);
         }
 
         private Task RemoteDeliver(IEnumerable<RemoteDeliver> m, IContext context)
@@ -344,7 +336,7 @@ namespace Proto.Remote
 
         private async Task SendEnvelopesAsync(MessageBatch batch, IContext context)
         {
-            if (_stream == null || _stream.RequestStream == null)
+            if (_stream?.RequestStream is null)
             {
                 Logger.LogError(
                     "[EndpointActor] gRPC Failed to send to address {Address}, reason No Connection available"
