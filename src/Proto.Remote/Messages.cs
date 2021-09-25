@@ -8,18 +8,11 @@ using System;
 
 namespace Proto.Remote
 {
-    public sealed record EndpointTerminatedEvent(string Address)
-    {
-        public override string ToString() => $"EndpointTerminatedEvent: {Address}";
-    }
+    public sealed record EndpointTerminatedEvent(string Address);
 
     public sealed record EndpointConnectedEvent(string Address);
 
-    public sealed record EndpointErrorEvent
-    {
-        public string Address { get; init; } = null!;
-        public Exception Exception { get; init; } = null!;
-    }
+    public sealed record EndpointErrorEvent(string Address, Exception Exception);
 
     public sealed record RemoteTerminate(PID Watcher, PID Watchee);
 

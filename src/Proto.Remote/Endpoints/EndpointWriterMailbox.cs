@@ -29,8 +29,8 @@ namespace Proto.Remote
         private readonly ActorSystem _system;
         private readonly IMailboxQueue _systemMessages = new UnboundedMailboxQueue();
         private readonly IMailboxQueue _userMessages = new UnboundedMailboxQueue();
-        private IDispatcher? _dispatcher;
-        private IMessageInvoker? _invoker;
+        private IDispatcher _dispatcher = null!;
+        private IMessageInvoker _invoker = null!;
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
@@ -90,7 +90,7 @@ namespace Proto.Remote
                 //     "[EndpointWriterMailbox] Running Mailbox Loop HasSystemMessages: {HasSystemMessages} HasUserMessages: {HasUserMessages} Suspended: {Suspended}",
                 //     _systemMessages.HasMessages, _userMessages.HasMessages, _suspended
                 // );
-                var _ = _dispatcher!.Throughput; //not used for batch mailbox
+                var _ = _dispatcher.Throughput; //not used for batch mailbox
                 var batch = new List<RemoteDeliver>(_batchSize);
                 var sys = _systemMessages.Pop();
 
@@ -100,9 +100,9 @@ namespace Proto.Remote
 
                     _suspended = sys switch
                     {
-                        SuspendMailbox _         => true,
-                        EndpointConnectedEvent _ => false,
-                        _                        => _suspended
+                        SuspendMailbox         => true,
+                        EndpointConnectedEvent => false,
+                        _                      => _suspended
                     };
 
                     m = sys;
@@ -111,13 +111,13 @@ namespace Proto.Remote
                     {
                         case EndpointErrorEvent e:
                             if (!_suspended) // Since it's already stopped, there is no need to throw the error
-                                await _invoker!.InvokeUserMessageAsync(sys);
+                                await _invoker.InvokeUserMessageAsync(sys);
                             break;
                         case EndpointConnectedEvent:
                             //endpoint connected event is not a real system message, do not pass it to the invoker
                             break;
                         default:
-                            await _invoker!.InvokeSystemMessageAsync(sys);
+                            await _invoker.InvokeSystemMessageAsync(sys);
                             break;
                     }
 
@@ -178,10 +178,10 @@ namespace Proto.Remote
 
                         switch (msg)
                         {
-                            case RemoteWatch _:
-                            case RemoteUnwatch _:
-                            case RemoteTerminate _:
-                                await _invoker!.InvokeUserMessageAsync(msg);
+                            case RemoteWatch:
+                            case RemoteUnwatch:
+                            case RemoteTerminate:
+                                await _invoker.InvokeUserMessageAsync(msg);
                                 continue;
                         }
                         
@@ -197,7 +197,7 @@ namespace Proto.Remote
                         m = batch;
                         // Logger.LogDebug("[EndpointWriterMailbox] Calling message invoker");
                         _system.Logger()?.LogDebug("EndpointWriter Sending batch {Batch}", batch);
-                        await _invoker!.InvokeUserMessageAsync(batch);
+                        await _invoker.InvokeUserMessageAsync(batch);
                     }
                 }
             }
@@ -213,7 +213,7 @@ namespace Proto.Remote
                 // }
 
                 _suspended = true;
-                _invoker!.EscalateFailure(x, m);
+                _invoker.EscalateFailure(x, m);
             }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
@@ -224,7 +224,7 @@ namespace Proto.Remote
         private void Schedule()
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
-                _dispatcher!.Schedule(RunAsync);
+                _dispatcher.Schedule(RunAsync);
         }
     }
 }

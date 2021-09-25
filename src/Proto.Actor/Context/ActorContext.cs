@@ -307,7 +307,7 @@ namespace Proto.Context
             }
             else
             {
-                var res = System.Config.DiagnosticsSerializer(Actor!);
+                var res = System.Config.DiagnosticsSerializer(Actor);
                 diagnosticsString += res;
             }
 
@@ -540,11 +540,9 @@ namespace Proto.Context
 
         private ValueTask StopAllChildren()
         {
-            var extras = _extras;
-
-            if (extras is {Children: not null!})
+            if (_extras != null)
             {
-                foreach (var pid in extras.Children)
+                foreach (var pid in _extras.Children)
                 {
                     System.Root.Stop(pid);
                 }
