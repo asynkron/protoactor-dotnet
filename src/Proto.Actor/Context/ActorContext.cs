@@ -540,7 +540,15 @@ namespace Proto.Context
 
         private ValueTask StopAllChildren()
         {
-            _extras?.Children.Stop(System);
+            var extras = _extras;
+
+            if (extras is {Children: not null!})
+            {
+                foreach (var pid in extras.Children)
+                {
+                    System.Root.Stop(pid);
+                }
+            }
 
             return TryRestartOrStopAsync();
         }
@@ -554,15 +562,12 @@ namespace Proto.Context
             CancelReceiveTimeout();
 
             //all children are now stopped, should we restart or stop ourselves?
-            switch (_state)
+            return _state switch
             {
-                case ContextState.Restarting:
-                    return RestartAsync();
-                case ContextState.Stopping:
-                    return FinalizeStopAsync();
-                default:
-                    return default;
-            }
+                ContextState.Restarting => RestartAsync(),
+                ContextState.Stopping   => FinalizeStopAsync(),
+                _                       => default
+            };
         }
 
         //Last and final termination step
