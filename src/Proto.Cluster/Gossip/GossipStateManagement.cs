@@ -84,7 +84,7 @@ namespace Proto.Cluster.Gossip
             return updates;
         }
 
-        public static void SetKey(GossipState state, string key, IMessage value, string memberId, ref long sequenceNo)
+        public static long SetKey(GossipState state, string key, IMessage value, string memberId, long sequenceNo)
         {
             //if entry does not exist, add it
             var memberState = EnsureMemberStateExists(state, memberId);
@@ -94,6 +94,7 @@ namespace Proto.Cluster.Gossip
 
             entry.SequenceNumber = sequenceNo;
             entry.Value = Any.Pack(value);
+            return sequenceNo;
         }
 
         public static (ImmutableDictionary<string, long> pendingOffsets, GossipState state) FilterGossipStateForMember(GossipState state, ImmutableDictionary<string, long> offsets, string targetMemberId)
@@ -188,14 +189,14 @@ namespace Proto.Cluster.Gossip
                     logger?.LogDebug("Remote: {OtherMemberId} - {OtherTopologyHash} - {OtherMemberCount}", memberId, topology.TopologyHash, topology.Members.Count);
                 }
 
-                var first = hashes.FirstOrDefault();
+                var (_, topologyHash) = hashes.FirstOrDefault();
                 
-                if (hashes.All(h => h.TopologyHash == first.TopologyHash) && first.TopologyHash != 0)
+                if (hashes.All(h => h.TopologyHash == topologyHash) && topologyHash != 0)
                 {
-                    Logger.LogDebug("Reached Consensus {TopologyHash} - {State}", first.TopologyHash, state);
-                    logger?.LogDebug("Reached Consensus {TopologyHash} - {State}", first.TopologyHash, state);
+                    Logger.LogDebug("Reached Consensus {TopologyHash} - {State}", topologyHash, state);
+                    logger?.LogDebug("Reached Consensus {TopologyHash} - {State}", topologyHash, state);
                     //all members have the same hash
-                    return (true, first.TopologyHash);
+                    return (true, TopologyHash: topologyHash);
                 }
 
                 Logger.LogDebug("No Consensus {Hashes}, {State}", hashes.Select(h => h.TopologyHash),  state);

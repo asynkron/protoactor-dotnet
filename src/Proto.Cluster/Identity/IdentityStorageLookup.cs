@@ -6,7 +6,6 @@ namespace Proto.Cluster.Identity
     public class IdentityStorageLookup : IIdentityLookup
     {
         private const string PlacementActorName = "placement-activator";
-        private static readonly int PidClusterIdentityStartIndex = PlacementActorName.Length + 1;
         private bool _isClient;
         private string _memberId = string.Empty;
         private PID _placementActor = null!;

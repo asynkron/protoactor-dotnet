@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
@@ -34,7 +35,7 @@ namespace Proto.Cluster.Cache
 
         public Cluster Cluster { get; }
 
-        private bool IsRemote(PID? sender) => sender?.Address != null && !sender.Address.Equals(Cluster.System.Address);
+        private bool IsRemote(PID? sender) => sender?.Address != null && !sender.Address.Equals(Cluster.System.Address, StringComparison.InvariantCulture);
 
         private void Invalidate(ClusterIdentity identity, PID activation, BitArray activeRemotes)
         {

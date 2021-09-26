@@ -4,14 +4,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using Google.Protobuf;
-using Microsoft.Extensions.Logging;
 using Proto.Remote;
 
 namespace Proto.Cluster
 {
     public partial class GrainRequest : IRootSerialized
     {
-        private static readonly ILogger Logger = Log.CreateLogger<GrainRequest>();
         //deserialize into the in-process message type that the grain actors understands
         public IRootSerializable Deserialize(ActorSystem system)
         {

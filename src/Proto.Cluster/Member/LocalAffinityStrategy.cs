@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Proto.Cluster.Partition;
@@ -34,7 +35,7 @@ namespace Proto.Cluster
             // Avoid adding the same member twice
             if (_members.Any(x => x.Address == member.Address)) return;
 
-            if (member.Address.Equals(_cluster.System.Address)) _me = member;
+            if (member.Address.Equals(_cluster.System.Address, StringComparison.InvariantCulture)) _me = member;
             _members = _members.Add(member);
             _rdv.UpdateMembers(_members);
         }
@@ -47,7 +48,7 @@ namespace Proto.Cluster
 
         public Member? GetActivator(string senderAddress)
         {
-            if (_me?.Address.Equals(senderAddress) == true) return _me;
+            if (_me?.Address.Equals(senderAddress, StringComparison.InvariantCulture) == true) return _me;
 
             var sender = _members.FirstOrDefault(member => member.Address == senderAddress);
             //TODO: Verify that the member is not overloaded already
