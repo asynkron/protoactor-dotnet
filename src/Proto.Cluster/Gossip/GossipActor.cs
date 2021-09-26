@@ -96,9 +96,10 @@ namespace Proto.Cluster.Gossip
         {
             var logger = context.Logger()?.BeginMethodScope();
 
-            GossipStateManagement.SetKey(_state, setStateKey.Key, setStateKey.Value, context.System.Id, ref _localSequenceNo);
-            logger?.LogDebug("Setting state key {Key} - {Value} - {State}", setStateKey.Key, setStateKey.Value, _state);
-            Logger.LogDebug("Setting state key {Key} - {Value} - {State}", setStateKey.Key, setStateKey.Value, _state);
+            var (key, message) = setStateKey;
+            _localSequenceNo = GossipStateManagement.SetKey(_state, key, message, context.System.Id, _localSequenceNo);
+            logger?.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
+            Logger.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
             if (!_state.Members.ContainsKey(context.System.Id))
             {
                 logger?.LogCritical("State corrupt");

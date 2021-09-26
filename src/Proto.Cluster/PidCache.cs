@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Proto.Cluster
@@ -21,7 +22,8 @@ namespace Proto.Cluster
             _cacheCollection = _cacheDict;
         }
 
-        public bool TryGet(ClusterIdentity clusterIdentity, out PID pid)
+        
+        public bool TryGet(ClusterIdentity clusterIdentity,[NotNullWhen(true)] out PID? pid)
         {
             if (clusterIdentity is null) throw new ArgumentNullException(nameof(clusterIdentity));
 
@@ -82,7 +84,7 @@ namespace Proto.Cluster
             return false;
         }
 
-        public void RemoveByMember(Member member) => RemoveByPredicate(pair => member.Address.Equals(pair.Value.Address));
+        public void RemoveByMember(Member member) => RemoveByPredicate(pair => member.Address.Equals(pair.Value.Address, StringComparison.InvariantCulture));
 
         private void RemoveByPredicate(Func<KeyValuePair<ClusterIdentity, PID>, bool> predicate)
         {
