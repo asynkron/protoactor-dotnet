@@ -49,20 +49,20 @@ namespace Proto.Cluster.Consul
         private int _port;
         private bool _shutdown;
 
-        public ConsulProvider(ConsulProviderConfig config) : this(config, clientConfiguration => { })
+        public ConsulProvider(ConsulProviderConfig config) : this(config, _ => { })
         {
         }
 
         public ConsulProvider(ConsulProviderConfig config, Action<ConsulClientConfiguration> clientConfiguration)
         {
-            _serviceTtl = config!.ServiceTtl;
-            _refreshTtl = config!.RefreshTtl;
-            _deregisterCritical = config!.DeregisterCritical;
-            _blockingWaitTime = config!.BlockingWaitTime;
+            _serviceTtl = config.ServiceTtl;
+            _refreshTtl = config.RefreshTtl;
+            _deregisterCritical = config.DeregisterCritical;
+            _blockingWaitTime = config.BlockingWaitTime;
             _client = new ConsulClient(clientConfiguration);
         }
 
-        public ConsulProvider(IOptions<ConsulProviderConfig> options) : this(options.Value, clientConfiguration => { })
+        public ConsulProvider(IOptions<ConsulProviderConfig> options) : this(options.Value, _ => { })
         {
         }
 
