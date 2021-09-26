@@ -57,8 +57,6 @@ namespace Proto
 
         public void StopChildren(params PID[] pids)
         {
-            if (pids is null!) return;
-
             foreach (var pid in pids)
             {
                 System.Root.Stop(pid);

@@ -118,10 +118,7 @@ namespace Proto.Context
             if (extras.ReceiveTimeoutTimer is null)
             {
                 extras.InitReceiveTimeoutTimer(
-                    new Timer(
-                        ReceiveTimeoutCallback, null!, ReceiveTimeout,
-                        ReceiveTimeout
-                    )
+                    new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout)
                 );
             }
             else extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
@@ -622,7 +619,7 @@ namespace Proto.Context
             return default;
         }
 
-        private void ReceiveTimeoutCallback(object state)
+        private void ReceiveTimeoutCallback(object? state)
         {
             if (_extras?.ReceiveTimeoutTimer is null) return;
 
