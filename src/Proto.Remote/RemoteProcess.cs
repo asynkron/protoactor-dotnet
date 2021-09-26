@@ -52,7 +52,7 @@ namespace Proto.Remote
                         return;
                     }
 
-                    message = new RemoteDeliver(header!, m, _pid, sender!);
+                    message = new RemoteDeliver(header, m, _pid, sender!);
                     break;
             }
 

@@ -280,7 +280,7 @@ namespace Proto.Context
                 await self.InternalInvokeUserMessageAsync(msg);
                 sw.Stop();
                 self.System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(sw,
-                    new[] {self.System.Id, self.System.Address, self.Actor.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name}
+                    new[] {self.System.Id, self.System.Address, self.Actor.GetType().Name, MessageEnvelope.UnwrapMessage(msg)?.GetType().Name ?? "{null}"}
                 );
             }
         }

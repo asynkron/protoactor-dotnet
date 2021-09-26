@@ -192,18 +192,18 @@ namespace Proto.Cluster
                     Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
                 _pidCache.RemoveByVal(clusterIdentity, pid);
 
-                return (ResponseStatus.TimedOut, default)!;
+                return (ResponseStatus.TimedOut, default);
             }
             catch (TimeoutException)
             {
-                return (ResponseStatus.TimedOut, default)!;
+                return (ResponseStatus.TimedOut, default);
             }
             catch (Exception x)
             {
                 if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                     Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
                 _pidCache.RemoveByVal(clusterIdentity, pid);
-                return (ResponseStatus.Exception, default)!;
+                return (ResponseStatus.Exception, default);
             }
             finally
             {
@@ -242,7 +242,7 @@ namespace Proto.Cluster
                     if (!context.System.Shutdown.IsCancellationRequested)
                         Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
 
-                    return (ResponseStatus.DeadLetter, default)!;
+                    return (ResponseStatus.DeadLetter, default);
                 case null: return (ResponseStatus.Ok, default);
                 case T t:  return (ResponseStatus.Ok, t);
                 default:

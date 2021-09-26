@@ -21,7 +21,7 @@ namespace Proto.Deduplication
         public DeduplicationContext(IContext context, TimeSpan deDuplicationWindow, TryGetDeduplicationKey<T> deduplicateBy) : base(context
         ) => _deDuplicator = new DeDuplicator<T>(deDuplicationWindow, deduplicateBy);
 
-        public override Task Receive(MessageEnvelope envelope) => _deDuplicator.DeDuplicate(envelope!, () => base.Receive(envelope));
+        public override Task Receive(MessageEnvelope envelope) => _deDuplicator.DeDuplicate(envelope, () => base.Receive(envelope));
     }
 
     /// <summary>

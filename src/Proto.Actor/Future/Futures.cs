@@ -83,7 +83,7 @@ namespace Proto.Future
                     _metrics!.FuturesTimedOutCount.Inc(new[] {System.Id, System.Address});
                 }
 
-                Stop(Pid!);
+                Stop(Pid);
                 throw new TimeoutException("Request didn't receive any Response within the expected time.");
             }
         }
@@ -92,7 +92,7 @@ namespace Proto.Future
         {
             try
             {
-                _tcs.TrySetResult(message!);
+                _tcs.TrySetResult(message);
             }
             finally
             {

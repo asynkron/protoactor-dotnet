@@ -109,7 +109,7 @@ namespace Proto.Cluster
             //default to partition identity lookup
             IdentityLookup = Config.IdentityLookup;
 
-            Remote = System.Extensions.Get<IRemote>() ?? throw new NotSupportedException("Remote module must be configured when using cluster");
+            Remote = System.Extensions.GetRequired<IRemote>("Remote module must be configured when using cluster");
 
             await Remote.StartAsync();
 
@@ -140,14 +140,14 @@ namespace Proto.Cluster
             Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 
             await Gossip.ShutdownAsync();
-            if (graceful) await IdentityLookup!.ShutdownAsync();
-            await Config!.ClusterProvider.ShutdownAsync(graceful);
+            if (graceful) await IdentityLookup.ShutdownAsync();
+            await Config.ClusterProvider.ShutdownAsync(graceful);
             await Remote.ShutdownAsync(graceful);
 
             Logger.LogInformation("Stopped Cluster {Id}", System.Id);
         }
 
-        public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => IdentityLookup!.GetAsync(clusterIdentity, ct);
+        public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => IdentityLookup.GetAsync(clusterIdentity, ct);
 
         public Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct) =>
             ClusterContext.RequestAsync<T>(clusterIdentity, message, context, ct)!;

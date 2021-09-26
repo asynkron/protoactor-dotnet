@@ -93,8 +93,8 @@ namespace Proto.Cluster.Identity.Tests
             var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(activator.Id);
-            activation!.Pid.Should().BeEquivalentTo(pid);
+            activation?.MemberId.Should().Be(activator.Id);
+            activation?.Pid.Should().BeEquivalentTo(pid);
 
             var noLock = await _storage.TryAcquireLock(identity, timeout);
 
@@ -127,8 +127,8 @@ namespace Proto.Cluster.Identity.Tests
             var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(activator.Id);
-            activation!.Pid.Should().BeEquivalentTo(pid);
+            activation?.MemberId.Should().Be(activator.Id);
+            activation?.Pid.Should().BeEquivalentTo(pid);
         }
 
         [Fact]
@@ -171,8 +171,8 @@ namespace Proto.Cluster.Identity.Tests
             var afterRemoval = await _storage.TryGetExistingActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(activator.Id);
-            activation!.Pid.Should().BeEquivalentTo(pid);
+            activation?.MemberId.Should().Be(activator.Id);
+            activation?.Pid.Should().BeEquivalentTo(pid);
 
             afterRemoval.Should().BeNull();
         }
@@ -192,8 +192,8 @@ namespace Proto.Cluster.Identity.Tests
             var afterRemoval = await _storage.TryGetExistingActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(activator.Id);
-            activation!.Pid.Should().BeEquivalentTo(pid);
+            activation?.MemberId.Should().Be(activator.Id);
+            activation?.Pid.Should().BeEquivalentTo(pid);
 
             afterRemoval.Should().NotBeNull("Removal pid did not match id, even if it matched cluster identity");
         }
@@ -226,8 +226,8 @@ namespace Proto.Cluster.Identity.Tests
             var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(newActivator.Id);
-            activation!.Pid.Should().BeEquivalentTo(newPid);
+            activation?.MemberId.Should().Be(newActivator.Id);
+            activation?.Pid.Should().BeEquivalentTo(newPid);
         }
 
         [Theory, InlineData(200, 10000)]
@@ -289,8 +289,8 @@ namespace Proto.Cluster.Identity.Tests
             var activation = await _storage.WaitForActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(activator.Id);
-            activation!.Pid.Should().BeEquivalentTo(pid);
+            activation?.MemberId.Should().Be(activator.Id);
+            activation?.Pid.Should().BeEquivalentTo(pid);
         }
 
         [Fact]

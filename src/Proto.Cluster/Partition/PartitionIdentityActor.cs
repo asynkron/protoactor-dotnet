@@ -55,7 +55,7 @@ namespace Proto.Cluster.Partition
 
         private Task OnStarted(IContext context)
         {
-            var self = context.Self!;
+            var self = context.Self;
             _cluster.System.EventStream.Subscribe<ActivationTerminated>(e => {
                 
                 _cluster.System.Root.Send(self,e);
@@ -316,7 +316,7 @@ namespace Proto.Cluster.Partition
                 Logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activatorAddress, req.Identity,
                     req.Kind
                 );
-                var timeout = _cluster.Config!.TimeoutTimespan;
+                var timeout = _cluster.Config.TimeoutTimespan;
                 var activatorPid = PartitionManager.RemotePartitionPlacementActor(activatorAddress);
 
                 var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activatorPid, req, timeout);

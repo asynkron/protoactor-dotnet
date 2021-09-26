@@ -26,7 +26,7 @@ namespace Proto.Cluster.CodeGen
             Log.LogMessage(MessageImportance.High, $"Intermediate OutputPath: {IntermediateOutputPath}");
             var projectDirectory = Path.GetDirectoryName(projectFile)!;
             
-            var potatoDirectory = Path.Combine(IntermediateOutputPath!, "protopotato");
+            var potatoDirectory = Path.Combine(IntermediateOutputPath, "protopotato");
             EnsureDirExistsAndIsEmpty(potatoDirectory);
 
             if (ProtoFile.Any())
