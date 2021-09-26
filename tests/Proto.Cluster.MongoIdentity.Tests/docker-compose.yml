@@ -1,0 +1,22 @@
+version: '3.7'
+
+services:
+
+  mongo:
+    container_name: proto-mongo
+    image: mongo
+    ports:
+      - '27017:27017'
+#    environment:
+#      MONGO_INITDB_ROOT_USERNAME: mongoadmin
+#      MONGO_INITDB_ROOT_PASSWORD: secret
+
+  redis:
+    container_name: proto-redis
+    image: redis
+    ports:
+      - '6379:6379'
+
+networks:
+  default:
+    name: proto-network
