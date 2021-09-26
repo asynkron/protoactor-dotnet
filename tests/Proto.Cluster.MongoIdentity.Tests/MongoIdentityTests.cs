@@ -1,13 +1,15 @@
 ﻿// ReSharper disable UnusedType.Global
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
+using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
+using Proto.Cluster.Identity.Tests;
 using Proto.Cluster.Tests;
 using Proto.TestFixtures;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Proto.Cluster.Identity.Tests
+namespace Proto.Cluster.MongoIdentity.Tests
 {
     public class MongoIdentityClusterFixture : BaseInMemoryClusterFixture
     {

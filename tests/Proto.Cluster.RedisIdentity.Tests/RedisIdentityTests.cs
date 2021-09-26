@@ -4,14 +4,16 @@
 using System;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
+using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.Redis;
+using Proto.Cluster.Identity.Tests;
 using Proto.Cluster.Tests;
 using Proto.TestFixtures;
 using StackExchange.Redis;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Proto.Cluster.Identity.Tests
+namespace Proto.Cluster.RedisIdentity.Tests
 {
     public class RedisIdentityClusterFixture : BaseInMemoryClusterFixture
     {
