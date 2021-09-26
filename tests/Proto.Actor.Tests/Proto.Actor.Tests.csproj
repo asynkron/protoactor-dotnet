@@ -3,7 +3,7 @@
     <RootNamespace>Proto.Tests</RootNamespace>
     <LangVersion>9</LangVersion>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
