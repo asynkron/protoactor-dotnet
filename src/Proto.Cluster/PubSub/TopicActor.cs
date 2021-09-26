@@ -72,7 +72,7 @@ namespace Proto.Cluster.PubSub
         private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s) => s.IdentityCase switch
         {
             SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult((s, s.Pid)),
-            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => GetClusterIdentityPid(context, s)!,
+            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => GetClusterIdentityPid(context, s),
             _                                                    => throw new ArgumentOutOfRangeException()
         };
 

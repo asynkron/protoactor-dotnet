@@ -227,7 +227,7 @@ namespace Proto.Cluster
                     if (!context.System.Shutdown.IsCancellationRequested)
                         Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
 
-                    return (ResponseStatus.DeadLetter, default)!;
+                    return (ResponseStatus.DeadLetter, default);
                 case null: return (ResponseStatus.Ok, default);
                 case T t:  return (ResponseStatus.Ok, t);
                 default:

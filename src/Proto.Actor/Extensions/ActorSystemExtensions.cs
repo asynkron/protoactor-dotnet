@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 
 namespace Proto.Extensions
 {
@@ -19,6 +20,19 @@ namespace Proto.Extensions
         {
             var id = IActorSystemExtension<T>.Id;
             return (T) _extensions[id];
+        }
+        
+        public T GetRequired<T>(string? notFoundMessage=null) where T : IActorSystemExtension
+        {
+            var id = IActorSystemExtension<T>.Id;
+            var res =  (T) _extensions[id];
+
+            if (res is null)
+            {
+                notFoundMessage ??= $"Key not found {typeof(T).Name}";
+                throw new NotSupportedException(notFoundMessage);
+            }
+            return res;
         }
 
         public void Register<T>(IActorSystemExtension<T> extension) where T : IActorSystemExtension

@@ -236,7 +236,7 @@ namespace Proto.Cluster.Identity.Redis
             {
                 if (uniqueIdentity == null || address == null || memberId == null) throw new ArgumentException();
 
-                Activation = new StoredActivation(memberId!, PID.FromAddress(address!, uniqueIdentity!));
+                Activation = new StoredActivation(memberId, PID.FromAddress(address, uniqueIdentity));
             }
 
             public ActivationStatus(string? lockId) => ActiveLockId = lockId;

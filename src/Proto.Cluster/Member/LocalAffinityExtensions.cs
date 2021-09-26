@@ -55,7 +55,7 @@ namespace Proto.Cluster
                             envelope.Message.GetType(), sender
                         );
                         context.MarkForRelocation();
-                        context.System.Root.PoisonAsync(self).ContinueWith(_ => ActivateByProxy(context, sender!.Address, context.Get<ClusterIdentity>()!, self));
+                        context.System.Root.PoisonAsync(self).ContinueWith(_ => ActivateByProxy(context, sender.Address, context.Get<ClusterIdentity>()!, self));
                     }
 
                     return task;

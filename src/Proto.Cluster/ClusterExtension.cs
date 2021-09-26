@@ -22,14 +22,14 @@ namespace Proto.Cluster
         }
 
         public static Cluster Cluster(this ActorSystem system)
-            => system.Extensions.Get<Cluster>() ?? throw new NotSupportedException("Cluster has not been configured");
+            => system.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
         public static Cluster Cluster(this IContext context)
-            => context.System.Extensions.Get<Cluster>() ?? throw new NotSupportedException("Cluster has not been configured");
+            => context.System.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
         public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct) =>
             //call cluster RequestAsync using actor context
-            context.System.Cluster()!.RequestAsync<T>(identity, kind, message, context, ct);
+            context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
 
         public static Props WithClusterIdentity(this Props props, ClusterIdentity clusterIdentity)
             => props.WithOnInit(context => context.Set(clusterIdentity));

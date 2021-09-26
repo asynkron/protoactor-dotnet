@@ -12,7 +12,7 @@ namespace Proto
     
     public static class CancellationTokens
     {
-        private record TokenEntry(DateTimeOffset timestamp, CancellationToken token);
+        private record TokenEntry(DateTimeOffset Timestamp, CancellationToken Token);
         
         private static readonly ConcurrentDictionary<int, TokenEntry> Tokens = new();
 
@@ -28,13 +28,13 @@ namespace Proto
 
             while (true)
             {
-                var x = Tokens.GetOrAdd(seconds, ValueFactory)!;
+                var x = Tokens.GetOrAdd(seconds, ValueFactory);
 
                 //is the entry expired?
                 //token reuse expire after 500ms
-                if (x.timestamp >= DateTimeOffset.Now.AddMilliseconds(-500))
+                if (x.Timestamp >= DateTimeOffset.Now.AddMilliseconds(-500))
                 {
-                    return x.token;
+                    return x.Token;
                 }
 
                 Tokens.TryRemove(seconds, out _);
