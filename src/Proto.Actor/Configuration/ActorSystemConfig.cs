@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Diagnostics;
+using System.Threading;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Ubiquitous.Metrics;
@@ -35,6 +36,7 @@ namespace Proto
         public static ActorSystemConfig Setup() => new();
 
         public Func<IActor, string> DiagnosticsSerializer { get; set; } = Diagnostics.DiagnosticsSerializer.Serialize;
+        public TimeSpan RequestAsyncTimeout { get; init; } = TimeSpan.FromSeconds(5);
 
         public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval) =>
             this with {DeadLetterThrottleInterval = deadLetterThrottleInterval};

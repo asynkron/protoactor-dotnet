@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
@@ -140,16 +141,13 @@ namespace Proto.Cluster.Partition
         {
             try
             {
-                var res = await context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg,
-                    CancellationTokens.WithTimeout(_identityHandoverTimeout)
-                );
+                using var cts = new CancellationTokenSource(_identityHandoverTimeout);
+                var res = await context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, cts.Token);
                 return res;
             }
             catch
             {
-                return new IdentityHandoverResponse()
-                {
-                };
+                return new IdentityHandoverResponse();
             }
         }
 
@@ -159,7 +157,6 @@ namespace Proto.Cluster.Partition
             {
                 return Task.CompletedTask;
             }
-            
             //we get this via broadcast to all nodes, remove if we have it, or ignore
             Logger.LogDebug("[PartitionIdentityActor] Terminated {Pid}", msg.Pid);
            // _cluster.PidCache.RemoveByVal(msg.ClusterIdentity,msg.Pid);
