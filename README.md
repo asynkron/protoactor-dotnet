@@ -74,6 +74,11 @@ context.Send(pid, new Hello("Alex"));
 You should see the output `Hello Alex`.
 
 
+## Sample application
+
+[https://github.com/asynkron/realtimemap-dotnet](https://github.com/asynkron/realtimemap-dotnet)
+
+
 ## Contributors
 
 <a href="https://github.com/AsynkronIT/protoactor-dotnet/graphs/contributors">
