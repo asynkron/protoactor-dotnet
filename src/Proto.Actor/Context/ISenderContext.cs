@@ -88,7 +88,7 @@ namespace Proto
         /// <typeparam name="T">Expected return message type</typeparam>
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
         public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message) =>
-            self.RequestAsync<T>(target, message, CancellationToken.None);
+            self.RequestAsync<T>(target, message, self.System.Config.RequestAsyncTimeout);
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
@@ -99,8 +99,12 @@ namespace Proto
         /// <param name="timeout">Timeout for the request</param>
         /// <typeparam name="T">Expected return message type</typeparam>
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
-        public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
-            => self.RequestAsync<T>(target, message, CancellationTokens.WithTimeout(timeout));
+        public static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
+        {
+            using var cts = new CancellationTokenSource(timeout);
+            var res = await self.RequestAsync<T>(target, message, cts.Token);
+            return res;
+        }
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.

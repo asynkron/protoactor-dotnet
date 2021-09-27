@@ -31,9 +31,9 @@ namespace Proto.Cluster.Partition
             _getPidTimeout = getPidTimeout;
         }
 
-        public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
+        public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken notUsed)
         {
-            ct = CancellationTokens.WithTimeout(_getPidTimeout);
+            using var cts = new CancellationTokenSource(_getPidTimeout);
             //Get address to node owning this ID
             var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
             Logger.LogDebug("Identity belongs to {address}", identityOwner);
@@ -55,7 +55,7 @@ namespace Proto.Cluster.Partition
                 if (_config.DeveloperLogging)
                     Console.WriteLine($"Sending Request {req.RequestId}");
                 
-                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);                
+                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, cts.Token);              
 
                 if (resp?.Pid != null) return resp.Pid;
 
