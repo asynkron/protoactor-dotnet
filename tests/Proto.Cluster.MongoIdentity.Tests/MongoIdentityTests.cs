@@ -63,7 +63,7 @@ namespace Proto.Cluster.MongoIdentity.Tests
         {
             var connectionString = TestConfig.Configuration.GetConnectionString("MongoDB");
             var settings = MongoClientSettings.FromConnectionString(connectionString);
-            settings.MaxConnectionPoolSize = 200;
+            settings.MaxConnectionPoolSize = 2000;
             settings.RetryReads = true;
             settings.RetryWrites = true;
             Client = new MongoClient(settings);
