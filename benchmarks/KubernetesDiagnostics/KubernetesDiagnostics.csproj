@@ -7,7 +7,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-      <PackageReference Include="KubernetesClient" Version="6.0.6" />
+      <PackageReference Include="KubernetesClient" Version="6.0.8" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
       <PackageReference Include="MongoDB.Driver" Version="2.13.1" />
       <PackageReference Include="Proto.Cluster.Identity.MongoDb" Version="0.24.0" />
