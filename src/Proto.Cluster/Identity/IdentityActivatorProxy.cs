@@ -107,6 +107,7 @@ namespace Proto.Cluster.Identity
                         {
                             Logger.LogWarning("Stale PID {Pid} from IdentityLookup when replacing {ClusterIdentity}. Retries exhausted", replacedPid, identity);
                         }
+                        return Task.CompletedTask;
                     }
 
                     Respond(context, activation);
