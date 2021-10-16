@@ -66,7 +66,7 @@ namespace Proto.Cluster.Identity
 
             try
             {
-                _logger.LogInformation("{Method}: {Subject} before",
+                _logger.LogInformation("{Method}: {Subject} before {Elapsed}",
                     method, subject, timer.Elapsed
                 );
                 await call();
