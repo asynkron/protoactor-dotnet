@@ -9,12 +9,12 @@ using System.Linq;
 
 namespace Proto.Router
 {
-    public class HashRing
+    public class HashRing<T>
     {
         private readonly Func<string, uint> _hash;
-        private readonly List<Tuple<uint, string>> _ring;
+        private readonly List<Tuple<uint, T>> _ring;
 
-        public HashRing(IEnumerable<string> nodes, Func<string, uint> hash, int replicaCount)
+        public HashRing(IEnumerable<T> nodes, Func<T,string> getKey, Func<string, uint> hash, int replicaCount)
         {
             _hash = hash;
 
@@ -26,7 +26,7 @@ namespace Proto.Router
                             .Select(
                                 i => new
                                 {
-                                    hashKey = i + n,
+                                    hashKey = i + getKey(n),
                                     node = n
                                 }
                             )
@@ -36,7 +36,7 @@ namespace Proto.Router
                 .ToList();
         }
 
-        public string GetNode(string key)
+        public T GetNode(string key)
         {
             var hash = _hash(key);
             return (_ring.Find(t => t.Item1 > hash) ?? _ring[0]).Item2;
