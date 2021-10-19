@@ -36,6 +36,10 @@ namespace Proto.Router
                 .ToList();
         }
 
-        public string GetNode(string key) => (_ring.FirstOrDefault(t => t.Item1 > _hash(key)) ?? _ring.First()).Item2;
+        public string GetNode(string key)
+        {
+            var hash = _hash(key);
+            return (_ring.Find(t => t.Item1 > hash) ?? _ring[0]).Item2;
+        }
     }
 }
