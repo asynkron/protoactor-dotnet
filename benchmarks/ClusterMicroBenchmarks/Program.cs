@@ -4,6 +4,6 @@ namespace ClusterMicroBenchmarks
 {
     class Program
     {
-        static void Main() => BenchmarkRunner.Run<ConcurrentSpawnBenchmark>();
+        static void Main() => BenchmarkRunner.Run<RendezvousBenchmark>();
     }
 }

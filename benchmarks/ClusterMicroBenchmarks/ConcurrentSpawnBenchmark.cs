@@ -24,7 +24,7 @@ namespace ClusterMicroBenchmarks
         [Params(IdentityLookup.Partition)]
         public IdentityLookup IdentityProvider { get; set; }
 
-        [Params(10_000, 20_000, 30_000)]
+        [Params(10_000, 20_000)]
         public int ConcurrentSpawns { get; set; }
 
         [GlobalSetup]

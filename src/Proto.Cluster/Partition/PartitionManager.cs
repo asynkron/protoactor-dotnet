@@ -55,12 +55,10 @@ namespace Proto.Cluster.Partition
                     .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
                 _partitionIdentityActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
 
-                var partitionActivatorProps =
-                    Props.FromProducer(() => new PartitionPlacementActor(_cluster, _config));
+                var partitionActivatorProps = Props.FromProducer(() => new PartitionPlacementActor(_cluster, _config));
                 _partitionPlacementActor = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
 
                 //synchronous subscribe to keep accurate
-
                 var topologyHash = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {

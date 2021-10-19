@@ -78,7 +78,7 @@ namespace Proto.Cluster.Partition
                 //this identity is not owned by the requester
                 if (ownerAddress != requestAddress) continue;
 
-                Logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {TopologyHash}", clusterIdentity, ownerAddress,
+                Logger.LogDebug("Transfer {Identity} to {NewOwnerAddress} -- {TopologyHash}", clusterIdentity, ownerAddress,
                     msg.TopologyHash
                 );
 
