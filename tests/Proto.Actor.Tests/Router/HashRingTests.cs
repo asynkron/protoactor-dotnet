@@ -17,13 +17,12 @@ namespace Proto.Router.Tests
         {
             var values = Enumerable.Range(0, 100).Select(_ => Guid.NewGuid().ToString("N")).ToArray();
             var hashRing = new HashRing<string>(values, value => value, MurmurHash2.Hash, 20);
-            var hashRing2 = new HashRing2<string>(values, value => value, MurmurHash2.Hash, 20);
 
             var val = Guid.NewGuid().ToString("N");
 
             var node = hashRing.GetNode(val);
-
-            node.Should().Be(hashRing2.GetNode(val));
+            var node2 = hashRing.GetNode(val);
+            node.Should().Be(node2);
         }
     }
 }

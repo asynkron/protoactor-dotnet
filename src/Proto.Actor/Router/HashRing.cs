@@ -12,13 +12,14 @@ namespace Proto.Router
     public class HashRing<T>
     {
         private readonly Func<string, uint> _hash;
-        private readonly List<Tuple<uint, T>> _ring;
+        private readonly uint[] _hashes;
+        private readonly T[] _values;
 
-        public HashRing(IEnumerable<T> nodes, Func<T,string> getKey, Func<string, uint> hash, int replicaCount)
+        public HashRing(IEnumerable<T> nodes, Func<T, string> getKey, Func<string, uint> hash, int replicaCount)
         {
             _hash = hash;
 
-            _ring = nodes
+            var ring = nodes
                 .SelectMany(
                     n =>
                         Enumerable
@@ -33,13 +34,31 @@ namespace Proto.Router
                 )
                 .Select(a => Tuple.Create(_hash(a.hashKey), a.node))
                 .OrderBy(t => t.Item1)
-                .ToList();
+                .ToArray();
+
+            _hashes = new uint[ring.Length];
+            _values = new T[ring.Length];
+
+            for (var i = 0; i < ring.Length; i++)
+            {
+                _hashes[i] = ring[i].Item1;
+                _values[i] = ring[i].Item2;
+            }
         }
 
         public T GetNode(string key)
         {
             var hash = _hash(key);
-            return (_ring.Find(t => t.Item1 >= hash) ?? _ring[0]).Item2;
+
+            var result = Array.BinarySearch(_hashes, hash);
+
+            if (result >= 0) return _values[result];
+
+            // Get the next higher value by taking the complement of the result
+            var nextIndex = ~result;
+
+            // Return the next higher value if it exists, or the first one
+            return _values[nextIndex % _values.Length];
         }
     }
 }

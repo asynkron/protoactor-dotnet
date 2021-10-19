@@ -25,7 +25,6 @@ namespace ClusterMicroBenchmarks
 
         private Rendezvous _rendezvous;
         private HashRing<Member> _hashRing;
-        private HashRing2<Member> _hashRing2;
 
         [GlobalSetup]
         public void Setup()
@@ -39,7 +38,6 @@ namespace ClusterMicroBenchmarks
             }).ToArray();
             _rendezvous.UpdateMembers(members);
             _hashRing = new HashRing<Member>(members, member => member.Address, MurmurHash2.Hash, 100);
-            _hashRing2 = new HashRing2<Member>(members, member => member.Address, MurmurHash2.Hash, 100);
         }
 
         [Benchmark]
@@ -54,13 +52,6 @@ namespace ClusterMicroBenchmarks
         {
             var id = Ids[_i++ % Ids.Length];
             var owner = _hashRing.GetNode(id);
-        }
-        
-        [Benchmark]
-        public void HashRing2()
-        {
-            var id = Ids[_i++ % Ids.Length];
-            var owner = _hashRing2.GetNode(id);
         }
     }
 }
