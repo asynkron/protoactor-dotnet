@@ -36,7 +36,7 @@ namespace Proto.Cluster.Partition
             using var cts = new CancellationTokenSource(_getPidTimeout);
             //Get address to node owning this ID
             var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
-            Logger.LogDebug("Identity belongs to {address}", identityOwner);
+            Logger.LogDebug("Identity belongs to {Address}", identityOwner);
             if (string.IsNullOrEmpty(identityOwner)) return null;
 
             var remotePid = PartitionManager.RemotePartitionIdentityActor(identityOwner);

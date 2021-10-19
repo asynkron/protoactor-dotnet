@@ -4,11 +4,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-// ReSharper disable once CheckNamespace
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 
+// ReSharper disable once CheckNamespace
 namespace Proto.Cluster
 {
     public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
@@ -55,7 +55,7 @@ namespace Proto.Cluster
         public static uint TopologyHash(IEnumerable<Member> members)
         {
             var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-            var key = string.Join("", x);
+            var key = string.Concat(x);
             var hash = MurmurHash2.Hash(key);
             return hash;
         }

@@ -6,9 +6,9 @@
     <TargetFrameworks>net5.0;net6.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Grpc.Core" Version="2.40.0" />
-    <PackageReference Include="Grpc.HealthCheck" Version="2.40.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.40.0" PrivateAssets="All" />
+    <PackageReference Include="Grpc.Core.Api" Version="2.41.0" />
+    <PackageReference Include="Grpc.HealthCheck" Version="2.41.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.41.0" PrivateAssets="All" />
     <PackageReference Include="Roslynator.Analyzers" Version="3.2.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
