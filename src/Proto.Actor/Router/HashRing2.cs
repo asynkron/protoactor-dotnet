@@ -46,15 +46,13 @@ namespace Proto.Router
 
             var result = Array.BinarySearch(_hashes, hash);
 
-            // If the value matches exactly, picks the next value. If it exactly the last value, pick the first one
-            if (result >= 0) return _values[result == _hashes.Length ? 0 : result + 1];
+            if (result >= 0) return _values[result];
 
             // Get the next higher value by taking the complement of the result
             var nextIndex = ~result;
 
             // Return the next higher value if it exists, or the first one
-            return _values[nextIndex < _values.Length ? nextIndex : 0];
-
+            return _values[nextIndex % _values.Length];
         }
     }
 }

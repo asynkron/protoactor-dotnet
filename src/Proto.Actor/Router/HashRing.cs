@@ -39,7 +39,7 @@ namespace Proto.Router
         public T GetNode(string key)
         {
             var hash = _hash(key);
-            return (_ring.Find(t => t.Item1 > hash) ?? _ring[0]).Item2;
+            return (_ring.Find(t => t.Item1 >= hash) ?? _ring[0]).Item2;
         }
     }
 }
