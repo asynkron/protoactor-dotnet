@@ -67,13 +67,14 @@ namespace Proto.Cluster.Partition
             var requestAddress = context.Sender!.Address;
 
             //use a local selector, which is based on the requesters view of the world
-            var rdv = new Rendezvous();
-            rdv.UpdateMembers(msg.Members);
+            var rdv = new MemberHashRing(msg.Members);
 
+            var chunkId = 1;
+            var chunkSize = _config.HandoverChunkSize;
             foreach (var (clusterIdentity, pid) in _myActors)
             {
                 //who owns this identity according to the requesters memberlist?
-                var ownerAddress = rdv.GetOwnerMemberByIdentity(clusterIdentity.Identity);
+                var ownerAddress = rdv.GetOwnerMemberByIdentity(clusterIdentity);
 
                 //this identity is not owned by the requester
                 if (ownerAddress != requestAddress) continue;
@@ -85,7 +86,17 @@ namespace Proto.Cluster.Partition
                 var actor = new Activation {ClusterIdentity = clusterIdentity, Pid = pid};
                 response.Actors.Add(actor);
                 count++;
+
+                if (count % chunkSize == 0)
+                {
+                    response.ChunkId = chunkId++;
+                    context.Respond(response);
+                    response = new IdentityHandoverResponse();
+                }
             }
+
+            response.ChunkId = chunkId;
+            response.Final = true;
 
             //always respond, this is request response msg
             context.Respond(response);

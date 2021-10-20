@@ -5,5 +5,5 @@
 // -----------------------------------------------------------------------
 namespace Proto.Cluster.Partition
 {
-    public record PartitionConfig(bool DeveloperLogging);
+    public record PartitionConfig(bool DeveloperLogging, int HandoverChunkSize);
 }

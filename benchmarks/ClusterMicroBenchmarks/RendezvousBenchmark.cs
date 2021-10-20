@@ -14,44 +14,52 @@ using Proto.Router;
 namespace ClusterMicroBenchmarks
 {
     [MemoryDiagnoser, InProcess]
-
     public class RendezvousBenchmark
     {
-        [Params(2,10,100)]
+        [Params(1, 10, 100)]
         public int NodeCount { get; set; }
 
         private int _i = 0;
         private static readonly string[] Ids = Enumerable.Range(0, 100).Select(_ => Guid.NewGuid().ToString()).ToArray();
 
         private Rendezvous _rendezvous;
+        private MemberHashRing _memberHashRing;
         private HashRing<Member> _hashRing;
 
         [GlobalSetup]
         public void Setup()
         {
+            var members = Enumerable.Range(0, NodeCount).Select(i => new Member
+                {
+                    Host = "localhost",
+                    Id = Guid.NewGuid().ToString("N"),
+                    Port = i + 1000
+                }
+            ).ToArray();
             _rendezvous = new Rendezvous();
-            var members = Enumerable.Range(0,NodeCount).Select(i => new Member
-            {
-                Host = "localhost",
-                Id = Guid.NewGuid().ToString("N"),
-                Port = i + 1000
-            }).ToArray();
             _rendezvous.UpdateMembers(members);
-            _hashRing = new HashRing<Member>(members, member => member.Address, MurmurHash2.Hash, 100);
+            _memberHashRing = new MemberHashRing(members);
+            _hashRing = new HashRing<Member>(members, member => member.Address, MurmurHash2.Hash, 50);
         }
 
         [Benchmark]
         public void Rendezvous()
         {
-            var id = Ids[_i++ % Ids.Length];
-            var owner = _rendezvous.GetOwnerMemberByIdentity(id);
+            var owner = _rendezvous.GetOwnerMemberByIdentity(TestId());
         }
-        
+
+        [Benchmark]
+        public void MemberRing()
+        {
+            var owner = _memberHashRing.GetOwnerMemberByIdentity(TestId());
+        }
+
         [Benchmark]
         public void HashRing()
         {
-            var id = Ids[_i++ % Ids.Length];
-            var owner = _hashRing.GetNode(id);
+            var owner = _hashRing.GetNode(TestId());
         }
+
+        private string TestId() => Ids[_i++ % Ids.Length];
     }
 }

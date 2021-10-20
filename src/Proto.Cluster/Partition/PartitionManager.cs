@@ -29,7 +29,7 @@ namespace Proto.Cluster.Partition
             _context = _system.Root;
             _isClient = isClient;
             _identityHandoverTimeout = identityHandoverTimeout;
-            _config = config ?? new PartitionConfig(false);
+            _config = config ?? new PartitionConfig(false, 5000);
         }
 
         internal PartitionMemberSelector Selector { get; } = new();

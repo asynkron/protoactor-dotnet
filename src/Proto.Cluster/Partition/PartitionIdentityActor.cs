@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,7 +29,7 @@ namespace Proto.Cluster.Partition
 
         private readonly Dictionary<ClusterIdentity, PID> _partitionLookup = new(); //actor/grain name to PID
 
-        private readonly Rendezvous _rdv = new();
+        private MemberHashRing _rdv = new(ImmutableList<Member>.Empty);
 
         private readonly Dictionary<ClusterIdentity, Task<ActivationResponse>> _spawns = new();
 
@@ -79,7 +80,7 @@ namespace Proto.Cluster.Partition
        //     await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
             var members = msg.Members.ToArray();
             _topologyHash = msg.TopologyHash;
-            _rdv.UpdateMembers(members);
+            _rdv = new MemberHashRing(msg.Members);
 
             //remove all identities we do no longer own.
             _partitionLookup.Clear();
@@ -96,8 +97,7 @@ namespace Proto.Cluster.Partition
             foreach (var member in members)
             {
                 var activatorPid = PartitionManager.RemotePartitionPlacementActor(member.Address);
-                var request =
-                    GetIdentitiesForMember(context, activatorPid, requestMsg);
+                var request = GetIdentitiesForMember(context, activatorPid, requestMsg);
                 requests.Add(request);
             }
 
