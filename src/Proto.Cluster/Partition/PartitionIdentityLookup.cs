@@ -26,7 +26,7 @@ namespace Proto.Cluster.Partition
         
         public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout, PartitionConfig? config=null)
         {
-            _config = config ?? new PartitionConfig(false);
+            _config = config ?? new PartitionConfig(false, 5000);
             _identityHandoverTimeout = identityHandoverTimeout;
             _getPidTimeout = getPidTimeout;
         }

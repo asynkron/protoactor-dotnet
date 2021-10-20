@@ -85,7 +85,6 @@ namespace Proto.Cluster.Partition
             //remove all identities we do no longer own.
             _partitionLookup.Clear();
 
-            var requests = new List<Task<IdentityHandoverResponse>>();
             var requestMsg = new IdentityHandoverRequest
             {
                 TopologyHash = _topologyHash,
@@ -94,39 +93,12 @@ namespace Proto.Cluster.Partition
 
             requestMsg.Members.AddRange(members);
 
-            foreach (var member in members)
-            {
-                var activatorPid = PartitionManager.RemotePartitionPlacementActor(member.Address);
-                var request = GetIdentitiesForMember(context, activatorPid, requestMsg);
-                requests.Add(request);
-            }
-
-            try
-            {
-                Logger.LogDebug("Requesting ownerships");
-
-                //built in timeout on each request above
-                var responses = await Task.WhenAll(requests);
-                Logger.LogDebug("Got ownerships {EventId}", _topologyHash);
-
-                foreach (var response in responses)
-                {
-                    foreach (var actor in response.Actors)
-                    {
-                        TakeOwnership(actor);
-
-                        if (!_partitionLookup.ContainsKey(actor.ClusterIdentity))
-                            Logger.LogError("Ownership bug, we should own {Identity}", actor.ClusterIdentity);
-                        else
-                            Logger.LogDebug("I have ownership of {Identity}", actor.ClusterIdentity);
-                    }
-                }
-            }
-            catch (Exception x)
-            {
-                Logger.LogError(x, "Failed to get identities");
-                throw;
-            }
+            var workerPid = context.Spawn(Props.FromProducer(() => new PartitionIdentityRelocationWorker(_partitionLookup)));
+            using var cts = new CancellationTokenSource(_identityHandoverTimeout);
+            Logger.LogDebug("Requesting ownerships");
+            var response = await context.RequestAsync<IdentityHandoverAcknowledgement>(workerPid,requestMsg, cts.Token);
+            
+            Logger.LogDebug("Got ownerships {EventId}, {Count}", _topologyHash, response.ChunkId);
             
             var membersLookup = msg.Members.ToDictionary(m => m.Address, m => m);
 
@@ -134,20 +106,6 @@ namespace Proto.Cluster.Partition
             foreach (var (actorId, pid) in _partitionLookup.ToArray())
             {
                 if (!membersLookup.ContainsKey(pid.Address)) _partitionLookup.Remove(actorId);
-            }
-        }
-
-        private async Task<IdentityHandoverResponse> GetIdentitiesForMember(IContext context, PID activatorPid, IdentityHandoverRequest requestMsg)
-        {
-            try
-            {
-                using var cts = new CancellationTokenSource(_identityHandoverTimeout);
-                var res = await context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, cts.Token);
-                return res;
-            }
-            catch
-            {
-                return new IdentityHandoverResponse();
             }
         }
 
@@ -165,17 +123,7 @@ namespace Proto.Cluster.Partition
             return Task.CompletedTask;
         }
 
-        private void TakeOwnership(Activation msg)
-        {
-            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var existing))
-            {
-                //these are the same, that's good, just ignore message
-                if (existing.Address == msg.Pid.Address) return;
-            }
 
-            Logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Identity, msg.Pid);
-            _partitionLookup[msg.ClusterIdentity] = msg.Pid;
-        }
 
         private Task OnActivationRequest(ActivationRequest msg, IContext context)
         {

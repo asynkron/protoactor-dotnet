@@ -14,6 +14,13 @@ message IdentityHandoverRequest {
 //response message to the above
 message IdentityHandoverResponse {
     repeated Activation actors = 1;
+    int32 chunk_id = 2;
+    bool final = 3;
+}
+
+message IdentityHandoverAcknowledgement {
+  int32 count = 1;
+  int32 chunk_id = 2;
 }
 
 message ClusterIdentity{

@@ -90,7 +90,7 @@ namespace Proto.Cluster.Partition
                 if (count % chunkSize == 0)
                 {
                     response.ChunkId = chunkId++;
-                    context.Respond(response);
+                    context.Request(context.Sender,response);
                     response = new IdentityHandoverResponse();
                 }
             }
@@ -99,7 +99,7 @@ namespace Proto.Cluster.Partition
             response.Final = true;
 
             //always respond, this is request response msg
-            context.Respond(response);
+            context.Request(context.Sender,response);
 
             Logger.LogDebug("Transferred {Count} actor ownership to other members", count);
             return Task.CompletedTask;
