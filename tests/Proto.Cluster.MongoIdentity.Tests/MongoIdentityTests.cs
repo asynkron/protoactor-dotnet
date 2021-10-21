@@ -1,4 +1,5 @@
 ﻿// ReSharper disable UnusedType.Global
+using System;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using Proto.Cluster.Identity;
@@ -13,7 +14,7 @@ namespace Proto.Cluster.MongoIdentity.Tests
 {
     public class MongoIdentityClusterFixture : BaseInMemoryClusterFixture
     {
-        public MongoIdentityClusterFixture() : base(3)
+        public MongoIdentityClusterFixture() : base(3, config => config with {ActorActivationTimeout = TimeSpan.FromSeconds(10)})
         {
         }
 
@@ -36,7 +37,7 @@ namespace Proto.Cluster.MongoIdentity.Tests
 
     public class ChaosMongoIdentityClusterFixture : BaseInMemoryClusterFixture
     {
-        public ChaosMongoIdentityClusterFixture() : base(3)
+        public ChaosMongoIdentityClusterFixture() : base(3, config => config with {ActorActivationTimeout = TimeSpan.FromSeconds(10)})
         {
         }
 
