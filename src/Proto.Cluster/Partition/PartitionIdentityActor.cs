@@ -98,7 +98,7 @@ namespace Proto.Cluster.Partition
             Logger.LogDebug("Requesting ownerships");
             var response = await context.RequestAsync<IdentityHandoverAcknowledgement>(workerPid,requestMsg, cts.Token);
             
-            Logger.LogDebug("Got ownerships {EventId}, {Count}", _topologyHash, response.ChunkId);
+            Logger.LogDebug("Got ownerships {EventId}, {Count}", _topologyHash, response.Count);
             
             var membersLookup = msg.Members.ToDictionary(m => m.Address, m => m);
 

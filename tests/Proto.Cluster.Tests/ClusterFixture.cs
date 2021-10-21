@@ -144,8 +144,7 @@ namespace Proto.Cluster.Tests
 
         private InMemAgent InMemAgent => _inMemAgent.Value;
 
-        protected override IClusterProvider GetClusterProvider() =>
-            new TestProvider(new TestProviderOptions(), InMemAgent);
+        protected override IClusterProvider GetClusterProvider() => new TestProvider(new TestProviderOptions(), InMemAgent);
     }
 
     // ReSharper disable once ClassNeverInstantiated.Global

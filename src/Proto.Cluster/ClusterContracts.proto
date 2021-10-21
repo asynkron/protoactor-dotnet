@@ -20,7 +20,6 @@ message IdentityHandoverResponse {
 
 message IdentityHandoverAcknowledgement {
   int32 count = 1;
-  int32 chunk_id = 2;
 }
 
 message ClusterIdentity{

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -12,14 +13,13 @@ namespace Proto.Cluster.Partition
 {
     /// <summary>
     /// Used by partitionIdentityActor to update partition lookup on topology changes.
-    /// TODO: Retries / failure modes
     /// </summary>
     class PartitionIdentityRelocationWorker : IActor
     {
         private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
 
         private readonly Dictionary<ClusterIdentity, PID> _partitionLookup;
-        private readonly TaskCompletionSource<int> _onRelocationComplete = new();
+        private readonly TaskCompletionSource<bool> _onRelocationComplete = new();
         private readonly Dictionary<PID, MemberRequestState> _waitingRequests = new();
         private int _totalReceived;
         private readonly Stopwatch _timer = new();
@@ -30,8 +30,29 @@ namespace Proto.Cluster.Partition
         {
             IdentityHandoverRequest request   => OnIdentityHandoverRequest(request, context),
             IdentityHandoverResponse response => OnIdentityHandoverResponse(response, context),
+            DeadLetterResponse response       => OnDeadLetterResponse(response, context),
+            ReceiveTimeout                    => OnReceiveTimeout(),
             _                                 => Task.CompletedTask
         };
+
+        private Task OnReceiveTimeout()
+        {
+            // TODO: Retry strategy
+            Logger.LogError("Relocation timed out");
+            _onRelocationComplete.TrySetResult(false);
+            return Task.CompletedTask;
+        }
+
+        private Task OnDeadLetterResponse(DeadLetterResponse response, IContext context)
+        {
+            if (_waitingRequests.Remove(response.Target))
+            {
+                Logger.LogError("Unreachable node: {Address}", response.Target.Address);
+                TryCompleteRelocation();
+            }
+
+            return Task.CompletedTask;
+        }
 
         private Task OnIdentityHandoverResponse(IdentityHandoverResponse response, IContext context)
         {
@@ -47,28 +68,20 @@ namespace Proto.Cluster.Partition
             foreach (var activation in response.Actors)
             {
                 TakeOwnership(activation);
-
-                if (!_partitionLookup.ContainsKey(activation.ClusterIdentity))
-                    Logger.LogError("Ownership bug, we should own {Identity}", activation.ClusterIdentity);
-                else
-                    Logger.LogDebug("I have ownership of {Identity}", activation.ClusterIdentity);
             }
 
-            context.Respond(new IdentityHandoverAcknowledgement
-                {
-                    ChunkId = response.ChunkId
-                }
-            );
-
-            TryCompleteRelocation(response, context, sender);
+            TryCompleteRelocation(response, sender);
 
             return Task.CompletedTask;
         }
 
-        private void TryCompleteRelocation(IdentityHandoverResponse response, IContext context, PID sender)
+        private void TryCompleteRelocation(IdentityHandoverResponse response, PID sender)
         {
             if (!_waitingRequests.TryGetValue(sender, out var workerState))
             {
+                Logger.LogWarning("Received unexpected IdentityHandoverResponse from {Sender}, chunk {ChunkId} with {ActorCount} actors", sender,
+                    response.ChunkId, response.Actors.Count
+                );
                 return;
             }
 
@@ -79,17 +92,23 @@ namespace Proto.Cluster.Partition
                 _waitingRequests.Remove(sender!);
                 Logger.LogDebug("Received ownership of {Count} actors from {MemberAddress}", workerState.ReceivedActors, sender.Address);
 
-                if (_waitingRequests.Count == 0)
-                {
-                    Logger.LogInformation("IdentityRelocation completed, received {Count} actors in {Elapsed}", _totalReceived, _timer.Elapsed);
-                    _onRelocationComplete.SetResult(_totalReceived);
-                }
+                TryCompleteRelocation();
+            }
+        }
+
+        private void TryCompleteRelocation()
+        {
+            if (_waitingRequests.Count == 0)
+            {
+                Logger.LogInformation("IdentityRelocation completed, received {Count} actors in {Elapsed}", _totalReceived, _timer.Elapsed);
+                _onRelocationComplete.TrySetResult(true);
             }
         }
 
         private Task OnIdentityHandoverRequest(IdentityHandoverRequest request, IContext context)
         {
             _timer.Start();
+            context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
 
             foreach (var member in request.Members)
             {
@@ -100,9 +119,10 @@ namespace Proto.Cluster.Partition
 
             context.ReenterAfter(_onRelocationComplete.Task, task => {
                     context.Respond(new IdentityHandoverAcknowledgement
-                    {
-                        Count = task.Result
-                    });
+                        {
+                            Count = _totalReceived
+                        }
+                    );
                     context.Self.Stop(context.System);
                     return Task.CompletedTask;
                 }
