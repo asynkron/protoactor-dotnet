@@ -30,7 +30,7 @@ namespace Proto.Cluster.Partition
         {
             IdentityHandoverRequest request   => OnIdentityHandoverRequest(request, context),
             IdentityHandoverResponse response => OnIdentityHandoverResponse(response, context),
-            DeadLetterResponse response       => OnDeadLetterResponse(response, context),
+            DeadLetterResponse response       => OnDeadLetterResponse(response),
             ReceiveTimeout                    => OnReceiveTimeout(),
             _                                 => Task.CompletedTask
         };
@@ -43,7 +43,7 @@ namespace Proto.Cluster.Partition
             return Task.CompletedTask;
         }
 
-        private Task OnDeadLetterResponse(DeadLetterResponse response, IContext context)
+        private Task OnDeadLetterResponse(DeadLetterResponse response)
         {
             if (_waitingRequests.Remove(response.Target))
             {
@@ -77,7 +77,7 @@ namespace Proto.Cluster.Partition
 
         private void TryCompleteRelocation(IdentityHandoverResponse response, PID sender)
         {
-            if (!_waitingRequests.TryGetValue(sender, out var workerState))
+            if (!_waitingRequests.TryGetValue(sender, out var requestState))
             {
                 Logger.LogWarning("Received unexpected IdentityHandoverResponse from {Sender}, chunk {ChunkId} with {ActorCount} actors", sender,
                     response.ChunkId, response.Actors.Count
@@ -87,10 +87,10 @@ namespace Proto.Cluster.Partition
 
             _totalReceived += response.Actors.Count;
 
-            if (workerState.TryComplete(response))
+            if (requestState.TryComplete(response))
             {
                 _waitingRequests.Remove(sender!);
-                Logger.LogDebug("Received ownership of {Count} actors from {MemberAddress}", workerState.ReceivedActors, sender.Address);
+                Logger.LogDebug("Received ownership of {Count} actors from {MemberAddress}", requestState.ReceivedActors, sender.Address);
 
                 TryCompleteRelocation();
             }
@@ -130,6 +130,18 @@ namespace Proto.Cluster.Partition
             return Task.CompletedTask;
         }
 
+        private void TakeOwnership(Activation msg)
+        {
+            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var existing))
+            {
+                //these are the same, that's good, just ignore message
+                if (existing.Address == msg.Pid.Address) return;
+            }
+
+            // Logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Identity, msg.Pid);
+            _partitionLookup[msg.ClusterIdentity] = msg.Pid;
+        }
+
         private class MemberRequestState
         {
             private readonly HashSet<int> _received = new();
@@ -159,18 +171,6 @@ namespace Proto.Cluster.Partition
 
                 return _finalChunk.HasValue && _received.Count == _finalChunk;
             }
-        }
-
-        private void TakeOwnership(Activation msg)
-        {
-            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var existing))
-            {
-                //these are the same, that's good, just ignore message
-                if (existing.Address == msg.Pid.Address) return;
-            }
-
-            // Logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Identity, msg.Pid);
-            _partitionLookup[msg.ClusterIdentity] = msg.Pid;
         }
     }
 }

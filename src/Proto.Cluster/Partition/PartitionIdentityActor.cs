@@ -78,7 +78,6 @@ namespace Proto.Cluster.Partition
         private async Task OnClusterTopologyInner(ClusterTopology msg, IContext context)
         {
        //     await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
-            var members = msg.Members.ToArray();
             _topologyHash = msg.TopologyHash;
             _rdv = new MemberHashRing(msg.Members);
 
@@ -91,7 +90,7 @@ namespace Proto.Cluster.Partition
                 Address = _myAddress
             };
 
-            requestMsg.Members.AddRange(members);
+            requestMsg.Members.AddRange(msg.Members);
 
             var workerPid = context.Spawn(Props.FromProducer(() => new PartitionIdentityRelocationWorker(_partitionLookup)));
             using var cts = new CancellationTokenSource(_identityHandoverTimeout);
