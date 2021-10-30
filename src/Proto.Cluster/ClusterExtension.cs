@@ -37,6 +37,13 @@ namespace Proto.Cluster
             var task = context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
             context.ReenterAfter(task, callback);
         }
+        
+        public static void ClusterRequestReenter<T>(this IContext context, ClusterIdentity clusterIdentity, object message, Func<Task<T>, Task> callback, CancellationToken ct)
+        {
+            //call cluster RequestReenter using actor context
+            var task = context.System.Cluster().RequestAsync<T>(clusterIdentity, message, context, ct);
+            context.ReenterAfter(task, callback);
+        }
 
         public static Props WithClusterIdentity(this Props props, ClusterIdentity clusterIdentity)
             => props.WithOnInit(context => context.Set(clusterIdentity));
