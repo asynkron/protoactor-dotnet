@@ -14,6 +14,32 @@ namespace Proto.Tests
         private readonly ITestOutputHelper output;
 
         public ReenterTests(ITestOutputHelper output) => this.output = output;
+        
+        [Fact]
+        public async Task RequestReenterSelf()
+        {
+            var props = Props.FromFunc(async ctx => {
+                    switch (ctx.Message)
+                    {
+                        case "reenter":
+                            await Task.Delay(500);
+                            ctx.Respond("done");
+                            break;
+                        case "start":
+                            ctx.RequestReenter<string>(ctx.Self, "reenter", t => {
+                                ctx.Respond("response");
+                                return Task.CompletedTask;
+                            }, CancellationToken.None);
+                            break;
+                    }
+                }
+            );
+
+            var pid = Context.Spawn(props);
+
+            var res = await Context.RequestAsync<string>(pid, "start", TimeSpan.FromSeconds(5));
+            Assert.Equal("response", res);
+        }
 
         [Fact]
         public async Task ReenterAfterCompletedTask()
