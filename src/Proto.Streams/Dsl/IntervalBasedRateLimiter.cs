@@ -1,0 +1,35 @@
+﻿//-----------------------------------------------------------------------
+// <copyright file="IntervalBasedRateLimiter.cs" company="Proto.NET Project">
+//     Copyright (C) 2009-2021 Lightbend Inc. <http://www.lightbend.com>
+//     Copyright (C) 2013-2021 .NET Foundation <https://github.com/akkadotnet/akka.net>
+// </copyright>
+//-----------------------------------------------------------------------
+
+using System;
+using System.Collections.Generic;
+
+namespace Proto.Streams.Dsl
+{
+    public static class IntervalBasedRateLimiter
+    {
+        /// <summary>
+        /// Specialized type of rate limiter which emits batches of elements (with size limited by the <paramref name="maxBatchSize"/> parameter)
+        /// with a minimum time interval of <paramref name="minInterval"/>.
+        /// <para />
+        /// Because the next emit is scheduled after we downstream the current batch, the effective throughput,
+        /// depending on the minimal interval length, may never reach the maximum allowed one.
+        /// You can minimize these delays by sending bigger batches less often.
+        /// </summary>
+        /// <typeparam name="T">type of element</typeparam>
+        /// <param name="minInterval">minimal pause to be kept before downstream the next batch. Should be >= 10 milliseconds.</param>
+        /// <param name="maxBatchSize">maximum number of elements to send in the single batch</param>
+        /// <returns></returns>
+        
+        public static IGraph<FlowShape<T, IEnumerable<T>>, NotUsed> Create<T>(TimeSpan minInterval, int maxBatchSize)
+        { 
+            // for spec purposes, we need this timeout to stop waiting for the last batch (it may never be of maxBatchSize size)
+            var minGroupingInterval = TimeSpan.FromTicks(minInterval.Ticks * 3);
+            return Flow.Create<T>().GroupedWithin(maxBatchSize, minGroupingInterval).Via(new DelayFlow<IEnumerable<T>>(minInterval));
+        }
+    }
+}

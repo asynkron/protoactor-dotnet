@@ -1,0 +1,25 @@
+﻿//-----------------------------------------------------------------------
+// <copyright file="ObjectExtensions.cs" company="Proto.NET Project">
+//     Copyright (C) 2009-2021 Lightbend Inc. <http://www.lightbend.com>
+//     Copyright (C) 2013-2021 .NET Foundation <https://github.com/akkadotnet/akka.net>
+// </copyright>
+//-----------------------------------------------------------------------
+
+using System.Collections.Generic;
+
+namespace Proto.Streams.Util
+{
+    /// <summary>
+    /// TBD
+    /// </summary>
+    public static class ObjectExtensions
+    {
+        /// <summary>
+        /// TBD
+        /// </summary>
+        /// <typeparam name="T">TBD</typeparam>
+        /// <param name="obj">TBD</param>
+        /// <returns>TBD</returns>
+        public static bool IsDefaultForType<T>(this T obj) => EqualityComparer<T>.Default.Equals(obj, default(T));
+    }
+}
