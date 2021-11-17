@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-//   <copyright file="EndpointActor.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//   <copyright file="BannedEndpoint.cs" company="Asynkron AB">
+//       Copyright (C) 2015-2021 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 

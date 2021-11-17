@@ -62,7 +62,7 @@ namespace Proto.Remote
 
                 _system.Metrics.Get<RemoteMetrics>().RemoteEndpointConnectedCount.Inc(new[] { _system.Id, _system.Address, context.Peer });
 
-                Logger.LogInformation("[{systemAddress}] Accepted connection request from {Remote} to {Local}", _system.Address, context.Peer, context.Host);
+                Logger.LogDebug("[{systemAddress}] Accepted connection request from {Remote} to {Local}", _system.Address, context.Peer, context.Host);
 
                 if (await requestStream.MoveNext().ConfigureAwait(false) && requestStream.Current.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectRequest) throw new RpcException(Status.DefaultCancelled, "Expected connection message");
 
@@ -181,10 +181,6 @@ namespace Proto.Remote
                         _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage);
                     }
                 }
-                // catch (Exception e)
-                // {
-                //     Logger.LogError(e, "Error : {message}", e.Message);
-                // }
                 finally
                 {
                     cancellationTokenSource.Cancel();

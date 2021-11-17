@@ -1,24 +1,18 @@
 // -----------------------------------------------------------------------
-//   <copyright file="EndpointActor.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//   <copyright file="Endpoint.cs" company="Asynkron AB">
+//       Copyright (C) 2015-2021 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Google.Protobuf;
-using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Proto.Logging;
-using Proto.Mailbox;
 using Proto.Remote.Metrics;
 
 namespace Proto.Remote

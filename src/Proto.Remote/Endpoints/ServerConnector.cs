@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-//   <copyright file="EndpointActor.cs" company="Asynkron AB">
+//   <copyright file="ServerConnector.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2020 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -9,7 +9,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
-using Grpc.Core.Utils;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Metrics;
 
