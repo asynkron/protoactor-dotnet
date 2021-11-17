@@ -269,7 +269,7 @@ namespace Proto.Remote.Tests
         private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
         {
             var props = Props.FromProducer(() => new LocalActor(remoteActors));
-            var actor = System.Root.Spawn(props).Clone();
+            var actor = System.Root.Spawn(props);
 
             // The local actor watches the remote one - we wait here for the RemoteWatch 
             // message to propagate to the remote actor
