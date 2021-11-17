@@ -49,7 +49,7 @@ namespace Proto.Remote.GrpcNet
 
                 var channelProvider = new GrpcNetChannelProvider(_config);
                 _endpointManager = new EndpointManager(System, Config, channelProvider);
-                _endpointReader = new EndpointReader(System, _endpointManager, Config.Serialization);
+                _endpointReader = new EndpointReader(System, _endpointManager);
                 _healthCheck = new HealthServiceImpl();
 
                 if (!IPAddress.TryParse(Config.Host, out var ipAddress))

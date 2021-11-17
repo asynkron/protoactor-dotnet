@@ -34,7 +34,7 @@ namespace Proto.Remote.GrpcNet
         public RemoteConfigBase Config => _config;
         public ActorSystem System { get; }
         public bool Started { get; private set; }
-        
+
         public BlockList BlockList { get; } = new();
 
         public Task StartAsync()
@@ -44,7 +44,7 @@ namespace Proto.Remote.GrpcNet
                 if (Started)
                     return Task.CompletedTask;
 
-                var uri = ServerAddressesFeature?.Addresses.Select(address => new Uri(address)).FirstOrDefault();
+                var uri = _config.UriChooser(ServerAddressesFeature?.Addresses.Select(address => new Uri(address)));
                 var boundPort = uri?.Port ?? Config.Port;
                 var host = uri?.Host ?? Config.Host;
                 System.SetAddress(Config.AdvertisedHost ?? host,

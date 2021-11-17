@@ -10,11 +10,9 @@ namespace Messages
 {
     public partial class Ping : ICachedSerialization
     {
-        public (ByteString bytes, string typename, int serializerId, bool boolHasData) SerializerData { get; set; }
     }
     
     public partial class Pong : ICachedSerialization
     {
-        public (ByteString bytes, string typename, int serializerId, bool boolHasData) SerializerData { get; set; }
     }
 }

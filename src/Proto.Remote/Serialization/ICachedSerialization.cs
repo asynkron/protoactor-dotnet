@@ -9,6 +9,5 @@ namespace Proto.Remote
 {
     public interface ICachedSerialization
     {
-        (ByteString bytes, string typename, int serializerId, bool boolHasData) SerializerData { get; set; }
     }
 }

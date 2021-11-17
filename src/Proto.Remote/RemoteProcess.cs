@@ -4,18 +4,21 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+
 namespace Proto.Remote
 {
     public class RemoteProcess : Process
     {
         private readonly EndpointManager _endpointManager;
         private readonly PID _pid;
-        private PID? _endpoint;
+        private readonly string? _systemId;
 
         public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
         {
             _endpointManager = endpointManager;
             _pid = pid;
+            pid.TryGetSystemId(system, out _systemId);
         }
 
         protected internal override void SendUserMessage(PID _, object message) => Send(message);
@@ -24,39 +27,20 @@ namespace Proto.Remote
 
         private void Send(object msg)
         {
-            object message;
-            _endpoint ??= _endpointManager.GetEndpoint(_pid.Address);
-
+            // If the target endpoint is down or banned, we get a BannedEndpoint instance
+            var endpoint = _systemId is not null ? _endpointManager.GetClientEndpoint(_systemId) : _endpointManager.GetOrAddServerEndpoint(_pid.Address);
             switch (msg)
             {
                 case Watch w:
-                    if (_endpoint is null)
-                    {
-                        System.Root.Send(w.Watcher, new Terminated {Why = TerminatedReason.AddressTerminated, Who = _pid});
-                        return;
-                    }
-
-                    message = new RemoteWatch(w.Watcher, _pid);
+                    endpoint.RemoteWatch(_pid, w);
                     break;
                 case Unwatch uw:
-                    if (_endpoint is null) return;
-
-                    message = new RemoteUnwatch(uw.Watcher, _pid);
+                    endpoint.RemoteUnwatch(_pid, uw);
                     break;
                 default:
-                    var (m, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
-
-                    if (_endpoint is null)
-                    {
-                        System.EventStream.Publish(new DeadLetterEvent(_pid, m, sender));
-                        return;
-                    }
-
-                    message = new RemoteDeliver(header, m, _pid, sender!);
+                    endpoint.SendMessage(_pid, msg);
                     break;
             }
-
-            System.Root.Send(_endpoint, message);
         }
     }
 }

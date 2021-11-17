@@ -18,7 +18,8 @@ namespace Proto
     [PublicAPI]
     public class ActorSystem
     {
-        internal const string NoHost = "nonhost";
+        public const string NoHost = "nonhost";
+        public const string Client = "$client";
         private CancellationTokenSource _cts = new();
         private string _host = NoHost;
         private int _port;
@@ -39,7 +40,6 @@ namespace Proto
             ProcessRegistry.TryAdd("eventstream", new EventStreamProcess(this));
             Extensions = new ActorSystemExtensions(this);
             DeferredFuture = new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
-
             RunThreadPoolStats();
         }
 
@@ -75,16 +75,16 @@ namespace Proto
             _ = ThreadPoolStats.Run(TimeSpan.FromSeconds(5),
                 t => {
                     //collect the latency metrics
-                    Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, new[] {Id, Address});
+                    Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, new[] { Id, Address });
 
                     //does it take longer than 1 sec for a task to start executing?
                     if (t <= Config.ThreadPoolStatsTimeout) return;
 
                     if (Config.DeveloperThreadPoolStatsLogging)
                     {
-                        Console.WriteLine($"System {Id} - ThreadPool is running hot, ThreadPool latency {t}");    
+                        Console.WriteLine($"System {Id} - ThreadPool is running hot, ThreadPool latency {t}");
                     }
-                        
+
                     logger.LogWarning("System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}", Id, t);
                 }, _cts.Token
             );
@@ -102,6 +102,8 @@ namespace Proto
             _port = port;
             Address = $"{host}:{port}";
         }
+
+        public void SetClientAddress() => Address = $"{Client}/{Id}";
 
         public RootContext NewRoot(MessageHeader? headers = null, params Func<Sender, Sender>[] middleware) =>
             new(this, headers, middleware);

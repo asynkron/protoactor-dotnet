@@ -62,7 +62,8 @@ namespace Proto.Remote.Tests
                 .WithEndpointWriterMaxRetries(2)
                 .WithEndpointWriterRetryBackOff(TimeSpan.FromMilliseconds(10))
                 .WithEndpointWriterRetryTimeSpan(TimeSpan.FromSeconds(120))
-                .WithProtoMessages(Messages.ProtosReflection.Descriptor);
+                .WithProtoMessages(Messages.ProtosReflection.Descriptor)
+                .WithRemoteKinds(("EchoActor", EchoActorProps));
 
         protected static (IHost, HostedGrpcNetRemote) GetHostedGrpcNetRemote(GrpcNetRemoteConfig config)
         {
@@ -109,6 +110,13 @@ namespace Proto.Remote.Tests
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
             return new GrpcNetRemote(new ActorSystem(), config);
+        }
+        protected static GrpcNetClientRemote GetGrpcNetClientRemote(GrpcNetRemoteConfig config)
+        {
+#if NETCORE
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+#endif
+            return new GrpcNetClientRemote(new ActorSystem(), config);
         }
     }
 }

@@ -51,7 +51,7 @@ namespace Proto.Remote.GrpcCore
 
                 var channelProvider = new GrpcCoreChannelProvider(_config);
                 _endpointManager = new EndpointManager(System, Config, channelProvider);
-                _endpointReader = new EndpointReader(System, _endpointManager, Config.Serialization);
+                _endpointReader = new EndpointReader(System, _endpointManager);
                 _healthCheck = new HealthServiceImpl();
                 _server = new Server
                 {
