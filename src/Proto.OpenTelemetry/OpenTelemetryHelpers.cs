@@ -1,0 +1,54 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using OpenTelemetry;
+using OpenTelemetry.Context.Propagation;
+
+namespace Proto.OpenTelemetry
+{
+    static class OpenTelemetryHelpers
+    {
+        private static readonly ActivitySource ActivitySource = new ActivitySource(ProtoTags.ActivityName);
+        private static readonly TextMapPropagator Propagator = new TraceContextPropagator();
+
+        public static void DefaultSetupActivity(Activity _, object __)
+        {
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Activity? BuildStartedScope(
+            ActivityContext parent,
+            string verb,
+            object message,
+            ActivitySetup activitySetup,
+            ActivityKind activityKind = ActivityKind.Internal
+        )
+        {
+            var messageType = message?.GetType().Name ?? "Unknown";
+
+            var name = $"{verb} {messageType}";
+            var tags = new[] {new KeyValuePair<string, object?>(ProtoTags.MessageType, messageType)};
+            var activity = ActivitySource.StartActivity(name, activityKind, parent, tags);
+
+            activitySetup.Invoke(activity, message!);
+
+            return activity;
+        }
+
+        public static IEnumerable<KeyValuePair<string, string>> GetPropagationHeaders(this ActivityContext activityContext)
+        {
+            var context = new List<KeyValuePair<string, string>>();
+            Propagator.Inject(new PropagationContext(activityContext, Baggage.Current), context, AddHeader);
+            return context;
+        }
+
+        public static PropagationContext ExtractPropagationContext(this MessageHeader headers)
+            => Propagator.Extract(default, headers.ToDictionary(),
+                (dictionary, key) => dictionary.TryGetValue(key, out var value) ? new[] {value} : Array.Empty<string>()
+            );
+
+        private static void AddHeader(List<KeyValuePair<string, string>> list, string key, string value)
+            => list.Add(new KeyValuePair<string, string>(key, value));
+    }
+}
