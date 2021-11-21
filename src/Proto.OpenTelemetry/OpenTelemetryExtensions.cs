@@ -43,17 +43,15 @@ namespace Proto.OpenTelemetry
 
         /// <summary>
         ///     Setup OpenTelemetry send decorator around RootContext.
-        ///     DO NOT FORGET to create the RootContext passing OpenTelemetryExtensions.OpenTelemetrySenderMiddleware to the
-        ///     constructor.
         /// </summary>
         /// <param name="context">Root context</param>
         /// <param name="sendActivitySetup">provide a way inject send activity customization according to the message.</param>
         /// <returns>IRootContext</returns>
-        public static IRootContext WithTracing(this IRootContext context, ActivitySetup? sendActivitySetup = null)
+        public static IRootContext WithTracing(this RootContext context, ActivitySetup? sendActivitySetup = null)
         {
             sendActivitySetup ??= OpenTelemetryHelpers.DefaultSetupActivity!;
 
-            return new OpenTelemetryRootContextDecorator(context, sendActivitySetup);
+            return new OpenTelemetryRootContextDecorator(context.WithSenderMiddleware(OpenTelemetrySenderMiddleware), sendActivitySetup);
         }
     }
 }
