@@ -7,3 +7,4 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Proto.Cluster")]
 [assembly: InternalsVisibleTo("Proto.Remote")]
+[assembly: InternalsVisibleTo("Proto.OpenTelemetry.Tests")]

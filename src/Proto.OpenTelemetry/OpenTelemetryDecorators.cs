@@ -24,6 +24,9 @@ namespace Proto.OpenTelemetry
         public override void Request(PID target, object message)
             => OpenTelemetryMethodsDecorators.Request(target, message, _sendActivitySetup, () => base.Request(target, message));
 
+        public override void Request(PID target, object message, PID? sender)
+            => OpenTelemetryMethodsDecorators.Request(target, message, sender, _sendActivitySetup, () => base.Request(target, message, sender));
+
         public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => OpenTelemetryMethodsDecorators.RequestAsync(target, message, _sendActivitySetup,
                 () => base.RequestAsync<T>(target, message, cancellationToken)
@@ -35,7 +38,11 @@ namespace Proto.OpenTelemetry
         private readonly ActivitySetup _receiveActivitySetup;
         private readonly ActivitySetup _sendActivitySetup;
 
-        public OpenTelemetryActorContextDecorator(IContext context, ActivitySetup sendActivitySetup, ActivitySetup receiveActivitySetup) : base(context)
+        public OpenTelemetryActorContextDecorator(
+            IContext context,
+            ActivitySetup sendActivitySetup,
+            ActivitySetup receiveActivitySetup
+        ) : base(context)
         {
             var actorType = context.Actor.GetType().Name;
             var self = context.Self.ToString();
@@ -73,7 +80,8 @@ namespace Proto.OpenTelemetry
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Send(PID target, object message, ActivitySetup sendActivitySetup, Action send)
         {
-            using var activity = OpenTelemetryHelpers.BuildStartedScope(Activity.Current?.Context ?? default, nameof(Send), message, sendActivitySetup);
+            using var activity =
+                OpenTelemetryHelpers.BuildStartedScope(Activity.Current?.Context ?? default, nameof(Send), message, sendActivitySetup);
 
             try
             {
@@ -97,6 +105,31 @@ namespace Proto.OpenTelemetry
             try
             {
                 activity?.SetTag(ProtoTags.TargetPID, target.ToString());
+                request();
+            }
+            catch (Exception ex)
+            {
+                activity?.RecordException(ex);
+                activity?.SetStatus(Status.Error);
+                throw;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Request(PID target, object message, PID? sender, ActivitySetup sendActivitySetup, Action request)
+        {
+            using var activity =
+                OpenTelemetryHelpers.BuildStartedScope(Activity.Current?.Context ?? default, nameof(Request), message, sendActivitySetup);
+
+            try
+            {
+                activity?.SetTag(ProtoTags.TargetPID, target.ToString());
+
+                if (sender is not null)
+                {
+                    activity?.SetTag(ProtoTags.SenderPID, sender.ToString());
+                }
+
                 request();
             }
             catch (Exception ex)
@@ -152,11 +185,11 @@ namespace Proto.OpenTelemetry
 
             var propagationContext = envelope.Header.ExtractPropagationContext();
 
-            using var activity = OpenTelemetryHelpers.BuildStartedScope(propagationContext.ActivityContext, nameof(Receive), message, receiveActivitySetup);
+            using var activity =
+                OpenTelemetryHelpers.BuildStartedScope(propagationContext.ActivityContext, nameof(Receive), message, receiveActivitySetup);
 
             try
             {
-
                 if (envelope.Sender != null) activity?.SetTag(ProtoTags.SenderPID, envelope.Sender.ToString());
 
                 receiveActivitySetup?.Invoke(activity, message);
