@@ -17,7 +17,7 @@
 
     <ItemGroup>
       <PackageReference Include="Google.Protobuf" Version="3.18.0" />
-      <PackageReference Include="Grpc.Tools" Version="2.40.0" />
+      <PackageReference Include="Grpc.Tools" Version="2.42.0" />
       <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
     </ItemGroup>
 
