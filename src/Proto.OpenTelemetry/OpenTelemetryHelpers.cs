@@ -26,11 +26,14 @@ namespace Proto.OpenTelemetry
         {
             var messageType = message?.GetType().Name ?? "Unknown";
 
-            var name = $"{verb} {messageType}";
+            var name = $"Proto.{verb} {messageType}";
             var tags = new[] {new KeyValuePair<string, object?>(ProtoTags.MessageType, messageType)};
             var activity = ActivitySource.StartActivity(name, activityKind, parent, tags);
 
-            activitySetup.Invoke(activity, message!);
+            if (activity is not null)
+            {
+                activitySetup(activity, message!);
+            }
 
             return activity;
         }
