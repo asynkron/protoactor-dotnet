@@ -81,7 +81,7 @@ namespace Proto.OpenTelemetry
         public static void Send(PID target, object message, ActivitySetup sendActivitySetup, Action send)
         {
             using var activity =
-                OpenTelemetryHelpers.BuildStartedScope(Activity.Current?.Context ?? default, nameof(Send), message, sendActivitySetup);
+                OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, nameof(Send), message, sendActivitySetup);
 
             try
             {
@@ -100,7 +100,7 @@ namespace Proto.OpenTelemetry
         internal static void Request(PID target, object message, ActivitySetup sendActivitySetup, Action request)
         {
             using var activity =
-                OpenTelemetryHelpers.BuildStartedScope(Activity.Current?.Context ?? default, nameof(Request), message, sendActivitySetup);
+                OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, nameof(Request), message, sendActivitySetup);
 
             try
             {
@@ -119,7 +119,7 @@ namespace Proto.OpenTelemetry
         internal static void Request(PID target, object message, PID? sender, ActivitySetup sendActivitySetup, Action request)
         {
             using var activity =
-                OpenTelemetryHelpers.BuildStartedScope(Activity.Current?.Context ?? default, nameof(Request), message, sendActivitySetup);
+                OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, nameof(Request), message, sendActivitySetup);
 
             try
             {
@@ -144,7 +144,7 @@ namespace Proto.OpenTelemetry
         internal static async Task<T> RequestAsync<T>(PID target, object message, ActivitySetup sendActivitySetup, Func<Task<T>> requestAsync)
         {
             using var activity =
-                OpenTelemetryHelpers.BuildStartedScope(Activity.Current?.Context ?? default, nameof(Request), message, sendActivitySetup);
+                OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, nameof(Request), message, sendActivitySetup);
 
             try
             {
@@ -163,7 +163,7 @@ namespace Proto.OpenTelemetry
         internal static void Forward(PID target, object message, ActivitySetup sendActivitySetup, Action forward)
         {
             using var activity =
-                OpenTelemetryHelpers.BuildStartedScope(Activity.Current?.Context ?? default, nameof(Forward), message, sendActivitySetup);
+                OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, nameof(Forward), message, sendActivitySetup);
 
             try
             {
@@ -186,7 +186,7 @@ namespace Proto.OpenTelemetry
             var propagationContext = envelope.Header.ExtractPropagationContext();
 
             using var activity =
-                OpenTelemetryHelpers.BuildStartedScope(propagationContext.ActivityContext, nameof(Receive), message, receiveActivitySetup);
+                OpenTelemetryHelpers.BuildStartedActivity(propagationContext.ActivityContext, nameof(Receive), message, receiveActivitySetup);
 
             try
             {

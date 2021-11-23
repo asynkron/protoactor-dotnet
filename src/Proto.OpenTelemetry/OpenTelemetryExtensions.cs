@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using OpenTelemetry.Trace;
 
 namespace Proto.OpenTelemetry
 {
@@ -6,6 +7,9 @@ namespace Proto.OpenTelemetry
 
     public static class OpenTelemetryExtensions
     {
+        public static TracerProviderBuilder AddProtoActorInstrumentation(this TracerProviderBuilder builder)
+            => builder.AddSource(ProtoTags.ActivitySourceName);
+
         /// <summary>
         ///     Setup OpenTelemetry send middleware & decorator.
         /// </summary>

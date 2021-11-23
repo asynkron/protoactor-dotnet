@@ -9,15 +9,14 @@ namespace Proto.OpenTelemetry
 {
     static class OpenTelemetryHelpers
     {
-        private static readonly ActivitySource ActivitySource = new ActivitySource(ProtoTags.ActivityName);
-        private static readonly TextMapPropagator Propagator = new TraceContextPropagator();
+        private static readonly ActivitySource ActivitySource = new(ProtoTags.ActivitySourceName);
 
         public static void DefaultSetupActivity(Activity _, object __)
         {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Activity? BuildStartedScope(
+        public static Activity? BuildStartedActivity(
             ActivityContext parent,
             string verb,
             object message,
@@ -39,12 +38,12 @@ namespace Proto.OpenTelemetry
         public static IEnumerable<KeyValuePair<string, string>> GetPropagationHeaders(this ActivityContext activityContext)
         {
             var context = new List<KeyValuePair<string, string>>();
-            Propagator.Inject(new PropagationContext(activityContext, Baggage.Current), context, AddHeader);
+            Propagators.DefaultTextMapPropagator.Inject(new PropagationContext(activityContext, Baggage.Current), context, AddHeader);
             return context;
         }
 
         public static PropagationContext ExtractPropagationContext(this MessageHeader headers)
-            => Propagator.Extract(default, headers.ToDictionary(),
+            => Propagators.DefaultTextMapPropagator.Extract(default, headers.ToDictionary(),
                 (dictionary, key) => dictionary.TryGetValue(key, out var value) ? new[] {value} : Array.Empty<string>()
             );
 

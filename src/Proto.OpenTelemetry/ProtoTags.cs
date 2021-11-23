@@ -2,7 +2,7 @@
 {
     public static class ProtoTags
     {
-        public const string ActivityName = "Proto.Actor";
+        public const string ActivitySourceName = "Proto.Actor";
 
         /// <summary>
         ///     GetType().Name on the message
