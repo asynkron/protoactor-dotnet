@@ -32,10 +32,12 @@ namespace Proto.Cluster
             IdentityLookup = identityLookup;
             MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
             PubSubBatchSize = 2000;
+            RemotePidCacheTimeToLive = TimeSpan.FromMinutes(15);
+            RemotePidCacheClearInterval = TimeSpan.FromSeconds(15);
         }
 
         public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
-        
+
         public string ClusterName { get; }
 
         public ImmutableList<ClusterKind> ClusterKinds { get; init; } = ImmutableList<ClusterKind>.Empty;
@@ -50,7 +52,7 @@ namespace Proto.Cluster
         public TimeSpan RequestLogThrottlePeriod { get; init; }
         public int MaxNumberOfEventsInRequestLogThrottlePeriod { get; init; }
 
-        public int GossipFanout { get; init;  }
+        public int GossipFanout { get; init; }
 
         public IIdentityLookup IdentityLookup { get; }
         public TimeSpan GossipInterval { get; init; }
@@ -60,18 +62,21 @@ namespace Proto.Cluster
 
         public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
 
+        public TimeSpan RemotePidCacheTimeToLive { get; set; }
+        public TimeSpan RemotePidCacheClearInterval { get; set; }
+        
         public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
-            c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Config.ToClusterContextConfig(),c.System.Shutdown);
+            c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Config.ToClusterContextConfig(), c.System.Shutdown);
 
         public ClusterConfig WithTimeout(TimeSpan timeSpan) =>
             this with {TimeoutTimespan = timeSpan};
 
         public ClusterConfig WithActorRequestTimeout(TimeSpan timeSpan) =>
             this with {ActorRequestTimeout = timeSpan};
-        
+
         public ClusterConfig WithActorSpawnTimeout(TimeSpan timeSpan) =>
             this with {ActorSpawnTimeout = timeSpan};
-        
+
         public ClusterConfig WithActorActivationTimeout(TimeSpan timeSpan) =>
             this with {ActorActivationTimeout = timeSpan};
 
@@ -100,22 +105,24 @@ namespace Proto.Cluster
 
         public ClusterConfig WithClusterKinds(params ClusterKind[] clusterKinds)
             => this with {ClusterKinds = ClusterKinds.AddRange(clusterKinds)};
-        
+
         public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder) =>
             this with {MemberStrategyBuilder = builder};
 
         public ClusterConfig WithClusterContextProducer(Func<Cluster, IClusterContext> producer) =>
             this with {ClusterContextProducer = producer};
-        
+
         public ClusterConfig WithGossipInterval(TimeSpan interval) =>
             this with {GossipInterval = interval};
-        
+
         public ClusterConfig WithGossipFanOut(int fanout) =>
             this with {GossipFanout = fanout};
 
         public ClusterConfig WithGossipRequestTimeout(TimeSpan timeout) =>
-            this with { GossipRequestTimeout = timeout };
+            this with {GossipRequestTimeout = timeout};
 
+        public ClusterConfig WithRemotePidCacheTimeToLive(TimeSpan timeout) =>
+            this with {RemotePidCacheTimeToLive = timeout};
 
         public static ClusterConfig Setup(
             string clusterName,
