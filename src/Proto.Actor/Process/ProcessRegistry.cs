@@ -13,7 +13,6 @@ namespace Proto
 {
     public class ProcessRegistry
     {
-        private readonly List<Func<PID, Process>> _clientResolvers = new();
         private readonly List<Func<PID, Process>> _hostResolvers = new();
         private readonly HashedConcurrentDictionary _localProcesses = new();
         private int _sequenceId;
@@ -36,25 +35,25 @@ namespace Proto
 
         public void RegisterHostResolver(Func<PID, Process> resolver) => _hostResolvers.Add(resolver);
 
-        public void RegisterClientResolver(Func<PID, Process> resolver) => _clientResolvers.Add(resolver);
-
         public Process Get(PID pid)
         {
-            if (pid.Address == ActorSystem.NoHost || pid.Address == System.Address)
+            if (pid.Address == ActorSystem.NoHost || (pid.Address == System.Address && !pid.Id.StartsWith(ActorSystem.Client)))
             {
                 if (_localProcesses.TryGetValue(pid.Id, out var process)) return process;
-
-                var client = _clientResolvers.Select(x => x(pid)).FirstOrDefault();
-                if (client is null) return System.DeadLetter;
-
-                return client;
+                return System.DeadLetter;
             }
+            else
+            {
+                Process? reff = null;
+                foreach (var resolver in _hostResolvers)
+                {
+                    reff = resolver(pid);
+                    if (reff != null) return reff;
+                }
 
-            var reff = _hostResolvers.Select(x => x(pid)).FirstOrDefault();
-
-            if (reff is null) throw new NotSupportedException("Unknown host");
-
-            return reff;
+                if (reff is null) throw new NotSupportedException("Unknown host");
+                return reff;
+            }
         }
 
         public (PID pid, bool ok) TryAdd(string id, Process process)

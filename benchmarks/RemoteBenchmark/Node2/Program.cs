@@ -22,18 +22,23 @@ namespace Node2
     {
         private PID _sender;
         private static readonly Pong Pong = new Pong();
+        private int _count = 0;
 
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case StartRemote sr:
-                    Console.WriteLine($"Starting for {sr.Sender}");
+                    // Console.WriteLine($"Starting for {sr.Sender}");
                     _sender = sr.Sender;
                     context.Respond(new Start());
                     return Task.CompletedTask;
                 case Ping _:
                     context.Send(_sender, Pong);
+                    // if (++_count % 500_000 == 0)
+                    // {
+                    //     Console.WriteLine($"{_count} to {_sender}");
+                    // }
                     return Task.CompletedTask;
                 default:
                     return Task.CompletedTask;
@@ -47,6 +52,8 @@ namespace Node2
         {
             Log.SetLoggerFactory(LoggerFactory.Create(c => c
                     .SetMinimumLevel(LogLevel.Information)
+                    .AddFilter("Microsoft", LogLevel.None)
+                    .AddFilter("Grpc", LogLevel.None)
                     .AddConsole()
                 )
             );
@@ -55,12 +62,12 @@ namespace Node2
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
 
-            Console.WriteLine("Enter 0 to use GrpcCore provider");
-            Console.WriteLine("Enter 1 to use GrpcNet provider");
+            Console.WriteLine("Enter 0 to use GrpcNet provider (Default)");
+            Console.WriteLine("Enter 1 to use GrpcCore provider");
             if (!int.TryParse(Console.ReadLine(), out var provider))
                 provider = 0;
 
-            Console.WriteLine("Enter Advertised Host (Enter = localhost)");
+            Console.WriteLine("Enter Advertised Host (Default = 127.0.0.1)");
             var advertisedHost = Console.ReadLine().Trim();
             if (string.IsNullOrEmpty(advertisedHost))
                 advertisedHost = "127.0.0.1";
@@ -74,27 +81,29 @@ namespace Node2
 
             if (provider == 0)
             {
-                var remoteConfig = GrpcCoreRemoteConfig
-                    .BindTo(advertisedHost, 12000)
-                    .WithProtoMessages(ProtosReflection.Descriptor)
-                    .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
-                remote = new GrpcCoreRemote(system, remoteConfig);
-            }
-            else
-            {
                 var remoteConfig = GrpcNetRemoteConfig
                     .BindTo(advertisedHost, 12000)
                     .WithChannelOptions(new GrpcChannelOptions
-                        {
-                            CompressionProviders = new ICompressionProvider[]
+                    {
+                        CompressionProviders = new ICompressionProvider[]
                             {
                                 new GzipCompressionProvider(CompressionLevel.Fastest)
-                            }
-                        }
-                    )
-                    .WithProtoMessages(ProtosReflection.Descriptor)
-                    .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
+                             }
+                    }
+                     )
+                     .WithEndpointWriterMaxRetries(3)
+                     .WithProtoMessages(ProtosReflection.Descriptor)
+                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
                 remote = new GrpcNetRemote(system, remoteConfig);
+            }
+            else
+            {
+                var remoteConfig = GrpcCoreRemoteConfig
+                   .BindTo(advertisedHost, 12000)
+                   .WithProtoMessages(ProtosReflection.Descriptor)
+                   .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
+                remote = new GrpcCoreRemote(system, remoteConfig);
+
             }
 
             await remote.StartAsync();

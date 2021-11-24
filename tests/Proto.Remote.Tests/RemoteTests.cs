@@ -63,6 +63,21 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
+        public async Task CanSpawnActorOnClientRemote()
+        {
+            var remoteActorName = Guid.NewGuid().ToString();
+
+            var remoteActorResp = await Remote.SpawnNamedAsync(
+                _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5)
+            );
+            var remoteActor = remoteActorResp.Pid;
+            var pong = await System.Root.RequestAsync<SpawnOnMeAndPingResponse>(remoteActor, new SpawnOnMeAndPing(),
+                TimeSpan.FromMilliseconds(5000)
+            );
+            Assert.Equal($"{_fixture.ActorSystem.Address} Hello", pong.Message);
+        }
+
+        [Fact, DisplayTestMethodName]
         public async Task CanWatchRemoteActor()
         {
             var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
