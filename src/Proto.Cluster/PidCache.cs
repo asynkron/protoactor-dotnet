@@ -93,7 +93,7 @@ namespace Proto.Cluster
         /// <returns></returns>
         public int RemoveIdleRemoteProcessesOlderThan(TimeSpan age)
         {
-            var cutoff = Stopwatch.GetTimestamp() - age.Ticks;
+            var cutoff = Stopwatch.GetTimestamp() - (long)(Stopwatch.Frequency * age.TotalSeconds);
             return RemoveByPredicate(pair => pair.Value.CurrentRef is RemoteProcess remoteProcess && remoteProcess.LastUsedTick < cutoff);
         }
 
