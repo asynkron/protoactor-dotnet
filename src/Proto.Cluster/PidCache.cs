@@ -28,14 +28,21 @@ namespace Proto.Cluster
         {
             if (clusterIdentity is null) throw new ArgumentNullException(nameof(clusterIdentity));
 
-            if (clusterIdentity.CachedPid is { } identityCachedPid)
+            if (clusterIdentity.CachedPid is {CurrentRef: { } and not DeadLetterProcess} identityCachedPid)
             {
                 //If the PID is already cached using ClusterIdentity, we can skip the lookup altogether
                 pid = identityCachedPid;
                 return true;
             }
 
-            return _cacheDict.TryGetValue(clusterIdentity, out pid);
+            if (_cacheDict.TryGetValue(clusterIdentity, out pid))
+            {
+                clusterIdentity.CachedPid = pid;
+                return true;
+            }
+
+            clusterIdentity.CachedPid = null;
+            return false;
         }
 
         public bool TryAdd(ClusterIdentity clusterIdentity, PID pid)
@@ -85,7 +92,6 @@ namespace Proto.Cluster
             return false;
         }
 
-        
         /// <summary>
         /// Remove cached remote activations which have not been used since
         /// </summary>
@@ -93,7 +99,7 @@ namespace Proto.Cluster
         /// <returns></returns>
         public int RemoveIdleRemoteProcessesOlderThan(TimeSpan age)
         {
-            var cutoff = Stopwatch.GetTimestamp() - (long)(Stopwatch.Frequency * age.TotalSeconds);
+            var cutoff = Stopwatch.GetTimestamp() - (long) (Stopwatch.Frequency * age.TotalSeconds);
             return RemoveByPredicate(pair => pair.Value.CurrentRef is RemoteProcess remoteProcess && remoteProcess.LastUsedTick < cutoff);
         }
 

@@ -1,10 +1,14 @@
 #nullable enable
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
+using Proto.Cluster.Partition;
+using Proto.Cluster.Testing;
+using Proto.Remote.GrpcCore;
 using Xunit;
 
 namespace Proto.Cluster.Tests
@@ -53,5 +57,34 @@ namespace Proto.Cluster.Tests
             foundInCache.Should().BeTrue();
             pidInCache.Should().BeEquivalentTo(alivePid);
         }
+
+        [Fact]
+        public async Task PurgesPidCacheOnVirtualActorShutdown()
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var system = new ActorSystem()
+                .WithRemote(GrpcCoreRemoteConfig.BindToLocalhost())
+                .WithCluster(GetClusterConfig());
+
+            var cluster = system.Cluster();
+            await cluster.StartMemberAsync();
+
+            var identity = ClusterIdentity.Create("", "echo");
+
+            await cluster.RequestAsync<Ack>(identity, new Die(), timeout.Token);
+
+            // Let the system purge the terminated PID,
+            await Task.Delay(50);
+
+            cluster.PidCache.TryGet(identity, out _).Should().BeFalse();
+        }
+
+        ClusterConfig GetClusterConfig() => ClusterConfig
+            .Setup(
+                "MyCluster",
+                new TestProvider(new TestProviderOptions(), new InMemAgent()),
+                new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500))
+            )
+            .WithClusterKind("echo", Props.FromProducer(() => new EchoActor()));
     }
 }
