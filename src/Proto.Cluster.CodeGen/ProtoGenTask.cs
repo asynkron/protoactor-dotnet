@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -73,24 +74,34 @@ namespace Proto.Cluster.CodeGen
             if (!templateFiles.Any())
             {
                 var template = Template.DefaultTemplate;
-                GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template);
+                var outputFileName = OutputFileName.GetOutputFileName(inputFileInfo);
+                
+                GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template, outputFileName);
             }
             else
             {
                 foreach (var templateFile in templateFiles)
                 {
                     var template = File.ReadAllText(templateFile.FullName, Encoding.Default);
-                    GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template);
+                    var outputFileName = OutputFileName.GetOutputFileName(inputFileInfo, templateFile);
+                    
+                    GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template, outputFileName);
                 }
             }
         }
 
-        private void GenerateFile(string projectDirectory, string objDirectory, FileInfo inputFileInfo, DirectoryInfo[] importPaths, string template)
+        private void GenerateFile(
+            string projectDirectory,
+            string objDirectory,
+            FileInfo inputFileInfo,
+            DirectoryInfo[] importPaths,
+            string template,
+            string outputFileName
+        )
         {
-            var guidName = Guid.NewGuid().ToString("N");
-            var outputFile = Path.Combine(objDirectory, $"{guidName}.cs");
-            Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
-            var outputFileInfo = new FileInfo(outputFile);
+            var outputFilePath = Path.Combine(objDirectory, outputFileName);
+            Log.LogMessage(MessageImportance.High, $"Output file path: {outputFilePath}");
+            var outputFileInfo = new FileInfo(outputFilePath);
             Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory, template);
         }
 
