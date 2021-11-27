@@ -41,7 +41,7 @@ namespace Proto.Remote
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private CancellationToken CancellationToken => _cancellationTokenSource.Token;
         private readonly LogLevel _deserializationErrorLogLevel;
-        public ObjectPool<MessageEnvelope> EnvelopePool { get; } = ObjectPool.Create(new EnvelopePoolPolicy());
+        public ObjectPool<MessageEnvelope> EnvelopePool { get; } = ObjectPool.Create<MessageEnvelope>();
         public ObjectPool<MessageBatch> BatchPool { get; } = ObjectPool.Create(new BatchPoolPolicy());
         public ObjectPool<RemoteDeliver> RemoteDeveliverPool { get; } = ObjectPool.Create<RemoteDeliver>();
 
@@ -362,21 +362,6 @@ namespace Proto.Remote
                     Logger.LogError(ex, "[{systemAddress}] Error in RunAsync", System.Address);
                 }
             }
-        }
-    }
-    public class EnvelopePoolPolicy : IPooledObjectPolicy<MessageEnvelope>
-    {
-        public MessageEnvelope Create() => new() { };
-        public bool Return(MessageEnvelope obj)
-        {
-            obj.MessageData = ByteString.Empty;
-            obj.MessageHeader = default;
-            obj.RequestId = default;
-            obj.Sender = default;
-            obj.SerializerId = default;
-            obj.Target = default;
-            obj.TypeId = default;
-            return true;
         }
     }
     public class BatchPoolPolicy : IPooledObjectPolicy<MessageBatch>
