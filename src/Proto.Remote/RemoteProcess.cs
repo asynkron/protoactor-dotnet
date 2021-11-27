@@ -15,7 +15,6 @@ namespace Proto.Remote
         private readonly EndpointManager _endpointManager;
         private readonly PID _pid;
         private readonly string? _systemId;
-        private PID? _endpoint;
         private long _lastUsedTick;
 
         public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
@@ -46,8 +45,7 @@ namespace Proto.Remote
                     endpoint.SendMessage(_pid, msg);
                     break;
             }
-
-            System.Root.Send(_endpoint, message);
+            
             _lastUsedTick = Stopwatch.GetTimestamp();
         }
 
