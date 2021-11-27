@@ -8,4 +8,6 @@ message StartRemote {
     actor.PID Sender = 1;
 }
 message Ping {}
+message CachedPing {}
 message Pong {}
+message CachedPong {}

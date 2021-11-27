@@ -21,28 +21,35 @@ namespace Node2
     public class EchoActor : IActor
     {
         private PID _sender;
-        private static readonly Pong Pong = new Pong();
-        private int _count = 0;
+        private static readonly Pong Pong = new();
+        private static readonly PongClr PongClr = new();
+        private static readonly CachedPong CachedPong = new();
+        private static readonly CachedPongClr CachedPongClr = new();
 
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case StartRemote sr:
-                    // Console.WriteLine($"Starting for {sr.Sender}");
                     _sender = sr.Sender;
                     context.Respond(new Start());
-                    return Task.CompletedTask;
+                    break;
                 case Ping _:
                     context.Send(_sender, Pong);
-                    // if (++_count % 500_000 == 0)
-                    // {
-                    //     Console.WriteLine($"{_count} to {_sender}");
-                    // }
-                    return Task.CompletedTask;
+                    break;
+                case PingClr _:
+                    context.Send(_sender, PongClr);
+                    break;
+                case CachedPing _:
+                    context.Send(_sender, CachedPong);
+                    break;
+                case CachedPingClr _:
+                    context.Send(_sender, CachedPongClr);
+                    break;
                 default:
                     return Task.CompletedTask;
             }
+            return Task.CompletedTask;
         }
     }
 

@@ -44,7 +44,6 @@ namespace Proto.Remote
                             }
                             // batch.Targets[i].Ref(System);
                         }
-                        var typeNames = batch.TypeNames.ToArray();
 
                         var m = System.Metrics.Get<RemoteMetrics>().RemoteDeserializedMessageCount;
 
@@ -57,7 +56,7 @@ namespace Proto.Remote
                             {
                                 target = target.WithRequestId(envelope.RequestId);
                             }
-                            var typeName = typeNames[envelope.TypeId];
+                            var typeName = batch.TypeNames[envelope.TypeId];
 
                             if (!System.Metrics.IsNoop) m.Inc(new[] { System.Id, System.Address, typeName });
 
@@ -90,12 +89,18 @@ namespace Proto.Remote
                                     target.SendSystemMessage(System, sys);
                                     break;
                                 default:
-                                    Proto.MessageHeader? header = null;
-                                    if (envelope.MessageHeader is not null) header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
-                                    var localEnvelope = new Proto.MessageEnvelope(message, sender, header);
-                                    if (_logger.IsEnabled(LogLevel.Trace))
-                                        _logger.LogTrace("[{systemAddress}] Received user message {MessageType} {message} for {target} from {sender}", System.Address, message.GetType().Name, message, target, sender);
-                                    System.Root.Send(target, localEnvelope);
+                                    // if (_logger.IsEnabled(LogLevel.Trace))
+                                    //     _logger.LogTrace("[{systemAddress}] Received user message {MessageType} {message} for {target} from {sender}", System.Address, message.GetType().Name, message, target, sender);
+                                    var header = envelope.MessageHeader is not null ? new Proto.MessageHeader(envelope.MessageHeader.HeaderData) : null;
+                                    if (header is null && sender is null)
+                                    {
+                                        target.SendUserMessage(System, message);
+                                    }
+                                    else
+                                    {
+                                        var localEnvelope = new Proto.MessageEnvelope(message, sender, header);
+                                        target.SendUserMessage(System, localEnvelope);
+                                    }
                                     break;
                             }
                         }

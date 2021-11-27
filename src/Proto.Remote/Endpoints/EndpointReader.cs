@@ -113,12 +113,10 @@ namespace Proto.Remote
                                                 throw;
                                             }
                                         }
-                                        while (endpoint.OutgoingStash.IsEmpty && !cancellationTokenSource.Token.IsCancellationRequested)
+                                        await foreach (var message in endpoint.Outgoing.Reader.ReadAllAsync(cancellationTokenSource.Token).ConfigureAwait(false))
                                         {
-                                            var message = await endpoint.Outgoing.Reader.ReadAsync(cancellationTokenSource.Token).ConfigureAwait(false);
                                             try
                                             {
-                                                // Logger.LogInformation($"Sending {message}");
                                                 await responseStream.WriteAsync(message).ConfigureAwait(false);
                                             }
                                             catch (Exception)

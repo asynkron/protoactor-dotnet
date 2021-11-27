@@ -45,7 +45,6 @@ namespace Proto.Remote
                     endpoint.SendMessage(_pid, msg);
                     break;
             }
-            
             _lastUsedTick = Stopwatch.GetTimestamp();
         }
 

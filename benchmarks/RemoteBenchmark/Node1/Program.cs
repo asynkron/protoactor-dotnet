@@ -4,8 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Net.Client;
@@ -64,6 +66,14 @@ class Program
 
         if (string.IsNullOrEmpty(remoteAddress)) remoteAddress = "127.0.0.1";
 
+        Console.WriteLine("Enter 0 to use cached protobuf messages (Default)");
+        Console.WriteLine("Enter 1 to use protobuf messages");
+        Console.WriteLine("Enter 2 to use cached clr messages");
+        Console.WriteLine("Enter 3 to use clr messages");
+
+        if (!int.TryParse(Console.ReadLine(), out var messageType) && (messageType > 3 || messageType < 0))
+            messageType = 0;
+
         var actorSystemConfig = new ActorSystemConfig()
             .WithDeadLetterThrottleCount(10)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(2));
@@ -101,8 +111,14 @@ class Program
 
         await remote.StartAsync();
 
-        var msg = new Ping();
-
+        object msg = messageType switch
+        {
+            1 => new Ping(),
+            2 => new CachedPingClr(),
+            3 => new PingClr(),
+            _ => new CachedPing()
+        };
+        var results = new Queue<double>();
         var messageCount = 1_000_000;
         var cancellationTokenSource = new CancellationTokenSource();
         _ = SafeTask.Run(async () => {
@@ -136,16 +152,21 @@ class Program
 
                         var linkedTokenSource =
                             CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token,
-                                new CancellationTokenSource(5000).Token
+                                new CancellationTokenSource(20_000).Token
                             );
                         await semaphore.WaitAsync(linkedTokenSource.Token);
                         stopWatch.Stop();
                         var elapsed = stopWatch.Elapsed;
                         Console.WriteLine("Elapsed {0}", elapsed);
 
-                        var t = messageCount * 2.0 / elapsed.TotalMilliseconds * 1000;
+                        var t = messageCount * 2 / elapsed.TotalMilliseconds * 1000;
                         Console.Clear();
-                        Console.WriteLine("Throughput {0} msg / sec", t);
+                        Console.WriteLine("Throughput {0:N0} msg / sec", t);
+
+                        results.Enqueue(t);
+                        if (results.Count > 10)
+                            results.Dequeue();
+                        Console.WriteLine("Average {0:N0} msg / sec", results.Sum() / results.Count);
                         await context.StopAsync(remotePid);
                     }
                 }
@@ -189,7 +210,10 @@ class Program
         {
             switch (context.Message)
             {
+                case PongClr _:
                 case Pong _:
+                case CachedPong _:
+                case CachedPongClr _:
                     if (++_count % 50000 == 0)
                     {
                         // Console.WriteLine(_count);

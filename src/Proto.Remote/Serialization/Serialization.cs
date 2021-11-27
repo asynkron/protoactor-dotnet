@@ -33,7 +33,7 @@ namespace Proto.Remote
         private List<SerializerItem> _serializers = new();
         private readonly ConcurrentDictionary<Type, TypeSerializerItem> _serializerLookup = new();
         internal readonly Dictionary<string, MessageParser> TypeLookup = new();
-        internal readonly ConcurrentDictionary<string, (ByteString bytes, string typename, object instance, int serializerId)> Cache = new();
+        internal ConcurrentDictionary<string, (ByteString bytes, string typename, object instance, int serializerId)>? Cache;
 
         public const int SERIALIZER_ID_PROTOBUF = 0;
         public const int SERIALIZER_ID_JSON = 1;
@@ -93,7 +93,7 @@ namespace Proto.Remote
         {
             var serializer = FindSerializerToUse(message);
             var typename = serializer.Serializer.GetTypeName(message);
-            if (message is ICachedSerialization && Cache.TryGetValue(typename, out var cached))
+            if (Cache is not null && message is ICachedSerialization && Cache.TryGetValue(typename, out var cached))
             {
                 return (cached.bytes, typename, cached.serializerId);
             }
@@ -101,7 +101,7 @@ namespace Proto.Remote
             var bytes = serializer.Serializer.Serialize(message);
             if (message is ICachedSerialization)
             {
-                Cache.TryAdd(typename, (bytes, typename, message, serializerId));
+                GetOrCreateCache().TryAdd(typename, (bytes, typename, message, serializerId));
             }
             return (bytes, typename, serializerId);
         }
@@ -130,7 +130,7 @@ namespace Proto.Remote
 
         public object Deserialize(string typeName, ByteString bytes, int serializerId)
         {
-            if (Cache.TryGetValue(typeName, out var cachedMessage))
+            if (Cache?.TryGetValue(typeName, out var cachedMessage) ?? false)
                 return cachedMessage.instance;
             foreach (var serializerItem in _serializers)
             {
@@ -140,12 +140,24 @@ namespace Proto.Remote
                         bytes,
                         typeName);
                     if (message is ICachedSerialization)
-                        Cache.TryAdd(typeName, (bytes, typeName, message, serializerId));
+                    {
+                        GetOrCreateCache().TryAdd(typeName, (bytes, typeName, message, serializerId));
+                    }
                     return message;
                 }
             }
 
             throw new Exception($"Couldn't find serializerId: {serializerId} for typeName: {typeName}");
+        }
+        private readonly object _cacheLock = new();
+        private ConcurrentDictionary<string, (ByteString bytes, string typename, object instance, int serializerId)> GetOrCreateCache()
+        {
+            if (Cache is not null) return Cache;
+            lock (_cacheLock)
+            {
+                Cache = new();
+                return Cache;
+            }
         }
     }
 }

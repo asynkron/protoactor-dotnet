@@ -6,12 +6,8 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
 
@@ -111,71 +107,60 @@ namespace Proto.Remote
         }
         internal IEndpoint GetOrAddServerEndpoint(string address)
         {
-            if (_cancellationTokenSource.IsCancellationRequested || (address is not null && _bannedAddresses.ContainsKey(address)))
+            if (string.IsNullOrWhiteSpace(address) || _cancellationTokenSource.IsCancellationRequested || (_bannedAddresses.ContainsKey(address)))
                 return _bannedEndpoint;
 
-            if (address is not null && _serverEndpoints.TryGetValue(address, out var endpoint))
+            if (_serverEndpoints.TryGetValue(address, out var endpoint))
             {
                 return endpoint;
             }
 
             lock (_synLock)
             {
-                if (address is not null && _serverEndpoints.TryGetValue(address, out endpoint))
+                if (_serverEndpoints.TryGetValue(address, out endpoint))
                 {
                     return endpoint;
                 }
 
                 //still no instance, we can spawn and add it here.
-                if (address is not null)
+                if (_system.Address.StartsWith(ActorSystem.Client))
                 {
-                    if (_system.Address.StartsWith(ActorSystem.Client))
-                    {
-                        Logger.LogDebug("[{SystemAdress}] Requesting new client side ServerEndpoint for {Address}", _system.Address, address);
-                        endpoint = _serverEndpoints.GetOrAdd(address, v => new ServerEndpoint(_system, _remoteConfig, v, _channelProvider, ServerConnector.Type.ClientSide, RemoteMessageHandler));
-                    }
-                    else
-                    {
-                        Logger.LogDebug("[{SystemAdress}] Requesting new server side ServerEndpoint for {Address}", _system.Address, address);
-                        endpoint = _serverEndpoints.GetOrAdd(address, v => new ServerEndpoint(_system, _remoteConfig, v, _channelProvider, ServerConnector.Type.ServerSide, RemoteMessageHandler));
-                    }
-                    return endpoint;
+                    Logger.LogDebug("[{SystemAdress}] Requesting new client side ServerEndpoint for {Address}", _system.Address, address);
+                    endpoint = _serverEndpoints.GetOrAdd(address, v => new ServerEndpoint(_system, _remoteConfig, v, _channelProvider, ServerConnector.Type.ClientSide, RemoteMessageHandler));
                 }
-                Logger.LogWarning("[{SystemAdress}] No endpoint found for {Address}", _system.Address, address);
-                return _bannedEndpoint;
+                else
+                {
+                    Logger.LogDebug("[{SystemAdress}] Requesting new server side ServerEndpoint for {Address}", _system.Address, address);
+                    endpoint = _serverEndpoints.GetOrAdd(address, v => new ServerEndpoint(_system, _remoteConfig, v, _channelProvider, ServerConnector.Type.ServerSide, RemoteMessageHandler));
+                }
+                return endpoint;
             }
         }
         internal IEndpoint GetOrAddClientEndpoint(string systemId)
         {
-            if (_cancellationTokenSource.IsCancellationRequested || _bannedClientSystemIds.ContainsKey(systemId))
+            if (string.IsNullOrWhiteSpace(systemId) || _cancellationTokenSource.IsCancellationRequested || _bannedClientSystemIds.ContainsKey(systemId))
                 return _bannedEndpoint;
 
-            if (systemId is not null && _clientEndpoints.TryGetValue(systemId, out var endpoint))
+            if (_clientEndpoints.TryGetValue(systemId, out var endpoint))
             {
                 return endpoint;
             }
 
             lock (_synLock)
             {
-                if (systemId is not null && _clientEndpoints.TryGetValue(systemId, out endpoint))
+                if (_clientEndpoints.TryGetValue(systemId, out endpoint))
                 {
                     return endpoint;
                 }
 
                 //still no instance, we can spawn and add it here.
-                if (systemId is not null)
-                {
-                    Logger.LogDebug("[{SystemAdress}] Requesting new ServerSideClientEndpoint for {SystemId}", _system.Address, systemId);
-
-                    return _clientEndpoints.GetOrAdd(systemId, v => new ServerSideClientEndpoint(_system, _remoteConfig, $"{v}"));
-                }
-                Logger.LogWarning("[{SystemAdress}] No endpoint found for {SystemId}", _system.Address, systemId);
-                return _bannedEndpoint;
+                Logger.LogDebug("[{SystemAdress}] Requesting new ServerSideClientEndpoint for {SystemId}", _system.Address, systemId);
+                return _clientEndpoints.GetOrAdd(systemId, v => new ServerSideClientEndpoint(_system, _remoteConfig, $"{v}"));
             }
         }
         internal IEndpoint GetServerEndpoint(string address)
         {
-            if (_cancellationTokenSource.IsCancellationRequested || _bannedAddresses.ContainsKey(address))
+            if (string.IsNullOrWhiteSpace(address) || _cancellationTokenSource.IsCancellationRequested || _bannedAddresses.ContainsKey(address))
                 return _bannedEndpoint;
 
             if (_serverEndpoints.TryGetValue(address, out var endpoint))
@@ -186,7 +171,7 @@ namespace Proto.Remote
         }
         internal IEndpoint GetClientEndpoint(string systemId)
         {
-            if (_cancellationTokenSource.IsCancellationRequested || _bannedClientSystemIds.ContainsKey(systemId))
+            if (string.IsNullOrWhiteSpace(systemId) || _cancellationTokenSource.IsCancellationRequested || _bannedClientSystemIds.ContainsKey(systemId))
                 return _bannedEndpoint;
 
             if (_clientEndpoints.TryGetValue(systemId, out var endpoint))
