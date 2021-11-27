@@ -27,6 +27,9 @@ namespace Proto.OpenTracing
 
         public override void Request(PID target, object message)
             => OpenTracingMethodsDecorators.Request(target, message, _sendSpanSetup, _tracer, () => base.Request(target, message));
+        
+        public override void Request(PID target, object message, PID sender)
+            => OpenTracingMethodsDecorators.Request(target, message, sender, _sendSpanSetup, _tracer, () => base.Request(target, message, sender));
 
         public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
@@ -108,6 +111,28 @@ namespace Proto.OpenTracing
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Request(PID target, object message, PID sender, SpanSetup sendSpanSetup, ITracer tracer, Action request)
+        {
+            using var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Request), message, sendSpanSetup);
+
+            try
+            {
+                ProtoTags.TargetPID.Set(scope.Span, target.ToString());
+
+                if (sender is not null)
+                {
+                    ProtoTags.SenderPID.Set(scope.Span, sender.ToString());
+                }
+                request();
+            }
+            catch (Exception ex)
+            {
+                ex.SetupSpan(scope.Span);
+                throw;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static async Task<T> RequestAsync<T>(PID target, object message, SpanSetup sendSpanSetup, ITracer tracer, Func<Task<T>> requestAsync)
         {
             using var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Request), message, sendSpanSetup);
@@ -146,9 +171,7 @@ namespace Proto.OpenTracing
         {
             var message = envelope.Message;
 
-            var parentSpanCtx = envelope.Header != null
-                ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
-                : null;
+            var parentSpanCtx = tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()));
 
             using var scope = tracer.BuildStartedScope(parentSpanCtx, nameof(Receive), message, receiveSpanSetup);
 

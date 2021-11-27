@@ -18,8 +18,8 @@ namespace Proto.OpenTracing
         ///     Setup open tracing send middleware & decorator.
         /// </summary>
         /// <param name="props">props.</param>
-        /// <param name="sendSpanSetup">provide a way inject send span constumisation according to the message.</param>
-        /// <param name="receiveSpanSetup">provide a way inject receive span constumisation according to the message.</param>
+        /// <param name="sendSpanSetup">provide a way inject send span customization according to the message.</param>
+        /// <param name="receiveSpanSetup">provide a way inject receive span customization according to the message.</param>
         /// <param name="tracer">OpenTracing, if nul : GlobalTracer.Instance will be used.</param>
         /// <returns>props</returns>
         public static Props WithOpenTracing(
@@ -77,7 +77,7 @@ namespace Proto.OpenTracing
         ///     constructor.
         /// </summary>
         /// <param name="props">props.</param>
-        /// <param name="sendSpanSetup">provide a way inject send span constumisation according to the message.</param>
+        /// <param name="sendSpanSetup">provide a way inject send span customization according to the message.</param>
         /// <param name="tracer">OpenTracing, if nul : GlobalTracer.Instance will be used.</param>
         /// <returns>IRootContext</returns>
         public static IRootContext WithOpenTracing(this IRootContext context, SpanSetup sendSpanSetup = null, ITracer tracer = null)

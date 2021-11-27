@@ -5,6 +5,8 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
+
 
 namespace Proto.Remote
 {
@@ -13,12 +15,15 @@ namespace Proto.Remote
         private readonly EndpointManager _endpointManager;
         private readonly PID _pid;
         private readonly string? _systemId;
+        private PID? _endpoint;
+        private long _lastUsedTick;
 
         public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
         {
             _endpointManager = endpointManager;
             _pid = pid;
             pid.TryGetSystemId(system, out _systemId);
+            _lastUsedTick = Stopwatch.GetTimestamp();
         }
 
         protected internal override void SendUserMessage(PID _, object message) => Send(message);
@@ -41,6 +46,11 @@ namespace Proto.Remote
                     endpoint.SendMessage(_pid, msg);
                     break;
             }
+
+            System.Root.Send(_endpoint, message);
+            _lastUsedTick = Stopwatch.GetTimestamp();
         }
+
+        internal long LastUsedTick => _lastUsedTick;
     }
 }
