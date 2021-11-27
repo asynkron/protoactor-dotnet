@@ -74,19 +74,6 @@ namespace Proto.Tests
 
             Assert.Same(p, p2);
         }
-
-        [Fact]
-        public void Given_PIDExistsInClientResolver_GetShouldReturnIt()
-        {
-            var pid = new PID();
-            pid.Address = System.Address;
-            var p = new TestProcess(System);
-            var reg = new ProcessRegistry(System);
-            reg.RegisterClientResolver(x => p);
-
-            var p2 = reg.Get(pid);
-
-            Assert.Same(p, p2);
-        }
+        
     }
 }

@@ -23,3 +23,11 @@ message BinaryMessage {
 
 message Ack {
 }
+
+message SpawnOnMeAndPing {
+	string message=1;
+}
+message SpawnOnMeAndPingResponse {
+	actor.PID pid=1;
+	string message=2;
+}
