@@ -39,6 +39,8 @@ namespace Proto
             return _process;
         }
 
+        internal Process? CurrentRef => _process;
+
         internal void SendUserMessage(ActorSystem system, object message)
         {
             var reff = Ref(system) ?? system.ProcessRegistry.Get(this);

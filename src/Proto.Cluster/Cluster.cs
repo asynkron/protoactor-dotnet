@@ -31,7 +31,7 @@ namespace Proto.Cluster
 
             system.Extensions.Register(this);
             system.Metrics.Register(new ClusterMetrics(system.Metrics));
-            
+
             //register cluster messages
             var serialization = system.Serialization();
             serialization.RegisterFileDescriptor(ClusterContractsReflection.Descriptor);
@@ -53,7 +53,7 @@ namespace Proto.Cluster
         public IClusterContext ClusterContext { get; private set; } = null!;
 
         public Gossiper Gossip { get; }
-        
+
         public ClusterConfig Config { get; }
 
         public ActorSystem System { get; }
@@ -110,7 +110,6 @@ namespace Proto.Cluster
             IdentityLookup = Config.IdentityLookup;
 
             Remote = System.Extensions.GetRequired<IRemote>("Remote module must be configured when using cluster");
-
             await Remote.StartAsync();
 
             Logger.LogInformation("Starting");
@@ -121,6 +120,22 @@ namespace Proto.Cluster
             await IdentityLookup.SetupAsync(this, kinds, client);
             InitIdentityProxy();
             await PubSub.StartAsync();
+            InitPidCacheTimeouts();
+        }
+
+        private void InitPidCacheTimeouts()
+        {
+            if (Config.RemotePidCacheClearInterval > TimeSpan.Zero && Config.RemotePidCacheTimeToLive > TimeSpan.Zero)
+            {
+                _ = Task.Run(async () => {
+                        while (!System.Shutdown.IsCancellationRequested)
+                        {
+                            await Task.Delay(Config.RemotePidCacheClearInterval, System.Shutdown);
+                            PidCache.RemoveIdleRemoteProcessesOlderThan(Config.RemotePidCacheTimeToLive);
+                        }
+                    }, System.Shutdown
+                );
+            }
         }
 
         private void InitClusterKinds()
