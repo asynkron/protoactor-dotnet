@@ -118,6 +118,14 @@ namespace Proto.Remote
                                             try
                                             {
                                                 await responseStream.WriteAsync(message).ConfigureAwait(false);
+                                                if (message.MessageTypeCase == RemoteMessage.MessageTypeOneofCase.MessageBatch)
+                                                {
+                                                    foreach (var env in message.MessageBatch.Envelopes)
+                                                    {
+                                                        endpoint.EnvelopePool.Return(env);
+                                                    }
+                                                    endpoint.BatchPool.Return(message.MessageBatch);
+                                                }
                                             }
                                             catch (Exception)
                                             {

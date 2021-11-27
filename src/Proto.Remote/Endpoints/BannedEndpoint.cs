@@ -6,10 +6,9 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.ObjectPool;
 
 namespace Proto.Remote
 {
@@ -19,6 +18,8 @@ namespace Proto.Remote
         public BannedEndpoint(ActorSystem system) => _system = system;
         public Channel<RemoteMessage> Outgoing { get; } = Channel.CreateUnbounded<RemoteMessage>();
         public ConcurrentStack<RemoteMessage> OutgoingStash { get; } = new();
+        public ObjectPool<MessageEnvelope> EnvelopePool { get; } = ObjectPool.Create<MessageEnvelope>();
+        public ObjectPool<MessageBatch> BatchPool { get; } = ObjectPool.Create(new BatchPoolPolicy());
         public ValueTask DisposeAsync()
         {
             GC.SuppressFinalize(this);

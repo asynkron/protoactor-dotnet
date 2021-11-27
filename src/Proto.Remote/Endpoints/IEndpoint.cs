@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Channels;
+using Microsoft.Extensions.ObjectPool;
 
 namespace Proto.Remote
 {
@@ -15,6 +16,8 @@ namespace Proto.Remote
     {
         Channel<RemoteMessage> Outgoing { get; }
         ConcurrentStack<RemoteMessage> OutgoingStash { get; }
+        ObjectPool<MessageEnvelope> EnvelopePool { get; }
+        ObjectPool<MessageBatch> BatchPool { get; }
         void SendMessage(PID pid, object message);
         void RemoteTerminate(PID target, Terminated terminated);
         void RemoteWatch(PID pid, Watch watch);

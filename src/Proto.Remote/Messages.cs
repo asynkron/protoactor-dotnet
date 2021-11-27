@@ -13,5 +13,16 @@ namespace Proto.Remote
         public override string ToString() => $"EndpointTerminatedEvent: {Address ?? ActorSystemId}";
     }
 
-    public sealed record RemoteDeliver(Proto.MessageHeader Header, object Message, PID Target, PID? Sender);
+    public sealed class RemoteDeliver
+    {
+        public RemoteDeliver()
+        {
+            Message = new();
+            Target = new PID();
+        }
+        public Proto.MessageHeader? Header { get; set; }
+        public object Message { get; set; }
+        public PID Target { get; set; }
+        public PID? Sender { get; set; }
+    }
 }

@@ -9,6 +9,7 @@
     <PackageReference Include="Grpc.Core" Version="2.40.0" />
     <PackageReference Include="Grpc.HealthCheck" Version="2.40.0" />
     <PackageReference Include="Grpc.Tools" Version="2.40.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="6.0.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="3.2.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

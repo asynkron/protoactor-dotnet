@@ -141,6 +141,14 @@ namespace Proto.Remote
                                     {
                                         // _logger.LogInformation($"Sending {message}");
                                         await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
+                                        if (message.MessageTypeCase == RemoteMessage.MessageTypeOneofCase.MessageBatch)
+                                        {
+                                            foreach (var env in message.MessageBatch.Envelopes)
+                                            {
+                                                _endpoint.EnvelopePool.Return(env);
+                                            }
+                                            _endpoint.BatchPool.Return(message.MessageBatch);
+                                        }
                                     }
                                     catch (Exception)
                                     {
