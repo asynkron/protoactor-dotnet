@@ -6,3 +6,7 @@ updates:
     interval: weekly
     time: "04:00"
   open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: CouchbaseNetClient
+    versions:
+    - ">=3.0.0"
