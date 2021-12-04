@@ -4,8 +4,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.IO.Compression;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
+using Grpc.Net.Client;
+using Grpc.Net.Compression;
 using k8s;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -18,7 +21,7 @@ using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using Serilog;
 using Serilog.Events;
 using StackExchange.Redis;
@@ -41,16 +44,24 @@ namespace ClusterExperiment1
                 .WithGossipFanOut(3);
         }
 
-        private static GrpcCoreRemoteConfig GetRemoteConfig()
+        private static GrpcNetRemoteConfig GetRemoteConfig()
         {
             var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
             var port = int.Parse(portStr);
             var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfigBase.Localhost;
             var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
-            var remoteConfig = GrpcCoreRemoteConfig
+            var remoteConfig = GrpcNetRemoteConfig
                 .BindTo(host, port)
                 .WithAdvertisedHost(advertisedHost)
+                // .WithChannelOptions(new GrpcChannelOptions
+                //     {
+                //         CompressionProviders = new[]
+                //         {
+                //             new GzipCompressionProvider(CompressionLevel.Fastest)
+                //         }
+                //     }
+                // )
                 .WithProtoMessages(MessagesReflection.Descriptor)
                 .WithEndpointWriterMaxRetries(2);
             

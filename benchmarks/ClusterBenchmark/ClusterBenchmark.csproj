@@ -11,7 +11,6 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster.Kubernetes\Proto.Cluster.Kubernetes.csproj" />
         <ProjectReference Include="..\..\src\Proto.Remote.GrpcNet\Proto.Remote.GrpcNet.csproj" />
@@ -31,36 +30,6 @@
     <ItemGroup>
         <Protobuf Include="messages.proto" GrpcServices="Server" />
     </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="storage.bson" />
-      <None Remove="sizeStorer.wt" />
-      <None Remove="mongod.lock" />
-      <None Remove="journal\WiredTigerPreplog.0000000002" />
-      <None Remove="journal\WiredTigerPreplog.0000000001" />
-      <None Remove="index-6--4490564912954053049.wt" />
-      <None Remove="index-5--4490564912954053049.wt" />
-      <None Remove="index-3--4490564912954053049.wt" />
-      <None Remove="index-1--4490564912954053049.wt" />
-      <None Remove="diagnostic.data\metrics.interim" />
-      <None Remove="collection-4--4490564912954053049.wt" />
-      <None Remove="collection-2--4490564912954053049.wt" />
-      <None Remove="collection-0--4490564912954053049.wt" />
-      <None Remove="_mdb_catalog.wt" />
-      <None Remove="WiredTigerHS.wt" />
-      <None Remove="WiredTiger.wt" />
-      <None Remove="WiredTiger.turtle" />
-      <None Remove="WiredTiger.lock" />
-      <None Remove="WiredTiger" />
-      <None Remove="index-66--6826860001100435848.wt" />
-      <None Remove="index-6--6826860001100435848.wt" />
-      <None Remove="index-5--6826860001100435848.wt" />
-      <None Remove="index-3--6826860001100435848.wt" />
-      <None Remove="index-1--6826860001100435848.wt" />
-      <None Remove="collection-41--6826860001100435848.wt" />
-      <None Remove="collection-4--6826860001100435848.wt" />
-      <None Remove="collection-2--6826860001100435848.wt" />
-      <None Remove="collection-0--6826860001100435848.wt" />
-    </ItemGroup>
+    
 
 </Project>
