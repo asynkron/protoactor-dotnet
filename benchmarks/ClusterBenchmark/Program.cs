@@ -31,7 +31,7 @@ namespace ClusterExperiment1
 
         public static async Task Main(string[] args)
         {
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+            //AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             //    ThreadPool.SetMinThreads(500, 500);
             Request = new HelloRequest();
             Configuration.SetupLogger(LogLevel.Error);
@@ -39,7 +39,9 @@ namespace ClusterExperiment1
             if (args.Length > 0)
             {
                 // InteractiveOutput = args[0] == "1";
-
+                
+                var l = typeof(Program).Assembly.Location;
+                Console.WriteLine($"Worker running {l}");
                 var worker = await Configuration.SpawnMember();
                 AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
                 Thread.Sleep(Timeout.Infinite);

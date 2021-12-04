@@ -54,14 +54,14 @@ namespace ClusterExperiment1
             var remoteConfig = GrpcNetRemoteConfig
                 .BindTo(host, port)
                 .WithAdvertisedHost(advertisedHost)
-                // .WithChannelOptions(new GrpcChannelOptions
-                //     {
-                //         CompressionProviders = new[]
-                //         {
-                //             new GzipCompressionProvider(CompressionLevel.Fastest)
-                //         }
-                //     }
-                // )
+                .WithChannelOptions(new GrpcChannelOptions
+                    {
+                        CompressionProviders = new[]
+                        {
+                            new GzipCompressionProvider(CompressionLevel.Fastest)
+                        }
+                    }
+                )
                 .WithProtoMessages(MessagesReflection.Descriptor)
                 .WithEndpointWriterMaxRetries(2);
             
@@ -83,7 +83,11 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+        public static IIdentityLookup GetIdentityLookup()
+        {
+            return GetRedisIdentityLookup();
+            //return new PartitionIdentityLookup(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+        }
 
         private static IIdentityLookup GetRedisIdentityLookup()
         {
