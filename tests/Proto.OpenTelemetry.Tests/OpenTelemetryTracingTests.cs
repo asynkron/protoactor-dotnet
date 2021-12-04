@@ -85,7 +85,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         var outerSpan = activities.FirstOrDefault();
         outerSpan.Should().NotBeNull();
         outerSpan!.SpanId.Should().Be(outerSpanId);
-        outerSpan!.OperationName.Should().Be(nameof(Trace));
+        outerSpan.OperationName.Should().Be(nameof(Trace));
         var inner = activities.Last();
         inner.Tags.Should().Contain(new KeyValuePair<string, string?>("inner", "true"));
     }
@@ -106,7 +106,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 
         await action();
 
-        return (activity!.SpanId, activity!.TraceId);
+        return (activity!.SpanId, activity.TraceId);
     }
 
     [Fact]

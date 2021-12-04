@@ -299,7 +299,7 @@ namespace ClusterExperiment1
                     var ctx = cluster.System.Root.CreateBatchContext(batchSize,ct);
                     for (var i = 0; i < batchSize; i++)
                     {
-                        var id = identities![rnd!.Next(0, actorCount)];
+                        var id = identities[rnd!.Next(0, actorCount)];
                         var request = SendRequest(cluster, id, ct, ctx);
 
                         requests.Add(request);

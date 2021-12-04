@@ -209,7 +209,7 @@ namespace Proto.Remote
                 Logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {Message} to {Target} from {Sender}", System.Address, message.GetType().Name, message, target, sender);
             if (sender is not null && sender.TryTranslateToProxyPID(System, Address, out var clientPID))
                 sender = clientPID;
-            var env = new RemoteDeliver(header!, message, target, sender!);
+            var env = new RemoteDeliver(header, message, target, sender!);
             if (CancellationToken.IsCancellationRequested || !_remoteDelivers.Writer.TryWrite(env))
             {
                 Logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {Message} to {Target} from {Sender}", System.Address, message.GetType().Name, message, target, sender);
