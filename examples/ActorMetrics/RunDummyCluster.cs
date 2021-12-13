@@ -13,7 +13,6 @@ using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using Some.Namespace;
-using Ubiquitous.Metrics.Prometheus;
 
 namespace ActorMetrics
 {
@@ -23,7 +22,7 @@ namespace ActorMetrics
         {
             var l = LoggerFactory.Create(x => x.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
-            var config = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
+            var config = ActorSystemConfig.Setup().WithMetrics();
 
             var remoteConfig = GrpcCoreRemoteConfig
                 .BindToLocalhost()
@@ -45,7 +44,7 @@ namespace ActorMetrics
 
             var props = Props.FromProducer(() => new MyActor());
 
-            var config2 = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
+            var config2 = ActorSystemConfig.Setup().WithMetrics();
 
             var remoteConfig2 = GrpcCoreRemoteConfig
                 .BindToLocalhost()

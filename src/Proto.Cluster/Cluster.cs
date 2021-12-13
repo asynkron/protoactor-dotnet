@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,6 +44,14 @@ namespace Proto.Cluster
             PidCache = new PidCache();
             PubSub = new PubSubManager(this);
 
+            if (!System.Metrics.IsNoop)
+            {
+                System.Metrics.Get<ClusterMetrics>().ClusterMembersCount
+                    .AddObserver(() => new[]
+                        {new Measurement<long>(MemberList.GetAllMembers().Length, new("id", System.Id), new("address", System.Address))}
+                    );
+            }
+
             SubscribeToTopologyEvents();
         }
 
@@ -70,10 +79,6 @@ namespace Proto.Cluster
 
         private void SubscribeToTopologyEvents() =>
             System.EventStream.Subscribe<ClusterTopology>(e => {
-                    System.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
-                        new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
-                    );
-
                     foreach (var member in e.Left)
                     {
                         PidCache.RemoveByMember(member);
@@ -143,6 +148,17 @@ namespace Proto.Cluster
             foreach (var clusterKind in Config.ClusterKinds)
             {
                 _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
+            }
+
+            if (!System.Metrics.IsNoop)
+            {
+                System.Metrics.Get<ClusterMetrics>().VirtualActorsCount
+                    .AddObserver(() =>
+                        _clusterKinds.Values
+                            .Select(ck =>
+                                new Measurement<long>(ck.Count, new("id", System.Id), new("address", System.Address), new("clusterkind", ck.Name))
+                            )
+                    );
             }
         }
 

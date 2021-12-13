@@ -106,7 +106,8 @@ namespace Proto.Remote
                             }
                             var typeName = typeNames[envelope.TypeId];
 
-                            if (!System.Metrics.IsNoop) m.Inc(new[] { System.Id, System.Address, typeName });
+                            if (!System.Metrics.IsNoop)
+                                m.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", typeName));
 
                             object message;
 
@@ -337,7 +338,8 @@ namespace Proto.Remote
                     throw;
                 }
 
-                if (!System.Metrics.IsNoop) counter.Inc(new[] { System.Id, System.Address, typeName });
+                if (!System.Metrics.IsNoop)
+                    counter.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", typeName));
 
                 if (!typeNames.TryGetValue(typeName, out var typeId))
                 {

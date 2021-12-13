@@ -1,42 +1,43 @@
-using System.Linq;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using JetBrains.Annotations;
 using Proto.Utils;
-using Ubiquitous.Metrics;
-using Ubiquitous.Metrics.Labels;
-using Ubiquitous.Metrics.NoMetrics;
 
 namespace Proto.Metrics
 {
     [PublicAPI]
     public class ProtoMetrics
     {
+        public const string MeterName = "Proto.Actor";
+
+        internal static Meter Meter = new(MeterName, typeof(ProtoMetrics).Assembly.GetName().Version?.ToString());
+
         internal readonly ActorMetrics InternalActorMetrics;
         public readonly bool IsNoop;
-        private IMetricsProvider[] _configurators;
-        private TypeDictionary<object,ProtoMetrics> _knownMetrics = new(10);
-        private Ubiquitous.Metrics.Metrics _metrics;
+        private TypeDictionary<object, ProtoMetrics> _knownMetrics = new(10);
 
-        public ProtoMetrics(IMetricsProvider[] configurators)
+        public ProtoMetrics(bool recordMetrics)
         {
-            if (configurators.FirstOrDefault() is NoMetricsProvider) IsNoop = true;
-
-            _metrics = Ubiquitous.Metrics.Metrics.CreateUsing(configurators);
-            _configurators = configurators;
             InternalActorMetrics = new ActorMetrics(this);
             Register(InternalActorMetrics);
+            IsNoop = !recordMetrics;
         }
 
         public void Register<T>(T instance) => _knownMetrics.Add<T>(instance!);
 
         public T Get<T>() => (T) _knownMetrics.Get<T>()!;
 
-        public ICountMetric CreateCount(string name, string description, params LabelName[] labelNames)
-            => _metrics.CreateCount(name, description, labelNames);
+        public Counter<T> CreateCounter<T>(string name, string? unit = null, string? description = null)
+            where T : struct
+            => Meter.CreateCounter<T>(name, unit, description);
 
-        public IGaugeMetric CreateGauge(string name, string description, params LabelName[] labelNames)
-            => _metrics.CreateGauge(name, description, labelNames);
+        public Histogram<T> CreateHistogram<T>(string name, string? unit = null, string? description = null)
+            where T : struct
+            => Meter.CreateHistogram<T>(name, unit, description);
 
-        public IHistogramMetric CreateHistogram(string name, string description, params LabelName[] labelNames)
-            => _metrics.CreateHistogram(name, description, labelNames);
+        public ObservableGauge<T> CreateObservableGauge<T>(string name, Func<IEnumerable<Measurement<T>>> observeValues, string? unit = null, string? description = null)
+            where T : struct
+            => Meter.CreateObservableGauge(name, observeValues, unit, description);
     }
 }
