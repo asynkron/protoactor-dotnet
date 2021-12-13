@@ -110,7 +110,7 @@ namespace Proto.Cluster
                     if (!_system.Metrics.IsNoop)
                     {
                         context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Add(
-                            1, new("system", _system.Id), new("address", _system.Address),
+                            1, new("id", _system.Id), new("address", _system.Address),
                             new("clusterkind", clusterIdentity.Kind), new("messagetype", message.GetType().Name)
                         );
                     }
@@ -153,7 +153,7 @@ namespace Proto.Cluster
                     var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidDuration
                         .Observe(
                             async () => await _identityLookup.GetAsync(clusterIdentity, ct),
-                            new("system", _system.Id), new("address", _system.Address), new("clusterkind", clusterIdentity.Kind)
+                            new("id", _system.Id), new("address", _system.Address), new("clusterkind", clusterIdentity.Kind)
                         );
 
                     if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
@@ -224,7 +224,7 @@ namespace Proto.Cluster
                     var elapsed = t.Elapsed;
                     context.System.Metrics.Get<ClusterMetrics>().ClusterRequestDuration
                         .Record(elapsed.TotalSeconds,
-                            new("system", _system.Id), new("address", _system.Address),
+                            new("id", _system.Id), new("address", _system.Address),
                             new("clusterkind", clusterIdentity.Kind), new("messagetype", message.GetType().Name),
                             new("pidsource", source == PidSource.Cache ? "PidCache" : "IIdentityLookup")
                         );
