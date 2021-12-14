@@ -71,7 +71,8 @@ namespace Proto
 
         public override void Respond(object message)
         {
-            if (message.GetType().Namespace!.StartsWith("Proto"))
+            //ignore any built in messages
+            if (_ignoreInfrastructureMessages && message is InfrastructureMesage)
             {
                 base.Respond(message);
                 return;
