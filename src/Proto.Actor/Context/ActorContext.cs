@@ -47,6 +47,8 @@ namespace Proto.Context
             {
                 _metricTags = new KeyValuePair<string, object?>[]
                     {new("id", System.Id), new("address", System.Address), new("actortype", Actor.GetType().Name)};
+
+                ActorMetrics.ActorSpawnCount.Add(1, _metricTags);
             }
         }
 
@@ -459,12 +461,7 @@ namespace Proto.Context
         private IActor IncarnateActor()
         {
             _state = ContextState.Alive;
-            var actor = _props.Producer(System);
-
-            if (!System.Metrics.IsNoop)
-                ActorMetrics.ActorSpawnCount.Add(1, _metricTags);
-
-            return actor;
+            return _props.Producer(System);
         }
 
         private async ValueTask HandleRestartAsync()

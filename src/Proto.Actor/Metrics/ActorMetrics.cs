@@ -19,7 +19,7 @@ namespace Proto.Metrics
         );
 
         public static readonly Histogram<double> ActorMessageReceiveDuration =
-            ProtoMetrics.Meter.CreateHistogram<double>("protoactor_actor_message_receive_duration", "seconds", "Time spent in actor's receive handler"
+            ProtoMetrics.Meter.CreateHistogram<double>("protoactor_actor_messagereceive_duration", "seconds", "Time spent in actor's receive handler"
             );
 
         public static readonly Counter<long> ActorRestartedCount =
@@ -43,7 +43,7 @@ namespace Proto.Metrics
             ProtoMetrics.Meter.CreateCounter<long>("protoactor_future_started_count", description: "Number of started futures");
 
         public static readonly Counter<long> FuturesTimedOutCount =
-            ProtoMetrics.Meter.CreateCounter<long>("protoactor_future_timed_out_count", description: "Number of futures that timed out");
+            ProtoMetrics.Meter.CreateCounter<long>("protoactor_future_timedout_count", description: "Number of futures that timed out");
 
         //Threadpool
         public static readonly Histogram<double> ThreadPoolLatency = ProtoMetrics.Meter.CreateHistogram<double>(

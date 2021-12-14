@@ -36,7 +36,7 @@ namespace Proto.Cluster.Metrics
         static ClusterMetrics()
         {
             ProtoMetrics.Meter.CreateObservableGauge(
-                "protocluster_virtualactor",
+                "protocluster_virtualactors",
                 VirtualActorsCount.Observe,
                 description: "Number of active virtual actors on this node"
             );
