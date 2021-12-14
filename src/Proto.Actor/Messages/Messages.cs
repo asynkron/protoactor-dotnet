@@ -11,7 +11,7 @@ using Proto.Mailbox;
 namespace Proto
 {
     //marker interface for all built in message types
-    public interface InfrastructureMesage
+    public interface InfrastructureMessage
     {
     }
     
@@ -24,7 +24,7 @@ namespace Proto
     {
     }
 
-    public sealed class Restarting : InfrastructureMesage
+    public sealed class Restarting : InfrastructureMessage
     {
         public static readonly Restarting Instance = new();
 
@@ -33,7 +33,7 @@ namespace Proto
         }
     }
 
-    public sealed partial class Touch : IAutoRespond, InfrastructureMesage
+    public sealed partial class Touch : IAutoRespond, InfrastructureMessage
     {
         public object GetAutoResponse(IContext context) => new Touched()
         {
@@ -41,7 +41,7 @@ namespace Proto
         };
     }
 
-    public sealed partial class PoisonPill : IIgnoreDeadLetterLogging, InfrastructureMesage
+    public sealed partial class PoisonPill : IIgnoreDeadLetterLogging, InfrastructureMessage
     {
         public static readonly PoisonPill Instance = new();
     }

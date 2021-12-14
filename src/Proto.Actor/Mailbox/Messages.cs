@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 namespace Proto.Mailbox
 {
-    public interface SystemMessage: InfrastructureMesage
+    public interface SystemMessage: InfrastructureMessage
     {
     }
 

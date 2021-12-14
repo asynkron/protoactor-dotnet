@@ -33,7 +33,7 @@ namespace Proto
             var message = envelope.Message;
 
             //ignore any built in messages
-            if (_ignoreInfrastructureMessages && message is InfrastructureMesage)
+            if (_ignoreInfrastructureMessages && message is InfrastructureMessage)
             {
                 await base.Receive(envelope);
                 return;
@@ -72,7 +72,7 @@ namespace Proto
         public override void Respond(object message)
         {
             //ignore any built in messages
-            if (_ignoreInfrastructureMessages && message is InfrastructureMesage)
+            if (_ignoreInfrastructureMessages && message is InfrastructureMessage)
             {
                 base.Respond(message);
                 return;
