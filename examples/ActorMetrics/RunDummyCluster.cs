@@ -37,6 +37,8 @@ namespace ActorMetrics
             var system = new ActorSystem(config)
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
+            
+            Console.WriteLine($"System 1 Id {system.Id}");
 
             system
                 .Cluster()
@@ -60,6 +62,8 @@ namespace ActorMetrics
             var system2 = new ActorSystem(config2)
                 .WithRemote(remoteConfig2)
                 .WithCluster(clusterConfig2);
+
+            Console.WriteLine($"System 2 Id {system2.Id}");
 
             system2
                 .Cluster()

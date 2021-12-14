@@ -47,7 +47,7 @@ namespace Proto
 
         public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
 
-        public ActorSystemConfig WithMetrics() => this with {RecordMetrics = true};
+        public ActorSystemConfig WithMetrics(bool recordMetrics = true) => this with {RecordMetrics = recordMetrics};
 
         public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
         
