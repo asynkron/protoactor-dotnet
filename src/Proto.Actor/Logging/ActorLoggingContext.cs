@@ -17,9 +17,10 @@ namespace Proto
             this Props props,
             ILogger logger,
             LogLevel logLevel = LogLevel.Debug,
-            LogLevel infrastructureLogLevel = LogLevel.None
+            LogLevel infrastructureLogLevel = LogLevel.None,
+            LogLevel exceptionLogLevel = LogLevel.Error
         ) =>
-            props.WithContextDecorator(ctx => new ActorLoggingContext(ctx, logger, logLevel, infrastructureLogLevel));
+            props.WithContextDecorator(ctx => new ActorLoggingContext(ctx, logger, logLevel, infrastructureLogLevel, exceptionLogLevel));
     }
 
     public class ActorLoggingContext : ActorContextDecorator
@@ -27,17 +28,20 @@ namespace Proto
         private readonly ILogger _logger;
         private readonly LogLevel _logLevel;
         private readonly LogLevel _infrastructureLogLevel;
+        private readonly LogLevel _exceptionLogLevel;
 
         public ActorLoggingContext(
             IContext context,
             ILogger logger,
             LogLevel logLevel = LogLevel.Debug,
-            LogLevel infrastructureLogLevel = LogLevel.None
+            LogLevel infrastructureLogLevel = LogLevel.None,
+            LogLevel exceptionLogLevel = LogLevel.Error
         ) : base(context)
         {
             _logger = logger;
             _logLevel = logLevel;
             _infrastructureLogLevel = infrastructureLogLevel;
+            _exceptionLogLevel = exceptionLogLevel;
         }
 
         public override async Task Receive(MessageEnvelope envelope)
@@ -54,7 +58,7 @@ namespace Proto
             }
             catch (Exception x)
             {
-                _logger.LogError(x, "Actor {Self} {ActorType} failed during message {Message}", Self, ActorType, message);
+                _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed during message {Message}", Self, ActorType, message);
                 throw;
             }
         }
@@ -75,7 +79,7 @@ namespace Proto
             }
             catch (Exception x)
             {
-                _logger.LogError(x, "Actor {Self} {ActorType} failed when spawning child actor {Name}", Self, ActorType, name);
+                _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed when spawning child actor {Name}", Self, ActorType, name);
                 throw;
             }
         }
