@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry.Metrics;
 using Proto.Metrics;
+using Proto.OpenTelemetry;
 
 namespace WebApplication1
 {
@@ -22,13 +23,9 @@ namespace WebApplication1
             services.AddControllers();
             services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "WebApplication1", Version = "v1"}); });
 
-            services.AddOpenTelemetryMetrics(b =>
-                b.AddMeter(ProtoMetrics.MeterName)
-                    .AddView("protoactor_actor_messagereceive_duration", new ExplicitBucketHistogramConfiguration
-                        {
-                            Boundaries = new[] {.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10}
-                        }
-                    )
+            services.AddOpenTelemetryMetrics(b => b
+                    .AddProtoActorInstrumentation()
+                    .AddAspNetCoreInstrumentation()
                     .AddPrometheusExporter(prom => prom.ScrapeResponseCacheDurationMilliseconds = 1000)
             );
             RunDummyCluster.Run();
