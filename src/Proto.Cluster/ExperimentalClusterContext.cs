@@ -131,7 +131,7 @@ namespace Proto.Cluster
                         if (!context.System.Metrics.IsNoop)
                         {
                             var elapsed = t.Elapsed;
-                            context.System.Metrics.Get<ClusterMetrics>().ClusterRequestDuration
+                            ClusterMetrics.ClusterRequestDuration
                                 .Record(elapsed.TotalSeconds,
                                     new("id", _system.Id), new("address", _system.Address),
                                     new("clusterkind", clusterIdentity.Kind), new("messagetype", message.GetType().Name),
@@ -142,7 +142,7 @@ namespace Proto.Cluster
 
                     if (!context.System.Metrics.IsNoop)
                     {
-                        context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Add(
+                        ClusterMetrics.ClusterRequestRetryCount.Add(
                             1, new("id", _system.Id), new("address", _system.Address),
                             new("clusterkind", clusterIdentity.Kind), new("messagetype", message.GetType().Name)
                         );
@@ -195,7 +195,7 @@ namespace Proto.Cluster
             {
                 if (!context.System.Metrics.IsNoop)
                 {
-                    var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidDuration
+                    var pid = await ClusterMetrics.ClusterResolvePidDuration
                         .Observe(
                             async () => await _identityLookup.GetAsync(clusterIdentity, ct),
                             new("id", _system.Id), new("address", _system.Address), new("clusterkind", clusterIdentity.Kind)

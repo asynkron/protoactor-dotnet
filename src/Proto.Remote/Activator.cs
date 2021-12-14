@@ -35,7 +35,7 @@ namespace Proto.Remote
 
                         if (!_system.Metrics.IsNoop)
                         {
-                            context.System.Metrics.Get<RemoteMetrics>().RemoteActorSpawnCount
+                            RemoteMetrics.RemoteActorSpawnCount
                                 .Add(1, new("id", _system.Id), new("address", _system.Address), new("kind", msg.Kind));
                         }
 

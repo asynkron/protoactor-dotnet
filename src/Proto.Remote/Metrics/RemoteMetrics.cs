@@ -8,27 +8,21 @@ using Proto.Metrics;
 
 namespace Proto.Remote.Metrics
 {
-    public class RemoteMetrics
+    public static class RemoteMetrics
     {
-        public readonly Counter<long> RemoteActorSpawnCount;
-        public readonly Counter<long> RemoteDeserializedMessageCount;
+        public static readonly Counter<long> RemoteActorSpawnCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoremote_spawn_count", description: "Number of actors spawned over remote");
 
-        public readonly Counter<long> RemoteEndpointConnectedCount;
-        public readonly Counter<long> RemoteEndpointDisconnectedCount;
+        public static readonly Counter<long> RemoteSerializedMessageCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoremote_message_serialize_count", description: "Number of serialized messages");
 
-        public readonly Counter<long> RemoteSerializedMessageCount;
+        public static readonly Counter<long> RemoteDeserializedMessageCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoremote_message_deserialize_count", description: "Number of deserialized messages");
 
-        public RemoteMetrics(ProtoMetrics metrics)
-        {
-            RemoteSerializedMessageCount =
-                metrics.CreateCounter<long>("protoremote_message_serialize_count", description: "Number of serialized messages");
-            RemoteDeserializedMessageCount =
-                metrics.CreateCounter<long>("protoremote_message_deserialize_count", description: "Number of deserialized messages");
-            RemoteActorSpawnCount = metrics.CreateCounter<long>("protoremote_spawn_count", description: "Number of actors spawned over remote");
-            RemoteEndpointConnectedCount =
-                metrics.CreateCounter<long>("protoremote_endpoint_connected_count", description: "Number of endpoint connects");
-            RemoteEndpointDisconnectedCount =
-                metrics.CreateCounter<long>("protoremote_endpoint_disconnected_count", description: "Number of endpoint disconnects");
-        }
+        public static readonly Counter<long> RemoteEndpointConnectedCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoremote_endpoint_connected_count", description: "Number of endpoint connects");
+
+        public static readonly Counter<long> RemoteEndpointDisconnectedCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoremote_endpoint_disconnected_count", description: "Number of endpoint disconnects");
     }
 }

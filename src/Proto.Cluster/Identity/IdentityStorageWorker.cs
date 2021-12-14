@@ -29,8 +29,6 @@ namespace Proto.Cluster.Identity
         private readonly IIdentityStorage _storage;
         private readonly Dictionary<ClusterIdentity, List<PID>> _waitingRequests = new();
 
-        private IdentityMetrics Metrics => _cluster.System.Metrics.Get<IdentityMetrics>();
-
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
             _shouldThrottle = Throttle.Create(
@@ -172,7 +170,7 @@ namespace Proto.Cluster.Identity
             if (_cluster.System.Metrics.IsNoop)
                 return Inner();
 
-            return Metrics.GetWithGlobalLockDuration.Observe(
+            return IdentityMetrics.GetWithGlobalLockDuration.Observe(
                 Inner,
                 new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
             );
@@ -185,7 +183,7 @@ namespace Proto.Cluster.Identity
             if (_cluster.System.Metrics.IsNoop)
                 return Inner();
 
-            return Metrics.TryAcquireLockDuration.Observe(
+            return IdentityMetrics.TryAcquireLockDuration.Observe(
                 Inner,
                 new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
             );
@@ -206,7 +204,7 @@ namespace Proto.Cluster.Identity
             if (_cluster.System.Metrics.IsNoop)
                 return Inner();
 
-            return Metrics.WaitForActivationDuration
+            return IdentityMetrics.WaitForActivationDuration
                 .Observe(
                     Inner,
                     new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)

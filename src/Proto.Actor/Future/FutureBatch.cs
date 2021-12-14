@@ -18,7 +18,6 @@ namespace Proto.Future
     public sealed class FutureBatchProcess : Process, IDisposable
     {
         private readonly TaskCompletionSource<object>?[] _completionSources;
-        private readonly ActorMetrics? _metrics;
         private readonly CancellationTokenRegistration _cancellation;
         private readonly Action? _onTimeout;
         private int _prevIndex = -1;
@@ -37,9 +36,8 @@ namespace Proto.Future
 
             if (!system.Metrics.IsNoop)
             {
-                _metrics = system.Metrics.Get<ActorMetrics>();
                 _metricTags = new KeyValuePair<string, object?>[] {new("id", System.Id), new("address", System.Address)};
-                _onTimeout = () => _metrics.FuturesTimedOutCount.Add(1, _metricTags);
+                _onTimeout = () => ActorMetrics.FuturesTimedOutCount.Add(1, _metricTags);
             }
             else
             {
@@ -75,7 +73,7 @@ namespace Proto.Future
                 _completionSources[index] = tcs;
 
                 if (!System.Metrics.IsNoop)
-                    _metrics!.FuturesStartedCount.Add(1, _metricTags);
+                    ActorMetrics.FuturesStartedCount.Add(1, _metricTags);
 
                 return new SimpleFutureHandle(Pid.WithRequestId(ToRequestId(index)), tcs, _onTimeout);
             }
@@ -95,7 +93,7 @@ namespace Proto.Future
             finally
             {
                 if(!System.Metrics.IsNoop)
-                    _metrics!.FuturesCompletedCount.Add(1, _metricTags);
+                    ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
             }
         }
 
@@ -117,7 +115,7 @@ namespace Proto.Future
             finally
             {
                 if(!System.Metrics.IsNoop)
-                    _metrics!.FuturesCompletedCount.Add(1, _metricTags);
+                   ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
             }
         }
 

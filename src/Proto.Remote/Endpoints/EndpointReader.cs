@@ -63,7 +63,7 @@ namespace Proto.Remote
 
                 if (!_system.Metrics.IsNoop)
                 {
-                    _system.Metrics.Get<RemoteMetrics>().RemoteEndpointConnectedCount
+                    RemoteMetrics.RemoteEndpointConnectedCount
                         .Add(1, new("id", _system.Id), new("address", _system.Address), new("destinationaddress", context.Peer));
                 }
 
@@ -212,7 +212,7 @@ namespace Proto.Remote
 
                     if (!_system.Metrics.IsNoop)
                     {
-                        _system.Metrics.Get<RemoteMetrics>().RemoteEndpointDisconnectedCount
+                        RemoteMetrics.RemoteEndpointDisconnectedCount
                             .Add(1, new("id", _system.Id), new("address", _system.Address), new("destinationaddress", context.Peer));
                     }
                 }

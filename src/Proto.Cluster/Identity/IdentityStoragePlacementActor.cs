@@ -102,7 +102,7 @@ namespace Proto.Cluster.Identity
 
                     if (!_cluster.System.Metrics.IsNoop)
                     {
-                        context.System.Metrics.Get<ClusterMetrics>().ClusterActorSpawnDuration
+                        ClusterMetrics.ClusterActorSpawnDuration
                             .Record(sw.Elapsed.TotalSeconds,
                                 new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", msg.Kind)
                             );

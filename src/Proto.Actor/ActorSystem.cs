@@ -79,7 +79,7 @@ namespace Proto
                 t => {
                     //collect the latency metrics
                     if(!Metrics.IsNoop)
-                        Metrics.InternalActorMetrics.ThreadPoolLatency.Record(t.TotalSeconds, metricTags);
+                        ActorMetrics.ThreadPoolLatency.Record(t.TotalSeconds, metricTags);
 
                     //does it take longer than 1 sec for a task to start executing?
                     if (t <= Config.ThreadPoolStatsTimeout) return;

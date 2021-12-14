@@ -17,6 +17,8 @@ namespace Proto.Metrics
 
         public void AddObserver(Func<IEnumerable<Measurement<T>>> observer) => _observers = _observers.Add(observer);
 
+        public void RemoveObserver(Func<IEnumerable<Measurement<T>>> observer) => _observers = _observers.Remove(observer);
+
         public IEnumerable<Measurement<T>> Observe() => _observers.SelectMany(o => o());
     }
 }

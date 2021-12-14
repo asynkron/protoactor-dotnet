@@ -24,6 +24,8 @@ namespace Proto.Cluster
     public class Cluster : IActorSystemExtension<Cluster>
     {
         private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
+        private Func<IEnumerable<Measurement<long>>>? _clusterKindObserver;
+        private Func<IEnumerable<Measurement<long>>>? _clusterMembersObserver;
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
@@ -31,7 +33,6 @@ namespace Proto.Cluster
             Config = config;
 
             system.Extensions.Register(this);
-            system.Metrics.Register(new ClusterMetrics(system.Metrics));
 
             //register cluster messages
             var serialization = system.Serialization();
@@ -46,10 +47,9 @@ namespace Proto.Cluster
 
             if (!System.Metrics.IsNoop)
             {
-                System.Metrics.Get<ClusterMetrics>().ClusterMembersCount
-                    .AddObserver(() => new[]
-                        {new Measurement<long>(MemberList.GetAllMembers().Length, new("id", System.Id), new("address", System.Address))}
-                    );
+                _clusterMembersObserver = () => new[]
+                    {new Measurement<long>(MemberList.GetAllMembers().Length, new("id", System.Id), new("address", System.Address))};
+                ClusterMetrics.ClusterMembersCount.AddObserver( _clusterMembersObserver);
             }
 
             SubscribeToTopologyEvents();
@@ -152,13 +152,13 @@ namespace Proto.Cluster
 
             if (!System.Metrics.IsNoop)
             {
-                System.Metrics.Get<ClusterMetrics>().VirtualActorsCount
-                    .AddObserver(() =>
-                        _clusterKinds.Values
-                            .Select(ck =>
-                                new Measurement<long>(ck.Count, new("id", System.Id), new("address", System.Address), new("clusterkind", ck.Name))
-                            )
-                    );
+                _clusterKindObserver = () =>
+                    _clusterKinds.Values
+                        .Select(ck =>
+                            new Measurement<long>(ck.Count, new("id", System.Id), new("address", System.Address), new("clusterkind", ck.Name))
+                        );
+
+                ClusterMetrics.VirtualActorsCount.AddObserver(_clusterKindObserver);
             }
         }
 
@@ -167,6 +167,17 @@ namespace Proto.Cluster
 
         public async Task ShutdownAsync(bool graceful = true)
         {
+            if (_clusterKindObserver != null)
+            {
+                ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
+                _clusterKindObserver = null;
+            }
+            if(_clusterMembersObserver != null)
+            {
+                ClusterMetrics.ClusterMembersCount.RemoveObserver(_clusterMembersObserver);
+                _clusterMembersObserver = null;
+            }
+
             await System.ShutdownAsync();
             Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 

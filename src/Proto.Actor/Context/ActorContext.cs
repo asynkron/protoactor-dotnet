@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Proto.Diagnostics;
 using Proto.Future;
 using Proto.Mailbox;
+using Proto.Metrics;
 
 namespace Proto.Context
 {
@@ -201,7 +202,7 @@ namespace Proto.Context
         public void Stop(PID pid)
         {
             if (!System.Metrics.IsNoop)
-                System.Metrics.InternalActorMetrics.ActorStoppedCount.Add(1, _metricTags);
+                ActorMetrics.ActorStoppedCount.Add(1, _metricTags);
 
             pid.Stop(System);
         }
@@ -234,7 +235,7 @@ namespace Proto.Context
                 );
             }
 
-            System.Metrics.InternalActorMetrics.ActorFailureCount.Add(1, _metricTags);
+            ActorMetrics.ActorFailureCount.Add(1, _metricTags);
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
 
@@ -281,7 +282,7 @@ namespace Proto.Context
             {
                 if (!self.System.Metrics.IsNoop)
                 {
-                    self.System.Metrics.InternalActorMetrics.ActorMailboxLength.Record(
+                    ActorMetrics.ActorMailboxLength.Record(
                         self._mailbox.UserMessageCount,
                         metricTags
                     );
@@ -293,7 +294,7 @@ namespace Proto.Context
 
                 if (!self.System.Metrics.IsNoop && metricTags.Length == 3)
                 {
-                    self.System.Metrics.InternalActorMetrics.ActorMessageReceiveDuration.Record(sw.Elapsed.TotalSeconds,
+                    ActorMetrics.ActorMessageReceiveDuration.Record(sw.Elapsed.TotalSeconds,
                         metricTags[0], metricTags[1], metricTags[2],
                         new("messagetype", MessageEnvelope.UnwrapMessage(msg)?.GetType().Name ?? "{null}")
                     );
@@ -461,7 +462,7 @@ namespace Proto.Context
             var actor = _props.Producer(System);
 
             if (!System.Metrics.IsNoop)
-                System.Metrics.InternalActorMetrics.ActorSpawnCount.Add(1, _metricTags);
+                ActorMetrics.ActorSpawnCount.Add(1, _metricTags);
 
             return actor;
         }
@@ -474,7 +475,7 @@ namespace Proto.Context
             await StopAllChildren();
 
             if (!System.Metrics.IsNoop)
-                System.Metrics.InternalActorMetrics.ActorRestartedCount.Add(1, _metricTags);
+                ActorMetrics.ActorRestartedCount.Add(1, _metricTags);
         }
 
         private ValueTask HandleUnwatch(Unwatch uw)

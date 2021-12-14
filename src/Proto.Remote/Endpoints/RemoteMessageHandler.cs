@@ -47,7 +47,7 @@ namespace Proto.Remote
 
                     var typeNames = batch.TypeNames.ToArray();
 
-                    var m = System.Metrics.Get<RemoteMetrics>().RemoteDeserializedMessageCount;
+                    var m = RemoteMetrics.RemoteDeserializedMessageCount;
 
                     foreach (var envelope in batch.Envelopes)
                     {

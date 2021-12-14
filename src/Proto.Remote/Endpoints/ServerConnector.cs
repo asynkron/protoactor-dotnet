@@ -209,7 +209,7 @@ namespace Proto.Remote
                     await reader.ConfigureAwait(false);
                     
                     if (!_system.Metrics.IsNoop)
-                        _system.Metrics.Get<RemoteMetrics>().RemoteEndpointDisconnectedCount.Add(1, _metricTags);
+                        RemoteMetrics.RemoteEndpointDisconnectedCount.Add(1, _metricTags);
 
                     _logger.LogInformation("[{systemAddress}] Disconnected from {Address}", _system.Address, _address);
                 }

@@ -26,7 +26,6 @@ namespace Proto.Future
         /// </summary>
         private readonly int _maxRequestId;
 
-        private readonly ActorMetrics? _metrics;
         private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
         private readonly Action? _onTimeout;
         private readonly Action? _onStarted;
@@ -42,10 +41,9 @@ namespace Proto.Future
 
             if (!system.Metrics.IsNoop)
             {
-                _metrics = system.Metrics.Get<ActorMetrics>();
                 _metricTags = new KeyValuePair<string, object?>[] {new("id", System.Id), new("address", System.Address)};
-                _onTimeout = () => _metrics.FuturesTimedOutCount.Add(1, _metricTags);
-                _onStarted = () => _metrics.FuturesStartedCount.Add(1, _metricTags);
+                _onTimeout = () => ActorMetrics.FuturesTimedOutCount.Add(1, _metricTags);
+                _onStarted = () => ActorMetrics.FuturesStartedCount.Add(1, _metricTags);
             }
             else
             {
@@ -127,7 +125,7 @@ namespace Proto.Future
                 Interlocked.Increment(ref _completedRequests);
 
                 if (!System.Metrics.IsNoop)
-                    _metrics?.FuturesCompletedCount.Add(1, _metricTags);
+                    ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
 
                 if (Stopping && RequestsInFlight == 0)
                     Stop(Pid);

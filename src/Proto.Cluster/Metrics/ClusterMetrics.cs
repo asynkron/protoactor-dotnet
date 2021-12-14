@@ -8,43 +8,40 @@ using Proto.Metrics;
 
 namespace Proto.Cluster.Metrics
 {
-    public class ClusterMetrics
+    public static class ClusterMetrics
     {
-        public readonly Histogram<double> ClusterActorSpawnDuration;
-        public readonly Histogram<double> ClusterRequestDuration;
-        public readonly Counter<long> ClusterRequestRetryCount;
-        public readonly Histogram<double> ClusterResolvePidDuration;
+        public static readonly Histogram<double> ClusterActorSpawnDuration =
+            ProtoMetrics.Meter.CreateHistogram<double>("protocluster_virtualactor_spawn_duration", unit: "seconds",
+                description: "Time it takes to spawn a virtual actor"
+            );
 
-        public ObservableGaugeWrapper<long> VirtualActorsCount;
-        public ObservableGaugeWrapper<long> ClusterMembersCount;
+        public static readonly Histogram<double> ClusterRequestDuration = ProtoMetrics.Meter.CreateHistogram<double>(
+            "protocluster_virtualactor_requestasync_duration", unit: "seconds",
+            description: "Cluster request duration"
+        );
 
-        public ClusterMetrics(ProtoMetrics metrics)
+        public static readonly Counter<long> ClusterRequestRetryCount = ProtoMetrics.Meter.CreateCounter<long>(
+            "protocluster_virtualactor_requestasync_retry_count",
+            description: "Number of retries after failed cluster requests"
+        );
+
+        public static readonly Histogram<double> ClusterResolvePidDuration =
+            ProtoMetrics.Meter.CreateHistogram<double>("protocluster_resolve_pid_duration", unit: "seconds",
+                description: "Time it takes to resolve a pid"
+            );
+
+        public static readonly ObservableGaugeWrapper<long> VirtualActorsCount = new();
+        public static readonly ObservableGaugeWrapper<long> ClusterMembersCount = new();
+
+        static ClusterMetrics()
         {
-            ClusterActorSpawnDuration =
-                metrics.CreateHistogram<double>("protocluster_virtualactor_spawn_duration", unit: "seconds", description: "Time it takes to spawn a virtual actor");
-
-            ClusterRequestDuration = metrics.CreateHistogram<double>("protocluster_virtualactor_requestasync_duration", unit: "seconds",
-                description: "Cluster request duration"
-            );
-
-            ClusterRequestRetryCount = metrics.CreateCounter<long>("protocluster_virtualactor_requestasync_retry_count",
-                description: "Number of retries after failed cluster requests"
-            );
-
-            ClusterResolvePidDuration =
-                metrics.CreateHistogram<double>("protocluster_resolve_pid_duration", unit: "seconds",
-                    description: "Time it takes to resolve a pid"
-                );
-
-            VirtualActorsCount = new ObservableGaugeWrapper<long>();
-            metrics.CreateObservableGauge(
-                "protocluster_virtualactors",
+            ProtoMetrics.Meter.CreateObservableGauge(
+                "protocluster_virtualactor",
                 VirtualActorsCount.Observe,
                 description: "Number of active virtual actors on this node"
             );
 
-            ClusterMembersCount = new ObservableGaugeWrapper<long>();
-            metrics.CreateObservableGauge(
+            ProtoMetrics.Meter.CreateObservableGauge(
                 "protocluster_members_count",
                 ClusterMembersCount.Observe,
                 description: "Number of cluster members as seen by this node"
