@@ -78,10 +78,15 @@ namespace Proto.Cluster
             while (!ct.IsCancellationRequested)
             {
                 var t = _topologyConsensus.Task;
+                if (t.IsCompleted)
+                    return true;
+                
                 // ReSharper disable once MethodSupportsCancellation
                 await Task.WhenAny(t, Task.Delay(500));
                 if (t.IsCompleted)
-                    return true;                
+                    return true;
+
+                Logger.LogWarning("Did not reach topology consensus, retrying");
             }
 
             return false;
@@ -317,6 +322,8 @@ namespace Proto.Cluster
 
         public Member[] GetAllMembers() => _activeMembers.Members.ToArray();
         public Member[] GetOtherMembers() => _activeMembers.Members.Where(m => m.Id != _system.Id).ToArray();
+        
+        public Member[] GetMembersByKind(string kind) => _activeMembers.Members.Where(m => m.Kinds.Contains(kind)).ToArray();
 
         internal void TrySetTopologyConsensus()
         {

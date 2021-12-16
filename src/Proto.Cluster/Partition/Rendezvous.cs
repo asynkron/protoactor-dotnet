@@ -45,6 +45,30 @@ namespace Proto.Cluster.Partition
 
             return maxNode?.Address ?? "";
         }
+        
+        public string GetOwnerMemberByIdentity(ClusterIdentity ci)
+        {
+            //TODO: memoize
+            var members = _members.Where(m => m.Info.Kinds.Contains(ci.Kind));
+
+            var keyBytes = Encoding.UTF8.GetBytes(ci.Identity);
+
+            uint maxScore = 0;
+            Member? maxNode = null;
+
+            foreach (var member in members)
+            {
+                var hashBytes = member.Hash;
+                var score = RdvHash(hashBytes, keyBytes);
+
+                if (score <= maxScore) continue;
+
+                maxScore = score;
+                maxNode = member.Info;
+            }
+
+            return maxNode?.Address ?? "";
+        }
 
         // ReSharper disable once ParameterTypeCanBeEnumerable.Global
         public void UpdateMembers(IEnumerable<Member> members) => _members = members
