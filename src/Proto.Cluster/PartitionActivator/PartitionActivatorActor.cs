@@ -102,6 +102,8 @@ namespace Proto.Cluster.PartitionActivator
 
                 return Task.CompletedTask;
             }
+            
+            
 
             if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
             {
