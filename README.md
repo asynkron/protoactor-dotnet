@@ -80,6 +80,12 @@ You should see the output `Hello Alex`.
 
 [https://github.com/asynkron/realtimemap-dotnet](https://github.com/asynkron/realtimemap-dotnet)
 
+## Sponsors
+
+Our awesome sponsors:
+
+<!-- sponsors --><!-- sponsors -->
+
 ## Contributors
 
 <a href="https://github.com/AsynkronIT/protoactor-dotnet/graphs/contributors">
@@ -87,7 +93,3 @@ You should see the output `Hello Alex`.
 </a>
 
 Made with [contributors-img](https://contributors-img.firebaseapp.com).
-
-## Sponsors
-
-<!-- sponsors --><!-- sponsors -->
