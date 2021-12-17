@@ -15,3 +15,9 @@ jobs:
         with:
           token: ${{ secrets.PAT }}
           file: "README.md"
+
+      - name: Deploy to GitHub Pages 🚀
+        uses: JamesIves/github-pages-deploy-action@4.1.1
+        with:
+          branch: dev
+          folder: "."
