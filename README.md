@@ -84,7 +84,7 @@ You should see the output `Hello Alex`.
 
 Our awesome sponsors:
 
-<!-- sponsors --><!-- sponsors -->
+<!-- sponsors --><a href="https://github.com/jhston02"><img src="https://github.com/jhston02.png" width="60px" alt="" /></a><a href="https://github.com/schafer14"><img src="https://github.com/schafer14.png" width="60px" alt="" /></a><!-- sponsors -->
 
 ## Contributors
 
