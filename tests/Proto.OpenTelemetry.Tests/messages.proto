@@ -1,0 +1,11 @@
+syntax = "proto3";
+package opentelemetrytest;
+option csharp_namespace = "Proto.OpenTelemetry.Tests.Messages";
+
+message Ping {
+  string message = 1;
+}
+
+message Pong {
+  string message = 1;
+}
