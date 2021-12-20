@@ -34,7 +34,8 @@ namespace Proto
         public PID? Sender { get; }
         public MessageHeader Header { get; }
 
-        public override string ToString() => $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
+        public override string ToString()
+            => $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
     }
 
     public class DeadLetterProcess : Process
@@ -46,7 +47,12 @@ namespace Proto
         protected internal override void SendUserMessage(PID pid, object message)
         {
             if (System.Metrics.Enabled)
-                ActorMetrics.DeadletterCount.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", message.GetType().Name));
+            {
+                ActorMetrics.DeadletterCount.Add(1,
+                    new("id", System.Id), new("address", System.Address),
+                    new("messagetype", MessageEnvelope.UnwrapMessage(message)?.GetType().Name ?? "<null>")
+                );
+            }
 
             var (msg, sender, header) = MessageEnvelope.Unwrap(message);
             System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender, header));
