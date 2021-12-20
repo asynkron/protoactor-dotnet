@@ -52,7 +52,7 @@ namespace Proto
             {
                 ActorMetrics.DeadletterCount.Add(1,
                     new("id", System.Id), new("address", System.Address),
-                    new("messagetype", msg)
+                    new("messagetype", msg.GetType().Name)
                 );
             }
 
