@@ -46,15 +46,16 @@ namespace Proto
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
+            var (msg, sender, header) = MessageEnvelope.Unwrap(message);
+
             if (System.Metrics.Enabled)
             {
                 ActorMetrics.DeadletterCount.Add(1,
                     new("id", System.Id), new("address", System.Address),
-                    new("messagetype", MessageEnvelope.UnwrapMessage(message)?.GetType().Name ?? "<null>")
+                    new("messagetype", msg)
                 );
             }
 
-            var (msg, sender, header) = MessageEnvelope.Unwrap(message);
             System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender, header));
             if (sender is null) return;
 
