@@ -45,7 +45,7 @@ namespace Proto
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
-            if (!System.Metrics.IsNoop)
+            if (System.Metrics.Enabled)
                 ActorMetrics.DeadletterCount.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", message.GetType().Name));
 
             var (msg, sender, header) = MessageEnvelope.Unwrap(message);
@@ -60,7 +60,7 @@ namespace Proto
 
         protected internal override void SendSystemMessage(PID pid, object message)
         {
-            if (!System.Metrics.IsNoop)
+            if (System.Metrics.Enabled)
                 ActorMetrics.DeadletterCount.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", message.GetType().Name));
 
             System.EventStream.Publish(new DeadLetterEvent(pid, message, null, null));

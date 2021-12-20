@@ -16,7 +16,7 @@ namespace Proto
     {
         public TimeSpan DeadLetterThrottleInterval { get; init; }
 
-        public bool RecordMetrics { get; init; }
+        public bool MetricsEnabled { get; init; }
         public int DeadLetterThrottleCount { get; init; }
 
         public bool DeadLetterRequestLogging { get; set; } = true;
@@ -47,7 +47,7 @@ namespace Proto
 
         public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
 
-        public ActorSystemConfig WithMetrics(bool recordMetrics = true) => this with {RecordMetrics = recordMetrics};
+        public ActorSystemConfig WithMetrics(bool enabled = true) => this with {MetricsEnabled = enabled};
 
         public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
         

@@ -10,8 +10,8 @@ namespace Proto.Metrics
 
         public static Meter Meter = new(MeterName, typeof(ProtoMetrics).Assembly.GetName().Version?.ToString());
 
-        public readonly bool IsNoop;
+        public readonly bool Enabled;
 
-        public ProtoMetrics(bool recordMetrics) => IsNoop = !recordMetrics;
+        public ProtoMetrics(bool enabled) => Enabled = enabled;
     }
 }

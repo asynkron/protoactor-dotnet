@@ -111,7 +111,7 @@ namespace Proto.Remote
 
                         var typeName = typeNames[envelope.TypeId];
 
-                        if (!System.Metrics.IsNoop)
+                        if (System.Metrics.Enabled)
                             RemoteMetrics.RemoteDeserializedMessageCount.Add(1,
                                 new("id", System.Id),
                                 new("address", System.Address),
@@ -365,7 +365,7 @@ namespace Proto.Remote
                     throw;
                 }
 
-                if (!System.Metrics.IsNoop)
+                if (System.Metrics.Enabled)
                     RemoteMetrics.RemoteSerializedMessageCount.Add(1,
                         new("id", System.Id),
                         new("address", System.Address),

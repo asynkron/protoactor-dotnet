@@ -39,7 +39,7 @@ namespace Proto.Future
 
             Pid = pid;
 
-            if (!system.Metrics.IsNoop)
+            if (system.Metrics.Enabled)
             {
                 _metricTags = new KeyValuePair<string, object?>[] {new("id", System.Id), new("address", System.Address)};
                 _onTimeout = () => ActorMetrics.FuturesTimedOutCount.Add(1, _metricTags);
@@ -124,7 +124,7 @@ namespace Proto.Future
 
                 Interlocked.Increment(ref _completedRequests);
 
-                if (!System.Metrics.IsNoop)
+                if (System.Metrics.Enabled)
                     ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
 
                 if (Stopping && RequestsInFlight == 0)

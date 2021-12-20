@@ -34,7 +34,7 @@ namespace Proto.Future
 
             _completionSources = ArrayPool<TaskCompletionSource<object>>.Shared.Rent(size);
 
-            if (!system.Metrics.IsNoop)
+            if (system.Metrics.Enabled)
             {
                 _metricTags = new KeyValuePair<string, object?>[] {new("id", System.Id), new("address", System.Address)};
                 _onTimeout = () => ActorMetrics.FuturesTimedOutCount.Add(1, _metricTags);
@@ -72,7 +72,7 @@ namespace Proto.Future
                 var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
                 _completionSources[index] = tcs;
 
-                if (!System.Metrics.IsNoop)
+                if (System.Metrics.Enabled)
                     ActorMetrics.FuturesStartedCount.Add(1, _metricTags);
 
                 return new SimpleFutureHandle(Pid.WithRequestId(ToRequestId(index)), tcs, _onTimeout);
@@ -92,7 +92,7 @@ namespace Proto.Future
             }
             finally
             {
-                if(!System.Metrics.IsNoop)
+                if(System.Metrics.Enabled)
                     ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
             }
         }
@@ -114,7 +114,7 @@ namespace Proto.Future
             }
             finally
             {
-                if(!System.Metrics.IsNoop)
+                if(System.Metrics.Enabled)
                    ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
             }
         }

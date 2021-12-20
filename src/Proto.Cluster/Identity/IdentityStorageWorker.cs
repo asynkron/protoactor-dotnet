@@ -167,7 +167,7 @@ namespace Proto.Cluster.Identity
                 return result;
             }
 
-            if (_cluster.System.Metrics.IsNoop)
+            if (!_cluster.System.Metrics.Enabled)
                 return Inner();
 
             return IdentityMetrics.GetWithGlobalLockDuration.Observe(
@@ -180,7 +180,7 @@ namespace Proto.Cluster.Identity
         {
             Task<SpawnLock?> Inner() => _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
 
-            if (_cluster.System.Metrics.IsNoop)
+            if (!_cluster.System.Metrics.Enabled)
                 return Inner();
 
             return IdentityMetrics.TryAcquireLockDuration.Observe(
@@ -201,7 +201,7 @@ namespace Proto.Cluster.Identity
                 return res;
             }
 
-            if (_cluster.System.Metrics.IsNoop)
+            if (!_cluster.System.Metrics.Enabled)
                 return Inner();
 
             return IdentityMetrics.WaitForActivationDuration

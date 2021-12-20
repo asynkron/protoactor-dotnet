@@ -33,7 +33,7 @@ namespace Proto.Remote
                     {
                         var pid = _system.Root.SpawnNamed(props, name);
 
-                        if (!_system.Metrics.IsNoop)
+                        if (_system.Metrics.Enabled)
                         {
                             RemoteMetrics.RemoteActorSpawnCount
                                 .Add(1, new("id", _system.Id), new("address", _system.Address), new("kind", msg.Kind));

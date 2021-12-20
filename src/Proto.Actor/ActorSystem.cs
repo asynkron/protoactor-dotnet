@@ -37,7 +37,7 @@ namespace Proto
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
             EventStream = new EventStream(this);
-            Metrics = new ProtoMetrics(config.RecordMetrics);
+            Metrics = new ProtoMetrics(config.MetricsEnabled);
             ProcessRegistry.TryAdd("eventstream", new EventStreamProcess(this));
             Extensions = new ActorSystemExtensions(this);
             DeferredFuture = new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
@@ -78,7 +78,7 @@ namespace Proto
             _ = ThreadPoolStats.Run(TimeSpan.FromSeconds(5),
                 t => {
                     //collect the latency metrics
-                    if(!Metrics.IsNoop)
+                    if(Metrics.Enabled)
                         ActorMetrics.ThreadPoolLatency.Record(t.TotalSeconds, metricTags);
 
                     //does it take longer than 1 sec for a task to start executing?

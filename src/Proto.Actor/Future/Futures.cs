@@ -43,7 +43,7 @@ namespace Proto.Future
 
         internal FutureProcess(ActorSystem system) : base(system)
         {
-            if (!system.Metrics.IsNoop)
+            if (system.Metrics.Enabled)
             {
                 _metricTags = new KeyValuePair<string, object?>[] {new("id", System.Id), new("address", System.Address)};
                 ActorMetrics.FuturesStartedCount.Add(1, _metricTags);
@@ -79,7 +79,7 @@ namespace Proto.Future
             }
             catch
             {
-                if (!System.Metrics.IsNoop)
+                if (System.Metrics.Enabled)
                     ActorMetrics.FuturesTimedOutCount.Add(1, _metricTags);
 
                 Stop(Pid);
@@ -95,7 +95,7 @@ namespace Proto.Future
             }
             finally
             {
-                if(!System.Metrics.IsNoop)
+                if(System.Metrics.Enabled)
                     ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
 
                 Stop(Pid);
@@ -112,7 +112,7 @@ namespace Proto.Future
 
             _tcs.TrySetResult(default!);
 
-            if (!System.Metrics.IsNoop)
+            if (System.Metrics.Enabled)
                 ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
 
             Stop(pid);

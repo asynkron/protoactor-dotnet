@@ -43,7 +43,7 @@ namespace Proto.Context
 
             Actor = IncarnateActor();
 
-            if (!System.Metrics.IsNoop)
+            if (System.Metrics.Enabled)
             {
                 _metricTags = new KeyValuePair<string, object?>[]
                     {new("id", System.Id), new("address", System.Address), new("actortype", Actor.GetType().Name)};
@@ -203,7 +203,7 @@ namespace Proto.Context
 
         public void Stop(PID pid)
         {
-            if (!System.Metrics.IsNoop)
+            if (System.Metrics.Enabled)
                 ActorMetrics.ActorStoppedCount.Add(1, _metricTags);
 
             pid.Stop(System);
@@ -275,14 +275,14 @@ namespace Proto.Context
 
         public ValueTask InvokeUserMessageAsync(object msg)
         {
-            if (System.Metrics.IsNoop) return InternalInvokeUserMessageAsync(msg);
+            if (!System.Metrics.Enabled) return InternalInvokeUserMessageAsync(msg);
 
             return Await(this, msg, _metricTags);
 
             //static, don't create a closure
             static async ValueTask Await(ActorContext self, object msg, KeyValuePair<string, object?>[] metricTags)
             {
-                if (!self.System.Metrics.IsNoop)
+                if (self.System.Metrics.Enabled)
                 {
                     ActorMetrics.ActorMailboxLength.Record(
                         self._mailbox.UserMessageCount,
@@ -294,7 +294,7 @@ namespace Proto.Context
                 await self.InternalInvokeUserMessageAsync(msg);
                 sw.Stop();
 
-                if (!self.System.Metrics.IsNoop && metricTags.Length == 3)
+                if (self.System.Metrics.Enabled && metricTags.Length == 3)
                 {
                     ActorMetrics.ActorMessageReceiveDuration.Record(sw.Elapsed.TotalSeconds,
                         metricTags[0], metricTags[1], metricTags[2],
@@ -471,7 +471,7 @@ namespace Proto.Context
             await InvokeUserMessageAsync(Restarting.Instance);
             await StopAllChildren();
 
-            if (!System.Metrics.IsNoop)
+            if (System.Metrics.Enabled)
                 ActorMetrics.ActorRestartedCount.Add(1, _metricTags);
         }
 

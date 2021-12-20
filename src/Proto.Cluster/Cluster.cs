@@ -45,7 +45,7 @@ namespace Proto.Cluster
             PidCache = new PidCache();
             PubSub = new PubSubManager(this);
 
-            if (!System.Metrics.IsNoop)
+            if (System.Metrics.Enabled)
             {
                 _clusterMembersObserver = () => new[]
                     {new Measurement<long>(MemberList.GetAllMembers().Length, new("id", System.Id), new("address", System.Address))};
@@ -150,7 +150,7 @@ namespace Proto.Cluster
                 _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
             }
 
-            if (!System.Metrics.IsNoop)
+            if (System.Metrics.Enabled)
             {
                 _clusterKindObserver = () =>
                     _clusterKinds.Values

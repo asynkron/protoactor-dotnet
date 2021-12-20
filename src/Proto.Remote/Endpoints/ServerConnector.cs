@@ -57,7 +57,7 @@ namespace Proto.Remote
             _withinTimeSpan = remoteConfig.EndpointWriterOptions.RetryTimeSpan;
             _backoff = remoteConfig.EndpointWriterOptions.RetryBackOff;
             _runner = Task.Run(() => RunAsync());
-            if (!_system.Metrics.IsNoop)
+            if (_system.Metrics.Enabled)
                 _metricTags = new KeyValuePair<string, object?>[] {new("id", _system.Id), new("address", _system.Address)};
         }
         public async Task RunAsync()
@@ -208,7 +208,7 @@ namespace Proto.Remote
                     await call.RequestStream.CompleteAsync().ConfigureAwait(false);
                     await reader.ConfigureAwait(false);
                     
-                    if (!_system.Metrics.IsNoop)
+                    if (_system.Metrics.Enabled)
                         RemoteMetrics.RemoteEndpointDisconnectedCount.Add(1, _metricTags);
 
                     _logger.LogInformation("[{systemAddress}] Disconnected from {Address}", _system.Address, _address);

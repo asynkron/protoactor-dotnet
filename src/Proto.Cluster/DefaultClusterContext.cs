@@ -107,7 +107,7 @@ namespace Proto.Cluster
                             break;
                     }
 
-                    if (!_system.Metrics.IsNoop)
+                    if (_system.Metrics.Enabled)
                     {
                         ClusterMetrics.ClusterRequestRetryCount.Add(
                             1, new("id", _system.Id), new("address", _system.Address),
@@ -148,7 +148,7 @@ namespace Proto.Cluster
         {
             try
             {
-                if (!context.System.Metrics.IsNoop)
+                if (context.System.Metrics.Enabled)
                 {
                     var pid = await ClusterMetrics.ClusterResolvePidDuration
                         .Observe(
@@ -219,7 +219,7 @@ namespace Proto.Cluster
             }
             finally
             {
-                if (!context.System.Metrics.IsNoop)
+                if (context.System.Metrics.Enabled)
                 {
                     var elapsed = t.Elapsed;
                     ClusterMetrics.ClusterRequestDuration

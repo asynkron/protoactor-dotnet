@@ -100,7 +100,7 @@ namespace Proto.Cluster.Identity
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
                     sw.Stop();
 
-                    if (!_cluster.System.Metrics.IsNoop)
+                    if (_cluster.System.Metrics.Enabled)
                     {
                         ClusterMetrics.ClusterActorSpawnDuration
                             .Record(sw.Elapsed.TotalSeconds,

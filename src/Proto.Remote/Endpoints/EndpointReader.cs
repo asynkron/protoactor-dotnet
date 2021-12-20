@@ -61,7 +61,7 @@ namespace Proto.Remote
                 string? address = null;
                 string systemId;
 
-                if (!_system.Metrics.IsNoop)
+                if (_system.Metrics.Enabled)
                 {
                     RemoteMetrics.RemoteEndpointConnectedCount
                         .Add(1, new("id", _system.Id), new("address", _system.Address), new("destinationaddress", context.Peer));
@@ -210,7 +210,7 @@ namespace Proto.Remote
                     if (address is null && systemId is not null)
                         _system.EventStream.Publish(new EndpointTerminatedEvent(false, null, systemId));
 
-                    if (!_system.Metrics.IsNoop)
+                    if (_system.Metrics.Enabled)
                     {
                         RemoteMetrics.RemoteEndpointDisconnectedCount
                             .Add(1, new("id", _system.Id), new("address", _system.Address), new("destinationaddress", context.Peer));
