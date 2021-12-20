@@ -23,7 +23,6 @@ namespace Proto.Remote.GrpcNet
         {
             System = system;
             _config = config;
-            system.Metrics.Register(new RemoteMetrics(system.Metrics));
             _endpointManager = endpointManager;
             _logger = logger;
             System.Extensions.Register(this);

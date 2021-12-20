@@ -3,7 +3,6 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -22,6 +21,7 @@ public sealed class ActivityFixture : IAsyncLifetime
 
     public ActivityFixture()
     {
+        global::OpenTelemetry.Sdk.CreateTracerProviderBuilder(); // static init method will replace No-op trace propagator 
         _testListener = new ActivityListener()
         {
             ShouldListenTo = source => source.Name.StartsWith("Proto.Actor"),
@@ -29,9 +29,10 @@ public sealed class ActivityFixture : IAsyncLifetime
             ActivityStopped = activity => _activities.Add(activity)
         };
         ActivitySource.AddActivityListener(_testListener);
+        
     }
 
-    private static ActivitySamplingResult SampleAll(ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData;
+    private static ActivitySamplingResult SampleAll(ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllDataAndRecorded;
 
     public IEnumerable<Activity> GetActivitiesByTraceId(ActivityTraceId traceId) => _activities.Where(it => it.TraceId == traceId);
 

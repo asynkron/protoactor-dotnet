@@ -92,9 +92,7 @@ namespace Proto.Cluster
                 var grainInit = new ClusterInit(identity!, cluster);
 #pragma warning restore 618
                 var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-                var count = clusterKind.Inc();
-                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
-                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterKind.Name});
+                clusterKind.Inc();
                 await baseReceive(ctx, grainInitEnvelope);
             }
 
@@ -104,10 +102,8 @@ namespace Proto.Cluster
                 MessageEnvelope stopEnvelope
             )
             {
-                var count = clusterKind.Dec();
+                clusterKind.Dec();
                 var cluster = ctx.System.Cluster();
-                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
-                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterKind.Name});
                 var identity = ctx.Get<ClusterIdentity>();
 
                 if (identity is not null)

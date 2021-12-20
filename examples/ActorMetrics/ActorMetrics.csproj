@@ -10,15 +10,16 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="prometheus-net.AspNetCore" Version="5.0.1" />
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus" Version="1.2.0-rc1" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc8" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc8" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.2" />
-        <PackageReference Include="Ubiquitous.Metrics" Version="0.4.0" />
-        <PackageReference Include="Ubiquitous.Metrics.Prometheus" Version="0.4.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
       <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+      <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
       <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
     </ItemGroup>
 

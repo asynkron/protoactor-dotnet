@@ -5,7 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using Prometheus;
+using OpenTelemetry.Metrics;
+using Proto.Metrics;
+using Proto.OpenTelemetry;
 
 namespace WebApplication1
 {
@@ -21,6 +23,11 @@ namespace WebApplication1
             services.AddControllers();
             services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "WebApplication1", Version = "v1"}); });
 
+            services.AddOpenTelemetryMetrics(b => b
+                    .AddProtoActorInstrumentation()
+                    .AddAspNetCoreInstrumentation()
+                    .AddPrometheusExporter(prom => prom.ScrapeResponseCacheDurationMilliseconds = 1000)
+            );
             RunDummyCluster.Run();
         }
 
@@ -40,11 +47,9 @@ namespace WebApplication1
 
             app.UseAuthorization();
 
-            app.UseEndpoints(endpoints => {
-                    endpoints.MapControllers();
-                    endpoints.MapMetrics();
-                }
-            );
+            app.UseOpenTelemetryPrometheusScrapingEndpoint();
+
+            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
 }
