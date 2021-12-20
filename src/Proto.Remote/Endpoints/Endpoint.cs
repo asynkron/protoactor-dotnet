@@ -323,17 +323,12 @@ namespace Proto.Remote
 
                 var sender = rd.Sender;
 
-                if (sender != null && !senders.TryGetValue(sender, out var senderId))
+                var senderId = 0;
+                if (sender != null && !senders.TryGetValue(sender, out senderId))
                 {
-                    senderId = senders[sender] = senders.Count;
+                    senderId = senders[sender] = senders.Count+1;
                     senderList.Add(sender);
                 }
-                else
-                {
-                    senderId = -1;
-                }
-
-                senderId++;
 
                 var message = rd.Message;
                 //if the message can be translated to a serialization representation, we do this here
