@@ -5,8 +5,11 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Diagnostics;
+using System.Threading;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Ubiquitous.Metrics;
+using Ubiquitous.Metrics.NoMetrics;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -16,7 +19,7 @@ namespace Proto
     {
         public TimeSpan DeadLetterThrottleInterval { get; init; }
 
-        public bool MetricsEnabled { get; init; }
+        public IMetricsProvider[] MetricsProviders { get; init; } = {new NoMetricsProvider()};
         public int DeadLetterThrottleCount { get; init; }
 
         public bool DeadLetterRequestLogging { get; set; } = true;
@@ -47,7 +50,7 @@ namespace Proto
 
         public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
 
-        public ActorSystemConfig WithMetrics(bool enabled = true) => this with {MetricsEnabled = enabled};
+        public ActorSystemConfig WithMetricsProviders(params IMetricsProvider[] providers) => this with {MetricsProviders = providers};
 
         public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
         

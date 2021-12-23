@@ -15,7 +15,6 @@ using Microsoft.Extensions.Logging;
 using Proto.Diagnostics;
 using Proto.Future;
 using Proto.Mailbox;
-using Proto.Metrics;
 
 namespace Proto.Context
 {
@@ -28,7 +27,6 @@ namespace Proto.Context
         private ActorContextExtras? _extras;
         private object? _messageOrEnvelope;
         private ContextState _state;
-        private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
 
         public ActorContext(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)
         {
@@ -42,14 +40,6 @@ namespace Proto.Context
             Self = self;
 
             Actor = IncarnateActor();
-
-            if (System.Metrics.Enabled)
-            {
-                _metricTags = new KeyValuePair<string, object?>[]
-                    {new("id", System.Id), new("address", System.Address), new("actortype", Actor.GetType().Name)};
-
-                ActorMetrics.ActorSpawnCount.Add(1, _metricTags);
-            }
         }
 
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
@@ -203,8 +193,8 @@ namespace Proto.Context
 
         public void Stop(PID pid)
         {
-            if (System.Metrics.Enabled)
-                ActorMetrics.ActorStoppedCount.Add(1, _metricTags);
+            if (!System.Metrics.IsNoop)
+                System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(new[] {System.Id, System.Address, Actor.GetType().Name});
 
             pid.Stop(System);
         }
@@ -237,7 +227,7 @@ namespace Proto.Context
                 );
             }
 
-            ActorMetrics.ActorFailureCount.Add(1, _metricTags);
+            System.Metrics.InternalActorMetrics.ActorFailureCount.Inc(new[] {System.Id, System.Address, Actor.GetType().Name});
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
 
@@ -275,32 +265,23 @@ namespace Proto.Context
 
         public ValueTask InvokeUserMessageAsync(object msg)
         {
-            if (!System.Metrics.Enabled) return InternalInvokeUserMessageAsync(msg);
+            if (System.Metrics.IsNoop) return InternalInvokeUserMessageAsync(msg);
 
-            return Await(this, msg, _metricTags);
+            return Await(this, msg);
 
             //static, don't create a closure
-            static async ValueTask Await(ActorContext self, object msg, KeyValuePair<string, object?>[] metricTags)
+            static async ValueTask Await(ActorContext self, object msg)
             {
-                if (self.System.Metrics.Enabled)
-                {
-                    ActorMetrics.ActorMailboxLength.Record(
-                        self._mailbox.UserMessageCount,
-                        metricTags
-                    );
-                }
+                self.System.Metrics.InternalActorMetrics.ActorMailboxLength.Set(self._mailbox.UserMessageCount,
+                    new[] {self.System.Id, self.System.Address, self.Actor.GetType().Name}
+                );
 
                 var sw = Stopwatch.StartNew();
                 await self.InternalInvokeUserMessageAsync(msg);
                 sw.Stop();
-
-                if (self.System.Metrics.Enabled && metricTags.Length == 3)
-                {
-                    ActorMetrics.ActorMessageReceiveDuration.Record(sw.Elapsed.TotalSeconds,
-                        metricTags[0], metricTags[1], metricTags[2],
-                        new("messagetype", MessageEnvelope.UnwrapMessage(msg)?.GetType().Name ?? "{null}")
-                    );
-                }
+                self.System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(sw,
+                    new[] {self.System.Id, self.System.Address, self.Actor.GetType().Name, MessageEnvelope.UnwrapMessage(msg)?.GetType().Name ?? "{null}"}
+                );
             }
         }
 
@@ -461,7 +442,12 @@ namespace Proto.Context
         private IActor IncarnateActor()
         {
             _state = ContextState.Alive;
-            return _props.Producer(System);
+            var actor = _props.Producer(System);
+
+            if (!System.Metrics.IsNoop)
+                System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(new[] {System.Id, System.Address, actor.GetType().Name});
+
+            return actor;
         }
 
         private async ValueTask HandleRestartAsync()
@@ -471,8 +457,8 @@ namespace Proto.Context
             await InvokeUserMessageAsync(Restarting.Instance);
             await StopAllChildren();
 
-            if (System.Metrics.Enabled)
-                ActorMetrics.ActorRestartedCount.Add(1, _metricTags);
+            if (!System.Metrics.IsNoop)
+                System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[] {System.Id, System.Address, Actor.GetType().Name});
         }
 
         private ValueTask HandleUnwatch(Unwatch uw)

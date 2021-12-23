@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -37,7 +36,7 @@ namespace Proto
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
             EventStream = new EventStream(this);
-            Metrics = new ProtoMetrics(config.MetricsEnabled);
+            Metrics = new ProtoMetrics(config.MetricsProviders);
             ProcessRegistry.TryAdd("eventstream", new EventStreamProcess(this));
             Extensions = new ActorSystemExtensions(this);
             DeferredFuture = new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
@@ -72,14 +71,11 @@ namespace Proto
 
         private void RunThreadPoolStats()
         {
-            var metricTags = new KeyValuePair<string, object?>[]{ new("id", Id), new("address", Address)};
-
             var logger = Log.CreateLogger(nameof(ThreadPoolStats));
             _ = ThreadPoolStats.Run(TimeSpan.FromSeconds(5),
                 t => {
                     //collect the latency metrics
-                    if(Metrics.Enabled)
-                        ActorMetrics.ThreadPoolLatency.Record(t.TotalSeconds, metricTags);
+                    Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, new[] { Id, Address });
 
                     //does it take longer than 1 sec for a task to start executing?
                     if (t <= Config.ThreadPoolStatsTimeout) return;

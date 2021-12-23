@@ -34,6 +34,7 @@ namespace Proto.Cluster.Tests
         public async Task PurgesPidCacheOnNullResponse()
         {
             var system = new ActorSystem();
+            system.Metrics.Register(new ClusterMetrics(system.Metrics));
             var props = Props.FromProducer(() => new EchoActor());
             var deadPid = system.Root.SpawnNamed(props, "stopped");
             var alivePid = system.Root.SpawnNamed(props, "alive");
@@ -45,7 +46,7 @@ namespace Proto.Cluster.Tests
             var logger = Log.CreateLogger("dummylog");
             var clusterIdentity = new ClusterIdentity {Identity = "identity", Kind = "kind"};
             pidCache.TryAdd(clusterIdentity, deadPid);
-            var requestAsyncStrategy = new DefaultClusterContext(system, dummyIdentityLookup, pidCache, new ClusterContextConfig(), system.Shutdown);
+            var requestAsyncStrategy = new DefaultClusterContext(dummyIdentityLookup, pidCache, new ClusterContextConfig(), system.Shutdown);
 
             var res = await requestAsyncStrategy.RequestAsync<Pong>(clusterIdentity, new Ping {Message = "msg"}, system.Root,
                 new CancellationTokenSource(6000).Token

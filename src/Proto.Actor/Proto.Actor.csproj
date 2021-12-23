@@ -18,8 +18,8 @@
     </PackageReference>
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0" />
     <PackageReference Include="System.Threading.Channels" Version="5.0.0" />
+    <PackageReference Include="Ubiquitous.Metrics" Version="0.4.0" />
   </ItemGroup>
 
   <ItemGroup>

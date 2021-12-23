@@ -66,7 +66,7 @@ namespace Proto.Cluster
         public TimeSpan RemotePidCacheClearInterval { get; set; }
         
         public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
-            c => new DefaultClusterContext(c.System, c.IdentityLookup, c.PidCache, c.Config.ToClusterContextConfig(), c.System.Shutdown);
+            c => new DefaultClusterContext(c.IdentityLookup, c.PidCache, c.Config.ToClusterContextConfig(), c.System.Shutdown);
 
         public ClusterConfig WithTimeout(TimeSpan timeSpan) =>
             this with {TimeoutTimespan = timeSpan};

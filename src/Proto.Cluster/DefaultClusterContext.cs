@@ -22,28 +22,18 @@ namespace Proto.Cluster
         private readonly PidCache _pidCache;
         private readonly ShouldThrottle _requestLogThrottle;
         private readonly TaskClock _clock;
-        private readonly ActorSystem _system;
-
         private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
 
-        public DefaultClusterContext(
-            ActorSystem system,
-            IIdentityLookup identityLookup,
-            PidCache pidCache,
-            ClusterContextConfig config,
-            CancellationToken killSwitch
-        )
+        public DefaultClusterContext(IIdentityLookup identityLookup, PidCache pidCache, ClusterContextConfig config, CancellationToken killSwitch)
         {
             _identityLookup = identityLookup;
             _pidCache = pidCache;
-            _system = system;
 
             _requestLogThrottle = Throttle.Create(
                 config.MaxNumberOfEventsInRequestLogThrottlePeriod,
                 config.RequestLogThrottlePeriod,
                 i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
             );
-
             _clock = new TaskClock(config.ActorRequestTimeout, TimeSpan.FromSeconds(1), killSwitch);
             _clock.Start();
         }
@@ -71,7 +61,7 @@ namespace Proto.Cluster
                         source = PidSource.Lookup;
                         pid = await GetPidFromLookup(clusterIdentity, context, ct);
                     }
-
+                    
                     if (context.System.Shutdown.IsCancellationRequested) return default;
 
                     if (pid is null)
@@ -107,11 +97,10 @@ namespace Proto.Cluster
                             break;
                     }
 
-                    if (_system.Metrics.Enabled)
+                    if (!context.System.Metrics.IsNoop)
                     {
-                        ClusterMetrics.ClusterRequestRetryCount.Add(
-                            1, new("id", _system.Id), new("address", _system.Address),
-                            new("clusterkind", clusterIdentity.Kind), new("messagetype", message.GetType().Name)
+                        context.System.Metrics.Get<ClusterMetrics>().ClusterRequestRetryCount.Inc(new[]
+                            {context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name}
                         );
                     }
                 }
@@ -148,12 +137,11 @@ namespace Proto.Cluster
         {
             try
             {
-                if (context.System.Metrics.Enabled)
+                if (!context.System.Metrics.IsNoop)
                 {
-                    var pid = await ClusterMetrics.ClusterResolvePidDuration
-                        .Observe(
-                            async () => await _identityLookup.GetAsync(clusterIdentity, ct),
-                            new("id", _system.Id), new("address", _system.Address), new("clusterkind", clusterIdentity.Kind)
+                    var pid = await context.System.Metrics.Get<ClusterMetrics>().ClusterResolvePidHistogram
+                        .Observe(async () => await _identityLookup.GetAsync(clusterIdentity, ct), context.System.Id, context.System.Address,
+                            clusterIdentity.Kind
                         );
 
                     if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
@@ -219,14 +207,15 @@ namespace Proto.Cluster
             }
             finally
             {
-                if (context.System.Metrics.Enabled)
+                if (!context.System.Metrics.IsNoop)
                 {
                     var elapsed = t.Elapsed;
-                    ClusterMetrics.ClusterRequestDuration
-                        .Record(elapsed.TotalSeconds,
-                            new("id", _system.Id), new("address", _system.Address),
-                            new("clusterkind", clusterIdentity.Kind), new("messagetype", message.GetType().Name),
-                            new("pidsource", source == PidSource.Cache ? "PidCache" : "IIdentityLookup")
+                    context.System.Metrics.Get<ClusterMetrics>().ClusterRequestHistogram
+                        .Observe(elapsed, new[]
+                            {
+                                context.System.Id, context.System.Address, clusterIdentity.Kind, message.GetType().Name,
+                                source == PidSource.Cache ? "PidCache" : "IIdentityLookup"
+                            }
                         );
                 }
             }
@@ -243,11 +232,10 @@ namespace Proto.Cluster
 
             return pid;
         }
-
+        
         private static (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
         {
             var message = MessageEnvelope.UnwrapMessage(result);
-
             switch (message)
             {
                 case DeadLetterResponse:

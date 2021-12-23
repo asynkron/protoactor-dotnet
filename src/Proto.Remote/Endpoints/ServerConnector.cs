@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,8 +36,6 @@ namespace Proto.Remote
         private readonly TimeSpan? _withinTimeSpan;
         private readonly Task _runner;
         private readonly CancellationTokenSource _cts = new();
-        private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
-        
         public async Task Stop()
         {
             _cts.Cancel();
@@ -57,8 +54,6 @@ namespace Proto.Remote
             _withinTimeSpan = remoteConfig.EndpointWriterOptions.RetryTimeSpan;
             _backoff = remoteConfig.EndpointWriterOptions.RetryBackOff;
             _runner = Task.Run(() => RunAsync());
-            if (_system.Metrics.Enabled)
-                _metricTags = new KeyValuePair<string, object?>[] {new("id", _system.Id), new("address", _system.Address)};
         }
         public async Task RunAsync()
         {
@@ -207,9 +202,7 @@ namespace Proto.Remote
                     cancellationTokenSource.Cancel();
                     await call.RequestStream.CompleteAsync().ConfigureAwait(false);
                     await reader.ConfigureAwait(false);
-                    
-                    if (_system.Metrics.Enabled)
-                        RemoteMetrics.RemoteEndpointDisconnectedCount.Add(1, _metricTags);
+                    _system.Metrics.Get<RemoteMetrics>().RemoteEndpointDisconnectedCount.Inc(new[] { _system.Id, _system.Address });
 
                     _logger.LogInformation("[{systemAddress}] Disconnected from {Address}", _system.Address, _address);
                 }

@@ -9,6 +9,7 @@ namespace Proto.Cluster
 {
     public record ActivatedClusterKind
     {
+        
         private int _count;
 
         internal ActivatedClusterKind(string name, Props props, IMemberStrategy? strategy)
@@ -23,9 +24,6 @@ namespace Proto.Cluster
         public IMemberStrategy? Strategy { get; }
 
         internal int Inc() => Interlocked.Increment(ref _count);
-
         internal int Dec() => Interlocked.Decrement(ref _count);
-
-        internal int Count => _count;
     }
 }

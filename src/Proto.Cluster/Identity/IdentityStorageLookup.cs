@@ -35,6 +35,8 @@ namespace Proto.Cluster.Identity
             _isClient = isClient;
             await Storage.Init();
 
+            cluster.System.Metrics.Register(new IdentityMetrics(cluster.System.Metrics));
+
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
             _worker = _system.Root.Spawn(workerProps);
 

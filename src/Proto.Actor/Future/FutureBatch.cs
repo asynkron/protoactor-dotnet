@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.Metrics;
@@ -18,10 +17,11 @@ namespace Proto.Future
     public sealed class FutureBatchProcess : Process, IDisposable
     {
         private readonly TaskCompletionSource<object>?[] _completionSources;
+        private readonly ActorMetrics? _metrics;
         private readonly CancellationTokenRegistration _cancellation;
         private readonly Action? _onTimeout;
         private int _prevIndex = -1;
-        private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
+        private readonly string[]? _metricLabels;
 
         public FutureBatchProcess(ActorSystem system, int size, CancellationToken ct) : base(system)
         {
@@ -34,10 +34,11 @@ namespace Proto.Future
 
             _completionSources = ArrayPool<TaskCompletionSource<object>>.Shared.Rent(size);
 
-            if (system.Metrics.Enabled)
+            if (!system.Metrics.IsNoop)
             {
-                _metricTags = new KeyValuePair<string, object?>[] {new("id", System.Id), new("address", System.Address)};
-                _onTimeout = () => ActorMetrics.FuturesTimedOutCount.Add(1, _metricTags);
+                _metrics = system.Metrics.Get<ActorMetrics>();
+                _metricLabels = new[] {System.Id, System.Address};
+                _onTimeout = () => _metrics.FuturesTimedOutCount.Inc(_metricLabels);
             }
             else
             {
@@ -50,8 +51,8 @@ namespace Proto.Future
                         foreach (var tcs in _completionSources)
                         {
                             if (tcs?.TrySetException(
-                                    new TimeoutException("Request didn't receive any Response within the expected time.")
-                                ) == true)
+                                new TimeoutException("Request didn't receive any Response within the expected time.")
+                            ) == true)
                             {
                                 _onTimeout?.Invoke();
                             }
@@ -71,10 +72,7 @@ namespace Proto.Future
             {
                 var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
                 _completionSources[index] = tcs;
-
-                if (System.Metrics.Enabled)
-                    ActorMetrics.FuturesStartedCount.Add(1, _metricTags);
-
+                _metrics?.FuturesStartedCount.Inc(_metricLabels);
                 return new SimpleFutureHandle(Pid.WithRequestId(ToRequestId(index)), tcs, _onTimeout);
             }
 
@@ -92,8 +90,7 @@ namespace Proto.Future
             }
             finally
             {
-                if(System.Metrics.Enabled)
-                    ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
+                _metrics?.FuturesCompletedCount.Inc(_metricLabels);
             }
         }
 
@@ -114,8 +111,7 @@ namespace Proto.Future
             }
             finally
             {
-                if(System.Metrics.Enabled)
-                   ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
+                _metrics?.FuturesCompletedCount.Inc(_metricLabels);
             }
         }
 
@@ -169,7 +165,7 @@ namespace Proto.Future
                     {
                         return await Tcs.Task;
                     }
-
+                    
                     await using (cancellationToken.Register(() => Tcs.TrySetCanceled()))
                     {
                         return await Tcs.Task;
