@@ -14,6 +14,7 @@ using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
 using Proto.Cluster.PubSub;
+using Proto.Cluster.Singleton;
 using Proto.Extensions;
 using Proto.Remote;
 
@@ -42,11 +43,14 @@ namespace Proto.Cluster
             Gossip = new Gossiper(this);
             PidCache = new PidCache();
             PubSub = new PubSubManager(this);
+            Singleton = new SingletonManager(this);
 
             SubscribeToTopologyEvents();
         }
 
         public PubSubManager PubSub { get; }
+        
+        public SingletonManager Singleton { get; }
 
         public static ILogger Logger { get; } = Log.CreateLogger<Cluster>();
 
