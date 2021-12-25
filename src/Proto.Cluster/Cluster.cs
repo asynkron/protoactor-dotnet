@@ -93,6 +93,7 @@ namespace Proto.Cluster
             await BeginStartAsync(false);
             //gossiper must be started whenever any topology events starts flowing
             await Gossip.StartAsync();
+            MemberList.InitializeTopologyConsensus();
             await Provider.StartMemberAsync(this);
             Logger.LogInformation("Started as cluster member");
             await MemberList.Started;
