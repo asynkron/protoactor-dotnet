@@ -51,3 +51,11 @@ message AggregatorResult{
   int32 sequence_key_count = 3;
   int32 sender_key_count = 4;
 }
+
+message SomeGossipState{
+  string key = 1;
+}
+
+message SomeTopologyGossipState{
+  uint64 topology_hash = 1;
+}
