@@ -15,11 +15,6 @@ namespace Proto.Cluster.Gossip
         Task<(bool consensus, T value)> TryGetConsensus(CancellationToken ct);
 
         Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Clear any current consensus to prevent stale reads
-        /// </summary>
-        public void TryResetConsensus();
     }
 
     internal class GossipConsensusHandle<T> : IConsensusHandle<T>
