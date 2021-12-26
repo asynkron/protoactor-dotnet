@@ -6,12 +6,14 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Utils;
 
 namespace Proto.Cluster.Gossip
 {
     public interface IConsensusHandle<T> : IDisposable
     {
         Task<(bool consensus, T value)> TryGetConsensus(CancellationToken ct);
+
         Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken);
 
         /// <summary>
@@ -48,7 +50,6 @@ namespace Proto.Cluster.Gossip
             {
                 var taskCompletionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
                 Interlocked.CompareExchange(ref _consensus, taskCompletionSource, current);
-                
             }
         }
 
@@ -65,13 +66,9 @@ namespace Proto.Cluster.Gossip
 
             return (false, default);
         }
-        
-        public async Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken)
-        {
-            var t = _consensus.Task;
-            await Task.WhenAny(t, Task.Delay(maxWait, cancellationToken)).ConfigureAwait(false);
-            return t.IsCompleted ? (true, t.Result) : (false, default);
-        }
+
+        public Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken)
+            => _consensus.Task.WaitUpTo(maxWait, cancellationToken);
 
         public void Dispose() => _deregister();
     }
