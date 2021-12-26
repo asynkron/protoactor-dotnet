@@ -48,6 +48,8 @@ namespace Proto.Cluster.Tests
             await using var clusterFixture = new InMemoryClusterFixture();
             await clusterFixture.InitializeAsync().ConfigureAwait(false);
 
+            await Task.Delay(TimeSpan.FromSeconds(1)); // Tolerate slow CI servers
+            
             var (consensus, initialTopologyHash) =
                 await clusterFixture.Members.First().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
             consensus.Should().BeTrue();
@@ -62,13 +64,13 @@ namespace Proto.Cluster.Tests
 
             await SetTopologyGossipStateAsync(fixtureMembers, initialTopologyHash);
 
-            var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(3000), CancellationTokens.FromSeconds(1));
+            var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromSeconds(10), CancellationTokens.FromSeconds(1));
 
             afterSettingMatchingState.consensus.Should().BeTrue("After assigning the matching topology hash, there should be consensus");
             afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
             await clusterFixture.SpawnNode();
-            await Task.Delay(1000); // Allow topology state to propagate
+            await Task.Delay(2000); // Allow topology state to propagate
 
             var afterChangingTopology =
                 await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), CancellationTokens.FromSeconds(1));
