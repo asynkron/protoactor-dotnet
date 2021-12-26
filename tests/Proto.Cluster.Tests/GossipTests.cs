@@ -100,18 +100,18 @@ namespace Proto.Cluster.Tests
             // Sets a now inconsistent state on the first node
             firstMember.Gossip.SetState(GossipStateKey, new SomeGossipState {Key = otherValue});
 
-            var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(500));
+            var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(3000));
 
             afterSettingDifferingState.Should()
                 .BeEquivalentTo((false, (string) null), "We should be able to read our writes, and locally we do not have consensus");
 
-            await Task.Delay(300);
+            await Task.Delay(1000);
             await ShouldBeNotHaveConsensus(consensusChecks);
         }
 
         private static async Task ShouldBeInConsensusAboutValue(List<IConsensusHandle<string>> consensusChecks, string initialValue)
         {
-            var results = await Task.WhenAll(consensusChecks.Select(it => it.TryGetConsensus(CancellationTokens.FromSeconds(1))))
+            var results = await Task.WhenAll(consensusChecks.Select(it => it.TryGetConsensus(CancellationTokens.FromSeconds(2))))
                 .ConfigureAwait(false);
 
             foreach (var (consensus, consensusValue) in results)
