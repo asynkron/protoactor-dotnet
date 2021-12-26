@@ -62,16 +62,16 @@ namespace Proto.Cluster.Tests
 
             SetTopologyGossipState(fixtureMembers, initialTopologyHash);
 
-            var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), CancellationTokens.FromSeconds(1));
+            var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(3000), CancellationTokens.FromSeconds(1));
 
             afterSettingMatchingState.consensus.Should().BeTrue("After assigning the matching topology hash, there should be consensus");
             afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
             await clusterFixture.SpawnNode();
-            await Task.Delay(300); // Allow topology state to propagate
+            await Task.Delay(1000); // Allow topology state to propagate
 
             var afterChangingTopology =
-                await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(200), CancellationTokens.FromSeconds(1));
+                await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), CancellationTokens.FromSeconds(1));
 
             afterChangingTopology.consensus.Should().BeFalse("The state does no longer match the current topology");
         }
