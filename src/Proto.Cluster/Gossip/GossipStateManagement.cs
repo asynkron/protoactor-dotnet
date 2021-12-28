@@ -100,6 +100,7 @@ namespace Proto.Cluster.Gossip
             return sequenceNo;
         }
 
+        
         public static (ImmutableDictionary<string, long> pendingOffsets, GossipState state) FilterGossipStateForMember(
             GossipState state,
             ImmutableDictionary<string, long> offsets,
@@ -143,9 +144,8 @@ namespace Proto.Cluster.Gossip
                 if (newMemberState.Values.Count > 0)
                 {
                     newState.Members.Add(memberId, newMemberState);
+                    pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
                 }
-
-                pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
             }
 
             //make sure to clone to make it a separate copy, avoid race conditions on mutate
@@ -166,7 +166,7 @@ namespace Proto.Cluster.Gossip
             string myId,
             ImmutableHashSet<string> members,
             string valueKey,
-            Func<T, TV> extractValue    
+            Func<T, TV> extractValue
         ) where T : IMessage, new()
         {
             var logger = ctx?.Logger()?.BeginMethodScope();

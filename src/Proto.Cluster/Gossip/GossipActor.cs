@@ -91,23 +91,45 @@ namespace Proto.Cluster.Gossip
             var logger = context.Logger()?.BeginScope<GossipActor>();
             logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
-            var remoteState = gossipRequest.State;
-            var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState, out var updatedKeys);
+            ReceiveState(context, gossipRequest.State);
+            var senderMember = TryGetSenderMember(context);
 
-            if (updates.Count > 0)
+            if (senderMember is null || !TryGetStateForMember(senderMember, out var pendingOffsets, out var stateForMember))
             {
-                foreach (var update in updates)
-                {
-                    context.System.EventStream.Publish(update);
-                }
-
-                _state = newState;
-                CheckConsensus(context, updatedKeys);
+                // Nothing to send, do not provide sender or state payload
+                context.Respond(new GossipResponse());
+                return Task.CompletedTask;
             }
 
-            //Ack, we got it
-            context.Respond(new GossipResponse());
+            context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
+            {
+                State = stateForMember
+            }, task => ReenterAfterResponseAck(context, task, pendingOffsets), context.CancellationToken);
+
             return Task.CompletedTask;
+        }
+
+        private Member? TryGetSenderMember(IContext context)
+        {
+            var senderAddress = context.Sender?.Address;
+            if (senderAddress is null) return default;
+
+            return Array.Find(_otherMembers, member => member.Address.Equals(senderAddress, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void ReceiveState(IContext context, GossipState remoteState)
+        {
+            var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState, out var updatedKeys);
+
+            if (updates.Count <= 0) return;
+
+            foreach (var update in updates)
+            {
+                context.System.EventStream.Publish(update);
+            }
+
+            _state = newState;
+            CheckConsensus(context, updatedKeys);
         }
 
         private void CheckConsensus(IContext context, string updatedKey)
@@ -193,45 +215,52 @@ namespace Proto.Cluster.Gossip
         private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger)
         {
             var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
-            var (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
-
-            //if we dont have any state to send, don't send it...
-            if (pendingOffsets == _committedOffsets)
-            {
-                return;
-            }
+            if (!TryGetStateForMember(member, out var pendingOffsets, out var stateForMember)) return;
 
             logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
             Logger.LogDebug("Sending GossipRequest to {MemberId}", member.Id);
 
             //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
-            var t = context.RequestAsync<GossipResponse>(pid, new GossipRequest
+            
+            // This will return a GossipResponse, but since we need could need to get the sender, we do not unpack it from the MessageEnvelope
+            var t = context.RequestAsync<MessageEnvelope>(pid, new GossipRequest
                 {
                     State = stateForMember,
                 }, CancellationTokens.WithTimeout(_gossipRequestTimeout)
             );
 
-            context.ReenterAfter(t, async task => await GossipReenter(context, task, pendingOffsets));
+            context.ReenterAfter(t,  task => GossipReenterAfterSend(context, task, pendingOffsets));
         }
 
-        private async Task GossipReenter(IContext context, Task<GossipResponse> task, ImmutableDictionary<string, long> pendingOffsets)
+        private bool TryGetStateForMember(Member member, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember)
+        {
+            (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
+
+            //if we dont have any state to send, don't send it...
+            return pendingOffsets != _committedOffsets;
+        }
+
+        private async Task GossipReenterAfterSend(IContext context, Task<MessageEnvelope> task, ImmutableDictionary<string, long> pendingOffsets)
         {
             var logger = context.Logger();
 
             try
             {
                 await task;
+                var envelope = task.Result;
 
-                foreach (var (key, sequenceNumber) in pendingOffsets)
+                if (envelope.Message is GossipResponse response)
                 {
-                    //TODO: this needs to be improved with filter state on sender side, and then Ack from here
-                    //update our state with the data from the remote node
-                    //GossipStateManagement.MergeState(_state, response.State, out var newState);
-                    //_state = newState;
+                    CommitPendingOffsets(pendingOffsets);
 
-                    if (!_committedOffsets.ContainsKey(key) || _committedOffsets[key] < pendingOffsets[key])
+                    if (response.State is not null)
                     {
-                        _committedOffsets = _committedOffsets.SetItem(key, sequenceNumber);
+                        ReceiveState(context, response.State!);
+
+                        if (envelope.Sender is not null)
+                        {
+                            context.Send(envelope.Sender, new GossipResponseAck());
+                        }
                     }
                 }
             }
@@ -251,6 +280,50 @@ namespace Proto.Cluster.Gossip
             {
                 logger?.LogError(x, "OnSendGossipState failed");
                 Logger.LogError(x, "OnSendGossipState failed");
+            }
+        }
+        
+        private async Task ReenterAfterResponseAck(IContext context, Task<GossipResponseAck> task, ImmutableDictionary<string, long> pendingOffsets)
+        {
+            var logger = context.Logger();
+
+            try
+            {
+                await task;
+                CommitPendingOffsets(pendingOffsets);
+            }
+            catch (DeadLetterException)
+            {
+                logger?.LogWarning("DeadLetter");
+            }
+            catch (OperationCanceledException)
+            {
+                logger?.LogWarning("Timeout");
+            }
+            catch (TimeoutException)
+            {
+                logger?.LogWarning("Timeout");
+            }
+            catch (Exception x)
+            {
+                logger?.LogError(x, "OnSendGossipState failed");
+                Logger.LogError(x, "OnSendGossipState failed");
+            }
+        }
+
+        private void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets)
+        {
+            foreach (var (key, sequenceNumber) in pendingOffsets)
+            {
+                //TODO: this needs to be improved with filter state on sender side, and then Ack from here
+                //update our state with the data from the remote node
+                //GossipStateManagement.MergeState(_state, response.State, out var newState);
+                //_state = newState;
+
+                if (!_committedOffsets.ContainsKey(key) || _committedOffsets[key] < pendingOffsets[key])
+                {
+                    _committedOffsets = _committedOffsets.SetItem(key, sequenceNumber);
+                }
             }
         }
 

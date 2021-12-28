@@ -48,8 +48,6 @@ namespace Proto.Cluster.Tests
             await using var clusterFixture = new InMemoryClusterFixture();
             await clusterFixture.InitializeAsync().ConfigureAwait(false);
 
-            await Task.Delay(TimeSpan.FromSeconds(1)); // Tolerate slow CI servers
-            
             var (consensus, initialTopologyHash) =
                 await clusterFixture.Members.First().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
             consensus.Should().BeTrue();
@@ -102,7 +100,7 @@ namespace Proto.Cluster.Tests
             // Sets a now inconsistent state on the first node
             await firstMember.Gossip.SetStateAsync(GossipStateKey, new SomeGossipState {Key = otherValue});
 
-            var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(3000));
+            var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(2000));
 
             afterSettingDifferingState.Should()
                 .BeEquivalentTo((false, (string) null), "We should be able to read our writes, and locally we do not have consensus");
