@@ -45,24 +45,25 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task CompositeConsensusWorks()
         {
+            var timeout = CancellationTokens.FromSeconds(20);
             await using var clusterFixture = new InMemoryClusterFixture();
             await clusterFixture.InitializeAsync().ConfigureAwait(false);
 
             var (consensus, initialTopologyHash) =
-                await clusterFixture.Members.First().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
+                await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
             consensus.Should().BeTrue();
 
             var fixtureMembers = clusterFixture.Members;
             var consensusChecks = fixtureMembers.Select(CreateCompositeConsensusCheck).ToList();
 
             var firstNodeCheck = consensusChecks[0];
-            var notConsensus = await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(200), CancellationTokens.FromSeconds(1));
+            var notConsensus = await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(200), timeout);
 
             notConsensus.consensus.Should().BeFalse("We have not set the correct topology hash in the state yet");
 
             await SetTopologyGossipStateAsync(fixtureMembers, initialTopologyHash);
 
-            var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromSeconds(10), CancellationTokens.FromSeconds(1));
+            var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromSeconds(10), timeout);
 
             afterSettingMatchingState.consensus.Should().BeTrue("After assigning the matching topology hash, there should be consensus");
             afterSettingMatchingState.value.Should().Be(initialTopologyHash);
@@ -71,7 +72,7 @@ namespace Proto.Cluster.Tests
             await Task.Delay(2000); // Allow topology state to propagate
 
             var afterChangingTopology =
-                await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), CancellationTokens.FromSeconds(1));
+                await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout);
 
             afterChangingTopology.consensus.Should().BeFalse("The state does no longer match the current topology");
         }
