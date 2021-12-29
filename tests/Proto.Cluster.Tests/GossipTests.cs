@@ -49,6 +49,8 @@ namespace Proto.Cluster.Tests
             await using var clusterFixture = new InMemoryClusterFixture();
             await clusterFixture.InitializeAsync().ConfigureAwait(false);
 
+            await Task.Delay(1000);
+            
             var (consensus, initialTopologyHash) =
                 await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
             consensus.Should().BeTrue();
