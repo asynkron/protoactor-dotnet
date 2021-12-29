@@ -63,7 +63,7 @@ namespace Proto.Cluster.Tests
 
             await SetTopologyGossipStateAsync(fixtureMembers, initialTopologyHash);
 
-            var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromSeconds(10), timeout);
+            var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromSeconds(20), timeout);
 
             afterSettingMatchingState.consensus.Should().BeTrue("After assigning the matching topology hash, there should be consensus");
             afterSettingMatchingState.value.Should().Be(initialTopologyHash);
