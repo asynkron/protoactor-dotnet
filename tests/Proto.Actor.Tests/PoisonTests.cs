@@ -6,6 +6,7 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Proto.Utils;
 using Xunit;
 
 namespace Proto.Tests
@@ -24,13 +25,12 @@ namespace Proto.Tests
         {
             var system = new ActorSystem();
             var deadPid = PID.FromAddress(system.Address, "nowhere");
-            var timeout = Task.Delay(TimeSpan.FromSeconds(10));
 
             var poisonTask = system.Root.PoisonAsync(deadPid);
 
-            await Task.WhenAny(timeout, poisonTask);
+            var completed = await poisonTask.WaitUpTo(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
 
-            poisonTask.IsCompleted.Should().BeTrue("Or we did not get a response when poisoning a missing pid");
+            completed.Should().BeTrue("Or we did not get a response when poisoning a missing pid");
         }
 
         [Fact]
@@ -41,13 +41,12 @@ namespace Proto.Tests
             var pid = system.Root.Spawn(EchoProps);
 
             const string message = "hello";
-            (await system.Root.RequestAsync<string>(pid, message)).Should().Be(message);
+            (await system.Root.RequestAsync<string>(pid, message).ConfigureAwait(false)).Should().Be(message);
 
-            var timeout = Task.Delay(TimeSpan.FromSeconds(10));
             var poisonTask = system.Root.PoisonAsync(pid);
-            await Task.WhenAny(timeout, poisonTask);
+            var completed = await poisonTask.WaitUpTo(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
 
-            poisonTask.IsCompleted.Should().BeTrue("Or we did not get a response when poisoning a live pid");
+            completed.Should().BeTrue("Or we did not get a response when poisoning a live pid");
 
             system.Root.Invoking(ctx => ctx.RequestAsync<string>(pid, message)).Should().ThrowExactly<DeadLetterException>();
         }

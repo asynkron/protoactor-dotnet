@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Gossip;
+using Proto.Utils;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -33,14 +34,11 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task TopologiesShouldHaveConsensus()
         {
-            var timeout = Task.Delay(20000);
-        
-            var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))));
-        
-            await Task.WhenAny(timeout, consensus);
+            var consensus = await Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
+                .WaitUpTo(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
 
             _testOutputHelper.WriteLine(LogStore.ToFormattedString());
-            timeout.IsCompleted.Should().BeFalse();
+            consensus.completed.Should().BeTrue("All members should have gotten consensus on the same topology hash");
         }
 
         [Fact]
