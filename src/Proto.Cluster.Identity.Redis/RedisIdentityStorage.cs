@@ -14,7 +14,7 @@ using StackExchange.Redis;
 
 namespace Proto.Cluster.Identity.Redis
 {
-    public class RedisIdentityStorage : IIdentityStorage
+    public sealed class RedisIdentityStorage : IIdentityStorage
     {
         private static readonly ILogger Logger = Log.CreateLogger<RedisIdentityStorage>();
 
