@@ -27,6 +27,7 @@ namespace Proto.Remote
             _sender = Task.Run(RunAsync);
             _deserializationErrorLogLevel = system.Remote().Config.DeserializationErrorLogLevel;
         }
+
         public Channel<RemoteMessage> Outgoing { get; } = global::System.Threading.Channels.Channel.CreateUnbounded<RemoteMessage>();
         public ConcurrentStack<RemoteMessage> OutgoingStash { get; } = new();
         protected readonly ActorSystem System;
@@ -53,23 +54,28 @@ namespace Proto.Remote
             GC.SuppressFinalize(this);
             Logger.LogDebug($"[{System.Address}] Disposed endpoint {Address}");
         }
+
         protected void TerminateEndpoint()
         {
             ClearWatchers();
             var droppedMessageCount = 0;
+
             while (OutgoingStash.TryPop(out var remoteMessage))
             {
                 droppedMessageCount += DropMessagesInBatch(remoteMessage);
             }
+
             while (Outgoing.Reader.TryRead(out var remoteMessage))
             {
                 droppedMessageCount += DropMessagesInBatch(remoteMessage);
             }
+
             while (_remoteDelivers.Reader.TryRead(out var rd))
             {
                 RejectRemoteDeliver(rd);
                 droppedMessageCount++;
             }
+
             if (droppedMessageCount > 0)
                 Logger.LogInformation("[{systemAddress}] Dropped {count} messages for {address}", System.Address, droppedMessageCount, Address);
         }
@@ -77,77 +83,85 @@ namespace Proto.Remote
         private int DropMessagesInBatch(RemoteMessage remoteMessage)
         {
             var droppedMessageCout = 0;
+
             switch (remoteMessage.MessageTypeCase)
             {
                 case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
                     Logger.LogWarning("[{systemAddress}] Dropping disconnect request for {address}", System.Address, Address);
                     break;
-                case RemoteMessage.MessageTypeOneofCase.MessageBatch:
-                    {
-                        var batch = remoteMessage.MessageBatch;
+                case RemoteMessage.MessageTypeOneofCase.MessageBatch: {
+                    var batch = remoteMessage.MessageBatch;
 
-                        for (var i = 0; i < batch.Targets.Count; i++)
+                    for (var i = 0; i < batch.Targets.Count; i++)
+                    {
+                        batch.Targets[i].Ref(System);
+                    }
+
+                    var typeNames = batch.TypeNames.ToArray();
+
+                    foreach (var envelope in batch.Envelopes)
+                    {
+                        var target = batch.Targets[envelope.Target];
+                        var sender = envelope.Sender == 0 ? null : batch.Senders[envelope.Sender - 1];
+
+                        if (envelope.RequestId != default)
                         {
-                            batch.Targets[i].Ref(System);
+                            target = target.WithRequestId(envelope.RequestId);
                         }
 
-                        var typeNames = batch.TypeNames.ToArray();
+                        var typeName = typeNames[envelope.TypeId];
 
-                        var m = System.Metrics.Get<RemoteMetrics>().RemoteDeserializedMessageCount;
+                        if (System.Metrics.Enabled)
+                            RemoteMetrics.RemoteDeserializedMessageCount.Add(1,
+                                new("id", System.Id),
+                                new("address", System.Address),
+                                new("messagetype", typeName)
+                            );
 
-                        foreach (var envelope in batch.Envelopes)
+                        object message;
+
+                        try
                         {
-                            var target = batch.Targets[envelope.Target];
-                            var sender = envelope.Sender == 0 ? null : batch.Senders[envelope.Sender - 1];
+                            message = RemoteConfig.Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
 
-                            if (envelope.RequestId != default)
-                            {
-                                target = target.WithRequestId(envelope.RequestId);
-                            }
-                            var typeName = typeNames[envelope.TypeId];
+                            // _logger.LogDebug("Received (Type) {Message}", message.GetType(), message);
 
-                            if (!System.Metrics.IsNoop) m.Inc(new[] { System.Id, System.Address, typeName });
+                            //translate from on-the-wire representation to in-process representation
+                            //this only applies to root level messages, and never on nested child messages
+                            if (message is IRootSerialized serialized) message = serialized.Deserialize(System);
+                        }
+                        catch (Exception)
+                        {
+                            if (Logger.IsEnabled(_deserializationErrorLogLevel))
+                                Logger.Log(_deserializationErrorLogLevel, "[{systemAddress}] Unable to deserialize message with {Type}",
+                                    System.Address, typeName
+                                );
+                            continue;
+                        }
 
-                            object message;
+                        droppedMessageCout++;
 
-                            try
-                            {
-                                message = RemoteConfig.Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
-
-                                // _logger.LogDebug("Received (Type) {Message}", message.GetType(), message);
-
-                                //translate from on-the-wire representation to in-process representation
-                                //this only applies to root level messages, and never on nested child messages
-                                if (message is IRootSerialized serialized) message = serialized.Deserialize(System);
-                            }
-                            catch (Exception)
-                            {
-                                if (Logger.IsEnabled(_deserializationErrorLogLevel))
-                                    Logger.Log(_deserializationErrorLogLevel, "[{systemAddress}] Unable to deserialize message with {Type}", System.Address, typeName);
-                                continue;
-                            }
-                            droppedMessageCout++;
-
-                            if (message is PoisonPill or Stop && sender is not null)
-                            {
-                                System.Root.Send(sender, new Terminated { Who = target, Why = TerminatedReason.AddressTerminated });
-                            }
-                            else if (message is Watch watch)
-                            {
-                                watch.Watcher.SendSystemMessage(System, new Terminated { Who = target, Why = TerminatedReason.AddressTerminated });
-                            }
-                            else
-                            {
-                                System.EventStream.Publish(new DeadLetterEvent(target, message, sender));
-                                if (sender is not null)
-                                    System.Root.Send(sender, new DeadLetterResponse { Target = target });
-                            }
+                        if (message is PoisonPill or Stop && sender is not null)
+                        {
+                            System.Root.Send(sender, new Terminated {Who = target, Why = TerminatedReason.AddressTerminated});
+                        }
+                        else if (message is Watch watch)
+                        {
+                            watch.Watcher.SendSystemMessage(System, new Terminated {Who = target, Why = TerminatedReason.AddressTerminated});
+                        }
+                        else
+                        {
+                            System.EventStream.Publish(new DeadLetterEvent(target, message, sender));
+                            if (sender is not null)
+                                System.Root.Send(sender, new DeadLetterResponse {Target = target});
                         }
                     }
+                }
                     break;
                 default:
                     break;
             }
+
             return droppedMessageCout;
         }
 
@@ -164,17 +178,18 @@ namespace Proto.Remote
                 }
 
                 foreach (var t in pidSet.Select(
-                    pid => new Terminated
-                    {
-                        Who = pid,
-                        Why = TerminatedReason.AddressTerminated
-                    }
-                ))
+                             pid => new Terminated
+                             {
+                                 Who = pid,
+                                 Why = TerminatedReason.AddressTerminated
+                             }
+                         ))
                 {
                     //send the address Terminated event to the Watcher
                     watcherPid.SendSystemMessage(System, t);
                 }
             }
+
             _watchedActors.Clear();
         }
 
@@ -187,6 +202,7 @@ namespace Proto.Remote
                     if (pidSet.Remove(unwatch.Watcher) && pidSet.Count == 0)
                         _watchedActors.Remove(target.Id);
                 }
+
                 var w = unwatch.Watcher;
                 SendMessage(target, unwatch);
             }
@@ -197,7 +213,7 @@ namespace Proto.Remote
             lock (_synLock)
             {
                 if (_watchedActors.TryGetValue(target.Id, out var pidSet)) pidSet.Add(watch.Watcher);
-                else _watchedActors[target.Id] = new HashSet<PID> { watch.Watcher };
+                else _watchedActors[target.Id] = new HashSet<PID> {watch.Watcher};
                 SendMessage(target, watch);
             }
         }
@@ -206,13 +222,18 @@ namespace Proto.Remote
         {
             var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
             if (Logger.IsEnabled(LogLevel.Trace))
-                Logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {Message} to {Target} from {Sender}", System.Address, message.GetType().Name, message, target, sender);
+                Logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {Message} to {Target} from {Sender}", System.Address,
+                    message.GetType().Name, message, target, sender
+                );
             if (sender is not null && sender.TryTranslateToProxyPID(System, Address, out var clientPID))
                 sender = clientPID;
             var env = new RemoteDeliver(header, message, target, sender!);
+
             if (CancellationToken.IsCancellationRequested || !_remoteDelivers.Writer.TryWrite(env))
             {
-                Logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {Message} to {Target} from {Sender}", System.Address, message.GetType().Name, message, target, sender);
+                Logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {Message} to {Target} from {Sender}", System.Address,
+                    message.GetType().Name, message, target, sender
+                );
                 RejectRemoteDeliver(env);
             }
         }
@@ -226,27 +247,30 @@ namespace Proto.Remote
                     if (pidSet.Remove(watcher) && pidSet.Count == 0)
                         _watchedActors.Remove(terminated.Who.Id);
                 }
+
                 watcher.SendSystemMessage(System, terminated);
             }
         }
+
         private void RejectRemoteDeliver(RemoteDeliver env)
         {
             switch (env.Message)
             {
                 case PoisonPill or Stop when env.Sender is not null:
-                    System.Root.Send(env.Sender, new Terminated { Who = env.Target, Why = TerminatedReason.AddressTerminated });
+                    System.Root.Send(env.Sender, new Terminated {Who = env.Target, Why = TerminatedReason.AddressTerminated});
                     break;
                 case Watch watch:
-                    watch.Watcher.SendSystemMessage(System, new Terminated { Who = env.Target, Why = TerminatedReason.AddressTerminated });
+                    watch.Watcher.SendSystemMessage(System, new Terminated {Who = env.Target, Why = TerminatedReason.AddressTerminated});
                     break;
                 default:
                     if (env.Sender is not null)
-                        System.Root.Send(env.Sender, new DeadLetterResponse { Target = env.Target });
+                        System.Root.Send(env.Sender, new DeadLetterResponse {Target = env.Target});
                     else
                         System.EventStream.Publish(new DeadLetterEvent(env.Target, env.Message, env.Sender));
                     break;
             }
         }
+
         public async Task RunAsync()
         {
             while (!CancellationToken.IsCancellationRequested)
@@ -256,22 +280,27 @@ namespace Proto.Remote
                     while (await _remoteDelivers.Reader.WaitToReadAsync(CancellationToken).ConfigureAwait(false))
                     {
                         var messages = new List<RemoteDeliver>();
+
                         while (_remoteDelivers.Reader.TryRead(out var remoteDeliver))
                         {
                             messages.Add(remoteDeliver);
                             if (messages.Count > RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize) break;
                         }
+
                         var batch = CreateBatch(messages);
-                        Outgoing.Writer.TryWrite(new RemoteMessage { MessageBatch = batch });
+                        Outgoing.Writer.TryWrite(new RemoteMessage {MessageBatch = batch});
                     }
                 }
-                catch (OperationCanceledException) { }
+                catch (OperationCanceledException)
+                {
+                }
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "[{systemAddress}] Error in RunAsync", System.Address);
                 }
             }
         }
+
         private MessageBatch CreateBatch(IEnumerable<RemoteDeliver> m)
         {
             var envelopes = new List<MessageEnvelope>();
@@ -281,7 +310,6 @@ namespace Proto.Remote
             var typeNameList = new List<string>();
             var senders = new Dictionary<PID, int>();
             var senderList = new List<PID>();
-            var counter = System.Metrics.Get<RemoteMetrics>().RemoteSerializedMessageCount;
 
             foreach (var rd in m)
             {
@@ -295,17 +323,12 @@ namespace Proto.Remote
 
                 var sender = rd.Sender;
 
-                if (sender != null && !senders.TryGetValue(sender, out var senderId))
+                var senderId = 0;
+                if (sender != null && !senders.TryGetValue(sender, out senderId))
                 {
-                    senderId = senders[sender] = senders.Count;
+                    senderId = senders[sender] = senders.Count+1;
                     senderList.Add(sender);
                 }
-                else
-                {
-                    senderId = -1;
-                }
-
-                senderId++;
 
                 var message = rd.Message;
                 //if the message can be translated to a serialization representation, we do this here
@@ -337,7 +360,12 @@ namespace Proto.Remote
                     throw;
                 }
 
-                if (!System.Metrics.IsNoop) counter.Inc(new[] { System.Id, System.Address, typeName });
+                if (System.Metrics.Enabled)
+                    RemoteMetrics.RemoteSerializedMessageCount.Add(1,
+                        new("id", System.Id),
+                        new("address", System.Address),
+                        new("messagetype", typeName)
+                    );
 
                 if (!typeNames.TryGetValue(typeName, out var typeId))
                 {

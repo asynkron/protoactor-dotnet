@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +24,8 @@ namespace Proto.Cluster
     public class Cluster : IActorSystemExtension<Cluster>
     {
         private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
+        private Func<IEnumerable<Measurement<long>>>? _clusterKindObserver;
+        private Func<IEnumerable<Measurement<long>>>? _clusterMembersObserver;
 
         public Cluster(ActorSystem system, ClusterConfig config)
         {
@@ -30,7 +33,6 @@ namespace Proto.Cluster
             Config = config;
 
             system.Extensions.Register(this);
-            system.Metrics.Register(new ClusterMetrics(system.Metrics));
 
             //register cluster messages
             var serialization = system.Serialization();
@@ -42,6 +44,13 @@ namespace Proto.Cluster
             Gossip = new Gossiper(this);
             PidCache = new PidCache();
             PubSub = new PubSubManager(this);
+
+            if (System.Metrics.Enabled)
+            {
+                _clusterMembersObserver = () => new[]
+                    {new Measurement<long>(MemberList.GetAllMembers().Length, new("id", System.Id), new("address", System.Address))};
+                ClusterMetrics.ClusterMembersCount.AddObserver( _clusterMembersObserver);
+            }
 
             SubscribeToTopologyEvents();
         }
@@ -70,10 +79,6 @@ namespace Proto.Cluster
 
         private void SubscribeToTopologyEvents() =>
             System.EventStream.Subscribe<ClusterTopology>(e => {
-                    System.Metrics.Get<ClusterMetrics>().ClusterTopologyEventGauge.Set(e.Members.Count,
-                        new[] {System.Id, System.Address, e.GetMembershipHashCode().ToString()}
-                    );
-
                     foreach (var member in e.Left)
                     {
                         PidCache.RemoveByMember(member);
@@ -145,6 +150,17 @@ namespace Proto.Cluster
             {
                 _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
             }
+
+            if (System.Metrics.Enabled)
+            {
+                _clusterKindObserver = () =>
+                    _clusterKinds.Values
+                        .Select(ck =>
+                            new Measurement<long>(ck.Count, new("id", System.Id), new("address", System.Address), new("clusterkind", ck.Name))
+                        );
+
+                ClusterMetrics.VirtualActorsCount.AddObserver(_clusterKindObserver);
+            }
         }
 
         private void InitIdentityProxy()
@@ -152,6 +168,17 @@ namespace Proto.Cluster
 
         public async Task ShutdownAsync(bool graceful = true)
         {
+            if (_clusterKindObserver != null)
+            {
+                ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
+                _clusterKindObserver = null;
+            }
+            if(_clusterMembersObserver != null)
+            {
+                ClusterMetrics.ClusterMembersCount.RemoveObserver(_clusterMembersObserver);
+                _clusterMembersObserver = null;
+            }
+
             await System.ShutdownAsync();
             Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 

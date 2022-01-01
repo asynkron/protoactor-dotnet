@@ -27,7 +27,6 @@ namespace Proto.Cluster.Identity
         //kind -> the actor kind
         //eventId -> the cluster wide eventId when this actor was created
         private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
-        
 
         public IdentityStoragePlacementActor(Cluster cluster, IdentityStorageLookup identityLookup)
         {
@@ -99,9 +98,15 @@ namespace Proto.Cluster.Identity
 
                     var sw = Stopwatch.StartNew();
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
-                    context.System.Metrics.Get<ClusterMetrics>().ClusterActorSpawnHistogram
-                        .Observe(sw, new[] {_cluster.System.Id, _cluster.System.Address, msg.Kind});
                     sw.Stop();
+
+                    if (_cluster.System.Metrics.Enabled)
+                    {
+                        ClusterMetrics.ClusterActorSpawnDuration
+                            .Record(sw.Elapsed.TotalSeconds,
+                                new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", msg.Kind)
+                            );
+                    }
 
                     //Do not expose the PID externally before we have persisted the activation
                     var completionCallback = new TaskCompletionSource<PID?>();

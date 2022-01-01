@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.Metrics;
@@ -38,14 +39,14 @@ namespace Proto.Future
     public sealed class FutureProcess : Process, IFuture
     {
         private readonly TaskCompletionSource<object> _tcs;
-        private readonly ActorMetrics? _metrics;
+        private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
 
         internal FutureProcess(ActorSystem system) : base(system)
         {
-            if (!system.Metrics.IsNoop)
+            if (system.Metrics.Enabled)
             {
-                _metrics = system.Metrics.Get<ActorMetrics>();
-                _metrics.FuturesStartedCount.Inc(new[] {system.Id, system.Address});
+                _metricTags = new KeyValuePair<string, object?>[] {new("id", System.Id), new("address", System.Address)};
+                ActorMetrics.FuturesStartedCount.Add(1, _metricTags);
             }
 
             _tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -78,10 +79,8 @@ namespace Proto.Future
             }
             catch
             {
-                if (!System.Metrics.IsNoop)
-                {
-                    _metrics!.FuturesTimedOutCount.Inc(new[] {System.Id, System.Address});
-                }
+                if (System.Metrics.Enabled)
+                    ActorMetrics.FuturesTimedOutCount.Add(1, _metricTags);
 
                 Stop(Pid);
                 throw new TimeoutException("Request didn't receive any Response within the expected time.");
@@ -96,7 +95,8 @@ namespace Proto.Future
             }
             finally
             {
-                _metrics?.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
+                if(System.Metrics.Enabled)
+                    ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
 
                 Stop(Pid);
             }
@@ -112,10 +112,8 @@ namespace Proto.Future
 
             _tcs.TrySetResult(default!);
 
-            if (!System.Metrics.IsNoop)
-            {
-                _metrics!.FuturesCompletedCount.Inc(new[] {System.Id, System.Address});
-            }
+            if (System.Metrics.Enabled)
+                ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
 
             Stop(pid);
         }

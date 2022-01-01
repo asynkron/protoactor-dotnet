@@ -5,7 +5,7 @@ namespace Proto.OpenTelemetry
 {
     public delegate void ActivitySetup(Activity? activity, object message);
 
-    public static class OpenTelemetryExtensions
+    public static class OpenTelemetryTracingExtensions
     {
         public static TracerProviderBuilder AddProtoActorInstrumentation(this TracerProviderBuilder builder)
             => builder.AddSource(ProtoTags.ActivitySourceName);
