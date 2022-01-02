@@ -108,6 +108,11 @@ namespace Proto.Cluster
 
                 if (identity is not null)
                 {
+                    ctx.System.EventStream.Publish(new ActivationTerminating
+                    {
+                        Pid = ctx.Self,
+                        ClusterIdentity = identity,
+                    });
                     cluster.PidCache.RemoveByVal(identity, ctx.Self);
                 }
 
