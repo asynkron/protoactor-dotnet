@@ -5,11 +5,12 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Utils;
 
 namespace Proto.Cluster.Partition
 {
@@ -21,20 +22,24 @@ namespace Proto.Cluster.Partition
     class PartitionIdentityActor : IActor
     {
         //for how long do we wait when performing a identity handover?
-        
+
         private readonly Cluster _cluster;
         private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
         private readonly string _myAddress;
 
         private readonly Dictionary<ClusterIdentity, PID> _partitionLookup = new(); //actor/grain name to PID
 
-        private readonly Rendezvous _rdv = new();
+        private MemberHashRing _memberHashRing = new(ImmutableList<Member>.Empty);
 
-        private readonly Dictionary<ClusterIdentity, Task<ActivationResponse>> _spawns = new();
+        private readonly Dictionary<ClusterIdentity, (TaskCompletionSource<ActivationResponse> Response, string activationAddress)> _spawns = new();
 
         private ulong _topologyHash;
         private readonly TimeSpan _identityHandoverTimeout;
         private readonly PartitionConfig _config;
+
+        private TaskCompletionSource<ulong>? _rebalanceTcs;
+        private CancellationTokenSource? _rebalanceCancellation;
+        private HashSet<string> _currentMemberAddresses = new();
 
         public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout, PartitionConfig config)
         {
@@ -43,13 +48,13 @@ namespace Proto.Cluster.Partition
             _identityHandoverTimeout = identityHandoverTimeout;
             _config = config;
         }
-        
+
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
             {
                 Started                  => OnStarted(context),
                 ActivationRequest msg    => OnActivationRequest(msg, context),
-                ActivationTerminated msg => OnActivationTerminated(msg, context),
+                ActivationTerminated msg => OnActivationTerminated(msg),
                 ClusterTopology msg      => OnClusterTopology(msg, context),
                 _                        => Task.CompletedTask
             };
@@ -57,143 +62,265 @@ namespace Proto.Cluster.Partition
         private Task OnStarted(IContext context)
         {
             var self = context.Self;
-            _cluster.System.EventStream.Subscribe<ActivationTerminated>(e => {
-                
-                _cluster.System.Root.Send(self,e);
-            });
-            
+            _cluster.System.EventStream.Subscribe<ActivationTerminated>(e => _cluster.System.Root.Send(self, e));
+
             return Task.CompletedTask;
         }
 
-        private async Task OnClusterTopology(ClusterTopology msg, IContext context)
+        private Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
-            await Retry.Try(() => OnClusterTopologyInner(msg, context), onError: OnError, onFailed: OnFailed, ignoreFailure:true);
+            if (_topologyHash.Equals(msg.TopologyHash))
+            {
+                return Task.CompletedTask;
+            }
 
-            static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to handle topology change");
+            StopInvalidatedTopologyRebalance(msg);
+            FailSpawnsTargetingLeftMembers(msg);
+            SetTopology(msg);
 
-            static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to handle topology change");
+            if (msg.Members.Count == 0)
+            {
+                Logger.LogWarning("No active members in cluster topology update");
+                return Task.CompletedTask;
+            }
+
+            _rebalanceTcs ??= new TaskCompletionSource<ulong>();
+
+            SetReadyToRebalanceIfNoMoreWaitingSpawns();
+
+            Logger.LogInformation("{SystemId} Starting to wait for activations to complete:, {CurrentTopology}", _cluster.System.Id, _topologyHash);
+
+            var timer = Stopwatch.StartNew();
+
+            var currentRebalanceCancellation = new CancellationTokenSource();
+            _rebalanceCancellation = currentRebalanceCancellation;
+
+            var waitUntilInFlightActivationsAreCompleted =
+                _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(_identityHandoverTimeout, currentRebalanceCancellation.Token);
+
+            context.ReenterAfter(waitUntilInFlightActivationsAreCompleted, consensusResult => {
+                    if (_topologyHash != msg.TopologyHash || currentRebalanceCancellation.IsCancellationRequested)
+                    {
+                        // Cancelled
+                        return Task.CompletedTask;
+                    }
+
+                    timer.Stop();
+                    var allNodesCompletedActivations = consensusResult.Result.consensus;
+
+                    if (allNodesCompletedActivations)
+                    {
+                        Logger.LogDebug("{SystemId} All nodes OK, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
+                            _cluster.System.Id, _topologyHash, consensusResult.Result.topologyHash, timer.Elapsed
+                        );
+                    }
+                    else
+                    {
+                        Logger.LogError(
+                            "{SystemId} Consensus not reached, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
+                            _cluster.System.Id, _topologyHash, consensusResult.Result.topologyHash, timer.Elapsed
+                        );
+                    }
+
+                    InitRebalance(msg, context, currentRebalanceCancellation.Token);
+                    return Task.CompletedTask;
+                }
+            );
+            return Task.CompletedTask;
         }
 
-        private async Task OnClusterTopologyInner(ClusterTopology msg, IContext context)
+        private void SetTopology(ClusterTopology msg)
         {
-       //     await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
-            var members = msg.Members.ToArray();
             _topologyHash = msg.TopologyHash;
-            _rdv.UpdateMembers(members);
+            _memberHashRing = new MemberHashRing(msg.Members);
+            _currentMemberAddresses = msg.Members.Select(it => it.Address).ToHashSet();
+        }
+
+        private void FailSpawnsTargetingLeftMembers(ClusterTopology topology)
+        {
+            if (topology.Left.Count == 0) return;
+
+            var leftAddresses = topology.Left.Select(member => member.Address).ToHashSet();
+
+            var spawningOnLeftMembers = _spawns.Where(it => leftAddresses.Contains(it.Value.activationAddress)).ToList();
+            if (spawningOnLeftMembers.Count == 0) return;
+
+            var result = new ActivationResponse
+            {
+                Failed = true
+            };
+
+            foreach (var (clusterIdentity, invalidSpawn) in spawningOnLeftMembers)
+            {
+                invalidSpawn.Response.TrySetResult(result);
+                _spawns.Remove(clusterIdentity);
+            }
+
+            Logger.LogDebug("Removed {Count} spawns targeting previous members", spawningOnLeftMembers.Count);
+        }
+
+        private void SetReadyToRebalanceIfNoMoreWaitingSpawns()
+        {
+            if (_spawns.Count == 0)
+            {
+                _cluster.Gossip.SetInFlightActivationsCompleted(_topologyHash);
+            }
+        }
+
+        private void InitRebalance(ClusterTopology msg, IContext context, CancellationToken cancellationToken)
+        {
+            var workerPid = SpawnRebalanceWorker(context, cancellationToken);
+            var rebalanceTask = context.RequestAsync<PartitionsRebalanced>(workerPid, new IdentityHandoverRequest
+                {
+                    TopologyHash = _topologyHash,
+                    Address = _myAddress,
+                    Members = {msg.Members}
+                }, cancellationToken
+            );
+
+            context.ReenterAfter(rebalanceTask, task => {
+                    if (task.IsCompletedSuccessfully)
+                    {
+                        return OnPartitionsRebalanced(task.Result, context);
+                    }
+
+                    Logger.LogError("Partition Rebalance cancelled for {TopologyHash}", _topologyHash);
+                    return Task.CompletedTask;
+                }
+            );
+        }
+
+        private PID SpawnRebalanceWorker(IContext context, CancellationToken cancellationToken) => context.Spawn(
+            Props.FromProducer(() => new PartitionIdentityRebalanceWorker(_config.RebalanceRequestTimeout, cancellationToken))
+        );
+
+        private Task OnPartitionsRebalanced(PartitionsRebalanced msg, IContext context)
+        {
+            if (msg.TopologyHash != _topologyHash)
+            {
+                if (_config.DeveloperLogging)
+                {
+                    Console.WriteLine($"Rebalance with outdated TopologyHash {msg.TopologyHash}!={_topologyHash}");
+                }
+
+                Logger.LogWarning("Rebalance with outdated TopologyHash {Received} instead of {Current}", msg.TopologyHash, _topologyHash);
+                return Task.CompletedTask;
+            }
+
+            _cluster.Gossip.SetRebalanceCompleted(_topologyHash);
+
+            if (_config.DeveloperLogging)
+            {
+                Console.WriteLine($"{context.System.Id}: Got ownerships {msg.TopologyHash} / {_topologyHash}");
+            }
 
             //remove all identities we do no longer own.
             _partitionLookup.Clear();
 
-            var requests = new List<Task<IdentityHandoverResponse>>();
-            var requestMsg = new IdentityHandoverRequest
+            Logger.LogInformation("{SystemId} Got  ownerships of {Count} activations, for topology {TopologyHash}, ", context.System.Id,
+                msg.OwnedActivations.Count, _topologyHash
+            );
+
+            foreach (var activation in msg.OwnedActivations)
             {
-                TopologyHash = _topologyHash,
-                Address = _myAddress
-            };
+                if (_partitionLookup.TryAdd(activation.Key, activation.Value)) continue;
 
-            requestMsg.Members.AddRange(members);
-
-            foreach (var member in members)
-            {
-                var activatorPid = PartitionManager.RemotePartitionPlacementActor(member.Address);
-                var request =
-                    GetIdentitiesForMember(context, activatorPid, requestMsg);
-                requests.Add(request);
-            }
-
-            try
-            {
-                Logger.LogDebug("Requesting ownerships");
-
-                //built in timeout on each request above
-                var responses = await Task.WhenAll(requests);
-                Logger.LogDebug("Got ownerships {EventId}", _topologyHash);
-
-                foreach (var response in responses)
-                {
-                    foreach (var actor in response.Actors)
-                    {
-                        TakeOwnership(actor);
-
-                        if (!_partitionLookup.ContainsKey(actor.ClusterIdentity))
-                            Logger.LogError("Ownership bug, we should own {Identity}", actor.ClusterIdentity);
-                        else
-                            Logger.LogDebug("I have ownership of {Identity}", actor.ClusterIdentity);
-                    }
-                }
-            }
-            catch (Exception x)
-            {
-                Logger.LogError(x, "Failed to get identities");
-                throw;
+                var existingActivation = _partitionLookup[activation.Key];
+                // Already present, duplicate?
+                Logger.LogError("Got duplicate activations of {ClusterIdentity}: {Activation1}, {Activation2}",
+                    activation.Key,
+                    existingActivation,
+                    activation.Value
+                );
             }
             
-            var membersLookup = msg.Members.ToDictionary(m => m.Address, m => m);
+            // _rebalanceTcs?.TrySetResult(_topologyHash);
+            // _rebalanceTcs = null;
 
-            //scan through all id lookups and remove cases where the address is no longer part of cluster members
-            foreach (var (actorId, pid) in _partitionLookup.ToArray())
-            {
-                if (!membersLookup.ContainsKey(pid.Address)) _partitionLookup.Remove(actorId);
-            }
+            context.ReenterAfter(_cluster.Gossip.WaitUntilAllMembersCompletedRebalance(TimeSpan.FromSeconds(1), _rebalanceCancellation!.Token), ()
+                    => {
+                    if (msg.TopologyHash == _topologyHash)
+                    {
+                        Logger.LogInformation("All members reported rebalance completed for topology {TopologyHash}", _topologyHash);
+                        _rebalanceTcs?.TrySetResult(_topologyHash);
+                        _rebalanceTcs = null;
+                    }
+                }
+            );
+
+            return Task.CompletedTask;
         }
 
-        private async Task<IdentityHandoverResponse> GetIdentitiesForMember(IContext context, PID activatorPid, IdentityHandoverRequest requestMsg)
+        private void StopInvalidatedTopologyRebalance(ClusterTopology msg)
         {
-            try
+            if (_rebalanceCancellation is not null && _topologyHash != msg.TopologyHash)
             {
-                using var cts = new CancellationTokenSource(_identityHandoverTimeout);
-                var res = await context.RequestAsync<IdentityHandoverResponse>(activatorPid, requestMsg, cts.Token);
-                return res;
-            }
-            catch
-            {
-                return new IdentityHandoverResponse();
+                Logger.LogDebug("[PartitionIdentityActor] Cancelling handover of {OldTopology}, new topology is {CurrentTopology}", _topologyHash,
+                    msg.TopologyHash
+                );
+
+                _rebalanceCancellation.Cancel();
+                _rebalanceCancellation = null;
             }
         }
 
-        private Task OnActivationTerminated(ActivationTerminated msg, IContext context)
+        private Task OnActivationTerminated(ActivationTerminated msg)
         {
             if (_spawns.ContainsKey(msg.ClusterIdentity))
             {
                 return Task.CompletedTask;
             }
+
             //we get this via broadcast to all nodes, remove if we have it, or ignore
             Logger.LogDebug("[PartitionIdentityActor] Terminated {Pid}", msg.Pid);
-           // _cluster.PidCache.RemoveByVal(msg.ClusterIdentity,msg.Pid);
-            _partitionLookup.Remove(msg.ClusterIdentity);
+
+            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var existingActivation) && existingActivation.Equals(msg.Pid))
+            {
+                _partitionLookup.Remove(msg.ClusterIdentity);
+            }
+
+            _cluster.PidCache.RemoveByVal(msg.ClusterIdentity, msg.Pid);
 
             return Task.CompletedTask;
         }
 
-        private void TakeOwnership(Activation msg)
-        {
-            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var existing))
-            {
-                //these are the same, that's good, just ignore message
-                if (existing.Address == msg.Pid.Address) return;
-            }
-
-            Logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Identity, msg.Pid);
-            _partitionLookup[msg.ClusterIdentity] = msg.Pid;
-        }
-
         private Task OnActivationRequest(ActivationRequest msg, IContext context)
         {
-            if (_config.DeveloperLogging)
-                Console.WriteLine($"Got ActivationRequest {msg.RequestId}");
-            
-            var ownerAddress = _rdv.GetOwnerMemberByIdentity(msg.Identity);
-
-            if (ownerAddress != _myAddress)
+            // Wait for rebalance in progress
+            if (_rebalanceTcs is not null)
             {
                 if (_config.DeveloperLogging)
-                    Console.WriteLine($"Forwarding ActivationRequest {msg.RequestId} to {ownerAddress}");
-                
-                var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
-                Logger.LogWarning("Tried to spawn on wrong node, forwarding");
-                context.Forward(ownerPid);
-
+                    Console.WriteLine($"Rebalance in progress,  {msg.RequestId}");
+                context.ReenterAfter(_rebalanceTcs.Task, _ => OnActivationRequest(msg, context));
                 return Task.CompletedTask;
+            }
+
+            if (_memberHashRing.Count == 0)
+            {
+                if (_config.DeveloperLogging)
+                    Console.WriteLine($"No active members, {msg.RequestId}");
+                RespondWithFailure(context);
+                return Task.CompletedTask;
+            }
+
+            if (_config.DeveloperLogging)
+                Console.WriteLine($"Got ActivationRequest {msg.RequestId}");
+
+            if (msg.TopologyHash != _topologyHash)
+            {
+                var ownerAddress = _memberHashRing.GetOwnerMemberByIdentity(msg.Identity);
+
+                if (ownerAddress != _myAddress)
+                {
+                    if (_config.DeveloperLogging)
+                        Console.WriteLine($"Forwarding ActivationRequest {msg.RequestId} to {ownerAddress}");
+
+                    var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
+                    Logger.LogWarning("Tried to spawn on wrong node, forwarding");
+                    context.Forward(ownerPid);
+
+                    return Task.CompletedTask;
+                }
             }
 
             //Check if exist in current partition dictionary
@@ -201,24 +328,11 @@ namespace Proto.Cluster.Partition
             {
                 if (_config.DeveloperLogging)
                     Console.WriteLine($"Found existing activation for {msg.RequestId}");
-                
-                if (pid == null)
-                {
-                    if (_config.DeveloperLogging)
-                        Console.WriteLine($"Found null activation for {msg.RequestId}");
-                    
-                    _partitionLookup.Remove(msg.ClusterIdentity);
-                    Logger.LogError("Null PID for ClusterIdentity {ClusterIdentity}",msg.ClusterIdentity);
-                    context.Respond(new ActivationResponse()
-                    {
-                        Failed = true,
-                    });
-                    return Task.CompletedTask;
-                }
+
                 context.Respond(new ActivationResponse {Pid = pid});
                 return Task.CompletedTask;
             }
-            
+
             //only activate members when we are all in sync
             // var c = await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
             //
@@ -237,9 +351,10 @@ namespace Proto.Cluster.Partition
                 //No activator currently available, return unavailable
                 Logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
                 context.Respond(new ActivationResponse
-                {
-                    Failed = true
-                });
+                    {
+                        Failed = true
+                    }
+                );
                 return Task.CompletedTask;
             }
 
@@ -247,11 +362,22 @@ namespace Proto.Cluster.Partition
             //in case the actor of msg.Name is not yet spawned. there could be multiple re-entrant
             //messages requesting it, we just reuse the same task for all those
             //once spawned, the key is removed from this dict
-            if (!_spawns.TryGetValue(msg.ClusterIdentity, out var res))
+            if (_spawns.TryGetValue(msg.ClusterIdentity, out var res))
             {
-                res = SpawnRemoteActor(msg, activatorAddress);
-                _spawns.Add(msg.ClusterIdentity, res);
+                // Just waits for the already in-progress activation to complete (or fail)
+                context.ReenterAfter(res.Response.Task, task => {
+                        context.Respond(task.Result);
+                        return Task.CompletedTask;
+                    }
+                );
+                return Task.CompletedTask;
             }
+
+            // Not in progress, spawn actor
+
+            var spawnResponse = SpawnRemoteActor(msg, activatorAddress);
+            var setResponse = new TaskCompletionSource<ActivationResponse>();
+            _spawns.Add(msg.ClusterIdentity, (setResponse, activatorAddress));
 
             //execution ends here. context.ReenterAfter is invoked once the task completes
             //but still within the actors sequential execution
@@ -261,49 +387,135 @@ namespace Proto.Cluster.Partition
                 Console.Write("S"); //spawned
             //Await SpawningProcess
             context.ReenterAfter(
-                res,
-                async rst => {
+                spawnResponse,
+                rst => {
                     try
                     {
-                        var response = await rst;
-                        if (_config.DeveloperLogging)
-                            Console.Write("R"); //reentered
-                        
-                        if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
+                        if (rst.IsCompletedSuccessfully)
                         {
-                            if (_config.DeveloperLogging)
-                                Console.Write("C");  //cached
-                            _spawns.Remove(msg.ClusterIdentity);
-                            context.Respond(new ActivationResponse {Pid = pid});
-                            return;
-                        }
+                            var response = rst.Result;
 
-                        if (response?.Pid != null)
-                        {
                             if (_config.DeveloperLogging)
-                                Console.Write("A"); //activated
-                            _partitionLookup[msg.ClusterIdentity] = response.Pid;
-                            _spawns.Remove(msg.ClusterIdentity);
-                            context.Respond(response);
-                            return;
+                                Console.Write("R"); //reentered
+
+                            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
+                            {
+                                if (_config.DeveloperLogging)
+                                    Console.Write("C"); //cached
+
+                                if (response.Pid is not null && !response.Pid.Equals(pid))
+                                {
+                                    context.Stop(response.Pid); // Stop duplicate activation
+                                }
+
+                                Respond(new ActivationResponse {Pid = pid, TopologyHash = _topologyHash});
+                                return Task.CompletedTask;
+                            }
+
+                            if (response?.Pid != null)
+                            {
+                                if (_config.DeveloperLogging)
+                                    Console.Write("A"); //activated
+
+                                if (response.TopologyHash != _topologyHash) // Topology changed between request and response
+                                {
+                                    if (!_currentMemberAddresses.Contains(response.Pid.Address))
+                                    {
+                                        // No longer part of cluster, dropped
+                                        Logger.LogWarning("Received activation response {@Response}, no longer part of cluster", response);
+                                        Respond(new ActivationResponse {Failed = true});
+                                        return Task.CompletedTask;
+                                    }
+
+                                    var currentActivatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
+
+                                    if (_myAddress != currentActivatorAddress)
+                                    {
+                                        //TODO: Stop it or handover?
+                                        Logger.LogWarning("Misplaced spawn: {ClusterIdentity}, {Pid}", msg.ClusterIdentity, response.Pid);
+                                    }
+                                }
+
+                                _partitionLookup[msg.ClusterIdentity] = response.Pid;
+                                Respond(response);
+
+                                return Task.CompletedTask;
+                            }
+                        }
+                        else
+                        {
+                            Logger.LogError(rst.Exception, "Spawn task failed");
                         }
                     }
-                    catch(Exception x)
+                    catch (Exception x)
                     {
                         Logger.LogError(x, "Spawning failed");
                     }
-                    
+                    finally
+                    {
+                        var wasPresent = _spawns.Remove(msg.ClusterIdentity);
+
+                        if (wasPresent && _rebalanceTcs is not null && _spawns.Count == 0)
+                        {
+                            SetReadyToRebalanceIfNoMoreWaitingSpawns();
+                        }
+                    }
+
                     if (_config.DeveloperLogging)
                         Console.Write("F"); //failed
-                    _spawns.Remove(msg.ClusterIdentity);
-                    context.Respond(new ActivationResponse
+                    Respond(new ActivationResponse {Failed = true});
+
+                    return Task.CompletedTask;
+
+                    // The response both responds to the initial activator, but also any other waiting reentrant requests
+                    void Respond(ActivationResponse response)
                     {
-                        Failed = true
-                    });
+                        context.Respond(response);
+                        setResponse.TrySetResult(response);
+                    }
                 }
             );
             return Task.CompletedTask;
         }
+
+        private void ActivateAfterConsensus(ActivationRequest msg, IContext context)
+            => context.ReenterAfter(_cluster.MemberList.TopologyConsensus(CancellationToken.None), _ => OnActivationRequest(msg, context));
+
+        // private void HandleMisplacedIdentity(ActivationRequest msg, ActivationResponse response, string? activatorAddress, IContext context)
+        // {
+        //     _spawns.Remove(msg.ClusterIdentity);
+        //     if (activatorAddress is null)
+        //     {
+        //         context.Stop(response.Pid); // We could possibly move the activation to the new owner?
+        //         RespondWithFailure(context);
+        //     }
+        //     else
+        //     {
+        //         var pid = PartitionManager.RemotePartitionIdentityActor(activatorAddress);
+        //         context.RequestReenter<ActivationResponse>(pid, new ActivationHandover
+        //         {
+        //             ClusterIdentity = msg.ClusterIdentity,
+        //             RequestId = msg.RequestId,
+        //             TopologyHash = msg.TopologyHash,
+        //             Pid = response.Pid
+        //         }, responseTask => {
+        //             if (responseTask.IsCompletedSuccessfully)
+        //             {
+        //                 context.Respond(responseTask.Result);
+        //             }
+        //             else
+        //             {
+        //                 context.Stop(response.Pid);
+        //                 RespondWithFailure(context);
+        //             }
+        //             
+        //             
+        //             return Task.CompletedTask;
+        //         }, CancellationTokens.WithTimeout(_identityHandoverTimeout));
+        //     }
+        // }
+
+        private static void RespondWithFailure(IContext context) => context.Respond(new ActivationResponse {Failed = true});
 
         private async Task<ActivationResponse> SpawnRemoteActor(ActivationRequest req, string activatorAddress)
         {
@@ -320,11 +532,13 @@ namespace Proto.Cluster.Partition
             }
             catch
             {
-                return new ActivationResponse()
+                return new ActivationResponse
                 {
                     Failed = true
                 };
             }
         }
     }
+
+    record PartitionsRebalanced(Dictionary<ClusterIdentity, PID> OwnedActivations, ulong TopologyHash);
 }

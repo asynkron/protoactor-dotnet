@@ -4,14 +4,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-// ReSharper disable once CheckNamespace
-
-// ReSharper disable once CheckNamespace
-
 using System;
 using JetBrains.Annotations;
 using Proto.Metrics;
 
+// ReSharper disable once CheckNamespace
 namespace Proto
 {
     [PublicAPI]

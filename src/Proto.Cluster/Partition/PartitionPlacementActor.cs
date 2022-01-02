@@ -5,13 +5,13 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.Partition
 {
-    class PartitionPlacementActor : IActor
+    class PartitionPlacementActor : IActor, IDisposable
     {
         private readonly Cluster _cluster;
         private static readonly ILogger Logger = Log.CreateLogger<PartitionPlacementActor>();
@@ -20,6 +20,7 @@ namespace Proto.Cluster.Partition
         //kind -> the actor kind
         private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
         private readonly PartitionConfig _config;
+        private EventStreamSubscription<object>? _subscription;
 
         public PartitionPlacementActor(Cluster cluster, PartitionConfig config)
         {
@@ -30,21 +31,39 @@ namespace Proto.Cluster.Partition
         public Task ReceiveAsync(IContext context) =>
             context.Message switch
             {
-                Terminated msg              => Terminated(context, msg),
+                Started                     => OnStarted(context),
+                ActivationTerminating msg   => ActivationTerminating(msg),
                 IdentityHandoverRequest msg => IdentityHandoverRequest(context, msg),
                 ActivationRequest msg       => ActivationRequest(context, msg),
                 _                           => Task.CompletedTask
             };
 
-        private Task Terminated(IContext context, Terminated msg)
+        private Task OnStarted(IContext context)
         {
-            //TODO: if this turns out to be perf intensive, lets look at optimizations for reverse lookups
-            var (clusterIdentity, pid) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
+            _subscription = context.System.EventStream.Subscribe<ActivationTerminating>(e => context.Send(context.Self, e));
+            return Task.CompletedTask;
+        }
+
+        private Task ActivationTerminating(ActivationTerminating msg)
+        {
+            if (!_myActors.TryGetValue(msg.ClusterIdentity, out var pid))
+            {
+                Logger.LogWarning("Activation not found: {ActivationTerminating}", msg);
+                return Task.CompletedTask;
+            }
+
+            if (!pid.Equals(msg.Pid))
+            {
+                Logger.LogWarning("Activation did not match pid: {ActivationTerminating}, {Pid}", msg, pid);
+                return Task.CompletedTask;
+            }
+
+            _myActors.Remove(msg.ClusterIdentity);
 
             var activationTerminated = new ActivationTerminated
             {
                 Pid = pid,
-                ClusterIdentity = clusterIdentity,
+                ClusterIdentity = msg.ClusterIdentity,
             };
 
             _cluster.MemberList.BroadcastEvent(activationTerminated);
@@ -53,7 +72,6 @@ namespace Proto.Cluster.Partition
             // var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
             //
             // context.Send(ownerPid, activationTerminated);
-            _myActors.Remove(clusterIdentity);
             return Task.CompletedTask;
         }
 
@@ -63,36 +81,97 @@ namespace Proto.Cluster.Partition
         private Task IdentityHandoverRequest(IContext context, IdentityHandoverRequest msg)
         {
             var count = 0;
-            var response = new IdentityHandoverResponse();
             var requestAddress = context.Sender!.Address;
 
             //use a local selector, which is based on the requesters view of the world
-            var rdv = new Rendezvous();
-            rdv.UpdateMembers(msg.Members);
+            var memberHashRing = new MemberHashRing(msg.Members);
 
-            foreach (var (clusterIdentity, pid) in _myActors)
+            var chunk = 0;
+            var response = new IdentityHandoverResponse
             {
-                //who owns this identity according to the requesters memberlist?
-                var ownerAddress = rdv.GetOwnerMemberByIdentity(clusterIdentity.Identity);
+                ChunkId = ++chunk,
+                TopologyHash = msg.TopologyHash
+            };
+            var chunkSize = _config.HandoverChunkSize;
+            using var cancelRebalance = new CancellationTokenSource();
+            var outOfBandResponseHandler = context.System.Root.Spawn(AbortOnDeadLetter(cancelRebalance));
 
-                //this identity is not owned by the requester
-                if (ownerAddress != requestAddress) continue;
+            try
+            {
+                foreach (var (clusterIdentity, pid) in _myActors)
+                {
+                    //who owns this identity according to the requesters memberlist?
+                    var ownerAddress = memberHashRing.GetOwnerMemberByIdentity(clusterIdentity);
 
-                Logger.LogDebug("Transfer {Identity} to {newOwnerAddress} -- {TopologyHash}", clusterIdentity, ownerAddress,
-                    msg.TopologyHash
+                    //this identity is not owned by the requester
+                    if (ownerAddress != requestAddress) continue;
+
+                    Logger.LogDebug("Transfer {Identity} to {NewOwnerAddress} -- {TopologyHash}", clusterIdentity, ownerAddress,
+                        msg.TopologyHash
+                    );
+
+                    var actor = new Activation {ClusterIdentity = clusterIdentity, Pid = pid};
+                    response.Actors.Add(actor);
+                    count++;
+
+                    if (count % chunkSize == 0)
+                    {
+                        if (cancelRebalance.IsCancellationRequested)
+                        {
+                            return Task.CompletedTask;
+                        }
+
+                        context.Request(context.Sender, response, outOfBandResponseHandler);
+                        response = new IdentityHandoverResponse
+                        {
+                            ChunkId = ++chunk,
+                            TopologyHash = msg.TopologyHash
+                        };
+                    }
+                }
+
+                if (cancelRebalance.IsCancellationRequested)
+                {
+                    return Task.CompletedTask;
+                }
+
+                response.Final = true;
+                Logger.LogDebug("{Id}, Sending final response with {Count} activations, total {Total}, chunk {ChunkId}, {Pid}, Topology {TopologyHash}", context.System.Id, response.Actors.Count, count, chunk,
+                    outOfBandResponseHandler, msg.TopologyHash
                 );
 
-                var actor = new Activation {ClusterIdentity = clusterIdentity, Pid = pid};
-                response.Actors.Add(actor);
-                count++;
+                context.Request(context.Sender, response);
+
+                Logger.LogDebug("Transferred {Count} actor ownership to other members", count);
+            }
+            finally
+            {
+                if (cancelRebalance.IsCancellationRequested)
+                {
+                    if (_config.DeveloperLogging)
+                    {
+                        Console.WriteLine($"Cancelled rebalance handover for topology: {msg.TopologyHash}");
+                    }
+
+                    Logger.LogInformation("Cancelled rebalance: {@IdentityHandoverRequest}", msg);
+                }
+
+                context.Stop(outOfBandResponseHandler);
             }
 
-            //always respond, this is request response msg
-            context.Respond(response);
-
-            Logger.LogDebug("Transferred {Count} actor ownership to other members", count);
             return Task.CompletedTask;
         }
+
+        private Props AbortOnDeadLetter(CancellationTokenSource cts) => Props.FromFunc(responseContext => {
+                // Node lost or rebalance cancelled because of topology changes
+                if (responseContext.Message is DeadLetterResponse)
+                {
+                    cts.Cancel();
+                }
+
+                return Task.CompletedTask;
+            }
+        );
 
         private Task ActivationRequest(IContext context, ActivationRequest msg)
         {
@@ -105,7 +184,8 @@ namespace Proto.Cluster.Partition
                     //this identity already exists
                     var response = new ActivationResponse
                     {
-                        Pid = existing
+                        Pid = existing,
+                        TopologyHash = msg.TopologyHash
                     };
                     context.Respond(response);
                 }
@@ -128,14 +208,15 @@ namespace Proto.Cluster.Partition
 
                     var response = new ActivationResponse
                     {
-                        Pid = pid
+                        Pid = pid,
+                        TopologyHash = msg.TopologyHash
                     };
                     context.Respond(response);
                     if (_config.DeveloperLogging)
                         Console.WriteLine($"Activated {msg.RequestId}");
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.LogError(e, "Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
                 var response = new ActivationResponse
@@ -147,5 +228,7 @@ namespace Proto.Cluster.Partition
 
             return Task.CompletedTask;
         }
+
+        public void Dispose() => _subscription?.Unsubscribe();
     }
 }

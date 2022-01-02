@@ -22,14 +22,14 @@ namespace Proto.Cluster.Partition
         private readonly TimeSpan _identityHandoverTimeout;
         private readonly PartitionConfig _config;
 
-        internal PartitionManager(Cluster cluster, bool isClient, TimeSpan identityHandoverTimeout, PartitionConfig? config=null)
+        internal PartitionManager(Cluster cluster, bool isClient, TimeSpan identityHandoverTimeout, PartitionConfig? config = null)
         {
             _cluster = cluster;
             _system = cluster.System;
             _context = _system.Root;
             _isClient = isClient;
             _identityHandoverTimeout = identityHandoverTimeout;
-            _config = config ?? new PartitionConfig(false);
+            _config = config ?? new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1));
         }
 
         internal PartitionMemberSelector Selector { get; } = new();
@@ -44,7 +44,7 @@ namespace Proto.Cluster.Partition
                         if (e.TopologyHash == eventId) return;
 
                         eventId = e.TopologyHash;
-                        Selector.Update(e.Members.ToArray());
+                        Selector.Update(e.Members.ToArray(), e.TopologyHash);
                     }
                 );
             }
@@ -55,12 +55,10 @@ namespace Proto.Cluster.Partition
                     .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
                 _partitionIdentityActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
 
-                var partitionActivatorProps =
-                    Props.FromProducer(() => new PartitionPlacementActor(_cluster, _config));
+                var partitionActivatorProps = Props.FromProducer(() => new PartitionPlacementActor(_cluster, _config));
                 _partitionPlacementActor = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
 
                 //synchronous subscribe to keep accurate
-
                 var topologyHash = 0ul;
                 //make sure selector is updated first
                 _system.EventStream.Subscribe<ClusterTopology>(e => {
@@ -68,7 +66,8 @@ namespace Proto.Cluster.Partition
 
                         topologyHash = e.TopologyHash;
 
-                        Selector.Update(e.Members.ToArray());
+                        Selector.Update(e.Members.ToArray(), e.TopologyHash);
+
                         _context.Send(_partitionIdentityActor, e);
                         _context.Send(_partitionPlacementActor, e);
                     }
@@ -94,5 +93,4 @@ namespace Proto.Cluster.Partition
         public static PID RemotePartitionPlacementActor(string address) =>
             PID.FromAddress(address, PartitionPlacementActorName);
     }
-    
 }

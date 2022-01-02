@@ -14,7 +14,7 @@ namespace Proto.Tests
         private readonly ITestOutputHelper output;
 
         public ReenterTests(ITestOutputHelper output) => this.output = output;
-        
+
         [Fact]
         public async Task RequestReenterSelf()
         {
@@ -27,9 +27,10 @@ namespace Proto.Tests
                             break;
                         case "start":
                             ctx.RequestReenter<string>(ctx.Self, "reenter", t => {
-                                ctx.Respond("response");
-                                return Task.CompletedTask;
-                            }, CancellationToken.None);
+                                    ctx.Respond("response");
+                                    return Task.CompletedTask;
+                                }, CancellationToken.None
+                            );
                             break;
                     }
                 }
@@ -60,7 +61,7 @@ namespace Proto.Tests
             var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
             Assert.Equal("response", res);
         }
-        
+
         [Fact]
         public async Task ReenterAfterFailedTask()
         {
@@ -73,6 +74,31 @@ namespace Proto.Tests
                             }
                         );
                         ctx.ReenterAfter(task, () => { ctx.Respond("response"); });
+                    }
+
+                    return Task.CompletedTask;
+                }
+            );
+
+            var pid = Context.Spawn(props);
+
+            var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
+            Assert.Equal("response", res);
+        }
+
+        [Fact]
+        public async Task ReenterAfterCancelledTask()
+        {
+            var props = Props.FromFunc(ctx => {
+                    if (ctx.Message is "reenter")
+                    {
+                        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                        ctx.ReenterAfter(tcs.Task, _ => {
+                                ctx.Respond("response");
+                                return Task.CompletedTask;
+                            }
+                        );
+                        tcs.TrySetCanceled();
                     }
 
                     return Task.CompletedTask;
