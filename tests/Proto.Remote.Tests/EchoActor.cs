@@ -14,7 +14,7 @@ namespace Proto.Remote.Tests
             switch (context.Message)
             {
                 case Started:
-                    Logger.LogDebug($"{context.Self}");
+                    Logger.LogDebug("Started {ActorPid}",context.Self);
                     break;
                 case Ping ping:
                     Logger.LogDebug("Received Ping, replying Pong");

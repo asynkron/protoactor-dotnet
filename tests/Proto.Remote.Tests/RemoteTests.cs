@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Tests.Messages;
 using Xunit;
@@ -217,7 +219,7 @@ namespace Proto.Remote.Tests
                 )
             );
         }
-        
+
         [Fact, DisplayTestMethodName]
         public async Task CanMakeRequestToRemoteActor()
         {
@@ -225,6 +227,71 @@ namespace Proto.Remote.Tests
 
             var res = await System.Root.RequestAsync<Touched>(remoteActor, new Touch(), TimeSpan.FromSeconds(5));
             res.Who.Should().BeEquivalentTo(remoteActor);
+        }
+
+        [Theory, DisplayTestMethodName]
+        [InlineData(true, 1, 1, 5)]
+        [InlineData(true, 2, 1, 5)]
+        [InlineData(true, 10, 100, 5)]
+        [InlineData(false, 1, 1, 5)]
+        [InlineData(false, 2, 1, 5)]
+        [InlineData(false, 10, 100, 5)]
+        public async Task ConcurrentMessagesWorks(bool remote, int messageCount, int messageSize, int timeoutSeconds)
+        {
+            if (_fixture is HostedGrpcNetWithCustomSerializerTests.Fixture)
+            {
+                //Skip 
+                return;
+            }
+            
+            var rnd = new Random();
+            var tcs = new TaskCompletionSource<bool>();
+            var responseCount = 0;
+            var responseHandler = _fixture.ActorSystem.Root.Spawn(Props.FromFunc(ctx => {
+                        if (ctx.Message is Ack)
+                        {
+                            if (Interlocked.Increment(ref responseCount) == messageCount)
+                            {
+                                tcs.TrySetResult(true);
+                            }
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                )
+            );
+
+            var actor = remote ? await SpawnRemoteActor(_fixture.RemoteAddress) : SpawnLocalActor();
+
+            var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
+
+            for (var i = 0; i < messageCount; i++)
+            {
+                System.Root.Request(actor, NextMsg(), responseHandler);
+            }
+
+            await Task.WhenAny(tcs.Task, timeout);
+
+            var res = await System.Root.RequestAsync<Touched>(actor, new Touch(), TimeSpan.FromSeconds(1));
+            res.Should().NotBeNull("Remote should still be alive");
+            res.Who.Should().BeEquivalentTo(actor);
+
+            responseCount.Should().Be(messageCount);
+            
+            
+            tcs.Task.IsCompletedSuccessfully.Should().BeTrue("All responses received");
+            responseCount.Should().Be(messageCount);
+
+            BinaryMessage NextMsg()
+            {
+                var bytes = new byte[messageSize];
+                rnd.NextBytes(bytes);
+                return new BinaryMessage
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Payload = ByteString.CopyFrom(bytes)
+                };
+            }
         }
 
         [Fact]
@@ -237,7 +304,6 @@ namespace Proto.Remote.Tests
                 //Skip 
                 return;
             }
-            
 
             var remoteActorName = Guid.NewGuid().ToString();
 
@@ -249,7 +315,7 @@ namespace Proto.Remote.Tests
             {
                 Id = "hello"
             };
-            
+
             var res = await System.Root.RequestAsync<Ack>(remoteActor, msg,
                 CancellationTokens.FromSeconds(5)
             );
@@ -261,10 +327,11 @@ namespace Proto.Remote.Tests
         private async Task<PID> SpawnRemoteActor(string address)
         {
             var remoteActorName = Guid.NewGuid().ToString();
-            var remoteActorResp =
-                await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            var remoteActorResp = await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
             return remoteActorResp.Pid;
         }
+        
+        private PID SpawnLocalActor() => System.Root.Spawn(RemoteFixture.EchoActorProps);
 
         private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
         {
