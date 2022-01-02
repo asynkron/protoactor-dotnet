@@ -29,7 +29,7 @@ namespace Proto.Remote
         private readonly RemoteConfigBase _remoteConfig;
         private readonly RemoteMessageHandler _remoteMessageHandler;
         private readonly string _address;
-        private readonly Type _connectortype;
+        private readonly Type _connectorType;
         private readonly IEndpoint _endpoint;
         private readonly TimeSpan _backoff;
         private readonly int _maxNrOfRetries;
@@ -44,14 +44,14 @@ namespace Proto.Remote
             _cts.Cancel();
             await _runner.ConfigureAwait(false);
         }
-        public ServerConnector(string address, Type connectortype, IEndpoint endpoint, IChannelProvider channelProvider, ActorSystem system, RemoteConfigBase remoteConfig, RemoteMessageHandler remoteMessageHandler)
+        public ServerConnector(string address, Type connectorType, IEndpoint endpoint, IChannelProvider channelProvider, ActorSystem system, RemoteConfigBase remoteConfig, RemoteMessageHandler remoteMessageHandler)
         {
             _channelProvider = channelProvider;
             _system = system;
             _remoteConfig = remoteConfig;
             _remoteMessageHandler = remoteMessageHandler;
             _address = address;
-            _connectortype = connectortype;
+            _connectorType = connectorType;
             _endpoint = endpoint;
             _maxNrOfRetries = remoteConfig.EndpointWriterOptions.MaxRetries;
             _withinTimeSpan = remoteConfig.EndpointWriterOptions.RetryTimeSpan;
@@ -73,7 +73,7 @@ namespace Proto.Remote
                     var client = new Remoting.RemotingClient(channel);
                     using var call = client.Receive(_remoteConfig.CallOptions);
 
-                    switch (_connectortype)
+                    switch (_connectorType)
                     {
                         case Type.ServerSide:
                             await call.RequestStream.WriteAsync(new RemoteMessage
@@ -178,7 +178,7 @@ namespace Proto.Remote
                                             break;
                                         }
                                     default:
-                                        if (_connectortype == Type.ServerSide)
+                                        if (_connectorType == Type.ServerSide)
                                             _logger.LogWarning("[{systemAddress}] Received {message} from {_address}", _system.Address, currentMessage, _address);
                                         else
                                             _remoteMessageHandler.HandleRemoteMessage(currentMessage);

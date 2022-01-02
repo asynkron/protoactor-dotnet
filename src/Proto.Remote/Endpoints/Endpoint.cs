@@ -35,7 +35,7 @@ namespace Proto.Remote
         protected readonly RemoteConfigBase RemoteConfig;
         protected readonly ILogger Logger = Log.CreateLogger<Endpoint>();
         private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
-        private readonly Channel<RemoteDeliver> _remoteDelivers = global::System.Threading.Channels.Channel.CreateUnbounded<RemoteDeliver>();
+        private readonly Channel<RemoteDeliver> _remoteDelivers = Channel.CreateUnbounded<RemoteDeliver>();
         private readonly object _synLock = new();
         private readonly Task _sender;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -44,7 +44,7 @@ namespace Proto.Remote
 
         public virtual async ValueTask DisposeAsync()
         {
-            Logger.LogDebug($"[{System.Address}] Disposing endpoint {Address}");
+            Logger.LogDebug("[{SystemAddress}] Disposing endpoint {Address}", System.Address, Address);
             _remoteDelivers.Writer.TryComplete();
             _cancellationTokenSource.Cancel();
             Outgoing.Writer.TryComplete();
@@ -52,7 +52,7 @@ namespace Proto.Remote
             await _sender.ConfigureAwait(false);
             _cancellationTokenSource.Dispose();
             GC.SuppressFinalize(this);
-            Logger.LogDebug($"[{System.Address}] Disposed endpoint {Address}");
+            Logger.LogDebug("[{SystemAddress}] Disposed endpoint {Address}", System.Address, Address);
         }
 
         protected void TerminateEndpoint()
@@ -77,17 +77,16 @@ namespace Proto.Remote
             }
 
             if (droppedMessageCount > 0)
-                Logger.LogInformation("[{systemAddress}] Dropped {count} messages for {address}", System.Address, droppedMessageCount, Address);
+                Logger.LogInformation("[{SystemAddress}] Dropped {Count} messages for {Address}", System.Address, droppedMessageCount, Address);
         }
 
         private int DropMessagesInBatch(RemoteMessage remoteMessage)
         {
-            var droppedMessageCout = 0;
-
+            var droppedMessageCount = 0;
             switch (remoteMessage.MessageTypeCase)
             {
                 case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
-                    Logger.LogWarning("[{systemAddress}] Dropping disconnect request for {address}", System.Address, Address);
+                    Logger.LogWarning("[{SystemAddress}] Dropping disconnect request for {Address}", System.Address, Address);
                     break;
                 case RemoteMessage.MessageTypeOneofCase.MessageBatch: {
                     var batch = remoteMessage.MessageBatch;
@@ -133,13 +132,13 @@ namespace Proto.Remote
                         catch (Exception)
                         {
                             if (Logger.IsEnabled(_deserializationErrorLogLevel))
-                                Logger.Log(_deserializationErrorLogLevel, "[{systemAddress}] Unable to deserialize message with {Type}",
+                                Logger.Log(_deserializationErrorLogLevel, "[{SystemAddress}] Unable to deserialize message with {Type}",
                                     System.Address, typeName
                                 );
                             continue;
                         }
 
-                        droppedMessageCout++;
+                        droppedMessageCount++;
 
                         if (message is PoisonPill or Stop && sender is not null)
                         {
@@ -162,7 +161,7 @@ namespace Proto.Remote
                     break;
             }
 
-            return droppedMessageCout;
+            return droppedMessageCount;
         }
 
         private void ClearWatchers()
@@ -296,7 +295,7 @@ namespace Proto.Remote
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "[{systemAddress}] Error in RunAsync", System.Address);
+                    Logger.LogError(ex, "[{SystemAddress}] Error in RunAsync", System.Address);
                 }
             }
         }
@@ -311,6 +310,7 @@ namespace Proto.Remote
             var senders = new Dictionary<PID, int>();
             var senderList = new List<PID>();
 
+            
             foreach (var rd in m)
             {
                 var target = rd.Target;
@@ -392,7 +392,7 @@ namespace Proto.Remote
                     RequestId = rd.Target.RequestId
                 };
                 // if (Logger.IsEnabled(LogLevel.Trace))
-                //     Logger.LogTrace("[{systemAddress}] Endpoint adding Envelope {Envelope}", System.Address, envelope);
+                //     Logger.LogTrace("[{SystemAddress}] Endpoint adding Envelope {Envelope}", System.Address, envelope);
                 envelopes.Add(envelope);
             }
 
@@ -402,7 +402,7 @@ namespace Proto.Remote
             batch.Envelopes.AddRange(envelopes);
             batch.Senders.AddRange(senderList);
             // if (Logger.IsEnabled(LogLevel.Trace))
-            //     Logger.LogTrace("[{systemAddress}] Sending {Count} envelopes for {Address}", System.Address, envelopes.Count, Address);
+            //     Logger.LogTrace("[{SystemAddress}] Sending {Count} envelopes for {Address}", System.Address, envelopes.Count, Address);
             return batch;
         }
     }
