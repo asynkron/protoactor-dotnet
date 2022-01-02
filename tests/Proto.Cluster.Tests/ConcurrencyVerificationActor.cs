@@ -29,11 +29,11 @@ namespace Proto.Cluster.Tests
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            Started msg  => OnStarted(context),
-            Stopping msg => OnStopping(context),
-            Die          => StopNow(context),
-            IncCount     => OnInc(context),
-            _            => Task.CompletedTask
+            Started  => OnStarted(context),
+            Stopping => OnStopping(context),
+            Die      => StopNow(context),
+            IncCount => OnInc(context),
+            _        => Task.CompletedTask
         };
 
         private Task OnInc(IContext context)

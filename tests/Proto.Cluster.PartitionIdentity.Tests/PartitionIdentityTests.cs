@@ -26,7 +26,7 @@ namespace Proto.Cluster.PartitionIdentity.Tests
         private int _requests = 0;
 
         [Theory]
-        [InlineData(3, 100000, 1, 24, 30)]
+        [InlineData(3, 100000, 1, 24, 20)]
         public async Task ClusterMaintainsSingleConcurrentVirtualActorPerIdentity(
             int memberCount,
             int identityCount,

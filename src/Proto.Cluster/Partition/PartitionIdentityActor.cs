@@ -38,7 +38,7 @@ namespace Proto.Cluster.Partition
         private readonly PartitionConfig _config;
 
         private TaskCompletionSource<ulong>? _rebalanceTcs;
-        private CancellationTokenSource? _rebalanceCancellation;
+        // private CancellationTokenSource? _rebalanceCancellation;
         private HashSet<string> _currentMemberAddresses = new();
 
         public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout, PartitionConfig config)
@@ -74,7 +74,6 @@ namespace Proto.Cluster.Partition
                 return Task.CompletedTask;
             }
 
-            StopInvalidatedTopologyRebalance(msg);
             FailSpawnsTargetingLeftMembers(msg);
             SetTopology(msg);
 
@@ -92,14 +91,12 @@ namespace Proto.Cluster.Partition
 
             var timer = Stopwatch.StartNew();
 
-            var currentRebalanceCancellation = new CancellationTokenSource();
-            _rebalanceCancellation = currentRebalanceCancellation;
-
+            var topologyValidityToken = msg.TopologyValidityToken!.Value;
             var waitUntilInFlightActivationsAreCompleted =
-                _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(_identityHandoverTimeout, currentRebalanceCancellation.Token);
+                _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(_identityHandoverTimeout, topologyValidityToken);
 
             context.ReenterAfter(waitUntilInFlightActivationsAreCompleted, consensusResult => {
-                    if (_topologyHash != msg.TopologyHash || currentRebalanceCancellation.IsCancellationRequested)
+                    if (_topologyHash != msg.TopologyHash || topologyValidityToken.IsCancellationRequested)
                     {
                         // Cancelled
                         return Task.CompletedTask;
@@ -122,7 +119,7 @@ namespace Proto.Cluster.Partition
                         );
                     }
 
-                    InitRebalance(msg, context, currentRebalanceCancellation.Token);
+                    InitRebalance(msg, context, topologyValidityToken);
                     return Task.CompletedTask;
                 }
             );
@@ -233,35 +230,11 @@ namespace Proto.Cluster.Partition
                     activation.Value
                 );
             }
-            
-            // _rebalanceTcs?.TrySetResult(_topologyHash);
-            // _rebalanceTcs = null;
 
-            context.ReenterAfter(_cluster.Gossip.WaitUntilAllMembersCompletedRebalance(TimeSpan.FromSeconds(1), _rebalanceCancellation!.Token), ()
-                    => {
-                    if (msg.TopologyHash == _topologyHash)
-                    {
-                        Logger.LogInformation("All members reported rebalance completed for topology {TopologyHash}", _topologyHash);
-                        _rebalanceTcs?.TrySetResult(_topologyHash);
-                        _rebalanceTcs = null;
-                    }
-                }
-            );
+            _rebalanceTcs?.TrySetResult(_topologyHash);
+            _rebalanceTcs = null;
 
             return Task.CompletedTask;
-        }
-
-        private void StopInvalidatedTopologyRebalance(ClusterTopology msg)
-        {
-            if (_rebalanceCancellation is not null && _topologyHash != msg.TopologyHash)
-            {
-                Logger.LogDebug("[PartitionIdentityActor] Cancelling handover of {OldTopology}, new topology is {CurrentTopology}", _topologyHash,
-                    msg.TopologyHash
-                );
-
-                _rebalanceCancellation.Cancel();
-                _rebalanceCancellation = null;
-            }
         }
 
         private Task OnActivationTerminated(ActivationTerminated msg)
