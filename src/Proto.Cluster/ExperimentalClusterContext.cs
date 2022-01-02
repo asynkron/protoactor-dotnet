@@ -177,17 +177,7 @@ namespace Proto.Cluster
         }
 
 
-        private PID? GetCachedPid(ClusterIdentity clusterIdentity)
-        {
-            var pid = clusterIdentity.CachedPid;
-
-            if (pid is null && _pidCache.TryGet(clusterIdentity, out pid))
-            {
-                clusterIdentity.CachedPid = pid;
-            }
-
-            return pid;
-        }
+        private PID? GetCachedPid(ClusterIdentity clusterIdentity) => _pidCache.TryGet(clusterIdentity, out var pid) ? pid : null;
 
         private async Task<PID?> GetPidFromLookup(ClusterIdentity clusterIdentity, ISenderContext context, CancellationToken ct)
         {
