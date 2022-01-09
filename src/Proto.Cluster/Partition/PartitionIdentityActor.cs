@@ -136,7 +136,7 @@ namespace Proto.Cluster.Partition
             }
 
             SetReadyToRebalanceIfNoMoreWaitingSpawns();
-            DiscardActivationsOnLeftMembers(msg);
+            DiscardInvalidatedActivations();
 
             _rebalanceTcs ??= new TaskCompletionSource<ulong>();
 
@@ -185,15 +185,17 @@ namespace Proto.Cluster.Partition
             return Task.CompletedTask;
         }
 
-        private void DiscardActivationsOnLeftMembers(ClusterTopology topology)
+        private void DiscardInvalidatedActivations()
         {
-            var left = topology.Left.Select(member => member.Address).ToHashSet();
-            var leftIdentities = _partitionLookup
-                .Where(kv => left.Contains(kv.Value.Address))
+            var members = _currentMemberAddresses;
+            var invalid = _partitionLookup
+                .Where(kv => !members.Contains(kv.Value.Address) ||
+                             !_memberHashRing.GetOwnerMemberByIdentity(kv.Key).Equals(_myAddress, StringComparison.InvariantCultureIgnoreCase)
+                )
                 .Select(kv => kv.Key)
                 .ToList();
 
-            foreach (var clusterIdentity in leftIdentities)
+            foreach (var clusterIdentity in invalid)
             {
                 _partitionLookup.Remove(clusterIdentity);
             }
