@@ -25,7 +25,8 @@ namespace Proto.Cluster.CodeGen
                 throw new ArgumentException("value cannot be null or empty", nameof(path));
             }
 
-            var relativeToUri = GetUri(relativeTo);
+            var relativeToUri = GetUri(relativeTo.EndsWith(Path.DirectorySeparatorChar.ToString())? relativeTo : relativeTo+Path.DirectorySeparatorChar);
+
             var pathUri = GetUri(path);
 
             if (relativeToUri.Scheme != pathUri.Scheme)
@@ -54,8 +55,10 @@ namespace Proto.Cluster.CodeGen
 
         private static Uri GetUri(string path)
         {
-            var fullPath = Path.GetFullPath(path);
+            var fullPath = Path.GetFullPath(path+Path.DirectorySeparatorChar);
             var pathWithDirectorySeparatorChar = AppendDirectorySeparatorChar(fullPath);
+
+            var uriBuilder = new UriBuilder(pathWithDirectorySeparatorChar);
 
             return new Uri(pathWithDirectorySeparatorChar);
         }

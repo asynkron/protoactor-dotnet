@@ -13,26 +13,34 @@ namespace Proto.Cluster.CodeGen.Tests
     public class PathPolyfillTests
     {
         [Theory]
-        [InlineData(@"some\other\path")]
-        [InlineData(@"some\other\path\")]
-        [InlineData(@".\some\other\path")]
-        [InlineData(@".\some\other\path\")]
-        [InlineData(@".\foo\..\some\other\path")]
-        [InlineData(@".\foo\..\some\other\path\")]
-        public void CanGetRelativePath(string unadjustedPath)
+        [InlineData(@"./..", @"./..")]
+        [InlineData(@"same", @"same")]
+        [InlineData(@"..\dir", @"some\other\path")]
+        [InlineData(@".\dir", @"some\other\path")]
+        [InlineData(@".\root\dir", @"some\other\path")]
+        [InlineData(@"root\dir", @"some\other\path")]
+        [InlineData(@"root\dir", @"some\other\path.dot")]
+        [InlineData(@"root\dir", @"some\other\path\")]
+        [InlineData(@"root\dir", @".\some\other\path")]
+        [InlineData(@"root\dir\", @".\some\other\path")]
+        [InlineData(@"root\dir", @".\some\other\path\")]
+        [InlineData(@"root\dir", @".\foo\..\some\other\path")]
+        [InlineData(@"root\dir", @".\foo\..\some\other\path\")]
+        [InlineData(@"root\dir.something\else", @"some\other\path")]
+        [InlineData(@"root\dir.some.thing", @"some\other\path")]
+        [InlineData(@"root\dir.something", @"some\other\path")]
+        [InlineData(@"root\dir.something\", @"some\other\path")]
+        public void CanGetRelativePath(string basePath, string unadjustedPath)
         {
-            var relativeTo = AdjustToCurrentOs(@"root\dir");
+            var relativeTo = AdjustToCurrentOs(basePath);
             var path = AdjustToCurrentOs(unadjustedPath);
             
             var relativePath = PathPolyfill.GetRelativePath(relativeTo, path);
 
+            var expected = Path.GetRelativePath(relativeTo, path);
             relativePath
                 .Should()
-                .Be(AdjustToCurrentOs(@"..\..\some\other\path"));
-
-            relativePath
-                .Should()
-                .Be(Path.GetRelativePath(relativeTo, path));
+                .Be(expected, "Should match the Path.GetRelativePath poly-filled behavior");
         }
 
         [Theory]
