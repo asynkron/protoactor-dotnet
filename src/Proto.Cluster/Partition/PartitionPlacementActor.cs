@@ -46,6 +46,7 @@ namespace Proto.Cluster.Partition
         private Task OnClusterTopology(IContext context, ClusterTopology msg)
         {
             if (_config.Mode != PartitionIdentityLookup.Mode.Push) return Task.CompletedTask;
+
             Logger.LogDebug("Got topology {TopologyHash}, waiting for current activations to complete", msg.TopologyHash);
 
             var cancellationToken = msg.TopologyValidityToken!.Value;
@@ -66,6 +67,7 @@ namespace Proto.Cluster.Partition
         private async Task Rebalance(IContext context, ClusterTopology msg)
         {
             Logger.LogDebug("Initiating rebalance publish for topology {TopologyHash}", msg.TopologyHash);
+
             try
             {
                 var handoverStates = new Dictionary<string, MemberHandover>();
@@ -139,11 +141,12 @@ namespace Proto.Cluster.Partition
 
         private class MemberHandover
         {
-            private List<Task<IdentityHandoverAck>> responseTasks = new();
+            private readonly List<Task<IdentityHandoverAck>> _responseTasks = new();
             private readonly PID _target;
             private readonly IContext _context;
             private readonly ClusterTopology _topology;
             private readonly int _chunkSize;
+            private readonly TimeSpan _requestTimeout;
 
             private IdentityHandover _identityHandover;
             private uint _chunkId;
@@ -154,6 +157,7 @@ namespace Proto.Cluster.Partition
                 _context = context;
                 _topology = msg;
                 _chunkSize = config.HandoverChunkSize;
+                _requestTimeout = config.RebalanceRequestTimeout;
                 _target = PartitionManager.RemotePartitionIdentityActor(member.Address);
                 _identityHandover = new IdentityHandover
                 {
@@ -197,11 +201,11 @@ namespace Proto.Cluster.Partition
 
             private void SendWithRetries(IdentityHandover identityHandover, CancellationToken cancellationToken)
             {
-                var task = Retry.TryUntil(() => _context.RequestAsync<IdentityHandoverAck>(_target, identityHandover, cancellationToken),
+                var task = Retry.TryUntil(() => _context.RequestAsync<IdentityHandoverAck>(_target, identityHandover, _requestTimeout),
                     ack => cancellationToken.IsCancellationRequested || ack is not null,
-                    int.MaxValue // Continue until complete or cancelled
+                    int.MaxValue // Continue until complete or cancelled,
                 );
-                responseTasks.Add(task);
+                _responseTasks.Add(task);
             }
 
             public IEnumerable<Task<IdentityHandoverAck>> Complete()
@@ -209,7 +213,7 @@ namespace Proto.Cluster.Partition
                 _identityHandover.Final = true;
                 _identityHandover.Skipped = _skipped;
                 SendWithRetries(_identityHandover, _topology.TopologyValidityToken!.Value);
-                return responseTasks;
+                return _responseTasks;
             }
         }
 
