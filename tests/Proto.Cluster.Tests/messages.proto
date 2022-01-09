@@ -28,7 +28,7 @@ message Die {
 }
 
 message WhereAreYou {
-  string request_id = 1; 
+  string request_id = 1;
 }
 
 message HereIAm {
@@ -50,4 +50,22 @@ message AggregatorResult{
   int32 out_of_order_count = 2;
   int32 sequence_key_count = 3;
   int32 sender_key_count = 4;
+}
+
+message SomeGossipState{
+  string key = 1;
+}
+
+message SomeTopologyGossipState{
+  uint64 topology_hash = 1;
+}
+
+message IncCount{
+
+}
+
+message IncResponse{
+  int32 count = 1;
+  int32 expected_count = 2;
+  string session_id = 3;
 }

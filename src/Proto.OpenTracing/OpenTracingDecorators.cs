@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenTracing;
 using OpenTracing.Propagation;
+using Proto.Mailbox;
 
 namespace Proto.OpenTracing
 {
@@ -66,6 +67,8 @@ namespace Proto.OpenTracing
             => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
                 () => base.RequestAsync<T>(target, message, cancellationToken)
             );
+
+        public override void Request(PID target, object message, PID? sender) => OpenTracingMethodsDecorators.Request(target, message, _sendSpanSetup, _tracer, () => base.Request(target, message, sender));
 
         public override void Forward(PID target)
             => OpenTracingMethodsDecorators.Forward(target, base.Message, _sendSpanSetup, _tracer, () => base.Forward(target));
@@ -171,6 +174,12 @@ namespace Proto.OpenTracing
         {
             var message = envelope.Message;
 
+            if (message is SystemMessage)
+            {
+                await receive().ConfigureAwait(false);
+                return;
+            }
+            
             var parentSpanCtx = tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()));
 
             using var scope = tracer.BuildStartedScope(parentSpanCtx, nameof(Receive), message, receiveSpanSetup);

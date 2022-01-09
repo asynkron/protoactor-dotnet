@@ -13,7 +13,7 @@ namespace Proto.Persistence.Marten
 
         public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
         {
-            using var session = _store.OpenSession();
+            await using var session = _store.OpenSession();
 
             var events = await session.Query<Event>()
                 .Where(x => x.ActorName == actorName)
@@ -31,7 +31,7 @@ namespace Proto.Persistence.Marten
 
         public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
         {
-            using var session = _store.OpenSession();
+            await using var session = _store.OpenSession();
 
             var snapshot = await session.Query<Snapshot>()
                 .Where(x => x.ActorName == actorName)

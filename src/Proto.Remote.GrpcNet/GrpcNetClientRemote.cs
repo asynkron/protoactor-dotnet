@@ -26,7 +26,6 @@ namespace Proto.Remote.GrpcNet
                 throw new ArgumentException("Choosing port is not supported in client mode");
             System.SetClientAddress();
             _config = config;
-            system.Metrics.Register(new RemoteMetrics(system.Metrics));
             System.Extensions.Register(this);
             System.Extensions.Register(config.Serialization);
             var channelProvider = new GrpcNetChannelProvider(_config);

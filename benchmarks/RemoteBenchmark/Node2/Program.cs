@@ -22,7 +22,7 @@ namespace Node2
     {
         private PID _sender;
         private static readonly Pong Pong = new Pong();
-        private int _count = 0;
+        // private int _count = 0;
 
         public Task ReceiveAsync(IContext context)
         {

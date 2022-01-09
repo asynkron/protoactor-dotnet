@@ -4,14 +4,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-// ReSharper disable once CheckNamespace
-
-// ReSharper disable once CheckNamespace
-
 using System;
 using JetBrains.Annotations;
 using Proto.Metrics;
 
+// ReSharper disable once CheckNamespace
 namespace Proto
 {
     [PublicAPI]
@@ -34,7 +31,8 @@ namespace Proto
         public PID? Sender { get; }
         public MessageHeader Header { get; }
 
-        public override string ToString() => $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
+        public override string ToString()
+            => $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
     }
 
     public class DeadLetterProcess : Process
@@ -45,8 +43,16 @@ namespace Proto
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
-            System.Metrics.Get<ActorMetrics>().DeadletterCount.Inc(new[] {System.Id, System.Address, message.GetType().Name});
             var (msg, sender, header) = MessageEnvelope.Unwrap(message);
+
+            if (System.Metrics.Enabled)
+            {
+                ActorMetrics.DeadletterCount.Add(1,
+                    new("id", System.Id), new("address", System.Address),
+                    new("messagetype", msg.GetType().Name)
+                );
+            }
+
             System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender, header));
             if (sender is null) return;
 
@@ -58,7 +64,9 @@ namespace Proto
 
         protected internal override void SendSystemMessage(PID pid, object message)
         {
-            System.Metrics.Get<ActorMetrics>().DeadletterCount.Inc(new[] {System.Id, System.Address, message.GetType().Name});
+            if (System.Metrics.Enabled)
+                ActorMetrics.DeadletterCount.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", message.GetType().Name));
+
             System.EventStream.Publish(new DeadLetterEvent(pid, message, null, null));
         }
     }

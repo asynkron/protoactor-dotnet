@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenTelemetry.Trace;
+using Proto.Mailbox;
 
 namespace Proto.OpenTelemetry
 {
@@ -67,6 +68,9 @@ namespace Proto.OpenTelemetry
             => OpenTelemetryMethodsDecorators.RequestAsync(target, message, _sendActivitySetup,
                 () => base.RequestAsync<T>(target, message, cancellationToken)
             );
+
+        public override void Request(PID target, object message, PID? sender)
+            => OpenTelemetryMethodsDecorators.Request(target, message, sender, _sendActivitySetup, () => base.Request(target, message, sender));
 
         public override void Forward(PID target)
             => OpenTelemetryMethodsDecorators.Forward(target, base.Message!, _sendActivitySetup, () => base.Forward(target));
@@ -182,6 +186,12 @@ namespace Proto.OpenTelemetry
         internal static async Task Receive(MessageEnvelope envelope, ActivitySetup receiveActivitySetup, Func<Task> receive)
         {
             var message = envelope.Message;
+            
+            if (message is SystemMessage)
+            {
+                await receive().ConfigureAwait(false);
+                return;
+            }
 
             var propagationContext = envelope.Header.ExtractPropagationContext();
 

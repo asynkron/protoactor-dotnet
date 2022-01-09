@@ -29,8 +29,6 @@ namespace Proto.Cluster.Identity
         private readonly IIdentityStorage _storage;
         private readonly Dictionary<ClusterIdentity, List<PID>> _waitingRequests = new();
 
-        private IdentityMetrics Metrics => _cluster.System.Metrics.Get<IdentityMetrics>();
-
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
             _shouldThrottle = Throttle.Create(
@@ -108,7 +106,7 @@ namespace Proto.Cluster.Identity
                 var tries = 0;
                 PID? result = null;
                 SpawnLock? spawnLock = null;
-                
+
                 while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
                 {
                     try
@@ -133,7 +131,7 @@ namespace Proto.Cluster.Identity
                         spawnLock ??= await TryAcquireLock(clusterIdentity);
 
                         //we didn't get the lock, wait for activation to complete
-                        
+
                         if (spawnLock == null)
                         {
                             using var cts = new CancellationTokenSource(_cluster.Config.ActorActivationTimeout);
@@ -141,7 +139,6 @@ namespace Proto.Cluster.Identity
                         }
                         else
                         {
-
                             using var cts = new CancellationTokenSource(_cluster.Config.ActorActivationTimeout);
                             //we have the lock, spawn and return
                             (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, cts.Token);
@@ -170,16 +167,26 @@ namespace Proto.Cluster.Identity
                 return result;
             }
 
-            return Metrics
-                .GetWithGlobalLockHistogram
-                .Observe(Inner, _cluster.System.Id, _cluster.System.Address, clusterIdentity.Kind);
+            if (!_cluster.System.Metrics.Enabled)
+                return Inner();
+
+            return IdentityMetrics.GetWithGlobalLockDuration.Observe(
+                Inner,
+                new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+            );
         }
 
         private Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity)
         {
             Task<SpawnLock?> Inner() => _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
 
-            return Metrics.TryAcquireLockHistogram.Observe(Inner, _cluster.System.Id, _cluster.System.Address, clusterIdentity.Kind);
+            if (!_cluster.System.Metrics.Enabled)
+                return Inner();
+
+            return IdentityMetrics.TryAcquireLockDuration.Observe(
+                Inner,
+                new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+            );
         }
 
         private Task<PID?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct)
@@ -193,10 +200,15 @@ namespace Proto.Cluster.Identity
                 );
                 return res;
             }
-            
-            return Metrics
-                .WaitForActivationHistogram
-                .Observe(Inner, _cluster.System.Id,_cluster.System.Address,clusterIdentity.Kind);
+
+            if (!_cluster.System.Metrics.Enabled)
+                return Inner();
+
+            return IdentityMetrics.WaitForActivationDuration
+                .Observe(
+                    Inner,
+                    new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+                );
         }
 
         private async Task<(PID?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
@@ -243,7 +255,6 @@ namespace Proto.Cluster.Identity
             //Clean up our mess..
             await _storage.RemoveLock(spawnLock, ct);
             return (null, null);
-
         }
 
         private async Task<PID?> ValidateAndMapToPid(ClusterIdentity clusterIdentity, StoredActivation? activation)

@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -27,7 +26,7 @@ namespace Proto.Cluster.Identity
         //kind -> the actor kind
         //eventId -> the cluster wide eventId when this actor was created
         private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
-        
+        private EventStreamSubscription<object>? _subscription;
 
         public IdentityStoragePlacementActor(Cluster cluster, IdentityStorageLookup identityLookup)
         {
@@ -37,44 +36,60 @@ namespace Proto.Cluster.Identity
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            Stopping _            => Stopping(context),
-            Stopped _             => Stopped(context),
-            Terminated msg        => Terminated(context, msg),
-            ActivationRequest msg => ActivationRequest(context, msg),
-            _                     => Task.CompletedTask
+            Started                   => OnStarted(context),
+            Stopping _                => Stopping(),
+            Stopped _                 => Stopped(),
+            ActivationTerminating msg => Terminated(context, msg),
+            ActivationRequest msg     => ActivationRequest(context, msg),
+            _                         => Task.CompletedTask
         };
 
-        private Task Stopping(IContext context)
+        private Task OnStarted(IContext context)
         {
-            Logger.LogInformation("Stopping placement actor");
+            _subscription = context.System.EventStream.Subscribe<ActivationTerminating>(e => context.Send(context.Self, e));
             return Task.CompletedTask;
         }
 
-        private Task Stopped(IContext context)
+        private Task Stopping()
+        {
+            Logger.LogInformation("Stopping placement actor");
+            _subscription?.Unsubscribe();
+            return Task.CompletedTask;
+        }
+
+        private Task Stopped()
         {
             Logger.LogInformation("Stopped placement actor");
             return Task.CompletedTask;
         }
 
-        private async Task Terminated(IContext context, Terminated msg)
+        private async Task Terminated(IContext context, ActivationTerminating msg)
         {
             if (context.System.Shutdown.IsCancellationRequested) return;
-
-            var (identity, pid) = _myActors.FirstOrDefault(kvp => kvp.Value.Equals(msg.Who));
-
-            if (identity != null && pid != null)
+            
+            if (!_myActors.TryGetValue(msg.ClusterIdentity, out var pid))
             {
-                _myActors.Remove(identity);
-                _cluster.PidCache.RemoveByVal(identity, pid);
+                Logger.LogWarning("Activation not found: {ActivationTerminating}", msg);
+                return;
+            }
 
-                try
-                {
-                    await _identityLookup.RemovePidAsync(identity, msg.Who, CancellationToken.None);
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError(e, "Failed to remove {Activation} from storage", pid);
-                }
+            if (!pid.Equals(msg.Pid))
+            {
+                Logger.LogWarning("Activation did not match pid: {ActivationTerminating}, {Pid}", msg, pid);
+                return;
+            }
+
+
+            _myActors.Remove(msg.ClusterIdentity);
+            _cluster.PidCache.RemoveByVal(msg.ClusterIdentity, pid);
+
+            try
+            {
+                await _identityLookup.RemovePidAsync(msg.ClusterIdentity, pid, CancellationToken.None);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "Failed to remove {Activation} from storage", pid);
             }
         }
 
@@ -99,9 +114,15 @@ namespace Proto.Cluster.Identity
 
                     var sw = Stopwatch.StartNew();
                     var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
-                    context.System.Metrics.Get<ClusterMetrics>().ClusterActorSpawnHistogram
-                        .Observe(sw, new[] {_cluster.System.Id, _cluster.System.Address, msg.Kind});
                     sw.Stop();
+
+                    if (_cluster.System.Metrics.Enabled)
+                    {
+                        ClusterMetrics.ClusterActorSpawnDuration
+                            .Record(sw.Elapsed.TotalSeconds,
+                                new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", msg.Kind)
+                            );
+                    }
 
                     //Do not expose the PID externally before we have persisted the activation
                     var completionCallback = new TaskCompletionSource<PID?>();

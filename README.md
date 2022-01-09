@@ -3,6 +3,7 @@
 ### [Join our Slack channel](https://join.slack.com/t/asynkron/shared_invite/zt-ko824601-yGN1d3GHF9jzZX2VtONodQ)
 
 # Proto.Actor
+
 Ultra-fast, distributed, cross-platform actors.
 
 ## Bootcamp Training
@@ -16,10 +17,12 @@ Using NuGet Package Manager Console:
 `PM> Install-Package Proto.Actor`
 
 ## Source code
+
 This is the .NET repository for Proto Actor.
 
 Other implementations:
-* Go: [https://github.com/AsynkronIT/protoactor-go](https://github.com/AsynkronIT/protoactor-go)
+
+- Go: [https://github.com/AsynkronIT/protoactor-go](https://github.com/AsynkronIT/protoactor-go)
 
 ## Design principles
 
@@ -73,11 +76,14 @@ context.Send(pid, new Hello("Alex"));
 
 You should see the output `Hello Alex`.
 
-
 ## Sample application
 
 [https://github.com/asynkron/realtimemap-dotnet](https://github.com/asynkron/realtimemap-dotnet)
 
+## Sponsors
+Our awesome sponsors:
+
+<!-- sponsors --><a href="https://github.com/jhston02"><img src="https://github.com/jhston02.png" width="60px" alt="" /></a><a href="https://github.com/schafer14"><img src="https://github.com/schafer14.png" width="60px" alt="" /></a><a href="https://github.com/nbokovoy"><img src="https://github.com/nbokovoy.png" width="60px" alt="" /></a><!-- sponsors -->
 
 ## Contributors
 

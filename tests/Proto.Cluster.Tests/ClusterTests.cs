@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Gossip;
+using Proto.Utils;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -33,14 +34,11 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task TopologiesShouldHaveConsensus()
         {
-            var timeout = Task.Delay(20000);
-        
-            var consensus = Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))));
-        
-            await Task.WhenAny(timeout, consensus);
+            var consensus = await Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
+                .WaitUpTo(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
 
             _testOutputHelper.WriteLine(LogStore.ToFormattedString());
-            timeout.IsCompleted.Should().BeFalse();
+            consensus.completed.Should().BeTrue("All members should have gotten consensus on the same topology hash");
         }
 
         [Fact]
@@ -48,7 +46,7 @@ namespace Proto.Cluster.Tests
         {
             var timeout = new CancellationTokenSource(8000).Token;
 
-            var msg = "Hello-slow-world";
+            const string msg = "Hello-slow-world";
             var response = await Members.First().RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
                 new SlowPing {Message = msg, DelayMs = 5000}, timeout
             );
@@ -140,29 +138,31 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine("All responses OK. Terminating fixture");
         }
 
-        // [Fact]
-        // public async Task HandlesLosingANodeWhileProcessing()
-        // {
-        //     var ingressNodes = new[] {Members[0], Members[1]};
-        //     var victim = Members[2];
-        //     var ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
-        //
-        //     var cts = new CancellationTokenSource();
-        //
-        //     var worker = Task.Run(async () => {
-        //             while (!cts.IsCancellationRequested)
-        //             {
-        //                 await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 10000);
-        //             }
-        //         }
-        //     );
-        //     await Task.Delay(200);
-        //     await ClusterFixture.RemoveNode(victim);
-        //     await ClusterFixture.SpawnNode();
-        //     await Task.Delay(1000);
-        //     cts.Cancel();
-        //     await worker;
-        // }
+        [Fact]
+        public async Task HandlesLosingANodeWhileProcessing()
+        {
+            var ingressNodes = new[] {Members[0], Members[1]};
+            var victim = Members[2];
+            var ids = Enumerable.Range(1, 200).Select(id => id.ToString()).ToList();
+
+            var cts = new CancellationTokenSource();
+
+            var worker = Task.Run(async () => {
+                    while (!cts.IsCancellationRequested)
+                    {
+                        await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 10000);
+                    }
+                }
+            );
+            await Task.Delay(200);
+            _testOutputHelper.WriteLine("Terminating node");
+            await ClusterFixture.RemoveNode(victim);
+            _testOutputHelper.WriteLine("Spawning node");
+            await ClusterFixture.SpawnNode();
+            await Task.Delay(1000);
+            cts.Cancel();
+            await worker;
+        }
 
         private async Task CanGetResponseFromAllIdsOnAllNodes(IEnumerable<string> actorIds, IList<Cluster> nodes, int timeoutMs)
         {

@@ -25,7 +25,7 @@ namespace Proto.Remote.Tests
 
     public abstract class RemoteFixture : IRemoteFixture
     {
-        private static readonly Props EchoActorProps = Props.FromProducer(() => new EchoActor());
+        public static readonly Props EchoActorProps = Props.FromProducer(() => new EchoActor());
 
         private static LogStore _logStore = new();
         public LogStore LogStore { get; } = _logStore;
