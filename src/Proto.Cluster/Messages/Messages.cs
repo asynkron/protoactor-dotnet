@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Google.Protobuf;
+using Proto.Remote;
 
 // ReSharper disable once CheckNamespace
 namespace Proto.Cluster
@@ -43,13 +44,97 @@ namespace Proto.Cluster
         public string Identity => ClusterIdentity.Identity;
     }
 
+    public sealed partial class IdentityHandoverResponse : IRootSerializable
+    {
+        public IRootSerialized Serialize(ActorSystem system) =>
+            new RemoteIdentityHandoverResponse
+            {
+                Actors = PackedActivations.Pack(system.Address, Actors),
+                TopologyHash = TopologyHash,
+                Final = Final,
+                ChunkId = ChunkId
+            };
+    }
+
+    public sealed partial class RemoteIdentityHandoverResponse : IRootSerialized
+    {
+        public IRootSerializable Deserialize(ActorSystem system) => new IdentityHandoverResponse
+        {
+            TopologyHash = TopologyHash,
+            Final = Final,
+            ChunkId = ChunkId,
+            Actors = {Actors.UnPack()}
+        };
+    }
+    
+    public sealed partial class IdentityHandover : IRootSerializable
+    {
+        public IRootSerialized Serialize(ActorSystem system) =>
+            new RemoteIdentityHandover
+            {
+                Actors = PackedActivations.Pack(system.Address, Actors),
+                TopologyHash = TopologyHash,
+                Final = Final,
+                Skipped = Skipped,
+                ChunkId = ChunkId
+            };
+    }
+
+    public sealed partial class RemoteIdentityHandover : IRootSerialized
+    {
+        public IRootSerializable Deserialize(ActorSystem system) => new IdentityHandover
+        {
+            TopologyHash = TopologyHash,
+            Final = Final,
+            Skipped = Skipped,
+            ChunkId = ChunkId,
+            Actors = {Actors.UnPack()}
+        };
+    }
+
+    public sealed partial class PackedActivations
+    {
+        public IEnumerable<Activation> UnPack() => Actors.SelectMany(UnpackKind);
+
+        private IEnumerable<Activation> UnpackKind(Types.Kind kind)
+            => kind.Activations.Select(packed => new Activation
+                {
+                    ClusterIdentity = ClusterIdentity.Create(packed.Identity, kind.Name),
+                    Pid = PID.FromAddress(Address, packed.ActivationId)
+                }
+            );
+
+        public static PackedActivations Pack(string address, IEnumerable<Activation> activations) => new()
+        {
+            Address = address,
+            Actors = {PackActivations(activations)}
+        };
+
+        private static IEnumerable<Types.Kind> PackActivations(IEnumerable<Activation> activations)
+            => activations.GroupBy(it => it.Kind)
+                .Select(grouping => new Types.Kind
+                    {
+                        Name = grouping.Key,
+                        Activations =
+                        {
+                            grouping.Select(activation => new PackedActivations.Types.Activation
+                                {
+                                    Identity = activation.Identity,
+                                    ActivationId = activation.Pid.Id
+                                }
+                            )
+                        }
+                    }
+                );
+    }
+
     public record Tick;
 
     public partial class ClusterTopology
     {
         //this ignores joined and left members, only the actual members are relevant
         public uint GetMembershipHashCode() => Member.TopologyHash(Members);
-        
+
         /// <summary>
         /// Topology based logic (IE partition based) can use this token to cancel any work when this topology is no longer valid
         /// </summary>
