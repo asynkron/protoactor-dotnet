@@ -19,12 +19,40 @@ message IdentityHandoverResponse {
   uint64 topology_hash = 4;
 }
 
+message RemoteIdentityHandoverResponse {
+  PackedActivations actors = 1;
+  int32 chunk_id = 2;
+  bool final = 3;
+  uint64 topology_hash = 4;
+}
+
 message IdentityHandover {
   repeated Activation actors = 1;
   uint32 chunk_id = 2;
   bool final = 3;
   uint64 topology_hash = 4;
   uint32 skipped = 5;
+}
+
+message RemoteIdentityHandover {
+  PackedActivations actors = 1;
+  uint32 chunk_id = 2;
+  bool final = 3;
+  uint64 topology_hash = 4;
+  uint32 skipped = 5;
+}
+
+message PackedActivations{
+  string address = 1;
+  repeated Kind actors = 2;
+  message Kind{
+    string name = 1;
+    repeated Activation activations = 2;
+  }
+  message Activation{
+    string identity = 1;
+    string activation_id = 2;
+  }
 }
 
 message IdentityHandoverAck {

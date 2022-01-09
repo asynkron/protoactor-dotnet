@@ -286,9 +286,6 @@ namespace Proto.Cluster.Partition
                 Console.WriteLine($"{context.System.Id}: Got ownerships {msg.TopologyHash} / {_topologyHash}");
             }
 
-            //remove all identities we do no longer own.
-            _partitionLookup.Clear();
-
             Logger.LogInformation("{SystemId} Got  ownerships of {Count} activations, for topology {TopologyHash}, ", context.System.Id,
                 msg.OwnedActivations.Count, _topologyHash
             );
@@ -310,11 +307,7 @@ namespace Proto.Cluster.Partition
 
             var existingActivation = _partitionLookup[clusterIdentity];
 
-            if (existingActivation.Equals(activation))
-            {
-                Logger.LogDebug("Got the same activations twice {ClusterIdentity}: {Activation}", clusterIdentity, existingActivation);
-            }
-            else
+            if (!existingActivation.Equals(activation))
             {
                 // Already present, duplicate?
                 Logger.LogError("Got duplicate activations of {ClusterIdentity}: {Activation1}, {Activation2}",
@@ -323,6 +316,10 @@ namespace Proto.Cluster.Partition
                     activation
                 );
             }
+            // else
+            // {
+            //     Logger.LogDebug("Got the same activations twice {ClusterIdentity}: {Activation}", clusterIdentity, existingActivation);
+            // }
         }
 
         private Task OnActivationTerminated(ActivationTerminated msg)

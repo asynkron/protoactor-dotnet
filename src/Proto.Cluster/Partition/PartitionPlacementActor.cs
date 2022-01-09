@@ -23,7 +23,7 @@ namespace Proto.Cluster.Partition
         private readonly PartitionConfig _config;
         private EventStreamSubscription<object>? _subscription;
 
-        private ClusterTopology? _lastRebalancedTopology = null;
+        private ClusterTopology? _lastRebalancedTopology;
 
         public PartitionPlacementActor(Cluster cluster, PartitionConfig config)
         {
@@ -128,7 +128,6 @@ namespace Proto.Cluster.Partition
             private readonly IContext _context;
             private readonly ClusterTopology _topology;
             private readonly int _chunkSize;
-            private readonly bool _isLocal;
 
             private IdentityHandover _identityHandover;
             private uint _chunkId;
@@ -140,7 +139,6 @@ namespace Proto.Cluster.Partition
                 _topology = msg;
                 _chunkSize = config.HandoverChunkSize;
                 _target = PartitionManager.RemotePartitionIdentityActor(member.Address);
-                _isLocal = member.Address.Equals(context.System.Address, StringComparison.OrdinalIgnoreCase);
                 _identityHandover = new IdentityHandover
                 {
                     ChunkId = ++_chunkId,
