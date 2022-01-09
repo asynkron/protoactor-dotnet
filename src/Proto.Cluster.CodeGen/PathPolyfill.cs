@@ -58,8 +58,6 @@ namespace Proto.Cluster.CodeGen
             var fullPath = Path.GetFullPath(path+Path.DirectorySeparatorChar);
             var pathWithDirectorySeparatorChar = AppendDirectorySeparatorChar(fullPath);
 
-            var uriBuilder = new UriBuilder(pathWithDirectorySeparatorChar);
-
             return new Uri(pathWithDirectorySeparatorChar);
         }
 
