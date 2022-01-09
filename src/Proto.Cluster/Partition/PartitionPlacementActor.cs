@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -22,6 +23,8 @@ namespace Proto.Cluster.Partition
         private readonly PartitionConfig _config;
         private EventStreamSubscription<object>? _subscription;
 
+        private ClusterTopology? _lastRebalancedTopology = null;
+
         public PartitionPlacementActor(Cluster cluster, PartitionConfig config)
         {
             _cluster = cluster;
@@ -34,9 +37,159 @@ namespace Proto.Cluster.Partition
                 Started                     => OnStarted(context),
                 ActivationTerminating msg   => ActivationTerminating(msg),
                 IdentityHandoverRequest msg => IdentityHandoverRequest(context, msg),
+                ClusterTopology msg         => OnClusterTopology(context, msg),
                 ActivationRequest msg       => ActivationRequest(context, msg),
                 _                           => Task.CompletedTask
             };
+
+        private Task OnClusterTopology(IContext context, ClusterTopology msg)
+        {
+            if (_config.Mode != PartitionIdentityLookup.Mode.Push) return Task.CompletedTask;
+
+            var cancellationToken = msg.TopologyValidityToken!.Value;
+            // TODO: Configurable timeout
+            var activationsCompleted = _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(TimeSpan.FromSeconds(10), cancellationToken);
+
+            // Waits until all members agree on a cluster topology and have no more in-flight activation requests
+            context.ReenterAfter(activationsCompleted, async _ => {
+                    if (!cancellationToken.IsCancellationRequested)
+                    {
+                        await Rebalance(context, msg);
+                    }
+                }
+            );
+            return Task.CompletedTask;
+        }
+
+        private async Task Rebalance(IContext context, ClusterTopology msg)
+        {
+            var handoverStates = new Dictionary<string, MemberHandover>();
+
+            foreach (var member in msg.Members)
+            {
+                handoverStates[member.Id] = new MemberHandover(context, member, msg, _config);
+            }
+
+            var currentHashRing = new MemberHashRing(msg.Members);
+
+            switch (_config.Send)
+            {
+                case PartitionIdentityLookup.Send.Delta:
+                    var previousHashRing = _lastRebalancedTopology is null ? null : new MemberHashRing(_lastRebalancedTopology.Members);
+
+                    foreach (var (clusterIdentity, activation) in _myActors)
+                    {
+                        var identity = clusterIdentity.Identity;
+                        var owner = currentHashRing.GetNode(identity);
+                        var handoverState = handoverStates[owner.Id];
+
+                        var previousOwner = previousHashRing?.GetNode(identity);
+
+                        if (previousOwner?.Id.Equals(owner.Id, StringComparison.Ordinal) == true)
+                        {
+                            handoverState.AddSkipped();
+                        }
+                        else
+                        {
+                            handoverState.Add(clusterIdentity, activation);
+                        }
+                    }
+
+                    break;
+
+                case PartitionIdentityLookup.Send.Everything:
+                default:
+                    foreach (var (clusterIdentity, activation) in _myActors)
+                    {
+                        var identity = clusterIdentity.Identity;
+                        var owner = currentHashRing.GetNode(identity);
+                        var memberHandover = handoverStates[owner.Id];
+                        memberHandover.Add(clusterIdentity, activation);
+                    }
+
+                    break;
+            }
+
+            var waitingRequests = handoverStates.Values.SelectMany(it => it.Complete()).ToList();
+            await Task.WhenAll(waitingRequests);
+
+            if (waitingRequests.All(task => task.IsCompletedSuccessfully && task.Result is not null))
+            {
+                // All members should now be up-to-date with the current set of activations.
+                // With delta sends, it will use this to determine which activations to skip sending
+                _lastRebalancedTopology = msg;
+            }
+        }
+
+        private class MemberHandover
+        {
+            private List<Task<IdentityHandoverAck>> responseTasks = new();
+            private readonly PID _target;
+            private readonly IContext _context;
+            private readonly ClusterTopology _topology;
+            private readonly int _chunkSize;
+            private readonly bool _isLocal;
+
+            private IdentityHandover _identityHandover;
+            private uint _chunkId;
+            private uint _skipped;
+
+            public MemberHandover(IContext context, Member member, ClusterTopology msg, PartitionConfig config)
+            {
+                _context = context;
+                _topology = msg;
+                _chunkSize = config.HandoverChunkSize;
+                _target = PartitionManager.RemotePartitionIdentityActor(member.Address);
+                _isLocal = member.Address.Equals(context.System.Address, StringComparison.OrdinalIgnoreCase);
+                _identityHandover = new IdentityHandover
+                {
+                    ChunkId = ++_chunkId,
+                    TopologyHash = _topology.TopologyHash
+                };
+            }
+
+            public void Add(ClusterIdentity id, PID activation)
+            {
+                if (_identityHandover.Actors.Count == _chunkSize)
+                {
+                    Flush();
+                }
+
+                _identityHandover.Actors.Add(new Activation
+                    {
+                        ClusterIdentity = id,
+                        Pid = activation
+                    }
+                );
+            }
+
+            /// <summary>
+            /// When sending delta only, includes the number of skipped messages (already present on the owner from last rebalance)
+            /// </summary>
+            public void AddSkipped() => _skipped++;
+
+            private void Flush()
+            {
+                var cancellationToken = _topology.TopologyValidityToken!.Value;
+                cancellationToken.ThrowIfCancellationRequested();
+                // TODO: retries
+                responseTasks.Add(_context.RequestAsync<IdentityHandoverAck>(_target, _identityHandover, cancellationToken));
+                _identityHandover = new IdentityHandover
+                {
+                    ChunkId = ++_chunkId,
+                    TopologyHash = _topology.TopologyHash
+                };
+            }
+
+            public IEnumerable<Task<IdentityHandoverAck>> Complete()
+            {
+                _identityHandover.Final = true;
+                _identityHandover.Skipped = _skipped;
+                // TODO: retries
+                responseTasks.Add(_context.RequestAsync<IdentityHandoverAck>(_target, _identityHandover));
+                return responseTasks;
+            }
+        }
 
         private Task OnStarted(IContext context)
         {
@@ -136,7 +289,9 @@ namespace Proto.Cluster.Partition
                 }
 
                 response.Final = true;
-                Logger.LogDebug("{Id}, Sending final response with {Count} activations, total {Total}, chunk {ChunkId}, {Pid}, Topology {TopologyHash}", context.System.Id, response.Actors.Count, count, chunk,
+                Logger.LogDebug(
+                    "{Id}, Sending final response with {Count} activations, total {Total}, chunk {ChunkId}, {Pid}, Topology {TopologyHash}",
+                    context.System.Id, response.Actors.Count, count, chunk,
                     outOfBandResponseHandler, msg.TopologyHash
                 );
 

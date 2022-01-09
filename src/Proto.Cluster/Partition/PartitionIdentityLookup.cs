@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="PartitionIdentityLookup.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -35,7 +35,7 @@ namespace Proto.Cluster.Partition
         {
             using var cts = new CancellationTokenSource(_getPidTimeout);
             //Get address to node owning this ID
-            var (identityOwner,topologyHash) = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
+            var (identityOwner, topologyHash) = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
             Logger.LogDebug("Identity belongs to {Address}", identityOwner);
             if (string.IsNullOrEmpty(identityOwner)) return null;
 
@@ -74,7 +74,7 @@ namespace Proto.Cluster.Partition
             {
                 try
                 {
-                    var resp = await _cluster.System.Root.RequestAsync<Touched>(remotePid, new Touch(), CancellationTokens.FromSeconds(2));
+                    var resp = await _cluster.System.Root.RequestAsync<Touched?>(remotePid, new Touch(), CancellationTokens.FromSeconds(2));
 
                     if (resp == null)
                     {
@@ -123,6 +123,32 @@ namespace Proto.Cluster.Partition
         {
             _partitionManager.Shutdown();
             return Task.CompletedTask;
+        }
+
+        public enum Mode
+        {
+            /// <summary>
+            /// Each member queries every member to get the currently owned identities
+            /// </summary>
+            Pull,
+
+            /// <summary>
+            /// Each activation owner publishes activations to the current identity owner
+            /// </summary>
+            Push
+        }
+
+        public enum Send
+        {
+            /// <summary>
+            /// Only identities which have changed owner since the last completed topology rebalance are sent
+            /// </summary>
+            Delta,
+
+            /// <summary>
+            /// All activations are sent on every topology rebalance
+            /// </summary>
+            Everything
         }
     }
 }

@@ -11,6 +11,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Proto.Cluster.Identity;
+using Proto.Cluster.Partition;
 using Proto.Cluster.Tests;
 using Xunit;
 using Xunit.Abstractions;
@@ -26,17 +28,19 @@ namespace Proto.Cluster.PartitionIdentity.Tests
         private int _requests = 0;
 
         [Theory]
-        [InlineData(3, 100000, 1, 24, 20)]
+        [InlineData(3, 10000, 5, 12, 20, PartitionIdentityLookup.Mode.Pull)]
+        [InlineData(3, 10000, 5, 12, 20, PartitionIdentityLookup.Mode.Push)]
         public async Task ClusterMaintainsSingleConcurrentVirtualActorPerIdentity(
             int memberCount,
             int identityCount,
             int batchSize,
             int threads,
-            int runtimeSeconds
+            int runtimeSeconds,
+            PartitionIdentityLookup.Mode mode
         )
         {
             _requests = 0;
-            await using var fixture = await InitClusterFixture(memberCount);
+            await using var fixture = await InitClusterFixture(memberCount, mode);
 
             var identities = Enumerable.Range(0, identityCount).Select(_ => Guid.NewGuid().ToString("N")).ToList();
 
@@ -155,11 +159,12 @@ namespace Proto.Cluster.PartitionIdentity.Tests
                     await Task.Delay(rnd.Next(50), cancellationToken);
                     var id = RandomIdentity(identities, rnd);
                     var member = clusterFixture.Members[rnd.Next(clusterFixture.Members.Count)];
-                    await member.RequestAsync<Ack>(new ClusterIdentity
-                        {
-                            Identity = id,
-                            Kind = ConcurrencyVerificationActor.Kind
-                        }, new Die(), cancellationToken
+                    var clusterIdentity = new ClusterIdentity
+                    {
+                        Identity = id,
+                        Kind = ConcurrencyVerificationActor.Kind
+                    };
+                    await member.RequestAsync<Ack>(clusterIdentity, new Die(), cancellationToken
                     );
                     Interlocked.Increment(ref _requests);
                 }
@@ -193,8 +198,8 @@ namespace Proto.Cluster.PartitionIdentity.Tests
                         }
                         else
                         {
-                            // var graceful = rnd.Next() % 4 != 0;
-                            const bool graceful = true;
+                            var graceful = rnd.Next() % 2 != 0;
+                            // const bool graceful = true;
 
                             if (clusterFixture.Members.Count > minMembers)
                             {
@@ -218,8 +223,8 @@ namespace Proto.Cluster.PartitionIdentity.Tests
                             }
                             else
                             {
-                                // var graceful = rnd.Next() % 4 != 0;
-                                const bool graceful = true;
+                                var graceful = rnd.Next() % 2 != 0;
+                                // const bool graceful = true;
 
                                 if (clusterFixture.Members.Count > minMembers)
                                 {
@@ -243,9 +248,9 @@ namespace Proto.Cluster.PartitionIdentity.Tests
         private static Task StopRandomMember(IClusterFixture fixture, IList<Cluster> candidates, Random rnd, bool graceful)
             => _ = fixture.RemoveNode(RandomMember(candidates, rnd), graceful);
 
-        private static async Task<PartitionIdentityClusterFixture> InitClusterFixture(int memberCount)
+        private static async Task<PartitionIdentityClusterFixture> InitClusterFixture(int memberCount, PartitionIdentityLookup.Mode mode)
         {
-            var fixture = new PartitionIdentityClusterFixture(memberCount);
+            var fixture = new PartitionIdentityClusterFixture(memberCount, mode);
             await fixture.InitializeAsync();
             return fixture;
         }
@@ -253,11 +258,14 @@ namespace Proto.Cluster.PartitionIdentity.Tests
 
     public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
     {
+        private readonly PartitionIdentityLookup.Mode _mode;
         public readonly ActorStateRepo Repository = new();
 
-        public PartitionIdentityClusterFixture(int memberCount) : base(memberCount)
-        {
-        }
+        public PartitionIdentityClusterFixture(int memberCount, PartitionIdentityLookup.Mode mode) : base(memberCount) => _mode = mode;
+
+        protected override IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionIdentityLookup(TimeSpan.FromSeconds(3),
+            TimeSpan.FromSeconds(5), new PartitionConfig(false, 1000, TimeSpan.FromSeconds(3), _mode)
+        );
 
         protected override ClusterKind[] ClusterKinds
             => new[] {new ClusterKind(ConcurrencyVerificationActor.Kind, Props.FromProducer(() => new ConcurrencyVerificationActor(Repository)))};

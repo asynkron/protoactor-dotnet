@@ -21,8 +21,6 @@ namespace Proto.Cluster.Partition
     //for spawning/activating cluster actors see PartitionActivator.cs
     class PartitionIdentityActor : IActor
     {
-        //for how long do we wait when performing a identity handover?
-
         private readonly Cluster _cluster;
         private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
         private readonly string _myAddress;
@@ -34,11 +32,13 @@ namespace Proto.Cluster.Partition
         private readonly Dictionary<ClusterIdentity, (TaskCompletionSource<ActivationResponse> Response, string activationAddress)> _spawns = new();
 
         private ulong _topologyHash;
+        private HandoverState? _currentHandover;
+
         private readonly TimeSpan _identityHandoverTimeout;
         private readonly PartitionConfig _config;
 
         private TaskCompletionSource<ulong>? _rebalanceTcs;
-        // private CancellationTokenSource? _rebalanceCancellation;
+
         private HashSet<string> _currentMemberAddresses = new();
 
         public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout, PartitionConfig config)
@@ -56,8 +56,58 @@ namespace Proto.Cluster.Partition
                 ActivationRequest msg    => OnActivationRequest(msg, context),
                 ActivationTerminated msg => OnActivationTerminated(msg),
                 ClusterTopology msg      => OnClusterTopology(msg, context),
+                IdentityHandover msg     => OnIdentityHandover(msg, context),
                 _                        => Task.CompletedTask
             };
+
+        private Task OnIdentityHandover(IdentityHandover msg, IContext context)
+        {
+            if (context.Sender is null)
+            {
+                Logger.LogWarning("IdentityHandover received with null sender");
+                return Task.CompletedTask;
+            }
+
+            context.Respond(new IdentityHandoverAck
+                {
+                    ChunkId = msg.ChunkId,
+                    TopologyHash = msg.TopologyHash
+                }
+            );
+
+            if (msg.TopologyHash != _topologyHash)
+            {
+                Logger.LogWarning("IdentityHandover with non-matching topology hash {MessageTopologyHash} instead of {CurrentTopologyHash}",
+                    msg.TopologyHash, _topologyHash
+                );
+                return Task.CompletedTask;
+            }
+
+            if (_currentHandover is null)
+            {
+                Logger.LogWarning("IdentityHandover received when member is not re-balancing");
+                return Task.CompletedTask;
+            }
+
+            foreach (var activation in msg.Actors)
+            {
+                TakeOverIdentity(activation.ClusterIdentity, activation.Pid);
+            }
+
+            if (_currentHandover.IsFinalHandoverMessage(context.Sender, msg))
+            {
+                if (_config.DeveloperLogging)
+                {
+                    Console.WriteLine("Completed rebalance from all members for topology " + _topologyHash);
+                }
+
+                _currentHandover = null;
+                _rebalanceTcs?.TrySetResult(_topologyHash);
+                _rebalanceTcs = null;
+            }
+
+            return Task.CompletedTask;
+        }
 
         private Task OnStarted(IContext context)
         {
@@ -75,17 +125,26 @@ namespace Proto.Cluster.Partition
             }
 
             FailSpawnsTargetingLeftMembers(msg);
+
             SetTopology(msg);
 
             if (msg.Members.Count == 0)
             {
                 Logger.LogWarning("No active members in cluster topology update");
+                _partitionLookup.Clear();
                 return Task.CompletedTask;
             }
 
+            SetReadyToRebalanceIfNoMoreWaitingSpawns();
+            DiscardActivationsOnLeftMembers(msg);
+
             _rebalanceTcs ??= new TaskCompletionSource<ulong>();
 
-            SetReadyToRebalanceIfNoMoreWaitingSpawns();
+            if (_config.Mode == PartitionIdentityLookup.Mode.Push)
+            {
+                _currentHandover = new HandoverState(msg);
+                return Task.CompletedTask;
+            }
 
             Logger.LogInformation("{SystemId} Starting to wait for activations to complete:, {CurrentTopology}", _cluster.System.Id, _topologyHash);
 
@@ -124,6 +183,20 @@ namespace Proto.Cluster.Partition
                 }
             );
             return Task.CompletedTask;
+        }
+
+        private void DiscardActivationsOnLeftMembers(ClusterTopology topology)
+        {
+            var left = topology.Left.Select(member => member.Address).ToHashSet();
+            var leftIdentities = _partitionLookup
+                .Where(kv => left.Contains(kv.Value.Address))
+                .Select(kv => kv.Key)
+                .ToList();
+
+            foreach (var clusterIdentity in leftIdentities)
+            {
+                _partitionLookup.Remove(clusterIdentity);
+            }
         }
 
         private void SetTopology(ClusterTopology msg)
@@ -218,23 +291,36 @@ namespace Proto.Cluster.Partition
                 msg.OwnedActivations.Count, _topologyHash
             );
 
-            foreach (var activation in msg.OwnedActivations)
+            foreach (var (clusterIdentity, activation) in msg.OwnedActivations)
             {
-                if (_partitionLookup.TryAdd(activation.Key, activation.Value)) continue;
-
-                var existingActivation = _partitionLookup[activation.Key];
-                // Already present, duplicate?
-                Logger.LogError("Got duplicate activations of {ClusterIdentity}: {Activation1}, {Activation2}",
-                    activation.Key,
-                    existingActivation,
-                    activation.Value
-                );
+                TakeOverIdentity(clusterIdentity, activation);
             }
 
             _rebalanceTcs?.TrySetResult(_topologyHash);
             _rebalanceTcs = null;
 
             return Task.CompletedTask;
+        }
+
+        private void TakeOverIdentity(ClusterIdentity clusterIdentity, PID activation)
+        {
+            if (_partitionLookup.TryAdd(clusterIdentity, activation)) return;
+
+            var existingActivation = _partitionLookup[clusterIdentity];
+
+            if (existingActivation.Equals(activation))
+            {
+                Logger.LogDebug("Got the same activations twice {ClusterIdentity}: {Activation}", clusterIdentity, existingActivation);
+            }
+            else
+            {
+                // Already present, duplicate?
+                Logger.LogError("Got duplicate activations of {ClusterIdentity}: {Activation1}, {Activation2}",
+                    clusterIdentity,
+                    existingActivation,
+                    activation
+                );
+            }
         }
 
         private Task OnActivationTerminated(ActivationTerminated msg)
@@ -259,6 +345,16 @@ namespace Proto.Cluster.Partition
 
         private Task OnActivationRequest(ActivationRequest msg, IContext context)
         {
+            //Check if exist in current partition dictionary
+            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
+            {
+                if (_config.DeveloperLogging)
+                    Console.WriteLine($"Found existing activation for {msg.RequestId} {msg.ClusterIdentity}");
+
+                context.Respond(new ActivationResponse {Pid = pid});
+                return Task.CompletedTask;
+            }
+
             // Wait for rebalance in progress
             if (_rebalanceTcs is not null)
             {
@@ -294,16 +390,6 @@ namespace Proto.Cluster.Partition
 
                     return Task.CompletedTask;
                 }
-            }
-
-            //Check if exist in current partition dictionary
-            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
-            {
-                if (_config.DeveloperLogging)
-                    Console.WriteLine($"Found existing activation for {msg.RequestId}");
-
-                context.Respond(new ActivationResponse {Pid = pid});
-                return Task.CompletedTask;
             }
 
             //only activate members when we are all in sync

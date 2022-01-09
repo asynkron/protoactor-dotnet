@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.IO.Compression;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
+using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Compression;
 using k8s;
@@ -24,22 +24,25 @@ using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.OpenTelemetry;
 using Proto.Remote;
+using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using Serilog;
 using Serilog.Events;
 using StackExchange.Redis;
+using CompressionLevel = System.IO.Compression.CompressionLevel;
 using Log = Serilog.Log;
 
 namespace ClusterExperiment1
 {
     public static class Configuration
     {
-        private const bool EnableTracing = true;
+        private const bool EnableTracing = false;
 
         private static readonly object InitLock = new();
         private static TracerProvider? tracerProvider;
 
 #pragma warning disable CS0162
+// ReSharper disable once HeuristicUnreachableCode
         private static void InitTracing()
         {
             if (!EnableTracing) return;
@@ -72,6 +75,8 @@ namespace ClusterExperiment1
                 .WithGossipFanOut(3);
         }
 
+        // private static GrpcCoreRemoteConfig GetRemoteConfig() => GetRemoteConfigGrpcCore();
+
         private static GrpcNetRemoteConfig GetRemoteConfig()
         {
             var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
@@ -96,6 +101,22 @@ namespace ClusterExperiment1
             return remoteConfig;
         }
 
+        private static GrpcCoreRemoteConfig GetRemoteConfigGrpcCore()
+        {
+            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
+            var port = int.Parse(portStr);
+            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfigBase.Localhost;
+            var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
+
+            var remoteConfig = GrpcCoreRemoteConfig
+                .BindTo(host, port)
+                .WithAdvertisedHost(advertisedHost)
+                .WithProtoMessages(MessagesReflection.Descriptor)
+                .WithEndpointWriterMaxRetries(2);
+
+            return remoteConfig;
+        }
+
         private static IClusterProvider ClusterProvider()
         {
             try
@@ -112,7 +133,7 @@ namespace ClusterExperiment1
         }
 
         public static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
-            new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1))
+            new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1), PartitionIdentityLookup.Mode.Pull)
         );
 
         private static IIdentityLookup GetRedisIdentityLookup()
@@ -179,9 +200,9 @@ namespace ClusterExperiment1
                 // .WithSharedFutures()
                 .WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
-                .WithDeadLetterRequestLogging(false)
-                .WithDeveloperSupervisionLogging(true)
-                .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1));
+                .WithDeadLetterRequestLogging(false);
+                // .WithDeveloperSupervisionLogging(false)
+                // .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1));
 
             return EnableTracing ? config.WithConfigureProps(props => props.WithTracing()) : config;
         }

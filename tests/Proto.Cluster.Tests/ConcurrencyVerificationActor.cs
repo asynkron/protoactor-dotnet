@@ -79,7 +79,7 @@ namespace Proto.Cluster.Tests
         {
             SessionId = Guid.NewGuid();
             _state = _repo.Get(context.ClusterIdentity()!.Identity);
-            _state!.RecordStarted(context.Self);
+            _state.RecordStarted(context.Self);
             _count = _state.StoredCount;
 
             // Simulate network hop
