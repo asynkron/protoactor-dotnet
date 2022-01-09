@@ -41,6 +41,7 @@ namespace Proto.Cluster
         //meaning the partition infra might be ahead of this list.
         //come up with a good solution to keep all this in sync
         private ImmutableMemberSet _activeMembers = ImmutableMemberSet.Empty;
+        private CancellationTokenSource? _currentTopologyTokenSource;
 
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
@@ -145,6 +146,9 @@ namespace Proto.Cluster
                 {
                     return;
                 }
+                // Cancel any work based on the previous topology
+                _currentTopologyTokenSource?.Cancel();
+                _currentTopologyTokenSource = new CancellationTokenSource();
 
                 var left = _activeMembers.Except(activeMembers);
                 var joined = activeMembers.Except(_activeMembers);
@@ -170,7 +174,8 @@ namespace Proto.Cluster
                     Members = {activeMembers.Members},
                     Left = {left.Members},
                     Joined = {joined.Members},
-                    Blocked = {blockList.BlockedMembers}
+                    Blocked = {blockList.BlockedMembers},
+                    TopologyValidityToken = _currentTopologyTokenSource.Token
                 };
 
                 Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);

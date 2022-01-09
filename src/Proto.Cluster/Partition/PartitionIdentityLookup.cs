@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="PartitionIdentityLookup.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -20,13 +20,13 @@ namespace Proto.Cluster.Partition
         private readonly TimeSpan _getPidTimeout;
         private readonly PartitionConfig _config;
 
-        public PartitionIdentityLookup() : this(TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(1))
+        public PartitionIdentityLookup() : this(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1))
         {
         }
-        
-        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout, PartitionConfig? config=null)
+
+        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout, PartitionConfig? config = null)
         {
-            _config = config ?? new PartitionConfig(false);
+            _config = config ?? new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1));
             _identityHandoverTimeout = identityHandoverTimeout;
             _getPidTimeout = getPidTimeout;
         }
@@ -35,8 +35,8 @@ namespace Proto.Cluster.Partition
         {
             using var cts = new CancellationTokenSource(_getPidTimeout);
             //Get address to node owning this ID
-            var identityOwner = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
-            Logger.LogDebug("Identity belongs to {address}", identityOwner);
+            var (identityOwner, topologyHash) = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
+            Logger.LogDebug("Identity belongs to {Address}", identityOwner);
             if (string.IsNullOrEmpty(identityOwner)) return null;
 
             var remotePid = PartitionManager.RemotePartitionIdentityActor(identityOwner);
@@ -44,57 +44,56 @@ namespace Proto.Cluster.Partition
             var req = new ActivationRequest
             {
                 RequestId = Guid.NewGuid().ToString("N"),
-                ClusterIdentity = clusterIdentity
+                ClusterIdentity = clusterIdentity,
+                TopologyHash = topologyHash
             };
 
-            Logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", identityOwner, remotePid, req
-            );
+            Logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", identityOwner, remotePid, req);
 
             try
             {
                 if (_config.DeveloperLogging)
                     Console.WriteLine($"Sending Request {req.RequestId}");
-                
-                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, cts.Token);              
+
+                var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, cts.Token);
 
                 if (resp?.Pid != null) return resp.Pid;
 
                 if (_config.DeveloperLogging)
                     Console.WriteLine("Failed");
-                
-                return null;
 
+                return null;
             }
             //TODO: decide if we throw or return null
             catch (DeadLetterException)
             {
-                Logger.LogInformation("Remote PID request deadletter {@Request}, identity Owner {Owner}", req,identityOwner);
+                Logger.LogInformation("Remote PID request deadletter {@Request}, identity Owner {Owner}", req, identityOwner);
                 return null;
             }
             catch (TimeoutException)
             {
                 try
                 {
-                    var resp = await _cluster.System.Root.RequestAsync<Touched>(remotePid, new Touch(), CancellationTokens.FromSeconds(2));
+                    var resp = await _cluster.System.Root.RequestAsync<Touched?>(remotePid, new Touch(), CancellationTokens.FromSeconds(2));
 
                     if (resp == null)
                     {
-                        if(_config.DeveloperLogging)
+                        if (_config.DeveloperLogging)
                             Console.WriteLine("Actor is blocked....");
                     }
                 }
                 catch
                 {
-                    if(_config.DeveloperLogging)
+                    if (_config.DeveloperLogging)
                         Console.WriteLine("Actor is blocked....");
                 }
 
-                Logger.LogInformation("Remote PID request timeout {@Request}, identity Owner {Owner}", req,identityOwner);
+                Logger.LogInformation("Remote PID request timeout {@Request}, identity Owner {Owner}", req, identityOwner);
                 return null;
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "Error occured requesting remote PID {@Request}, identity Owner {Owner}", req,identityOwner);
+                Logger.LogError(e, "Error occured requesting remote PID {@Request}, identity Owner {Owner}", req, identityOwner);
                 return null;
             }
         }
@@ -106,16 +105,16 @@ namespace Proto.Cluster.Partition
                 Pid = pid,
                 ClusterIdentity = clusterIdentity,
             };
-           
+
             _cluster.MemberList.BroadcastEvent(activationTerminated);
-            
+
             return Task.CompletedTask;
         }
 
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             _cluster = cluster;
-            _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout,_config);
+            _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout, _config);
             _partitionManager.Setup();
             return Task.CompletedTask;
         }
@@ -124,6 +123,32 @@ namespace Proto.Cluster.Partition
         {
             _partitionManager.Shutdown();
             return Task.CompletedTask;
+        }
+
+        public enum Mode
+        {
+            /// <summary>
+            /// Each member queries every member to get the currently owned identities
+            /// </summary>
+            Pull,
+
+            /// <summary>
+            /// Each activation owner publishes activations to the current identity owner
+            /// </summary>
+            Push
+        }
+
+        public enum Send
+        {
+            /// <summary>
+            /// Only identities which have changed owner since the last completed topology rebalance are sent
+            /// </summary>
+            Delta,
+
+            /// <summary>
+            /// All activations are sent on every topology rebalance
+            /// </summary>
+            Everything
         }
     }
 }

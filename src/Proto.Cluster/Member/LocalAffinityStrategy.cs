@@ -16,7 +16,6 @@ namespace Proto.Cluster
     class LocalAffinityStrategy : IMemberStrategy
     {
         private readonly Cluster _cluster;
-        private readonly Rendezvous _rdv;
         private readonly RoundRobinMemberSelector _rr;
         private Member? _me;
         private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
@@ -24,7 +23,6 @@ namespace Proto.Cluster
         public LocalAffinityStrategy(Cluster cluster)
         {
             _cluster = cluster;
-            _rdv = new Rendezvous();
             _rr = new RoundRobinMemberSelector(this);
         }
 
@@ -37,13 +35,11 @@ namespace Proto.Cluster
 
             if (member.Address.Equals(_cluster.System.Address, StringComparison.InvariantCulture)) _me = member;
             _members = _members.Add(member);
-            _rdv.UpdateMembers(_members);
         }
 
         public void RemoveMember(Member member)
         {
             _members = _members.RemoveAll(x => x.Address == member.Address);
-            _rdv.UpdateMembers(_members);
         }
 
         public Member? GetActivator(string senderAddress)
