@@ -201,7 +201,11 @@ namespace Proto.Cluster.Partition
 
             private void SendWithRetries(IdentityHandover identityHandover, CancellationToken cancellationToken)
             {
-                var task = Retry.TryUntil(() => _context.RequestAsync<IdentityHandoverAck>(_target, identityHandover, _requestTimeout),
+                var task = Retry.TryUntil(() => {
+                        using var timeout = new CancellationTokenSource(_requestTimeout);
+                        using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
+                        return _context.RequestAsync<IdentityHandoverAck>(_target, identityHandover, linked.Token);
+                    },
                     ack => cancellationToken.IsCancellationRequested || ack is not null,
                     int.MaxValue // Continue until complete or cancelled,
                 );
