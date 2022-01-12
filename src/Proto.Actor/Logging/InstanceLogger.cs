@@ -19,8 +19,10 @@ namespace Proto.Logging
         private readonly LogStore? _logStore;
         private readonly string _category;
 
-        public InstanceLogger BeginMethodScope([CallerMemberName]string caller="")  => new(_logLevel, _logStore, _logger, $"{_category}/{caller}");
-        public InstanceLogger BeginScope<T>()  => new(_logLevel, _logStore, _logger, typeof(T).Name);
+        public InstanceLogger BeginMethodScope([CallerMemberName] string caller = "") => new(_logLevel, _logStore, _logger, $"{_category}/{caller}");
+
+        public InstanceLogger BeginScope<T>() => new(_logLevel, _logStore, _logger, typeof(T).Name);
+
         public InstanceLogger BeginScope(string category) => new(_logLevel, _logStore, _logger, $"{_category}/{category}");
 
         public InstanceLogger(LogLevel logLevel, LogStore? logStore = null, ILogger? logger = null, string category = "default")
@@ -35,42 +37,47 @@ namespace Proto.Logging
         {
             if (_logLevel > LogLevel.Debug)
                 return;
+
             _logger?.LogDebug(template);
+            _logStore?.Append(_logLevel, _category, template, null, Array.Empty<object>());
+
         }
 
         public void LogDebug<T>(string template, T arg)
         {
             if (_logLevel > LogLevel.Debug)
                 return;
-            
+
             _logger?.LogDebug(template, arg);
-        }
-        
-        public void LogDebug<T,T2>(string template, T arg, T2 arg2)
-        {
-            if (_logLevel > LogLevel.Debug)
-                return;
-            
-            _logger?.LogDebug(template, arg, arg2);
-        }
-        
-        public void LogDebug<T,T2, T3>(string template, T arg, T2 arg2, T3 arg3)
-        {
-            if (_logLevel > LogLevel.Debug)
-                return;
-            
-            _logger?.LogDebug(template, arg, arg2, arg3);
+            _logStore?.Append(_logLevel, _category, template, null, new object[]{ arg });
         }
 
-        
+        public void LogDebug<T, T2>(string template, T arg, T2 arg2)
+        {
+            if (_logLevel > LogLevel.Debug)
+                return;
+
+            _logger?.LogDebug(template, arg, arg2);
+            _logStore?.Append(_logLevel, _category, template, null, new object[] {arg, arg2});
+
+        }
+
+        public void LogDebug<T, T2, T3>(string template, T arg, T2 arg2, T3 arg3)
+        {
+            if (_logLevel > LogLevel.Debug)
+                return;
+
+            _logger?.LogDebug(template, arg, arg2, arg3);
+            _logStore?.Append(_logLevel, _category, template, null, new object[] {arg, arg2, arg3});
+        }
+
         public void LogDebug(string template, params object[] args)
         {
             if (_logLevel > LogLevel.Debug)
                 return;
 
             _logger?.LogDebug(template, args);
-            _logStore?.Append(_logLevel, _category, template,null, args);
-
+            _logStore?.Append(_logLevel, _category, template, null, args);
         }
 
         public void LogDebug(Exception x, string template, params object[] args)
@@ -79,7 +86,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogDebug(x, template, args);
-            _logStore?.Append(_logLevel, _category, template,x, args);
+            _logStore?.Append(_logLevel, _category, template, x, args);
         }
 
         public void LogInformation(string template, params object[] args)
@@ -88,7 +95,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogInformation(template, args);
-            _logStore?.Append(_logLevel, _category, template,null, args);
+            _logStore?.Append(_logLevel, _category, template, null, args);
         }
 
         public void LogInformation(Exception x, string template, params object[] args)
@@ -97,7 +104,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogInformation(x, template, args);
-            _logStore?.Append(_logLevel, _category, template,x, args);
+            _logStore?.Append(_logLevel, _category, template, x, args);
         }
 
         public void LogWarning(string template, params object[] args)
@@ -106,7 +113,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogWarning(template, args);
-            _logStore?.Append(_logLevel, _category, template,null, args);
+            _logStore?.Append(_logLevel, _category, template, null, args);
         }
 
         public void LogWarning(Exception x, string template, params object[] args)
@@ -115,7 +122,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogWarning(x, template, args);
-            _logStore?.Append(_logLevel, _category, template,x, args);
+            _logStore?.Append(_logLevel, _category, template, x, args);
         }
 
         public void LogError(string template, params object[] args)
@@ -124,7 +131,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogError(template, args);
-            _logStore?.Append(_logLevel, _category, template,null, args);
+            _logStore?.Append(_logLevel, _category, template, null, args);
         }
 
         public void LogError(Exception x, string template, params object[] args)
@@ -133,7 +140,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogError(x, template, args);
-            _logStore?.Append(_logLevel, _category, template,x, args);
+            _logStore?.Append(_logLevel, _category, template, x, args);
         }
 
         public void LogCritical(string template, params object[] args)
@@ -142,7 +149,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogCritical(template, args);
-            _logStore?.Append(_logLevel, _category, template,null, args);
+            _logStore?.Append(_logLevel, _category, template, null, args);
         }
 
         public void LogCritical(Exception x, string template, params object[] args)
@@ -151,7 +158,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogCritical(x, template, args);
-            _logStore?.Append(_logLevel, _category, template,x, args);
+            _logStore?.Append(_logLevel, _category, template, x, args);
         }
     }
 }
