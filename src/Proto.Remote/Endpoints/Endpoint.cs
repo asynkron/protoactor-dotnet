@@ -283,18 +283,19 @@ namespace Proto.Remote
             {
                 try
                 {
+                    var messages = new List<RemoteDeliver>(RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize);
                     while (await _remoteDelivers.Reader.WaitToReadAsync(CancellationToken).ConfigureAwait(false))
                     {
-                        var messages = new List<RemoteDeliver>();
 
                         while (_remoteDelivers.Reader.TryRead(out var remoteDeliver))
                         {
                             messages.Add(remoteDeliver);
-                            if (messages.Count > RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize) break;
+                            if (messages.Count >= RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize) break;
                         }
 
                         var batch = CreateBatch(messages);
                         await Outgoing.Writer.WriteAsync(new RemoteMessage {MessageBatch = batch}, CancellationToken);
+                        messages.Clear();
                     }
                 }
                 catch (OperationCanceledException)
