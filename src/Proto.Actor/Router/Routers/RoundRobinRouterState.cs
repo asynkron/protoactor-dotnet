@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="RoundRobinRouterState.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
@@ -17,9 +17,8 @@ namespace Proto.Router.Routers
         public override void RouteMessage(object message)
         {
             var values = GetValues();
-            var i = _currentIndex % values.Count;
+            var i = Interlocked.Increment(ref _currentIndex) % values.Count;
             var pid = values[i];
-            Interlocked.Add(ref _currentIndex, 1);
             _senderContext.Send(pid, message);
         }
     }
