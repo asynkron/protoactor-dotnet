@@ -231,8 +231,8 @@ namespace Proto.Future
         private class FutureHandle
         {
             public TaskCompletionSource<object>? CompletionSource { get; private set; }
-            private int _requestId;
-            public uint RequestId => (uint) _requestId;
+            private long _requestId;
+            public uint RequestId => (uint) Interlocked.Read(ref _requestId);
             private readonly SharedFutureProcess _parent;
 
             public FutureHandle(SharedFutureProcess parent, uint requestId)
