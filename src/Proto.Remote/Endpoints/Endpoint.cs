@@ -324,7 +324,7 @@ namespace Proto.Remote
                 if (!targets.TryGetValue(target.Id, out var targetId))
                 {
                     targetId = targets[target.Id] = targets.Count;
-                    targetList.Add(target);
+                    targetList.Add(PID.FromAddress(target.Address, target.Id));
                 }
 
                 var sender = rd.Sender;
@@ -334,7 +334,7 @@ namespace Proto.Remote
                 if (sender != null && !senders.TryGetValue(sender.Id, out senderId))
                 {
                     senderId = senders[sender.Id] = senders.Count + 1;
-                    senderList.Add(sender);
+                    senderList.Add(PID.FromAddress(sender.Address, sender.Id));
                 }
 
                 var message = rd.Message;
