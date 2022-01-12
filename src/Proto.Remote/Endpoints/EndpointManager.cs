@@ -53,7 +53,7 @@ namespace Proto.Remote
             {
                 if (CancellationToken.IsCancellationRequested) return;
 
-                Logger.LogDebug("[{SystemAdress}] Stopping", _system.Address);
+                Logger.LogDebug("[{SystemAddress}] Stopping", _system.Address);
 
                 _system.EventStream.Unsubscribe(_endpointTerminatedEvnSub);
 
@@ -74,12 +74,12 @@ namespace Proto.Remote
 
                 StopActivator();
 
-                Logger.LogDebug("[{SystemAdress}] Stopped", _system.Address);
+                Logger.LogDebug("[{SystemAddress}] Stopped", _system.Address);
             }
         }
         private void OnEndpointTerminated(EndpointTerminatedEvent evt)
         {
-            Logger.LogDebug("[{SystemAdress}] Endpoint {address} terminating", _system.Address, evt.Address ?? evt.ActorSystemId);
+            Logger.LogDebug("[{SystemAddress}] Endpoint {address} terminating", _system.Address, evt.Address ?? evt.ActorSystemId);
             lock (_synLock)
             {
                 if (evt.Address is not null && _serverEndpoints.TryRemove(evt.Address, out var endpoint))
@@ -107,7 +107,7 @@ namespace Proto.Remote
                     }
                 }
             }
-            Logger.LogDebug("[{SystemAdress}] Endpoint {address} terminated", _system.Address, evt.Address ?? evt.ActorSystemId);
+            Logger.LogDebug("[{SystemAddress}] Endpoint {address} terminated", _system.Address, evt.Address ?? evt.ActorSystemId);
         }
         internal IEndpoint GetOrAddServerEndpoint(string address)
         {
@@ -129,19 +129,19 @@ namespace Proto.Remote
                 //still no instance, we can spawn and add it here.
                 if (address is not null)
                 {
-                    if (_system.Address.StartsWith(ActorSystem.Client))
+                    if (_system.Address.StartsWith(ActorSystem.Client, StringComparison.Ordinal))
                     {
-                        Logger.LogDebug("[{SystemAdress}] Requesting new client side ServerEndpoint for {Address}", _system.Address, address);
+                        Logger.LogDebug("[{SystemAddress}] Requesting new client side ServerEndpoint for {Address}", _system.Address, address);
                         endpoint = _serverEndpoints.GetOrAdd(address, v => new ServerEndpoint(_system, _remoteConfig, v, _channelProvider, ServerConnector.Type.ClientSide, RemoteMessageHandler));
                     }
                     else
                     {
-                        Logger.LogDebug("[{SystemAdress}] Requesting new server side ServerEndpoint for {Address}", _system.Address, address);
+                        Logger.LogDebug("[{SystemAddress}] Requesting new server side ServerEndpoint for {Address}", _system.Address, address);
                         endpoint = _serverEndpoints.GetOrAdd(address, v => new ServerEndpoint(_system, _remoteConfig, v, _channelProvider, ServerConnector.Type.ServerSide, RemoteMessageHandler));
                     }
                     return endpoint;
                 }
-                Logger.LogWarning("[{SystemAdress}] No endpoint found for {Address}", _system.Address, address);
+                Logger.LogWarning("[{SystemAddress}] No endpoint found for {Address}", _system.Address, address);
                 return _bannedEndpoint;
             }
         }
@@ -165,11 +165,11 @@ namespace Proto.Remote
                 //still no instance, we can spawn and add it here.
                 if (systemId is not null)
                 {
-                    Logger.LogDebug("[{SystemAdress}] Requesting new ServerSideClientEndpoint for {SystemId}", _system.Address, systemId);
+                    Logger.LogDebug("[{SystemAddress}] Requesting new ServerSideClientEndpoint for {SystemId}", _system.Address, systemId);
 
                     return _clientEndpoints.GetOrAdd(systemId, v => new ServerSideClientEndpoint(_system, _remoteConfig, $"{v}"));
                 }
-                Logger.LogWarning("[{SystemAdress}] No endpoint found for {SystemId}", _system.Address, systemId);
+                Logger.LogWarning("[{SystemAddress}] No endpoint found for {SystemId}", _system.Address, systemId);
                 return _bannedEndpoint;
             }
         }
