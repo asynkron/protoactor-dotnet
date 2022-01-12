@@ -70,7 +70,15 @@ namespace Proto.Future
         private PID Pid { get; }
         public bool Stopping { get; private set; }
 
-        public int RequestsInFlight => (int) (_createdRequests - _completedRequests);
+        public int RequestsInFlight {
+            get {
+                // Read completedRequests first and createdRequests later so that we will
+                // never read the 2 vars in an order that would result in completedRequests > createdRequests.
+                long completed = Interlocked.Read(ref _createdRequests);
+                long created = Interlocked.Read(ref _createdRequests);
+                return (int) (created - completed);
+            }
+        }
 
         public IFuture? TryCreateHandle()
         {
