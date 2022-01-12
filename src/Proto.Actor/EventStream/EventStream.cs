@@ -23,6 +23,8 @@ namespace Proto
 
         internal EventStream(ActorSystem system)
         {
+            if (!_logger.IsEnabled(LogLevel.Information)) return;
+
             var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount, system.Config.DeadLetterThrottleInterval,
                 droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs", droppedLogs)
             );

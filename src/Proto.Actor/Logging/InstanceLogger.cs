@@ -31,6 +31,38 @@ namespace Proto.Logging
             _category = category;
         }
 
+        public void LogDebug(string template)
+        {
+            if (_logLevel > LogLevel.Debug)
+                return;
+            _logger?.LogDebug(template);
+        }
+
+        public void LogDebug<T>(string template, T arg)
+        {
+            if (_logLevel > LogLevel.Debug)
+                return;
+            
+            _logger?.LogDebug(template, arg);
+        }
+        
+        public void LogDebug<T,T2>(string template, T arg, T2 arg2)
+        {
+            if (_logLevel > LogLevel.Debug)
+                return;
+            
+            _logger?.LogDebug(template, arg, arg2);
+        }
+        
+        public void LogDebug<T,T2, T3>(string template, T arg, T2 arg2, T3 arg3)
+        {
+            if (_logLevel > LogLevel.Debug)
+                return;
+            
+            _logger?.LogDebug(template, arg, arg2, arg3);
+        }
+
+        
         public void LogDebug(string template, params object[] args)
         {
             if (_logLevel > LogLevel.Debug)

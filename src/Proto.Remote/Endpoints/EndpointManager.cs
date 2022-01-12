@@ -79,7 +79,8 @@ namespace Proto.Remote
         }
         private void OnEndpointTerminated(EndpointTerminatedEvent evt)
         {
-            Logger.LogDebug("[{SystemAddress}] Endpoint {address} terminating", _system.Address, evt.Address ?? evt.ActorSystemId);
+            if(Logger.IsEnabled(LogLevel.Debug))
+                Logger.LogDebug("[{SystemAddress}] Endpoint {Address} terminating", _system.Address, evt.Address ?? evt.ActorSystemId);
             lock (_synLock)
             {
                 if (evt.Address is not null && _serverEndpoints.TryRemove(evt.Address, out var endpoint))
