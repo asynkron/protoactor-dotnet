@@ -25,7 +25,7 @@ namespace Proto.Cluster.PartitionIdentity.Tests
 
         public PartitionIdentityTests(ITestOutputHelper output) => _output = output;
 
-        private int _requests = 0;
+        private long _requests = 0;
 
         [Theory]
         [InlineData(3, 10000, 5, 12, 20, PartitionIdentityLookup.Mode.Pull)]
@@ -39,7 +39,7 @@ namespace Proto.Cluster.PartitionIdentity.Tests
             PartitionIdentityLookup.Mode mode
         )
         {
-            _requests = 0;
+            Interlocked.Exchange(ref _requests, 0);
             await using var fixture = await InitClusterFixture(memberCount, mode);
 
             var identities = Enumerable.Range(0, identityCount).Select(_ => Guid.NewGuid().ToString("N")).ToList();
@@ -56,12 +56,12 @@ namespace Proto.Cluster.PartitionIdentity.Tests
             StartSpawningAndStoppingMembers(fixture, stop.Token);
 
             var timer = Stopwatch.StartNew();
-            var prev = _requests;
+            var prev = Interlocked.Read(ref _requests);
 
             while (!stop.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-                var now = _requests;
+                var now = Interlocked.Read(ref _requests);
 
                 _output.WriteLine($"Consistent responses: {now - prev}/{timer.Elapsed}");
                 timer.Restart();

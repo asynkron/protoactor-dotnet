@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -246,7 +246,7 @@ namespace Proto.Remote.Tests
             
             var rnd = new Random();
             var tcs = new TaskCompletionSource<bool>();
-            var responseCount = 0;
+            long responseCount = 0;
             var responseHandler = _fixture.ActorSystem.Root.Spawn(Props.FromFunc(ctx => {
                         if (ctx.Message is Ack)
                         {
@@ -276,11 +276,11 @@ namespace Proto.Remote.Tests
             res.Should().NotBeNull("Remote should still be alive");
             res.Who.Should().BeEquivalentTo(actor);
 
-            responseCount.Should().Be(messageCount);
+            Interlocked.Read(ref responseCount).Should().Be(messageCount);
             
             
             tcs.Task.IsCompletedSuccessfully.Should().BeTrue("All responses received");
-            responseCount.Should().Be(messageCount);
+            Interlocked.Read(ref responseCount).Should().Be(messageCount);
 
             BinaryMessage NextMsg()
             {
