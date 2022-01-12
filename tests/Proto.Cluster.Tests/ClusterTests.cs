@@ -296,7 +296,7 @@ namespace Proto.Cluster.Tests
             LogProcessCounts();
 
             _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
-            await Task.Delay(100, timeout);
+            await Task.Delay(200, timeout);
             LogProcessCounts();
 
             await PingAndVerifyLocality(secondNode, timeout, "2.2", secondNode.System.Address,
