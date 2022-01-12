@@ -101,11 +101,14 @@ namespace Proto.Remote
                     foreach (var envelope in batch.Envelopes)
                     {
                         var target = batch.Targets[envelope.Target];
-                        var sender = envelope.Sender == 0 ? null : batch.Senders[envelope.Sender - 1];
-
-                        if (envelope.RequestId != default)
+                        if (envelope.TargetRequestId != default)
                         {
-                            target = target.WithRequestId(envelope.RequestId);
+                            target = target.WithRequestId(envelope.TargetRequestId);
+                        }
+                        var sender = envelope.Sender == 0 ? null : batch.Senders[envelope.Sender - 1];
+                        if (envelope.SenderRequestId != default)
+                        {
+                            sender = sender?.WithRequestId(envelope.SenderRequestId);
                         }
 
                         var typeName = typeNames[envelope.TypeId];
@@ -304,10 +307,10 @@ namespace Proto.Remote
         {
             var envelopes = new List<MessageEnvelope>();
             var typeNames = new Dictionary<string, int>();
-            var targets = new Dictionary<PID, int>();
+            var targets = new Dictionary<string, int>();
             var targetList = new List<PID>();
             var typeNameList = new List<string>();
-            var senders = new Dictionary<PID, int>();
+            var senders = new Dictionary<string, int>();
             var senderList = new List<PID>();
 
             
@@ -315,18 +318,18 @@ namespace Proto.Remote
             {
                 var target = rd.Target;
 
-                if (!targets.TryGetValue(target, out var targetId))
+                if (!targets.TryGetValue(target.Id, out var targetId))
                 {
-                    targetId = targets[target] = targets.Count;
+                    targetId = targets[target.Id] = targets.Count;
                     targetList.Add(target);
                 }
 
                 var sender = rd.Sender;
 
                 var senderId = 0;
-                if (sender != null && !senders.TryGetValue(sender, out senderId))
+                if (sender != null && !senders.TryGetValue(sender.Id, out senderId))
                 {
-                    senderId = senders[sender] = senders.Count+1;
+                    senderId = senders[sender.Id] = senders.Count+1;
                     senderList.Add(sender);
                 }
 
@@ -389,7 +392,8 @@ namespace Proto.Remote
                     TypeId = typeId,
                     SerializerId = serializerId,
                     MessageHeader = header,
-                    RequestId = rd.Target.RequestId
+                    TargetRequestId = rd.Target.RequestId,
+                    SenderRequestId = sender?.RequestId ?? default
                 };
                 // if (Logger.IsEnabled(LogLevel.Trace))
                 //     Logger.LogTrace("[{SystemAddress}] Endpoint adding Envelope {Envelope}", System.Address, envelope);

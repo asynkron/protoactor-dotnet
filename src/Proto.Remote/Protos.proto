@@ -18,7 +18,7 @@ message MessageBatch {
   repeated string type_names = 1;
   repeated actor.PID targets = 2;
   repeated MessageEnvelope envelopes = 3;
-  repeated actor.PID senders = 4;
+  repeated actor.PID senders = 4; 
 }
 
 message MessageEnvelope {
@@ -28,7 +28,8 @@ message MessageEnvelope {
   int32 sender = 4;
   int32 serializer_id = 5;
   MessageHeader message_header = 6;
-  uint32 request_id = 7;
+  uint32 target_request_id = 7;
+  uint32 sender_request_id = 8;
 }
 
 message MessageHeader {

@@ -42,20 +42,20 @@ namespace Proto.Remote
             }
 
             using (_endpointManager.CancellationToken.Register(async () => {
-                           try
-                           {
-                               await responseStream.WriteAsync(new RemoteMessage
-                                   {
-                                       DisconnectRequest = new DisconnectRequest()
-                                   }
-                               ).ConfigureAwait(false);
-                           }
-                           catch (Exception)
-                           {
-                               Logger.LogWarning("[{systemAddress}] Failed to write disconnect message to the stream", _system.Address);
-                           }
-                       }
-                   ))
+                        try
+                        {
+                            await responseStream.WriteAsync(new RemoteMessage
+                                {
+                                    DisconnectRequest = new DisconnectRequest()
+                                }
+                            ).ConfigureAwait(false);
+                        }
+                        catch (Exception)
+                        {
+                            Logger.LogWarning("[{systemAddress}] Failed to write disconnect message to the stream", _system.Address);
+                        }
+                    }
+                ))
             {
                 IEndpoint endpoint;
                 string? address = null;
