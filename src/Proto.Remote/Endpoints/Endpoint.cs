@@ -28,7 +28,7 @@ namespace Proto.Remote
             _deserializationErrorLogLevel = system.Remote().Config.DeserializationErrorLogLevel;
         }
 
-        public Channel<RemoteMessage> Outgoing { get; } = global::System.Threading.Channels.Channel.CreateUnbounded<RemoteMessage>();
+        public Channel<RemoteMessage> Outgoing { get; } = Channel.CreateBounded<RemoteMessage>(3);
         public ConcurrentStack<RemoteMessage> OutgoingStash { get; } = new();
         protected readonly ActorSystem System;
         protected readonly string Address;
@@ -83,6 +83,7 @@ namespace Proto.Remote
         private int DropMessagesInBatch(RemoteMessage remoteMessage)
         {
             var droppedMessageCount = 0;
+
             switch (remoteMessage.MessageTypeCase)
             {
                 case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
@@ -101,11 +102,14 @@ namespace Proto.Remote
                     foreach (var envelope in batch.Envelopes)
                     {
                         var target = batch.Targets[envelope.Target];
+
                         if (envelope.TargetRequestId != default)
                         {
                             target = target.WithRequestId(envelope.TargetRequestId);
                         }
+
                         var sender = envelope.Sender == 0 ? null : batch.Senders[envelope.Sender - 1];
+
                         if (envelope.SenderRequestId != default)
                         {
                             sender = sender?.WithRequestId(envelope.SenderRequestId);
@@ -180,12 +184,12 @@ namespace Proto.Remote
                 }
 
                 foreach (var t in pidSet.Select(
-                             pid => new Terminated
-                             {
-                                 Who = pid,
-                                 Why = TerminatedReason.AddressTerminated
-                             }
-                         ))
+                        pid => new Terminated
+                        {
+                            Who = pid,
+                            Why = TerminatedReason.AddressTerminated
+                        }
+                    ))
                 {
                     //send the address Terminated event to the Watcher
                     watcherPid.SendSystemMessage(System, t);
@@ -290,7 +294,7 @@ namespace Proto.Remote
                         }
 
                         var batch = CreateBatch(messages);
-                        Outgoing.Writer.TryWrite(new RemoteMessage {MessageBatch = batch});
+                        await Outgoing.Writer.WriteAsync(new RemoteMessage {MessageBatch = batch}, CancellationToken);
                     }
                 }
                 catch (OperationCanceledException)
@@ -313,7 +317,6 @@ namespace Proto.Remote
             var senders = new Dictionary<string, int>();
             var senderList = new List<PID>();
 
-            
             foreach (var rd in m)
             {
                 var target = rd.Target;
@@ -327,9 +330,10 @@ namespace Proto.Remote
                 var sender = rd.Sender;
 
                 var senderId = 0;
+
                 if (sender != null && !senders.TryGetValue(sender.Id, out senderId))
                 {
-                    senderId = senders[sender.Id] = senders.Count+1;
+                    senderId = senders[sender.Id] = senders.Count + 1;
                     senderList.Add(sender);
                 }
 
