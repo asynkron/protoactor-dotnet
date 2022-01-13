@@ -37,6 +37,24 @@ namespace Proto.Remote.Tests
         }
 
         [Fact, DisplayTestMethodName]
+        public async Task CanForwardBetweenRemotes()
+        {
+            var remoteActor1 = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
+            var remoteActor2 = PID.FromAddress(_fixture.RemoteAddress2, "EchoActorInstance");
+
+            var response = await System.Root.RequestAsync<ForwardResponse>(remoteActor1, new Forward
+                    {Message = "Hi", Target = remoteActor2},
+                TimeSpan.FromMilliseconds(5000)
+            );
+
+            response.Should().BeEquivalentTo(new ForwardResponse
+                {
+                    Message = "Hi", Sender = remoteActor2
+                }
+            );
+        }
+
+        [Fact, DisplayTestMethodName]
         public async Task RemoteHandlesRequestIdsCorrectly()
         {
             const int messageCount = 200;
@@ -322,8 +340,7 @@ namespace Proto.Remote.Tests
             res.Who.Should().BeEquivalentTo(actor);
 
             Interlocked.Read(ref responseCount).Should().Be(messageCount);
-            
-            
+
             tcs.Task.IsCompletedSuccessfully.Should().BeTrue("All responses received");
             Interlocked.Read(ref responseCount).Should().Be(messageCount);
 

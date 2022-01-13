@@ -173,30 +173,33 @@ namespace Proto.Remote
 
         private void ClearWatchers()
         {
-            foreach (var (id, pidSet) in _watchedActors)
+            lock (_synLock)
             {
-                var watcherPid = PID.FromAddress(System.Address, id);
-                var watcherRef = System.ProcessRegistry.Get(watcherPid);
-
-                if (watcherRef == System.DeadLetter)
+                foreach (var (id, pidSet) in _watchedActors)
                 {
-                    continue;
+                    var watcherPid = PID.FromAddress(System.Address, id);
+                    var watcherRef = System.ProcessRegistry.Get(watcherPid);
+
+                    if (watcherRef == System.DeadLetter)
+                    {
+                        continue;
+                    }
+
+                    foreach (var t in pidSet.Select(
+                            pid => new Terminated
+                            {
+                                Who = pid,
+                                Why = TerminatedReason.AddressTerminated
+                            }
+                        ))
+                    {
+                        //send the address Terminated event to the Watcher
+                        watcherPid.SendSystemMessage(System, t);
+                    }
                 }
 
-                foreach (var t in pidSet.Select(
-                        pid => new Terminated
-                        {
-                            Who = pid,
-                            Why = TerminatedReason.AddressTerminated
-                        }
-                    ))
-                {
-                    //send the address Terminated event to the Watcher
-                    watcherPid.SendSystemMessage(System, t);
-                }
+                _watchedActors.Clear();
             }
-
-            _watchedActors.Clear();
         }
 
         public void RemoteUnwatch(PID target, Unwatch unwatch)
@@ -315,7 +318,7 @@ namespace Proto.Remote
             var targets = new Dictionary<string, int>();
             var targetList = new List<PID>();
             var typeNameList = new List<string>();
-            var senders = new Dictionary<string, int>();
+            var senders = new Dictionary<(string address, string id), int>();
             var senderList = new List<PID>();
 
             foreach (var rd in m)
@@ -332,10 +335,16 @@ namespace Proto.Remote
 
                 var senderId = 0;
 
-                if (sender != null && !senders.TryGetValue(sender.Id, out senderId))
+
+                if (sender != null)
                 {
-                    senderId = senders[sender.Id] = senders.Count + 1;
-                    senderList.Add(PID.FromAddress(sender.Address, sender.Id));
+                    var senderKey = (sender.Address,sender.Id);
+
+                    if (!senders.TryGetValue(senderKey, out senderId))
+                    {
+                        senderId = senders[senderKey] = senders.Count + 1;
+                        senderList.Add(PID.FromAddress(sender.Address, sender.Id));
+                    }
                 }
 
                 var message = rd.Message;

@@ -17,9 +17,10 @@ namespace Proto.Remote.Tests
     public interface IRemoteFixture : IAsyncLifetime
     {
         string RemoteAddress { get; }
+        string RemoteAddress2 { get; }
         IRemote Remote { get; }
         ActorSystem ActorSystem { get; }
-        IRemote ServerRemote { get; }
+        IRemote ServerRemote1 { get; }
         LogStore LogStore { get; }
     }
 
@@ -30,24 +31,30 @@ namespace Proto.Remote.Tests
         private static LogStore _logStore = new();
         public LogStore LogStore { get; } = _logStore;
         
-        public string RemoteAddress => ServerRemote.System.Address;
+        public string RemoteAddress => ServerRemote1.System.Address;
+        public string RemoteAddress2 => ServerRemote2.System.Address;
 
         public IRemote Remote { get; protected set; }
         public ActorSystem ActorSystem => Remote.System;
 
-        public IRemote ServerRemote { get; protected set; }
+        public IRemote ServerRemote1 { get; protected set; }
+        public IRemote ServerRemote2 { get; protected set; }
 
         public virtual async Task InitializeAsync()
         {
-            await ServerRemote.StartAsync();
+            await ServerRemote1.StartAsync();
+            await ServerRemote2.StartAsync();
             await Remote.StartAsync();
-            ServerRemote.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
+            ServerRemote1.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
+            ServerRemote2.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
         }
+        
 
         public virtual async Task DisposeAsync()
         {
             await Remote.ShutdownAsync();
-            await ServerRemote.ShutdownAsync();
+            await ServerRemote1.ShutdownAsync();
+            await ServerRemote2.ShutdownAsync();
         }
 
         protected static TRemoteConfig ConfigureServerRemoteConfig<TRemoteConfig>(TRemoteConfig serverRemoteConfig)

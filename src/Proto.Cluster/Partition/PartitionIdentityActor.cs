@@ -391,14 +391,6 @@ namespace Proto.Cluster.Partition
                 }
             }
 
-            //only activate members when we are all in sync
-            // var c = await _cluster.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
-            //
-            // if (!c)
-            // {
-            //     Console.WriteLine("No consensus " + _cluster.System.Id);
-            // }
-
             //Get activator
             var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
 
@@ -408,11 +400,7 @@ namespace Proto.Cluster.Partition
                     Console.Write("?");
                 //No activator currently available, return unavailable
                 Logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
-                context.Respond(new ActivationResponse
-                    {
-                        Failed = true
-                    }
-                );
+                RespondWithFailure(context);
                 return Task.CompletedTask;
             }
 

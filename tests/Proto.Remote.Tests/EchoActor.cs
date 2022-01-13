@@ -24,6 +24,20 @@ namespace Proto.Remote.Tests
                     Logger.LogDebug("Received BinaryMessage, replying Ack");
                     context.Respond(new Ack());
                     break;
+                case Forward msg:
+                    if (msg.Target.Equals(context.Self))
+                    {
+                        context.Respond(new ForwardResponse
+                        {
+                            Message = msg.Message,
+                            Sender = context.Self,
+                        });
+                    }
+                    else
+                    {
+                        context.Forward(msg.Target);
+                    }
+                    break;
                 case Die:
                     Logger.LogDebug("Received termination request, stopping");
                     context.Stop(context.Self);
