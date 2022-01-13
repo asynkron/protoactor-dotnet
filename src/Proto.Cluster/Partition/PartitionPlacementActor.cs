@@ -141,7 +141,7 @@ namespace Proto.Cluster.Partition
 
         private class MemberHandover
         {
-            private readonly List<Task<IdentityHandoverAck>> _responseTasks = new();
+            private readonly List<Task<IdentityHandoverAck?>> _responseTasks = new();
             private readonly PID _target;
             private readonly IContext _context;
             private readonly ClusterTopology _topology;

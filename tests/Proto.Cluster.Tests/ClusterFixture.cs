@@ -16,6 +16,7 @@ using Proto.OpenTelemetry;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using Xunit;
+
 // ReSharper disable ClassNeverInstantiated.Global
 
 namespace Proto.Cluster.Tests

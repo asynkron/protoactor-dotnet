@@ -23,7 +23,7 @@ namespace Proto.Tests
                 )
             );
 
-            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.FromSeconds(1));
+            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.FromSeconds(5));
             var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
 
 
@@ -43,7 +43,7 @@ namespace Proto.Tests
                 )
             );
 
-            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.FromSeconds(1));
+            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.FromSeconds(5));
             var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
 
             Context.Request(pid, "hello", future.Pid);
@@ -62,8 +62,8 @@ namespace Proto.Tests
                 )
             );
 
-            var batchSize = 1000;
-            using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.FromSeconds(1));
+            var batchSize = 100;
+            using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.FromSeconds(5));
             var futures = new IFuture[batchSize];
 
             for (int i = 0; i < batchSize; i++)

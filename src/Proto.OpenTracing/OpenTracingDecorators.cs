@@ -68,7 +68,7 @@ namespace Proto.OpenTracing
                 () => base.RequestAsync<T>(target, message, cancellationToken)
             );
 
-        public override void Request(PID target, object message, PID? sender) => OpenTracingMethodsDecorators.Request(target, message, _sendSpanSetup, _tracer, () => base.Request(target, message, sender));
+        public override void Request(PID target, object message, PID sender) => OpenTracingMethodsDecorators.Request(target, message, _sendSpanSetup, _tracer, () => base.Request(target, message, sender));
 
         public override void Forward(PID target)
             => OpenTracingMethodsDecorators.Forward(target, base.Message, _sendSpanSetup, _tracer, () => base.Forward(target));
