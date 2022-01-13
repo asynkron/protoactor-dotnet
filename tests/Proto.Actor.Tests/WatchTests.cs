@@ -14,7 +14,7 @@ namespace Proto.Tests
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()
         {
-            var counter = 0;
+            long counter = 0;
             var childProps = Props.FromFunc(context => {
                     switch (context.Message)
                     {
@@ -45,7 +45,7 @@ namespace Proto.Tests
             );
 
             await Task.Delay(1000);
-            Assert.Equal(1, counter);
+            Assert.Equal(1, Interlocked.Read(ref counter));
         }
 
         [Fact]

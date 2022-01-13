@@ -12,11 +12,11 @@ namespace Proto.Mailbox
     {
         private readonly Channel<object> _messages;
         private volatile bool _hasMessages;
-        private int _length;
+        private long _length;
 
         public BoundedMailboxQueue(int size) => _messages = Channel.CreateBounded<object>(size);
 
-        public int Length => _length;
+        public int Length => (int)Interlocked.Read(ref _length);
 
         public void Push(object message)
         {

@@ -21,7 +21,7 @@ namespace Proto
         private const int HashMask = HashSize-1;
         private readonly Dictionary<TKey,TValue>[] _partitions = new Dictionary<TKey,TValue>[HashSize];
 
-        private int _count;
+        private long _count;
 
         internal HashedConcurrentDictionary()
         {
@@ -31,7 +31,7 @@ namespace Proto
             }
         }
 
-        public int Count => _count;
+        public int Count => (int)Interlocked.Read(ref _count);
 
         private Dictionary<TKey,TValue> GetPartition(TKey key)
         {
