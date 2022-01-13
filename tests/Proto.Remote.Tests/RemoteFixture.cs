@@ -50,12 +50,10 @@ namespace Proto.Remote.Tests
         }
         
 
-        public virtual async Task DisposeAsync()
-        {
-            await Remote.ShutdownAsync();
-            await ServerRemote1.ShutdownAsync();
-            await ServerRemote2.ShutdownAsync();
-        }
+        public virtual Task DisposeAsync() => Task.WhenAll(Remote.ShutdownAsync(),
+            ServerRemote1.ShutdownAsync(),
+            ServerRemote2.ShutdownAsync()
+        );
 
         protected static TRemoteConfig ConfigureServerRemoteConfig<TRemoteConfig>(TRemoteConfig serverRemoteConfig)
             where TRemoteConfig : RemoteConfigBase =>
