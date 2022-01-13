@@ -28,7 +28,7 @@ namespace Proto.Remote
             _deserializationErrorLogLevel = system.Remote().Config.DeserializationErrorLogLevel;
         }
 
-        public Channel<RemoteMessage> Outgoing { get; } = global::System.Threading.Channels.Channel.CreateUnbounded<RemoteMessage>();
+        public Channel<RemoteMessage> Outgoing { get; } = Channel.CreateBounded<RemoteMessage>(3);
         public ConcurrentStack<RemoteMessage> OutgoingStash { get; } = new();
         protected readonly ActorSystem System;
         protected readonly string Address;
@@ -287,7 +287,7 @@ namespace Proto.Remote
                         }
 
                         var batch = CreateBatch(messages);
-                        Outgoing.Writer.TryWrite(new RemoteMessage {MessageBatch = batch});
+                        await Outgoing.Writer.WriteAsync(new RemoteMessage {MessageBatch = batch}, CancellationToken);
                     }
                 }
                 catch (OperationCanceledException)
