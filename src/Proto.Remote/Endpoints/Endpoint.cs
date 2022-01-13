@@ -83,7 +83,6 @@ namespace Proto.Remote
         private int DropMessagesInBatch(RemoteMessage remoteMessage)
         {
             var droppedMessageCount = 0;
-
             switch (remoteMessage.MessageTypeCase)
             {
                 case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
