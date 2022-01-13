@@ -125,7 +125,7 @@ namespace Proto.Cluster.Tests
         {
             var ids = Enumerable.Range(1, 10).Select(id => id.ToString()).ToList();
 
-            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 10000);
+            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
 
             var toBeRemoved = Members.Last();
             _testOutputHelper.WriteLine("Removing node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
@@ -133,7 +133,7 @@ namespace Proto.Cluster.Tests
             _testOutputHelper.WriteLine("Removed node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
             await ClusterFixture.SpawnNode();
 
-            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 10000);
+            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
 
             _testOutputHelper.WriteLine("All responses OK. Terminating fixture");
         }
@@ -150,7 +150,7 @@ namespace Proto.Cluster.Tests
             var worker = Task.Run(async () => {
                     while (!cts.IsCancellationRequested)
                     {
-                        await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 10000);
+                        await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 20000);
                     }
                 }
             );
