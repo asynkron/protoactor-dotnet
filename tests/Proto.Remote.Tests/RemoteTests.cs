@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
+using Proto.Future;
 using Proto.Remote.Tests.Messages;
 using Xunit;
 
@@ -33,6 +34,50 @@ namespace Proto.Remote.Tests
             );
 
             Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
+        }
+
+        [Fact, DisplayTestMethodName]
+        public async Task RemoteHandlesRequestIdsCorrectly()
+        {
+            const int messageCount = 200;
+            var timeout = new CancellationTokenSource(5000);
+            var batchContext = _fixture.ActorSystem.Root.CreateBatchContext(messageCount, timeout.Token);
+            // Batch futures are using the same process, but differentiate responses based on the request id
+            var requestIds = Enumerable.Range(1, messageCount).ToList();
+            List<(IFuture future, Ping message)> requests = requestIds
+                .Select(i => (batchContext.GetFuture(), new Ping {Message = i.ToString()})).ToList();
+
+            var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
+
+            // Send all request at once, to make sure they are batched in the remote
+            foreach (var request in requests)
+            {
+                System.Root.Request(remoteActor, request.message, request.future.Pid);
+            }
+
+            var responses = await Task.WhenAll(requests.Select(request => GetResponse(request.future)));
+
+            for (var index = 0; index < requests.Count; index++)
+            {
+                // Make sure that each request got the matched response
+                var ping = requests[index].message;
+                var pong = responses[index];
+                Assert.Equal($"{_fixture.RemoteAddress} " + ping.Message, pong.Message);
+            }
+
+            static async Task<Pong> GetResponse(IFuture future)
+            {
+                var response = await future.Task;
+
+                switch (response)
+                {
+                    case Proto.MessageEnvelope envelope: return (Pong) envelope.Message;
+                    case Pong pong:
+                        return pong;
+                    default:
+                        throw new ArgumentException(response?.ToString(), nameof(response));
+                }
+            }
         }
 
         [Fact, DisplayTestMethodName]
@@ -243,7 +288,7 @@ namespace Proto.Remote.Tests
                 //Skip 
                 return;
             }
-            
+
             var rnd = new Random();
             var tcs = new TaskCompletionSource<bool>();
             var responseCount = 0;
@@ -277,8 +322,7 @@ namespace Proto.Remote.Tests
             res.Who.Should().BeEquivalentTo(actor);
 
             responseCount.Should().Be(messageCount);
-            
-            
+
             tcs.Task.IsCompletedSuccessfully.Should().BeTrue("All responses received");
             responseCount.Should().Be(messageCount);
 
@@ -330,7 +374,7 @@ namespace Proto.Remote.Tests
             var remoteActorResp = await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
             return remoteActorResp.Pid;
         }
-        
+
         private PID SpawnLocalActor() => System.Root.Spawn(RemoteFixture.EchoActorProps);
 
         private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
