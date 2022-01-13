@@ -304,7 +304,7 @@ namespace Proto.Remote
         {
             var envelopes = new List<MessageEnvelope>();
             var typeNames = new Dictionary<string, int>();
-            var targets = new Dictionary<PID, int>();
+            var targets = new Dictionary<(string,string), int>();
             var targetList = new List<PID>();
             var typeNameList = new List<string>();
             var senders = new Dictionary<PID, int>();
@@ -315,9 +315,10 @@ namespace Proto.Remote
             {
                 var target = rd.Target;
 
-                if (!targets.TryGetValue(target, out var targetId))
+                var targetKey = (target.Address, target.Id);
+                if (!targets.TryGetValue(targetKey, out var targetId))
                 {
-                    targetId = targets[target] = targets.Count;
+                    targetId = targets[targetKey] = targets.Count;
                     targetList.Add(target);
                 }
 
