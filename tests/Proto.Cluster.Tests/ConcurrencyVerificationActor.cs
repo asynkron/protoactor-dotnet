@@ -14,7 +14,7 @@ using ClusterTest.Messages;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
 
-namespace Proto.Cluster.PartitionIdentity.Tests
+namespace Proto.Cluster.Tests
 {
     public class ConcurrencyVerificationActor : IActor
     {

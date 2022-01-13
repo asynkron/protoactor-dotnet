@@ -49,7 +49,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogDebug(template, arg);
-            _logStore?.Append(_logLevel, _category, template, null, new object[]{ arg });
+            _logStore?.Append(_logLevel, _category, template, null, arg!);
         }
 
         public void LogDebug<T, T2>(string template, T arg, T2 arg2)
@@ -58,7 +58,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogDebug(template, arg, arg2);
-            _logStore?.Append(_logLevel, _category, template, null, new object[] {arg, arg2});
+            _logStore?.Append(_logLevel, _category, template, null, arg!, arg2!);
 
         }
 
@@ -68,7 +68,7 @@ namespace Proto.Logging
                 return;
 
             _logger?.LogDebug(template, arg, arg2, arg3);
-            _logStore?.Append(_logLevel, _category, template, null, new object[] {arg, arg2, arg3});
+            _logStore?.Append(_logLevel, _category, template, null, arg!, arg2!, arg3!);
         }
 
         public void LogDebug(string template, params object[] args)

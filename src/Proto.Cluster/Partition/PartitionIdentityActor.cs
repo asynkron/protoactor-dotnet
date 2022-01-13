@@ -316,10 +316,6 @@ namespace Proto.Cluster.Partition
                     activation
                 );
             }
-            // else
-            // {
-            //     Logger.LogDebug("Got the same activations twice {ClusterIdentity}: {Activation}", clusterIdentity, existingActivation);
-            // }
         }
 
         private Task OnActivationTerminated(ActivationTerminated msg)
@@ -432,134 +428,101 @@ namespace Proto.Cluster.Partition
             if (_config.DeveloperLogging)
                 Console.Write("S"); //spawned
             //Await SpawningProcess
-            context.ReenterAfter(
-                spawnResponse,
-                rst => {
-                    try
-                    {
-                        if (rst.IsCompletedSuccessfully)
-                        {
-                            var response = rst.Result;
-
-                            if (_config.DeveloperLogging)
-                                Console.Write("R"); //reentered
-
-                            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out pid))
-                            {
-                                if (_config.DeveloperLogging)
-                                    Console.Write("C"); //cached
-
-                                if (response.Pid is not null && !response.Pid.Equals(pid))
-                                {
-                                    context.Stop(response.Pid); // Stop duplicate activation
-                                }
-
-                                Respond(new ActivationResponse {Pid = pid, TopologyHash = _topologyHash});
-                                return Task.CompletedTask;
-                            }
-
-                            if (response?.Pid != null)
-                            {
-                                if (_config.DeveloperLogging)
-                                    Console.Write("A"); //activated
-
-                                if (response.TopologyHash != _topologyHash) // Topology changed between request and response
-                                {
-                                    if (!_currentMemberAddresses.Contains(response.Pid.Address))
-                                    {
-                                        // No longer part of cluster, dropped
-                                        Logger.LogWarning("Received activation response {@Response}, no longer part of cluster", response);
-                                        Respond(new ActivationResponse {Failed = true});
-                                        return Task.CompletedTask;
-                                    }
-
-                                    var currentActivatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
-
-                                    if (_myAddress != currentActivatorAddress)
-                                    {
-                                        //TODO: Stop it or handover?
-                                        Logger.LogWarning("Misplaced spawn: {ClusterIdentity}, {Pid}", msg.ClusterIdentity, response.Pid);
-                                    }
-                                }
-
-                                _partitionLookup[msg.ClusterIdentity] = response.Pid;
-                                Respond(response);
-
-                                return Task.CompletedTask;
-                            }
-                        }
-                        else
-                        {
-                            Logger.LogError(rst.Exception, "Spawn task failed");
-                        }
-                    }
-                    catch (Exception x)
-                    {
-                        Logger.LogError(x, "Spawning failed");
-                    }
-                    finally
-                    {
-                        var wasPresent = _spawns.Remove(msg.ClusterIdentity);
-
-                        if (wasPresent && _rebalanceTcs is not null && _spawns.Count == 0)
-                        {
-                            SetReadyToRebalanceIfNoMoreWaitingSpawns();
-                        }
-                    }
-
-                    if (_config.DeveloperLogging)
-                        Console.Write("F"); //failed
-                    Respond(new ActivationResponse {Failed = true});
-
-                    return Task.CompletedTask;
-
-                    // The response both responds to the initial activator, but also any other waiting reentrant requests
-                    void Respond(ActivationResponse response)
-                    {
-                        context.Respond(response);
-                        setResponse.TrySetResult(response);
-                    }
-                }
-            );
+            context.ReenterAfter(spawnResponse, OnSpawnResponse(msg, context, setResponse));
             return Task.CompletedTask;
         }
 
-        private void ActivateAfterConsensus(ActivationRequest msg, IContext context)
-            => context.ReenterAfter(_cluster.MemberList.TopologyConsensus(CancellationToken.None), _ => OnActivationRequest(msg, context));
+        private Func<Task<ActivationResponse>, Task> OnSpawnResponse(
+            ActivationRequest msg,
+            IContext context,
+            TaskCompletionSource<ActivationResponse> setResponse
+        )
+            => rst => {
+                try
+                {
+                    if (rst.IsCompletedSuccessfully)
+                    {
+                        var response = rst.Result;
 
-        // private void HandleMisplacedIdentity(ActivationRequest msg, ActivationResponse response, string? activatorAddress, IContext context)
-        // {
-        //     _spawns.Remove(msg.ClusterIdentity);
-        //     if (activatorAddress is null)
-        //     {
-        //         context.Stop(response.Pid); // We could possibly move the activation to the new owner?
-        //         RespondWithFailure(context);
-        //     }
-        //     else
-        //     {
-        //         var pid = PartitionManager.RemotePartitionIdentityActor(activatorAddress);
-        //         context.RequestReenter<ActivationResponse>(pid, new ActivationHandover
-        //         {
-        //             ClusterIdentity = msg.ClusterIdentity,
-        //             RequestId = msg.RequestId,
-        //             TopologyHash = msg.TopologyHash,
-        //             Pid = response.Pid
-        //         }, responseTask => {
-        //             if (responseTask.IsCompletedSuccessfully)
-        //             {
-        //                 context.Respond(responseTask.Result);
-        //             }
-        //             else
-        //             {
-        //                 context.Stop(response.Pid);
-        //                 RespondWithFailure(context);
-        //             }
-        //             
-        //             
-        //             return Task.CompletedTask;
-        //         }, CancellationTokens.WithTimeout(_identityHandoverTimeout));
-        //     }
-        // }
+                        if (_config.DeveloperLogging)
+                            Console.Write("R"); //reentered
+
+                        if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
+                        {
+                            if (_config.DeveloperLogging)
+                                Console.Write("C"); //cached
+
+                            if (response.Pid is not null && !response.Pid.Equals(pid))
+                            {
+                                context.Stop(response.Pid); // Stop duplicate activation
+                            }
+
+                            Respond(new ActivationResponse {Pid = pid, TopologyHash = _topologyHash});
+                            return Task.CompletedTask;
+                        }
+
+                        if (response?.Pid != null)
+                        {
+                            if (_config.DeveloperLogging)
+                                Console.Write("A"); //activated
+
+                            if (response.TopologyHash != _topologyHash) // Topology changed between request and response
+                            {
+                                if (!_currentMemberAddresses.Contains(response.Pid.Address))
+                                {
+                                    // No longer part of cluster, dropped
+                                    Logger.LogWarning("Received activation response {@Response}, no longer part of cluster", response);
+                                    Respond(new ActivationResponse {Failed = true});
+                                    return Task.CompletedTask;
+                                }
+
+                                var currentActivatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
+
+                                if (_myAddress != currentActivatorAddress)
+                                {
+                                    //Stop it or handover?
+                                    Logger.LogWarning("Misplaced spawn: {ClusterIdentity}, {Pid}", msg.ClusterIdentity, response.Pid);
+                                }
+                            }
+
+                            _partitionLookup[msg.ClusterIdentity] = response.Pid;
+                            Respond(response);
+
+                            return Task.CompletedTask;
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogError(rst.Exception, "Spawn task failed");
+                    }
+                }
+                catch (Exception x)
+                {
+                    Logger.LogError(x, "Spawning failed");
+                }
+                finally
+                {
+                    var wasPresent = _spawns.Remove(msg.ClusterIdentity);
+
+                    if (wasPresent && _rebalanceTcs is not null && _spawns.Count == 0)
+                    {
+                        SetReadyToRebalanceIfNoMoreWaitingSpawns();
+                    }
+                }
+
+                if (_config.DeveloperLogging)
+                    Console.Write("F"); //failed
+                Respond(new ActivationResponse {Failed = true});
+
+                return Task.CompletedTask;
+
+                // The response both responds to the initial activator, but also any other waiting reentrant requests
+                void Respond(ActivationResponse response)
+                {
+                    context.Respond(response);
+                    setResponse.TrySetResult(response);
+                }
+            };
 
         private static void RespondWithFailure(IContext context) => context.Respond(new ActivationResponse {Failed = true});
 
