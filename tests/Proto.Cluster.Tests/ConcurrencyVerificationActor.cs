@@ -42,7 +42,7 @@ namespace Proto.Cluster.Tests
             context.Respond(new IncResponse
                 {
                     Count = count,
-                    ExpectedCount = totalCount,
+                    ExpectedCount = (int)totalCount,
                     SessionId = SessionId.ToString("N"),
                 }
             );
@@ -53,8 +53,8 @@ namespace Proto.Cluster.Tests
             }
             else
             {
-                _count = totalCount; // Reset to the global total count.
-                _state.RecordInconsistency(count, totalCount, context.Self);
+                _count = (int)totalCount; // Reset to the global total count.
+                _state.RecordInconsistency(count, (int)totalCount, context.Self);
             }
 
             _state.StoredCount = _count;
@@ -89,15 +89,15 @@ namespace Proto.Cluster.Tests
 
     public record VerificationEvent(PID Activation, DateTimeOffset When);
 
-    public record ActorStarted(PID Activation, DateTimeOffset When, int StoredCount, int GlobalCount) : VerificationEvent(Activation, When);
+    public record ActorStarted(PID Activation, DateTimeOffset When, int StoredCount, long GlobalCount) : VerificationEvent(Activation, When);
 
-    public record ActorStopped(PID Activation, DateTimeOffset When, int StoredCount, int GlobalCount) : VerificationEvent(Activation, When);
+    public record ActorStopped(PID Activation, DateTimeOffset When, int StoredCount, long GlobalCount) : VerificationEvent(Activation, When);
 
     public record ConsistencyError(
             PID Activation,
             DateTimeOffset When,
             int StoredCount,
-            int GlobalCount,
+            long GlobalCount,
             int ExpectedCount,
             int ActualCount
         )
@@ -105,10 +105,10 @@ namespace Proto.Cluster.Tests
 
     public class ActorState
     {
-        private int _totalCount;
+        private long _totalCount;
         public int StoredCount { get; set; }
         public bool Inconsistent { get; private set; }
-        public int TotalCount => _totalCount;
+        public long TotalCount => Interlocked.Read(ref _totalCount);
         private readonly string _id;
 
         public ActorState(string id) => _id = id;
@@ -126,7 +126,7 @@ namespace Proto.Cluster.Tests
             Inconsistent = true;
         }
 
-        public (int local, int total) Inc(int actorLocalCount) => (actorLocalCount + 1, Interlocked.Increment(ref _totalCount));
+        public (int local, long total) Inc(int actorLocalCount) => (actorLocalCount + 1, Interlocked.Increment(ref _totalCount));
 
         // public void VerifyStateIsConsistent()
         // {

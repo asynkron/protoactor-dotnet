@@ -48,7 +48,7 @@ namespace Proto.Mailbox
         private IDispatcher _dispatcher;
         private IMessageInvoker _invoker;
 
-        private int _status = MailboxStatus.Idle;
+        private long _status = MailboxStatus.Idle;
         private bool _suspended;
 
         public DefaultMailbox(
@@ -78,7 +78,7 @@ namespace Proto.Mailbox
             _invoker = NoopInvoker.Instance;
         }
 
-        public int Status => _status;
+        public int Status => (int)Interlocked.Read(ref _status);
 
         public int UserMessageCount => _userMailbox.Length;
 

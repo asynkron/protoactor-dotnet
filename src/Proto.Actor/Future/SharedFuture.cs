@@ -70,7 +70,15 @@ namespace Proto.Future
         private PID Pid { get; }
         public bool Stopping { get; private set; }
 
-        public int RequestsInFlight => (int) (_createdRequests - _completedRequests);
+        public int RequestsInFlight {
+            get {
+                // Read completedRequests first and createdRequests later so that we will
+                // never read the 2 vars in an order that would result in completedRequests > createdRequests.
+                long completed = Interlocked.Read(ref _createdRequests);
+                long created = Interlocked.Read(ref _createdRequests);
+                return (int) (created - completed);
+            }
+        }
 
         public IFuture? TryCreateHandle()
         {
@@ -231,8 +239,8 @@ namespace Proto.Future
         private class FutureHandle
         {
             public TaskCompletionSource<object>? CompletionSource { get; private set; }
-            private int _requestId;
-            public uint RequestId => (uint) _requestId;
+            private long _requestId;
+            public uint RequestId => (uint) Interlocked.Read(ref _requestId);
             private readonly SharedFutureProcess _parent;
 
             public FutureHandle(SharedFutureProcess parent, uint requestId)
