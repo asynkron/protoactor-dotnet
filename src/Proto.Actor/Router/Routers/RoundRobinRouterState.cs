@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Threading;
 
 namespace Proto.Router.Routers
@@ -17,7 +18,7 @@ namespace Proto.Router.Routers
         public override void RouteMessage(object message)
         {
             var values = GetValues();
-            var i = Interlocked.Increment(ref _currentIndex) % values.Count;
+            var i = Math.Abs(Interlocked.Increment(ref _currentIndex) - 1) % values.Count;
             var pid = values[i];
             _senderContext.Send(pid, message);
         }
