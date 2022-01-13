@@ -287,7 +287,7 @@ namespace Proto.Remote
                         }
 
                         var batch = CreateBatch(messages);
-                        Outgoing.Writer.TryWrite(new RemoteMessage {MessageBatch = batch});
+                        await Outgoing.Writer.WriteAsync(new RemoteMessage {MessageBatch = batch}, CancellationToken);
                     }
                 }
                 catch (OperationCanceledException)
