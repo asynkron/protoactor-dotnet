@@ -104,7 +104,7 @@ namespace Proto.Cluster.Partition
 
                         break;
 
-                    case PartitionIdentityLookup.Send.Everything:
+                    case PartitionIdentityLookup.Send.Full:
                     default:
                         foreach (var (clusterIdentity, activation) in _myActors)
                         {
@@ -120,7 +120,8 @@ namespace Proto.Cluster.Partition
                 var waitingRequests = handoverStates.Values.SelectMany(it => it.Complete()).ToList();
                 await Task.WhenAll(waitingRequests);
 
-                if (waitingRequests.All(task => task.IsCompletedSuccessfully && task.Result is not null))
+                // Ensure that we only update last rebalanced topology when all members have received the current activations
+                if (waitingRequests.All(task => task.IsCompletedSuccessfully && task.Result?.ProcessingState == IdentityHandoverAck.Types.State.Processed))
                 {
                     Logger.LogDebug("Completed rebalance publish for topology {TopologyHash}", msg.TopologyHash);
 

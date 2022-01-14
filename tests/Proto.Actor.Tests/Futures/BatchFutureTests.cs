@@ -116,9 +116,9 @@ namespace Proto.Tests
                     }
                 )
             );
-            const int size = 1000;
+            const int size = 100;
 
-            var cancellationToken = CancellationTokens.FromSeconds(1);
+            var cancellationToken = CancellationTokens.FromSeconds(5);
             using var batchContext = System.Root.CreateBatchContext(size, cancellationToken);
 
             var tasks = new Task<object>[size];
@@ -130,7 +130,7 @@ namespace Proto.Tests
 
             var replies = await Task.WhenAll(tasks);
 
-            replies.Should().BeInAscendingOrder().And.HaveCount(1000);
+            replies.Should().BeInAscendingOrder().And.HaveCount(size);
         }
     }
 }

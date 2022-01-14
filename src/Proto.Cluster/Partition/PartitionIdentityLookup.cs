@@ -141,14 +141,14 @@ namespace Proto.Cluster.Partition
         public enum Send
         {
             /// <summary>
-            /// Only identities which have changed owner since the last completed topology rebalance are sent
+            /// Only identities which have changed owner since the last completed topology rebalance are sent.
             /// </summary>
             Delta,
 
             /// <summary>
             /// All activations are sent on every topology rebalance
             /// </summary>
-            Everything
+            Full
         }
     }
 }

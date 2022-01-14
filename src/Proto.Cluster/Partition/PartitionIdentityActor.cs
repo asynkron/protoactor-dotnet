@@ -25,7 +25,7 @@ namespace Proto.Cluster.Partition
         private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
         private readonly string _myAddress;
 
-        private readonly Dictionary<ClusterIdentity, PID> _partitionLookup = new(); //actor/grain name to PID
+        private readonly Dictionary<ClusterIdentity, PID> _partitionLookup = new(); // actor/grain name to PID
 
         private MemberHashRing _memberHashRing = new(ImmutableList<Member>.Empty);
 
@@ -68,30 +68,26 @@ namespace Proto.Cluster.Partition
                 return Task.CompletedTask;
             }
 
-            context.Respond(new IdentityHandoverAck
-                {
-                    ChunkId = msg.ChunkId,
-                    TopologyHash = msg.TopologyHash
-                }
-            );
-
             if (msg.TopologyHash != _topologyHash)
             {
                 Logger.LogWarning("IdentityHandover with non-matching topology hash {MessageTopologyHash} instead of {CurrentTopologyHash}",
                     msg.TopologyHash, _topologyHash
                 );
+                Acknowledge(IdentityHandoverAck.Types.State.IncorrectTopology);
                 return Task.CompletedTask;
+            }
+
+            Acknowledge(IdentityHandoverAck.Types.State.Processed);
+
+            foreach (var activation in msg.Actors)
+            {
+                TakeOverIdentity(activation.ClusterIdentity, activation.Pid, context);
             }
 
             if (_currentHandover is null)
             {
                 Logger.LogWarning("IdentityHandover received when member is not re-balancing");
                 return Task.CompletedTask;
-            }
-
-            foreach (var activation in msg.Actors)
-            {
-                TakeOverIdentity(activation.ClusterIdentity, activation.Pid);
             }
 
             if (_currentHandover.IsFinalHandoverMessage(context.Sender, msg))
@@ -107,6 +103,14 @@ namespace Proto.Cluster.Partition
             }
 
             return Task.CompletedTask;
+
+            void Acknowledge(IdentityHandoverAck.Types.State state) => context.Respond(new IdentityHandoverAck
+                {
+                    ChunkId = msg.ChunkId,
+                    TopologyHash = msg.TopologyHash,
+                    ProcessingState = state
+                }
+            );
         }
 
         private Task OnStarted(IContext context)
@@ -292,7 +296,7 @@ namespace Proto.Cluster.Partition
 
             foreach (var (clusterIdentity, activation) in msg.OwnedActivations)
             {
-                TakeOverIdentity(clusterIdentity, activation);
+                TakeOverIdentity(clusterIdentity, activation, context);
             }
 
             _rebalanceTcs?.TrySetResult(_topologyHash);
@@ -301,7 +305,7 @@ namespace Proto.Cluster.Partition
             return Task.CompletedTask;
         }
 
-        private void TakeOverIdentity(ClusterIdentity clusterIdentity, PID activation)
+        private void TakeOverIdentity(ClusterIdentity clusterIdentity, PID activation, IContext context)
         {
             if (_partitionLookup.TryAdd(clusterIdentity, activation)) return;
 
@@ -309,13 +313,22 @@ namespace Proto.Cluster.Partition
 
             if (!existingActivation.Equals(activation))
             {
-                // Already present, duplicate?
-                Logger.LogError("Got duplicate activations of {ClusterIdentity}: {Activation1}, {Activation2}",
-                    clusterIdentity,
-                    existingActivation,
-                    activation
-                );
+                ResolveDuplicateActivations(clusterIdentity, existingActivation, activation, context);
             }
+        }
+
+        private void ResolveDuplicateActivations(ClusterIdentity clusterIdentity, PID existingActivation, PID conflictingActivation, IContext context)
+        {
+            Logger.LogError(
+                "Got duplicate activations of {ClusterIdentity}: {ExistingActivation}, {NewActivation}, terminating the previous activation",
+                clusterIdentity,
+                existingActivation,
+                conflictingActivation
+            );
+            // Could possibly reach out to both of them and check liveness, but this kind of double-activation should not happen in normal operations.
+            // Since the conflicting activation has reported last, we assume it is live and replace the existing one
+            context.Stop(existingActivation);
+            _partitionLookup[clusterIdentity] = conflictingActivation;
         }
 
         private Task OnActivationTerminated(ActivationTerminated msg)
