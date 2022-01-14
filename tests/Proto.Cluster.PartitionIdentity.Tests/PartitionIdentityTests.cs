@@ -28,19 +28,21 @@ namespace Proto.Cluster.PartitionIdentity.Tests
         private long _requests = 0;
 
         [Theory]
-        [InlineData(3, 10000, 5, 12, 20, PartitionIdentityLookup.Mode.Pull)]
-        [InlineData(3, 10000, 5, 12, 20, PartitionIdentityLookup.Mode.Push)]
+        [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Pull, PartitionIdentityLookup.Send.Full)]
+        [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Full)]
+        [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Delta)]
         public async Task ClusterMaintainsSingleConcurrentVirtualActorPerIdentity(
             int memberCount,
             int identityCount,
             int batchSize,
             int threads,
             int runtimeSeconds,
-            PartitionIdentityLookup.Mode mode
+            PartitionIdentityLookup.Mode mode,
+            PartitionIdentityLookup.Send send
         )
         {
             Interlocked.Exchange(ref _requests, 0);
-            await using var fixture = await InitClusterFixture(memberCount, mode);
+            await using var fixture = await InitClusterFixture(memberCount, mode, send);
 
             var identities = Enumerable.Range(0, identityCount).Select(_ => Guid.NewGuid().ToString("N")).ToList();
 
@@ -106,12 +108,7 @@ namespace Proto.Cluster.PartitionIdentity.Tests
                         var id = identities[identityIndex++ % identities.Count];
 
                         tasks.Add(Inc(clusterFixture.Members[0], id, cancellationToken));
-
-                        if (rnd.Next() % 2 == 0)
-                        {
-                            // Try to provoke race condition, call simultaneously to another member
-                            tasks.Add(Inc(clusterFixture.Members[1], id, cancellationToken));
-                        }
+                        tasks.Add(Inc(clusterFixture.Members[1], id, cancellationToken));
                     }
 
                     await Task.WhenAll(tasks);
@@ -248,9 +245,13 @@ namespace Proto.Cluster.PartitionIdentity.Tests
         private static Task StopRandomMember(IClusterFixture fixture, IList<Cluster> candidates, Random rnd, bool graceful)
             => _ = fixture.RemoveNode(RandomMember(candidates, rnd), graceful);
 
-        private static async Task<PartitionIdentityClusterFixture> InitClusterFixture(int memberCount, PartitionIdentityLookup.Mode mode)
+        private static async Task<PartitionIdentityClusterFixture> InitClusterFixture(
+            int memberCount,
+            PartitionIdentityLookup.Mode mode,
+            PartitionIdentityLookup.Send send
+        )
         {
-            var fixture = new PartitionIdentityClusterFixture(memberCount, mode);
+            var fixture = new PartitionIdentityClusterFixture(memberCount, mode, send);
             await fixture.InitializeAsync();
             return fixture;
         }
@@ -259,12 +260,17 @@ namespace Proto.Cluster.PartitionIdentity.Tests
     public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
     {
         private readonly PartitionIdentityLookup.Mode _mode;
+        private readonly PartitionIdentityLookup.Send _send;
         public readonly ActorStateRepo Repository = new();
 
-        public PartitionIdentityClusterFixture(int memberCount, PartitionIdentityLookup.Mode mode) : base(memberCount) => _mode = mode;
+        public PartitionIdentityClusterFixture(int memberCount, PartitionIdentityLookup.Mode mode, PartitionIdentityLookup.Send send) : base(memberCount)
+        {
+            _mode = mode;
+            _send = send;
+        }
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionIdentityLookup(TimeSpan.FromSeconds(3),
-            TimeSpan.FromSeconds(5), new PartitionConfig(false, 1000, TimeSpan.FromSeconds(3), _mode)
+            TimeSpan.FromSeconds(5), new PartitionConfig(false, 1000, TimeSpan.FromSeconds(3), _mode, _send)
         );
 
         protected override ClusterKind[] ClusterKinds

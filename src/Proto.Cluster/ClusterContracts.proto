@@ -58,6 +58,11 @@ message PackedActivations{
 message IdentityHandoverAck {
   uint32 chunk_id = 1;
   uint64 topology_hash = 2;
+  State processing_state = 3;
+  enum State {
+    processed = 0;
+    incorrect_topology = 1;
+  }
 }
 
 message ClusterIdentity{
