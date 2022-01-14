@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
@@ -96,7 +97,7 @@ namespace Acme.OtherSystem.Foo
             _cluster = cluster;
         }
 
-        public async Task<Acme.Mysystem.Bar.GetCurrentStateResponse> GetState(CancellationToken ct)
+        public async Task<Acme.Mysystem.Bar.GetCurrentStateResponse?> GetState(CancellationToken ct)
         {
             var gr = new GrainRequestMessage(0, null);
             //request the RPC method to be invoked
@@ -105,7 +106,7 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse)grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -115,7 +116,7 @@ namespace Acme.OtherSystem.Foo
             };
         }
         
-        public async Task<Acme.Mysystem.Bar.GetCurrentStateResponse> GetState(ISenderContext context, CancellationToken ct)
+        public async Task<Acme.Mysystem.Bar.GetCurrentStateResponse?> GetState(ISenderContext context, CancellationToken ct)
         {
             var gr = new GrainRequestMessage(0, null);
             //request the RPC method to be invoked
@@ -124,7 +125,7 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse)grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -133,7 +134,7 @@ namespace Acme.OtherSystem.Foo
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
-        public async Task<Google.Protobuf.WellKnownTypes.Empty> SendCommand(Acme.Mysystem.Bar.SomeCommand request, CancellationToken ct)
+        public async Task<Google.Protobuf.WellKnownTypes.Empty?> SendCommand(Acme.Mysystem.Bar.SomeCommand request, CancellationToken ct)
         {
             var gr = new GrainRequestMessage(1, request);
             //request the RPC method to be invoked
@@ -152,7 +153,7 @@ namespace Acme.OtherSystem.Foo
             };
         }
         
-        public async Task<Google.Protobuf.WellKnownTypes.Empty> SendCommand(Acme.Mysystem.Bar.SomeCommand request, ISenderContext context, CancellationToken ct)
+        public async Task<Google.Protobuf.WellKnownTypes.Empty?> SendCommand(Acme.Mysystem.Bar.SomeCommand request, ISenderContext context, CancellationToken ct)
         {
             var gr = new GrainRequestMessage(1, request);
             //request the RPC method to be invoked
@@ -170,7 +171,7 @@ namespace Acme.OtherSystem.Foo
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
-        public async Task<Acme.Mysystem.Bar.Response> RequestResponse(Acme.Mysystem.Bar.Query request, CancellationToken ct)
+        public async Task<Acme.Mysystem.Bar.Response?> RequestResponse(Acme.Mysystem.Bar.Query request, CancellationToken ct)
         {
             var gr = new GrainRequestMessage(2, request);
             //request the RPC method to be invoked
@@ -179,7 +180,7 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response)grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -189,7 +190,7 @@ namespace Acme.OtherSystem.Foo
             };
         }
         
-        public async Task<Acme.Mysystem.Bar.Response> RequestResponse(Acme.Mysystem.Bar.Query request, ISenderContext context, CancellationToken ct)
+        public async Task<Acme.Mysystem.Bar.Response?> RequestResponse(Acme.Mysystem.Bar.Query request, ISenderContext context, CancellationToken ct)
         {
             var gr = new GrainRequestMessage(2, request);
             //request the RPC method to be invoked
@@ -198,7 +199,7 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response)grainResponse.ResponseMessage,
+                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -207,7 +208,7 @@ namespace Acme.OtherSystem.Foo
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
             };
         }
-        public async Task<Google.Protobuf.WellKnownTypes.Empty> NoParameterOrReturn(CancellationToken ct)
+        public async Task<Google.Protobuf.WellKnownTypes.Empty?> NoParameterOrReturn(CancellationToken ct)
         {
             var gr = new GrainRequestMessage(3, null);
             //request the RPC method to be invoked
@@ -226,7 +227,7 @@ namespace Acme.OtherSystem.Foo
             };
         }
         
-        public async Task<Google.Protobuf.WellKnownTypes.Empty> NoParameterOrReturn(ISenderContext context, CancellationToken ct)
+        public async Task<Google.Protobuf.WellKnownTypes.Empty?> NoParameterOrReturn(ISenderContext context, CancellationToken ct)
         {
             var gr = new GrainRequestMessage(3, null);
             //request the RPC method to be invoked
@@ -250,9 +251,9 @@ namespace Acme.OtherSystem.Foo
     {
         public const string Kind = "TestGrain";
 
-        private TestGrainBase _inner;
-        private IContext _context;
-        private Func<IContext, ClusterIdentity, TestGrainBase> _innerFactory;        
+        private TestGrainBase? _inner;
+        private IContext? _context;
+        private readonly Func<IContext, ClusterIdentity, TestGrainBase> _innerFactory;
     
         public TestGrainActor(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
         {
@@ -266,7 +267,7 @@ namespace Acme.OtherSystem.Foo
                 case Started msg: 
                 {
                     _context = context;
-                    var id = context.Get<ClusterIdentity>();
+                    var id = context.Get<ClusterIdentity>()!; // Always populated on startup
                     _inner = _innerFactory(context, id);
                     await _inner.OnStarted();
                     break;
@@ -278,12 +279,12 @@ namespace Acme.OtherSystem.Foo
                     break;
                 case Stopping _:
                 {
-                    await _inner.OnStopping();
+                    await _inner!.OnStopping();
                     break;
                 }
                 case Stopped _:
                 {
-                    await _inner.OnStopped();
+                    await _inner!.OnStopped();
                     break;
                 }    
                 case GrainRequestMessage(var methodIndex, var r):
@@ -292,14 +293,14 @@ namespace Acme.OtherSystem.Foo
                     {
                         case 0:
                         {   
-                            await _inner.GetState(Respond, OnError);
+                            await _inner!.GetState(Respond, OnError);
 
                             break;
                         }
                         case 1:
                         {   
                             if(r is Acme.Mysystem.Bar.SomeCommand input){
-                                await _inner.SendCommand(input, Respond, OnError);
+                                await _inner!.SendCommand(input, Respond, OnError);
                             } else {
                                 OnError($"Invalid client contract. Expected Acme.Mysystem.Bar.SomeCommand, received {r?.GetType().FullName}");
                             }
@@ -309,7 +310,7 @@ namespace Acme.OtherSystem.Foo
                         case 2:
                         {   
                             if(r is Acme.Mysystem.Bar.Query input){
-                                await _inner.RequestResponse(input, Respond, OnError);
+                                await _inner!.RequestResponse(input, Respond, OnError);
                             } else {
                                 OnError($"Invalid client contract. Expected Acme.Mysystem.Bar.Query, received {r?.GetType().FullName}");
                             }
@@ -318,7 +319,7 @@ namespace Acme.OtherSystem.Foo
                         }
                         case 3:
                         {   
-                            await _inner.NoParameterOrReturn(Respond, OnError);
+                            await _inner!.NoParameterOrReturn(Respond, OnError);
 
                             break;
                         }
@@ -331,15 +332,15 @@ namespace Acme.OtherSystem.Foo
                 }
                 default:
                 {
-                    await _inner.OnReceive();
+                    await _inner!.OnReceive();
                     break;
                 }
             }
         }
 
-        private void Respond<T>(T response) where T: IMessage => _context.Respond( new GrainResponseMessage(response));
-        private void Respond() => _context.Respond( new GrainResponseMessage(null));
-        private void OnError(string error) => _context.Respond( new GrainErrorResponse {Err = error } );
+        private void Respond<T>(T response) where T: IMessage => _context!.Respond( new GrainResponseMessage(response));
+        private void Respond() => _context!.Respond( new GrainResponseMessage(null));
+        private void OnError(string error) => _context!.Respond( new GrainErrorResponse {Err = error } );
 
         public static ClusterKind GetClusterKind(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
             => new ClusterKind(Kind, Props.FromProducer(() => new TestGrainActor(innerFactory)));
