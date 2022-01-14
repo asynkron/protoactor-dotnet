@@ -141,7 +141,7 @@ namespace Proto.Cluster.Partition
 
         private class MemberHandover
         {
-            private readonly List<Task<IdentityHandoverAck>> _responseTasks = new();
+            private readonly List<Task<IdentityHandoverAck?>> _responseTasks = new();
             private readonly PID _target;
             private readonly IContext _context;
             private readonly ClusterTopology _topology;
@@ -201,10 +201,28 @@ namespace Proto.Cluster.Partition
 
             private void SendWithRetries(IdentityHandover identityHandover, CancellationToken cancellationToken)
             {
-                var task = Retry.TryUntil(() => {
-                        using var timeout = new CancellationTokenSource(_requestTimeout);
-                        using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
-                        return _context.RequestAsync<IdentityHandoverAck>(_target, identityHandover, linked.Token);
+                var task = Retry.TryUntil(async () => {
+                        try
+                        {
+                            using var timeout = new CancellationTokenSource(_requestTimeout);
+                            using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
+                            return await _context.RequestAsync<IdentityHandoverAck>(_target, identityHandover, linked.Token);
+                        }
+                        catch (TimeoutException) when (!cancellationToken.IsCancellationRequested)
+                        {
+                            if (Logger.IsEnabled(LogLevel.Warning))
+                            {
+                                Logger.LogWarning("Identity handover request timeout for topology {TopologyHash}, address {Address}",
+                                    _topology.TopologyHash, _target.Address
+                                );
+                            }
+
+                            return null;
+                        }
+                        catch (TimeoutException) // Cancelled, new topology active
+                        {
+                            return null;
+                        }
                     },
                     ack => cancellationToken.IsCancellationRequested || ack is not null,
                     int.MaxValue // Continue until complete or cancelled,

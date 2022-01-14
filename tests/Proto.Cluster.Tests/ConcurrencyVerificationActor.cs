@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
+
 // ReSharper disable NotAccessedPositionalProperty.Global
 
 namespace Proto.Cluster.Tests

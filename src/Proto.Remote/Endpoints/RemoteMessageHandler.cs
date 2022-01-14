@@ -42,7 +42,10 @@ namespace Proto.Remote
                         {
                             batch.Targets[i] = pid;
                         }
-                        // batch.Targets[i].Ref(System);
+                        else
+                        {
+                            batch.Targets[i].Ref(System);
+                        }
                     }
 
                     var typeNames = batch.TypeNames.ToArray();
@@ -52,11 +55,17 @@ namespace Proto.Remote
                     foreach (var envelope in batch.Envelopes)
                     {
                         var target = batch.Targets[envelope.Target];
+
+                        if (envelope.TargetRequestId != default)
+                        {
+                            target = target.WithRequestId(envelope.TargetRequestId);
+                        }
+
                         var sender = envelope.Sender == 0 ? null : batch.Senders[envelope.Sender - 1];
 
-                        if (envelope.RequestId != default)
+                        if (envelope.SenderRequestId != default)
                         {
-                            target = target.WithRequestId(envelope.RequestId);
+                            sender = sender?.WithRequestId(envelope.SenderRequestId);
                         }
 
                         var typeName = typeNames[envelope.TypeId];

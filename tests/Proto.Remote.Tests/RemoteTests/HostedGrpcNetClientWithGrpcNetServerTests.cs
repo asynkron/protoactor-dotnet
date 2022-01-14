@@ -24,14 +24,16 @@ namespace Proto.Remote.Tests
                 var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost(5000));
                 (_clientHost, Remote) = GetHostedGrpcNetRemote(clientConfig);
                 var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost(5001));
-                ServerRemote = GetGrpcNetRemote(serverConfig);
+                var serverConfig2 = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
+                ServerRemote1 = GetGrpcNetRemote(serverConfig);
+                ServerRemote2 = GetGrpcNetRemote(serverConfig2);
             }
 
             public override async Task DisposeAsync()
             {
                 await _clientHost.StopAsync();
                 _clientHost.Dispose();
-                await ServerRemote.ShutdownAsync();
+                await ServerRemote1.ShutdownAsync();
             }
         }
     }

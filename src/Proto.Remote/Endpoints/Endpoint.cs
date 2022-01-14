@@ -101,11 +101,17 @@ namespace Proto.Remote
                     foreach (var envelope in batch.Envelopes)
                     {
                         var target = batch.Targets[envelope.Target];
+
+                        if (envelope.TargetRequestId != default)
+                        {
+                            target = target.WithRequestId(envelope.TargetRequestId);
+                        }
+
                         var sender = envelope.Sender == 0 ? null : batch.Senders[envelope.Sender - 1];
 
-                        if (envelope.RequestId != default)
+                        if (envelope.SenderRequestId != default)
                         {
-                            target = target.WithRequestId(envelope.RequestId);
+                            sender = sender?.WithRequestId(envelope.SenderRequestId);
                         }
 
                         var typeName = typeNames[envelope.TypeId];
@@ -166,30 +172,33 @@ namespace Proto.Remote
 
         private void ClearWatchers()
         {
-            foreach (var (id, pidSet) in _watchedActors)
+            lock (_synLock)
             {
-                var watcherPid = PID.FromAddress(System.Address, id);
-                var watcherRef = System.ProcessRegistry.Get(watcherPid);
-
-                if (watcherRef == System.DeadLetter)
+                foreach (var (id, pidSet) in _watchedActors)
                 {
-                    continue;
+                    var watcherPid = PID.FromAddress(System.Address, id);
+                    var watcherRef = System.ProcessRegistry.Get(watcherPid);
+
+                    if (watcherRef == System.DeadLetter)
+                    {
+                        continue;
+                    }
+
+                    foreach (var t in pidSet.Select(
+                            pid => new Terminated
+                            {
+                                Who = pid,
+                                Why = TerminatedReason.AddressTerminated
+                            }
+                        ))
+                    {
+                        //send the address Terminated event to the Watcher
+                        watcherPid.SendSystemMessage(System, t);
+                    }
                 }
 
-                foreach (var t in pidSet.Select(
-                             pid => new Terminated
-                             {
-                                 Who = pid,
-                                 Why = TerminatedReason.AddressTerminated
-                             }
-                         ))
-                {
-                    //send the address Terminated event to the Watcher
-                    watcherPid.SendSystemMessage(System, t);
-                }
+                _watchedActors.Clear();
             }
-
-            _watchedActors.Clear();
         }
 
         public void RemoteUnwatch(PID target, Unwatch unwatch)
@@ -276,18 +285,19 @@ namespace Proto.Remote
             {
                 try
                 {
+                    var messages = new List<RemoteDeliver>(RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize);
                     while (await _remoteDelivers.Reader.WaitToReadAsync(CancellationToken).ConfigureAwait(false))
                     {
-                        var messages = new List<RemoteDeliver>();
 
                         while (_remoteDelivers.Reader.TryRead(out var remoteDeliver))
                         {
                             messages.Add(remoteDeliver);
-                            if (messages.Count > RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize) break;
+                            if (messages.Count >= RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize) break;
                         }
 
                         var batch = CreateBatch(messages);
                         await Outgoing.Writer.WriteAsync(new RemoteMessage {MessageBatch = batch}, CancellationToken);
+                        messages.Clear();
                     }
                 }
                 catch (OperationCanceledException)
@@ -304,13 +314,12 @@ namespace Proto.Remote
         {
             var envelopes = new List<MessageEnvelope>();
             var typeNames = new Dictionary<string, int>();
-            var targets = new Dictionary<(string,string), int>();
+            var targets = new Dictionary<(string address, string id), int>();
             var targetList = new List<PID>();
             var typeNameList = new List<string>();
-            var senders = new Dictionary<PID, int>();
+            var senders = new Dictionary<(string address, string id), int>();
             var senderList = new List<PID>();
 
-            
             foreach (var rd in m)
             {
                 var target = rd.Target;
@@ -322,13 +331,19 @@ namespace Proto.Remote
                     targetList.Add(target);
                 }
 
-                var sender = rd.Sender;
 
                 var senderId = 0;
-                if (sender != null && !senders.TryGetValue(sender, out senderId))
+
+                var sender = rd.Sender;
+                if (sender != null)
                 {
-                    senderId = senders[sender] = senders.Count+1;
-                    senderList.Add(sender);
+                    var senderKey = (sender.Address,sender.Id);
+
+                    if (!senders.TryGetValue(senderKey, out senderId))
+                    {
+                        senderId = senders[senderKey] = senders.Count + 1;
+                        senderList.Add(PID.FromAddress(sender.Address, sender.Id));
+                    }
                 }
 
                 var message = rd.Message;
@@ -390,7 +405,8 @@ namespace Proto.Remote
                     TypeId = typeId,
                     SerializerId = serializerId,
                     MessageHeader = header,
-                    RequestId = rd.Target.RequestId
+                    TargetRequestId = rd.Target.RequestId,
+                    SenderRequestId = sender?.RequestId ?? default
                 };
                 // if (Logger.IsEnabled(LogLevel.Trace))
                 //     Logger.LogTrace("[{SystemAddress}] Endpoint adding Envelope {Envelope}", System.Address, envelope);

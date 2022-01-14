@@ -7,6 +7,14 @@ message Start {}
 message StartRemote {
 	actor.PID Sender = 1;
 }
+message Forward {
+	actor.PID Target = 1;
+	string message = 2;
+}
+message ForwardResponse {
+	string message = 1;
+	actor.PID sender = 2;
+}
 message Ping {
 	string message=1;
 }

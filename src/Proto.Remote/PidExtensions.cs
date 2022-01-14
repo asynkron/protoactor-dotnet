@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
@@ -5,11 +6,11 @@ namespace Proto.Remote
 {
     public static class PidExtensions
     {
-        public static bool IsClientAddress(this PID pid) => pid.Address.StartsWith(ActorSystem.Client);
-        public static bool IsClientID(this PID pid) => pid.Id.StartsWith(ActorSystem.Client);
+        public static bool IsClientAddress(this PID pid) => pid.Address.StartsWith(ActorSystem.Client, StringComparison.Ordinal);
+        public static bool IsClientId(this PID pid) => pid.Id.StartsWith(ActorSystem.Client, StringComparison.Ordinal);
         public static bool TryTranslateToLocalClientPID(this PID pid, [NotNullWhen(true)] out PID? clientPid)
         {
-            if (pid.IsClientID())
+            if (pid.IsClientId())
             {
                 var parts = pid.Id.Split("/");
                 var address = $"{parts[0]}/{parts[1]}";
@@ -39,7 +40,7 @@ namespace Proto.Remote
                 systemId = pid.Address.Split("/")[1];
                 return true;
             }
-            else if (pid.Address == system.Address && pid.IsClientID())
+            else if (pid.Address == system.Address && pid.IsClientId())
             {
                 systemId = pid.Id.Split("/")[1];
                 return true;

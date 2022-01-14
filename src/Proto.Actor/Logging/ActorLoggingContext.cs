@@ -91,6 +91,6 @@ namespace Proto
             base.Respond(message);
         }
 
-        private string ActorType => Actor?.GetType().Name;
+        private string ActorType => Actor?.GetType().Name ?? "None";
     }
 }

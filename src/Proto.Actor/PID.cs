@@ -28,7 +28,7 @@ namespace Proto
         {
             if (_process is not null)
             {
-                if (_process is ActorProcess actorProcess && actorProcess.IsDead) _process = null;
+                if (_process is ActorProcess {IsDead: true}) _process = null;
 
                 return _process;
             }

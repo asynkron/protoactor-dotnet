@@ -37,7 +37,7 @@ namespace Proto
 
         public Process Get(PID pid)
         {
-            if (pid.Address == ActorSystem.NoHost || (pid.Address == System.Address && !pid.Id.StartsWith(ActorSystem.Client)))
+            if (pid.Address == ActorSystem.NoHost || (pid.Address == System.Address && !pid.Id.StartsWith(ActorSystem.Client, StringComparison.Ordinal)))
             {
                 if (_localProcesses.TryGetValue(pid.Id, out var process)) return process;
                 return System.DeadLetter;
