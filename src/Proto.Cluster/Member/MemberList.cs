@@ -315,5 +315,7 @@ namespace Proto.Cluster
         public Member[] GetAllMembers() => _activeMembers.Members.ToArray();
 
         public Member[] GetOtherMembers() => _activeMembers.Members.Where(m => m.Id != _system.Id).ToArray();
+        
+        public Member[] GetMembersByKind(string kind) => _activeMembers.Members.Where(m => m.Kinds.Contains(kind)).ToArray();
     }
 }
