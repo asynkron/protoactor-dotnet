@@ -8,6 +8,7 @@ namespace Proto.Cluster.CodeGen
     public static class Template
     {
         public const string DefaultTemplate = @"
+#nullable enable
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -80,7 +81,7 @@ namespace {{CsNamespace}}
         }
 
 		{{#each Methods}}
-        public async Task<{{OutputName}}> {{Name}}({{LeadingParameterDefinition}}CancellationToken ct)
+        public async Task<{{OutputName}}?> {{Name}}({{LeadingParameterDefinition}}CancellationToken ct)
         {
             var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
@@ -89,7 +90,7 @@ namespace {{CsNamespace}}
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}})grainResponse.ResponseMessage{{else}}Nothing.Instance{{/if}},
+                GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}Nothing.Instance{{/if}},
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -99,7 +100,7 @@ namespace {{CsNamespace}}
             };
         }
         
-        public async Task<{{OutputName}}> {{Name}}({{LeadingParameterDefinition}}ISenderContext context, CancellationToken ct)
+        public async Task<{{OutputName}}?> {{Name}}({{LeadingParameterDefinition}}ISenderContext context, CancellationToken ct)
         {
             var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
@@ -108,7 +109,7 @@ namespace {{CsNamespace}}
             return res switch
             {
                 // normal response
-                GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}})grainResponse.ResponseMessage{{else}}Nothing.Instance{{/if}},
+                GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}Nothing.Instance{{/if}},
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 //timeout
@@ -124,9 +125,9 @@ namespace {{CsNamespace}}
     {
         public const string Kind = ""{{Name}}"";
 
-        private {{Name}}Base _inner;
-        private IContext _context;
-        private Func<IContext, ClusterIdentity, {{Name}}Base> _innerFactory;        
+        private {{Name}}Base? _inner;
+        private IContext? _context;
+        private readonly Func<IContext, ClusterIdentity, {{Name}}Base> _innerFactory;
     
         public {{Name}}Actor(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
         {
@@ -140,7 +141,7 @@ namespace {{CsNamespace}}
                 case Started msg: 
                 {
                     _context = context;
-                    var id = context.Get<ClusterIdentity>();
+                    var id = context.Get<ClusterIdentity>()!; // Always populated on startup
                     _inner = _innerFactory(context, id);
                     await _inner.OnStarted();
                     break;
@@ -152,12 +153,12 @@ namespace {{CsNamespace}}
                     break;
                 case Stopping _:
                 {
-                    await _inner.OnStopping();
+                    await _inner!.OnStopping();
                     break;
                 }
                 case Stopped _:
                 {
-                    await _inner.OnStopped();
+                    await _inner!.OnStopped();
                     break;
                 }    
                 case GrainRequestMessage(var methodIndex, var r):
@@ -169,12 +170,12 @@ namespace {{CsNamespace}}
                         {   
                             {{#if UseParameter}}
                             if(r is {{InputName}} input){
-                                await _inner.{{Name}}(input, Respond, OnError);
+                                await _inner!.{{Name}}(input, Respond, OnError);
                             } else {
                                 OnError($""Invalid client contract. Expected {{InputName}}, received {r?.GetType().FullName}"");
                             }
                             {{else}}
-                            await _inner.{{Name}}(Respond, OnError);
+                            await _inner!.{{Name}}(Respond, OnError);
                             {{/if}}
 
                             break;
@@ -189,15 +190,15 @@ namespace {{CsNamespace}}
                 }
                 default:
                 {
-                    await _inner.OnReceive();
+                    await _inner!.OnReceive();
                     break;
                 }
             }
         }
 
-        private void Respond<T>(T response) where T: IMessage => _context.Respond( new GrainResponseMessage(response));
-        private void Respond() => _context.Respond( new GrainResponseMessage(null));
-        private void OnError(string error) => _context.Respond( new GrainErrorResponse {Err = error } );
+        private void Respond<T>(T response) where T: IMessage => _context!.Respond( new GrainResponseMessage(response));
+        private void Respond() => _context!.Respond( new GrainResponseMessage(null));
+        private void OnError(string error) => _context!.Respond( new GrainErrorResponse {Err = error } );
 
         public static ClusterKind GetClusterKind(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
             => new ClusterKind(Kind, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
