@@ -21,25 +21,25 @@ namespace Proto.Cluster.Partition
     //for spawning/activating cluster actors see PartitionActivator.cs
     class PartitionIdentityActor : IActor
     {
-        private readonly Cluster _cluster;
         private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
+
+        private readonly Cluster _cluster;
         private readonly string _myAddress;
-
-        private readonly Dictionary<ClusterIdentity, PID> _partitionLookup = new(); // actor/grain name to PID
-
-        private MemberHashRing _memberHashRing = new(ImmutableList<Member>.Empty);
-
-        private readonly Dictionary<ClusterIdentity, (TaskCompletionSource<ActivationResponse> Response, string activationAddress)> _spawns = new();
-
-        private ulong _topologyHash;
-        private HandoverState? _currentHandover;
-
         private readonly TimeSpan _identityHandoverTimeout;
         private readonly PartitionConfig _config;
 
-        private TaskCompletionSource<ulong>? _rebalanceTcs;
+        private readonly Dictionary<ClusterIdentity, PID> _partitionLookup = new(); // actor/grain name to PID
+        private readonly Dictionary<ClusterIdentity, (TaskCompletionSource<ActivationResponse> Response, string activationAddress)> _spawns = new();
 
+        private ulong _topologyHash;
+        private ClusterTopology? _currentTopology;
+        private MemberHashRing _memberHashRing = new(ImmutableList<Member>.Empty);
         private HashSet<string> _currentMemberAddresses = new();
+
+        private TaskCompletionSource<ulong>? _rebalanceTcs;
+        private HandoverSink? _currentHandover;
+
+        private ClusterTopology? _deltaTopology;
 
         public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout, PartitionConfig config)
         {
@@ -79,23 +79,21 @@ namespace Proto.Cluster.Partition
 
             Acknowledge(IdentityHandoverAck.Types.State.Processed);
 
-            foreach (var activation in msg.Actors)
-            {
-                TakeOverIdentity(activation.ClusterIdentity, activation.Pid, context);
-            }
-
             if (_currentHandover is null)
             {
                 Logger.LogWarning("IdentityHandover received when member is not re-balancing");
                 return Task.CompletedTask;
             }
 
-            if (_currentHandover.IsFinalHandoverMessage(context.Sender, msg))
+            if (_currentHandover.Receive(context.Sender, msg))
             {
                 if (_config.DeveloperLogging)
                 {
                     Console.WriteLine("Completed rebalance from all members for topology " + _topologyHash);
                 }
+
+                // CheckHandover(_currentHandover.ReportedActivationsPerAddress);
+                CheckHandover(_currentHandover.CompletedHandovers.ToDictionary(member => member.Address, member => (member.SentActivations, member.SkippedActivations)));
 
                 _currentHandover = null;
                 _rebalanceTcs?.TrySetResult(_topologyHash);
@@ -146,7 +144,13 @@ namespace Proto.Cluster.Partition
 
             if (_config.Mode == PartitionIdentityLookup.Mode.Push)
             {
-                _currentHandover = new HandoverState(msg);
+                _currentHandover = new HandoverSink(msg, handover => {
+                        foreach (var activation in handover.Actors)
+                        {
+                            TakeOverIdentity(activation.ClusterIdentity, activation.Pid, context);
+                        }
+                    }
+                );
                 return Task.CompletedTask;
             }
 
@@ -208,6 +212,7 @@ namespace Proto.Cluster.Partition
         private void SetTopology(ClusterTopology msg)
         {
             _topologyHash = msg.TopologyHash;
+            _currentTopology = msg;
             _memberHashRing = new MemberHashRing(msg.Members);
             _currentMemberAddresses = msg.Members.Select(it => it.Address).ToHashSet();
         }
@@ -248,9 +253,20 @@ namespace Proto.Cluster.Partition
             var workerPid = SpawnRebalanceWorker(context, cancellationToken);
             var rebalanceTask = context.RequestAsync<PartitionsRebalanced>(workerPid, new IdentityHandoverRequest
                 {
-                    TopologyHash = _topologyHash,
                     Address = _myAddress,
-                    Members = {msg.Members}
+                    CurrentTopology = new IdentityHandoverRequest.Types.Topology
+                    {
+                        TopologyHash = _topologyHash,
+                        Members = {msg.Members}
+                    },
+                    // If we have a known good topology rebalance, we can let it just rebalance the difference (delta) between the topologies
+                    DeltaTopology = _deltaTopology is not null
+                        ? new IdentityHandoverRequest.Types.Topology
+                        {
+                            TopologyHash = _deltaTopology.TopologyHash,
+                            Members = {_deltaTopology.Members}
+                        }
+                        : null
                 }, cancellationToken
             );
 
@@ -291,18 +307,78 @@ namespace Proto.Cluster.Partition
             }
 
             Logger.LogInformation("{SystemId} Got  ownerships of {Count} activations, for topology {TopologyHash}, ", context.System.Id,
-                msg.OwnedActivations.Count, _topologyHash
+                msg.CompletedPartitions.Count, _topologyHash
             );
+            var referenceActorCounts = new Dictionary<string, int>();
 
-            foreach (var (clusterIdentity, activation) in msg.OwnedActivations)
+            foreach (var partition in msg.CompletedPartitions)
             {
-                TakeOverIdentity(clusterIdentity, activation, context);
+                foreach (var activation in partition.Activations)
+                {
+                    TakeOverIdentity(activation.ClusterIdentity, activation.Pid, context);
+                }
+
+                var activationsCount = partition.Activations.Count;
+                var distinctActivationsCount = partition.Activations.Select(it => it.Pid.Id).Distinct().Count();
+
+                if (distinctActivationsCount != activationsCount)
+                {
+                    Console.WriteLine($"Duplicate activations {activationsCount} / {distinctActivationsCount}");
+                }
+
+                if (partition.Skipped > 0)
+                {
+                }
+
+                referenceActorCounts.Add(partition.MemberAddress, partition.Skipped + activationsCount);
+            }
+
+            // if (referenceActorCounts.Count > 0)
+            // {
+            //     CheckHandover(referenceActorCounts);
+            // }
+
+            // Sets the current topology as a consistent baseline which can be used when deciding which topologies should be sent from 
+            // the partition placement actor on rebalance.
+            if (_config.Send == PartitionIdentityLookup.Send.Delta)
+            {
+                _deltaTopology = _currentTopology;
             }
 
             _rebalanceTcs?.TrySetResult(_topologyHash);
             _rebalanceTcs = null;
 
             return Task.CompletedTask;
+        }
+
+        private void CheckHandover(Dictionary<string, (int sent, int skipped)> referenceActorCounts)
+        {
+            var delta = 0;
+
+            var activationCountByAddress = _partitionLookup
+                .Select(kv => kv.Value.Address)
+                .GroupBy(address => address)
+                .ToDictionary(addresses => addresses.Key, addresses => addresses.Count());
+
+            foreach (var (address, activationCount) in activationCountByAddress)
+            {
+                if (referenceActorCounts.TryGetValue(address, out var refCounts))
+                {
+                    var memberDelta = activationCount - refCounts.skipped - refCounts.sent;
+                    delta += memberDelta;
+                    Console.WriteLine(
+                        $"DoubleCheck {_config.Mode},{_config.Send} {_myAddress}->{address}, identities: {activationCount}, skipped {refCounts.skipped}, sent {refCounts.sent}, delta: {memberDelta}"
+                    );
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"Missing refcounts {_myAddress}->{address}, identities: {activationCount}"
+                    );
+                }
+            }
+
+            Console.WriteLine("Overall delta: " + delta);
         }
 
         private void TakeOverIdentity(ClusterIdentity clusterIdentity, PID activation, IContext context)
@@ -450,68 +526,62 @@ namespace Proto.Cluster.Partition
             IContext context,
             TaskCompletionSource<ActivationResponse> setResponse
         )
-            => rst => {
+            => async rst => {
                 try
                 {
-                    if (rst.IsCompletedSuccessfully)
-                    {
-                        var response = rst.Result;
+                    var response = await rst;
 
+                    if (_config.DeveloperLogging)
+                        Console.Write("R"); //reentered
+
+                    if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
+                    {
                         if (_config.DeveloperLogging)
-                            Console.Write("R"); //reentered
+                            Console.Write("C"); //cached
 
-                        if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
+                        if (response.Pid is not null && !response.Pid.Equals(pid))
                         {
-                            if (_config.DeveloperLogging)
-                                Console.Write("C"); //cached
-
-                            if (response.Pid is not null && !response.Pid.Equals(pid))
-                            {
-                                context.Stop(response.Pid); // Stop duplicate activation
-                            }
-
-                            Respond(new ActivationResponse {Pid = pid, TopologyHash = _topologyHash});
-                            return Task.CompletedTask;
+                            context.Stop(response.Pid); // Stop duplicate activation
                         }
 
-                        if (response?.Pid != null)
-                        {
-                            if (_config.DeveloperLogging)
-                                Console.Write("A"); //activated
-
-                            if (response.TopologyHash != _topologyHash) // Topology changed between request and response
-                            {
-                                if (!_currentMemberAddresses.Contains(response.Pid.Address))
-                                {
-                                    // No longer part of cluster, dropped
-                                    Logger.LogWarning("Received activation response {@Response}, no longer part of cluster", response);
-                                    Respond(new ActivationResponse {Failed = true});
-                                    return Task.CompletedTask;
-                                }
-
-                                var currentActivatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
-
-                                if (_myAddress != currentActivatorAddress)
-                                {
-                                    //Stop it or handover?
-                                    Logger.LogWarning("Misplaced spawn: {ClusterIdentity}, {Pid}", msg.ClusterIdentity, response.Pid);
-                                }
-                            }
-
-                            _partitionLookup[msg.ClusterIdentity] = response.Pid;
-                            Respond(response);
-
-                            return Task.CompletedTask;
-                        }
+                        Respond(new ActivationResponse {Pid = pid, TopologyHash = _topologyHash});
+                        return;
                     }
-                    else
+
+                    if (response?.Pid != null)
                     {
-                        Logger.LogError(rst.Exception, "Spawn task failed");
+                        if (_config.DeveloperLogging)
+                            Console.Write("A"); //activated
+
+                        if (response.TopologyHash != _topologyHash) // Topology changed between request and response
+                        {
+                            if (!_currentMemberAddresses.Contains(response.Pid.Address))
+                            {
+                                // No longer part of cluster, dropped
+                                Logger.LogWarning("Received activation response {@Response}, no longer part of cluster", response);
+                                Respond(new ActivationResponse {Failed = true});
+                                return;
+                            }
+
+                            var currentActivatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
+
+                            if (_myAddress != currentActivatorAddress)
+                            {
+                                //Stop it or handover. ?
+                                Logger.LogWarning("Misplaced spawn: {ClusterIdentity}, {Pid}", msg.ClusterIdentity, response.Pid);
+                            }
+                        }
+
+                        _partitionLookup[msg.ClusterIdentity] = response.Pid;
+                        Respond(response);
+
+                        return;
                     }
                 }
                 catch (Exception x)
                 {
-                    Logger.LogError(x, "Spawning failed");
+                    Logger.LogError(x, "Spawn failed");
+                    _deltaTopology = null; // Do not use delta handover if we are not sure all spawns are OK.
                 }
                 finally
                 {
@@ -526,8 +596,6 @@ namespace Proto.Cluster.Partition
                 if (_config.DeveloperLogging)
                     Console.Write("F"); //failed
                 Respond(new ActivationResponse {Failed = true});
-
-                return Task.CompletedTask;
 
                 // The response both responds to the initial activator, but also any other waiting reentrant requests
                 void Respond(ActivationResponse response)
@@ -562,5 +630,9 @@ namespace Proto.Cluster.Partition
         }
     }
 
-    record PartitionsRebalanced(Dictionary<ClusterIdentity, PID> OwnedActivations, ulong TopologyHash);
+    record PartitionsRebalanced(List<PartitionActivations> CompletedPartitions, ulong TopologyHash);
+
+    public record PartitionActivations(string MemberAddress, List<Activation> Activations, int Skipped);
+
+    public record PartitionFailed(string MemberAddress, string Reason);
 }

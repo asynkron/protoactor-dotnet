@@ -106,6 +106,7 @@ namespace Proto.Cluster.Tests
 
     public class ActorState
     {
+        private int _activeCount = 0;
         private long _totalCount;
         public int StoredCount { get; set; }
         public bool Inconsistent { get; private set; }
@@ -116,10 +117,26 @@ namespace Proto.Cluster.Tests
 
         public ConcurrentBag<VerificationEvent> Events { get; } = new();
 
-        public void RecordStarted(PID activation) => Events.Add(new ActorStarted(activation, DateTimeOffset.Now, StoredCount, TotalCount));
+        public void RecordStarted(PID activation)
+        {
+            Events.Add(new ActorStarted(activation, DateTimeOffset.Now, StoredCount, TotalCount));
+            var active = Interlocked.Increment(ref _activeCount);
+
+            if (active != 1)
+            {
+                Inconsistent = true;
+            }
+        }
 
         public void RecordStopping(PID activation)
-            => Events.Add(new ActorStopped(activation, DateTimeOffset.Now, StoredCount, TotalCount));
+        {
+            Events.Add(new ActorStopped(activation, DateTimeOffset.Now, StoredCount, TotalCount));
+            var active = Interlocked.Decrement(ref _activeCount);
+            if (active != 0)
+            {
+                Inconsistent = true;
+            }
+        }
 
         public void RecordInconsistency(int expected, int actual, PID activation)
         {

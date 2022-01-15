@@ -6,40 +6,32 @@ import "Proto.Actor/Protos.proto";
 //request response call from Identity actor sent to each member
 //asking what activations they hold that belong to the requester
 message IdentityHandoverRequest {
-  uint64 topology_hash = 1;
+  Topology current_topology = 1;
   string address = 2;
-  repeated Member members = 3;
-}
-
-//response message to the above
-message IdentityHandoverResponse {
-  repeated Activation actors = 1;
-  int32 chunk_id = 2;
-  bool final = 3;
-  uint64 topology_hash = 4;
-}
-
-message RemoteIdentityHandoverResponse {
-  PackedActivations actors = 1;
-  int32 chunk_id = 2;
-  bool final = 3;
-  uint64 topology_hash = 4;
+  // If the requester passes a delta topology, only return activations which would not be assigned to the member
+  // in the previous topology. 
+  Topology delta_topology = 3; 
+  message Topology{
+    uint64 topology_hash = 1;
+    repeated Member members = 3;
+  }
 }
 
 message IdentityHandover {
   repeated Activation actors = 1;
-  uint32 chunk_id = 2;
+  int32 chunk_id = 2;
   bool final = 3;
   uint64 topology_hash = 4;
-  uint32 skipped = 5;
+  int32 skipped = 5; // Total number of activations skipped
+  int32 sent = 6;    // Total number of activations sent
 }
 
 message RemoteIdentityHandover {
   PackedActivations actors = 1;
-  uint32 chunk_id = 2;
+  int32 chunk_id = 2;
   bool final = 3;
   uint64 topology_hash = 4;
-  uint32 skipped = 5;
+  int32 skipped = 5;
 }
 
 message PackedActivations{
@@ -56,7 +48,7 @@ message PackedActivations{
 }
 
 message IdentityHandoverAck {
-  uint32 chunk_id = 1;
+  int32 chunk_id = 1;
   uint64 topology_hash = 2;
   State processing_state = 3;
   enum State {

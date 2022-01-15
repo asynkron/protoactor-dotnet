@@ -44,29 +44,6 @@ namespace Proto.Cluster
         public string Identity => ClusterIdentity.Identity;
     }
 
-    public sealed partial class IdentityHandoverResponse : IRootSerializable
-    {
-        public IRootSerialized Serialize(ActorSystem system) =>
-            new RemoteIdentityHandoverResponse
-            {
-                Actors = PackedActivations.Pack(system.Address, Actors),
-                TopologyHash = TopologyHash,
-                Final = Final,
-                ChunkId = ChunkId
-            };
-    }
-
-    public sealed partial class RemoteIdentityHandoverResponse : IRootSerialized
-    {
-        public IRootSerializable Deserialize(ActorSystem system) => new IdentityHandoverResponse
-        {
-            TopologyHash = TopologyHash,
-            Final = Final,
-            ChunkId = ChunkId,
-            Actors = {Actors.UnPack()}
-        };
-    }
-    
     public sealed partial class IdentityHandover : IRootSerializable
     {
         public IRootSerialized Serialize(ActorSystem system) =>

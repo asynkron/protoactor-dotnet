@@ -12,6 +12,6 @@ namespace Proto.Cluster.Partition
         int HandoverChunkSize,
         TimeSpan RebalanceRequestTimeout,
         PartitionIdentityLookup.Mode Mode = PartitionIdentityLookup.Mode.Pull,
-        PartitionIdentityLookup.Send Send = PartitionIdentityLookup.Send.Delta
+        PartitionIdentityLookup.Send Send = PartitionIdentityLookup.Send.Full
     );
 }

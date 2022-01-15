@@ -29,6 +29,7 @@ namespace Proto.Cluster.PartitionIdentity.Tests
 
         [Theory]
         [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Pull, PartitionIdentityLookup.Send.Full)]
+        [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Pull, PartitionIdentityLookup.Send.Delta)]
         [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Full)]
         [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Delta)]
         public async Task ClusterMaintainsSingleConcurrentVirtualActorPerIdentity(
@@ -263,7 +264,11 @@ namespace Proto.Cluster.PartitionIdentity.Tests
         private readonly PartitionIdentityLookup.Send _send;
         public readonly ActorStateRepo Repository = new();
 
-        public PartitionIdentityClusterFixture(int memberCount, PartitionIdentityLookup.Mode mode, PartitionIdentityLookup.Send send) : base(memberCount)
+        public PartitionIdentityClusterFixture(
+            int memberCount,
+            PartitionIdentityLookup.Mode mode,
+            PartitionIdentityLookup.Send send
+        ) : base(memberCount)
         {
             _mode = mode;
             _send = send;
