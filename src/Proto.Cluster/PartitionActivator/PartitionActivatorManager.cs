@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Linq;
+using Proto.Cluster.Partition;
 
 namespace Proto.Cluster.PartitionActivator
 {
