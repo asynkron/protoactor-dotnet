@@ -66,22 +66,25 @@ namespace ClusterExperiment1
             return remoteConfig;
         }
 
-        // private static readonly InMemAgent Agent = new();
-        //
-        // private static readonly TestProviderOptions Options = new()
-        // {
-        //
-        // };
-        // private static IClusterProvider ClusterProvider() => new TestProvider(Options, Agent);
-        //
-        private static IClusterProvider ClusterProvider()
+        private static readonly InMemAgent Agent = new();
+        
+        private static readonly TestProviderOptions Options = new()
         {
-            Console.WriteLine("Running with Consul Provider");
-            return new ConsulProvider(new ConsulProviderConfig());
-        }
+            DeregisterCritical = TimeSpan.FromSeconds(10),
+            RefreshTtl = TimeSpan.FromSeconds(5),
+            ServiceTtl = TimeSpan.FromSeconds(3)
+        };
+        
+        private static IClusterProvider ClusterProvider() => new TestProvider(Options, Agent);
+        
+        // private static IClusterProvider ClusterProvider()
+        // {
+        //     Console.WriteLine("Running with Consul Provider");
+        //     return new ConsulProvider(new ConsulProviderConfig());
+        // }
 
         private static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
-            new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1), PartitionIdentityLookup.Mode.Pull)
+            new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1), PartitionIdentityLookup.Mode.Push)
         );
 
         public static async Task<Cluster> SpawnMember()
