@@ -29,7 +29,8 @@ namespace ClusterExperiment1
         private static object Request = new HelloRequest();
 
         public static async Task Main(string[] args)
-        {
+        { 
+            ThreadPool.SetMinThreads(0, 0);
             foreach (var batchSize in new[] { 100, 150, 200, 250, 300 })
             {
                 Configuration.ResetAgent();
