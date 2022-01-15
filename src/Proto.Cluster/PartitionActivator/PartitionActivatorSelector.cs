@@ -3,10 +3,10 @@
 //      Copyright (C) 2015-2020 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Collections.Immutable;
+using Proto.Cluster.Partition;
 
-namespace Proto.Cluster.Partition
+namespace Proto.Cluster.PartitionActivator
 {
     //this class is responsible for translating between Identity->activator member
     //this is the key algorithm for the distributed hash table
