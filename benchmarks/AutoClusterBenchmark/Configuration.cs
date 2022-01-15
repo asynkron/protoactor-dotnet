@@ -80,7 +80,7 @@ namespace ClusterExperiment1
             return new ConsulProvider(new ConsulProviderConfig());
         }
 
-        public static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
+        private static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
             new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1), PartitionIdentityLookup.Mode.Pull)
         );
 
@@ -111,14 +111,11 @@ namespace ClusterExperiment1
         private static ActorSystemConfig GetMemberActorSystemConfig()
         {
             var config = new ActorSystemConfig()
-                // .WithSharedFutures()
                 .WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
                 .WithDeadLetterRequestLogging(false);
-                // .WithDeveloperSupervisionLogging(false)
-                // .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1));
 
-            return EnableTracing ? config.WithConfigureProps(props => props.WithTracing()) : config;
+            return config;
         }
 
         public static async Task<Cluster> SpawnClient()
@@ -146,18 +143,6 @@ namespace ClusterExperiment1
 
             await system.Cluster().StartClientAsync();
             return system.Cluster();
-        }
-
-        public static void SetupLogger(LogLevel loglevel)
-        {
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console(LogEventLevel.Error)
-                .CreateLogger();
-
-            Proto.Log.SetLoggerFactory(LoggerFactory.Create(l =>
-                    l.AddSerilog().SetMinimumLevel(loglevel)
-                )
-            );
         }
     }
 }
