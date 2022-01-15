@@ -18,10 +18,9 @@ namespace ClusterExperiment1
 {
     public static class Program
     {
-        private static TaskCompletionSource<bool> ts = null!;
         private static int actorCount = 1;
         private static int memberCount = 1;
-        private static int killTimeoutSeconds = 60;
+        private static int killTimeoutSeconds = 30;
 
         private static int requestCount;
         private static int failureCount;
@@ -31,15 +30,32 @@ namespace ClusterExperiment1
 
         public static async Task Main(string[] args)
         {
-            ts = new TaskCompletionSource<bool>();
+            foreach (var batchSize in new[] { 100, 150, 200, 250, 300 })
+            {
+                Configuration.ResetAgent();
+                ResetCounters();
+                
+                var cluster = await Configuration.SpawnClient();
+                
+                var elapsed = await RunWorkers(() => new RunMemberInProcGraceful(), () => RunBatchClient(batchSize, cluster));
+                var tps = requestCount / elapsed.TotalMilliseconds * 1000;
+                Console.WriteLine();
+                Console.WriteLine($"Batch Size:\t{batchSize}");
+                Console.WriteLine($"Requests:\t{requestCount:N0}");
+                Console.WriteLine($"Successful:\t{successCount:N0}");
+                Console.WriteLine($"Failures:\t{failureCount:N0}");
+                Console.WriteLine($"Throughput:\t{tps:N0} requests/sec -> {(tps * 2):N0} msg/sec");
+                await cluster.ShutdownAsync();
+                
+                await Task.Delay(5000);
+            }
+        }
 
-            var elapsed = await (RunWorkers(() => new RunMemberInProcGraceful(), () => RunBatchClient(150)));
-            var tps = requestCount / elapsed.TotalMilliseconds * 1000;
-            Console.WriteLine();
-            Console.WriteLine($"Requests:\t{requestCount:N0}");
-            Console.WriteLine($"Successful:\t{successCount:N0}");
-            Console.WriteLine($"Failures:\t{failureCount:N0}");
-            Console.WriteLine($"Throughput:\t{tps:N0} requests/sec -> {(tps * 2):N0} msg/sec");
+        private static void ResetCounters()
+        {
+            requestCount = 0;
+            failureCount = 0;
+            successCount = 0;
         }
 
         private static async Task SendRequest(Cluster cluster, ClusterIdentity id, CancellationToken cancellationToken, ISenderContext? context = null)
@@ -79,6 +95,8 @@ namespace ClusterExperiment1
 
             void OnError()
             {
+                if (cluster.System.Shutdown.IsCancellationRequested) return;
+
                 Interlocked.Increment(ref failureCount);
 
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -87,7 +105,7 @@ namespace ClusterExperiment1
             }
         }
 
-        private static void RunBatchClient(int batchSize)
+        private static void RunBatchClient(int batchSize, Cluster cluster)
         {
             var identities = new ClusterIdentity[actorCount];
             for (var i = 0; i < actorCount; i++)
@@ -99,11 +117,11 @@ namespace ClusterExperiment1
             var logger = Log.CreateLogger(nameof(Program));
 
             _ = SafeTask.Run(async () => {
-                    var cluster = await Configuration.SpawnClient();
+                   
                     var rnd = new Random();
                     var semaphore = new AsyncSemaphore(5);
 
-                    while (true)
+                    while (!cluster.System.Shutdown.IsCancellationRequested)
                     {
                         semaphore.Wait(() => RunBatch(rnd, cluster));
                     }
@@ -149,7 +167,7 @@ namespace ClusterExperiment1
                 followers.Add(p);
             }
 
-            await Task.Delay(4000);
+            await Task.Delay(1000);
 
             startClient();
             Console.WriteLine("Client started...");

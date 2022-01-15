@@ -66,22 +66,21 @@ namespace ClusterExperiment1
             return remoteConfig;
         }
 
-        private static readonly InMemAgent Agent = new();
+        private static InMemAgent Agent = null!;
         
-        private static readonly TestProviderOptions Options = new()
+        private static TestProviderOptions Options = new()
         {
             DeregisterCritical = TimeSpan.FromSeconds(10),
             RefreshTtl = TimeSpan.FromSeconds(5),
             ServiceTtl = TimeSpan.FromSeconds(3)
         };
+
+        public static void ResetAgent()
+        {
+            Agent = new();
+        }
         
         private static IClusterProvider ClusterProvider() => new TestProvider(Options, Agent);
-        
-        // private static IClusterProvider ClusterProvider()
-        // {
-        //     Console.WriteLine("Running with Consul Provider");
-        //     return new ConsulProvider(new ConsulProviderConfig());
-        // }
 
         private static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
             new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1), PartitionIdentityLookup.Mode.Push)

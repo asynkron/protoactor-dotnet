@@ -66,7 +66,7 @@ namespace Proto.Cluster.Testing
         {
             Logger.LogDebug("Unregistering service {Service}", _id);
 
-            _ttlReportTimer.Stop();
+            _ttlReportTimer?.Stop();
             _agent.DeregisterService(_id);
             return Task.CompletedTask;
         }
