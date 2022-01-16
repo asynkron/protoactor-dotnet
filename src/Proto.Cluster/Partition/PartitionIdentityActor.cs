@@ -137,8 +137,11 @@ namespace Proto.Cluster.Partition
         private void ReceiveIdentityHandover(HandoverSink sink, IdentityHandover msg, string address)
         {
             if (!sink.Receive(address, msg)) return; // Not the final message in the topology update
-            
-            Logger.LogError("Topology rebalance completed in {Elapsed}", _rebalanceTimer?.Elapsed);
+
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("Topology rebalance completed in {Elapsed}, received {@Stats}", _rebalanceTimer?.Elapsed, sink.CompletedHandovers);
+            }
             _rebalanceTimer = null;
 
             _cluster.Gossip.SetRebalanceCompleted(_topologyHash);
@@ -329,8 +332,6 @@ namespace Proto.Cluster.Partition
 
         private void CheckHandover(Dictionary<string, (int sent, int skipped)> referenceActorCounts)
         {
-            var delta = 0;
-
             var activationCountByAddress = _partitionLookup
                 .Select(kv => kv.Value.Address)
                 .GroupBy(address => address)
@@ -341,9 +342,8 @@ namespace Proto.Cluster.Partition
                 if (referenceActorCounts.TryGetValue(address, out var refCounts))
                 {
                     var memberDelta = activationCount - refCounts.skipped - refCounts.sent;
-                    delta += memberDelta;
                     Console.WriteLine(
-                        $"DoubleCheck {_config.Mode},{_config.Send} {_myAddress}->{address}, identities: {activationCount}, skipped {refCounts.skipped}, sent {refCounts.sent}, delta: {memberDelta}"
+                        $"Handover validation {_config.Mode},{_config.Send} {_myAddress}->{address}, identities: {activationCount}, skipped {refCounts.skipped}, sent {refCounts.sent}, delta: {memberDelta}"
                     );
                 }
                 else
@@ -353,8 +353,6 @@ namespace Proto.Cluster.Partition
                     );
                 }
             }
-
-            Console.WriteLine("Overall delta: " + delta);
         }
 
         private void TakeOverIdentity(ClusterIdentity clusterIdentity, PID activation, IContext context)
