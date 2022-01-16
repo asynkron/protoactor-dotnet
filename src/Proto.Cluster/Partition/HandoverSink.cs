@@ -22,7 +22,7 @@ namespace Proto.Cluster.Partition
         /// <summary>
         /// This class is responsible for keeping track of incoming identity handover messages.
         /// The requests from other members may be chunked, and it is required that all chunks are received before
-        /// we can complete the rebalance and return do normal mode.
+        /// we can complete the rebalance and return to normal mode.
         /// </summary>
         /// <param name="topology"></param>
         /// <param name="process"></param>
