@@ -14,9 +14,9 @@ namespace Proto.Cluster.Partition
         private readonly Action<IdentityHandover>? _onDuplicate;
         public ulong TopologyHash { get; }
         private readonly Dictionary<string, MemberHandoverSink> _memberSinks = new();
-        private readonly List<MemberHandoverStats> _completedHandovers = new();
+        private readonly Dictionary<string, MemberHandoverStats> _completedHandovers = new();
 
-        public IEnumerable<MemberHandoverStats> CompletedHandovers => _completedHandovers;
+        public IEnumerable<MemberHandoverStats> CompletedHandovers => _completedHandovers.Values;
         public bool IsComplete => _memberSinks.Count == _completedHandovers.Count;
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Proto.Cluster.Partition
             {
                 if (sink.Receive(message))
                 {
-                    _completedHandovers.Add(new MemberHandoverStats(sink.Address, sink.SentActivations, sink.SkippedActivations));
+                    _completedHandovers.Add(address,new MemberHandoverStats(sink.Address, sink.SentActivations, sink.SkippedActivations));
                 }
             }
 
@@ -59,10 +59,14 @@ namespace Proto.Cluster.Partition
         }
 
         /// <summary>
-        /// Reset this members handover state, if we need to retry this member in isolation
+        /// Reset this member handover state, if we need to retry this member in isolation
         /// </summary>
         /// <param name="address"></param>
-        public void ResetMember(string address) => _memberSinks[address] = new MemberHandoverSink(address, _process, _onDuplicate);
+        public void ResetMember(string address)
+        {
+            _memberSinks[address] = new MemberHandoverSink(address, _process, _onDuplicate);
+            _completedHandovers.Remove(address);
+        }
 
         public record MemberHandoverStats(string Address, int SentActivations, int SkippedActivations)
         {

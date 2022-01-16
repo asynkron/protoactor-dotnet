@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -22,14 +23,21 @@ namespace Proto.Cluster.Partition
         private readonly TimeSpan _handoverTimeout;
         private readonly CancellationToken _cancellationToken;
 
-        private readonly HashSet<string> _remainingPartitions = new();
+        private readonly HashSet<string> _remainingPartitions;
         private IdentityHandoverRequest? _request;
         private CancellationTokenRegistration? _tokenRegistration;
         private PID? _partitionIdentityPid;
         private Stopwatch? _timer;
 
-        public PartitionIdentityRebalanceWorker(TimeSpan handoverTimeout, CancellationToken cancellationToken)
+        /// <summary>
+        /// Worker which is responsible to pull activations for a given member-set.
+        /// </summary>
+        /// <param name="targetMemberAddresses">Addresses it should target, normally all active topology members</param>
+        /// <param name="handoverTimeout">Retry a partition if it does not receive a response within this timeout</param>
+        /// <param name="cancellationToken">Cancels the handover, does not send any more messages</param>
+        public PartitionIdentityRebalanceWorker(IEnumerable<string> targetMemberAddresses,TimeSpan handoverTimeout, CancellationToken cancellationToken)
         {
+            _remainingPartitions = targetMemberAddresses.ToHashSet();
             _handoverTimeout = handoverTimeout;
             _cancellationToken = cancellationToken;
         }
