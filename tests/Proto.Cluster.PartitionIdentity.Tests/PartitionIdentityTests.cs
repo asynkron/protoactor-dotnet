@@ -28,12 +28,11 @@ namespace Proto.Cluster.PartitionIdentity.Tests
         private long _requests = 0;
 
         [Theory]
-        [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Pull, PartitionIdentityLookup.Send.Full)]
-        [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Pull, PartitionIdentityLookup.Send.Delta)]
-        [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Full)]
-        [InlineData(3, 100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Delta)]
+        [InlineData(100, 5, 12, 20, PartitionIdentityLookup.Mode.Pull, PartitionIdentityLookup.Send.Full)]
+        [InlineData(100, 5, 12, 20, PartitionIdentityLookup.Mode.Pull, PartitionIdentityLookup.Send.Delta)]
+        [InlineData(100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Full)]
+        [InlineData(100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Delta)]
         public async Task ClusterMaintainsSingleConcurrentVirtualActorPerIdentity(
-            int memberCount,
             int identityCount,
             int batchSize,
             int threads,
@@ -42,6 +41,8 @@ namespace Proto.Cluster.PartitionIdentity.Tests
             PartitionIdentityLookup.Send send
         )
         {
+            const int memberCount = 3;
+
             Interlocked.Exchange(ref _requests, 0);
             await using var fixture = await InitClusterFixture(memberCount, mode, send);
 
@@ -66,7 +67,7 @@ namespace Proto.Cluster.PartitionIdentity.Tests
                 await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
                 var now = Interlocked.Read(ref _requests);
 
-                _output.WriteLine($"Consistent responses: {now - prev}/{timer.Elapsed}");
+                _output.WriteLine($"Consistent responses: {((now - prev) / (double)timer.ElapsedMilliseconds) * 1000d:N0} / s");
                 timer.Restart();
                 prev = now;
             }
@@ -196,8 +197,8 @@ namespace Proto.Cluster.PartitionIdentity.Tests
                         }
                         else
                         {
-                            var graceful = rnd.Next() % 2 != 0;
-                            // const bool graceful = true;
+                            // var graceful = rnd.Next() % 2 != 0;
+                            const bool graceful = true;
 
                             if (clusterFixture.Members.Count > minMembers)
                             {
@@ -221,8 +222,8 @@ namespace Proto.Cluster.PartitionIdentity.Tests
                             }
                             else
                             {
-                                var graceful = rnd.Next() % 2 != 0;
-                                // const bool graceful = true;
+                                // var graceful = rnd.Next() % 2 != 0;
+                                const bool graceful = true;
 
                                 if (clusterFixture.Members.Count > minMembers)
                                 {

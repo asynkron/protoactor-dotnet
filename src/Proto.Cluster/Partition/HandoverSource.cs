@@ -10,12 +10,12 @@ using System.Linq;
 
 namespace Proto.Cluster.Partition
 {
-    internal static class HandoverSource
+    static class HandoverSource
     {
         /// <summary>
         /// Single member handover
         /// </summary>
-        /// <param name="topology"></param>
+        /// <param name="topologyHash"></param>
         /// <param name="chunkSize"></param>
         /// <param name="activations"></param>
         /// <param name="ownedNow"></param>
@@ -35,7 +35,12 @@ namespace Proto.Cluster.Partition
             {
                 if (ownedNow(clusterIdentity))
                 {
-                    if (memberHandover.Add(clusterIdentity, pid, out var message))
+                    if (ownedBefore?.Invoke(clusterIdentity) == true)
+                    {
+                        // Member should already have this activation
+                        memberHandover.AddSkipped();
+                    }
+                    else if (memberHandover.Add(clusterIdentity, pid, out var message))
                     {
                         yield return message;
                     }
@@ -69,7 +74,12 @@ namespace Proto.Cluster.Partition
                 var currentOwner = getCurrentOwner(clusterIdentity);
                 var memberHandover = members[currentOwner];
                 {
-                    if (memberHandover.Add(clusterIdentity, pid, out var message))
+                    if (getPreviousOwner?.Invoke(clusterIdentity).Equals(currentOwner, StringComparison.Ordinal) == true)
+                    {
+                        // Member should already have this activation
+                        memberHandover.AddSkipped();
+                    }
+                    else if (memberHandover.Add(clusterIdentity, pid, out var message))
                     {
                         yield return (currentOwner, message);
                     }
@@ -105,6 +115,7 @@ namespace Proto.Cluster.Partition
 
             public bool Add(ClusterIdentity id, PID activation, [NotNullWhen(true)] out IdentityHandover? message)
             {
+                _sent++;
                 var flush = _currentMessage.Actors.Count == _chunkSize;
 
                 if (flush)
@@ -118,7 +129,6 @@ namespace Proto.Cluster.Partition
                 }
                 else message = default;
 
-                _sent++;
                 _currentMessage.Actors.Add(new Activation
                     {
                         ClusterIdentity = id,

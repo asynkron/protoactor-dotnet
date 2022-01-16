@@ -32,6 +32,7 @@ message RemoteIdentityHandover {
   bool final = 3;
   uint64 topology_hash = 4;
   int32 skipped = 5;
+  int32 sent = 6;
 }
 
 message PackedActivations{

@@ -87,7 +87,7 @@ namespace ClusterExperiment1
             }
             else
             {
-                Console.WriteLine("1) Protobuf serializer");
+                Console.WriteLine("1) Protobuf serializer (default)");
                 Console.WriteLine("2) Json serializer");
 
                 if (Console.ReadLine() == "2")

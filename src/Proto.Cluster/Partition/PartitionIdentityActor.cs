@@ -40,6 +40,7 @@ namespace Proto.Cluster.Partition
         private HandoverSink? _currentHandover;
 
         private ClusterTopology? _deltaTopology;
+        private Stopwatch? _rebalanceTimer;
 
         public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout, PartitionConfig config)
         {
@@ -57,11 +58,44 @@ namespace Proto.Cluster.Partition
                 ActivationTerminated msg => OnActivationTerminated(msg),
                 ClusterTopology msg      => OnClusterTopology(msg, context),
                 IdentityHandover msg     => OnIdentityHandover(msg, context),
+                PartitionCompleted msg   => OnPartitionCompleted(msg, context),
                 _                        => Task.CompletedTask
             };
 
+        /// <summary>
+        /// Used by pull mode, the partition identity actor will spawn workers to rebalance against each member.
+        /// They will send a message back upon completion of each partition, containing all Identity handover messages from that member.
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        private Task OnPartitionCompleted(PartitionCompleted msg, IContext context)
+        {
+            if (_currentHandover is null)
+            {
+                Logger.LogWarning("PartitionCompleted received when member is not re-balancing");
+                return Task.CompletedTask;
+            }
+
+            foreach (var handover in msg.Chunks)
+            {
+                ReceiveIdentityHandover(_currentHandover, handover, msg.MemberAddress);
+            }
+
+            return Task.CompletedTask;
+        }
+
         private Task OnIdentityHandover(IdentityHandover msg, IContext context)
         {
+            if (_config.Mode != PartitionIdentityLookup.Mode.Push)
+            {
+                Logger.LogError(
+                    "IdentityHandover push from {Address} received in pull mode. All members need to use the same partition rebalance algorithm",
+                    context.Sender?.Address
+                );
+                return Task.CompletedTask;
+            }
+
             if (context.Sender is null)
             {
                 Logger.LogWarning("IdentityHandover received with null sender");
@@ -85,20 +119,9 @@ namespace Proto.Cluster.Partition
                 return Task.CompletedTask;
             }
 
-            if (_currentHandover.Receive(context.Sender, msg))
-            {
-                if (_config.DeveloperLogging)
-                {
-                    Console.WriteLine("Completed rebalance from all members for topology " + _topologyHash);
-                }
+            var address = context.Sender.Address;
 
-                // CheckHandover(_currentHandover.ReportedActivationsPerAddress);
-                CheckHandover(_currentHandover.CompletedHandovers.ToDictionary(member => member.Address, member => (member.SentActivations, member.SkippedActivations)));
-
-                _currentHandover = null;
-                _rebalanceTcs?.TrySetResult(_topologyHash);
-                _rebalanceTcs = null;
-            }
+            ReceiveIdentityHandover(_currentHandover, msg, address);
 
             return Task.CompletedTask;
 
@@ -109,6 +132,35 @@ namespace Proto.Cluster.Partition
                     ProcessingState = state
                 }
             );
+        }
+
+        private void ReceiveIdentityHandover(HandoverSink sink, IdentityHandover msg, string address)
+        {
+            if (!sink.Receive(address, msg)) return; // Not the final message in the topology update
+            
+            Logger.LogError("Topology rebalance completed in {Elapsed}", _rebalanceTimer?.Elapsed);
+            _rebalanceTimer = null;
+
+            _cluster.Gossip.SetRebalanceCompleted(_topologyHash);
+
+            if (_config.DeveloperLogging)
+            {
+                CheckHandover(sink.CompletedHandovers.ToDictionary(member => member.Address,
+                        member => (member.SentActivations, member.SkippedActivations)
+                    )
+                );
+            }
+            
+
+            if (_config.Mode == PartitionIdentityLookup.Mode.Pull && _config.Send == PartitionIdentityLookup.Send.Delta)
+            {
+                // Establish current rebalanced topology as a baseline for next delta handover.
+                _deltaTopology = _currentTopology;
+            }
+
+            _currentHandover = null;
+            _rebalanceTcs?.TrySetResult(_topologyHash);
+            _rebalanceTcs = null;
         }
 
         private Task OnStarted(IContext context)
@@ -127,7 +179,6 @@ namespace Proto.Cluster.Partition
             }
 
             FailSpawnsTargetingLeftMembers(msg);
-
             SetTopology(msg);
 
             if (msg.Members.Count == 0)
@@ -141,16 +192,10 @@ namespace Proto.Cluster.Partition
             DiscardInvalidatedActivations();
 
             _rebalanceTcs ??= new TaskCompletionSource<ulong>();
-
-            if (_config.Mode == PartitionIdentityLookup.Mode.Push)
+            _currentHandover = new HandoverSink(msg, TakeOverIdentities(context));
+            _rebalanceTimer = Stopwatch.StartNew();
+            if (_config.Mode == PartitionIdentityLookup.Mode.Push) // Good things comes to those who wait
             {
-                _currentHandover = new HandoverSink(msg, handover => {
-                        foreach (var activation in handover.Actors)
-                        {
-                            TakeOverIdentity(activation.ClusterIdentity, activation.Pid, context);
-                        }
-                    }
-                );
                 return Task.CompletedTask;
             }
 
@@ -192,6 +237,13 @@ namespace Proto.Cluster.Partition
             );
             return Task.CompletedTask;
         }
+
+        private Action<IdentityHandover> TakeOverIdentities(IContext context) => handover => {
+            foreach (var activation in handover.Actors)
+            {
+                TakeOverIdentity(activation.ClusterIdentity, activation.Pid, context);
+            }
+        };
 
         private void DiscardInvalidatedActivations()
         {
@@ -251,7 +303,7 @@ namespace Proto.Cluster.Partition
         private void InitRebalance(ClusterTopology msg, IContext context, CancellationToken cancellationToken)
         {
             var workerPid = SpawnRebalanceWorker(context, cancellationToken);
-            var rebalanceTask = context.RequestAsync<PartitionsRebalanced>(workerPid, new IdentityHandoverRequest
+            context.Send(workerPid, new IdentityHandoverRequest
                 {
                     Address = _myAddress,
                     CurrentTopology = new IdentityHandoverRequest.Types.Topology
@@ -267,17 +319,6 @@ namespace Proto.Cluster.Partition
                             Members = {_deltaTopology.Members}
                         }
                         : null
-                }, cancellationToken
-            );
-
-            context.ReenterAfter(rebalanceTask, task => {
-                    if (task.IsCompletedSuccessfully)
-                    {
-                        return OnPartitionsRebalanced(task.Result, context);
-                    }
-
-                    Logger.LogError("Partition Rebalance cancelled for {TopologyHash}", _topologyHash);
-                    return Task.CompletedTask;
                 }
             );
         }
@@ -285,71 +326,6 @@ namespace Proto.Cluster.Partition
         private PID SpawnRebalanceWorker(IContext context, CancellationToken cancellationToken) => context.Spawn(
             Props.FromProducer(() => new PartitionIdentityRebalanceWorker(_config.RebalanceRequestTimeout, cancellationToken))
         );
-
-        private Task OnPartitionsRebalanced(PartitionsRebalanced msg, IContext context)
-        {
-            if (msg.TopologyHash != _topologyHash)
-            {
-                if (_config.DeveloperLogging)
-                {
-                    Console.WriteLine($"Rebalance with outdated TopologyHash {msg.TopologyHash}!={_topologyHash}");
-                }
-
-                Logger.LogWarning("Rebalance with outdated TopologyHash {Received} instead of {Current}", msg.TopologyHash, _topologyHash);
-                return Task.CompletedTask;
-            }
-
-            _cluster.Gossip.SetRebalanceCompleted(_topologyHash);
-
-            if (_config.DeveloperLogging)
-            {
-                Console.WriteLine($"{context.System.Id}: Got ownerships {msg.TopologyHash} / {_topologyHash}");
-            }
-
-            Logger.LogInformation("{SystemId} Got  ownerships of {Count} activations, for topology {TopologyHash}, ", context.System.Id,
-                msg.CompletedPartitions.Count, _topologyHash
-            );
-            var referenceActorCounts = new Dictionary<string, int>();
-
-            foreach (var partition in msg.CompletedPartitions)
-            {
-                foreach (var activation in partition.Activations)
-                {
-                    TakeOverIdentity(activation.ClusterIdentity, activation.Pid, context);
-                }
-
-                var activationsCount = partition.Activations.Count;
-                var distinctActivationsCount = partition.Activations.Select(it => it.Pid.Id).Distinct().Count();
-
-                if (distinctActivationsCount != activationsCount)
-                {
-                    Console.WriteLine($"Duplicate activations {activationsCount} / {distinctActivationsCount}");
-                }
-
-                if (partition.Skipped > 0)
-                {
-                }
-
-                referenceActorCounts.Add(partition.MemberAddress, partition.Skipped + activationsCount);
-            }
-
-            // if (referenceActorCounts.Count > 0)
-            // {
-            //     CheckHandover(referenceActorCounts);
-            // }
-
-            // Sets the current topology as a consistent baseline which can be used when deciding which topologies should be sent from 
-            // the partition placement actor on rebalance.
-            if (_config.Send == PartitionIdentityLookup.Send.Delta)
-            {
-                _deltaTopology = _currentTopology;
-            }
-
-            _rebalanceTcs?.TrySetResult(_topologyHash);
-            _rebalanceTcs = null;
-
-            return Task.CompletedTask;
-        }
 
         private void CheckHandover(Dictionary<string, (int sent, int skipped)> referenceActorCounts)
         {
@@ -629,10 +605,10 @@ namespace Proto.Cluster.Partition
             }
         }
     }
+    //
+    // record PartitionsRebalanced(List<PartitionCompleted> CompletedPartitions, ulong TopologyHash);
 
-    record PartitionsRebalanced(List<PartitionActivations> CompletedPartitions, ulong TopologyHash);
-
-    public record PartitionActivations(string MemberAddress, List<Activation> Activations, int Skipped);
+    public record PartitionCompleted(string MemberAddress, List<IdentityHandover> Chunks);
 
     public record PartitionFailed(string MemberAddress, string Reason);
 }

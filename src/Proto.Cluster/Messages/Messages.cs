@@ -53,7 +53,8 @@ namespace Proto.Cluster
                 TopologyHash = TopologyHash,
                 Final = Final,
                 Skipped = Skipped,
-                ChunkId = ChunkId
+                ChunkId = ChunkId,
+                Sent = Sent
             };
     }
 
@@ -64,6 +65,7 @@ namespace Proto.Cluster
             TopologyHash = TopologyHash,
             Final = Final,
             Skipped = Skipped,
+            Sent = Sent,
             ChunkId = ChunkId,
             Actors = {Actors.UnPack()}
         };

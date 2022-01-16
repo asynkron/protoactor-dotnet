@@ -18,38 +18,36 @@ namespace Proto.Cluster.Partition
     /// </summary>
     class PartitionIdentityRebalanceWorker : IActor, IDisposable
     {
+        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
         private readonly TimeSpan _handoverTimeout;
         private readonly CancellationToken _cancellationToken;
-        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
 
-        private readonly List<PartitionActivations> _completedPartitions = new();
-
-        private readonly TaskCompletionSource<bool> _onRelocationComplete;
-        private readonly Dictionary<string, PID> _waitingRequests = new();
-        private readonly Stopwatch _timer = new();
+        private readonly HashSet<string> _remainingPartitions = new();
         private IdentityHandoverRequest? _request;
         private CancellationTokenRegistration? _tokenRegistration;
+        private PID? _partitionIdentityPid;
+        private Stopwatch? _timer;
 
         public PartitionIdentityRebalanceWorker(TimeSpan handoverTimeout, CancellationToken cancellationToken)
         {
             _handoverTimeout = handoverTimeout;
             _cancellationToken = cancellationToken;
-            _onRelocationComplete = new TaskCompletionSource<bool>();
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
             IdentityHandoverRequest request => OnIdentityHandoverRequest(request, context),
-            PartitionActivations response     => OnPartitionCompleted(response),
+            PartitionCompleted response     => OnPartitionCompleted(response, context),
             PartitionFailed response        => OnPartitionFailed(response, context),
             _                               => Task.CompletedTask
         };
 
         private Task OnIdentityHandoverRequest(IdentityHandoverRequest request, IContext context)
         {
+            _timer = Stopwatch.StartNew();
+            _partitionIdentityPid = PartitionManager.RemotePartitionIdentityActor(context.System.Address);
             _tokenRegistration = _cancellationToken.Register(() => context.Self.Stop(context.System)
             );
-            _timer.Start();
             _request = request;
 
             foreach (var member in request.CurrentTopology.Members)
@@ -58,24 +56,20 @@ namespace Proto.Cluster.Partition
                 StartRebalanceFromMember(request, context, memberAddress);
             }
 
-            context.ReenterAfter(_onRelocationComplete.Task, () => {
-                    context.Respond(new PartitionsRebalanced(_completedPartitions, _request.CurrentTopology.TopologyHash));
-                    context.Self.Stop(context.System);
-                }
-            );
             return Task.CompletedTask;
         }
 
-        private Task OnPartitionCompleted(PartitionActivations response)
+        private Task OnPartitionCompleted(PartitionCompleted response, IContext context)
         {
-            _completedPartitions.Add(response);
-            _waitingRequests.Remove(response.MemberAddress);
+            context.Send(_partitionIdentityPid!, response);
+            _remainingPartitions.Remove(response.MemberAddress);
 
-            if (_waitingRequests.Count == 0)
+            if (_remainingPartitions.Count == 0)
             {
-                _timer.Stop();
-                Logger.LogDebug("IdentityRelocation completed, received {Count} actors in {Elapsed}", _completedPartitions.Count, _timer.Elapsed);
-                _onRelocationComplete.TrySetResult(true);
+                Logger.LogDebug("Pulled activations from {MemberCount} partitions completed in {Elapsed}", _request!.CurrentTopology.Members.Count,
+                    _timer!.Elapsed
+                );
+                context.Self.Stop(context.System);
             }
 
             return Task.CompletedTask;
@@ -92,7 +86,7 @@ namespace Proto.Cluster.Partition
         {
             var childPid = context.Spawn(Props.FromProducer(() => new PartitionWorker(memberAddress, _handoverTimeout)));
             context.Request(childPid, request);
-            _waitingRequests[memberAddress] = childPid;
+            _remainingPartitions.Add(memberAddress);
         }
 
         /// <summary>
@@ -102,12 +96,11 @@ namespace Proto.Cluster.Partition
         private class PartitionWorker : IActor
         {
             private readonly PID _targetMember;
-            private readonly IndexSet _receivedChunks = new();
-            private readonly List<Activation> _receivedActivations = new();
             private readonly string _memberAddress;
             private readonly TimeSpan _timeout;
             private readonly TaskCompletionSource<object> _completionSource = new();
-            private int? _finalChunk;
+            private readonly List<IdentityHandover> _chunks = new();
+            private MemberHandoverSink? _sink;
 
             public PartitionWorker(string memberAddress, TimeSpan timeout)
             {
@@ -120,6 +113,9 @@ namespace Proto.Cluster.Partition
             {
                 switch (context.Message)
                 {
+                    case Started:
+                        _sink = new MemberHandoverSink(_memberAddress, handover => _chunks.Add(handover));
+                        break;
                     case IdentityHandoverRequest msg:
                         OnIdentityHandoverRequest(msg, context);
                         break;
@@ -161,38 +157,21 @@ namespace Proto.Cluster.Partition
                     );
                 }
 
-                _receivedActivations.AddRange(response.Actors);
+                var complete = _sink!.Receive(response);
 
-                if (HasReceivedAllChunks(response))
+                if (!complete) return;
+
+                _completionSource.SetResult(new PartitionCompleted(_memberAddress, _chunks));
+
+                if (Logger.IsEnabled(LogLevel.Debug))
                 {
-                    _completionSource.SetResult(new PartitionActivations(_memberAddress, _receivedActivations, response.Skipped));
-
-                    if (Logger.IsEnabled(LogLevel.Debug))
-                    {
-                        Logger.LogDebug("Final handover received from {Address}: skipped: {Skipped}/{Total}, chunks: {Chunks}", _memberAddress,
-                            response.Skipped, response.Skipped + response.Sent, response.ChunkId
-                        );
-                    }
+                    Logger.LogDebug("Final handover received from {Address}: skipped: {Skipped}/{Total}, chunks: {Chunks}", _memberAddress,
+                        _sink.SkippedActivations, _sink.SentActivations + _sink.SkippedActivations, response.ChunkId
+                    );
                 }
             }
 
             private void FailPartition(string reason) => _completionSource.TrySetResult(new PartitionFailed(_memberAddress, reason));
-
-            private bool HasReceivedAllChunks(IdentityHandover response)
-            {
-                if (!_receivedChunks.TryAddIndex(response.ChunkId))
-                {
-                    Logger.LogWarning("Chunk {ChunkId} already received", response.ChunkId);
-                    return false;
-                }
-
-                if (response.Final)
-                {
-                    _finalChunk = response.ChunkId;
-                }
-
-                return _finalChunk.HasValue && _receivedChunks.IsCompleteSet;
-            }
         }
 
         public void Dispose() => _tokenRegistration?.Dispose();

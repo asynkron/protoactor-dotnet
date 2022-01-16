@@ -111,40 +111,39 @@ namespace Proto.Cluster.Partition
         {
             var currentHashRing = new MemberHashRing(msg.Members);
 
+            string GetCurrentOwner(ClusterIdentity identity) => currentHashRing.GetOwnerMemberByIdentity(identity);
+
             switch (_config.Send)
             {
                 case PartitionIdentityLookup.Send.Delta:
                     var previousHashRing = _lastRebalancedTopology is null ? null : new MemberHashRing(_lastRebalancedTopology.Members);
 
-                    return HandoverSource.CreateHandovers(msg, _config.HandoverChunkSize, _myActors,
-                        identity => currentHashRing.GetOwnerMemberByIdentity(identity),
+                    return HandoverSource.CreateHandovers(msg, _config.HandoverChunkSize, _myActors, GetCurrentOwner,
                         previousHashRing is null ? null : identity => previousHashRing.GetOwnerMemberByIdentity(identity)
                     );
-
                 case PartitionIdentityLookup.Send.Full:
                 default:
-                    return HandoverSource.CreateHandovers(msg, _config.HandoverChunkSize, _myActors,
-                        identity => currentHashRing.GetOwnerMemberByIdentity(identity)
-                    );
+                    return HandoverSource.CreateHandovers(msg, _config.HandoverChunkSize, _myActors, GetCurrentOwner);
             }
         }
 
-        private IEnumerable<IdentityHandover> GetPullHandovers(string address, IdentityHandoverRequest request)
+        private IEnumerable<IdentityHandover> GetPullHandovers(IdentityHandoverRequest request)
         {
             //use a local selector, which is based on the requesters view of the world
             var currentHashRing = new MemberHashRing(request.CurrentTopology.Members);
+            var address = request.Address!;
 
-            if (request.DeltaTopology is not null)
+            if (request.DeltaTopology is null)
             {
-                var previousHashRing = new MemberHashRing(request.DeltaTopology.Members);
                 return HandoverSource.CreateHandovers(request.CurrentTopology.TopologyHash, _config.HandoverChunkSize, _myActors,
-                    identity => currentHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal),
-                    identity => previousHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal)
+                    identity => currentHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal)
                 );
             }
 
+            var previousHashRing = new MemberHashRing(request.DeltaTopology.Members);
             return HandoverSource.CreateHandovers(request.CurrentTopology.TopologyHash, _config.HandoverChunkSize, _myActors,
-                identity => currentHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal)
+                identity => currentHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal),
+                identity => previousHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal)
             );
         }
 
@@ -247,14 +246,13 @@ namespace Proto.Cluster.Partition
                 return Task.CompletedTask;
             }
 
-            var requestAddress = msg.Address;
 
             using var cancelRebalance = new CancellationTokenSource();
             var outOfBandResponseHandler = context.System.Root.Spawn(AbortOnDeadLetter(cancelRebalance));
 
             try
             {
-                foreach (var handover in GetPullHandovers(requestAddress, msg))
+                foreach (var handover in GetPullHandovers(msg))
                 {
                     if (cancelRebalance.IsCancellationRequested)
                     {
