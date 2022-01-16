@@ -23,7 +23,7 @@ namespace Proto.Tests.DependencyInjection
             system.Extensions.Register(plugin);
 
             var props = system.DI().PropsFor<DiActor>();
-            var actor = (DiActor) props.Producer(system);
+            var actor = (DiActor) props.Producer(system,default!);
 
             Assert.NotNull(props);
             Assert.NotNull(actor);

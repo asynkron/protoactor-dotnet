@@ -18,8 +18,11 @@ namespace Proto
     public delegate PID Spawner(ActorSystem system, string id, Props props, PID? parent);
 
     public delegate IActor Producer();
+    public delegate IActor Producer<in T>(T parameter);
 
     public delegate IActor ProducerWithSystem(ActorSystem system);
+
+    public delegate IActor ProducerWithSystemAndContext(ActorSystem system, IContext context);
 
     public delegate IMailbox MailboxProducer();
 }

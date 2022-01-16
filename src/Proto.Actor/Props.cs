@@ -15,10 +15,10 @@ namespace Proto
     [PublicAPI]
     public sealed record Props
     {
-        private static IActor NullProducer(ActorSystem _) => null!;
+        private static IActor NullProducer(ActorSystem _,IContext __) => null!;
         public static readonly Props Empty = new();
 
-        public ProducerWithSystem Producer { get; init; } = NullProducer;
+        public ProducerWithSystemAndContext Producer { get; init; } = NullProducer;
         public MailboxProducer MailboxProducer { get; init; } = () => UnboundedMailbox.Create();
         public ISupervisorStrategy? GuardianStrategy { get; init; }
         public ISupervisorStrategy SupervisorStrategy { get; init; } = Supervision.DefaultStrategy;
@@ -60,7 +60,6 @@ namespace Proto
             
             //if successful, we create the actor and attach it to the mailbox
             var ctx = ActorContext.Setup(system, props, parent, self, mailbox);
-            Initialize(props, ctx);
             mailbox.RegisterHandlers(ctx, dispatcher);
             mailbox.PostSystemMessage(Started.Instance);
             
@@ -70,20 +69,17 @@ namespace Proto
             return self;
         }
 
-        private static void Initialize(Props props, ActorContext ctx)
-        {
-            foreach (var init in props.OnInit)
-            {
-                init(ctx);
-            }
-        }
+        
 
         public Props WithProducer(Producer producer) =>
-            this with {Producer = _ => producer()};
+            this with {Producer = (_,_) => producer()};
 
         public Props WithProducer(ProducerWithSystem producer) =>
-            this with {Producer = producer};
+            this with {Producer = (system, _) => producer(system)};
 
+        public Props WithProducer(ProducerWithSystemAndContext producer) =>
+            this with {Producer = producer};
+        
         public Props WithDispatcher(IDispatcher dispatcher) =>
             this with {Dispatcher = dispatcher};
 
@@ -147,6 +143,8 @@ namespace Proto
         public static Props FromProducer(Producer producer) => Empty.WithProducer(_ => producer());
 
         public static Props FromProducer(ProducerWithSystem producer) => Empty.WithProducer(producer);
+        
+        public static Props FromContextProducer(ProducerWithSystemAndContext producer) => Empty.WithProducer(producer);
 
         public static Props FromFunc(Receive receive) => FromProducer(() => new FunctionActor(receive));
     }

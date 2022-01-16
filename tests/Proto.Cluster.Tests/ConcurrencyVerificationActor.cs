@@ -20,11 +20,16 @@ namespace Proto.Cluster.Tests
     {
         public const string Kind = "concurrency-verification";
 
+        private readonly ClusterIdentity _clusterIdentity;
         private readonly ActorStateRepo _repo;
         private ActorState? _state;
         private int _count;
 
-        public ConcurrencyVerificationActor(ActorStateRepo repo) => _repo = repo;
+        public ConcurrencyVerificationActor(ClusterIdentity clusterIdentity, ActorStateRepo repo)
+        {
+            _clusterIdentity = clusterIdentity;
+            _repo = repo;
+        }
 
         private Guid SessionId { get; set; }
 
@@ -79,7 +84,7 @@ namespace Proto.Cluster.Tests
         private async Task OnStarted(IContext context)
         {
             SessionId = Guid.NewGuid();
-            _state = _repo.Get(context.ClusterIdentity()!.Identity);
+            _state = _repo.Get(_clusterIdentity.Identity);
             _state.RecordStarted(context.Self);
             _count = _state.StoredCount;
 

@@ -280,6 +280,6 @@ namespace Proto.Cluster.PartitionIdentity.Tests
         );
 
         protected override ClusterKind[] ClusterKinds
-            => new[] {new ClusterKind(ConcurrencyVerificationActor.Kind, Props.FromProducer(() => new ConcurrencyVerificationActor(Repository)))};
+            => new[] {new ClusterKind(ConcurrencyVerificationActor.Kind, Props.FromContextProducer((_, ctx) => new ConcurrencyVerificationActor(ctx.ClusterIdentity()!,Repository)))};
     }
 }

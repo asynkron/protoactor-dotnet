@@ -40,7 +40,7 @@ namespace Proto.Context
             //The parent is not part of the Watchers set
             Parent = parent;
             Self = self;
-
+            Initialize(props, this);
             Actor = IncarnateActor();
 
             if (System.Metrics.Enabled)
@@ -51,7 +51,14 @@ namespace Proto.Context
                 ActorMetrics.ActorSpawnCount.Add(1, _metricTags);
             }
         }
-
+        private static void Initialize(Props props, ActorContext ctx)
+        {
+            foreach (var init in props.OnInit)
+            {
+                init(ctx);
+            }
+        }
+        
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
 
         public ActorSystem System { get; }
@@ -461,7 +468,7 @@ namespace Proto.Context
         private IActor IncarnateActor()
         {
             _state = ContextState.Alive;
-            return _props.Producer(System);
+            return _props.Producer(System,this);
         }
 
         private async ValueTask HandleRestartAsync()
