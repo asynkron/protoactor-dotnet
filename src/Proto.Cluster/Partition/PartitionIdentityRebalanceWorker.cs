@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -19,100 +19,82 @@ namespace Proto.Cluster.Partition
     /// </summary>
     class PartitionIdentityRebalanceWorker : IActor, IDisposable
     {
+        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
         private readonly TimeSpan _handoverTimeout;
         private readonly CancellationToken _cancellationToken;
-        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
 
-        private readonly Dictionary<ClusterIdentity, PID> _partitionLookup;
-        private readonly TaskCompletionSource<bool> _onRelocationComplete;
-        private readonly Dictionary<string, PID> _waitingRequests = new();
-        private readonly Stopwatch _timer = new();
+        private readonly HashSet<string> _remainingPartitions;
         private IdentityHandoverRequest? _request;
         private CancellationTokenRegistration? _tokenRegistration;
+        private PID? _partitionIdentityPid;
+        private Stopwatch? _timer;
 
-        public PartitionIdentityRebalanceWorker(TimeSpan handoverTimeout, CancellationToken cancellationToken)
+        /// <summary>
+        /// Worker which is responsible to pull activations for a given member-set.
+        /// </summary>
+        /// <param name="targetMemberAddresses">Addresses it should target, normally all active topology members</param>
+        /// <param name="handoverTimeout">Retry a partition if it does not receive a response within this timeout</param>
+        /// <param name="cancellationToken">Cancels the handover, does not send any more messages</param>
+        public PartitionIdentityRebalanceWorker(IEnumerable<string> targetMemberAddresses,TimeSpan handoverTimeout, CancellationToken cancellationToken)
         {
+            _remainingPartitions = targetMemberAddresses.ToHashSet();
             _handoverTimeout = handoverTimeout;
             _cancellationToken = cancellationToken;
-            _partitionLookup = new Dictionary<ClusterIdentity, PID>();
-            _onRelocationComplete = new TaskCompletionSource<bool>();
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            IdentityHandoverRequest request             => OnIdentityHandoverRequest(request, context),
-            PartitionWorker.PartitionCompleted response => OnPartitionCompleted(response, context),
-            PartitionWorker.PartitionFailed response    => OnPartitionFailed(response, context),
-            _                                           => Task.CompletedTask
+            IdentityHandoverRequest request => OnIdentityHandoverRequest(request, context),
+            PartitionCompleted response     => OnPartitionCompleted(response, context),
+            PartitionFailed response        => OnPartitionFailed(response, context),
+            _                               => Task.CompletedTask
         };
 
         private Task OnIdentityHandoverRequest(IdentityHandoverRequest request, IContext context)
         {
+            _timer = Stopwatch.StartNew();
+            _partitionIdentityPid = PartitionManager.RemotePartitionIdentityActor(context.System.Address);
             _tokenRegistration = _cancellationToken.Register(() => context.Self.Stop(context.System)
             );
-            _timer.Start();
             _request = request;
 
-            foreach (var member in request.Members)
+            foreach (var member in request.CurrentTopology.Members)
             {
                 var memberAddress = member.Address;
                 StartRebalanceFromMember(request, context, memberAddress);
             }
 
-            context.ReenterAfter(_onRelocationComplete.Task, () => {
-                    context.Respond(new PartitionsRebalanced(_partitionLookup, _request.TopologyHash));
-                    context.Self.Stop(context.System);
-                }
-            );
             return Task.CompletedTask;
         }
 
-        private Task OnPartitionCompleted(PartitionWorker.PartitionCompleted response, IContext context)
+        private Task OnPartitionCompleted(PartitionCompleted response, IContext context)
         {
-            foreach (var activation in response.Activations)
-            {
-                TakeOwnership(activation, context);
-            }
+            context.Send(_partitionIdentityPid!, response);
+            _remainingPartitions.Remove(response.MemberAddress);
 
-            _waitingRequests.Remove(response.MemberAddress);
-
-            if (_waitingRequests.Count == 0)
+            if (_remainingPartitions.Count == 0)
             {
-                _timer.Stop();
-                Logger.LogDebug("IdentityRelocation completed, received {Count} actors in {Elapsed}", _partitionLookup.Count, _timer.Elapsed);
-                _onRelocationComplete.TrySetResult(true);
+                Logger.LogDebug("Pulled activations from {MemberCount} partitions completed in {Elapsed}", _request!.CurrentTopology.Members.Count,
+                    _timer!.Elapsed
+                );
+                context.Self.Stop(context.System);
             }
 
             return Task.CompletedTask;
         }
 
-        private Task OnPartitionFailed(PartitionWorker.PartitionFailed response, IContext context)
+        private Task OnPartitionFailed(PartitionFailed response, IContext context)
         {
             Logger.LogWarning("Retrying member {Member}, failed with {Reason}", response.MemberAddress, response.Reason);
             StartRebalanceFromMember(_request!, context, response.MemberAddress);
             return Task.CompletedTask;
         }
 
-        private void TakeOwnership(Activation msg, IContext context)
-        {
-            if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var existing))
-            {
-                if (existing.Address == msg.Pid.Address && existing.Id == msg.Pid.Id) return; // Identical activation, no-op
-
-                // If they are not equal, we might have multiple activations, ie invalid state
-                Logger.LogWarning("Duplicate activation: {ClusterIdentity}, {Pid1}, {Pid2}", msg.ClusterIdentity, existing, msg.Pid);
-                context.Poison(existing);
-            }
-
-            // Logger.LogDebug("Taking Ownership of: {Identity}, pid: {Pid}", msg.Identity, msg.Pid);
-            _partitionLookup[msg.ClusterIdentity] = msg.Pid;
-        }
-
         private void StartRebalanceFromMember(IdentityHandoverRequest request, IContext context, string memberAddress)
         {
             var childPid = context.Spawn(Props.FromProducer(() => new PartitionWorker(memberAddress, _handoverTimeout)));
             context.Request(childPid, request);
-            _waitingRequests[memberAddress] = childPid;
+            _remainingPartitions.Add(memberAddress);
         }
 
         /// <summary>
@@ -122,13 +104,11 @@ namespace Proto.Cluster.Partition
         private class PartitionWorker : IActor
         {
             private readonly PID _targetMember;
-            private readonly BitArray _receivedChunks = new(64);
-            private readonly List<Activation> _receivedActivations = new();
             private readonly string _memberAddress;
             private readonly TimeSpan _timeout;
             private readonly TaskCompletionSource<object> _completionSource = new();
-            private int _receivedCount;
-            private int? _finalChunk;
+            private readonly List<IdentityHandover> _chunks = new();
+            private MemberHandoverSink? _sink;
 
             public PartitionWorker(string memberAddress, TimeSpan timeout)
             {
@@ -141,11 +121,14 @@ namespace Proto.Cluster.Partition
             {
                 switch (context.Message)
                 {
+                    case Started:
+                        _sink = new MemberHandoverSink(_memberAddress, handover => _chunks.Add(handover));
+                        break;
                     case IdentityHandoverRequest msg:
                         OnIdentityHandoverRequest(msg, context);
                         break;
-                    case IdentityHandoverResponse msg:
-                        OnIdentityHandoverResponse(msg, context);
+                    case IdentityHandover msg:
+                        OnIdentityHandover(msg, context);
                         break;
                     case ReceiveTimeout:
                         FailPartition("Timeout");
@@ -169,53 +152,34 @@ namespace Proto.Cluster.Partition
                 );
             }
 
-            private void OnIdentityHandoverResponse(IdentityHandoverResponse response, IContext context)
+            private void OnIdentityHandover(IdentityHandover response, IContext context)
             {
                 var sender = context.Sender;
 
                 if (sender is null)
                 {
                     // Invalid response, requires sender to be populated
-                    Logger.LogError("Invalid IdentityHandoverResponse chunk {ChunkId} count {Count}, final {Final}, topology {TopologyHash} received, missing sender", response.ChunkId, response.Actors.Count, response.Final, response.TopologyHash);
-                    // FailPartition("MissingSender");
+                    Logger.LogError(
+                        "Invalid IdentityHandover chunk {ChunkId} count {Count}, final {Final}, topology {TopologyHash} received, missing sender",
+                        response.ChunkId, response.Actors.Count, response.Final, response.TopologyHash
+                    );
                 }
 
-                _receivedActivations.AddRange(response.Actors);
+                var complete = _sink!.Receive(response);
 
-                if (HasReceivedAllChunks(response))
+                if (!complete) return;
+
+                _completionSource.SetResult(new PartitionCompleted(_memberAddress, _chunks));
+
+                if (Logger.IsEnabled(LogLevel.Debug))
                 {
-                    _completionSource.SetResult(new PartitionCompleted(_memberAddress, _receivedActivations));
+                    Logger.LogDebug("Final handover received from {Address}: skipped: {Skipped}/{Total}, chunks: {Chunks}", _memberAddress,
+                        _sink.SkippedActivations, _sink.SentActivations + _sink.SkippedActivations, response.ChunkId
+                    );
                 }
             }
 
             private void FailPartition(string reason) => _completionSource.TrySetResult(new PartitionFailed(_memberAddress, reason));
-
-            private bool HasReceivedAllChunks(IdentityHandoverResponse response)
-            {
-                while (_receivedChunks.Length <= response.ChunkId)
-                {
-                    _receivedChunks.Length *= 2;
-                }
-                if (_receivedChunks.Get(response.ChunkId))
-                {
-                    Logger.LogWarning("Chunk {ChunkId} already received", response.ChunkId);
-                    return false;
-                }
-
-                _receivedChunks.Set(response.ChunkId, true);
-                _receivedCount++;
-
-                if (response.Final)
-                {
-                    _finalChunk = response.ChunkId;
-                }
-
-                return _finalChunk.HasValue && _receivedCount == _finalChunk;
-            }
-
-            public record PartitionCompleted(string MemberAddress, List<Activation> Activations);
-
-            public record PartitionFailed(string MemberAddress, string Reason);
         }
 
         public void Dispose() => _tokenRegistration?.Dispose();

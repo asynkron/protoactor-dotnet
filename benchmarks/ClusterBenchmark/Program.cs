@@ -87,7 +87,7 @@ namespace ClusterExperiment1
             }
             else
             {
-                Console.WriteLine("1) Protobuf serializer");
+                Console.WriteLine("1) Protobuf serializer (default)");
                 Console.WriteLine("2) Json serializer");
 
                 if (Console.ReadLine() == "2")
@@ -164,11 +164,11 @@ namespace ClusterExperiment1
             _ = SafeTask.Run(async () => {
                     var semaphore = new AsyncSemaphore(50);
                     var cluster = await Configuration.SpawnClient();
-                    var rnd = new Random();
-
+                    // var rnd = new Random();
+                    var i = 0;
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, actorCount);
+                        var id = "myactor" + (i++ % actorCount);
                         semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.FromSeconds(20)));
                     }
                 }
@@ -278,17 +278,19 @@ namespace ClusterExperiment1
 
             _ = SafeTask.Run(async () => {
                     var cluster = await Configuration.SpawnClient();
-                    var rnd = new Random();
+                    // var rnd = new Random();
                     var semaphore = new AsyncSemaphore(5);
-
+                    var i = 0;
                     while (true)
                     {
-                        semaphore.Wait(() => RunBatch(rnd, cluster));
+                        var b = i;
+                        semaphore.Wait(() => RunBatch(b, cluster));
+                        i = (i + batchSize) % actorCount;
                     }
                 }
             );
 
-            async Task RunBatch(Random? rnd, Cluster cluster)
+            async Task RunBatch(int startIndex, Cluster cluster)
             {
                 var requests = new List<Task>();
 
@@ -299,7 +301,7 @@ namespace ClusterExperiment1
                     var ctx = cluster.System.Root.CreateBatchContext(batchSize,ct);
                     for (var i = 0; i < batchSize; i++)
                     {
-                        var id = identities[rnd!.Next(0, actorCount)];
+                        var id = identities[(startIndex + i) % identities.Length];
                         var request = SendRequest(cluster, id, ct, ctx);
 
                         requests.Add(request);

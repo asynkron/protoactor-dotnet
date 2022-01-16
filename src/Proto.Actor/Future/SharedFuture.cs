@@ -74,7 +74,7 @@ namespace Proto.Future
             get {
                 // Read completedRequests first and createdRequests later so that we will
                 // never read the 2 vars in an order that would result in completedRequests > createdRequests.
-                long completed = Interlocked.Read(ref _createdRequests);
+                long completed = Interlocked.Read(ref _completedRequests);
                 long created = Interlocked.Read(ref _createdRequests);
                 return (int) (created - completed);
             }
