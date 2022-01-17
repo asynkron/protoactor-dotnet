@@ -53,7 +53,7 @@ namespace Proto.Cluster.Partition
         private Task OnIdentityHandoverRequest(IdentityHandoverRequest request, IContext context)
         {
             _timer = Stopwatch.StartNew();
-            _partitionIdentityPid = PartitionManager.RemotePartitionIdentityActor(context.System.Address);
+            _partitionIdentityPid = context.Sender;
             _tokenRegistration = _cancellationToken.Register(() => context.Self.Stop(context.System)
             );
             _request = request;
@@ -74,7 +74,7 @@ namespace Proto.Cluster.Partition
 
             if (_remainingPartitions.Count == 0)
             {
-                Logger.LogDebug("Pulled activations from {MemberCount} partitions completed in {Elapsed}", _request!.CurrentTopology.Members.Count,
+                Logger.LogDebug("[PartitionIdentity] Pulled activations from {MemberCount} partitions completed in {Elapsed}", _request!.CurrentTopology.Members.Count,
                     _timer!.Elapsed
                 );
                 context.Self.Stop(context.System);
@@ -85,7 +85,7 @@ namespace Proto.Cluster.Partition
 
         private Task OnPartitionFailed(PartitionFailed response, IContext context)
         {
-            Logger.LogWarning("Retrying member {Member}, failed with {Reason}", response.MemberAddress, response.Reason);
+            Logger.LogWarning("[PartitionIdentity] Retrying member {Member}, failed with {Reason}", response.MemberAddress, response.Reason);
             StartRebalanceFromMember(_request!, context, response.MemberAddress);
             return Task.CompletedTask;
         }
@@ -160,7 +160,7 @@ namespace Proto.Cluster.Partition
                 {
                     // Invalid response, requires sender to be populated
                     Logger.LogError(
-                        "Invalid IdentityHandover chunk {ChunkId} count {Count}, final {Final}, topology {TopologyHash} received, missing sender",
+                        "[PartitionIdentity] Invalid IdentityHandover chunk {ChunkId} count {Count}, final {Final}, topology {TopologyHash} received, missing sender",
                         response.ChunkId, response.Actors.Count, response.Final, response.TopologyHash
                     );
                 }
@@ -173,7 +173,7 @@ namespace Proto.Cluster.Partition
 
                 if (Logger.IsEnabled(LogLevel.Debug))
                 {
-                    Logger.LogDebug("Final handover received from {Address}: skipped: {Skipped}/{Total}, chunks: {Chunks}", _memberAddress,
+                    Logger.LogDebug("[PartitionIdentity] Final handover received from {Address}: skipped: {Skipped}/{Total}, chunks: {Chunks}", _memberAddress,
                         _sink.SkippedActivations, _sink.SentActivations + _sink.SkippedActivations, response.ChunkId
                     );
                 }

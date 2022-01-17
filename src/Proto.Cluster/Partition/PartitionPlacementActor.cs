@@ -47,7 +47,7 @@ namespace Proto.Cluster.Partition
         {
             if (_config.Mode != PartitionIdentityLookup.Mode.Push) return Task.CompletedTask;
 
-            Logger.LogDebug("Got topology {TopologyHash}, waiting for current activations to complete", msg.TopologyHash);
+            Logger.LogDebug("[PartitionIdentity] Got topology {TopologyHash}, waiting for current activations to complete", msg.TopologyHash);
 
             var cancellationToken = msg.TopologyValidityToken!.Value;
             // TODO: Configurable timeout
@@ -66,7 +66,7 @@ namespace Proto.Cluster.Partition
 
         private async Task Rebalance(IContext context, ClusterTopology msg)
         {
-            Logger.LogDebug("Initiating rebalance publish for topology {TopologyHash}", msg.TopologyHash);
+            Logger.LogDebug("[PartitionIdentity] Initiating rebalance publish for topology {TopologyHash}", msg.TopologyHash);
 
             try
             {
@@ -90,7 +90,7 @@ namespace Proto.Cluster.Partition
                         => task.IsCompletedSuccessfully && task.Result?.ProcessingState == IdentityHandoverAck.Types.State.Processed
                     ))
                 {
-                    Logger.LogDebug("Completed rebalance publish for topology {TopologyHash}", msg.TopologyHash);
+                    Logger.LogInformation("[PartitionIdentity] Completed rebalance publish for topology {TopologyHash}", msg.TopologyHash);
 
                     // All members should now be up-to-date with the current set of activations.
                     // With delta sends, it will use this to determine which activations to skip sending
@@ -98,12 +98,12 @@ namespace Proto.Cluster.Partition
                 }
                 else
                 {
-                    Logger.LogDebug("Cancelled rebalance after publish for topology {TopologyHash}", msg.TopologyHash);
+                    Logger.LogInformation("[PartitionIdentity] Cancelled rebalance after publish for topology {TopologyHash}", msg.TopologyHash);
                 }
             }
             catch (OperationCanceledException)
             {
-                Logger.LogInformation("Cancelled rebalance publish for topology {TopologyHash}", msg.TopologyHash);
+                Logger.LogInformation("[PartitionIdentity] Cancelled rebalance publish for topology {TopologyHash}", msg.TopologyHash);
             }
         }
 
@@ -179,7 +179,7 @@ namespace Proto.Cluster.Partition
                         {
                             if (Logger.IsEnabled(LogLevel.Warning))
                             {
-                                Logger.LogWarning("Identity handover request timeout for topology {TopologyHash}, address {Address}",
+                                Logger.LogWarning("[PartitionIdentity] Identity handover request timeout for topology {TopologyHash}, address {Address}",
                                     _topology.TopologyHash, _target.Address
                                 );
                             }
@@ -208,13 +208,13 @@ namespace Proto.Cluster.Partition
         {
             if (!_myActors.TryGetValue(msg.ClusterIdentity, out var pid))
             {
-                Logger.LogWarning("Activation not found: {ActivationTerminating}", msg);
+                Logger.LogWarning("[PartitionIdentity] Activation not found: {ActivationTerminating}", msg);
                 return Task.CompletedTask;
             }
 
             if (!pid.Equals(msg.Pid))
             {
-                Logger.LogWarning("Activation did not match pid: {ActivationTerminating}, {Pid}", msg, pid);
+                Logger.LogWarning("[PartitionIdentity] Activation did not match pid: {ActivationTerminating}, {Pid}", msg, pid);
                 return Task.CompletedTask;
             }
 
@@ -242,10 +242,9 @@ namespace Proto.Cluster.Partition
         {
             if (context.Sender is null)
             {
-                Logger.LogError("IdentityHandoverRequest {Request} missing sender", msg);
+                Logger.LogError("[PartitionIdentity] IdentityHandoverRequest {Request} missing sender", msg);
                 return Task.CompletedTask;
             }
-
 
             using var cancelRebalance = new CancellationTokenSource();
             var outOfBandResponseHandler = context.System.Root.Spawn(AbortOnDeadLetter(cancelRebalance));
@@ -263,15 +262,13 @@ namespace Proto.Cluster.Partition
 
                     if (handover.Final && Logger.IsEnabled(LogLevel.Debug))
                     {
-                        Logger.LogDebug(
-                            "{Id}, Sending final response with {Count} activations, total {Total}, skipped {Skipped}, Chunk {Chunk}, Topology {TopologyHash}",
+                        Logger.LogInformation(
+                            "[PartitionIdentity] {Id}, Sending final response with {Count} activations, total {Total}, skipped {Skipped}, Chunk {Chunk}, Topology {TopologyHash}",
                             context.System.Id, handover.Actors.Count, handover.Sent, handover.Skipped, handover.ChunkId,
                             msg.CurrentTopology.TopologyHash
                         );
                     }
                 }
-
-                // Logger.LogDebug("Transferred {Count} actor ownership to other members", count);
             }
             finally
             {
@@ -283,7 +280,7 @@ namespace Proto.Cluster.Partition
                     }
 
                     if (Logger.IsEnabled(LogLevel.Information))
-                        Logger.LogInformation("Cancelled rebalance: {@IdentityHandoverRequest}", msg);
+                        Logger.LogInformation("[PartitionIdentity] Cancelled rebalance: {@IdentityHandoverRequest}", msg);
                 }
 
                 context.Stop(outOfBandResponseHandler);
@@ -348,7 +345,7 @@ namespace Proto.Cluster.Partition
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
+                Logger.LogError(e, "[PartitionIdentity] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
                 var response = new ActivationResponse
                 {
                     Pid = null,
