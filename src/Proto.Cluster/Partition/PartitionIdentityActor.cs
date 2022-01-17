@@ -387,7 +387,7 @@ namespace Proto.Cluster.Partition
             }
 
             var workerPid = SpawnRebalanceWorker(memberAddresses, context, msg.TopologyValidityToken!.Value);
-            context.Send(workerPid, new IdentityHandoverRequest
+            context.Request(workerPid, new IdentityHandoverRequest
                 {
                     Address = _myAddress,
                     CurrentTopology = new IdentityHandoverRequest.Types.Topology
