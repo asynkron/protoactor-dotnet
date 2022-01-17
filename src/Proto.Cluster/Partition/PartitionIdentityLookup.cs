@@ -36,7 +36,7 @@ namespace Proto.Cluster.Partition
             using var cts = new CancellationTokenSource(_getPidTimeout);
             //Get address to node owning this ID
             var (identityOwner, topologyHash) = _partitionManager.Selector.GetIdentityOwner(clusterIdentity.Identity);
-            Logger.LogDebug("Identity belongs to {Address}", identityOwner);
+            Logger.LogTrace("[PartitionIdentity] Identity belongs to {Address}", identityOwner);
             if (string.IsNullOrEmpty(identityOwner)) return null;
 
             var remotePid = PartitionManager.RemotePartitionIdentityActor(identityOwner);
@@ -48,7 +48,7 @@ namespace Proto.Cluster.Partition
                 TopologyHash = topologyHash
             };
 
-            Logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", identityOwner, remotePid, req);
+            Logger.LogDebug("[PartitionIdentity] Requesting remote PID from {Partition}:{Remote} {@Request}", identityOwner, remotePid, req);
 
             try
             {
@@ -67,33 +67,37 @@ namespace Proto.Cluster.Partition
             //TODO: decide if we throw or return null
             catch (DeadLetterException)
             {
-                Logger.LogInformation("Remote PID request deadletter {@Request}, identity Owner {Owner}", req, identityOwner);
+                Logger.LogInformation("[PartitionIdentity] Remote PID request deadletter {@Request}, identity Owner {Owner}", req, identityOwner);
                 return null;
             }
             catch (TimeoutException)
             {
-                try
+                if (_config.DeveloperLogging)
                 {
-                    var resp = await _cluster.System.Root.RequestAsync<Touched?>(remotePid, new Touch(), CancellationTokens.FromSeconds(2));
+                    try
+                    {
+                        var resp = await _cluster.System.Root.RequestAsync<Touched?>(remotePid, new Touch(), CancellationTokens.FromSeconds(2));
 
-                    if (resp == null)
+                        if (resp == null)
+                        {
+                            if (_config.DeveloperLogging)
+                                Console.WriteLine("Actor is blocked....");
+                        }
+                    }
+                    catch
                     {
                         if (_config.DeveloperLogging)
                             Console.WriteLine("Actor is blocked....");
                     }
                 }
-                catch
-                {
-                    if (_config.DeveloperLogging)
-                        Console.WriteLine("Actor is blocked....");
-                }
+                
 
-                Logger.LogInformation("Remote PID request timeout {@Request}, identity Owner {Owner}", req, identityOwner);
+                Logger.LogInformation("[PartitionIdentity] Remote PID request timeout {@Request}, identity Owner {Owner}", req, identityOwner);
                 return null;
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "Error occured requesting remote PID {@Request}, identity Owner {Owner}", req, identityOwner);
+                Logger.LogError(e, "[PartitionIdentity] Error occured requesting remote PID {@Request}, identity Owner {Owner}", req, identityOwner);
                 return null;
             }
         }

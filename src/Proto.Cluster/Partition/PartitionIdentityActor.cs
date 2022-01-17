@@ -32,15 +32,14 @@ namespace Proto.Cluster.Partition
         private readonly MemberStatistics _memberStats = new();
         private readonly Dictionary<ClusterIdentity, (TaskCompletionSource<ActivationResponse> Response, string activationAddress)> _spawns = new();
 
-        private ulong _topologyHash;
+        private ulong TopologyHash => _currentTopology?.TopologyHash ?? 0;
         private ClusterTopology? _currentTopology;
         private MemberHashRing _memberHashRing = new(ImmutableList<Member>.Empty);
         private HashSet<string> _currentMemberAddresses = new();
 
+        private ClusterTopology? _deltaTopology;
         private TaskCompletionSource<ulong>? _rebalanceTcs;
         private HandoverSink? _currentHandover;
-
-        private ClusterTopology? _deltaTopology;
         private Stopwatch? _rebalanceTimer;
 
         public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout, PartitionConfig config)
@@ -74,7 +73,7 @@ namespace Proto.Cluster.Partition
         {
             if (_currentHandover is null)
             {
-                Logger.LogWarning("PartitionCompleted received when member is not re-balancing");
+                Logger.LogWarning("[PartitionIdentity] PartitionCompleted received when member is not re-balancing");
                 return Task.CompletedTask;
             }
 
@@ -91,7 +90,7 @@ namespace Proto.Cluster.Partition
             if (_config.Mode != PartitionIdentityLookup.Mode.Push)
             {
                 Logger.LogError(
-                    "IdentityHandover push from {Address} received in pull mode. All members need to use the same partition rebalance algorithm",
+                    "[PartitionIdentity] IdentityHandover push from {Address} received in pull mode. All members need to use the same partition rebalance algorithm",
                     context.Sender?.Address
                 );
                 return Task.CompletedTask;
@@ -99,14 +98,14 @@ namespace Proto.Cluster.Partition
 
             if (context.Sender is null)
             {
-                Logger.LogWarning("IdentityHandover received with null sender");
+                Logger.LogWarning("[PartitionIdentity] IdentityHandover received with null sender");
                 return Task.CompletedTask;
             }
 
-            if (msg.TopologyHash != _topologyHash)
+            if (msg.TopologyHash != TopologyHash)
             {
-                Logger.LogWarning("IdentityHandover with non-matching topology hash {MessageTopologyHash} instead of {CurrentTopologyHash}",
-                    msg.TopologyHash, _topologyHash
+                Logger.LogWarning("[PartitionIdentity] IdentityHandover with non-matching topology hash {MessageTopologyHash} instead of {CurrentTopologyHash}",
+                    msg.TopologyHash, TopologyHash
                 );
                 Acknowledge(IdentityHandoverAck.Types.State.IncorrectTopology);
                 return Task.CompletedTask;
@@ -116,7 +115,7 @@ namespace Proto.Cluster.Partition
 
             if (_currentHandover is null)
             {
-                Logger.LogWarning("IdentityHandover received when member is not re-balancing");
+                Logger.LogWarning("[PartitionIdentity] IdentityHandover received when member is not re-balancing");
                 return Task.CompletedTask;
             }
 
@@ -144,13 +143,13 @@ namespace Proto.Cluster.Partition
                 if (!ValidateOrRetryDeltaHandover(sink, address, context)) return;
             }
 
-            if (Logger.IsEnabled(LogLevel.Debug))
+            if (Logger.IsEnabled(LogLevel.Information))
             {
-                Logger.LogDebug("Topology rebalance completed in {Elapsed}, received {@Stats}", _rebalanceTimer?.Elapsed, sink.CompletedHandovers);
+                Logger.LogInformation("[PartitionIdentity] Topology {TopologyHash} rebalance completed in {Elapsed}, received {@Stats}", TopologyHash,_rebalanceTimer?.Elapsed, sink.CompletedHandovers);
             }
 
             _rebalanceTimer = null;
-            _cluster.Gossip.SetRebalanceCompleted(_topologyHash);
+            _cluster.Gossip.SetRebalanceCompleted(TopologyHash);
 
             if (_config.Mode == PartitionIdentityLookup.Mode.Pull && _config.Send == PartitionIdentityLookup.Send.Delta)
             {
@@ -159,7 +158,7 @@ namespace Proto.Cluster.Partition
             }
 
             _currentHandover = null;
-            _rebalanceTcs?.TrySetResult(_topologyHash);
+            _rebalanceTcs?.TrySetResult(TopologyHash);
             _rebalanceTcs = null;
         }
 
@@ -177,7 +176,7 @@ namespace Proto.Cluster.Partition
             }
 
             StartPartitionPull(_currentTopology!, incomplete, context);
-            Logger.LogWarning("Incomplete rebalance detected, will retry {@Addresses}", incomplete);
+            Logger.LogWarning("[PartitionIdentity] Incomplete rebalance detected, will retry {@Addresses}", incomplete);
             return false;
         }
 
@@ -216,7 +215,7 @@ namespace Proto.Cluster.Partition
 
         private Task OnClusterTopology(ClusterTopology msg, IContext context)
         {
-            if (_topologyHash.Equals(msg.TopologyHash))
+            if (TopologyHash.Equals(msg.TopologyHash))
             {
                 return Task.CompletedTask;
             }
@@ -226,7 +225,7 @@ namespace Proto.Cluster.Partition
 
             if (msg.Members.Count == 0)
             {
-                Logger.LogWarning("No active members in cluster topology update");
+                Logger.LogWarning("[PartitionIdentity] No active members in cluster topology update");
                 _partitionLookup.Clear();
                 _memberStats.Clear();
                 return Task.CompletedTask;
@@ -239,12 +238,15 @@ namespace Proto.Cluster.Partition
             _currentHandover = new HandoverSink(msg, TakeOverIdentities(context));
             _rebalanceTimer = Stopwatch.StartNew();
 
+            Logger.LogInformation(
+                "{SystemId} topology {CurrentTopology} Pausing activations while rebalance in progress, {SpawnCount} spawns waiting",
+                _cluster.System.Id, TopologyHash, _spawns.Count
+            );
+
             if (_config.Mode == PartitionIdentityLookup.Mode.Push) // Good things comes to those who wait
             {
                 return Task.CompletedTask;
             }
-
-            Logger.LogInformation("{SystemId} Starting to wait for activations to complete:, {CurrentTopology}", _cluster.System.Id, _topologyHash);
 
             var timer = Stopwatch.StartNew();
 
@@ -253,7 +255,7 @@ namespace Proto.Cluster.Partition
                 _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(_identityHandoverTimeout, topologyValidityToken);
 
             context.ReenterAfter(waitUntilInFlightActivationsAreCompleted, consensusResult => {
-                    if (_topologyHash != msg.TopologyHash || topologyValidityToken.IsCancellationRequested)
+                    if (TopologyHash != msg.TopologyHash || topologyValidityToken.IsCancellationRequested)
                     {
                         // Cancelled
                         return Task.CompletedTask;
@@ -264,15 +266,15 @@ namespace Proto.Cluster.Partition
 
                     if (allNodesCompletedActivations)
                     {
-                        Logger.LogDebug("{SystemId} All nodes OK, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
-                            _cluster.System.Id, _topologyHash, consensusResult.Result.topologyHash, timer.Elapsed
+                        Logger.LogDebug("[PartitionIdentity] {SystemId} All nodes OK, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
+                            _cluster.System.Id, TopologyHash, consensusResult.Result.topologyHash, timer.Elapsed
                         );
                     }
                     else
                     {
                         Logger.LogError(
-                            "{SystemId} Consensus not reached, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
-                            _cluster.System.Id, _topologyHash, consensusResult.Result.topologyHash, timer.Elapsed
+                            "[PartitionIdentity] {SystemId} Consensus not reached, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
+                            _cluster.System.Id, TopologyHash, consensusResult.Result.topologyHash, timer.Elapsed
                         );
                     }
 
@@ -325,7 +327,6 @@ namespace Proto.Cluster.Partition
 
         private void SetTopology(ClusterTopology msg)
         {
-            _topologyHash = msg.TopologyHash;
             _currentTopology = msg;
             _memberHashRing = new MemberHashRing(msg.Members);
             _currentMemberAddresses = msg.Members.Select(it => it.Address).ToHashSet();
@@ -351,14 +352,14 @@ namespace Proto.Cluster.Partition
                 _spawns.Remove(clusterIdentity);
             }
 
-            Logger.LogDebug("Removed {Count} spawns targeting previous members", spawningOnLeftMembers.Count);
+            Logger.LogDebug("[PartitionIdentity] Removed {Count} spawns targeting previous members", spawningOnLeftMembers.Count);
         }
 
         private void SetReadyToRebalanceIfNoMoreWaitingSpawns()
         {
             if (_spawns.Count == 0)
             {
-                _cluster.Gossip.SetInFlightActivationsCompleted(_topologyHash);
+                _cluster.Gossip.SetInFlightActivationsCompleted(TopologyHash);
             }
         }
 
@@ -369,13 +370,29 @@ namespace Proto.Cluster.Partition
             ClusterTopology? deltaBaseline = null
         )
         {
+            if (Logger.IsEnabled(LogLevel.Information))
+            {
+                if (deltaBaseline is not null)
+                {
+                    Logger.LogInformation("[PartitionIdentity] Pulling activations between topology {PrevTopology} and {CurrentTopology} from {@MemberAddresses}",
+                        deltaBaseline.TopologyHash, msg.TopologyHash, memberAddresses
+                    );
+                }
+                else
+                {
+                    Logger.LogInformation("[PartitionIdentity] Pulling activations for topology {CurrentTopology} from {@MemberAddresses}", msg.TopologyHash,
+                        memberAddresses
+                    );
+                }
+            }
+
             var workerPid = SpawnRebalanceWorker(memberAddresses, context, msg.TopologyValidityToken!.Value);
             context.Send(workerPid, new IdentityHandoverRequest
                 {
                     Address = _myAddress,
                     CurrentTopology = new IdentityHandoverRequest.Types.Topology
                     {
-                        TopologyHash = _topologyHash,
+                        TopologyHash = TopologyHash,
                         Members = {msg.Members}
                     },
                     // If we have a known good topology rebalance, we can let it just rebalance the difference (delta) between the topologies
@@ -416,7 +433,7 @@ namespace Proto.Cluster.Partition
         private void ResolveDuplicateActivations(ClusterIdentity clusterIdentity, PID existingActivation, PID conflictingActivation, IContext context)
         {
             Logger.LogError(
-                "Got duplicate activations of {ClusterIdentity}: {ExistingActivation}, {NewActivation}, terminating the previous activation",
+                "[PartitionIdentity] Got duplicate activations of {ClusterIdentity}: {ExistingActivation}, {NewActivation}, terminating the previous activation",
                 clusterIdentity,
                 existingActivation,
                 conflictingActivation
@@ -435,7 +452,7 @@ namespace Proto.Cluster.Partition
             }
 
             //we get this via broadcast to all nodes, remove if we have it, or ignore
-            Logger.LogDebug("[PartitionIdentityActor] Terminated {Pid}", msg.Pid);
+            Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Terminated {Pid}", msg.Pid);
 
             if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var existingActivation) && existingActivation.Equals(msg.Pid))
             {
@@ -479,7 +496,7 @@ namespace Proto.Cluster.Partition
             if (_config.DeveloperLogging)
                 Console.WriteLine($"Got ActivationRequest {msg.RequestId}");
 
-            if (msg.TopologyHash != _topologyHash)
+            if (msg.TopologyHash != TopologyHash)
             {
                 var ownerAddress = _memberHashRing.GetOwnerMemberByIdentity(msg.Identity);
 
@@ -489,7 +506,7 @@ namespace Proto.Cluster.Partition
                         Console.WriteLine($"Forwarding ActivationRequest {msg.RequestId} to {ownerAddress}");
 
                     var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
-                    Logger.LogWarning("Tried to spawn on wrong node, forwarding");
+                    Logger.LogWarning("[PartitionIdentity] Tried to spawn on wrong node, forwarding");
                     context.Forward(ownerPid);
 
                     return Task.CompletedTask;
@@ -504,7 +521,7 @@ namespace Proto.Cluster.Partition
                 if (_config.DeveloperLogging)
                     Console.Write("?");
                 //No activator currently available, return unavailable
-                Logger.LogWarning("No members currently available for kind {Kind}", msg.Kind);
+                Logger.LogWarning("[PartitionIdentity] No members currently available for kind {Kind}", msg.Kind);
                 RespondWithFailure(context);
                 return Task.CompletedTask;
             }
@@ -564,7 +581,7 @@ namespace Proto.Cluster.Partition
                             context.Stop(response.Pid); // Stop duplicate activation
                         }
 
-                        Respond(new ActivationResponse {Pid = pid, TopologyHash = _topologyHash});
+                        Respond(new ActivationResponse {Pid = pid, TopologyHash = TopologyHash});
                         return;
                     }
 
@@ -573,12 +590,12 @@ namespace Proto.Cluster.Partition
                         if (_config.DeveloperLogging)
                             Console.Write("A"); //activated
 
-                        if (response.TopologyHash != _topologyHash) // Topology changed between request and response
+                        if (response.TopologyHash != TopologyHash) // Topology changed between request and response
                         {
                             if (!_currentMemberAddresses.Contains(response.Pid.Address))
                             {
                                 // No longer part of cluster, dropped
-                                Logger.LogWarning("Received activation response {@Response}, no longer part of cluster", response);
+                                Logger.LogWarning("[PartitionIdentity] Received activation response {@Response}, no longer part of cluster", response);
                                 Respond(new ActivationResponse {Failed = true});
                                 return;
                             }
@@ -587,8 +604,8 @@ namespace Proto.Cluster.Partition
 
                             if (_myAddress != currentActivatorAddress)
                             {
-                                //Stop it or handover. ?
-                                Logger.LogWarning("Misplaced spawn: {ClusterIdentity}, {Pid}", msg.ClusterIdentity, response.Pid);
+                                //Stop it or handover. ? Should be rebalanced in the current pass
+                                Logger.LogWarning("[PartitionIdentity] Misplaced spawn: {ClusterIdentity}, {Pid}", msg.ClusterIdentity, response.Pid);
                             }
                         }
 
@@ -601,7 +618,7 @@ namespace Proto.Cluster.Partition
                 }
                 catch (Exception x)
                 {
-                    Logger.LogError(x, "Spawn failed");
+                    Logger.LogError(x, "[PartitionIdentity] Spawn failed");
                     _deltaTopology = null; // Do not use delta handover if we are not sure all spawns are OK.
                 }
                 finally
@@ -632,7 +649,7 @@ namespace Proto.Cluster.Partition
         {
             try
             {
-                Logger.LogDebug("Spawning Remote Actor {Activator} {Identity} {Kind}", activatorAddress, req.Identity,
+                Logger.LogDebug("[PartitionIdentity] Spawning Remote Actor {Activator} {Identity} {Kind}", activatorAddress, req.Identity,
                     req.Kind
                 );
                 var timeout = _cluster.Config.TimeoutTimespan;
@@ -657,17 +674,6 @@ namespace Proto.Cluster.Partition
             public IReadOnlyDictionary<string, MemberDetails> Members => _stats;
 
             public void Clear() => _stats.Clear();
-
-            // public void Rebuild(Dictionary<ClusterIdentity, PID> partitionLookup)
-            // {
-            //     foreach (var grouping in partitionLookup.GroupBy(activation => activation.Value.Address))
-            //     {
-            //         _stats[grouping.Key] = new MemberDetails
-            //         {
-            //             Activations = grouping.Count()
-            //         };
-            //     }
-            // }
 
             public void Inc(string memberAddress)
             {
@@ -702,8 +708,6 @@ namespace Proto.Cluster.Partition
             }
         }
     }
-    //
-    // record PartitionsRebalanced(List<PartitionCompleted> CompletedPartitions, ulong TopologyHash);
 
     public record PartitionCompleted(string MemberAddress, List<IdentityHandover> Chunks);
 
