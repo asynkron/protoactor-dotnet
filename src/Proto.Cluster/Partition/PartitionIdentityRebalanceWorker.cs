@@ -35,7 +35,11 @@ namespace Proto.Cluster.Partition
         /// <param name="targetMemberAddresses">Addresses it should target, normally all active topology members</param>
         /// <param name="handoverTimeout">Retry a partition if it does not receive a response within this timeout</param>
         /// <param name="cancellationToken">Cancels the handover, does not send any more messages</param>
-        public PartitionIdentityRebalanceWorker(IEnumerable<string> targetMemberAddresses,TimeSpan handoverTimeout, CancellationToken cancellationToken)
+        public PartitionIdentityRebalanceWorker(
+            IEnumerable<string> targetMemberAddresses,
+            TimeSpan handoverTimeout,
+            CancellationToken cancellationToken
+        )
         {
             _remainingPartitions = targetMemberAddresses.ToHashSet();
             _handoverTimeout = handoverTimeout;
@@ -70,11 +74,15 @@ namespace Proto.Cluster.Partition
         private Task OnPartitionCompleted(PartitionCompleted response, IContext context)
         {
             context.Send(_partitionIdentityPid!, response);
+            Logger.LogDebug("[PartitionIdentity] Completed pulling partition {Address}, {ChunkCount} chunks received",
+                response.MemberAddress, response.Chunks.Count
+            );
             _remainingPartitions.Remove(response.MemberAddress);
 
             if (_remainingPartitions.Count == 0)
             {
-                Logger.LogDebug("[PartitionIdentity] Pulled activations from {MemberCount} partitions completed in {Elapsed}", _request!.CurrentTopology.Members.Count,
+                Logger.LogInformation("[PartitionIdentity] Pulled activations from {MemberCount} partitions completed in {Elapsed}",
+                    _request!.CurrentTopology.Members.Count,
                     _timer!.Elapsed
                 );
                 context.Self.Stop(context.System);
@@ -173,7 +181,8 @@ namespace Proto.Cluster.Partition
 
                 if (Logger.IsEnabled(LogLevel.Debug))
                 {
-                    Logger.LogDebug("[PartitionIdentity] Final handover received from {Address}: skipped: {Skipped}/{Total}, chunks: {Chunks}", _memberAddress,
+                    Logger.LogDebug("[PartitionIdentity] Final handover received from {Address}: skipped: {Skipped}/{Total}, chunks: {Chunks}",
+                        _memberAddress,
                         _sink.SkippedActivations, _sink.SentActivations + _sink.SkippedActivations, response.ChunkId
                     );
                 }
