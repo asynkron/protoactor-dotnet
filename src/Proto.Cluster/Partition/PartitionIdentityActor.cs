@@ -649,9 +649,11 @@ namespace Proto.Cluster.Partition
         {
             try
             {
-                Logger.LogDebug("[PartitionIdentity] Spawning Remote Actor {Activator} {Identity} {Kind}", activatorAddress, req.Identity,
-                    req.Kind
-                );
+                if (Logger.IsEnabled(LogLevel.Trace))
+                {
+                    Logger.LogTrace("[PartitionIdentity] Spawning Remote Actor {Activator} {Identity} {Kind}",
+                        activatorAddress, req.Identity, req.Kind);
+                }
                 var timeout = _cluster.Config.TimeoutTimespan;
                 var activatorPid = PartitionManager.RemotePartitionPlacementActor(activatorAddress);
 

@@ -3,16 +3,26 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Utils;
 
 namespace Proto.Cluster.PartitionActivator
 {
     public class PartitionActivatorActor : IActor
     {
         private static readonly ILogger Logger = Log.CreateLogger<PartitionActivatorActor>();
+
+        private readonly ShouldThrottle _wrongPartitionLogThrottle = Throttle.Create(1, TimeSpan.FromSeconds(1), wrongNodeCount => {
+                if (wrongNodeCount > 1)
+                {
+                    Logger.LogWarning("Forwarded {SpawnCount} attempts to spawn on wrong node", wrongNodeCount);
+                }
+            }
+        );
         private ulong _topologyHash;
         private readonly Cluster _cluster;
         private readonly PartitionActivatorManager _manager;
@@ -80,7 +90,7 @@ namespace Proto.Cluster.PartitionActivator
                 return Task.CompletedTask;
             }
             //we get this via broadcast to all nodes, remove if we have it, or ignore
-            Logger.LogDebug("[PartitionIdentityActor] Terminated {Pid}", msg.Pid);
+            Logger.LogTrace("[PartitionIdentityActor] Terminated {Pid}", msg.Pid);
             _actors.Remove(msg.ClusterIdentity);
 
             return Task.CompletedTask;
@@ -97,7 +107,11 @@ namespace Proto.Cluster.PartitionActivator
             {
                 //get the owner
                 var ownerPid = PartitionActivatorManager.RemotePartitionActivatorActor(ownerAddress);
-                Logger.LogWarning("Tried to spawn on wrong node, forwarding");
+
+                if (_wrongPartitionLogThrottle().IsOpen())
+                {
+                    Logger.LogWarning("Tried to spawn on wrong node, forwarding");
+                }
                 context.Forward(ownerPid);
 
                 return Task.CompletedTask;
