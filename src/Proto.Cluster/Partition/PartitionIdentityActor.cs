@@ -38,6 +38,7 @@ namespace Proto.Cluster.Partition
         private HashSet<string> _currentMemberAddresses = new();
 
         private ClusterTopology? _deltaTopology;
+        private OperatingState _operatingState = OperatingState.NoTopology;
         private TaskCompletionSource<ulong>? _rebalanceTcs;
         private HandoverSink? _currentHandover;
         private Stopwatch? _rebalanceTimer;
@@ -98,7 +99,7 @@ namespace Proto.Cluster.Partition
 
             if (context.Sender is null)
             {
-                Logger.LogWarning("[PartitionIdentity] IdentityHandover received with null sender");
+                Logger.LogError("[PartitionIdentity] IdentityHandover received with null sender");
                 return Task.CompletedTask;
             }
 
@@ -708,6 +709,14 @@ namespace Proto.Cluster.Partition
             {
                 public int Activations { get; set; }
             }
+        }
+
+        enum OperatingState
+        {
+            NoTopology,
+            Normal,
+            CompletingSpawns,
+            ReBalancing
         }
     }
 

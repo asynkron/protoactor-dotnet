@@ -36,7 +36,7 @@ namespace Proto.Remote
         {
             if (_endpointManager.CancellationToken.IsCancellationRequested)
             {
-                Logger.LogWarning("[{systemAddress}] Attempt to connect to the suspended reader has been rejected", _system.Address);
+                Logger.LogWarning("[{SystemAddress}] Attempt to connect to the suspended reader has been rejected", _system.Address);
 
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
@@ -52,7 +52,7 @@ namespace Proto.Remote
                         }
                         catch (Exception)
                         {
-                            Logger.LogWarning("[{systemAddress}] Failed to write disconnect message to the stream", _system.Address);
+                            Logger.LogWarning("[{SystemAddress}] Failed to write disconnect message to the stream", _system.Address);
                         }
                     }
                 ))
@@ -67,7 +67,7 @@ namespace Proto.Remote
                         .Add(1, new("id", _system.Id), new("address", _system.Address), new("destinationaddress", context.Peer));
                 }
 
-                Logger.LogDebug("[{systemAddress}] Accepted connection request from {Remote} to {Local}",
+                Logger.LogDebug("[{SystemAddress}] Accepted connection request from {Remote} to {Local}",
                     _system.Address, context.Peer, context.Host
                 );
 
@@ -86,7 +86,7 @@ namespace Proto.Remote
 
                         if (_system.Remote().BlockList.IsBlocked(clientConnection.SystemId))
                         {
-                            Logger.LogWarning("[{systemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
+                            Logger.LogWarning("[{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
                             await responseStream.WriteAsync(new RemoteMessage
                                 {
                                     ConnectResponse = new ConnectResponse
@@ -148,11 +148,11 @@ namespace Proto.Remote
                                 }
                                 catch (OperationCanceledException)
                                 {
-                                    Logger.LogDebug("[{systemAddress}] Writer closed for {systemId}", _system.Address, systemId);
+                                    Logger.LogDebug("[{SystemAddress}] Writer closed for {systemId}", _system.Address, systemId);
                                 }
                                 catch (Exception e)
                                 {
-                                    Logger.LogWarning(e, "[{systemAddress}] Writing error to {systemId}", _system.Address, systemId);
+                                    Logger.LogWarning(e, "[{SystemAddress}] Writing error to {systemId}", _system.Address, systemId);
                                 }
                             }
                         );
@@ -163,7 +163,7 @@ namespace Proto.Remote
 
                         if (_system.Remote().BlockList.IsBlocked(serverConnection.SystemId))
                         {
-                            Logger.LogWarning("[{systemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
+                            Logger.LogWarning("[{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
                             await responseStream.WriteAsync(new RemoteMessage
                                 {
                                     ConnectResponse = new ConnectResponse

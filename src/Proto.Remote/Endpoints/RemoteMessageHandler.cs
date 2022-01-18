@@ -85,7 +85,7 @@ namespace Proto.Remote
                         }
                         catch (Exception)
                         {
-                            _logger.Log(_deserializationErrorLogLevel, "[{systemAddress}] Unable to deserialize message with {Type}", System.Address,
+                            _logger.Log(_deserializationErrorLogLevel, "[{SystemAddress}] Unable to deserialize message with {Type}", System.Address,
                                 typeName
                             );
                             continue;
@@ -95,7 +95,7 @@ namespace Proto.Remote
                         {
                             case Terminated msg:
                                 if (_logger.IsEnabled(LogLevel.Trace))
-                                    _logger.LogTrace("[{systemAddress}] Received message {MessageType} {message} for {target}", System.Address,
+                                    _logger.LogTrace("[{SystemAddress}] Received message {MessageType} {message} for {target}", System.Address,
                                         msg.GetType().Name, msg, target
                                     );
                                 var endpoint = msg.Who.TryGetSystemId(System, out var systemId)
@@ -105,7 +105,7 @@ namespace Proto.Remote
                                 break;
                             case SystemMessage sys:
                                 if (_logger.IsEnabled(LogLevel.Trace))
-                                    _logger.LogTrace("[{systemAddress}] Received system message {MessageType} {message} for {target}", System.Address,
+                                    _logger.LogTrace("[{SystemAddress}] Received system message {MessageType} {message} for {target}", System.Address,
                                         sys.GetType().Name, sys, target
                                     );
                                 target.SendSystemMessage(System, sys);
@@ -115,7 +115,7 @@ namespace Proto.Remote
                                 if (envelope.MessageHeader is not null) header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
                                 var localEnvelope = new Proto.MessageEnvelope(message, sender, header);
                                 if (_logger.IsEnabled(LogLevel.Trace))
-                                    _logger.LogTrace("[{systemAddress}] Received user message {MessageType} {message} for {target} from {sender}",
+                                    _logger.LogTrace("[{SystemAddress}] Received user message {MessageType} {message} for {target} from {sender}",
                                         System.Address, message.GetType().Name, message, target, sender
                                     );
                                 System.Root.Send(target, localEnvelope);
