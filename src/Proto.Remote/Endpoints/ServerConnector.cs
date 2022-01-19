@@ -215,6 +215,13 @@ namespace Proto.Remote
                 }
                 catch (Exception e)
                 {
+                    if (actorSystemId is not null && _system.Remote().BlockList.IsBlocked(actorSystemId))
+                    {
+                        _logger.LogDebug("[{SystemAddress}] dropped connection to blocked member {ActorSystemId}/{Address}", _system.Address, actorSystemId, _address);
+                        var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
+                        _system.EventStream.Publish(terminated);
+                        break;
+                    }
                     if (ShouldStop(rs))
                     {
                         _logger.LogError(e,"[{SystemAddress}] Stopping connection to {Address} after retries expired because of {Reason}", _system.Address, _address, e.GetType().Name);
