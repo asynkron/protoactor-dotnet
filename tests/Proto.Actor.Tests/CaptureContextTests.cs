@@ -12,6 +12,7 @@ using Xunit;
 namespace Proto.Tests
 {
     public record Unstash();
+    public record UnstashResponse(object unstash);
 
     public record UnstashResult(object Message, PID Sender);
     
@@ -32,9 +33,9 @@ namespace Proto.Tests
         //capture everything, except for Unstash message
         public async Task CapturingBehavior(IContext context)
         {
-            if (context.Message is Unstash)
+            if (context.Message is Unstash unStash)
             {
-                await ProcessStash();
+                await ProcessStash(context,unStash);
                 return;
             }
 
@@ -45,13 +46,15 @@ namespace Proto.Tests
             }
         }
 
-        private async Task ProcessStash()
+        private async Task ProcessStash(IContext context, Unstash message)
         {
             _behavior.Become(RunningBehavior);
             foreach (var c in _stash)
             {
                 await c.Receive();
             }
+
+            context.Respond(new UnstashResponse(context.Message!));
         }
         
 
@@ -82,6 +85,33 @@ namespace Proto.Tests
                 Context.Request(pid, $"message{i}", PID.FromAddress("someaddress", $"somesender{i}"));
             }
             Context.Send(pid, new Unstash());
+            await Context.PoisonAsync(pid);
+            
+            for (int i = 0; i < 10; i++)
+            {
+                var next = results.Dequeue();
+                next.Message.Should().Be($"message{i}");
+                next.Sender.Id.Should().Be($"somesender{i}");
+            }
+        }
+        
+        [Fact]
+        public async Task can_continue_after_processing_capture()
+        {
+            var results = new Queue<UnstashResult>();
+
+            var props = Props.FromProducer(() => new CaptureContextActor(results));
+            var pid = Context.Spawn(props);
+
+            for (int i = 0; i < 10; i++)
+            {
+                Context.Request(pid, $"message{i}", PID.FromAddress("someaddress", $"somesender{i}"));
+            }
+
+            var unstash = new Unstash();
+            var response = await Context.RequestAsync<UnstashResponse>(pid, unstash, TimeSpan.FromSeconds(1));
+            response.Should().NotBeNull();
+            Assert.Same(response.unstash, unstash);
             await Context.PoisonAsync(pid);
             
             for (int i = 0; i < 10; i++)
