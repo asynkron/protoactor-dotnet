@@ -157,7 +157,7 @@ namespace Proto.Remote
                             }
                             catch (OperationCanceledException)
                             {
-                                _logger.LogDebug("[{SystemAddress}] Writer cancelled for {address}", _system.Address, _address);
+                                _logger.LogDebug("[{SystemAddress}] Writer cancelled for {Address}", _system.Address, _address);
                             }
                         }
                     });
@@ -172,32 +172,32 @@ namespace Proto.Remote
                                 {
                                     case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
                                         {
-                                            _logger.LogDebug("[{SystemAddress}] Received disconnection request from {address}", _system.Address, _address);
+                                            _logger.LogDebug("[{SystemAddress}] Received disconnection request from {Address}", _system.Address, _address);
                                             var terminated = new EndpointTerminatedEvent(false, _address, actorSystemId);
                                             _system.EventStream.Publish(terminated);
                                             break;
                                         }
                                     default:
                                         if (_connectorType == Type.ServerSide)
-                                            _logger.LogWarning("[{SystemAddress}] Received {message} from {_address}", _system.Address, currentMessage, _address);
+                                            _logger.LogWarning("[{SystemAddress}] Received {Message} from {_address}", _system.Address, currentMessage, _address);
                                         else
                                             _remoteMessageHandler.HandleRemoteMessage(currentMessage);
                                         break;
                                 }
                             }
-                            _logger.LogDebug("[{SystemAddress}] Reader finished for {address}", _system.Address, _address);
+                            _logger.LogDebug("[{SystemAddress}] Reader finished for {Address}", _system.Address, _address);
                         }
                         catch (OperationCanceledException)
                         {
-                            _logger.LogDebug("[{SystemAddress}] Reader cancelled for {address}", _system.Address, _address);
+                            _logger.LogDebug("[{SystemAddress}] Reader cancelled for {Address}", _system.Address, _address);
                         }
                         catch (RpcException e) when (e.StatusCode == StatusCode.Cancelled)
                         {
-                            _logger.LogWarning("[{SystemAddress}] Reader cancelled for {address}", _system.Address, _address);
+                            _logger.LogWarning("[{SystemAddress}] Reader cancelled for {Address}", _system.Address, _address);
                         }
                         catch (Exception e)
                         {
-                            _logger.LogWarning("[{SystemAddress}] Error in reader for {address} {Reason}", _system.Address, _address, e.GetType().Name);
+                            _logger.LogWarning("[{SystemAddress}] Error in reader for {Address} {Reason}", _system.Address, _address, e.GetType().Name);
                             cancellationTokenSource.Cancel();
                             throw;
                         }
@@ -215,6 +215,13 @@ namespace Proto.Remote
                 }
                 catch (Exception e)
                 {
+                    if (actorSystemId is not null && _system.Remote().BlockList.IsBlocked(actorSystemId))
+                    {
+                        _logger.LogDebug("[{SystemAddress}] dropped connection to blocked member {ActorSystemId}/{Address}", _system.Address, actorSystemId, _address);
+                        var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
+                        _system.EventStream.Publish(terminated);
+                        break;
+                    }
                     if (ShouldStop(rs))
                     {
                         _logger.LogError(e,"[{SystemAddress}] Stopping connection to {Address} after retries expired because of {Reason}", _system.Address, _address, e.GetType().Name);
