@@ -90,5 +90,11 @@ namespace Proto
         /// <param name="target">the Task to await</param>
         /// <param name="action">the continuation to call once the task is completed</param>
         void ReenterAfter(Task target, Action action);
+
+        /// <summary>
+        /// Captures the current MessageOrEnvelope for the ActorContext
+        /// </summary>
+        /// <returns>The Captured Context</returns>
+        CapturedContext Capture();
     }
 }

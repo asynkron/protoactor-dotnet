@@ -72,6 +72,8 @@ namespace Proto
         public virtual void ReenterAfter(Task target, Action action) =>
             _context.ReenterAfter(target, action);
 
+        public CapturedContext Capture() => _context.Capture();
+
         public void Stop(PID pid) => _context.Stop(pid);
 
         public Task StopAsync(PID pid) => _context.StopAsync(pid);

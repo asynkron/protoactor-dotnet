@@ -3,7 +3,11 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Stashing
+using System.Threading.Tasks;
+
+namespace Proto
 {
-    public record StashedMessage();
+    public record CapturedContext(MessageEnvelope MessageEnvelope, IContext Context){
+        public Task Receive() => Context.Receive(MessageEnvelope);
+    }
 }

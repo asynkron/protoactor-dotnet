@@ -65,8 +65,7 @@ namespace Proto.TestKit
 
             if (_messageQueue.TryTake(out var o, time))
             {
-                throw new TestKitException($"Waited {time.Seconds} seconds and received a message of type {o.GetType()}"
-                );
+                throw new TestKitException($"Waited {time.Seconds} seconds and received a message of type {o.GetType()}");
             }
         }
 

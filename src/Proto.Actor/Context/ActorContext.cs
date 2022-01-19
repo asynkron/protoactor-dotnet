@@ -639,5 +639,7 @@ namespace Proto.Context
 
             SendUserMessage(Self, Proto.ReceiveTimeout.Instance);
         }
+
+        public CapturedContext Capture() => new CapturedContext(MessageEnvelope.Wrap(_messageOrEnvelope!), this);
     }
 }
