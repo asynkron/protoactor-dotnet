@@ -341,13 +341,11 @@ namespace Proto.Context
                 System.DeadLetter.SendUserMessage(Self, msg);
                 return default;
             }
+            var influenceReceiveTimeout = MessageEnvelope.UnwrapMessage(msg) is not INotInfluenceReceiveTimeout;
 
-            if (ReceiveTimeout > TimeSpan.Zero)
+            if (influenceReceiveTimeout && ReceiveTimeout > TimeSpan.Zero)
             {
-                var notInfluenceTimeout = msg is INotInfluenceReceiveTimeout;
-                var influenceTimeout = !notInfluenceTimeout;
-
-                if (influenceTimeout) _extras?.StopReceiveTimeoutTimer();
+                _extras?.StopReceiveTimeoutTimer();
             }
 
             Task t;
@@ -370,17 +368,24 @@ namespace Proto.Context
 
             if (t.IsCompletedSuccessfully)
             {
-                _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
+                if (influenceReceiveTimeout)
+                {
+                    _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
+                }
                 return default;
             }
 
-            return Await(this, t);
+            return Await(this, t, influenceReceiveTimeout);
 
             //static, dont create closure
-            static async ValueTask Await(ActorContext self, Task t)
+            static async ValueTask Await(ActorContext self, Task t, bool resetReceiveTimeout)
             {
                 await t;
-                self._extras?.ResetReceiveTimeoutTimer(self.ReceiveTimeout);
+
+                if (resetReceiveTimeout)
+                {
+                    self._extras?.ResetReceiveTimeoutTimer(self.ReceiveTimeout);
+                }
             }
         }
 

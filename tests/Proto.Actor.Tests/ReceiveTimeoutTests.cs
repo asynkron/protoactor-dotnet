@@ -38,6 +38,43 @@ namespace Proto.Tests
             Assert.True(timeoutReceived);
         }
 
+        record IgnoreMe : INotInfluenceReceiveTimeout;
+        
+        [Fact]
+        public async Task receive_timeout_received_within_expected_time_when_sending_ignored_messages()
+        {
+            var timeoutReceived = false;
+            var receiveTimeoutWaiter = GetExpiringTaskCompletionSource(1000);
+
+            var props = Props.FromFunc(context => {
+                    switch (context.Message)
+                    {
+                        case Started _:
+                            context.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
+                            break;
+                        case ReceiveTimeout _:
+                            timeoutReceived = true;
+                            receiveTimeoutWaiter.SetResult(0);
+                            break;
+                    }
+
+                    return Task.CompletedTask;
+                }
+            );
+            var pid = Context.Spawn(props);
+            _ = Task.Run(async () => {
+                    while (!receiveTimeoutWaiter.Task.IsCompleted)
+                    {
+                        Context.Send(pid, new IgnoreMe());
+                        await Task.Delay(100);
+                    }
+                }
+            );
+
+            await GetSafeAwaitableTask(receiveTimeoutWaiter);
+            Assert.True(timeoutReceived);
+        }
+
         [Fact]
         public async Task receive_timeout_not_received_within_expected_time()
         {
@@ -47,11 +84,11 @@ namespace Proto.Tests
             var props = Props.FromFunc(context => {
                     switch (context.Message)
                     {
-                        case Started _:
+                        case Started:
                             context.SetReceiveTimeout(TimeSpan.FromMilliseconds(1500));
                             actorStartedWaiter.SetResult(0);
                             break;
-                        case ReceiveTimeout _:
+                        case ReceiveTimeout:
                             timeoutReceived = true;
                             break;
                     }
