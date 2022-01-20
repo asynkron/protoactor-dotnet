@@ -8,6 +8,11 @@ using System.Threading.Tasks;
 namespace Proto
 {
     public record CapturedContext(MessageEnvelope MessageEnvelope, IContext Context){
-        public Task Receive() => Context.Receive(MessageEnvelope);
+        public async Task Receive()
+        {
+            var current = Context.Capture();
+            await Context.Receive(MessageEnvelope);
+            Context.Apply(current);
+        }
     }
 }

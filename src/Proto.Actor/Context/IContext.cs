@@ -96,5 +96,11 @@ namespace Proto
         /// </summary>
         /// <returns>The Captured Context</returns>
         CapturedContext Capture();
+
+        /// <summary>
+        /// Apply a captured context
+        /// </summary>
+        /// <param name="capturedContext">The context to apply</param>
+        void Apply(CapturedContext capturedContext);
     }
 }

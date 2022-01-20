@@ -74,6 +74,8 @@ namespace Proto
 
         public CapturedContext Capture() => _context.Capture();
 
+        public void Apply(CapturedContext capturedContext) => _context.Apply(capturedContext);
+
         public void Stop(PID pid) => _context.Stop(pid);
 
         public Task StopAsync(PID pid) => _context.StopAsync(pid);
