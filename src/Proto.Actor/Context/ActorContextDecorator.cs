@@ -14,7 +14,7 @@ namespace Proto
 {
     public abstract class ActorContextDecorator : IContext
     {
-        protected readonly IContext _context;
+        private readonly IContext _context;
 
         protected ActorContextDecorator(IContext context) =>
             _context = context;

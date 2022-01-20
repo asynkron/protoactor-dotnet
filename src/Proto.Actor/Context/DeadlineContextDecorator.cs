@@ -26,11 +26,13 @@ namespace Proto.Context
     {
         private readonly TimeSpan _deadline;
         private readonly ILogger _logger;
+        private readonly IContext _context;
 
         public DeadlineContextDecorator([NotNull] IContext context, TimeSpan deadline,ILogger logger) : base(context)
         {
             _deadline = deadline;
             _logger = logger;
+            _context = context;
         }
 
         public override async Task Receive(MessageEnvelope envelope)
