@@ -99,6 +99,7 @@ namespace Proto
 
         /// <summary>
         /// Apply a captured context
+        /// This overwrites the context current state with the state from the captured context
         /// </summary>
         /// <param name="capturedContext">The context to apply</param>
         void Apply(CapturedContext capturedContext);
