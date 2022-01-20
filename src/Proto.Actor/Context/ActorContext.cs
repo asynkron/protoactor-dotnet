@@ -341,10 +341,11 @@ namespace Proto.Context
                 System.DeadLetter.SendUserMessage(Self, msg);
                 return default;
             }
-            var influenceReceiveTimeout = MessageEnvelope.UnwrapMessage(msg) is not INotInfluenceReceiveTimeout;
+            var influenceReceiveTimeout = false;
 
-            if (influenceReceiveTimeout && ReceiveTimeout > TimeSpan.Zero)
+            if (ReceiveTimeout > TimeSpan.Zero && MessageEnvelope.UnwrapMessage(msg) is not INotInfluenceReceiveTimeout)
             {
+                influenceReceiveTimeout = true;
                 _extras?.StopReceiveTimeoutTimer();
             }
 
