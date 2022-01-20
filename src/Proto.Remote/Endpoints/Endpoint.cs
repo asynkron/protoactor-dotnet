@@ -83,6 +83,7 @@ namespace Proto.Remote
         private int DropMessagesInBatch(RemoteMessage remoteMessage)
         {
             var droppedMessageCount = 0;
+
             switch (remoteMessage.MessageTypeCase)
             {
                 case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
@@ -185,12 +186,12 @@ namespace Proto.Remote
                     }
 
                     foreach (var t in pidSet.Select(
-                            pid => new Terminated
-                            {
-                                Who = pid,
-                                Why = TerminatedReason.AddressTerminated
-                            }
-                        ))
+                                 pid => new Terminated
+                                 {
+                                     Who = pid,
+                                     Why = TerminatedReason.AddressTerminated
+                                 }
+                             ))
                     {
                         //send the address Terminated event to the Watcher
                         watcherPid.SendSystemMessage(System, t);
@@ -286,9 +287,9 @@ namespace Proto.Remote
                 try
                 {
                     var messages = new List<RemoteDeliver>(RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize);
+
                     while (await _remoteDelivers.Reader.WaitToReadAsync(CancellationToken).ConfigureAwait(false))
                     {
-
                         while (_remoteDelivers.Reader.TryRead(out var remoteDeliver))
                         {
                             messages.Add(remoteDeliver);
@@ -325,19 +326,20 @@ namespace Proto.Remote
                 var target = rd.Target;
 
                 var targetKey = (target.Address, target.Id);
+
                 if (!targets.TryGetValue(targetKey, out var targetId))
                 {
                     targetId = targets[targetKey] = targets.Count;
                     targetList.Add(target);
                 }
 
-
                 var senderId = 0;
 
                 var sender = rd.Sender;
+
                 if (sender != null)
                 {
-                    var senderKey = (sender.Address,sender.Id);
+                    var senderKey = (sender.Address, sender.Id);
 
                     if (!senders.TryGetValue(senderKey, out senderId))
                     {
