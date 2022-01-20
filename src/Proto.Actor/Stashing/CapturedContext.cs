@@ -12,7 +12,9 @@ namespace Proto
         {
             var current = Context.Capture();
             await Context.Receive(MessageEnvelope);
-            Context.Apply(current);
+            current.Apply();
         }
+
+        public void Apply() => Context.Apply(this);
     }
 }
