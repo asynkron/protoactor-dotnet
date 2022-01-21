@@ -422,8 +422,6 @@ namespace Proto.Context
 
         private Task HandlePoisonPill()
         {
-            if (Sender != null) HandleWatch(new Watch(Sender));
-
             Stop(Self);
             return Task.CompletedTask;
         }
