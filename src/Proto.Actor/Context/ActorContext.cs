@@ -201,28 +201,6 @@ namespace Proto.Context
             return DefaultReceive();
         }
 
-        public void Stop(PID pid)
-        {
-            if (System.Metrics.Enabled)
-                ActorMetrics.ActorStoppedCount.Add(1, _metricTags);
-
-            pid.Stop(System);
-        }
-
-        public Task StopAsync(PID pid)
-        {
-            var future = System.Future.Get();
-
-            pid.SendSystemMessage(System, new Watch(future.Pid));
-            Stop(pid);
-            // ReSharper disable once MethodSupportsCancellation
-            return future.Task;
-        }
-
-        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
-
-        public Task PoisonAsync(PID pid) => RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
-
         public IFuture GetFuture() => System.Future.Get();
 
         public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
@@ -444,8 +422,6 @@ namespace Proto.Context
 
         private Task HandlePoisonPill()
         {
-            if (Sender != null) HandleWatch(new Watch(Sender));
-
             Stop(Self);
             return Task.CompletedTask;
         }
@@ -649,5 +625,33 @@ namespace Proto.Context
         public CapturedContext Capture() => new(MessageEnvelope.Wrap(_messageOrEnvelope!), this);
 
         public void Apply(CapturedContext capturedContext) => _messageOrEnvelope = capturedContext.MessageEnvelope;
+        
+        public void Stop(PID pid)
+        {
+            if (System.Metrics.Enabled)
+                ActorMetrics.ActorStoppedCount.Add(1, _metricTags);
+
+            pid.Stop(System);
+        }
+
+        public Task StopAsync(PID pid)
+        {
+            var future = System.Future.Get();
+
+            pid.SendSystemMessage(System, new Watch(future.Pid));
+            Stop(pid);
+            return future.Task;
+        }
+        
+        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
+
+        public Task PoisonAsync(PID pid)
+        {
+            var future = System.Future.Get();
+
+            pid.SendSystemMessage(System, new Watch(future.Pid));
+            Poison(pid);
+            return future.Task;
+        }
     }
 }

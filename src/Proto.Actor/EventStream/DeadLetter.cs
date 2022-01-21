@@ -56,10 +56,7 @@ namespace Proto
             System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender, header));
             if (sender is null) return;
 
-            System.Root.Send(sender, msg is PoisonPill
-                ? new Terminated {Who = pid, Why = TerminatedReason.NotFound}
-                : new DeadLetterResponse {Target = pid}
-            );
+            System.Root.Send(sender,new DeadLetterResponse {Target = pid});
         }
 
         protected internal override void SendSystemMessage(PID pid, object message)
@@ -67,6 +64,12 @@ namespace Proto
             if (System.Metrics.Enabled)
                 ActorMetrics.DeadletterCount.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", message.GetType().Name));
 
+            //trying to watch a dead pid returns terminated, NotFound
+            if (message is Watch watch)
+            {
+                System.Root.Send(watch.Watcher, new Terminated {Who = pid, Why = TerminatedReason.NotFound});
+            }
+            
             System.EventStream.Publish(new DeadLetterEvent(pid, message, null, null));
         }
     }
