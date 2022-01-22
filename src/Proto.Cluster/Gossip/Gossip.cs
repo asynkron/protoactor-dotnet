@@ -117,7 +117,8 @@ namespace Proto.Cluster.Gossip
             CheckConsensus(key);
         }
 
-        public void GossipState(Action<Member, InstanceLogger?> gossipToMember)
+        //TODO: this does not need to use a callback, it can return a list of MemberStates
+        public void GossipState(Action<Member, InstanceLogger?, MemberStateDelta> gossipToMember)
         {
             var logger = _logger?.BeginMethodScope();
 
@@ -128,12 +129,26 @@ namespace Proto.Cluster.Gossip
                 GossipStateManagement.EnsureMemberStateExists(_state, member.Id);
             }
 
-            var fanOutMembers = PickRandomFanOutMembers(_otherMembers, _gossipFanout);
+            var randomMembers = PickRandomFanOutMembers(_otherMembers);
 
-            foreach (var member in fanOutMembers)
+            var fanoutCount = 0;
+            foreach (var member in randomMembers)
             {
+                var memberState = GetMemberStateDelta(member.Id);
+                if (!memberState.HasState)
+                {
+                    continue;
+                }
+                
                 //fire and forget, we handle results in ReenterAfter
-                gossipToMember(member, logger);
+                gossipToMember(member, logger, memberState);
+                
+                fanoutCount++;
+
+                if (fanoutCount == _gossipFanout)
+                {
+                    break;
+                }
             }
         }
 
@@ -150,12 +165,12 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        public bool TryGetMemberState(string memberId, out ImmutableDictionary<string, long> pendingOffsets, out GossipState memberState)
+        public MemberStateDelta GetMemberStateDelta(string memberId)
         {
-            (pendingOffsets, memberState) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, memberId);
+            var memberState = GossipStateManagement.GetMemberStateDelta(_state, _committedOffsets, memberId);
 
             //if we dont have any state to send, don't send it...
-            return pendingOffsets != _committedOffsets;
+            return memberState;
         }
 
         public void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets)
@@ -174,12 +189,10 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        private List<Member> PickRandomFanOutMembers(Member[] members, int fanOutBy) =>
+        private IEnumerable<Member> PickRandomFanOutMembers(Member[] members) =>
             members
                 .Select(m => (member: m, index: _rnd.Next()))
                 .OrderBy(m => m.index)
-                .Take(fanOutBy)
-                .Select(m => m.member)
-                .ToList();
+                .Select(m => m.member);
     }
 }

@@ -24,9 +24,9 @@ namespace Proto.Cluster.Gossip
 
         ImmutableList<GossipUpdate> MergeState(GossipState remoteState);
 
-        void GossipState(Action<Member, InstanceLogger?> gossipToMember);
+        void GossipState(Action<Member, InstanceLogger?, MemberStateDelta> gossipToMember);
 
-        bool TryGetMemberState(string memberId, out ImmutableDictionary<string, long> pendingOffsets, out GossipState memberState);
+        MemberStateDelta GetMemberStateDelta(string memberId);
 
         void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets);
     }

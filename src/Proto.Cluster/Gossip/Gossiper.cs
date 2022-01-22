@@ -44,15 +44,11 @@ namespace Proto.Cluster.Gossip
 
         private static readonly ILogger Logger = Log.CreateLogger<Gossiper>();
         private PID _pid = null!;
-        private readonly string _myId;
-        private readonly bool _debugLogging;
 
         public Gossiper(Cluster cluster)
         {
             _cluster = cluster;
             _context = _cluster.System.Root;
-            _myId = cluster.System.Id;
-            _debugLogging = cluster.System.Config.DeveloperSupervisionLogging;
         }
 
         public async Task<ImmutableDictionary<string, T>> GetState<T>(string key) where T : IMessage, new()

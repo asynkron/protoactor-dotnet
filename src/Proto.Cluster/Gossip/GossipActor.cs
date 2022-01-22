@@ -82,7 +82,8 @@ namespace Proto.Cluster.Gossip
                 return Task.CompletedTask;
             }
 
-            if (!_internal.TryGetMemberState(gossipRequest.MemberId, out var pendingOffsets, out var stateForMember))
+            var memberState = _internal.GetMemberStateDelta(gossipRequest.MemberId);
+            if (!memberState.HasState)
             {
                 Logger.LogWarning("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
 
@@ -93,8 +94,8 @@ namespace Proto.Cluster.Gossip
 
             context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
                 {
-                    State = stateForMember
-                }, task => ReenterAfterResponseAck(context, task, pendingOffsets), context.CancellationToken
+                    State = memberState.State
+                }, task => ReenterAfterResponseAck(context, task, memberState.PendingOffsets), context.CancellationToken
             );
 
             return Task.CompletedTask;
@@ -120,15 +121,14 @@ namespace Proto.Cluster.Gossip
 
         private Task OnSendGossipState(IContext context)
         {
-            _internal.GossipState((m, l) => SendGossipForMember(context, m, l));
+            _internal.GossipState((member, logger, memberState) => SendGossipForMember(context, member, logger, memberState));
             context.Respond(new SendGossipStateResponse());
             return Task.CompletedTask;
         }
 
-        private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger)
+        private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger, MemberStateDelta memberStateDelta)
         {
             var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
-            if (!_internal.TryGetMemberState(member.Id , out var pendingOffsets, out var stateForMember)) return;
 
             logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
             Logger.LogDebug("Sending GossipRequest to {MemberId}", member.Id);
@@ -139,9 +139,9 @@ namespace Proto.Cluster.Gossip
             context.RequestReenter<MessageEnvelope>(pid, new GossipRequest
                 {
                     MemberId = context.System.Id,
-                    State = stateForMember
+                    State = memberStateDelta.State
                 },
-                task => GossipReenterAfterSend(context, task, pendingOffsets),
+                task => GossipReenterAfterSend(context, task, memberStateDelta.PendingOffsets),
                 CancellationTokens.WithTimeout(_gossipRequestTimeout)
             );
         }
