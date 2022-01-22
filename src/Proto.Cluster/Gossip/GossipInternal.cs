@@ -60,7 +60,7 @@ namespace Proto.Cluster.Gossip
             _consensusChecks.Remove(id);
         }
 
-        public ImmutableDictionary<string, Any> GetGossipStateKey(GetGossipStateRequest getState)
+        public ImmutableDictionary<string, Any> GetState(GetGossipStateRequest getState)
         {
             var entries = ImmutableDictionary<string, Any>.Empty;
             var key = getState.Key;
@@ -74,13 +74,6 @@ namespace Proto.Cluster.Gossip
             }
 
             return entries;
-        }
-
-        public Member? TryGetSenderMember(string senderAddress)
-        {
-            if (senderAddress is null) return default;
-
-            return Array.Find(_otherMembers, member => member.Address.Equals(senderAddress, StringComparison.OrdinalIgnoreCase));
         }
 
         public IReadOnlyCollection<GossipUpdate> MergeState(GossipState remoteState)
@@ -158,9 +151,9 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        public bool TryGetMemberState(Member member, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember)
+        public bool TryGetMemberState(string memberId, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember)
         {
-            (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
+            (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, memberId);
 
             //if we dont have any state to send, don't send it...
             return pendingOffsets != _committedOffsets;

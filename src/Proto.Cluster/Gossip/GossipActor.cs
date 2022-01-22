@@ -60,7 +60,7 @@ namespace Proto.Cluster.Gossip
 
         private Task OnGetGossipStateKey(IContext context, GetGossipStateRequest getState)
         {
-            var state = _internal.GetGossipStateKey(getState);
+            var state = _internal.GetState(getState);
             var res = new GetGossipStateResponse(state);
             context.Respond(res);
             return Task.CompletedTask;
@@ -72,10 +72,20 @@ namespace Proto.Cluster.Gossip
             logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
             MergeState(context, gossipRequest.State);
-            var senderMember = _internal.TryGetSenderMember(context.Sender!.Address);
 
-            if (senderMember is null || !TryGetStateForMember(senderMember, out var pendingOffsets, out var stateForMember))
+            if (!context.Cluster().MemberList.TryGetMember(gossipRequest.MemberId, out var senderMember))
             {
+                Logger.LogWarning("Got gossip request from unknown member {MemberId}", gossipRequest.MemberId);
+
+                // Nothing to send, do not provide sender or state payload
+                context.Respond(new GossipResponse());
+                return Task.CompletedTask;
+            }
+
+            if (!_internal.TryGetMemberState(gossipRequest.MemberId, out var pendingOffsets, out var stateForMember))
+            {
+                Logger.LogWarning("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
+
                 // Nothing to send, do not provide sender or state payload
                 context.Respond(new GossipResponse());
                 return Task.CompletedTask;
@@ -118,7 +128,7 @@ namespace Proto.Cluster.Gossip
         private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger)
         {
             var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
-            if (!TryGetStateForMember(member, out var pendingOffsets, out var stateForMember)) return;
+            if (!_internal.TryGetMemberState(member.Id , out var pendingOffsets, out var stateForMember)) return;
 
             logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
             Logger.LogDebug("Sending GossipRequest to {MemberId}", member.Id);
@@ -134,9 +144,6 @@ namespace Proto.Cluster.Gossip
 
             context.ReenterAfter(t, task => GossipReenterAfterSend(context, task, pendingOffsets));
         }
-
-        private bool TryGetStateForMember(Member member, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember) =>
-            _internal.TryGetMemberState(member, out pendingOffsets, out stateForMember);
 
         private async Task GossipReenterAfterSend(IContext context, Task<MessageEnvelope> task, ImmutableDictionary<string, long> pendingOffsets)
         {

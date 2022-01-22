@@ -17,19 +17,15 @@ namespace Proto.Cluster.Gossip
     {
         Task UpdateClusterTopology(ClusterTopology clusterTopology);
 
-        ImmutableDictionary<string, Any> GetGossipStateKey(GetGossipStateRequest getState);
-
-        //TODO: should this not be part of MemberList instead? it's not related to the gossip logic
-        //also, why don't GossipRequest have MemberId in request?
-        Member? TryGetSenderMember(string senderAddress);
+        ImmutableDictionary<string, Any> GetState(GetGossipStateRequest getState);
+        
+        void SetState(string key, IMessage value);
 
         IReadOnlyCollection<GossipUpdate> MergeState(GossipState remoteState);
 
-        void SetState(string key, IMessage value);
-
         void SendState(Action<Member, InstanceLogger?> sendGossipForMember);
 
-        bool TryGetMemberState(Member member, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember);
+        bool TryGetMemberState(string memberId, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember);
 
         void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets);
 
