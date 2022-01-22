@@ -138,6 +138,7 @@ namespace Proto.Cluster.Gossip
             // This will return a GossipResponse, but since we need could need to get the sender, we do not unpack it from the MessageEnvelope
             var t = context.RequestAsync<MessageEnvelope>(pid, new GossipRequest
                 {
+                    MemberId = context.System.Id,
                     State = stateForMember,
                 }, CancellationTokens.WithTimeout(_gossipRequestTimeout)
             );
