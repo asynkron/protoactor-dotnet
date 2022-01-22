@@ -32,9 +32,9 @@ namespace Proto.Cluster.Gossip
 
     public record SendGossipStateResponse;
 
-    internal record AddConsensusCheck(ConsensusCheck Check);
+    public record AddConsensusCheck(ConsensusCheck Check);
 
-    internal record RemoveConsensusCheck(string Id);
+    public record RemoveConsensusCheck(string Id);
 
     public class Gossiper
     {

@@ -12,10 +12,9 @@ namespace Proto.Cluster.Gossip
 {
     
     
-    internal record ConsensusCheck(string Id, Action<GossipState, ImmutableHashSet<string>> Check, string[] AffectedKeys);
-
+    public record ConsensusCheck(string Id, Action<GossipState, ImmutableHashSet<string>> Check, string[] AffectedKeys);
     
-    internal class ConsensusChecks
+    public class ConsensusChecks
     {
         private readonly Dictionary<string, ConsensusCheck> _consensusChecks = new();
         private readonly Dictionary<string, HashSet<string>> _affectedChecksByStateKey = new();

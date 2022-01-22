@@ -15,9 +15,10 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    public class GossipFoo
+    public class GossipInternal
+        : IGossipInternal
     {
-        private static readonly ILogger Logger = Log.CreateLogger<GossipFoo>();
+        private static readonly ILogger Logger = Log.CreateLogger<GossipInternal>();
         private long _localSequenceNo;
         private GossipState _state = new();
         private readonly Random _rnd = new();
@@ -30,7 +31,7 @@ namespace Proto.Cluster.Gossip
         private readonly InstanceLogger? _logger;
         private readonly int _gossipFanout;
 
-        public GossipFoo(string myId, Func<ImmutableHashSet<string>> getBlockedMembers, InstanceLogger? logger, int gossipFanout)
+        public GossipInternal(string myId, Func<ImmutableHashSet<string>> getBlockedMembers, InstanceLogger? logger, int gossipFanout)
         {
             _myId = myId;
             _getBlockedMembers = getBlockedMembers;
@@ -38,7 +39,7 @@ namespace Proto.Cluster.Gossip
             _gossipFanout = gossipFanout;
         }
 
-        public Task OnClusterTopology(ClusterTopology clusterTopology)
+        public Task UpdateClusterTopology(ClusterTopology clusterTopology)
         {
             _otherMembers = clusterTopology.Members.Where(m => m.Id != _myId).ToArray();
             _activeMemberIds = clusterTopology.Members.Select(m => m.Id).ToImmutableHashSet();
@@ -47,22 +48,20 @@ namespace Proto.Cluster.Gossip
             return Task.CompletedTask;
         }
 
-        internal Task OnAddConsensusCheck(AddConsensusCheck msg)
+        public void AddConsensusCheck(ConsensusCheck check)
         {
-            _consensusChecks.Add(msg.Check);
+            _consensusChecks.Add(check);
 
             // Check when adding, if we are already consistent
-            msg.Check.Check(_state, _activeMemberIds);
-            return Task.CompletedTask;
+            check.Check(_state, _activeMemberIds);
         }
 
-        internal Task OnRemoveConsensusCheck(RemoveConsensusCheck request)
+        public void RemoveConsensusCheck(string id)
         {
-            _consensusChecks.Remove(request.Id);
-            return Task.CompletedTask;
+            _consensusChecks.Remove(id);
         }
 
-        public GetGossipStateResponse OnGetGossipStateKey(GetGossipStateRequest getState)
+        public ImmutableDictionary<string, Any> GetGossipStateKey(GetGossipStateRequest getState)
         {
             var entries = ImmutableDictionary<string, Any>.Empty;
             var key = getState.Key;
@@ -75,7 +74,7 @@ namespace Proto.Cluster.Gossip
                 }
             }
 
-            return new GetGossipStateResponse(entries);
+            return entries;
         }
 
         public Member? TryGetSenderMember(string senderAddress)
@@ -85,11 +84,11 @@ namespace Proto.Cluster.Gossip
             return Array.Find(_otherMembers, member => member.Address.Equals(senderAddress, StringComparison.OrdinalIgnoreCase));
         }
 
-        public IReadOnlyCollection<GossipUpdate> ReceiveState(GossipState remoteState)
+        public IReadOnlyCollection<GossipUpdate> MergeState(GossipState remoteState)
         {
             var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState, out var updatedKeys);
 
-            if (updates.Count <= 0) return updates;
+            if (updates.Count == 0) return updates;
 
             _state = newState;
             CheckConsensus(updatedKeys);
@@ -112,12 +111,10 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        public Task<SetGossipStateResponse> OnSetGossipStateKey(SetGossipStateKey setStateKey)
+        public void SetState(string key, IMessage message)
         {
             var logger = _logger?.BeginMethodScope();
-
-            var (key, message) = setStateKey;
-            SetState(key, message);
+            _localSequenceNo = GossipStateManagement.SetKey(_state, key, message, _myId, _localSequenceNo);
             logger?.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
             Logger.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
 
@@ -126,15 +123,10 @@ namespace Proto.Cluster.Gossip
                 logger?.LogCritical("State corrupt");
             }
 
-            CheckConsensus(setStateKey.Key);
-
-            return Task.FromResult(new SetGossipStateResponse());
+            CheckConsensus(key);
         }
 
-        private long SetState(string key, IMessage message)
-            => _localSequenceNo = GossipStateManagement.SetKey(_state, key, message, _myId, _localSequenceNo);
-
-        public Task<SendGossipStateResponse> OnSendGossipState(Action<Member, InstanceLogger?> sendGossipForMember)
+        public void SendState(Action<Member, InstanceLogger?> sendGossipForMember)
         {
             var logger = _logger?.BeginMethodScope();
 
@@ -152,8 +144,6 @@ namespace Proto.Cluster.Gossip
                 //fire and forget, we handle results in ReenterAfter
                 sendGossipForMember(member, logger);
             }
-
-            return Task.FromResult(new SendGossipStateResponse());
         }
 
         private void PurgeBannedMembers()
@@ -169,7 +159,7 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        public bool TryGetStateForMember(Member member, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember)
+        public bool TryGetMemberState(Member member, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember)
         {
             (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
 

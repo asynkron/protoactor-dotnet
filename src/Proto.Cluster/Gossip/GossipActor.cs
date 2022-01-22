@@ -15,7 +15,7 @@ namespace Proto.Cluster.Gossip
     {
         private static readonly ILogger Logger = Log.CreateLogger<GossipActor>();
         private readonly TimeSpan _gossipRequestTimeout;
-        private readonly GossipFoo _foo;
+        private readonly IGossipInternal _internal;
 
         // lookup from state key -> consensus checks
 
@@ -28,7 +28,7 @@ namespace Proto.Cluster.Gossip
         )
         {
             _gossipRequestTimeout = gossipRequestTimeout;
-            _foo = new GossipFoo(myId, getBlockedMembers, instanceLogger, gossipFanout);
+            _internal = new GossipInternal(myId, getBlockedMembers, instanceLogger, gossipFanout);
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
@@ -44,17 +44,24 @@ namespace Proto.Cluster.Gossip
         };
 
         private Task OnClusterTopology(ClusterTopology clusterTopology) =>
-            _foo.OnClusterTopology(clusterTopology);
+            _internal.UpdateClusterTopology(clusterTopology);
 
-        private Task OnAddConsensusCheck(AddConsensusCheck msg) =>
-            _foo.OnAddConsensusCheck(msg);
+        private Task OnAddConsensusCheck(AddConsensusCheck msg)
+        {
+             _internal.AddConsensusCheck(msg.Check);
+             return Task.CompletedTask;
+        }
 
-        private Task OnRemoveConsensusCheck(RemoveConsensusCheck request) =>
-            _foo.OnRemoveConsensusCheck(request);
+        private Task OnRemoveConsensusCheck(RemoveConsensusCheck request)
+        {
+            _internal.RemoveConsensusCheck(request.Id);
+            return Task.CompletedTask;
+        }
 
         private Task OnGetGossipStateKey(IContext context, GetGossipStateRequest getState)
         {
-            var res = _foo.OnGetGossipStateKey(getState);
+            var state = _internal.GetGossipStateKey(getState);
+            var res = new GetGossipStateResponse(state);
             context.Respond(res);
             return Task.CompletedTask;
         }
@@ -64,8 +71,8 @@ namespace Proto.Cluster.Gossip
             var logger = context.Logger()?.BeginScope<GossipActor>();
             logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
-            ReceiveState(context, gossipRequest.State);
-            var senderMember = _foo.TryGetSenderMember(context.Sender!.Address);
+            MergeState(context, gossipRequest.State);
+            var senderMember = _internal.TryGetSenderMember(context.Sender!.Address);
 
             if (senderMember is null || !TryGetStateForMember(senderMember, out var pendingOffsets, out var stateForMember))
             {
@@ -83,9 +90,9 @@ namespace Proto.Cluster.Gossip
             return Task.CompletedTask;
         }
 
-        private void ReceiveState(IContext context, GossipState remoteState)
+        private void MergeState(IContext context, GossipState remoteState)
         {
-            var updates = _foo.ReceiveState(remoteState);
+            var updates = _internal.MergeState(remoteState);
 
             foreach (var update in updates)
             {
@@ -93,16 +100,19 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        private async Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
+        private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
         {
-            var res= await _foo.OnSetGossipStateKey(setStateKey);
-            context.Respond(res);
+            var (key, message) = setStateKey;
+            _internal.SetState(key, message);
+            context.Respond(new SetGossipStateResponse());
+            return Task.CompletedTask;
         }
 
-        private async Task OnSendGossipState(IContext context)
+        private Task OnSendGossipState(IContext context)
         {
-            var res = await _foo.OnSendGossipState((m, l) => SendGossipForMember(context, m, l));
-            context.Respond(res);
+            _internal.SendState((m, l) => SendGossipForMember(context, m, l));
+            context.Respond(new SendGossipStateResponse());
+            return Task.CompletedTask;
         }
 
         private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger)
@@ -126,7 +136,7 @@ namespace Proto.Cluster.Gossip
         }
 
         private bool TryGetStateForMember(Member member, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember) =>
-            _foo.TryGetStateForMember(member, out pendingOffsets, out stateForMember);
+            _internal.TryGetMemberState(member, out pendingOffsets, out stateForMember);
 
         private async Task GossipReenterAfterSend(IContext context, Task<MessageEnvelope> task, ImmutableDictionary<string, long> pendingOffsets)
         {
@@ -139,11 +149,11 @@ namespace Proto.Cluster.Gossip
 
                 if (envelope.Message is GossipResponse response)
                 {
-                    _foo.CommitPendingOffsets(pendingOffsets);
+                    _internal.CommitPendingOffsets(pendingOffsets);
 
                     if (response.State is not null)
                     {
-                        ReceiveState(context, response.State!);
+                        MergeState(context, response.State!);
 
                         if (envelope.Sender is not null)
                         {
@@ -178,7 +188,7 @@ namespace Proto.Cluster.Gossip
             try
             {
                 await task;
-                _foo.CommitPendingOffsets(pendingOffsets);
+                _internal.CommitPendingOffsets(pendingOffsets);
             }
             catch (DeadLetterException)
             {
