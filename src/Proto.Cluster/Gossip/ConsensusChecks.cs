@@ -12,7 +12,7 @@ namespace Proto.Cluster.Gossip
 {
     
     
-    internal record ConsensusCheck(string Id, Action<GossipState, ImmutableHashSet<string>, IContext> Check, string[] AffectedKeys);
+    internal record ConsensusCheck(string Id, Action<GossipState, ImmutableHashSet<string>> Check, string[] AffectedKeys);
 
     
     internal class ConsensusChecks
