@@ -9,14 +9,6 @@ namespace Proto.Cluster.Gossip
 {
     public static class Extensions
     {
-        public static ClusterTopology? GetTopology(this GossipState self, string memberId)
-        {
-            if (!self.Members.TryGetValue(memberId, out var memberState))
-                return null;
-
-            return memberState.GetTopology();
-        }
-
         public static ClusterTopology? GetTopology(this GossipState.Types.GossipMemberState memberState)
         {
             if (!memberState.Values.TryGetValue("topology", out var entry))

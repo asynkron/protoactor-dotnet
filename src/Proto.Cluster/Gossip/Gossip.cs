@@ -15,7 +15,7 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    public class Gossip
+    internal class Gossip
         : IGossip
     {
         private static readonly ILogger Logger = Log.CreateLogger<Gossip>();

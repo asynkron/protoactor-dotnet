@@ -13,12 +13,12 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    public interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
+    internal interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
     {
 
     }
 
-    public interface IGossipCore
+    internal interface IGossipCore
     {
         Task UpdateClusterTopology(ClusterTopology clusterTopology);
 
@@ -31,14 +31,14 @@ namespace Proto.Cluster.Gossip
         void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets);
     }
 
-    public interface IGossipConsensusChecker
+    internal interface IGossipConsensusChecker
     {
         void AddConsensusCheck(ConsensusCheck check);
         
         void RemoveConsensusCheck(string id);
     }
 
-    public interface IGossipStateStore
+    internal interface IGossipStateStore
     {
         ImmutableDictionary<string, Any> GetState(string key);
         
