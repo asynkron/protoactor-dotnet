@@ -15,10 +15,10 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    public class GossipInternal
-        : IGossipInternal
+    public class Gossip
+        : IGossip
     {
-        private static readonly ILogger Logger = Log.CreateLogger<GossipInternal>();
+        private static readonly ILogger Logger = Log.CreateLogger<Gossip>();
         private long _localSequenceNo;
         private GossipState _state = new();
         private readonly Random _rnd = new();
@@ -31,7 +31,7 @@ namespace Proto.Cluster.Gossip
         private readonly InstanceLogger? _logger;
         private readonly int _gossipFanout;
 
-        public GossipInternal(string myId, Func<ImmutableHashSet<string>> getBlockedMembers, InstanceLogger? logger, int gossipFanout)
+        public Gossip(string myId, Func<ImmutableHashSet<string>> getBlockedMembers, InstanceLogger? logger, int gossipFanout)
         {
             _myId = myId;
             _getBlockedMembers = getBlockedMembers;
@@ -60,10 +60,9 @@ namespace Proto.Cluster.Gossip
             _consensusChecks.Remove(id);
         }
 
-        public ImmutableDictionary<string, Any> GetState(GetGossipStateRequest getState)
+        public ImmutableDictionary<string, Any> GetState(string key)
         {
             var entries = ImmutableDictionary<string, Any>.Empty;
-            var key = getState.Key;
 
             foreach (var (memberId, memberState) in _state.Members)
             {
@@ -118,7 +117,7 @@ namespace Proto.Cluster.Gossip
             CheckConsensus(key);
         }
 
-        public void SendState(Action<Member, InstanceLogger?> sendGossipForMember)
+        public void GossipState(Action<Member, InstanceLogger?> gossipToMember)
         {
             var logger = _logger?.BeginMethodScope();
 
@@ -134,7 +133,7 @@ namespace Proto.Cluster.Gossip
             foreach (var member in fanOutMembers)
             {
                 //fire and forget, we handle results in ReenterAfter
-                sendGossipForMember(member, logger);
+                gossipToMember(member, logger);
             }
         }
 
@@ -151,9 +150,9 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        public bool TryGetMemberState(string memberId, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember)
+        public bool TryGetMemberState(string memberId, out ImmutableDictionary<string, long> pendingOffsets, out GossipState memberState)
         {
-            (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, memberId);
+            (pendingOffsets, memberState) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, memberId);
 
             //if we dont have any state to send, don't send it...
             return pendingOffsets != _committedOffsets;

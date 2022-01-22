@@ -15,7 +15,7 @@ namespace Proto.Cluster.Gossip
     {
         private static readonly ILogger Logger = Log.CreateLogger<GossipActor>();
         private readonly TimeSpan _gossipRequestTimeout;
-        private readonly IGossipInternal _internal;
+        private readonly IGossip _internal;
 
         // lookup from state key -> consensus checks
 
@@ -28,7 +28,7 @@ namespace Proto.Cluster.Gossip
         )
         {
             _gossipRequestTimeout = gossipRequestTimeout;
-            _internal = new GossipInternal(myId, getBlockedMembers, instanceLogger, gossipFanout);
+            _internal = new Gossip(myId, getBlockedMembers, instanceLogger, gossipFanout);
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
@@ -60,7 +60,7 @@ namespace Proto.Cluster.Gossip
 
         private Task OnGetGossipStateKey(IContext context, GetGossipStateRequest getState)
         {
-            var state = _internal.GetState(getState);
+            var state = _internal.GetState(getState.Key);
             var res = new GetGossipStateResponse(state);
             context.Respond(res);
             return Task.CompletedTask;
@@ -73,7 +73,7 @@ namespace Proto.Cluster.Gossip
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
             MergeState(context, gossipRequest.State);
 
-            if (!context.Cluster().MemberList.TryGetMember(gossipRequest.MemberId, out var senderMember))
+            if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
             {
                 Logger.LogWarning("Got gossip request from unknown member {MemberId}", gossipRequest.MemberId);
 
@@ -120,7 +120,7 @@ namespace Proto.Cluster.Gossip
 
         private Task OnSendGossipState(IContext context)
         {
-            _internal.SendState((m, l) => SendGossipForMember(context, m, l));
+            _internal.GossipState((m, l) => SendGossipForMember(context, m, l));
             context.Respond(new SendGossipStateResponse());
             return Task.CompletedTask;
         }
@@ -136,14 +136,14 @@ namespace Proto.Cluster.Gossip
             //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
 
             // This will return a GossipResponse, but since we need could need to get the sender, we do not unpack it from the MessageEnvelope
-            var t = context.RequestAsync<MessageEnvelope>(pid, new GossipRequest
+            context.RequestReenter<MessageEnvelope>(pid, new GossipRequest
                 {
                     MemberId = context.System.Id,
-                    State = stateForMember,
-                }, CancellationTokens.WithTimeout(_gossipRequestTimeout)
+                    State = stateForMember
+                },
+                task => GossipReenterAfterSend(context, task, pendingOffsets),
+                CancellationTokens.WithTimeout(_gossipRequestTimeout)
             );
-
-            context.ReenterAfter(t, task => GossipReenterAfterSend(context, task, pendingOffsets));
         }
 
         private async Task GossipReenterAfterSend(IContext context, Task<MessageEnvelope> task, ImmutableDictionary<string, long> pendingOffsets)

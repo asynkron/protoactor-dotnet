@@ -13,24 +13,35 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    public interface IGossipInternal
+    public interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
+    {
+
+    }
+
+    public interface IGossipCore
     {
         Task UpdateClusterTopology(ClusterTopology clusterTopology);
 
-        ImmutableDictionary<string, Any> GetState(GetGossipStateRequest getState);
-        
-        void SetState(string key, IMessage value);
-
         IReadOnlyCollection<GossipUpdate> MergeState(GossipState remoteState);
 
-        void SendState(Action<Member, InstanceLogger?> sendGossipForMember);
+        void GossipState(Action<Member, InstanceLogger?> gossipToMember);
 
-        bool TryGetMemberState(string memberId, out ImmutableDictionary<string, long> pendingOffsets, out GossipState stateForMember);
+        bool TryGetMemberState(string memberId, out ImmutableDictionary<string, long> pendingOffsets, out GossipState memberState);
 
         void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets);
+    }
 
+    public interface IGossipConsensusChecker
+    {
         void AddConsensusCheck(ConsensusCheck check);
         
         void RemoveConsensusCheck(string id);
+    }
+
+    public interface IGossipStateStore
+    {
+        ImmutableDictionary<string, Any> GetState(string key);
+        
+        void SetState(string key, IMessage value);
     }
 }
