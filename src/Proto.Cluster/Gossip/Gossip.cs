@@ -75,15 +75,15 @@ namespace Proto.Cluster.Gossip
             return entries;
         }
 
-        public IReadOnlyCollection<GossipUpdate> MergeState(GossipState remoteState)
+        public ImmutableList<GossipUpdate> MergeState(GossipState remoteState)
         {
             var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState, out var updatedKeys);
 
-            if (updates.Count == 0) return updates;
+            if (updates.Count == 0) return ImmutableList<GossipUpdate>.Empty;
 
             _state = newState;
             CheckConsensus(updatedKeys);
-            return updates;
+            return updates.ToImmutableList();
         }
 
         private void CheckConsensus(string updatedKey)

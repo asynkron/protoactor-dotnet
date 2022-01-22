@@ -22,7 +22,7 @@ namespace Proto.Cluster.Gossip
     {
         Task UpdateClusterTopology(ClusterTopology clusterTopology);
 
-        IReadOnlyCollection<GossipUpdate> MergeState(GossipState remoteState);
+        ImmutableList<GossipUpdate> MergeState(GossipState remoteState);
 
         void GossipState(Action<Member, InstanceLogger?> gossipToMember);
 
