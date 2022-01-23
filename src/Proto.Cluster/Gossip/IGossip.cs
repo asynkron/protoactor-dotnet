@@ -22,13 +22,20 @@ namespace Proto.Cluster.Gossip
     {
         Task UpdateClusterTopology(ClusterTopology clusterTopology);
 
-        ImmutableList<GossipUpdate> MergeState(GossipState remoteState);
+        /// <summary>
+        /// Called when a member receives a gossip
+        /// </summary>
+        /// <param name="remoteState"></param>
+        /// <returns></returns>
+        ImmutableList<GossipUpdate> ReceiveState(GossipState remoteState);
 
-        void GossipState(Action<Member, InstanceLogger?, MemberStateDelta> gossipToMember);
+        /// <summary>
+        /// Sends the gossip to a random set of receiving members
+        /// </summary>
+        /// <param name="gossipToMember"></param>
+        void SendState(Action<MemberStateDelta, Member, InstanceLogger?> gossipToMember);
 
         MemberStateDelta GetMemberStateDelta(string memberId);
-
-        void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets);
     }
 
     internal interface IGossipConsensusChecker

@@ -13,7 +13,7 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    public record MemberStateDelta(string TargetMemberId, bool HasState, ImmutableDictionary<string, long> PendingOffsets,  GossipState State);
+    public record MemberStateDelta(string TargetMemberId, bool HasState,  GossipState State, Action CommitOffsets);
     
     internal static class GossipStateManagement
     {
@@ -106,7 +106,8 @@ namespace Proto.Cluster.Gossip
         public static MemberStateDelta GetMemberStateDelta(
             GossipState state,
             ImmutableDictionary<string, long> offsets,
-            string targetMemberId
+            string targetMemberId,
+            Action<ImmutableDictionary<string, long>> commitOffsets
         )
         {
             var newState = new GossipState();
@@ -151,8 +152,7 @@ namespace Proto.Cluster.Gossip
             }
 
             //make sure to clone to make it a separate copy, avoid race conditions on mutate
-            var s = newState.Clone();
-            return new MemberStateDelta(targetMemberId, offsets != pendingOffsets , pendingOffsets, s);
+            return new MemberStateDelta(targetMemberId, offsets != pendingOffsets, newState.Clone(), () => commitOffsets(pendingOffsets));
         }
 
         public static (bool Consensus, T value) CheckConsensus<T>(

@@ -28,7 +28,7 @@ namespace Proto.Cluster.Gossip
         )
         {
             _gossipRequestTimeout = gossipRequestTimeout;
-            _internal = new Gossip(myId, getBlockedMembers, instanceLogger, gossipFanout);
+            _internal = new Gossip(myId, gossipFanout, getBlockedMembers, instanceLogger);
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
@@ -95,7 +95,7 @@ namespace Proto.Cluster.Gossip
             context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
                 {
                     State = memberState.State
-                }, task => ReenterAfterResponseAck(context, task, memberState.PendingOffsets), context.CancellationToken
+                }, task => ReenterAfterResponseAck(context, task, memberState), context.CancellationToken
             );
 
             return Task.CompletedTask;
@@ -103,7 +103,7 @@ namespace Proto.Cluster.Gossip
 
         private void MergeState(IContext context, GossipState remoteState)
         {
-            var updates = _internal.MergeState(remoteState);
+            var updates = _internal.ReceiveState(remoteState);
 
             foreach (var update in updates)
             {
@@ -121,7 +121,7 @@ namespace Proto.Cluster.Gossip
 
         private Task OnSendGossipState(IContext context)
         {
-            _internal.GossipState((member, logger, memberState) => SendGossipForMember(context, member, logger, memberState));
+            _internal.SendState((memberState, member, logger) => SendGossipForMember(context, member, logger, memberState));
             context.Respond(new SendGossipStateResponse());
             return Task.CompletedTask;
         }
@@ -141,12 +141,12 @@ namespace Proto.Cluster.Gossip
                     MemberId = context.System.Id,
                     State = memberStateDelta.State
                 },
-                task => GossipReenterAfterSend(context, task, memberStateDelta.PendingOffsets),
+                task => GossipReenterAfterSend(context, task, memberStateDelta),
                 CancellationTokens.WithTimeout(_gossipRequestTimeout)
             );
         }
 
-        private async Task GossipReenterAfterSend(IContext context, Task<MessageEnvelope> task, ImmutableDictionary<string, long> pendingOffsets)
+        private async Task GossipReenterAfterSend(IContext context, Task<MessageEnvelope> task, MemberStateDelta delta)
         {
             var logger = context.Logger();
 
@@ -157,7 +157,7 @@ namespace Proto.Cluster.Gossip
 
                 if (envelope.Message is GossipResponse response)
                 {
-                    _internal.CommitPendingOffsets(pendingOffsets);
+                    delta.CommitOffsets();
 
                     if (response.State is not null)
                     {
@@ -189,14 +189,14 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        private async Task ReenterAfterResponseAck(IContext context, Task<GossipResponseAck> task, ImmutableDictionary<string, long> pendingOffsets)
+        private async Task ReenterAfterResponseAck(IContext context, Task<GossipResponseAck> task, MemberStateDelta delta)
         {
             var logger = context.Logger();
 
             try
             {
                 await task;
-                _internal.CommitPendingOffsets(pendingOffsets);
+                delta.CommitOffsets();
             }
             catch (DeadLetterException)
             {

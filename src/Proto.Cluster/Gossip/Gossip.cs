@@ -31,7 +31,7 @@ namespace Proto.Cluster.Gossip
         private readonly InstanceLogger? _logger;
         private readonly int _gossipFanout;
 
-        public Gossip(string myId, Func<ImmutableHashSet<string>> getBlockedMembers, InstanceLogger? logger, int gossipFanout)
+        public Gossip(string myId, int gossipFanout, Func<ImmutableHashSet<string>> getBlockedMembers, InstanceLogger? logger)
         {
             _myId = myId;
             _getBlockedMembers = getBlockedMembers;
@@ -75,7 +75,7 @@ namespace Proto.Cluster.Gossip
             return entries;
         }
 
-        public ImmutableList<GossipUpdate> MergeState(GossipState remoteState)
+        public ImmutableList<GossipUpdate> ReceiveState(GossipState remoteState)
         {
             var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState, out var updatedKeys);
 
@@ -118,7 +118,7 @@ namespace Proto.Cluster.Gossip
         }
 
         //TODO: this does not need to use a callback, it can return a list of MemberStates
-        public void GossipState(Action<Member, InstanceLogger?, MemberStateDelta> gossipToMember)
+        public void SendState(Action<MemberStateDelta, Member, InstanceLogger?> gossipToMember)
         {
             var logger = _logger?.BeginMethodScope();
 
@@ -141,7 +141,7 @@ namespace Proto.Cluster.Gossip
                 }
                 
                 //fire and forget, we handle results in ReenterAfter
-                gossipToMember(member, logger, memberState);
+                gossipToMember(memberState, member, logger);
                 
                 fanoutCount++;
 
@@ -167,7 +167,7 @@ namespace Proto.Cluster.Gossip
 
         public MemberStateDelta GetMemberStateDelta(string memberId)
         {
-            var memberState = GossipStateManagement.GetMemberStateDelta(_state, _committedOffsets, memberId);
+            var memberState = GossipStateManagement.GetMemberStateDelta(_state, _committedOffsets, memberId, CommitPendingOffsets );
 
             //if we dont have any state to send, don't send it...
             return memberState;
