@@ -6,17 +6,28 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Google.Protobuf;
 using Proto.Cluster.Gossip;
 using Proto.Logging;
 using Xunit;
 using Proto.Cluster;
+using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests
 {
     public class GossipCoreTests
     {
+        private readonly ITestOutputHelper _output;
+
+        public GossipCoreTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+        
         [Fact]
-        public void Foo()
+        public async Task Foo()
         {
             const int memberCount = 10;
             const int fanout = 3;
@@ -53,15 +64,60 @@ namespace Proto.Cluster.Tests
             }
 
             var first = environment.Values.First().Gossip;
-
-            //TODO: how do I create a consensus check and check for topology consensus now?
-            //w/o using Gossiper to run via actor infra that is...
-
-            foreach (var m in environment.Values)
-            {
-                m.Gossip.SendState(SendState);
-            }
+           
             
+            var handle = RegisterConsensusCheck<ClusterTopology, ulong>("topology", topology => topology.TopologyHash, first);
+
+            var ct = CancellationTokens.FromSeconds(10);
+            _ = Task.Run(async () => {
+                    while (!ct.IsCancellationRequested)
+                    {
+                        //emulate gossip requests
+                        await Task.Delay(100);
+                        foreach (var m in environment.Values)
+                        {
+                            m.Gossip.SendState(SendState);
+                        }
+                    }
+                }
+            ,ct);
+
+            var x = await handle.TryGetConsensus(ct);
+      
+            _output.WriteLine("Consensus topology hash " + x.value);
+            x.consensus.Should().BeTrue();
+
+        }
+        
+        private IConsensusHandle<TV> RegisterConsensusCheck<T, TV>(string key, Func<T, TV?> getValue, IGossipConsensusChecker checker) where T : IMessage, new()
+            => RegisterConsensusCheck(Gossiper.ConsensusCheckBuilder<TV>.Create(key, getValue),checker);
+        
+        private IConsensusHandle<T> RegisterConsensusCheck<T>(Gossiper.ConsensusCheckBuilder<T> builder, IGossipConsensusChecker checker)
+            => RegisterConsensusCheck(builder.Check, builder.AffectedKeys, checker);
+        
+        private IConsensusHandle<T> RegisterConsensusCheck<T>(ConsensusCheck<T> hasConsensus, string[] affectedKeys, IGossipConsensusChecker checker)
+        {
+            var id = Guid.NewGuid().ToString("N");
+            var handle = new GossipConsensusHandle<T>(() => checker.RemoveConsensusCheck(id));
+
+            var check = new ConsensusCheck(id, CheckConsensus, affectedKeys);
+            checker.AddConsensusCheck(check);
+
+            return handle;
+
+            void CheckConsensus(GossipState state, IImmutableSet<string> members)
+            {
+                var (consensus, value) = hasConsensus(state, members);
+
+                if (consensus)
+                {
+                    handle.TrySetConsensus(value!);
+                }
+                else
+                {
+                    handle.TryResetConsensus();
+                }
+            }
         }
     }
 }
