@@ -13,8 +13,6 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    public record MemberStateDelta(string TargetMemberId, bool HasState,  GossipState State, Action CommitOffsets);
-    
     internal static class GossipStateManagement
     {
         private static readonly ILogger Logger = Log.CreateLogger("GossipStateManagement");

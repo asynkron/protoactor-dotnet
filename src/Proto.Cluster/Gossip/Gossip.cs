@@ -55,10 +55,8 @@ namespace Proto.Cluster.Gossip
             check.Check(_state, _activeMemberIds);
         }
 
-        public void RemoveConsensusCheck(string id)
-        {
+        public void RemoveConsensusCheck(string id) => 
             _consensusChecks.Remove(id);
-        }
 
         public ImmutableDictionary<string, Any> GetState(string key)
         {
@@ -173,7 +171,7 @@ namespace Proto.Cluster.Gossip
             return memberState;
         }
 
-        public void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets)
+        private void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets)
         {
             foreach (var (key, sequenceNumber) in pendingOffsets)
             {
