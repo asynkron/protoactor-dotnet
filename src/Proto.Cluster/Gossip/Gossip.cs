@@ -116,7 +116,7 @@ namespace Proto.Cluster.Gossip
         }
 
         //TODO: this does not need to use a callback, it can return a list of MemberStates
-        public void SendState(Action<MemberStateDelta, Member, InstanceLogger?> gossipToMember)
+        public void SendState(SendStateAction stateActionToMember)
         {
             var logger = _logger?.BeginMethodScope();
 
@@ -139,7 +139,7 @@ namespace Proto.Cluster.Gossip
                 }
                 
                 //fire and forget, we handle results in ReenterAfter
-                gossipToMember(memberState, member, logger);
+                stateActionToMember(memberState, member, logger);
                 
                 fanoutCount++;
 

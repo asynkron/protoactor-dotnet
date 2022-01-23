@@ -13,6 +13,13 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
+    /// <summary>
+    /// memberStateDelta is the delta state
+    /// member is the target member
+    /// logger is the instance logger
+    /// </summary>
+    public delegate void SendStateAction(MemberStateDelta memberStateDelta, Member member, InstanceLogger? logger);
+    
     internal interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
     {
 
@@ -32,8 +39,8 @@ namespace Proto.Cluster.Gossip
         /// <summary>
         /// Sends the gossip to a random set of receiving members
         /// </summary>
-        /// <param name="gossipToMember"></param>
-        void SendState(Action<MemberStateDelta, Member, InstanceLogger?> gossipToMember);
+        /// <param name="stateActionToMember"></param>
+        void SendState(SendStateAction stateActionToMember);
 
         MemberStateDelta GetMemberStateDelta(string memberId);
     }
