@@ -13,7 +13,6 @@ using Google.Protobuf;
 using Proto.Cluster.Gossip;
 using Proto.Logging;
 using Xunit;
-using Proto.Cluster;
 using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests
@@ -28,9 +27,9 @@ namespace Proto.Cluster.Tests
         }
         
         [Fact]
-        public async Task Foo()
+        public async Task Large_cluster_should_get_topology_consensus()
         {
-            const int memberCount = 200;
+            const int memberCount = 100;
             const int fanout = 3;
 
             var members =
@@ -46,8 +45,10 @@ namespace Proto.Cluster.Tests
                         m => (Gossip: new Gossip.Gossip(m.Id, fanout, () => ImmutableHashSet<string>.Empty, null),
                                 Member: m));
 
+            var sends = 0l;
             void SendState(MemberStateDelta memberStateDelta, Member targetMember, InstanceLogger _)
             {
+                Interlocked.Increment(ref sends);
                 var target = environment[targetMember.Id];
                 target.Gossip.ReceiveState(memberStateDelta.State);
                 memberStateDelta.CommitOffsets();
@@ -61,20 +62,19 @@ namespace Proto.Cluster.Tests
 
             foreach (var m in environment.Values)
             {
-                m.Gossip.UpdateClusterTopology(topology.Clone());
+                await m.Gossip.UpdateClusterTopology(topology.Clone());
             }
 
             var first = environment.Values.First().Gossip;
-           
             
-            var handle = RegisterConsensusCheck<ClusterTopology, ulong>("topology", topology => topology.TopologyHash, first);
+            var handle = RegisterConsensusCheck<ClusterTopology, ulong>("topology", tp => tp.TopologyHash, first);
 
-            var gossipCount = 0l;
+            var gossipGenerations = 0l;
             var ct = CancellationTokens.FromSeconds(10);
             _ = Task.Run(async () => {
                     while (!ct.IsCancellationRequested)
                     {
-                        Interlocked.Increment(ref gossipCount);
+                        Interlocked.Increment(ref gossipGenerations);
                         //emulate gossip requests
                         await Task.Delay(100);
                         foreach (var m in environment.Values)
@@ -86,12 +86,11 @@ namespace Proto.Cluster.Tests
             ,ct);
 
             var x = await handle.TryGetConsensus(ct);
-            var count = Interlocked.Read(ref gossipCount);
-      
-            _output.WriteLine("Consensus topology hash " + x.value);
-            _output.WriteLine("Gossip count " + count);
-            x.consensus.Should().BeTrue();
 
+            _output.WriteLine("Consensus topology hash " + x.value);
+            _output.WriteLine("Gossip generations " + Interlocked.Read(ref gossipGenerations));
+            _output.WriteLine("Send count " + Interlocked.Read(ref sends));
+            x.consensus.Should().BeTrue();
         }
         
         private IConsensusHandle<TV> RegisterConsensusCheck<T, TV>(string key, Func<T, TV?> getValue, IGossipConsensusChecker checker) where T : IMessage, new()
