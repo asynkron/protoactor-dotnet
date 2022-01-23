@@ -16,7 +16,7 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    public delegate (bool, T) ConsensusCheck<T>(GossipState state, IImmutableSet<string> memberIds, IContext context);
+    public delegate (bool, T) ConsensusCheck<T>(GossipState state, IImmutableSet<string> memberIds);
 
     public record GossipUpdate(string MemberId, string Key, Any Value, long SequenceNumber);
 
@@ -32,9 +32,9 @@ namespace Proto.Cluster.Gossip
 
     public record SendGossipStateResponse;
 
-    internal record AddConsensusCheck(ConsensusCheck Check);
+    public record AddConsensusCheck(ConsensusCheck Check);
 
-    internal record RemoveConsensusCheck(string Id);
+    public record RemoveConsensusCheck(string Id);
 
     public class Gossiper
     {
@@ -98,7 +98,7 @@ namespace Proto.Cluster.Gossip
 
         internal Task StartAsync()
         {
-            var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout));
+            var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id, () => _cluster.Remote.BlockList.BlockedMembers, _cluster.System.Logger(),_cluster.Config.GossipFanout));
             _pid = _context.SpawnNamed(props, GossipActorName);
             _cluster.System.EventStream.Subscribe<ClusterTopology>(topology => _context.Send(_pid, topology));
             Logger.LogInformation("Started Cluster Gossip");
@@ -145,7 +145,7 @@ namespace Proto.Cluster.Gossip
             public ConsensusCheckBuilder(string key, Func<Any, T?> getValue)
             {
                 _getConsensusValues = ImmutableList.Create<(string, Func<Any, T?>)>((key, getValue));
-                _check = new Lazy<ConsensusCheck<T>>(this.Build, LazyThreadSafetyMode.PublicationOnly);
+                _check = new Lazy<ConsensusCheck<T>>(Build, LazyThreadSafetyMode.PublicationOnly);
             }
 
             public static ConsensusCheckBuilder<T> Create<TE>(string key, Func<TE, T?> getValue) where TE : IMessage, new()
@@ -174,7 +174,7 @@ namespace Proto.Cluster.Gossip
                 if (_getConsensusValues.Count == 1)
                 {
                     var mapToValue = MapToValue(_getConsensusValues.Single());
-                    return (state, ids, context) => {
+                    return (state, ids) => {
                         var memberStates = GetValidMemberStates(state, ids);
 
                         // Missing state, cannot have consensus
@@ -187,9 +187,9 @@ namespace Proto.Cluster.Gossip
                         // ReSharper disable PossibleMultipleEnumeration
                         var result = valueTuples.Select(it => it.value).HasConsensus();
 
-                        if (context.System.Config.DeveloperSupervisionLogging)
+                        if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("{SystemId}, consensus {Consensus}: {Values}", context.System.Id, result.Item1, valueTuples
+                            Logger.LogDebug("consensus {Consensus}: {Values}", result.Item1, valueTuples
                                 .GroupBy(it => (it.key, it.value), tuple => tuple.member).Select(
                                     grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
                                                 (grouping.Count() > 1 ? grouping.Count() + " nodes" : grouping.First())
@@ -203,7 +203,7 @@ namespace Proto.Cluster.Gossip
 
                 var mappers = _getConsensusValues.Select(MapToValue).ToArray();
 
-                return (state, ids, context) => {
+                return (state, ids) => {
                     var memberStates = GetValidMemberStates(state, ids);
 
                     if (memberStates.Length < ids.Count) // Not all members have state..
@@ -215,9 +215,9 @@ namespace Proto.Cluster.Gossip
                         .SelectMany(memberState => mappers.Select(mapper => mapper(memberState)));
                     var consensus = valueTuples.Select(it => it.value).HasConsensus();
 
-                    if (context.System.Config.DeveloperSupervisionLogging)
+                    if (Logger.IsEnabled(LogLevel.Debug))
                     {
-                        Logger.LogDebug("{SystemId}, consensus {Consensus}: {Values}", context.System.Id, consensus.Item1, valueTuples
+                        Logger.LogDebug("consensus {Consensus}: {Values}", consensus.Item1, valueTuples
                             .GroupBy(it => (it.key, it.value), tuple => tuple.member).Select(
                                 grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
                                             (grouping.Count() > 1 ? grouping.Count() + " nodes" : grouping.First())
@@ -252,9 +252,9 @@ namespace Proto.Cluster.Gossip
 
             return handle;
 
-            void CheckConsensus(GossipState state, IImmutableSet<string> members, IContext context)
+            void CheckConsensus(GossipState state, IImmutableSet<string> members)
             {
-                var (consensus, value) = hasConsensus(state, members, context);
+                var (consensus, value) = hasConsensus(state, members);
 
                 if (consensus)
                 {

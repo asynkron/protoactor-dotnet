@@ -101,10 +101,11 @@ namespace Proto.Cluster.Gossip
         }
 
         
-        public static (ImmutableDictionary<string, long> pendingOffsets, GossipState state) FilterGossipStateForMember(
+        public static MemberStateDelta GetMemberStateDelta(
             GossipState state,
             ImmutableDictionary<string, long> offsets,
-            string targetMemberId
+            string targetMemberId,
+            Action<ImmutableDictionary<string, long>> commitOffsets
         )
         {
             var newState = new GossipState();
@@ -149,7 +150,7 @@ namespace Proto.Cluster.Gossip
             }
 
             //make sure to clone to make it a separate copy, avoid race conditions on mutate
-            return (pendingOffsets, newState.Clone());
+            return new MemberStateDelta(targetMemberId, offsets != pendingOffsets, newState.Clone(), () => commitOffsets(pendingOffsets));
         }
 
         public static (bool Consensus, T value) CheckConsensus<T>(
@@ -228,7 +229,7 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        internal static T? GetMemberStateByKey<T>(this GossipState.Types.GossipMemberState memberState, string key) where T : IMessage, new()
+        private static T? GetMemberStateByKey<T>(this GossipState.Types.GossipMemberState memberState, string key) where T : IMessage, new()
         {
             if (!memberState.Values.TryGetValue(key, out var entry))
                 return default;

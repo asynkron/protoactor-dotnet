@@ -10,12 +10,9 @@ using System.Linq;
 
 namespace Proto.Cluster.Gossip
 {
+    public record ConsensusCheck(string Id, Action<GossipState, ImmutableHashSet<string>> Check, string[] AffectedKeys);
     
-    
-    internal record ConsensusCheck(string Id, Action<GossipState, ImmutableHashSet<string>, IContext> Check, string[] AffectedKeys);
-
-    
-    internal class ConsensusChecks
+    public class ConsensusChecks
     {
         private readonly Dictionary<string, ConsensusCheck> _consensusChecks = new();
         private readonly Dictionary<string, HashSet<string>> _affectedChecksByStateKey = new();
@@ -93,7 +90,5 @@ namespace Proto.Cluster.Gossip
                 _affectedChecksByStateKey.Remove(key);
             }
         }
-
-
     }
 }
