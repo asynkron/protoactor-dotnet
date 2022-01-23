@@ -9,6 +9,7 @@ using System.Linq;
 using Proto.Cluster.Gossip;
 using Proto.Logging;
 using Xunit;
+using Proto.Cluster;
 
 namespace Proto.Cluster.Tests
 {
@@ -23,16 +24,44 @@ namespace Proto.Cluster.Tests
             var members =
                 Enumerable
                     .Range(0, memberCount)
-                    .Select(_ => Guid.NewGuid().ToString("N"))
+                    .Select(_ => new Member() {Id = Guid.NewGuid().ToString("N")})
+                    .ToList();
+
+            var environment =
+                members
                     .ToDictionary(
-                        id => id, 
-                        id => new Gossip.Gossip(id, fanout, () => ImmutableHashSet<string>.Empty, null));
-         
-            Action<MemberStateDelta, Member, InstanceLogger> sendState = (memberStateDelta, receiver,_) => {
-                    var otherGossip = members[receiver.Id];
-                    otherGossip.ReceiveState(memberStateDelta.State);
-                    memberStateDelta.CommitOffsets();
-                };
+                        m => m.Id, 
+                        m => (Gossip: new Gossip.Gossip(m.Id, fanout, () => ImmutableHashSet<string>.Empty, null),
+                                Member: m));
+
+            void SendState(MemberStateDelta memberStateDelta, Member targetMember, InstanceLogger _)
+            {
+                var target = environment[targetMember.Id];
+                target.Gossip.ReceiveState(memberStateDelta.State);
+                memberStateDelta.CommitOffsets();
+            }
+
+            var topology = new ClusterTopology()
+            {
+                TopologyHash = Member.TopologyHash(members),
+                Members = { members }
+            };
+
+            foreach (var m in environment.Values)
+            {
+                m.Gossip.UpdateClusterTopology(topology.Clone());
+            }
+
+            var first = environment.Values.First().Gossip;
+
+            //TODO: how do I create a consensus check and check for topology consensus now?
+            //w/o using Gossiper to run via actor infra that is...
+
+            foreach (var m in environment.Values)
+            {
+                m.Gossip.SendState(SendState);
+            }
+            
         }
     }
 }
