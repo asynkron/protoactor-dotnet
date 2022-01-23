@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -66,8 +67,11 @@ namespace Proto.Cluster.Tests
             }
 
             var first = environment.Values.First().Gossip;
-            
-            var handle = RegisterConsensusCheck<ClusterTopology, ulong>("topology", tp => tp.TopologyHash, first);
+
+            var checkDefinition = Gossiper.ConsensusCheckBuilder<ulong>.Create("topology", (ClusterTopology tp) => tp.TopologyHash);
+            var id = Guid.NewGuid().ToString();
+            var (handle, check) = checkDefinition.Build(() => first.RemoveConsensusCheck(id));
+            first.AddConsensusCheck(id, check);
 
             var gossipGenerations = 0l;
             var ct = CancellationTokens.FromSeconds(10);
@@ -91,37 +95,6 @@ namespace Proto.Cluster.Tests
             _output.WriteLine("Gossip generations " + Interlocked.Read(ref gossipGenerations));
             _output.WriteLine("Send count " + Interlocked.Read(ref sends));
             x.consensus.Should().BeTrue();
-        }
-        
-        private IConsensusHandle<TV> RegisterConsensusCheck<T, TV>(string key, Func<T, TV?> getValue, IGossipConsensusChecker checker) where T : IMessage, new()
-            => RegisterConsensusCheck(Gossiper.ConsensusCheckBuilder<TV>.Create(key, getValue),checker);
-        
-        private IConsensusHandle<T> RegisterConsensusCheck<T>(Gossiper.ConsensusCheckBuilder<T> builder, IGossipConsensusChecker checker)
-            => RegisterConsensusCheck(builder.Check, builder.AffectedKeys, checker);
-        
-        private IConsensusHandle<T> RegisterConsensusCheck<T>(ConsensusCheck<T> hasConsensus, string[] affectedKeys, IGossipConsensusChecker checker)
-        {
-            var id = Guid.NewGuid().ToString("N");
-            var handle = new GossipConsensusHandle<T>(() => checker.RemoveConsensusCheck(id));
-
-            var check = new ConsensusCheck(id, CheckConsensus, affectedKeys);
-            checker.AddConsensusCheck(check);
-
-            return handle;
-
-            void CheckConsensus(GossipState state, IImmutableSet<string> members)
-            {
-                var (consensus, value) = hasConsensus(state, members);
-
-                if (consensus)
-                {
-                    handle.TrySetConsensus(value!);
-                }
-                else
-                {
-                    handle.TryResetConsensus();
-                }
-            }
         }
     }
 }

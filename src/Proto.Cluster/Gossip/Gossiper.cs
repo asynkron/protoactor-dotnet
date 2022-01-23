@@ -32,9 +32,7 @@ namespace Proto.Cluster.Gossip
 
     public record SendGossipStateResponse;
 
-    public record AddConsensusCheck(ConsensusCheck Check);
-
-    public record RemoveConsensusCheck(string Id);
+    public record AddConsensusCheck(ConsensusCheck Check, CancellationToken Token);
 
     public class Gossiper
     {
@@ -98,7 +96,10 @@ namespace Proto.Cluster.Gossip
 
         internal Task StartAsync()
         {
-            var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id, () => _cluster.Remote.BlockList.BlockedMembers, _cluster.System.Logger(),_cluster.Config.GossipFanout));
+            var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id,
+                    () => _cluster.Remote.BlockList.BlockedMembers, _cluster.System.Logger(), _cluster.Config.GossipFanout
+                )
+            );
             _pid = _context.SpawnNamed(props, GossipActorName);
             _cluster.System.EventStream.Subscribe<ClusterTopology>(topology => _context.Send(_pid, topology));
             Logger.LogInformation("Started Cluster Gossip");
@@ -127,14 +128,14 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        public class ConsensusCheckBuilder<T>
+        public class ConsensusCheckBuilder<T>: IConsensusCheckDefinition<T>
         {
             private readonly ImmutableList<(string, Func<Any, T?>)> _getConsensusValues;
 
             private readonly Lazy<ConsensusCheck<T>> _check;
             public ConsensusCheck<T> Check => _check.Value;
 
-            public string[] AffectedKeys => _getConsensusValues.Select(it => it.Item1).Distinct().ToArray();
+            public IImmutableSet<string> AffectedKeys => _getConsensusValues.Select(it => it.Item1).ToImmutableHashSet();
 
             private ConsensusCheckBuilder(ImmutableList<(string, Func<Any, T?>)> getValues)
             {
@@ -236,37 +237,19 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        public IConsensusHandle<TV> RegisterConsensusCheck<T, TV>(string key, Func<T, TV?> getValue) where T : IMessage, new()
+        public IConsensusHandle<TV> RegisterConsensusCheck<T, TV>(string key, Func<T, TV?> getValue) where T : notnull, IMessage, new()
             => RegisterConsensusCheck(ConsensusCheckBuilder<TV>.Create(key, getValue));
 
-        public IConsensusHandle<T> RegisterConsensusCheck<T>(ConsensusCheckBuilder<T> builder)
-            => RegisterConsensusCheck(builder.Check, builder.AffectedKeys);
 
-        public IConsensusHandle<T> RegisterConsensusCheck<T>(ConsensusCheck<T> hasConsensus, string[] affectedKeys)
+        public IConsensusHandle<T> RegisterConsensusCheck<T>(IConsensusCheckDefinition<T> consensusDefinition) where T : notnull
         {
-            var id = Guid.NewGuid().ToString("N");
-            var handle = new GossipConsensusHandle<T>(() => _context.Send(_pid, new RemoveConsensusCheck(id))
-            );
+            var cts = new CancellationTokenSource();
+            var (consensusHandle, check) = consensusDefinition.Build(cts.Cancel);
+            _context.Send(_pid, new AddConsensusCheck(check, cts.Token));
 
-            _context.Send(_pid, new AddConsensusCheck(new ConsensusCheck(id, CheckConsensus, affectedKeys)));
-
-            return handle;
-
-            void CheckConsensus(GossipState state, IImmutableSet<string> members)
-            {
-                var (consensus, value) = hasConsensus(state, members);
-
-                if (consensus)
-                {
-                    handle.TrySetConsensus(value!);
-                }
-                else
-                {
-                    handle.TryResetConsensus();
-                }
-            }
+            return consensusHandle;
         }
-
+        
         private async Task SendStateAsync()
         {
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
