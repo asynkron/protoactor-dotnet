@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Google.Protobuf;
@@ -29,7 +30,7 @@ namespace Proto.Cluster.Tests
         [Fact]
         public async Task Foo()
         {
-            const int memberCount = 10;
+            const int memberCount = 200;
             const int fanout = 3;
 
             var members =
@@ -68,10 +69,12 @@ namespace Proto.Cluster.Tests
             
             var handle = RegisterConsensusCheck<ClusterTopology, ulong>("topology", topology => topology.TopologyHash, first);
 
+            var gossipCount = 0l;
             var ct = CancellationTokens.FromSeconds(10);
             _ = Task.Run(async () => {
                     while (!ct.IsCancellationRequested)
                     {
+                        Interlocked.Increment(ref gossipCount);
                         //emulate gossip requests
                         await Task.Delay(100);
                         foreach (var m in environment.Values)
@@ -83,8 +86,10 @@ namespace Proto.Cluster.Tests
             ,ct);
 
             var x = await handle.TryGetConsensus(ct);
+            var count = Interlocked.Read(ref gossipCount);
       
             _output.WriteLine("Consensus topology hash " + x.value);
+            _output.WriteLine("Gossip count " + count);
             x.consensus.Should().BeTrue();
 
         }
