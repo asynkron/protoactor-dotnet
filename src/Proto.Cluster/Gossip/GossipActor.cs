@@ -71,7 +71,7 @@ namespace Proto.Cluster.Gossip
             var logger = context.Logger()?.BeginScope<GossipActor>();
             logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
-            MergeState(context, gossipRequest.State);
+            ReceiveState(context, gossipRequest.State);
 
             if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
             {
@@ -101,7 +101,7 @@ namespace Proto.Cluster.Gossip
             return Task.CompletedTask;
         }
 
-        private void MergeState(IContext context, GossipState remoteState)
+        private void ReceiveState(IContext context, GossipState remoteState)
         {
             var updates = _internal.ReceiveState(remoteState);
 
@@ -161,7 +161,7 @@ namespace Proto.Cluster.Gossip
 
                     if (response.State is not null)
                     {
-                        MergeState(context, response.State!);
+                        ReceiveState(context, response.State!);
 
                         if (envelope.Sender is not null)
                         {

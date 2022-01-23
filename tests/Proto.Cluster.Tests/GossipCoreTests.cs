@@ -28,12 +28,11 @@ namespace Proto.Cluster.Tests
                         id => id, 
                         id => new Gossip.Gossip(id, fanout, () => ImmutableHashSet<string>.Empty, null));
          
-            Action<MemberStateDelta, Member, InstanceLogger?> sendState = (memberStateDelta, receiver,_) => {
+            Action<MemberStateDelta, Member, InstanceLogger> sendState = (memberStateDelta, receiver,_) => {
                     var otherGossip = members[receiver.Id];
                     otherGossip.ReceiveState(memberStateDelta.State);
                     memberStateDelta.CommitOffsets();
-                }
-            ;
+                };
         }
     }
 }
