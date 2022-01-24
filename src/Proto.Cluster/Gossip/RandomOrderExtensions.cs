@@ -17,5 +17,19 @@ namespace Proto.Cluster.Gossip
                 .OrderBy(m => m.index)
                 .Select(m => m.item);
         
+        
+        public static  IEnumerable<T> OrderByRandom<T>(this IEnumerable<T> items, Random rnd, Func<T,bool> shouldBeFirst) =>
+            items
+                .Select(m => (item: m, index: rnd.Next()))
+                .OrderBy(m => {
+                        if (shouldBeFirst(m.item))
+                        {
+                            return -1;
+                        }
+
+                        return m.index;
+                    }
+                )
+                .Select(m => m.item);
     }
 }

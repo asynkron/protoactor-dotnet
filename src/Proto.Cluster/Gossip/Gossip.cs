@@ -173,7 +173,7 @@ namespace Proto.Cluster.Gossip
             var pendingOffsets = _committedOffsets;
 
             //for each member
-            foreach (var (memberId, memberState1) in _state.Members.OrderByRandom(_rnd))
+            foreach (var (memberId, memberState1) in _state.Members.OrderByRandom(_rnd, m => m.Key == _myId))
             {
                 //we dont need to send back state to the owner of the state
                 if (memberId == targetMemberId)

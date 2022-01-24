@@ -42,7 +42,7 @@ namespace Proto.Cluster.Tests
                 members
                     .ToDictionary(
                         m => m.Id, 
-                        m => (Gossip: new Gossip.Gossip(m.Id, fanout, 100, () => ImmutableHashSet<string>.Empty, null),
+                        m => (Gossip: new Gossip.Gossip(m.Id, fanout, memberCount, () => ImmutableHashSet<string>.Empty, null),
                                 Member: m));
 
             var sends = 0L;
@@ -75,8 +75,6 @@ namespace Proto.Cluster.Tests
                     while (!ct.IsCancellationRequested)
                     {
                         Interlocked.Increment(ref gossipGenerations);
-                        //emulate gossip requests
-                        await Task.Delay(100);
                         foreach (var m in environment.Values)
                         {
                             m.Gossip.SendState(SendState);
