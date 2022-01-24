@@ -100,59 +100,6 @@ namespace Proto.Cluster.Gossip
             return sequenceNo;
         }
 
-        
-        public static MemberStateDelta GetMemberStateDelta(
-            GossipState state,
-            ImmutableDictionary<string, long> offsets,
-            string targetMemberId,
-            Action<ImmutableDictionary<string, long>> commitOffsets
-        )
-        {
-            var newState = new GossipState();
-
-            var pendingOffsets = offsets;
-
-            //for each member
-            foreach (var (memberId, memberState) in state.Members)
-            {
-                //we dont need to send back state to the owner of the state
-                if (memberId == targetMemberId)
-                {
-                    continue;
-                }
-
-                //create an empty state
-                var newMemberState = new GossipState.Types.GossipMemberState();
-
-                var watermarkKey = $"{targetMemberId}.{memberId}";
-                //get the watermark 
-                offsets.TryGetValue(watermarkKey, out long watermark);
-                var newWatermark = watermark;
-
-                //for each value in member state
-                foreach (var (key, value) in memberState.Values)
-                {
-                    if (value.SequenceNumber <= watermark)
-                        continue;
-
-                    if (value.SequenceNumber > newWatermark)
-                        newWatermark = value.SequenceNumber;
-
-                    newMemberState.Values.Add(key, value);
-                }
-
-                //don't send memberStates that we have no new data for 
-                if (newMemberState.Values.Count > 0)
-                {
-                    newState.Members.Add(memberId, newMemberState);
-                    pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
-                }
-            }
-
-            //make sure to clone to make it a separate copy, avoid race conditions on mutate
-            return new MemberStateDelta(targetMemberId, offsets != pendingOffsets, newState.Clone(), () => commitOffsets(pendingOffsets));
-        }
-
         public static (bool Consensus, T value) CheckConsensus<T>(
             IContext ctx,
             GossipState state,
@@ -237,12 +184,5 @@ namespace Proto.Cluster.Gossip
             var topology = entry.Value.Unpack<T>();
             return topology;
         }
-
-        public static (bool Consensus, ulong TopologyHash) CheckTopologyConsensus(
-            IContext ctx,
-            GossipState state,
-            string myId,
-            ImmutableHashSet<string> members
-        ) => CheckConsensus<ClusterTopology, ulong>(ctx, state, myId, members, "topology", topology => topology.TopologyHash);
     }
 }

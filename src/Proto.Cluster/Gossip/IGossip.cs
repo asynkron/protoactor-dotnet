@@ -39,10 +39,10 @@ namespace Proto.Cluster.Gossip
         /// <summary>
         /// Sends the gossip to a random set of receiving members
         /// </summary>
-        /// <param name="stateActionToMember"></param>
-        void SendState(SendStateAction stateActionToMember);
+        /// <param name="sendStateToMember"></param>
+        void SendState(SendStateAction sendStateToMember);
 
-        MemberStateDelta GetMemberStateDelta(string memberId);
+        MemberStateDelta GetMemberStateDelta(string targetMemberId);
     }
 
     internal interface IGossipConsensusChecker

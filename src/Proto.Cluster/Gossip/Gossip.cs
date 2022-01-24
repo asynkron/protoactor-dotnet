@@ -30,13 +30,15 @@ namespace Proto.Cluster.Gossip
         private readonly Func<ImmutableHashSet<string>> _getBlockedMembers;
         private readonly InstanceLogger? _logger;
         private readonly int _gossipFanout;
+        private readonly int _gossipMaxSend;
 
-        public Gossip(string myId, int gossipFanout, Func<ImmutableHashSet<string>> getBlockedMembers, InstanceLogger? logger)
+        public Gossip(string myId, int gossipFanout, int gossipMaxSend, Func<ImmutableHashSet<string>> getBlockedMembers, InstanceLogger? logger)
         {
             _myId = myId;
             _getBlockedMembers = getBlockedMembers;
             _logger = logger;
             _gossipFanout = gossipFanout;
+            _gossipMaxSend = gossipMaxSend;
         }
 
         public Task UpdateClusterTopology(ClusterTopology clusterTopology)
@@ -116,7 +118,7 @@ namespace Proto.Cluster.Gossip
         }
 
         //TODO: this does not need to use a callback, it can return a list of MemberStates
-        public void SendState(SendStateAction stateActionToMember)
+        public void SendState(SendStateAction sendStateToMember)
         {
             var logger = _logger?.BeginMethodScope();
 
@@ -127,11 +129,13 @@ namespace Proto.Cluster.Gossip
                 GossipStateManagement.EnsureMemberStateExists(_state, member.Id);
             }
 
-            var randomMembers = PickRandomFanOutMembers(_otherMembers);
+            var randomMembers = _otherMembers.OrderByRandom(_rnd);
 
             var fanoutCount = 0;
             foreach (var member in randomMembers)
             {
+                //TODO: we can chunk up sends here
+                //instead of sending less state, we can send all of it, but in chunks
                 var memberState = GetMemberStateDelta(member.Id);
                 if (!memberState.HasState)
                 {
@@ -139,7 +143,7 @@ namespace Proto.Cluster.Gossip
                 }
                 
                 //fire and forget, we handle results in ReenterAfter
-                stateActionToMember(memberState, member, logger);
+                sendStateToMember(memberState, member, logger);
                 
                 fanoutCount++;
 
@@ -163,11 +167,58 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        public MemberStateDelta GetMemberStateDelta(string memberId)
+        public MemberStateDelta GetMemberStateDelta(string targetMemberId)
         {
-            var memberState = GossipStateManagement.GetMemberStateDelta(_state, _committedOffsets, memberId, CommitPendingOffsets );
+            var newState = new GossipState();
 
-            //if we dont have any state to send, don't send it...
+            var count = 0;
+            var pendingOffsets = _committedOffsets;
+
+            //for each member
+            var members = _state
+                .Members
+                .Where(m => m.Key != targetMemberId) //we dont need to send back state to the owner of the state
+                .OrderByRandom(_rnd, m => m.Key == _myId);
+            
+            foreach (var (memberId, memberState1) in members)
+            {
+                //create an empty state
+                var newMemberState = new GossipState.Types.GossipMemberState();
+
+                var watermarkKey = $"{targetMemberId}.{memberId}";
+                //get the watermark 
+                _committedOffsets.TryGetValue(watermarkKey, out var watermark);
+                var newWatermark = watermark;
+
+                //for each value in member state
+                foreach (var (key, value) in memberState1.Values)
+                {
+                    if (value.SequenceNumber <= watermark)
+                        continue;
+
+                    if (value.SequenceNumber > newWatermark)
+                        newWatermark = value.SequenceNumber;
+
+                    newMemberState.Values.Add(key, value);
+                }
+
+                //don't send memberStates that we have no new data for 
+                if (newMemberState.Values.Count > 0)
+                {
+                    count++;
+                    newState.Members.Add(memberId, newMemberState);
+                    pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
+                }
+
+                if (count > _gossipMaxSend)
+                {
+                    break;
+                }
+            }
+
+            //make sure to clone to make it a separate copy, avoid race conditions on mutate
+            var hasState = _committedOffsets != pendingOffsets;
+            var memberState = new MemberStateDelta(targetMemberId, hasState, newState, () => CommitPendingOffsets(pendingOffsets));
             return memberState;
         }
 
@@ -186,11 +237,5 @@ namespace Proto.Cluster.Gossip
                 }
             }
         }
-
-        private IEnumerable<Member> PickRandomFanOutMembers(Member[] members) =>
-            members
-                .Select(m => (member: m, index: _rnd.Next()))
-                .OrderBy(m => m.index)
-                .Select(m => m.member);
     }
 }
