@@ -19,7 +19,7 @@ namespace Proto.Remote.Tests
             {
                 var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
                 Remote = GetGrpcNetClientRemote(clientConfig);
-                var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost(5001));
+                var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
                 var serverConfig2 = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
                 ServerRemote1 = GetGrpcNetRemote(serverConfig);
                 ServerRemote2 = GetGrpcNetRemote(serverConfig2);
