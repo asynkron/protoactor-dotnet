@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
+using Proto.Context;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -60,6 +62,48 @@ namespace Proto.Tests
 
             var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
             Assert.Equal("response", res);
+        }
+        
+        [Fact]
+        public async Task ReenterAfterTimerCancelledToken()
+        {
+            var props = Props.FromProducer(() => new ReenterAfterCancellationActor());
+
+            var pid = Context.Spawn(props);
+
+            using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+            var request = new ReenterAfterCancellationActor.Request(cancellationTokenSource.Token);
+            
+            var res = await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request, TimeSpan.FromSeconds(5));
+            res.Should().NotBeNull();
+        }
+        
+        [Fact]
+        public async Task ReenterAfterAlreadyCancelledToken()
+        {
+            var props = Props.FromProducer(() => new ReenterAfterCancellationActor());
+
+            var pid = Context.Spawn(props);
+
+            using var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+            var request = new ReenterAfterCancellationActor.Request(cancellationTokenSource.Token);
+            
+            var res = await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request, TimeSpan.FromSeconds(5));
+            res.Should().NotBeNull();
+        }
+        
+        [Fact]
+        public void NoReenterAfterNonCancellableToken()
+        {
+            var props = Props.FromProducer(() => new ReenterAfterCancellationActor());
+
+            var pid = Context.Spawn(props);
+
+            var request = new ReenterAfterCancellationActor.Request(CancellationToken.None);
+
+            Context.Invoking(async ctx => await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request, TimeSpan.FromMilliseconds((500)))).Should()
+                .ThrowExactly<TimeoutException>();
         }
 
         [Fact]
@@ -149,5 +193,26 @@ namespace Proto.Tests
             Assert.True(correct);
             Assert.Equal(100000, counter);
         }
+
+        private class ReenterAfterCancellationActor : IActor, IDisposable
+        {
+            private CancellationTokenRegistration _registration;
+
+            public record Request(CancellationToken Token);
+            public record Response;
+
+            public Task ReceiveAsync(IContext context)
+            {
+                switch (context.Message)
+                {
+                    case Request request:
+                        _registration = context.ReenterAfterCancellation(request.Token, () => context.Respond(new Response()));
+                        break;
+                }
+                return Task.CompletedTask;
+            }
+
+            public void Dispose() => _registration.Dispose();
+        } 
     }
 }
