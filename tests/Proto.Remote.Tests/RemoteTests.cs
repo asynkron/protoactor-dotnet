@@ -14,7 +14,6 @@ using Xunit;
 
 namespace Proto.Remote.Tests
 {
-    [Collection("RemoteTests")]
     public abstract class RemoteTests
     {
         private readonly IRemoteFixture _fixture;
