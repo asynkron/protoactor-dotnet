@@ -19,10 +19,9 @@ namespace Proto.Cluster.Gossip
     /// logger is the instance logger
     /// </summary>
     public delegate void SendStateAction(MemberStateDelta memberStateDelta, Member member, InstanceLogger? logger);
-    
+
     internal interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
     {
-
     }
 
     internal interface IGossipCore
@@ -48,14 +47,16 @@ namespace Proto.Cluster.Gossip
     internal interface IGossipConsensusChecker
     {
         void AddConsensusCheck(ConsensusCheck check);
-        
+
         void RemoveConsensusCheck(string id);
     }
 
     internal interface IGossipStateStore
     {
+        GossipState GetStateSnapshot();
+
         ImmutableDictionary<string, Any> GetState(string key);
-        
+
         void SetState(string key, IMessage value);
     }
 }

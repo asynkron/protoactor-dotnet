@@ -60,6 +60,8 @@ namespace Proto.Cluster.Gossip
         public void RemoveConsensusCheck(string id) => 
             _consensusChecks.Remove(id);
 
+        public GossipState GetStateSnapshot() => _state.Clone();
+
         public ImmutableDictionary<string, Any> GetState(string key)
         {
             var entries = ImmutableDictionary<string, Any>.Empty;
