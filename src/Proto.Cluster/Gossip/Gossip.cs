@@ -173,14 +173,13 @@ namespace Proto.Cluster.Gossip
             var pendingOffsets = _committedOffsets;
 
             //for each member
-            foreach (var (memberId, memberState1) in _state.Members.OrderByRandom(_rnd, m => m.Key == _myId))
+            var members = _state
+                .Members
+                .Where(m => m.Key != targetMemberId) //we dont need to send back state to the owner of the state
+                .OrderByRandom(_rnd, m => m.Key == _myId);
+            
+            foreach (var (memberId, memberState1) in members)
             {
-                //we dont need to send back state to the owner of the state
-                if (memberId == targetMemberId)
-                {
-                    continue;
-                }
-
                 //create an empty state
                 var newMemberState = new GossipState.Types.GossipMemberState();
 
@@ -204,11 +203,10 @@ namespace Proto.Cluster.Gossip
                 //don't send memberStates that we have no new data for 
                 if (newMemberState.Values.Count > 0)
                 {
+                    count++;
                     newState.Members.Add(memberId, newMemberState);
                     pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
                 }
-
-                count++;
 
                 if (count > _gossipMaxSend)
                 {
