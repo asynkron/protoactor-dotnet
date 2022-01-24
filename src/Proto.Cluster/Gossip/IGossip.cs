@@ -42,7 +42,7 @@ namespace Proto.Cluster.Gossip
         /// <param name="stateActionToMember"></param>
         void SendState(SendStateAction stateActionToMember);
 
-        MemberStateDelta GetMemberStateDelta(string memberId);
+        MemberStateDelta GetMemberStateDelta(string targetMemberId);
     }
 
     internal interface IGossipConsensusChecker

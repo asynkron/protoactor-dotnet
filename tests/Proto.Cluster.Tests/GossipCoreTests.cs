@@ -42,10 +42,10 @@ namespace Proto.Cluster.Tests
                 members
                     .ToDictionary(
                         m => m.Id, 
-                        m => (Gossip: new Gossip.Gossip(m.Id, fanout, () => ImmutableHashSet<string>.Empty, null),
+                        m => (Gossip: new Gossip.Gossip(m.Id, fanout, 100, () => ImmutableHashSet<string>.Empty, null),
                                 Member: m));
 
-            var sends = 0l;
+            var sends = 0L;
             void SendState(MemberStateDelta memberStateDelta, Member targetMember, InstanceLogger _)
             {
                 Interlocked.Increment(ref sends);
@@ -69,7 +69,7 @@ namespace Proto.Cluster.Tests
             
             var handle = RegisterConsensusCheck<ClusterTopology, ulong>("topology", tp => tp.TopologyHash, first);
 
-            var gossipGenerations = 0l;
+            var gossipGenerations = 0L;
             var ct = CancellationTokens.FromSeconds(10);
             _ = Task.Run(async () => {
                     while (!ct.IsCancellationRequested)
