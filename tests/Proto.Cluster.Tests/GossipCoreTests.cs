@@ -71,9 +71,10 @@ namespace Proto.Cluster.Tests
 
             var gossipGenerations = 0L;
             var ct = CancellationTokens.FromSeconds(10);
-            _ = Task.Run(async () => {
+            _ = Task.Run(() => {
                     while (!ct.IsCancellationRequested)
                     {
+                        // ReSharper disable once AccessToModifiedClosure
                         Interlocked.Increment(ref gossipGenerations);
                         foreach (var m in environment.Values)
                         {
