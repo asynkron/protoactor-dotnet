@@ -36,6 +36,7 @@ namespace Proto.Cluster.Gossip
         {
             SetGossipStateKey setState      => OnSetGossipStateKey(context,setState),
             GetGossipStateRequest getState  => OnGetGossipStateKey(context, getState),
+            GetGossipStateSnapshot getSnapshot => OnGetGossipStateSnapshot(context),
             GossipRequest gossipRequest     => OnGossipRequest(context, gossipRequest),
             SendGossipStateRequest          => OnSendGossipState(context),
             AddConsensusCheck request       => OnAddConsensusCheck(request),
@@ -43,6 +44,13 @@ namespace Proto.Cluster.Gossip
             ClusterTopology clusterTopology => OnClusterTopology(clusterTopology),
             _                               => Task.CompletedTask
         };
+
+        private Task OnGetGossipStateSnapshot(IContext context)
+        {
+            var state = _internal.GetStateSnapshot();
+            context.Respond(state);
+            return Task.CompletedTask;
+        }
 
         private Task OnClusterTopology(ClusterTopology clusterTopology) =>
             _internal.UpdateClusterTopology(clusterTopology);
