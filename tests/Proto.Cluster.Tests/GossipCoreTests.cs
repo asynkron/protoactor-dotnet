@@ -43,10 +43,10 @@ namespace Proto.Cluster.Tests
                 members
                     .ToDictionary(
                         m => m.Id, 
-                        m => (Gossip: new Gossip.Gossip(m.Id, fanout, () => ImmutableHashSet<string>.Empty, null),
+                        m => (Gossip: new Gossip.Gossip(m.Id, fanout, memberCount, () => ImmutableHashSet<string>.Empty, null),
                                 Member: m));
 
-            var sends = 0l;
+            var sends = 0L;
             void SendState(MemberStateDelta memberStateDelta, Member targetMember, InstanceLogger _)
             {
                 Interlocked.Increment(ref sends);
@@ -73,14 +73,13 @@ namespace Proto.Cluster.Tests
             var (handle, check) = checkDefinition.Build(() => first.RemoveConsensusCheck(id));
             first.AddConsensusCheck(id, check);
 
-            var gossipGenerations = 0l;
+            var gossipGenerations = 0L;
             var ct = CancellationTokens.FromSeconds(10);
-            _ = Task.Run(async () => {
+            _ = Task.Run(() => {
                     while (!ct.IsCancellationRequested)
                     {
+                        // ReSharper disable once AccessToModifiedClosure
                         Interlocked.Increment(ref gossipGenerations);
-                        //emulate gossip requests
-                        await Task.Delay(100);
                         foreach (var m in environment.Values)
                         {
                             m.Gossip.SendState(SendState);

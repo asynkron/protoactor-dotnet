@@ -96,10 +96,7 @@ namespace Proto.Cluster.Gossip
 
         internal Task StartAsync()
         {
-            var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id,
-                    () => _cluster.Remote.BlockList.BlockedMembers, _cluster.System.Logger(), _cluster.Config.GossipFanout
-                )
-            );
+            var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id, () => _cluster.Remote.BlockList.BlockedMembers, _cluster.System.Logger(),_cluster.Config.GossipFanout, _cluster.Config.GossipMaxSend));
             _pid = _context.SpawnNamed(props, GossipActorName);
             _cluster.System.EventStream.Subscribe<ClusterTopology>(topology => _context.Send(_pid, topology));
             Logger.LogInformation("Started Cluster Gossip");

@@ -25,11 +25,12 @@ namespace Proto.Cluster.Gossip
             string myId,
             Func<ImmutableHashSet<string>> getBlockedMembers,
             InstanceLogger? instanceLogger,
-            int gossipFanout
+            int gossipFanout,
+            int gossipMaxSend
         )
         {
             _gossipRequestTimeout = gossipRequestTimeout;
-            _internal = new Gossip(myId, gossipFanout, getBlockedMembers, instanceLogger);
+            _internal = new Gossip(myId, gossipFanout, gossipMaxSend, getBlockedMembers, instanceLogger);
         }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
