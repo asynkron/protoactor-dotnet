@@ -194,9 +194,8 @@ namespace Proto.Tests
             Assert.Equal(100000, counter);
         }
 
-        private class ReenterAfterCancellationActor : IActor, IDisposable
+        private class ReenterAfterCancellationActor : IActor
         {
-            private CancellationTokenRegistration _registration;
 
             public record Request(CancellationToken Token);
             public record Response;
@@ -206,13 +205,11 @@ namespace Proto.Tests
                 switch (context.Message)
                 {
                     case Request request:
-                        _registration = context.ReenterAfterCancellation(request.Token, () => context.Respond(new Response()));
+                        context.ReenterAfterCancellation(request.Token, () => context.Respond(new Response()));
                         break;
                 }
                 return Task.CompletedTask;
             }
-
-            public void Dispose() => _registration.Dispose();
         } 
     }
 }

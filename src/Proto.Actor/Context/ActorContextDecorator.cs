@@ -76,6 +76,8 @@ namespace Proto
 
         public void Apply(CapturedContext capturedContext) => _context.Apply(capturedContext);
 
+        public void ReenterAfterCancellation(CancellationToken cancellationToken, Action onCancelled) => _context.ReenterAfterCancellation(cancellationToken, onCancelled);
+
         public void Stop(PID pid) => _context.Stop(pid);
 
         public Task StopAsync(PID pid) => _context.StopAsync(pid);

@@ -173,6 +173,32 @@ namespace Proto.Context
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
 
+        /// <summary>
+        /// Calls the callback on token cancellation. If CancellationToken is non-cancellable, this is a noop.
+        /// </summary>
+        public void ReenterAfterCancellation(CancellationToken token, Action onCancelled)
+        {
+            if (token.IsCancellationRequested)
+            {
+                ReenterAfter(Task.CompletedTask, onCancelled);
+                return;
+            }
+
+            // Noop
+            if (!token.CanBeCanceled) return;
+            
+            var tcs = new TaskCompletionSource<bool>();
+            var registration = token.Register(() => tcs.SetResult(true));
+            
+            // Ensures registration is disposed with the actor
+            var inceptionRegistration = EnsureExtras().CancellationTokenSource.Token.Register(() => registration.Dispose());
+            
+            ReenterAfter(tcs.Task, () => {
+                inceptionRegistration.Dispose();
+                onCancelled();
+            });
+        }
+        
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
             var msg = _messageOrEnvelope;
@@ -567,6 +593,8 @@ namespace Proto.Context
             System.ProcessRegistry.Remove(Self);
             //This is intentional
             await InvokeUserMessageAsync(Stopped.Instance);
+            
+            _extras?.Dispose();
 
             await DisposeActorIfDisposable();
 
