@@ -118,7 +118,7 @@ namespace Proto.Cluster.Gossip
         }
 
         //TODO: this does not need to use a callback, it can return a list of MemberStates
-        public void SendState(SendStateAction stateActionToMember)
+        public void SendState(SendStateAction sendStateToMember)
         {
             var logger = _logger?.BeginMethodScope();
 
@@ -134,6 +134,8 @@ namespace Proto.Cluster.Gossip
             var fanoutCount = 0;
             foreach (var member in randomMembers)
             {
+                //TODO: we can chunk up sends here
+                //instead of sending less state, we can send all of it, but in chunks
                 var memberState = GetMemberStateDelta(member.Id);
                 if (!memberState.HasState)
                 {
@@ -141,7 +143,7 @@ namespace Proto.Cluster.Gossip
                 }
                 
                 //fire and forget, we handle results in ReenterAfter
-                stateActionToMember(memberState, member, logger);
+                sendStateToMember(memberState, member, logger);
                 
                 fanoutCount++;
 
