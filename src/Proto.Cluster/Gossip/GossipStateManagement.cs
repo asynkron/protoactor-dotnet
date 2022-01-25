@@ -96,6 +96,7 @@ namespace Proto.Cluster.Gossip
             //if entry does not exist, add it
             var memberState = EnsureMemberStateExists(state, memberId);
             var entry = EnsureEntryExists(memberState, key);
+            entry.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             sequenceNo++;
 
