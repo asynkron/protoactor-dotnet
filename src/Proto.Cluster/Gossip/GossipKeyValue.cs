@@ -9,8 +9,7 @@ namespace Proto.Cluster.Gossip
 {
     public partial class GossipKeyValue
     {
-        public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
-
-        public TimeSpan Age => DateTimeOffset.UtcNow - Timestamp;
+        public DateTimeOffset LocalTimestamp => DateTimeOffset.FromUnixTimeMilliseconds(LocalTimestampUnixMilliseconds);
+        public TimeSpan Age => DateTimeOffset.UtcNow - LocalTimestamp;
     }
 }
