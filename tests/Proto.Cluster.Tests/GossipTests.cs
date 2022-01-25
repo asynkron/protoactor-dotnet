@@ -42,7 +42,7 @@ namespace Proto.Cluster.Tests
             await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
         }
 
-        [Fact]
+        [Fact(Skip = "Flaky")]
         public async Task CompositeConsensusWorks()
         {
             var timeout = CancellationTokens.FromSeconds(20);
