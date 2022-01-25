@@ -88,11 +88,6 @@ namespace Proto.Cluster.Gossip
                 }
             }
 
-            foreach (var update in updates)
-            {
-                mergedState.Members[update.MemberId].Values[update.Key].Timestamp = DateTimeOffset.UtcNow;
-            }
-
             return updates;
         }
 
