@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
@@ -82,6 +83,11 @@ namespace Proto.Cluster.Gossip
                     updates.Add(new GossipUpdate(memberId, key, remoteValue.Value, remoteValue.SequenceNumber));
                     updatedKeys.Add(key);
                 }
+            }
+
+            foreach (var update in updates)
+            {
+                mergedState.Members[update.MemberId].Values[update.Key].Timestamp = DateTimeOffset.UtcNow;
             }
 
             return updates;
