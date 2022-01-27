@@ -59,9 +59,10 @@ namespace Proto.Tests
         
 
         //this behavior is called when messages are being unstashed, and afterwards
-        public async Task RunningBehavior(IContext context)
+        public Task RunningBehavior(IContext context)
         {
             _results.Enqueue(new UnstashResult(context.Message!, context.Sender!));
+            return Task.CompletedTask;
         }
 
 

@@ -103,5 +103,12 @@ namespace Proto
         /// </summary>
         /// <param name="capturedContext">The context to apply</param>
         void Apply(CapturedContext capturedContext);
+
+        /// <summary>
+        /// Calls the callback on token cancellation. If CancellationToken is non-cancellable, this is a noop.
+        /// </summary>
+        /// <param name="cancellationToken">The CancellationToken to continue after</param>
+        /// <param name="onCancelled">The callback</param>
+        void ReenterAfterCancellation(CancellationToken cancellationToken, Action onCancelled);
     }
 }

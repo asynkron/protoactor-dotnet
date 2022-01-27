@@ -3,14 +3,14 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
 namespace Proto.Cluster.Gossip
 {
-    public record ConsensusCheck(string Id, Action<GossipState, ImmutableHashSet<string>> Check, string[] AffectedKeys);
+    public delegate void OnGossipStateUpdated(GossipState state, ImmutableHashSet<string> members);
+    public record ConsensusCheck(OnGossipStateUpdated Check, IImmutableSet<string> AffectedKeys);
     
     public class ConsensusChecks
     {
@@ -44,10 +44,10 @@ namespace Proto.Cluster.Gossip
         }
 
         
-        public void Add(ConsensusCheck consensusCheck)
+        public void Add(string id, ConsensusCheck consensusCheck)
         {
-            _consensusChecks[consensusCheck.Id] = consensusCheck;
-            RegisterAffectedKeys(consensusCheck.Id, consensusCheck.AffectedKeys);
+            _consensusChecks[id] = consensusCheck;
+            RegisterAffectedKeys(id, consensusCheck.AffectedKeys);
         }
         
         public void Remove(string id)
@@ -58,7 +58,7 @@ namespace Proto.Cluster.Gossip
             }
         }
      
-        private void RegisterAffectedKeys(string id, string[] keys)
+        private void RegisterAffectedKeys(string id, IEnumerable<string> keys)
         {
             foreach (var key in keys)
             {

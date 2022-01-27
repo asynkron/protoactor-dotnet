@@ -7,6 +7,7 @@ using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Context;
 using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
@@ -34,13 +35,12 @@ namespace Proto.Cluster.Gossip
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            SetGossipStateKey setState      => OnSetGossipStateKey(context,setState),
+            SetGossipStateKey setState      => OnSetGossipStateKey(context, setState),
             GetGossipStateRequest getState  => OnGetGossipStateKey(context, getState),
             GetGossipStateSnapshot getSnapshot => OnGetGossipStateSnapshot(context),
             GossipRequest gossipRequest     => OnGossipRequest(context, gossipRequest),
             SendGossipStateRequest          => OnSendGossipState(context),
-            AddConsensusCheck request       => OnAddConsensusCheck(request),
-            RemoveConsensusCheck request    => OnRemoveConsensusCheck(request),
+            AddConsensusCheck request       => OnAddConsensusCheck(context, request),
             ClusterTopology clusterTopology => OnClusterTopology(clusterTopology),
             _                               => Task.CompletedTask
         };
@@ -55,15 +55,12 @@ namespace Proto.Cluster.Gossip
         private Task OnClusterTopology(ClusterTopology clusterTopology) =>
             _internal.UpdateClusterTopology(clusterTopology);
 
-        private Task OnAddConsensusCheck(AddConsensusCheck msg)
+        private Task OnAddConsensusCheck(IContext context, AddConsensusCheck msg)
         {
-             _internal.AddConsensusCheck(msg.Check);
-             return Task.CompletedTask;
-        }
+            var id = Guid.NewGuid().ToString();
+            _internal.AddConsensusCheck(id, msg.Check);
+            context.ReenterAfterCancellation(msg.Token, () => _internal.RemoveConsensusCheck(id));
 
-        private Task OnRemoveConsensusCheck(RemoveConsensusCheck request)
-        {
-            _internal.RemoveConsensusCheck(request.Id);
             return Task.CompletedTask;
         }
 
@@ -92,6 +89,7 @@ namespace Proto.Cluster.Gossip
             }
 
             var memberState = _internal.GetMemberStateDelta(gossipRequest.MemberId);
+
             if (!memberState.HasState)
             {
                 Logger.LogWarning("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);

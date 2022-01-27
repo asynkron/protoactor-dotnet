@@ -56,6 +56,7 @@ namespace Proto.Context
 
         public ActorSystem System { get; }
         public CancellationToken CancellationToken => EnsureExtras().CancellationTokenSource.Token;
+        public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
         IReadOnlyCollection<PID> IContext.Children => Children;
 
         public IActor Actor { get; private set; }
@@ -173,6 +174,33 @@ namespace Proto.Context
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
 
+        /// <summary>
+        /// Calls the callback on token cancellation. If CancellationToken is non-cancellable, this is a noop.
+        /// </summary>
+        public void ReenterAfterCancellation(CancellationToken token, Action onCancelled)
+        {
+            if (token.IsCancellationRequested)
+            {
+                ReenterAfter(Task.CompletedTask, onCancelled);
+                return;
+            }
+
+            // Noop
+            if (!token.CanBeCanceled) return;
+
+            var tcs = new TaskCompletionSource<bool>();
+            var registration = token.Register(() => tcs.SetResult(true));
+
+            // Ensures registration is disposed with the actor
+            var inceptionRegistration = CancellationToken.Register(() => registration.Dispose());
+
+            ReenterAfter(tcs.Task, () => {
+                    inceptionRegistration.Dispose();
+                    onCancelled();
+                }
+            );
+        }
+
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
             var msg = _messageOrEnvelope;
@@ -202,8 +230,6 @@ namespace Proto.Context
         }
 
         public IFuture GetFuture() => System.Future.Get();
-
-        public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
 
         public void EscalateFailure(Exception reason, object? message)
         {
@@ -319,6 +345,7 @@ namespace Proto.Context
                 System.DeadLetter.SendUserMessage(Self, msg);
                 return default;
             }
+
             var influenceReceiveTimeout = false;
 
             if (ReceiveTimeout > TimeSpan.Zero && MessageEnvelope.UnwrapMessage(msg) is not INotInfluenceReceiveTimeout)
@@ -351,6 +378,7 @@ namespace Proto.Context
                 {
                     _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
                 }
+
                 return default;
             }
 
@@ -568,6 +596,8 @@ namespace Proto.Context
             //This is intentional
             await InvokeUserMessageAsync(Stopped.Instance);
 
+            _extras?.Dispose();
+
             await DisposeActorIfDisposable();
 
             //Notify watchers
@@ -625,7 +655,7 @@ namespace Proto.Context
         public CapturedContext Capture() => new(MessageEnvelope.Wrap(_messageOrEnvelope!), this);
 
         public void Apply(CapturedContext capturedContext) => _messageOrEnvelope = capturedContext.MessageEnvelope;
-        
+
         public void Stop(PID pid)
         {
             if (System.Metrics.Enabled)
@@ -642,7 +672,7 @@ namespace Proto.Context
             Stop(pid);
             return future.Task;
         }
-        
+
         public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
 
         public Task PoisonAsync(PID pid)

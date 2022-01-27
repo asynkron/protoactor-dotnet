@@ -49,9 +49,9 @@ namespace Proto.Cluster.Gossip
             return Task.CompletedTask;
         }
 
-        public void AddConsensusCheck(ConsensusCheck check)
+        public void AddConsensusCheck(string id, ConsensusCheck check)
         {
-            _consensusChecks.Add(check);
+            _consensusChecks.Add(id, check);
 
             // Check when adding, if we are already consistent
             check.Check(_state, _activeMemberIds);

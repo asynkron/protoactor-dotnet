@@ -46,8 +46,8 @@ namespace Proto.Cluster.Gossip
 
     internal interface IGossipConsensusChecker
     {
-        void AddConsensusCheck(ConsensusCheck check);
-
+        void AddConsensusCheck(string id, ConsensusCheck check);
+        
         void RemoveConsensusCheck(string id);
     }
 

@@ -50,11 +50,11 @@ namespace Proto.Remote.Tests
                         sender = translatedPid;
                     }
                     var remoteActorResp = await context.System.Remote().SpawnNamedAsync(
-                        sender.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5)
+                        sender.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
                     );
                     var remoteActor = remoteActorResp.Pid;
                     var pong = await context.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" },
-                        TimeSpan.FromMilliseconds(5000)
+                        TimeSpan.FromSeconds(10)
                     );
                     context.Respond(new SpawnOnMeAndPingResponse { Pid = remoteActor, Message = pong.Message });
                     break;
