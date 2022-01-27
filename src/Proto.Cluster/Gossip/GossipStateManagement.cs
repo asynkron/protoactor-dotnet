@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
@@ -37,29 +38,30 @@ namespace Proto.Cluster.Gossip
             return memberState;
         }
 
-        public static IReadOnlyCollection<GossipUpdate> MergeState(GossipState localState, GossipState remoteState, out GossipState mergedState, out HashSet<string> updatedKeys)
+        public static IReadOnlyCollection<GossipUpdate> MergeState(GossipState localState, GossipState remoteState, out GossipState newState, out HashSet<string> updatedKeys)
         {
-            mergedState = localState.Clone();
+            newState = localState.Clone();
             var updates = new List<GossipUpdate>();
             updatedKeys = new HashSet<string>();
 
             foreach (var (memberId, remoteMemberState) in remoteState.Members)
             {
                 //this entry does not exist in newState, just copy all of it
-                if (!mergedState.Members.ContainsKey(memberId))
+                if (!newState.Members.ContainsKey(memberId))
                 {
-                    mergedState.Members.Add(memberId, remoteMemberState);
+                    newState.Members.Add(memberId, remoteMemberState);
 
                     foreach (var entry in remoteMemberState.Values)
                     {
                         updates.Add(new GossipUpdate(memberId, entry.Key, entry.Value.Value, entry.Value.SequenceNumber));
+                        entry.Value.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                         updatedKeys.Add(entry.Key);
                     }
                     continue;
                 }
 
                 //this entry exists in both newState and remoteState, we should merge them
-                var newMemberState = mergedState.Members[memberId];
+                var newMemberState = newState.Members[memberId];
 
                 foreach (var (key, remoteValue) in remoteMemberState.Values)
                 {
@@ -68,6 +70,7 @@ namespace Proto.Cluster.Gossip
                     {
                         newMemberState.Values.Add(key, remoteValue);
                         updates.Add(new GossipUpdate(memberId, key, remoteValue.Value, remoteValue.SequenceNumber));
+                        remoteValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                         updatedKeys.Add(key);
                         continue;
                     }
@@ -80,6 +83,7 @@ namespace Proto.Cluster.Gossip
                     //just replace the existing value
                     newMemberState.Values[key] = remoteValue;
                     updates.Add(new GossipUpdate(memberId, key, remoteValue.Value, remoteValue.SequenceNumber));
+                    remoteValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                     updatedKeys.Add(key);
                 }
             }
@@ -92,6 +96,7 @@ namespace Proto.Cluster.Gossip
             //if entry does not exist, add it
             var memberState = EnsureMemberStateExists(state, memberId);
             var entry = EnsureEntryExists(memberState, key);
+            entry.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             sequenceNo++;
 

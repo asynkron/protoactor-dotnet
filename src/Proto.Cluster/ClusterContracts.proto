@@ -119,15 +119,6 @@ message ClusterTopology {
   repeated string blocked = 5;
 }
 
-message HeartbeatRequest {
-}
-
-message HeartbeatResponse {
-  uint32 actor_count = 1;
-  string member_id = 2;
-  uint32 topology_hash = 3;
-}
-
 message ClusterTopologyNotification {
   string member_id = 1;
   uint32 topology_hash = 2;
@@ -139,7 +130,16 @@ message GracefulShutdown {
 }
 
 message MemberHeartbeat {
+  ActorStatistics actor_statistics=1;
 }
+
+message ActorStatistics {
+  map<string,int64> actor_count=1;  
+}
+
+
+
+
 //keys to implement initially
 //topology - value is repeated members, this can replace ClusterTopologyNotification, as it would be the same, but better
 //heartbeat - value is unit, or sender timestamp?

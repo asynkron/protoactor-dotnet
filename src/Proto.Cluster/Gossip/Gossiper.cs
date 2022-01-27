@@ -34,6 +34,8 @@ namespace Proto.Cluster.Gossip
 
     public record AddConsensusCheck(ConsensusCheck Check, CancellationToken Token);
 
+    public record GetGossipStateSnapshot();
+
     public class Gossiper
     {
         public const string GossipActorName = "gossip";
@@ -42,6 +44,8 @@ namespace Proto.Cluster.Gossip
 
         private static readonly ILogger Logger = Log.CreateLogger<Gossiper>();
         private PID _pid = null!;
+
+        public Task<GossipState> GetStateSnapshot() => _context.RequestAsync<GossipState>(_pid, new GetGossipStateSnapshot());
 
         public Gossiper(Cluster cluster)
         {
@@ -115,7 +119,14 @@ namespace Proto.Cluster.Gossip
                 try
                 {
                     await Task.Delay((int) _cluster.Config.GossipInterval.TotalMilliseconds);
-                    SetState("heartbeat", new MemberHeartbeat());
+
+                    var stats = GetActorStatistics();
+
+                    await SetStateAsync("heartbeat", new MemberHeartbeat()
+                    {
+                        ActorStatistics = stats
+                    });
+                    
                     await SendStateAsync();
                 }
                 catch (Exception x)
@@ -123,6 +134,19 @@ namespace Proto.Cluster.Gossip
                     Logger.LogError(x, "Gossip loop failed");
                 }
             }
+        }
+
+        private ActorStatistics GetActorStatistics()
+        {
+            var stats = new ActorStatistics();
+
+            foreach (var k in _cluster.GetClusterKinds())
+            {
+                var kind = _cluster.GetClusterKind(k);
+                stats.ActorCount.Add(k, kind.Count);
+            }
+
+            return stats;
         }
 
         public class ConsensusCheckBuilder<T>: IConsensusCheckDefinition<T>
