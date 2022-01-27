@@ -192,7 +192,7 @@ namespace Proto.Context
             var registration = token.Register(() => tcs.SetResult(true));
 
             // Ensures registration is disposed with the actor
-            var inceptionRegistration = EnsureExtras().CancellationTokenSource.Token.Register(() => registration.Dispose());
+            var inceptionRegistration = CancellationToken.Register(() => registration.Dispose());
 
             ReenterAfter(tcs.Task, () => {
                     inceptionRegistration.Dispose();
