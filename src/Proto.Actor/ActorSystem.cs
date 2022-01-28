@@ -17,7 +17,7 @@ using Proto.Utils;
 namespace Proto
 {
     [PublicAPI]
-    public class ActorSystem
+    public class ActorSystem : IAsyncDisposable
     {
         public const string NoHost = "nonhost";
         public const string Client = "$client";
@@ -115,5 +115,11 @@ namespace Proto
         public (string Host, int Port) GetAddress() => (_host, _port);
 
         public Props ConfigureProps(Props props) => Config.ConfigureProps(props);
+
+        public async ValueTask DisposeAsync()
+        {
+            await ShutdownAsync();
+            _cts.Dispose();
+        }
     }
 }

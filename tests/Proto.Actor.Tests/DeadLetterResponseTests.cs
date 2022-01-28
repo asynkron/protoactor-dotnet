@@ -4,11 +4,9 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class DeadLetterResponseTests
+    public class DeadLetterResponseTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
-
+        
         private static readonly Props EchoProps = Props.FromFunc(context => {
                 if (context.Message is string s) context.Respond(s);
 

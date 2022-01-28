@@ -10,11 +10,8 @@ using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests
 {
-    public class SpawnTests
+    public class SpawnTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
-
         [Fact]
         public void Given_PropsWithSpawner_SpawnShouldReturnPidCreatedBySpawner()
         {

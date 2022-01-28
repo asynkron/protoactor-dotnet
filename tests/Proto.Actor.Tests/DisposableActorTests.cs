@@ -6,10 +6,8 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class DisposableActorTests
+    public class DisposableActorTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
 
         [Fact]
         public void WhenActorRestarted_DisposeIsCalled()

@@ -2,60 +2,61 @@ using System;
 using System.Threading.Tasks;
 using Proto.Router.Messages;
 using Proto.TestFixtures;
+using Proto.Tests;
 using Xunit;
 
 namespace Proto.Router.Tests
 {
-    public class BroadcastGroupTests
+    public class BroadcastGroupTests : ActorTestBase
     {
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
-        private readonly ActorSystem ActorSystem = new();
+
 
         [Fact]
         public async Task BroadcastGroupRouter_AllRouteesReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
-            ActorSystem.Root.Send(router, "hello");
+            System.Root.Send(router, "hello");
 
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
+            Assert.Equal("hello", await System.Root.RequestAsync<string>(routee1, "received?", _timeout));
+            Assert.Equal("hello", await System.Root.RequestAsync<string>(routee2, "received?", _timeout));
+            Assert.Equal("hello", await System.Root.RequestAsync<string>(routee3, "received?", _timeout));
         }
 
         [Fact]
         public async Task BroadcastGroupRouter_WhenOneRouteeIsStopped_AllOtherRouteesReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
-            await ActorSystem.Root.StopAsync(routee2);
-            ActorSystem.Root.Send(router, "hello");
+            await System.Root.StopAsync(routee2);
+            System.Root.Send(router, "hello");
 
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
+            Assert.Equal("hello", await System.Root.RequestAsync<string>(routee1, "received?", _timeout));
+            Assert.Equal("hello", await System.Root.RequestAsync<string>(routee3, "received?", _timeout));
         }
 
         [Fact]
         public async Task BroadcastGroupRouter_WhenOneRouteeIsSlow_AllOtherRouteesReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
-            ActorSystem.Root.Send(routee2, "go slow");
-            ActorSystem.Root.Send(router, "hello");
+            System.Root.Send(routee2, "go slow");
+            System.Root.Send(router, "hello");
 
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
+            Assert.Equal("hello", await System.Root.RequestAsync<string>(routee1, "received?", _timeout));
+            Assert.Equal("hello", await System.Root.RequestAsync<string>(routee3, "received?", _timeout));
         }
 
         [Fact]
         public async Task BroadcastGroupRouter_RouteesCanBeRemoved()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
-            ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
+            System.Root.Send(router, new RouterRemoveRoutee(routee1));
 
-            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+            var routees = await System.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.DoesNotContain(routee1, routees.Pids);
             Assert.Contains(routee2, routees.Pids);
             Assert.Contains(routee3, routees.Pids);
@@ -64,11 +65,11 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_RouteesCanBeAdded()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
-            var routee4 = ActorSystem.Root.Spawn(MyActorProps);
-            ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
+            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
+            var routee4 = System.Root.Spawn(MyActorProps);
+            System.Root.Send(router, new RouterAddRoutee(routee4));
 
-            var routees = await ActorSystem.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+            var routees = await System.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
             Assert.Contains(routee1, routees.Pids);
             Assert.Contains(routee2, routees.Pids);
             Assert.Contains(routee3, routees.Pids);
@@ -78,41 +79,41 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
-            ActorSystem.Root.Send(router, "first message");
-            ActorSystem.Root.Send(router, new RouterRemoveRoutee(routee1));
-            ActorSystem.Root.Send(router, "second message");
+            System.Root.Send(router, "first message");
+            System.Root.Send(router, new RouterRemoveRoutee(routee1));
+            System.Root.Send(router, "second message");
 
-            Assert.Equal("first message", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
-            Assert.Equal("second message", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));
-            Assert.Equal("second message", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
+            Assert.Equal("first message", await System.Root.RequestAsync<string>(routee1, "received?", _timeout));
+            Assert.Equal("second message", await System.Root.RequestAsync<string>(routee2, "received?", _timeout));
+            Assert.Equal("second message", await System.Root.RequestAsync<string>(routee3, "received?", _timeout));
         }
 
         [Fact]
         public async Task BroadcastGroupRouter_AddedRouteesReceiveMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
-            var routee4 = ActorSystem.Root.Spawn(MyActorProps);
-            ActorSystem.Root.Send(router, new RouterAddRoutee(routee4));
-            ActorSystem.Root.Send(router, "a message");
+            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
+            var routee4 = System.Root.Spawn(MyActorProps);
+            System.Root.Send(router, new RouterAddRoutee(routee4));
+            System.Root.Send(router, "a message");
 
-            Assert.Equal("a message", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
-            Assert.Equal("a message", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));
-            Assert.Equal("a message", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
-            Assert.Equal("a message", await ActorSystem.Root.RequestAsync<string>(routee4, "received?", _timeout));
+            Assert.Equal("a message", await System.Root.RequestAsync<string>(routee1, "received?", _timeout));
+            Assert.Equal("a message", await System.Root.RequestAsync<string>(routee2, "received?", _timeout));
+            Assert.Equal("a message", await System.Root.RequestAsync<string>(routee3, "received?", _timeout));
+            Assert.Equal("a message", await System.Root.RequestAsync<string>(routee4, "received?", _timeout));
         }
 
         [Fact]
         public async Task BroadcastGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
-            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(ActorSystem);
+            var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
-            ActorSystem.Root.Send(router, new RouterBroadcastMessage("hello"));
+            System.Root.Send(router, new RouterBroadcastMessage("hello"));
 
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee1, "received?", _timeout));
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee2, "received?", _timeout));
-            Assert.Equal("hello", await ActorSystem.Root.RequestAsync<string>(routee3, "received?", _timeout));
+            Assert.Equal("hello", await System.Root.RequestAsync<string>(routee1, "received?", _timeout));
+            Assert.Equal("hello", await System.Root.RequestAsync<string>(routee2, "received?", _timeout));
+            Assert.Equal("hello", await System.Root.RequestAsync<string>(routee3, "received?", _timeout));
         }
 
         private static (PID router, PID routee1, PID routee2, PID routee3) CreateBroadcastGroupRouterWith3Routees(ActorSystem system)

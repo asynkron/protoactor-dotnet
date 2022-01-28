@@ -11,12 +11,9 @@ namespace Proto.Tests
     {
         public object GetAutoResponse(IContext context) => "hey";
     }
-    public class ActorTests
-    {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
 
-        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+    public class ActorTests : ActorTestBase
+    {
 
         [Fact]
         public async Task RequestActorAsync()
@@ -182,7 +179,7 @@ namespace Proto.Tests
         //     Assert.IsType<Stopped>(msgs[4]);
         // }
 
-        public static PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(forwarder));
+        
 
         [Fact]
         public async Task ForwardActorAsync()
@@ -203,5 +200,7 @@ namespace Proto.Tests
 
             Assert.Equal("hey", reply);
         }
+
+
     }
 }

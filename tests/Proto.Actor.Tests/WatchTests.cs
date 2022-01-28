@@ -6,10 +6,8 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class WatchTests
+    public class WatchTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
 
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()

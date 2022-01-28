@@ -8,10 +8,8 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class BatchFutureTests
+    public class BatchFutureTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
 
         [Fact]
         public async Task Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()

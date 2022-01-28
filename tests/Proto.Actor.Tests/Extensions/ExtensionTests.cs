@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Proto.Extensions;
 using Xunit;
 
@@ -19,9 +20,9 @@ namespace Proto.Tests.Extensions
         public void ExtensionsGetOwnId() => Assert.NotEqual(IActorSystemExtension<ExtensionA>.Id, IActorSystemExtension<ExtensionB>.Id);
 
         [Fact]
-        public void CanGetExtension()
+        public async Task CanGetExtension()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             system.Extensions.Register(new ExtensionA
                 {
                     A = 123

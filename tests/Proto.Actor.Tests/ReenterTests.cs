@@ -8,10 +8,9 @@ using Xunit.Abstractions;
 
 namespace Proto.Tests
 {
-    public class ReenterTests
+    public class ReenterTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
+
 
         private readonly ITestOutputHelper output;
 

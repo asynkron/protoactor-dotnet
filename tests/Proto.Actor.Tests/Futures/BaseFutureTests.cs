@@ -13,11 +13,9 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public abstract class BaseFutureTests
+    public abstract class BaseFutureTests : ActorTestBase
     {
         protected const int BatchSize = 1000;
-        protected static readonly ActorSystem System = new();
-        protected static readonly RootContext Context = System.Root;
 
         protected abstract IFuture GetFuture();
 

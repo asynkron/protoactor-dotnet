@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2021 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Context;
 using Proto.Logging;
@@ -13,9 +14,9 @@ namespace Proto.Tests
     public class LoggingExtensionTests
     {
         [Fact]
-        public void CanGetLoggingExtension()
+        public async Task CanGetLoggingExtension()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             system.Extensions.Register(new InstanceLogger(LogLevel.Debug));
 
             var logger = system.Logger();
@@ -24,9 +25,9 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void CanLogToLogStore()
+        public async Task CanLogToLogStore()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var logStore = new LogStore();
             system.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
@@ -39,9 +40,9 @@ namespace Proto.Tests
         }
         
         [Fact]
-        public void CanCompareEntriesInStore()
+        public async Task CanCompareEntriesInStore()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var logStore = new LogStore();
             system.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
@@ -60,11 +61,11 @@ namespace Proto.Tests
         }
         
         [Fact] 
-        public void DoesNotCauseSideEffects()
+        public async Task DoesNotCauseSideEffects()
         {
             // this is not really a logging test, its just to highlight that ?. really ignores the right-side if null
 
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             //instance logger is null
             var logger = system.Logger();
 
@@ -75,9 +76,9 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void CanLogByCategory()
+        public async Task CanLogByCategory()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var logStore = new LogStore();
             system.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 

@@ -63,16 +63,12 @@ namespace Proto.Tests
         {
             _results.Enqueue(new UnstashResult(context.Message!, context.Sender!));
             return Task.CompletedTask;
-        }
-
-
-        
+        }        
     }
-    public class CaptureContextTests
+    
+    public class CaptureContextTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
-        
+
         [Fact]
         public async Task can_receive_captured_context()
         {

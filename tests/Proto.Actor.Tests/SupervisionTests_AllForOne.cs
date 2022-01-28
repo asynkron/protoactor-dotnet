@@ -7,10 +7,8 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class SupervisionTests_AllForOne
+    public class SupervisionTests_AllForOne : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
         private static readonly Exception Exception = new("boo hoo");
 
         [Fact]

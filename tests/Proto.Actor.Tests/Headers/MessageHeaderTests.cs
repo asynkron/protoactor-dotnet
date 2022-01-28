@@ -90,7 +90,7 @@ namespace Proto.Tests.Headers
         [Fact]
         public async Task Actors_can_reply_with_headers()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var echo = Props.FromFunc(ctx => {
                     if (ctx.Sender is not null && ctx.Message is not null)
                     {
@@ -113,7 +113,7 @@ namespace Proto.Tests.Headers
         [Fact]
         public async Task RequestAsync_honors_message_envelopes()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var echo = Props.FromFunc(ctx => {
                     if (ctx.Sender is not null && ctx.Headers.Count == 1)
                     {

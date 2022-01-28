@@ -5,10 +5,8 @@ using Xunit.Abstractions;
 
 namespace Proto.Tests
 {
-    public class FutureTests
+    public class FutureTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
 
         private readonly ITestOutputHelper output;
 

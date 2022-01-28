@@ -8,10 +8,8 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class SupervisionTests_OneForOne
+    public class SupervisionTests_OneForOne : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
         private static readonly Exception Exception = new("boo hoo");
 
         [Fact]

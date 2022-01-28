@@ -23,7 +23,7 @@ namespace Proto.Tests
         [Fact]
         public async Task PoisonReturnsIfPidDoesNotExist()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var deadPid = PID.FromAddress(system.Address, "nowhere");
 
             var poisonTask = system.Root.PoisonAsync(deadPid);
@@ -36,7 +36,7 @@ namespace Proto.Tests
         [Fact]
         public async Task PoisonTerminatesActor()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
 
             var pid = system.Root.Spawn(EchoProps);
 

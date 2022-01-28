@@ -3,10 +3,8 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class BehaviorTests
+    public class BehaviorTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
 
         [Fact]
         public async Task can_change_states()
@@ -37,9 +35,7 @@ namespace Proto.Tests
             response = await Context.RequestAsync<string>(actor, new Touch());
             Assert.Equal("OW!", response);
         }
-
-        public static PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
-
+        
         [Fact]
         public async Task pop_behavior_should_restore_pushed_behavior()
         {

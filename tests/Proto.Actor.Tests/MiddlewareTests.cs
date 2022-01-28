@@ -31,10 +31,8 @@ namespace Proto.Tests
         }
     }
 
-    public class MiddlewareTests
+    public class MiddlewareTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
 
         [Fact]
         public void Given_ContextDecorator_Should_Call_Decorator_Before_Actor_Receive()

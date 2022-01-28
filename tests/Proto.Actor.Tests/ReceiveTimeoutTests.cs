@@ -6,10 +6,8 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class ReceiveTimeoutTests
+    public class ReceiveTimeoutTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
 
         [Fact]
         public async Task receive_timeout_received_within_expected_time()
