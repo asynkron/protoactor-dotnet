@@ -249,7 +249,7 @@ namespace Proto.Remote
 
             rs.Fail();
 
-            if (rs.NumberOfFailures(_withinTimeSpan) > _maxNrOfRetries)
+            if (rs.FailureCount > _maxNrOfRetries)
             {
                 rs.Reset();
                 return true;
