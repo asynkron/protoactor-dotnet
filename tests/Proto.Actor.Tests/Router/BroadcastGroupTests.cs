@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Proto.Router.Tests
 {
-    public class BroadcastGroupTests : ActorTestBase
+    public class BroadcastGroupTests
     {
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
@@ -16,6 +16,8 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_AllRouteesReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
             System.Root.Send(router, "hello");
@@ -28,6 +30,8 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_WhenOneRouteeIsStopped_AllOtherRouteesReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
             await System.Root.StopAsync(routee2);
@@ -40,6 +44,8 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_WhenOneRouteeIsSlow_AllOtherRouteesReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
             System.Root.Send(routee2, "go slow");
@@ -52,6 +58,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_RouteesCanBeRemoved()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
             System.Root.Send(router, new RouterRemoveRoutee(routee1));
@@ -65,6 +74,8 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_RouteesCanBeAdded()
         {
+                    await using var System = new ActorSystem();
+
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
             var routee4 = System.Root.Spawn(MyActorProps);
             System.Root.Send(router, new RouterAddRoutee(routee4));
@@ -79,6 +90,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
             System.Root.Send(router, "first message");
@@ -93,6 +107,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_AddedRouteesReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
             var routee4 = System.Root.Spawn(MyActorProps);
             System.Root.Send(router, new RouterAddRoutee(routee4));
@@ -107,6 +124,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(System);
 
             System.Root.Send(router, new RouterBroadcastMessage("hello"));

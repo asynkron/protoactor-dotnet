@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Proto.Router.Tests
 {
-    public class PoolRouterTests : ActorTestBase
+    public class PoolRouterTests 
     {
         private static readonly Props MyActorProps = Props.FromProducer(() => new DoNothingActor());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
@@ -15,6 +15,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task BroadcastGroupPool_CreatesRoutees()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var props =  System.Root.NewBroadcastPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = System.Root.Spawn(props);
@@ -25,6 +28,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RoundRobinPool_CreatesRoutees()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var props =  System.Root.NewRoundRobinPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = System.Root.Spawn(props);
@@ -35,6 +41,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashPool_CreatesRoutees()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var props =  System.Root.NewConsistentHashPool(MyActorProps, 3)
                 .WithMailbox(() => new TestMailbox());
             var router = System.Root.Spawn(props);
@@ -45,6 +54,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomPool_CreatesRoutees()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var props =  System.Root.NewRandomPool(MyActorProps, 3, 0)
                 .WithMailbox(() => new TestMailbox());
             var router = System.Root.Spawn(props);

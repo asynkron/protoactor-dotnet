@@ -17,11 +17,11 @@ using Proto.Utils;
 namespace Proto
 {
     [PublicAPI]
-    public class ActorSystem : IAsyncDisposable
+    public sealed class ActorSystem : IAsyncDisposable
     {
         public const string NoHost = "nonhost";
         public const string Client = "$client";
-        private CancellationTokenSource _cts = new();
+        private readonly CancellationTokenSource _cts = new();
         private string _host = NoHost;
         private int _port;
 

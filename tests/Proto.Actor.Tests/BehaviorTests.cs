@@ -3,12 +3,16 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class BehaviorTests : ActorTestBase
+    public class BehaviorTests 
     {
 
         [Fact]
         public async Task can_change_states()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
+                    
             var testActorProps = Props.FromProducer(() => new LightBulb());
             var actor = Context.Spawn(testActorProps);
 
@@ -25,6 +29,9 @@ namespace Proto.Tests
         [Fact]
         public async Task can_use_global_behaviour()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var testActorProps = Props.FromProducer(() => new LightBulb());
             var actor = Context.Spawn(testActorProps);
             var _ = await Context.RequestAsync<string>(actor, new PressSwitch());
@@ -39,6 +46,11 @@ namespace Proto.Tests
         [Fact]
         public async Task pop_behavior_should_restore_pushed_behavior()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
+                    PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+                    
             var behavior = new Behavior();
             behavior.Become(ctx => {
                     if (ctx.Message is string)

@@ -5,16 +5,20 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests
 {
-    public class SpawnTests : ActorTestBase
+    public class SpawnTests
     {
         [Fact]
-        public void Given_PropsWithSpawner_SpawnShouldReturnPidCreatedBySpawner()
+        public async Task Given_PropsWithSpawner_SpawnShouldReturnPidCreatedBySpawner()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var spawnedPid = PID.FromAddress("test", "test");
             var props = Props.FromFunc(EmptyReceive)
                 .WithSpawner((s, id, p, parent) => spawnedPid);
@@ -25,8 +29,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Given_Existing_Name_SpawnNamedShouldThrow()
+        public async Task Given_Existing_Name_SpawnNamedShouldThrow()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var props = Props.FromFunc(EmptyReceive);
 
             var uniqueName = Guid.NewGuid().ToString();
@@ -36,8 +43,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Given_Existing_Name_SpawnPrefixShouldReturnPID()
+        public async Task Given_Existing_Name_SpawnPrefixShouldReturnPID()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var props = Props.FromFunc(EmptyReceive);
 
             Context.SpawnNamed(props, "existing");

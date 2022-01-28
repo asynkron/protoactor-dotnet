@@ -16,18 +16,21 @@ namespace Proto.Tests.Diagnostics
 
         public string GetDiagnosticsString() => "Hello World";
     }
-    public class DiagnosticsTests : ActorTestBase
+    public class DiagnosticsTests
     {
         
         [Fact]
-        public void CanListPidsInProcessRegistry()
+        public async Task CanListPidsInProcessRegistry()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var props = Props.FromProducer(() => new MyDiagnosticsActor());
 
             var pids = System.ProcessRegistry.SearchByName("MyActor");
             Assert.Empty(pids);
             
-            var pid = Context.SpawnNamed(props,"MyActor");
+            Context.SpawnNamed(props,"MyActor");
             
             pids = System.ProcessRegistry.SearchByName("MyActor");
             Assert.Single(pids);
@@ -36,6 +39,9 @@ namespace Proto.Tests.Diagnostics
         [Fact]
         public async Task CanGetDiagnosticsStringFromActorDiagnostics()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var props = Props.FromProducer(() => new MyDiagnosticsActor());
 
             var pid = Context.Spawn(props);

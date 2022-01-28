@@ -8,13 +8,16 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class SupervisionTests_OneForOne : ActorTestBase
+    public class SupervisionTests_OneForOne
     {
         private static readonly Exception Exception = new("boo hoo");
 
         [Fact]
-        public void OneForOneStrategy_Should_ResumeChildOnFailure()
+        public async Task OneForOneStrategy_Should_ResumeChildOnFailure()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
             var childProps = Props.FromProducer(() => new ChildActor())
@@ -31,8 +34,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_StopChildOnFailure()
+        public async Task OneForOneStrategy_Should_StopChildOnFailure()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
             var childProps = Props.FromProducer(() => new ChildActor())
@@ -49,8 +55,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_RestartChildOnFailure()
+        public async Task OneForOneStrategy_Should_RestartChildOnFailure()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
             var childProps = Props.FromProducer(() => new ChildActor())
@@ -67,9 +76,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void
-            OneForOneStrategy_WhenRestartedLessThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldNotStopChild()
+        public async Task OneForOneStrategy_WhenRestartedLessThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldNotStopChild()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3,
                 TimeSpan.FromMilliseconds(100)
@@ -97,9 +108,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void
-            OneForOneStrategy_WhenRestartedMoreThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldStopChild()
+        public async Task OneForOneStrategy_WhenRestartedMoreThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldStopChild()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3,
                 TimeSpan.FromMilliseconds(100)
@@ -121,8 +134,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_PassExceptionOnRestart()
+        public async Task OneForOneStrategy_Should_PassExceptionOnRestart()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
             var childProps = Props.FromProducer(() => new ChildActor())
@@ -139,8 +155,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_StopChildWhenRestartLimitReached()
+        public async Task OneForOneStrategy_Should_StopChildWhenRestartLimitReached()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
             var childProps = Props.FromProducer(() => new ChildActor())
@@ -158,8 +177,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_WhenEscalateDirectiveWithoutGrandparent_ShouldRevertToDefaultDirective()
+        public async Task OneForOneStrategy_WhenEscalateDirectiveWithoutGrandparent_ShouldRevertToDefaultDirective()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
             var childProps = Props.FromProducer(() => new ThrowOnStartedChildActor());
@@ -186,8 +208,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_EscalateFailureToParent()
+        public async Task OneForOneStrategy_Should_EscalateFailureToParent()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
             var childProps = Props.FromProducer(() => new ChildActor());
@@ -204,15 +229,18 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_StopChildOnFailureWhenStarted()
+        public async Task OneForOneStrategy_Should_StopChildOnFailureWhenStarted()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
             var childProps = Props.FromProducer(() => new ThrowOnStartedChildActor())
                 .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
             var parentProps = Props.FromProducer(() => new ParentActor(childProps))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Context.Spawn(parentProps);
+            Context.Spawn(parentProps);
 
             childMailboxStats.Reset.Wait(1000);
             Assert.Contains(Stop.Instance, childMailboxStats.Posted);
@@ -220,8 +248,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void OneForOneStrategy_Should_RestartParentOnEscalateFailure()
+        public async Task OneForOneStrategy_Should_RestartParentOnEscalateFailure()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var parentMailboxStats = new TestMailboxStatistics(msg => msg is Restart);
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 0, null);
             var childProps = Props.FromProducer(() => new ThrowOnStartedChildActor());
@@ -233,7 +264,7 @@ namespace Proto.Tests
                         TimeSpan.FromSeconds(1)
                     )
                 );
-            var grandParent = Context.Spawn(grandParentProps);
+            Context.Spawn(grandParentProps);
 
             parentMailboxStats.Reset.Wait(1000);
             Thread.Sleep(1000); //parentMailboxStats.Received could still be modified without a wait here

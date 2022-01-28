@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Proto.Router.Tests
 {
-    public class RandomGroupRouterTests : ActorTestBase
+    public class RandomGroupRouterTests
     {
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor());
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
@@ -15,6 +15,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_RouteesReceiveMessagesInRandomOrder()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, "1");
@@ -29,6 +32,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_NewlyAddedRouteesReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
             var routee4 = System.Root.Spawn(MyActorProps);
             System.Root.Send(router, new RouterAddRoutee(routee4));
@@ -49,6 +55,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_RemovedRouteesDoNotReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, _, _) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, new RouterRemoveRoutee(routee1));
@@ -64,6 +73,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_RouteesCanBeRemoved()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, new RouterRemoveRoutee(routee1));
@@ -77,6 +89,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_RouteesCanBeAdded()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
             var routee4 = System.Root.Spawn(MyActorProps);
             System.Root.Send(router, new RouterAddRoutee(routee4));
@@ -91,6 +106,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RandomGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, new RouterBroadcastMessage("hello"));
@@ -102,6 +120,7 @@ namespace Proto.Router.Tests
 
         private (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees(ActorSystem system)
         {
+        
             var routee1 = system.Root.Spawn(MyActorProps);
             var routee2 = system.Root.Spawn(MyActorProps);
             var routee3 = system.Root.Spawn(MyActorProps);

@@ -6,13 +6,15 @@ using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests
 {
-    public class PIDTests : ActorTestBase
+    public class PIDTests 
     {
 
 
         [Fact]
-        public void Given_ActorNotDead_Ref_ShouldReturnIt()
+        public async Task Given_ActorNotDead_Ref_ShouldReturnIt()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
             var pid = Context.Spawn(Props.FromFunc(EmptyReceive));
 
             var p = pid.Ref(System);
@@ -23,6 +25,9 @@ namespace Proto.Tests
         [Fact]
         public async Task Given_ActorDied_Ref_ShouldNotReturnIt()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var pid = Context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
             await Context.StopAsync(pid);
 
@@ -32,8 +37,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Given_OtherProcess_Ref_ShouldReturnIt()
+        public async Task Given_OtherProcess_Ref_ShouldReturnIt()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var id = Guid.NewGuid().ToString();
             var p = new TestProcess(System);
             var (pid, _) = System.ProcessRegistry.TryAdd(id, p);

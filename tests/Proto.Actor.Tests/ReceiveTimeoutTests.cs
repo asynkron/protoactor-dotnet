@@ -6,12 +6,15 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class ReceiveTimeoutTests : ActorTestBase
+    public class ReceiveTimeoutTests 
     {
 
         [Fact]
         public async Task receive_timeout_received_within_expected_time()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
@@ -41,6 +44,9 @@ namespace Proto.Tests
         [Fact]
         public async Task receive_timeout_received_within_expected_time_when_sending_ignored_messages()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource(1000);
 
@@ -76,6 +82,9 @@ namespace Proto.Tests
         [Fact]
         public async Task receive_timeout_not_received_within_expected_time()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var timeoutReceived = false;
             var actorStartedWaiter = GetExpiringTaskCompletionSource();
 
@@ -103,6 +112,9 @@ namespace Proto.Tests
         [Fact]
         public async Task can_cancel_receive_timeout()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var timeoutReceived = false;
             var endingTimeout = TimeSpan.MaxValue;
             var autoExpiringWaiter = GetExpiringTaskCompletionSource(1500);
@@ -137,6 +149,9 @@ namespace Proto.Tests
         [Fact]
         public async Task can_still_set_receive_timeout_after_cancelling()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var timeoutReceived = false;
             var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 

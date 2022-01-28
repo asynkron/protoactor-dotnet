@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class DeadLetterResponseTests : ActorTestBase
+    public class DeadLetterResponseTests
     {
         
         private static readonly Props EchoProps = Props.FromFunc(context => {
@@ -17,6 +17,9 @@ namespace Proto.Tests
         [Fact]
         public async Task ThrowsDeadLetterException()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var echoPid = System.Root.Spawn(EchoProps);
 
             const string message = "hello";
@@ -31,6 +34,9 @@ namespace Proto.Tests
         [Fact]
         public async Task SendsDeadLetterResponse()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var validationActor = Props.FromProducer(() => new DeadLetterResponseValidationActor());
 
             var pid = Context.Spawn(validationActor);

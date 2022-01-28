@@ -66,12 +66,15 @@ namespace Proto.Tests
         }        
     }
     
-    public class CaptureContextTests : ActorTestBase
+    public class CaptureContextTests
     {
 
         [Fact]
         public async Task can_receive_captured_context()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var results = new Queue<UnstashResult>();
 
             var props = Props.FromProducer(() => new CaptureContextActor(results));
@@ -95,6 +98,9 @@ namespace Proto.Tests
         [Fact]
         public async Task can_continue_after_processing_capture()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var results = new Queue<UnstashResult>();
 
             var props = Props.FromProducer(() => new CaptureContextActor(results));

@@ -31,12 +31,15 @@ namespace Proto.Tests
         }
     }
 
-    public class MiddlewareTests : ActorTestBase
+    public class MiddlewareTests
     {
 
         [Fact]
-        public void Given_ContextDecorator_Should_Call_Decorator_Before_Actor_Receive()
+        public async Task Given_ContextDecorator_Should_Call_Decorator_Before_Actor_Receive()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var logs = new List<string>();
             var logs2 = new List<string>();
             var logs3 = new List<string>();
@@ -73,9 +76,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void
-            Given_ReceiverMiddleware_and_ContextDecorator_Should_Call_Middleware_and_Decorator_Before_Actor_Receive()
+        public async Task Given_ReceiverMiddleware_and_ContextDecorator_Should_Call_Middleware_and_Decorator_Before_Actor_Receive()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
             var props = Props.FromFunc(c => {
@@ -118,8 +123,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Given_ReceiverMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
+        public async Task Given_ReceiverMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
             var props = Props.FromFunc(c => {
@@ -152,8 +160,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Given_SenderMiddleware_Should_Call_Middleware_In_Order()
+        public async Task Given_SenderMiddleware_Should_Call_Middleware_In_Order()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var logs = new List<string>();
             var pid1 = Context.Spawn(Props.FromProducer(() => new DoNothingActor()));
             var props = Props.FromFunc(c => {

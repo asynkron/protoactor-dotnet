@@ -7,13 +7,16 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class SupervisionTests_AllForOne : ActorTestBase
+    public class SupervisionTests_AllForOne
     {
         private static readonly Exception Exception = new("boo hoo");
 
         [Fact]
-        public void AllForOneStrategy_Should_ResumeChildOnFailure()
+        public async Task AllForOneStrategy_Should_ResumeChildOnFailure()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
             var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
@@ -35,8 +38,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void AllForOneStrategy_Should_StopAllChildrenOnFailure()
+        public async Task AllForOneStrategy_Should_StopAllChildrenOnFailure()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
@@ -59,8 +65,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void AllForOneStrategy_Should_RestartAllChildrenOnFailure()
+        public async Task AllForOneStrategy_Should_RestartAllChildrenOnFailure()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
@@ -83,8 +92,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void AllForOneStrategy_Should_PassExceptionOnRestart()
+        public async Task AllForOneStrategy_Should_PassExceptionOnRestart()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
@@ -107,8 +119,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void AllForOneStrategy_Should_EscalateFailureToParent()
+        public async Task AllForOneStrategy_Should_EscalateFailureToParent()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
             var childProps = Props.FromProducer(() => new ChildActor());

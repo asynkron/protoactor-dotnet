@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Proto.Router.Tests
 {
-    public class RoundRobinGroupTests : ActorTestBase
+    public class RoundRobinGroupTests
     {
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
             .WithMailbox(() => new TestMailbox());
@@ -17,7 +17,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RoundRobinGroupRouter_RouteesReceiveMessagesInRoundRobinStyle()
         {
-            var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(System);
+                    await using var System = new ActorSystem();
+
+                    var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(System);
 
             System.Root.Send(router, "1");
 
@@ -45,7 +47,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RoundRobinGroupRouter_RouteesCanBeRemoved()
         {
-            var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(System);
+                    await using var System = new ActorSystem();
+
+                    var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(System);
 
             System.Root.Send(router, new RouterRemoveRoutee(routee1));
 
@@ -58,6 +62,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RoundRobinGroupRouter_RouteesCanBeAdded()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(System);
             var routee4 = System.Root.Spawn(MyActorProps);
             System.Root.Send(router, new RouterAddRoutee(routee4));
@@ -72,6 +79,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RoundRobinGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(System);
 
             System.Root.Send(router, "0");
@@ -91,6 +101,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RoundRobinGroupRouter_AddedRouteesReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(System);
             var routee4 = System.Root.Spawn(MyActorProps);
             System.Root.Send(router, new RouterAddRoutee(routee4));
@@ -109,6 +122,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task RoundRobinGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(System);
 
             System.Root.Send(router, new RouterBroadcastMessage("hello"));

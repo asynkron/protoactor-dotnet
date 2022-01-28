@@ -6,12 +6,16 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class WatchTests : ActorTestBase
+    public class WatchTests 
     {
 
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
+            
             long counter = 0;
             var childProps = Props.FromFunc(context => {
                     switch (context.Message)
@@ -49,6 +53,9 @@ namespace Proto.Tests
         [Fact]
         public async Task CanWatchLocalActors()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
                 .WithMailbox(() => new TestMailbox())
             );

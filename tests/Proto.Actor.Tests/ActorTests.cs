@@ -12,12 +12,17 @@ namespace Proto.Tests
         public object GetAutoResponse(IContext context) => "hey";
     }
 
-    public class ActorTests : ActorTestBase
+    public class ActorTests 
     {
 
         [Fact]
         public async Task RequestActorAsync()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+            
+            PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+                
             var pid = SpawnActorFromFunc(ctx => {
                     if (ctx.Message is string) ctx.Respond("hey");
                     return Task.CompletedTask;
@@ -32,6 +37,11 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsyncCanTouchActor()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
+            PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+            
             //no code...
             var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
 
@@ -43,6 +53,10 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsyncAutoRespond()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+            PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+            
             //no code...
             var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
 
@@ -54,6 +68,10 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsync_should_raise_TimeoutException_when_timeout_is_reached()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+            PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+            
             var pid = SpawnActorFromFunc(EmptyReceive);
 
             var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(
@@ -65,6 +83,11 @@ namespace Proto.Tests
         [Fact]
         public async Task RequestActorAsync_should_not_raise_TimeoutException_when_result_is_first()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
+            PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+            
             var pid = SpawnActorFromFunc(ctx => {
                     if (ctx.Message is string) ctx.Respond("hey");
                     return Task.CompletedTask;
@@ -79,6 +102,9 @@ namespace Proto.Tests
         [Fact]
         public async Task ActorLifeCycle()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var messages = new Queue<object>();
 
             var pid = Context.Spawn(
@@ -105,6 +131,9 @@ namespace Proto.Tests
         [Fact]
         public async Task ActorLifeCycleWhenExceptionIsThrown()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var messages = new Queue<object>();
             var i = 0;
             async Task HandleMessage(IContext ctx)
@@ -184,6 +213,11 @@ namespace Proto.Tests
         [Fact]
         public async Task ForwardActorAsync()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+            PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(forwarder));
+            PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+            
             var pid = SpawnActorFromFunc(ctx => {
                     if (ctx.Message is string) ctx.Respond("hey");
                     return Task.CompletedTask;
@@ -200,7 +234,5 @@ namespace Proto.Tests
 
             Assert.Equal("hey", reply);
         }
-
-
     }
 }

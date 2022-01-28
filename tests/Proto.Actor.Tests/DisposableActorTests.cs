@@ -6,12 +6,15 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class DisposableActorTests : ActorTestBase
+    public class DisposableActorTests
     {
 
         [Fact]
-        public void WhenActorRestarted_DisposeIsCalled()
+        public async Task WhenActorRestarted_DisposeIsCalled()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
@@ -28,8 +31,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void WhenActorRestarted_DisposeAsyncIsCalled()
+        public async Task WhenActorRestarted_DisposeAsyncIsCalled()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
@@ -46,8 +52,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void WhenActorResumed_DisposeIsNotCalled()
+        public async Task WhenActorResumed_DisposeIsNotCalled()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
@@ -64,8 +73,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void WhenActorResumed_DisposeAsyncIsNotCalled()
+        public async Task WhenActorResumed_DisposeAsyncIsNotCalled()
         {
+            await using var System = new ActorSystem();
+            var Context = System.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
@@ -84,6 +96,9 @@ namespace Proto.Tests
         [Fact]
         public async Task WhenActorStopped_DisposeIsCalled()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var disposeCalled = false;
             var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
@@ -95,6 +110,9 @@ namespace Proto.Tests
         [Fact]
         public async Task WhenActorStopped_DisposeAsyncIsCalled()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var disposeCalled = false;
             var props = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
@@ -104,8 +122,11 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void WhenActorWithChildrenStopped_DisposeIsCalledInEachChild()
+        public async Task WhenActorWithChildrenStopped_DisposeIsCalledInEachChild()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var child1Disposed = false;
             var child2Disposed = false;
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);

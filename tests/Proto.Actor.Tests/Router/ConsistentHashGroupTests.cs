@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Proto.Router.Tests
 {
-    public class ConsistentHashGroupTests : ActorTestBase
+    public class ConsistentHashGroupTests 
     {
         private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
             .WithMailbox(() => new TestMailbox());
@@ -19,6 +19,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, new Message("message1"));
@@ -33,6 +36,10 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_with_MessageHasherFunc_MessageWithSameHashAlwaysGoesToSameRoutee()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
+                    
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System, x => x.ToString()!);
 
             System.Root.Send(router, "message1");
@@ -47,6 +54,10 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_MessagesWithDifferentHashesGoToDifferentRoutees()
         {
+        
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, new Message("message1"));
@@ -61,6 +72,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee_EvenWhenNewRouteeAdded()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, new Message("message1"));
@@ -76,6 +90,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_RouteesCanBeRemoved()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, new RouterRemoveRoutee(routee1));
@@ -89,6 +106,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_RouteesCanBeAdded()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
             var routee4 = System.Root.Spawn(MyActorProps);
             System.Root.Send(router, new RouterAddRoutee(routee4));
@@ -103,6 +123,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_RemovedRouteesNoLongerReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, _, _) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, new RouterRemoveRoutee(routee1));
@@ -113,6 +136,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_AddedRouteesReceiveMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, _, _, _) = CreateRouterWith3Routees(System);
             var routee4 = System.Root.Spawn(MyActorProps);
             System.Root.Send(router, new RouterAddRoutee(routee4));
@@ -123,6 +149,9 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_MessageIsReassignedWhenRouteeRemoved()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
             var (router, routee1, routee2, _) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, new Message("message1"));
@@ -139,6 +168,10 @@ namespace Proto.Router.Tests
         [Fact]
         public async Task ConsistentHashGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
         {
+                    await using var System = new ActorSystem();
+                    var Context = System.Root;
+
+                    
             var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(System);
 
             System.Root.Send(router, new RouterBroadcastMessage(new Message("hello")));
