@@ -6,18 +6,16 @@ using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests
 {
-    public class PIDTests 
+    public class PidTests
     {
-
-
         [Fact]
         public async Task Given_ActorNotDead_Ref_ShouldReturnIt()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
-            var pid = Context.Spawn(Props.FromFunc(EmptyReceive));
+            await using var system = new ActorSystem();
+            var context = system.Root;
+            var pid = context.Spawn(Props.FromFunc(EmptyReceive));
 
-            var p = pid.Ref(System);
+            var p = pid.Ref(system);
 
             Assert.NotNull(p);
         }
@@ -25,13 +23,13 @@ namespace Proto.Tests
         [Fact]
         public async Task Given_ActorDied_Ref_ShouldNotReturnIt()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
-            var pid = Context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
-            await Context.StopAsync(pid);
+            var pid = context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
+            await context.StopAsync(pid);
 
-            var p = pid.Ref(System);
+            var p = pid.Ref(system);
 
             Assert.Null(p);
         }
@@ -39,14 +37,13 @@ namespace Proto.Tests
         [Fact]
         public async Task Given_OtherProcess_Ref_ShouldReturnIt()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
 
             var id = Guid.NewGuid().ToString();
-            var p = new TestProcess(System);
-            var (pid, _) = System.ProcessRegistry.TryAdd(id, p);
+            var p = new TestProcess(system);
+            var (pid, _) = system.ProcessRegistry.TryAdd(id, p);
 
-            var p2 = pid.Ref(System);
+            var p2 = pid.Ref(system);
 
             Assert.Same(p, p2);
         }

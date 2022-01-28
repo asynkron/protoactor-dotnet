@@ -10,7 +10,6 @@ namespace Proto.Tests
 {
     public class BatchFutureTests : ActorTestBase
     {
-
         [Fact]
         public async Task Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()
         {
@@ -23,7 +22,6 @@ namespace Proto.Tests
 
             using var batch = new FutureBatchProcess(System, 1, CancellationTokens.FromSeconds(5));
             var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
-
 
             Context.Request(pid, "hello", future.Pid);
 
@@ -64,7 +62,7 @@ namespace Proto.Tests
             using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.FromSeconds(5));
             var futures = new IFuture[batchSize];
 
-            for (int i = 0; i < batchSize; i++)
+            for (var i = 0; i < batchSize; i++)
             {
                 var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
                 Context.Request(pid, i, future.Pid);
@@ -94,7 +92,7 @@ namespace Proto.Tests
             using var batch = new FutureBatchProcess(System, batchSize, cts.Token);
             var futures = new IFuture[batchSize];
 
-            for (int i = 0; i < batchSize; i++)
+            for (var i = 0; i < batchSize; i++)
             {
                 var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
                 futures[i] = future;
@@ -121,7 +119,7 @@ namespace Proto.Tests
 
             var tasks = new Task<object>[size];
 
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 tasks[i] = batchContext.RequestAsync<object>(pid, i, cancellationToken);
             }

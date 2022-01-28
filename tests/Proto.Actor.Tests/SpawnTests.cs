@@ -16,14 +16,14 @@ namespace Proto.Tests
         [Fact]
         public async Task Given_PropsWithSpawner_SpawnShouldReturnPidCreatedBySpawner()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var spawnedPid = PID.FromAddress("test", "test");
             var props = Props.FromFunc(EmptyReceive)
                 .WithSpawner((s, id, p, parent) => spawnedPid);
 
-            var pid = Context.Spawn(props);
+            var pid = context.Spawn(props);
 
             Assert.Same(spawnedPid, pid);
         }
@@ -31,27 +31,27 @@ namespace Proto.Tests
         [Fact]
         public async Task Given_Existing_Name_SpawnNamedShouldThrow()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var props = Props.FromFunc(EmptyReceive);
 
             var uniqueName = Guid.NewGuid().ToString();
-            Context.SpawnNamed(props, uniqueName);
-            var x = Assert.Throws<ProcessNameExistException>(() => { Context.SpawnNamed(props, uniqueName); });
+            context.SpawnNamed(props, uniqueName);
+            var x = Assert.Throws<ProcessNameExistException>(() => { context.SpawnNamed(props, uniqueName); });
             Assert.Equal(uniqueName, x.Name);
         }
 
         [Fact]
         public async Task Given_Existing_Name_SpawnPrefixShouldReturnPID()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var props = Props.FromFunc(EmptyReceive);
 
-            Context.SpawnNamed(props, "existing");
-            var pid = Context.SpawnPrefix(props, "existing");
+            context.SpawnNamed(props, "existing");
+            var pid = context.SpawnPrefix(props, "existing");
             Assert.NotNull(pid);
         }
     }

@@ -67,7 +67,7 @@ namespace Proto.Tests
 
             var futures = new IFuture[BatchSize];
 
-            for (int i = 0; i < BatchSize; i++)
+            for (var i = 0; i < BatchSize; i++)
             {
                 var future = GetFuture();
                 Context.Request(pid, i, future.Pid);
@@ -95,14 +95,13 @@ namespace Proto.Tests
             var batchSize = 1000;
             var futures = new IFuture[batchSize];
 
-            for (int i = 0; i < batchSize; i++)
+            for (var i = 0; i < batchSize; i++)
             {
                 var future = GetFuture();
                 futures[i] = future;
                 Context.Request(pid, i, future.Pid);
             }
 
-            
             futures.Invoking(async f => {
                     using var cts = new CancellationTokenSource(50);
                     // ReSharper disable once AccessToDisposedClosure

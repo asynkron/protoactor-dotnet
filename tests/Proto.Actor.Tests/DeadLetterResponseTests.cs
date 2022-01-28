@@ -6,7 +6,6 @@ namespace Proto.Tests
 {
     public class DeadLetterResponseTests
     {
-        
         private static readonly Props EchoProps = Props.FromFunc(context => {
                 if (context.Message is string s) context.Respond(s);
 
@@ -17,31 +16,31 @@ namespace Proto.Tests
         [Fact]
         public async Task ThrowsDeadLetterException()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
-            var echoPid = System.Root.Spawn(EchoProps);
+            var echoPid = system.Root.Spawn(EchoProps);
 
             const string message = "hello";
-            var response = await Context.RequestAsync<string>(echoPid, message);
+            var response = await context.RequestAsync<string>(echoPid, message);
             response.Should().Be(message);
-            await Context.PoisonAsync(echoPid);
+            await context.PoisonAsync(echoPid);
 
-            Context.Invoking(context => context.RequestAsync<string>(echoPid, message)).Should()
+            context.Invoking(c => c.RequestAsync<string>(echoPid, message)).Should()
                 .ThrowExactly<DeadLetterException>();
         }
 
         [Fact]
         public async Task SendsDeadLetterResponse()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var validationActor = Props.FromProducer(() => new DeadLetterResponseValidationActor());
 
-            var pid = Context.Spawn(validationActor);
+            var pid = context.Spawn(validationActor);
 
-            var response = await Context.RequestAsync<string>(pid, "Validate");
+            var response = await context.RequestAsync<string>(pid, "Validate");
 
             response.Should().Be("Validated");
         }

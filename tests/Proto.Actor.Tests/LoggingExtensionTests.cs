@@ -38,7 +38,7 @@ namespace Proto.Tests
 
             Assert.Single(logStore.GetEntries());
         }
-        
+
         [Fact]
         public async Task CanCompareEntriesInStore()
         {
@@ -47,20 +47,20 @@ namespace Proto.Tests
             system.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
             var logger = system.Logger();
-            
+
             logger?.LogDebug("...123....Hello...456...");
             logger?.LogDebug("...789....World...012...");
 
             var hello = logStore.FindEntry("Hello")!;
             Assert.NotNull(hello);
-            
+
             var world = logStore.FindEntry("World")!;
             Assert.NotNull(world);
-            
+
             Assert.True(hello.IsBefore(world));
         }
-        
-        [Fact] 
+
+        [Fact]
         public async Task DoesNotCauseSideEffects()
         {
             // this is not really a logging test, its just to highlight that ?. really ignores the right-side if null
@@ -70,9 +70,9 @@ namespace Proto.Tests
             var logger = system.Logger();
 
             var i = 0;
-            logger?.LogDebug("hello", ++i ); //we can pass a lot of args, call ToString etc. if logger is not enabled, it will be free
-            
-            Assert.Equal(0,i);
+            logger?.LogDebug("hello", ++i); //we can pass a lot of args, call ToString etc. if logger is not enabled, it will be free
+
+            Assert.Equal(0, i);
         }
 
         [Fact]

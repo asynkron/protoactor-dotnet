@@ -34,14 +34,12 @@ namespace Proto.Tests
         [Fact]
         public void Should_not_give_out_more_futures_than_size_allows()
         {
-            for (int i = 0; i < BatchSize; i++)
+            for (var i = 0; i < BatchSize; i++)
             {
                 GetFuture().Should().NotBeNull();
             }
 
             this.Invoking(it => it.GetFuture()).Should().Throw<Exception>();
         }
-        
-        
     }
 }

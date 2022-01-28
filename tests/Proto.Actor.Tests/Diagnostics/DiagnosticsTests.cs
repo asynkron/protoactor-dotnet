@@ -16,37 +16,37 @@ namespace Proto.Tests.Diagnostics
 
         public string GetDiagnosticsString() => "Hello World";
     }
+
     public class DiagnosticsTests
     {
-        
         [Fact]
         public async Task CanListPidsInProcessRegistry()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var props = Props.FromProducer(() => new MyDiagnosticsActor());
 
-            var pids = System.ProcessRegistry.SearchByName("MyActor");
+            var pids = system.ProcessRegistry.SearchByName("MyActor");
             Assert.Empty(pids);
-            
-            Context.SpawnNamed(props,"MyActor");
-            
-            pids = System.ProcessRegistry.SearchByName("MyActor");
+
+            context.SpawnNamed(props, "MyActor");
+
+            pids = system.ProcessRegistry.SearchByName("MyActor");
             Assert.Single(pids);
         }
-        
+
         [Fact]
         public async Task CanGetDiagnosticsStringFromActorDiagnostics()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var props = Props.FromProducer(() => new MyDiagnosticsActor());
 
-            var pid = Context.Spawn(props);
+            var pid = context.Spawn(props);
 
-            var res = await DiagnosticTools.GetDiagnosticsString(System, pid);
+            var res = await DiagnosticTools.GetDiagnosticsString(system, pid);
             Assert.Contains("Hello World", res, StringComparison.InvariantCulture);
         }
     }

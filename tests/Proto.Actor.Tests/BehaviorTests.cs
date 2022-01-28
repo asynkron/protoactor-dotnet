@@ -3,54 +3,52 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class BehaviorTests 
+    public class BehaviorTests
     {
-
         [Fact]
         public async Task can_change_states()
         {
-                    await using var System = new ActorSystem();
-                    var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
-                    
             var testActorProps = Props.FromProducer(() => new LightBulb());
-            var actor = Context.Spawn(testActorProps);
+            var actor = context.Spawn(testActorProps);
 
-            var response = await Context.RequestAsync<string>(actor, new PressSwitch());
+            var response = await context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Turning on", response);
-            response = await Context.RequestAsync<string>(actor, new Touch());
+            response = await context.RequestAsync<string>(actor, new Touch());
             Assert.Equal("Hot!", response);
-            response = await Context.RequestAsync<string>(actor, new PressSwitch());
+            response = await context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Turning off", response);
-            response = await Context.RequestAsync<string>(actor, new Touch());
+            response = await context.RequestAsync<string>(actor, new Touch());
             Assert.Equal("Cold", response);
         }
 
         [Fact]
         public async Task can_use_global_behaviour()
         {
-                    await using var System = new ActorSystem();
-                    var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var testActorProps = Props.FromProducer(() => new LightBulb());
-            var actor = Context.Spawn(testActorProps);
-            var _ = await Context.RequestAsync<string>(actor, new PressSwitch());
-            var response = await Context.RequestAsync<string>(actor, new HitWithHammer());
+            var actor = context.Spawn(testActorProps);
+            var _ = await context.RequestAsync<string>(actor, new PressSwitch());
+            var response = await context.RequestAsync<string>(actor, new HitWithHammer());
             Assert.Equal("Smashed!", response);
-            response = await Context.RequestAsync<string>(actor, new PressSwitch());
+            response = await context.RequestAsync<string>(actor, new PressSwitch());
             Assert.Equal("Broken", response);
-            response = await Context.RequestAsync<string>(actor, new Touch());
+            response = await context.RequestAsync<string>(actor, new Touch());
             Assert.Equal("OW!", response);
         }
-        
+
         [Fact]
         public async Task pop_behavior_should_restore_pushed_behavior()
         {
-                    await using var System = new ActorSystem();
-                    var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
-                    PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
-                    
+            PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
+
             var behavior = new Behavior();
             behavior.Become(ctx => {
                     if (ctx.Message is string)
@@ -69,9 +67,9 @@ namespace Proto.Tests
             );
             var pid = SpawnActorFromFunc(behavior.ReceiveAsync);
 
-            var reply = await Context.RequestAsync<string>(pid, "number");
-            var replyAfterPush = await Context.RequestAsync<int>(pid, null!);
-            var replyAfterPop = await Context.RequestAsync<string>(pid, "answertolifetheuniverseandeverything");
+            var reply = await context.RequestAsync<string>(pid, "number");
+            var replyAfterPush = await context.RequestAsync<int>(pid, null!);
+            var replyAfterPop = await context.RequestAsync<string>(pid, "answertolifetheuniverseandeverything");
 
             Assert.Equal("number42answertolifetheuniverseandeverything", $"{reply}{replyAfterPush}{replyAfterPop}");
         }

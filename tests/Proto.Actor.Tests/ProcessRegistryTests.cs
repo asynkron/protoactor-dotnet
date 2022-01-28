@@ -7,7 +7,6 @@ namespace Proto.Tests
 {
     public class ProcessRegistryTests
     {
-
         [Fact]
         public async Task Given_PIDDoesNotExist_TryAddShouldAddLocalPID()
         {
@@ -79,6 +78,5 @@ namespace Proto.Tests
 
             Assert.Same(p, p2);
         }
-        
     }
 }

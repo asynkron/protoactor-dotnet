@@ -22,10 +22,10 @@ namespace Proto.Tests
         [Fact]
         public async Task EventStream_CanSubscribeToAllEventTypes()
         {
-            await using  var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var eventStream = system.EventStream;
             var receivedEvents = new List<object>();
-            
+
             eventStream.Subscribe(@event => receivedEvents.Add(@event));
             eventStream.Publish("hello");
             eventStream.Publish(1);
@@ -36,7 +36,7 @@ namespace Proto.Tests
         [Fact]
         public async Task EventStream_CanUnsubscribeFromEvents()
         {
-            await using  var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var eventStream = system.EventStream;
             var receivedEvents = new List<object>();
             var subscription = eventStream.Subscribe<string>(@event => receivedEvents.Add(@event));
@@ -51,7 +51,7 @@ namespace Proto.Tests
         {
             await using var system = new ActorSystem();
             var eventStream = system.EventStream;
-            
+
             var eventsReceived = new List<object>();
             eventStream.Subscribe<int>(@event => eventsReceived.Add(@event));
             eventStream.Publish("not an int");
@@ -63,7 +63,7 @@ namespace Proto.Tests
         {
             await using var system = new ActorSystem();
             var eventStream = system.EventStream;
-            
+
             string received;
             eventStream.Subscribe<string>(theString => {
                     received = theString;

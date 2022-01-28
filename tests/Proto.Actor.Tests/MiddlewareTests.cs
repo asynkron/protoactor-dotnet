@@ -33,12 +33,11 @@ namespace Proto.Tests
 
     public class MiddlewareTests
     {
-
         [Fact]
         public async Task Given_ContextDecorator_Should_Call_Decorator_Before_Actor_Receive()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var logs = new List<string>();
             var logs2 = new List<string>();
@@ -60,9 +59,9 @@ namespace Proto.Tests
                 .WithMailbox(() => testMailbox)
                 .WithContextDecorator(c => new TestContextDecorator(c, logs), c => new TestContextDecorator(c, logs2))
                 .WithContextDecorator(c => new TestContextDecorator(c, logs3));
-            var pid = Context.Spawn(props);
+            var pid = context.Spawn(props);
 
-            Context.Send(pid, "middleware");
+            context.Send(pid, "middleware");
 
             Assert.Equal(2, logs.Count);
             Assert.Equal("decorator", logs[0]);
@@ -78,8 +77,8 @@ namespace Proto.Tests
         [Fact]
         public async Task Given_ReceiverMiddleware_and_ContextDecorator_Should_Call_Middleware_and_Decorator_Before_Actor_Receive()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
@@ -110,9 +109,9 @@ namespace Proto.Tests
                 )
                 .WithMailbox(() => testMailbox)
                 .WithContextDecorator(c => new TestContextDecorator(c, logs));
-            var pid = Context.Spawn(props);
+            var pid = context.Spawn(props);
 
-            Context.Send(pid, "start");
+            context.Send(pid, "start");
 
             Console.WriteLine(string.Join(", ", logs));
 
@@ -125,8 +124,8 @@ namespace Proto.Tests
         [Fact]
         public async Task Given_ReceiverMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var logs = new List<string>();
             var testMailbox = new TestMailbox();
@@ -149,9 +148,9 @@ namespace Proto.Tests
                     }
                 )
                 .WithMailbox(() => testMailbox);
-            var pid = Context.Spawn(props);
+            var pid = context.Spawn(props);
 
-            Context.Send(pid, "");
+            context.Send(pid, "");
 
             Assert.Equal(3, logs.Count);
             Assert.Equal("middleware 1", logs[0]);
@@ -162,11 +161,11 @@ namespace Proto.Tests
         [Fact]
         public async Task Given_SenderMiddleware_Should_Call_Middleware_In_Order()
         {
-            await using var System = new ActorSystem();
-            var Context = System.Root;
+            await using var system = new ActorSystem();
+            var context = system.Root;
 
             var logs = new List<string>();
-            var pid1 = Context.Spawn(Props.FromProducer(() => new DoNothingActor()));
+            var pid1 = context.Spawn(Props.FromProducer(() => new DoNothingActor()));
             var props = Props.FromFunc(c => {
                         if (c.Message is string)
                             c.Send(pid1, "hey");
@@ -186,9 +185,9 @@ namespace Proto.Tests
                     }
                 )
                 .WithMailbox(() => new TestMailbox());
-            var pid2 = Context.Spawn(props);
+            var pid2 = context.Spawn(props);
 
-            Context.Send(pid2, "");
+            context.Send(pid2, "");
 
             Assert.Equal(2, logs.Count);
             Assert.Equal("middleware 1", logs[0]);
