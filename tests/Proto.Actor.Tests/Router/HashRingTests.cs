@@ -13,10 +13,7 @@ namespace Proto.Router.Tests
 {
     public class HashRingTests
     {
-        [Theory]
-        [InlineData(2, 1)]
-        [InlineData(10, 5)]
-        [InlineData(100, 10)]
+        [Theory, InlineData(2, 1), InlineData(10, 5), InlineData(100, 10)]
         public void Can_provide_consistent_results_when_removing_values(int nodeCount, int removeCount)
         {
             var values = Enumerable.Range(0, nodeCount).Select(_ => Guid.NewGuid().ToString("N")).ToArray();
@@ -39,20 +36,12 @@ namespace Proto.Router.Tests
             {
                 var currentResult = hashRing.GetNode(key);
 
-                if (removed.Contains(prevResult))
-                {
-                    currentResult.Should().NotBe(prevResult);
-                }
-                else
-                {
-                    currentResult.Should().Be(prevResult);
-                }
+                if (removed.Contains(prevResult)) currentResult.Should().NotBe(prevResult);
+                else currentResult.Should().Be(prevResult);
             }
         }
 
-        [Theory]
-        [InlineData(10, 1, .8)]
-        [InlineData(100, 5, .9)]
+        [Theory, InlineData(10, 1, .8), InlineData(100, 5, .9)]
         public void Can_provide_relatively_consistent_results_when_adding_values(int nodeCount, int addedCount, double expectedRetainedRatio)
         {
             var values = Enumerable.Range(0, nodeCount).Select(_ => Guid.NewGuid().ToString("N")).ToArray();
@@ -80,10 +69,7 @@ namespace Proto.Router.Tests
             retainedRatio.Should().BeGreaterOrEqualTo(expectedRetainedRatio);
         }
 
-        [Theory]
-        [InlineData(2, 1)]
-        [InlineData(10, 10)]
-        [InlineData(100, 10)]
+        [Theory, InlineData(2, 1), InlineData(10, 10), InlineData(100, 10)]
         public void Adding_values_is_equivalent_to_ctor_values(int nodeCount, int addedCount)
         {
             var values = Enumerable.Range(0, nodeCount).Select(_ => Guid.NewGuid().ToString("N")).ToArray();
@@ -102,10 +88,7 @@ namespace Proto.Router.Tests
             }
         }
 
-        [Theory]
-        [InlineData(2, 1)]
-        [InlineData(10, 10)]
-        [InlineData(100, 10)]
+        [Theory, InlineData(2, 1), InlineData(10, 10), InlineData(100, 10)]
         public void Removing_values_is_equivalent_to_ctor_values(int nodeCount, int removedCount)
         {
             var values = Enumerable.Range(0, nodeCount).Select(_ => Guid.NewGuid().ToString("N")).ToArray();
