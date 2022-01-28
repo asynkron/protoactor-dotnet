@@ -10,7 +10,7 @@
         <PackageReference Include="GitHubActionsTestLogger" Version="1.2.0" />
         <PackageReference Include="Handlebars.Net" Version="2.0.9" />
         <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
-        <PackageReference Include="Roslynator.Analyzers" Version="3.2.2">
+        <PackageReference Include="Roslynator.Analyzers" Version="4.0.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

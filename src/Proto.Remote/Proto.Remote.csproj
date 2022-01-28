@@ -9,7 +9,7 @@
     <PackageReference Include="Grpc.Core" Version="2.40.0" />
     <PackageReference Include="Grpc.HealthCheck" Version="2.40.0" />
     <PackageReference Include="Grpc.Tools" Version="2.40.0" PrivateAssets="All" />
-    <PackageReference Include="Roslynator.Analyzers" Version="3.2.2">
+    <PackageReference Include="Roslynator.Analyzers" Version="4.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
