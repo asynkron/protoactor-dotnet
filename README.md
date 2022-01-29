@@ -1,6 +1,6 @@
-| Name            | Operating System      | Status | History |
-| :---            | :---                  | :---   | :---    |
-| Build           | Ubuntu                | ![Build status](https://ci.appveyor.com/api/projects/status/cmpnw19ur8j25xn4/branch/master?svg=true)|![Build history](https://buildstats.info/github/chart/asynkron/protoactor-dotnet)|
+| Status | History |
+| :---   | :---    |
+| ![Build status](https://ci.appveyor.com/api/projects/status/cmpnw19ur8j25xn4/branch/master?svg=true)|![Build history](https://buildstats.info/github/chart/asynkron/protoactor-dotnet)|
 
 
 ### [Join our Slack channel](https://join.slack.com/t/asynkron/shared_invite/zt-ko824601-yGN1d3GHF9jzZX2VtONodQ)
