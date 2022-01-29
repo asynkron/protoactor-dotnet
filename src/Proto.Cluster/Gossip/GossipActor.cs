@@ -79,14 +79,16 @@ namespace Proto.Cluster.Gossip
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
             ReceiveState(context, gossipRequest.State);
 
-            if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
-            {
-                Logger.LogWarning("Got gossip request from unknown member {MemberId}", gossipRequest.MemberId);
-
-                // Nothing to send, do not provide sender or state payload
-                context.Respond(new GossipResponse());
-                return Task.CompletedTask;
-            }
+            //it's OK, we might not just yet be aware of this member yet....
+            
+            // if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
+            // {
+            //     Logger.LogWarning("Got gossip request from unknown member {MemberId}", gossipRequest.MemberId);
+            //
+            //     // Nothing to send, do not provide sender or state payload
+            //     context.Respond(new GossipResponse());
+            //     return Task.CompletedTask;
+            // }
 
             var memberState = _internal.GetMemberStateDelta(gossipRequest.MemberId);
 

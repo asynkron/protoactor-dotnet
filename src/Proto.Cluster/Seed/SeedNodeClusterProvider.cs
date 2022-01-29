@@ -7,31 +7,28 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto.Cluster
+namespace Proto.Cluster.Seed
 {
     public class SeedNodeClusterProvider : IClusterProvider
     {
-        private CancellationTokenSource _cts = new();
-        
+        private readonly CancellationTokenSource _cts = new();
+        private PID? _pid;
+        private Cluster? _cluster;
+
         public Task StartMemberAsync(Cluster cluster)
         {
-            _ = SafeTask.Run(async () => {
-
-                }
-            );
+            _pid = cluster.System.Root.SpawnNamed(SeedNodeActor.Props(), "seed");
+            _cluster = cluster;
 
             return Task.CompletedTask;
         }
 
-        public Task StartClientAsync(Cluster cluster)
-        {
-            throw new NotImplementedException();
-        }
+        public Task StartClientAsync(Cluster cluster) => Task.CompletedTask;
 
-        public Task ShutdownAsync(bool graceful)
+        public async Task ShutdownAsync(bool graceful)
         {
+            await _cluster!.System.Root.StopAsync(_pid!);
            _cts.Cancel();
-           return Task.CompletedTask;
         }
     }
 }
