@@ -6,10 +6,8 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
@@ -43,7 +41,5 @@ namespace Proto.Remote
                     break;
             }
         }
-
-        public string? MemberId { get; set; } = null;
     }
 }

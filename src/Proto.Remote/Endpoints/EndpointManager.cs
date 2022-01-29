@@ -19,7 +19,7 @@ namespace Proto.Remote
         private static readonly ILogger Logger = Log.CreateLogger<EndpointManager>();
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly IChannelProvider _channelProvider;
-        private readonly ConcurrentDictionary<string, IEndpoint> _serverEndpoints = new();
+        private readonly ConcurrentDictionary<string, ServerEndpoint> _serverEndpoints = new();
         private readonly ConcurrentDictionary<string, IEndpoint> _clientEndpoints = new();
         private readonly ConcurrentDictionary<string, DateTime> _bannedAddresses = new();
         private readonly ConcurrentDictionary<string, DateTime> _bannedClientSystemIds = new();
@@ -96,9 +96,9 @@ namespace Proto.Remote
                 Logger.LogDebug("[{SystemAddress}] Endpoint {Address} terminating", _system.Address, evt.Address ?? evt.ActorSystemId);
             lock (_synLock)
             {
-                if (evt.Address is not null && _serverEndpoints.TryRemove(evt.Address, out var endpoint))
+                if (evt.Address is not null && _serverEndpoints.TryRemove(evt.Address, out var serverEndpoint))
                 {
-                    endpoint.DisposeAsync().GetAwaiter().GetResult();
+                    serverEndpoint.DisposeAsync().GetAwaiter().GetResult();
 
                     if (evt.OnError && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _bannedAddresses.TryAdd(evt.Address, DateTime.UtcNow))
                     {
@@ -108,9 +108,9 @@ namespace Proto.Remote
                         });
                     }
                 }
-                if (evt.ActorSystemId is not null && _clientEndpoints.TryRemove(evt.ActorSystemId, out endpoint))
+                if (evt.ActorSystemId is not null && _clientEndpoints.TryRemove(evt.ActorSystemId, out var clientEndpoint))
                 {
-                    endpoint.DisposeAsync().GetAwaiter().GetResult();
+                    clientEndpoint.DisposeAsync().GetAwaiter().GetResult();
 
                     if (evt.OnError && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _bannedClientSystemIds.TryAdd(evt.ActorSystemId, DateTime.UtcNow))
                     {

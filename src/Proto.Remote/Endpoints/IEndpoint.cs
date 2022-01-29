@@ -19,7 +19,5 @@ namespace Proto.Remote
         void RemoteTerminate(PID target, Terminated terminated);
         void RemoteWatch(PID pid, Watch watch);
         void RemoteUnwatch(PID pid, Unwatch unwatch);
-        
-        string? MemberId { get; set; }
     }
 }

@@ -28,8 +28,6 @@ namespace Proto.Remote
             _deserializationErrorLogLevel = system.Remote().Config.DeserializationErrorLogLevel;
         }
 
-        public string? MemberId { get; set; } = null;
-        
         public Channel<RemoteMessage> Outgoing { get; } = Channel.CreateBounded<RemoteMessage>(3);
         public ConcurrentStack<RemoteMessage> OutgoingStash { get; } = new();
         protected readonly ActorSystem System;

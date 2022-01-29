@@ -30,7 +30,7 @@ namespace Proto.Remote
         private readonly RemoteMessageHandler _remoteMessageHandler;
         private readonly string _address;
         private readonly Type _connectorType;
-        private readonly IEndpoint _endpoint;
+        private readonly ServerEndpoint _endpoint;
         private readonly TimeSpan _backoff;
         private readonly int _maxNrOfRetries;
         private readonly Random _random = new();
@@ -38,13 +38,14 @@ namespace Proto.Remote
         private readonly Task _runner;
         private readonly CancellationTokenSource _cts = new();
         private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
-        
+        private string _memberId = null!;
+
         public async Task Stop()
         {
             _cts.Cancel();
             await _runner.ConfigureAwait(false);
         }
-        public ServerConnector(string address, Type connectorType, IEndpoint endpoint, IChannelProvider channelProvider, ActorSystem system, RemoteConfigBase remoteConfig, RemoteMessageHandler remoteMessageHandler)
+        public ServerConnector(string address, Type connectorType, ServerEndpoint endpoint, IChannelProvider channelProvider, ActorSystem system, RemoteConfigBase remoteConfig, RemoteMessageHandler remoteMessageHandler)
         {
             _channelProvider = channelProvider;
             _system = system;
@@ -60,6 +61,9 @@ namespace Proto.Remote
             if (_system.Metrics.Enabled)
                 _metricTags = new KeyValuePair<string, object?>[] {new("id", _system.Id), new("address", _system.Address)};
         }
+
+        public string MemberId => _memberId;
+
         public async Task RunAsync()
         {
             string? memberId = null;
@@ -119,7 +123,7 @@ namespace Proto.Remote
                     }
                     
                     memberId = connectResponse.MemberId;
-                    _endpoint.MemberId = memberId;
+                    _memberId = memberId;
 
                     if (_system.Remote().BlockList.IsBlocked(memberId))
                     {

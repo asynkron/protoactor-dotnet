@@ -25,5 +25,7 @@ namespace Proto.Remote
             await Connector.Stop().ConfigureAwait(false);
             GC.SuppressFinalize(this);
         }
+
+        public string? MemberId => Connector.MemberId;
     }
 }
