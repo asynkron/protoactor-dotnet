@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.Seed
 {
@@ -16,8 +17,9 @@ namespace Proto.Cluster.Seed
         private readonly CancellationTokenSource _cts = new();
         private PID? _pid;
         private Cluster? _cluster;
+        private static readonly ILogger Logger = Log.CreateLogger<SeedNodeClusterProvider>(); 
 
-        public SeedNodeClusterProvider(TimeSpan? heartbeatExpiration) => 
+        public SeedNodeClusterProvider(TimeSpan? heartbeatExpiration=null) => 
             _heartbeatExpiration = heartbeatExpiration ?? TimeSpan.FromSeconds(5);
 
         public Task StartMemberAsync(Cluster cluster)
@@ -38,6 +40,7 @@ namespace Proto.Cluster.Seed
 
                         if (blocked.Any())
                         {
+                            Logger.LogInformation("Blocking members due to expired heartbeat {Members}", blocked);
                             cluster.MemberList.UpdateBlockedMembers(blocked);
                         }
                     }

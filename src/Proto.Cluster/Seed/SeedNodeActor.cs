@@ -6,12 +6,14 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
 
 namespace Proto.Cluster.Seed
 {
     public class SeedNodeActor : IActor
     {
+        private static readonly ILogger Logger = Log.CreateLogger<SeedNodeActor>(); 
         private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
 
         public Task ReceiveAsync(IContext context) => context.Message switch
@@ -24,16 +26,17 @@ namespace Proto.Cluster.Seed
 
         private Task OnStarted(IContext context)
         {
+            Logger.LogInformation("Started SeedNodeActor");
             SetMember(context.Cluster().MemberList.Self);
             context.System.EventStream.Subscribe<GossipUpdate>(context.System.Root, context.Self);
             UpdateMemberList(context);
             return Task.CompletedTask;
         }
 
-        private Task OnJoinRequest(IContext context, JoinRequest @join)
+        private Task OnJoinRequest(IContext context, JoinRequest request)
         {
-            SetMember(@join.Joiner);
-
+            Logger.LogInformation("Got JoinRequest from Member {Member}", request.Joiner);
+            SetMember(request.Joiner);
             UpdateMemberList(context);
             context.Respond(new JoinResponse());
             return Task.CompletedTask;
