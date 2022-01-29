@@ -3,7 +3,6 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,44 +13,49 @@ namespace Proto.Cluster.Seed
     public class SeedNodeActor : IActor
     {
         private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
-        public Task ReceiveAsync(IContext context)
+        public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            switch (context.Message)
+            Started                               => OnStarted(context),
+            GossipUpdate {Key: "topology"} update => OnTopologyUpdate(context, update),
+            JoinRequest join                      => OnJoinRequest(context, @join),
+            _                                     => Task.CompletedTask
+        };
+
+        private Task OnStarted(IContext context)
+        {
+            var (host, port) = context.System.GetAddress();
+            var selfMember = new Member
             {
-                case Started:
-                    Console.WriteLine("Started seed node actor " + context.Self);
-                    var (host, port) = context.System.GetAddress();
-                    var selfMember = new Member()
-                    {
-                        Id = context.System.Id,
-                        Host = host,
-                        Port = port,
-                        Kinds = { context.Cluster().GetClusterKinds() }
-                    };
-                    SetMember(selfMember);
-                    context.System.EventStream.Subscribe<GossipUpdate>(context.System.Root, context.Self);
-                    UpdateMemberList(context);
-                    break;
-                case GossipUpdate {Key: "topology"} update: {
-                    var topology = update.Value.Unpack<ClusterTopology>();
+                Id = context.System.Id,
+                Host = host,
+                Port = port,
+                Kinds = {context.Cluster().GetClusterKinds()}
+            };
+            SetMember(selfMember);
+            context.System.EventStream.Subscribe<GossipUpdate>(context.System.Root, context.Self);
+            UpdateMemberList(context);
+            return Task.CompletedTask;
+        }
 
-                    foreach (var m in topology.Members)
-                    {
-                        SetMember(m);
-                    }
+        private Task OnJoinRequest(IContext context, JoinRequest @join)
+        {
+            SetMember(@join.Joiner);
 
-                    UpdateMemberList(context);
-                    break;
-                }
-                case JoinRequest join: {
-                    SetMember(join.Joiner);
-                    
-                    UpdateMemberList(context);
-                    context.Respond(new JoinResponse());
-                    break;
-                }
+            UpdateMemberList(context);
+            context.Respond(new JoinResponse());
+            return Task.CompletedTask;
+        }
+
+        private Task OnTopologyUpdate(IContext context, GossipUpdate update)
+        {
+            var topology = update.Value.Unpack<ClusterTopology>();
+
+            foreach (var m in topology.Members)
+            {
+                SetMember(m);
             }
 
+            UpdateMemberList(context);
             return Task.CompletedTask;
         }
 
