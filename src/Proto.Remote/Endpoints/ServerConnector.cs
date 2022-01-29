@@ -109,6 +109,7 @@ namespace Proto.Remote
                     if (response.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectResponse)
                         throw new Exception("Expected ConnectResponse");
                     var connectResponse = response.ConnectResponse;
+                    
                     if (connectResponse.Blocked)
                     {
                         _logger.LogError("[{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, we are blocked", _system.Address, connectResponse.MemberId, _address);
@@ -116,7 +117,16 @@ namespace Proto.Remote
                         _system.EventStream.Publish(terminated);
                         return;
                     }
+                    
                     actorSystemId = connectResponse.MemberId;
+
+                    if (_system.Remote().BlockList.IsBlocked(actorSystemId))
+                    {
+                        _logger.LogError("[{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, they are blocked", _system.Address, connectResponse.MemberId, _address);
+                        var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
+                        _system.EventStream.Publish(terminated);
+                        return;
+                    }
 
                     rs.Reset();
                     var cancellationTokenSource = new CancellationTokenSource();
