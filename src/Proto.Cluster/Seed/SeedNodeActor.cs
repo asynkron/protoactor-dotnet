@@ -13,11 +13,12 @@ namespace Proto.Cluster.Seed
     public class SeedNodeActor : IActor
     {
         private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
+
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
             Started                               => OnStarted(context),
             GossipUpdate {Key: "topology"} update => OnTopologyUpdate(context, update),
-            JoinRequest join                      => OnJoinRequest(context, @join),
+            JoinRequest request                   => OnJoinRequest(context, request),
             _                                     => Task.CompletedTask
         };
 
