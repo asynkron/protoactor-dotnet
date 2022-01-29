@@ -62,7 +62,7 @@ namespace Proto.Remote
         }
         public async Task RunAsync()
         {
-            string? actorSystemId = null;
+            string? memberId = null;
             var rs = new RestartStatistics(0, null);
             while (!_cts.IsCancellationRequested)
             {
@@ -118,9 +118,10 @@ namespace Proto.Remote
                         return;
                     }
                     
-                    actorSystemId = connectResponse.MemberId;
+                    memberId = connectResponse.MemberId;
+                    _endpoint.MemberId = memberId;
 
-                    if (_system.Remote().BlockList.IsBlocked(actorSystemId))
+                    if (_system.Remote().BlockList.IsBlocked(memberId))
                     {
                         _logger.LogError("[{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, they are blocked", _system.Address, connectResponse.MemberId, _address);
                         var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
@@ -183,7 +184,7 @@ namespace Proto.Remote
                                     case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
                                         {
                                             _logger.LogDebug("[{SystemAddress}] Received disconnection request from {Address}", _system.Address, _address);
-                                            var terminated = new EndpointTerminatedEvent(false, _address, actorSystemId);
+                                            var terminated = new EndpointTerminatedEvent(false, _address, memberId);
                                             _system.EventStream.Publish(terminated);
                                             break;
                                         }
@@ -225,17 +226,17 @@ namespace Proto.Remote
                 }
                 catch (Exception e)
                 {
-                    if (actorSystemId is not null && _system.Remote().BlockList.IsBlocked(actorSystemId))
+                    if (memberId is not null && _system.Remote().BlockList.IsBlocked(memberId))
                     {
-                        _logger.LogDebug("[{SystemAddress}] dropped connection to blocked member {ActorSystemId}/{Address}", _system.Address, actorSystemId, _address);
-                        var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
+                        _logger.LogDebug("[{SystemAddress}] dropped connection to blocked member {ActorSystemId}/{Address}", _system.Address, memberId, _address);
+                        var terminated = new EndpointTerminatedEvent(true, _address, memberId);
                         _system.EventStream.Publish(terminated);
                         break;
                     }
                     if (ShouldStop(rs))
                     {
                         _logger.LogError(e,"[{SystemAddress}] Stopping connection to {Address} after retries expired because of {Reason}", _system.Address, _address, e.GetType().Name);
-                        var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
+                        var terminated = new EndpointTerminatedEvent(true, _address, memberId);
                         _system.EventStream.Publish(terminated);
                         break;
                     }

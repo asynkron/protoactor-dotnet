@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -75,6 +76,8 @@ namespace Proto.Remote.GrpcCore
                 return Task.CompletedTask;
             }
         }
+
+        public ImmutableHashSet<EndpointInfo> GetServerEndpoints() => _endpointManager.GetServerEndpoints();
 
         public async Task ShutdownAsync(bool graceful = true)
         {

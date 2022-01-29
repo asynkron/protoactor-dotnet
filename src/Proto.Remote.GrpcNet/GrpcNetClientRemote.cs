@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Metrics;
@@ -31,6 +32,9 @@ namespace Proto.Remote.GrpcNet
             var channelProvider = new GrpcNetChannelProvider(_config);
             _endpointManager = new EndpointManager(System, Config, channelProvider);
         }
+        
+        public ImmutableHashSet<EndpointInfo> GetServerEndpoints() => _endpointManager.GetServerEndpoints();
+        
         public Task ShutdownAsync(bool graceful = true)
         {
             lock (_lock)

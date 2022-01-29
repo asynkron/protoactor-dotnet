@@ -43,5 +43,7 @@ namespace Proto.Remote
                     break;
             }
         }
+
+        public string? MemberId { get; set; } = null;
     }
 }

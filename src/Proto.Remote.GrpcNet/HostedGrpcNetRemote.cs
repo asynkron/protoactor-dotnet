@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -35,6 +36,8 @@ namespace Proto.Remote.GrpcNet
         public bool Started { get; private set; }
 
         public BlockList BlockList { get; } = new();
+        
+        public ImmutableHashSet<EndpointInfo> GetServerEndpoints() => _endpointManager.GetServerEndpoints();
 
         public Task StartAsync()
         {

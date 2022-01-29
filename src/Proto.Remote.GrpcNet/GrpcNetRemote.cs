@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -38,6 +39,8 @@ namespace Proto.Remote.GrpcNet
         
         public RemoteConfigBase Config => _config;
         public ActorSystem System { get; }
+        
+        public ImmutableHashSet<EndpointInfo> GetServerEndpoints() => _endpointManager.GetServerEndpoints();
 
         public Task StartAsync()
         {

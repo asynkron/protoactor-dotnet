@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -38,6 +39,22 @@ namespace Proto.Remote
             _endpointTerminatedEvnSub = _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated, Dispatchers.DefaultDispatcher);
             _bannedEndpoint = new BannedEndpoint(system);
             RemoteMessageHandler = new RemoteMessageHandler(this, _system, _remoteConfig.Serialization, _remoteConfig);
+        }
+
+        public ImmutableHashSet<EndpointInfo> GetServerEndpoints()
+        {
+            var endpoints = ImmutableHashSet<EndpointInfo>.Empty;
+
+            foreach (var (key, value) in _serverEndpoints)
+            {
+                if (value.MemberId == null)
+                    continue;
+                
+                var info = new EndpointInfo(key, value.MemberId);
+                endpoints = endpoints.Add(info);
+            }
+
+            return endpoints;
         }
 
         public CancellationToken CancellationToken => _cancellationTokenSource.Token;

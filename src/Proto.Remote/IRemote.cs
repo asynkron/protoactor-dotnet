@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Proto.Extensions;
 
@@ -11,5 +12,7 @@ namespace Proto.Remote
         BlockList BlockList { get; }
         Task ShutdownAsync(bool graceful = true);
         Task StartAsync();
+
+        ImmutableHashSet<EndpointInfo> GetServerEndpoints();
     }
 }
