@@ -24,15 +24,7 @@ namespace Proto.Cluster.Seed
 
         private Task OnStarted(IContext context)
         {
-            var (host, port) = context.System.GetAddress();
-            var selfMember = new Member
-            {
-                Id = context.System.Id,
-                Host = host,
-                Port = port,
-                Kinds = {context.Cluster().GetClusterKinds()}
-            };
-            SetMember(selfMember);
+            SetMember(context.Cluster().MemberList.Self);
             context.System.EventStream.Subscribe<GossipUpdate>(context.System.Root, context.Self);
             UpdateMemberList(context);
             return Task.CompletedTask;
