@@ -23,6 +23,9 @@ namespace Proto.Cluster.Gossip
     public record GetGossipStateRequest(string Key);
 
     public record GetGossipStateResponse(ImmutableDictionary<string, Any> State);
+    
+    public record GetGossipStateEntryRequest(string Key);
+    public record GetGossipStateEntryResponse(ImmutableDictionary<string, GossipKeyValue> State);
 
     public record SetGossipStateKey(string Key, IMessage Value);
 
@@ -68,6 +71,15 @@ namespace Proto.Cluster.Gossip
             }
 
             return typed;
+        }
+        
+        public async Task<ImmutableDictionary<string, GossipKeyValue>> GetStateEntry(string key) 
+        {
+            _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
+
+            var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid, new GetGossipStateEntryRequest(key));
+
+            return res.State;
         }
 
         // Send message to update member state
@@ -118,15 +130,13 @@ namespace Proto.Cluster.Gossip
             {
                 try
                 {
-                    await Task.Delay((int) _cluster.Config.GossipInterval.TotalMilliseconds);
-
-                    var stats = GetActorStatistics();
-
+                    await Task.Delay(_cluster.Config.GossipInterval);
+                    
                     await SetStateAsync("heartbeat", new MemberHeartbeat()
                     {
-                        ActorStatistics = stats
+                        ActorStatistics = GetActorStatistics()
                     });
-                    
+
                     await SendStateAsync();
                 }
                 catch (Exception x)

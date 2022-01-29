@@ -35,15 +35,24 @@ namespace Proto.Cluster.Gossip
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            SetGossipStateKey setState      => OnSetGossipStateKey(context, setState),
-            GetGossipStateRequest getState  => OnGetGossipStateKey(context, getState),
+            SetGossipStateKey setState         => OnSetGossipStateKey(context, setState),
+            GetGossipStateRequest getState     => OnGetGossipStateKey(context, getState),
+            GetGossipStateEntryRequest getState     => OnGetGossipStateEntryKey(context, getState),
             GetGossipStateSnapshot getSnapshot => OnGetGossipStateSnapshot(context),
-            GossipRequest gossipRequest     => OnGossipRequest(context, gossipRequest),
-            SendGossipStateRequest          => OnSendGossipState(context),
-            AddConsensusCheck request       => OnAddConsensusCheck(context, request),
-            ClusterTopology clusterTopology => OnClusterTopology(clusterTopology),
-            _                               => Task.CompletedTask
+            GossipRequest gossipRequest        => OnGossipRequest(context, gossipRequest),
+            SendGossipStateRequest             => OnSendGossipState(context),
+            AddConsensusCheck request          => OnAddConsensusCheck(context, request),
+            ClusterTopology clusterTopology    => OnClusterTopology(clusterTopology),
+            _                                  => Task.CompletedTask
         };
+
+        private Task OnGetGossipStateEntryKey(IContext context, GetGossipStateEntryRequest getState)
+        {
+            var state = _internal.GetStateEntry(getState.Key);
+            var res = new GetGossipStateEntryResponse(state);
+            context.Respond(res);
+            return Task.CompletedTask;
+        }
 
         private Task OnGetGossipStateSnapshot(IContext context)
         {
