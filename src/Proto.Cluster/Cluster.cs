@@ -9,6 +9,7 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
@@ -168,6 +169,11 @@ namespace Proto.Cluster
 
         public async Task ShutdownAsync(bool graceful = true)
         {
+            await Gossip.SetStateAsync("cluster:left", new Empty());
+            
+            //TODO: improve later, await at least two gossip cycles
+            await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2);
+            
             if (_clusterKindObserver != null)
             {
                 ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
