@@ -42,8 +42,6 @@ class Program
         await system.Cluster().JoinSeed("127.0.0.1", 8090);
 
         Console.WriteLine("Started");
-        await Task.Delay(2000);
-
 
         var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
         
