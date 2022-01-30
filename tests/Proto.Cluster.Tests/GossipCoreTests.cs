@@ -68,7 +68,7 @@ namespace Proto.Cluster.Tests
 
             var first = environment.Values.First().Gossip;
 
-            var checkDefinition = Gossiper.ConsensusCheckBuilder<ulong>.Create("topology", (ClusterTopology tp) => tp.TopologyHash);
+            var checkDefinition = Gossiper.ConsensusCheckBuilder<ulong>.Create(GossipKeys.Topology, (ClusterTopology tp) => tp.TopologyHash);
             var id = Guid.NewGuid().ToString();
             var (handle, check) = checkDefinition.Build(() => first.RemoveConsensusCheck(id));
             first.AddConsensusCheck(id, check);

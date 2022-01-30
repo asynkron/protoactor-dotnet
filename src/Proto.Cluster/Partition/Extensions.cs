@@ -16,7 +16,7 @@ namespace Proto.Cluster.Partition
         private const string RebalanceCompletedKey = "reb:done";
 
         private static readonly Gossiper.ConsensusCheckBuilder<ulong> TopologyConsensus = Gossiper.ConsensusCheckBuilder<ulong>
-            .Create<ClusterTopology>("topology", topology => topology.TopologyHash);
+            .Create<ClusterTopology>(GossipKeys.Topology, topology => topology.TopologyHash);
 
         private static readonly Gossiper.ConsensusCheckBuilder<ulong> ReadyForRebalance = TopologyConsensus
             .InConsensusWith<ReadyForRebalance>(ReadyForRebalanceKey, rebalance => rebalance.TopologyHash);

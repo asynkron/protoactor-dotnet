@@ -73,7 +73,7 @@ namespace Proto.Cluster
             
             _eventStream = _system.EventStream;
             _eventStream.Subscribe<GossipUpdate>(u => {
-                    if (u.Key != "topology") return;
+                    if (u.Key != GossipKeys.Topology) return;
 
                     //get blocked members from all other member states, and merge that with our own blocked set
                     var topology = u.Value.Unpack<ClusterTopology>();
@@ -86,7 +86,7 @@ namespace Proto.Cluster
         public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m => m.Id).ToImmutableHashSet();
 
         internal void InitializeTopologyConsensus() => _topologyConsensus =
-            _cluster.Gossip.RegisterConsensusCheck<ClusterTopology, ulong>("topology", topology => topology.TopologyHash);
+            _cluster.Gossip.RegisterConsensusCheck<ClusterTopology, ulong>(GossipKeys.Topology, topology => topology.TopologyHash);
 
         public Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct)
             => _topologyConsensus?.TryGetConsensus(ct) ?? Task.FromResult<(bool consensus, ulong topologyHash)>(default);
@@ -262,7 +262,7 @@ namespace Proto.Cluster
         private void BroadcastTopologyChanges(ClusterTopology topology)
         {
             _system.Logger()?.LogDebug("MemberList sending state");
-            _cluster.Gossip.SetState("topology", topology);
+            _cluster.Gossip.SetState(GossipKeys.Topology, topology);
             _eventStream.Publish(topology);
 
             //Console.WriteLine($"{_system.Id} Broadcasting {topology.TopologyHash} - {topology.Members.Count}");

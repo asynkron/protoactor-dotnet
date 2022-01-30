@@ -28,6 +28,7 @@ namespace Proto.Cluster
             GossipRequestTimeout = TimeSpan.FromMilliseconds(500);
             GossipFanout = 3;
             GossipMaxSend = 50;
+            HeartbeatExpiration = TimeSpan.FromSeconds(10);
             ClusterRequestDeDuplication = true;
             ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
             IdentityLookup = identityLookup;
@@ -46,6 +47,8 @@ namespace Proto.Cluster
         public IClusterProvider ClusterProvider { get; }
 
         public int PubSubBatchSize { get; init; }
+
+        public TimeSpan HeartbeatExpiration { get; set; }
         public TimeSpan TimeoutTimespan { get; init; }
         public TimeSpan ActorRequestTimeout { get; init; }
         public TimeSpan ActorSpawnTimeout { get; init; }
@@ -128,6 +131,9 @@ namespace Proto.Cluster
 
         public ClusterConfig WithRemotePidCacheTimeToLive(TimeSpan timeout) =>
             this with {RemotePidCacheTimeToLive = timeout};
+
+        public ClusterConfig WithHeartbeatExpiration(TimeSpan expiration) =>
+            this with {HeartbeatExpiration = expiration};
 
         public static ClusterConfig Setup(
             string clusterName,

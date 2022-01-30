@@ -132,7 +132,11 @@ namespace Proto.Cluster.Gossip
                 {
                     await Task.Delay(_cluster.Config.GossipInterval);
                     
-                    await SetStateAsync("heartbeat", new MemberHeartbeat()
+                    await BlockExpiredHeartbeats();
+
+                    await BlockGracefullyLeft();
+
+                    await SetStateAsync(GossipKeys.Heartbeat, new MemberHeartbeat()
                     {
                         ActorStatistics = GetActorStatistics()
                     });
@@ -143,6 +147,36 @@ namespace Proto.Cluster.Gossip
                 {
                     Logger.LogError(x, "Gossip loop failed");
                 }
+            }
+        }
+
+        private async Task BlockGracefullyLeft()
+        {
+            var t2 = await GetStateEntry(GossipKeys.GracefullyLeft);
+
+            //don't ban ourselves. our gossip state will never reach other members then...
+            var gracefullyLeft = t2.Keys.Where(k => k != _cluster.System.Id).ToArray();
+
+            if (gracefullyLeft.Any())
+            {
+                Logger.LogInformation("Blocking members due to gracefully leaving {Members}", gracefullyLeft);
+                _cluster.MemberList.UpdateBlockedMembers(gracefullyLeft);
+            }
+        }
+
+        private async Task BlockExpiredHeartbeats()
+        {
+            var t = await GetStateEntry(GossipKeys.Heartbeat);
+
+            var blocked = (from x in t
+                           where x.Value.Age > _cluster.Config.HeartbeatExpiration
+                           select x.Key)
+                .ToArray();
+
+            if (blocked.Any())
+            {
+                Logger.LogInformation("Blocking members due to expired heartbeat {Members}", blocked);
+                _cluster.MemberList.UpdateBlockedMembers(blocked);
             }
         }
 

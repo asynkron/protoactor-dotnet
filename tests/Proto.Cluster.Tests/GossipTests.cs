@@ -163,7 +163,7 @@ namespace Proto.Cluster.Tests
         private static IConsensusHandle<ulong> CreateCompositeConsensusCheck(Cluster member) =>
             member.Gossip.RegisterConsensusCheck<ulong>(Gossiper.ConsensusCheckBuilder<ulong>
                 .Create<SomeTopologyGossipState>(TopologyStateKey, state => state.TopologyHash)
-                .InConsensusWith<ClusterTopology>("topology", topology => topology.TopologyHash)
+                .InConsensusWith<ClusterTopology>(GossipKeys.Topology, topology => topology.TopologyHash)
             );
 
         private static async Task<(bool consensus, string value)> GetCurrentConsensus(Cluster member, TimeSpan timeout)
