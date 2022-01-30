@@ -31,7 +31,7 @@ namespace Proto.Remote
 
         private void Send(object msg)
         {
-            // If the target endpoint is down or banned, we get a BannedEndpoint instance
+            // If the target endpoint is down or blocked, we get a BlockedEndpoint instance
             var endpoint = _systemId is not null ? _endpointManager.GetClientEndpoint(_systemId) : _endpointManager.GetOrAddServerEndpoint(_pid.Address);
             switch (msg)
             {

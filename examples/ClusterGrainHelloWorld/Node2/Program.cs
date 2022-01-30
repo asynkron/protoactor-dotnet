@@ -6,6 +6,7 @@
 using System;
 using System.Threading.Tasks;
 using ClusterHelloWorld.Messages;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Partition;
@@ -39,6 +40,9 @@ namespace Node2
     {
         private static async Task Main()
         {
+            Proto.Log.SetLoggerFactory(
+                LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
+            
             // Required to allow unencrypted GrpcNet connections
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))

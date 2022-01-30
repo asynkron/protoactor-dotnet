@@ -103,7 +103,7 @@ namespace Proto.Cluster.Gossip
 
             if (!memberState.HasState)
             {
-                Logger.LogWarning("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
+                Logger.LogDebug("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
 
                 // Nothing to send, do not provide sender or state payload
                 context.Respond(new GossipResponse());
@@ -133,7 +133,12 @@ namespace Proto.Cluster.Gossip
         {
             var (key, message) = setStateKey;
             _internal.SetState(key, message);
-            context.Respond(new SetGossipStateResponse());
+
+            if (context.Sender != null)
+            {
+                context.Respond(new SetGossipStateResponse());
+            }
+
             return Task.CompletedTask;
         }
 

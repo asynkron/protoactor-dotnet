@@ -75,7 +75,7 @@ namespace Proto.Cluster
             _eventStream.Subscribe<GossipUpdate>(u => {
                     if (u.Key != "topology") return;
 
-                    //get banned members from all other member states, and merge that with our own banned set
+                    //get blocked members from all other member states, and merge that with our own blocked set
                     var topology = u.Value.Unpack<ClusterTopology>();
                     var blocked = topology.Blocked.ToArray();
                     UpdateBlockedMembers(blocked);
@@ -103,19 +103,19 @@ namespace Proto.Cluster
             }
         }
 
-        public void UpdateBlockedMembers(string[] bannedMembers)
+        public void UpdateBlockedMembers(string[] blockedMembers)
         {
             var blockList = _system.Remote().BlockList;
 
             lock (_lock)
             {
-                //update banned members
+                //update blocked members
                 var before = blockList.BlockedMembers;
-                blockList.Block(bannedMembers);
+                blockList.Block(blockedMembers);
 
                 if (before != blockList.BlockedMembers)
                 {
-                    Logger.LogDebug("Updating banned members via gossip");
+                    Logger.LogDebug("Updating blocked members via gossip");
                 }
 
                 //then run the usual topology logic
@@ -141,13 +141,13 @@ namespace Proto.Cluster
                     }
 
                     _stopping = true;
-                    Logger.LogCritical("I have been banned, exiting {Id}", MemberId);
+                    Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
                     _ = _cluster.ShutdownAsync();
                     return;
                 }
 
                 //TLDR:
-                //this method basically filters out any member status in the banned list
+                //this method filters out any member status in the blocked list
                 //then makes a delta between new and old members
                 //notifying the cluster accordingly which members left or joined
 

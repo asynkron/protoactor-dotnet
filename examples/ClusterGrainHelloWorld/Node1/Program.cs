@@ -6,6 +6,7 @@
 using System;
 using System.Threading.Tasks;
 using ClusterHelloWorld.Messages;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Partition;
@@ -19,6 +20,9 @@ class Program
 {
     private static async Task Main()
     {
+        Proto.Log.SetLoggerFactory(
+            LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
+        
         // Required to allow unencrypted GrpcNet connections
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         var system = new ActorSystem()
@@ -38,8 +42,6 @@ class Program
         await system.Cluster().JoinSeed("127.0.0.1", 8090);
 
         Console.WriteLine("Started");
-        await Task.Delay(2000);
-
 
         var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
         
@@ -49,13 +51,9 @@ class Program
         res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
         Console.WriteLine(res.Message);
 
-        Console.CancelKeyPress += async (e, y) => {
-            Console.WriteLine("Shutting Down...");
-            await system.Cluster().ShutdownAsync();
-        };
-
-
-        
-        await Task.Delay(-1);
+        Console.WriteLine("Press enter to exit");
+        Console.ReadLine();
+        Console.WriteLine("Shutting Down...");
+        await system.Cluster().ShutdownAsync();
     }
 }

@@ -43,6 +43,17 @@ namespace Proto.Cluster.Seed
                             Logger.LogInformation("Blocking members due to expired heartbeat {Members}", blocked);
                             cluster.MemberList.UpdateBlockedMembers(blocked);
                         }
+
+                        var t2 = await cluster.Gossip.GetStateEntry("cluster:left");
+                        
+                        //don't ban ourselves. our gossip state will never reach other members then...
+                        var gracefullyLeft = t2.Keys.Where(k => k != cluster.System.Id) .ToArray();
+
+                        if (gracefullyLeft.Any())
+                        {
+                            Logger.LogInformation("Blocking members due to gracefully leaving {Members}", gracefullyLeft);
+                            cluster.MemberList.UpdateBlockedMembers(gracefullyLeft);
+                        }
                     }
                 }
             );

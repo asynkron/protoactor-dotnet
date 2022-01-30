@@ -149,7 +149,7 @@ namespace Proto.Cluster.Gossip
 
                 foreach (var (memberId, memberState) in state.Members)
                 {
-                    //skip banned members
+                    //skip blocked members
                     if (!members.Contains(memberId))
                     {
                         logger?.LogDebug("Member is not part of cluster {MemberId}", memberId);
