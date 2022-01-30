@@ -25,7 +25,6 @@ namespace Proto.Cluster.Partition
 
         private readonly Cluster _cluster;
         private readonly string _myAddress;
-        private readonly TimeSpan _identityHandoverTimeout;
         private readonly PartitionConfig _config;
 
         private readonly Dictionary<ClusterIdentity, PID> _partitionLookup = new(); // actor/grain name to PID
@@ -42,11 +41,10 @@ namespace Proto.Cluster.Partition
         private HandoverSink? _currentHandover;
         private Stopwatch? _rebalanceTimer;
 
-        public PartitionIdentityActor(Cluster cluster, TimeSpan identityHandoverTimeout, PartitionConfig config)
+        public PartitionIdentityActor(Cluster cluster, PartitionConfig config)
         {
             _cluster = cluster;
             _myAddress = cluster.System.Address;
-            _identityHandoverTimeout = identityHandoverTimeout;
             _config = config;
         }
 
@@ -252,7 +250,7 @@ namespace Proto.Cluster.Partition
 
             var topologyValidityToken = msg.TopologyValidityToken!.Value;
             var waitUntilInFlightActivationsAreCompleted =
-                _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(_identityHandoverTimeout, topologyValidityToken);
+                _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(_config.RebalanceActivationsCompletionTimeout, topologyValidityToken);
 
             context.ReenterAfter(waitUntilInFlightActivationsAreCompleted, consensusResult => {
                     if (TopologyHash != msg.TopologyHash || topologyValidityToken.IsCancellationRequested)

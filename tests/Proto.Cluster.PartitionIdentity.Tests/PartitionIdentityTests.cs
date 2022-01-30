@@ -264,20 +264,28 @@ namespace Proto.Cluster.PartitionIdentity.Tests
         private readonly PartitionIdentityLookup.Mode _mode;
         private readonly PartitionIdentityLookup.Send _send;
         public readonly ActorStateRepo Repository = new();
+        private readonly int _chunkSize;
 
         public PartitionIdentityClusterFixture(
             int memberCount,
             PartitionIdentityLookup.Mode mode,
-            PartitionIdentityLookup.Send send
+            PartitionIdentityLookup.Send send,
+            int chunkSize = 1000
         ) : base(memberCount)
         {
             _mode = mode;
             _send = send;
+            _chunkSize = chunkSize;
         }
 
-        protected override IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionIdentityLookup(TimeSpan.FromSeconds(3),
-            TimeSpan.FromSeconds(5), new PartitionConfig(false, 1000, TimeSpan.FromSeconds(3), _mode, _send)
-        );
+        protected override IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionIdentityLookup( new PartitionConfig
+        {
+            GetPidTimeout = TimeSpan.FromSeconds(5),
+            HandoverChunkSize = _chunkSize,
+            RebalanceRequestTimeout = TimeSpan.FromSeconds(3),
+            Mode = _mode,
+            Send = _send
+        });
 
         protected override ClusterKind[] ClusterKinds
             => new[] {new ClusterKind(ConcurrencyVerificationActor.Kind, Props.FromProducer(() => new ConcurrencyVerificationActor(Repository)))};

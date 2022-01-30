@@ -106,7 +106,7 @@ namespace Proto.Cluster.Tests
 
     public class ActorState
     {
-        private int _activeCount = 0;
+        private int _activeCount;
         private long _totalCount;
         public int StoredCount { get; set; }
         public bool Inconsistent { get; private set; }

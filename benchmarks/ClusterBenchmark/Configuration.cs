@@ -132,8 +132,13 @@ namespace ClusterExperiment1
             }
         }
 
-        public static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
-            new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1), PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Delta)
+        public static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(
+            new PartitionConfig
+            {
+                GetPidTimeout = TimeSpan.FromSeconds(5),
+                Mode = PartitionIdentityLookup.Mode.Push,
+                Send = PartitionIdentityLookup.Send.Delta
+            }
         );
 
         private static IIdentityLookup GetRedisIdentityLookup()

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Logging;
 using Proto.Utils;
 
 namespace Proto.Cluster.Partition
@@ -274,6 +275,7 @@ namespace Proto.Cluster.Partition
             {
                 if (cancelRebalance.IsCancellationRequested)
                 {
+                    context.Logger()?.LogInformation("[PartitionIdentity] Cancelled rebalance handover for topology: {TopologyHash}", msg.CurrentTopology.TopologyHash);
                     if (_config.DeveloperLogging)
                     {
                         Console.WriteLine($"Cancelled rebalance handover for topology: {msg.CurrentTopology.TopologyHash}");

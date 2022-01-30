@@ -82,7 +82,7 @@ namespace Proto.Cluster.Tests
             .Setup(
                 "MyCluster",
                 new TestProvider(new TestProviderOptions(), new InMemAgent()),
-                new PartitionIdentityLookup(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(500))
+                new PartitionIdentityLookup()
             )
             .WithClusterKind("echo", Props.FromProducer(() => new EchoActor()));
     }
