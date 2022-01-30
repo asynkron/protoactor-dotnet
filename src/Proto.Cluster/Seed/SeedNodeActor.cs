@@ -18,10 +18,10 @@ namespace Proto.Cluster.Seed
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            Started                               => OnStarted(context),
-            GossipUpdate {Key: "topology"} update => OnTopologyUpdate(context, update),
-            JoinRequest request                   => OnJoinRequest(context, request),
-            _                                     => Task.CompletedTask
+            Started                                        => OnStarted(context),
+            GossipUpdate {Key: GossipKeys.Topology} update => OnTopologyUpdate(context, update),
+            JoinRequest request                            => OnJoinRequest(context, request),
+            _                                              => Task.CompletedTask
         };
 
         private Task OnStarted(IContext context)

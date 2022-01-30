@@ -45,7 +45,7 @@ namespace Proto.Cluster.Gossip
         {
             _otherMembers = clusterTopology.Members.Where(m => m.Id != _myId).ToArray();
             _activeMemberIds = clusterTopology.Members.Select(m => m.Id).ToImmutableHashSet();
-            SetState("topology", clusterTopology);
+            SetState(GossipKeys.Topology, clusterTopology);
             return Task.CompletedTask;
         }
 
