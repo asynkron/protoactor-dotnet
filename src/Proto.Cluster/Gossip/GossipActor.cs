@@ -35,15 +35,24 @@ namespace Proto.Cluster.Gossip
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            SetGossipStateKey setState      => OnSetGossipStateKey(context, setState),
-            GetGossipStateRequest getState  => OnGetGossipStateKey(context, getState),
+            SetGossipStateKey setState         => OnSetGossipStateKey(context, setState),
+            GetGossipStateRequest getState     => OnGetGossipStateKey(context, getState),
+            GetGossipStateEntryRequest getState     => OnGetGossipStateEntryKey(context, getState),
             GetGossipStateSnapshot getSnapshot => OnGetGossipStateSnapshot(context),
-            GossipRequest gossipRequest     => OnGossipRequest(context, gossipRequest),
-            SendGossipStateRequest          => OnSendGossipState(context),
-            AddConsensusCheck request       => OnAddConsensusCheck(context, request),
-            ClusterTopology clusterTopology => OnClusterTopology(clusterTopology),
-            _                               => Task.CompletedTask
+            GossipRequest gossipRequest        => OnGossipRequest(context, gossipRequest),
+            SendGossipStateRequest             => OnSendGossipState(context),
+            AddConsensusCheck request          => OnAddConsensusCheck(context, request),
+            ClusterTopology clusterTopology    => OnClusterTopology(clusterTopology),
+            _                                  => Task.CompletedTask
         };
+
+        private Task OnGetGossipStateEntryKey(IContext context, GetGossipStateEntryRequest getState)
+        {
+            var state = _internal.GetStateEntry(getState.Key);
+            var res = new GetGossipStateEntryResponse(state);
+            context.Respond(res);
+            return Task.CompletedTask;
+        }
 
         private Task OnGetGossipStateSnapshot(IContext context)
         {
@@ -79,14 +88,16 @@ namespace Proto.Cluster.Gossip
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
             ReceiveState(context, gossipRequest.State);
 
-            if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
-            {
-                Logger.LogWarning("Got gossip request from unknown member {MemberId}", gossipRequest.MemberId);
-
-                // Nothing to send, do not provide sender or state payload
-                context.Respond(new GossipResponse());
-                return Task.CompletedTask;
-            }
+            //it's OK, we might not just yet be aware of this member yet....
+            
+            // if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
+            // {
+            //     Logger.LogWarning("Got gossip request from unknown member {MemberId}", gossipRequest.MemberId);
+            //
+            //     // Nothing to send, do not provide sender or state payload
+            //     context.Respond(new GossipResponse());
+            //     return Task.CompletedTask;
+            // }
 
             var memberState = _internal.GetMemberStateDelta(gossipRequest.MemberId);
 

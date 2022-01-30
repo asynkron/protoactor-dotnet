@@ -239,5 +239,20 @@ namespace Proto.Cluster.Gossip
                 }
             }
         }
+        
+        public ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key)
+        {
+            var entries = ImmutableDictionary<string, GossipKeyValue>.Empty;
+
+            foreach (var (memberId, memberState) in _state.Members)
+            {
+                if (memberState.Values.TryGetValue(key, out var value))
+                {
+                    entries = entries.SetItem(memberId, value);
+                }
+            }
+
+            return entries;
+        }
     }
 }

@@ -56,6 +56,8 @@ namespace Proto.Cluster.Gossip
         GossipState GetStateSnapshot();
 
         ImmutableDictionary<string, Any> GetState(string key);
+        
+        ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key);
 
         void SetState(string key, IMessage value);
     }

@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 using ClusterHelloWorld.Messages;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
+using Proto.Cluster.Seed;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using static Proto.CancellationTokens;
@@ -24,11 +24,18 @@ class Program
         var system = new ActorSystem()
             .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
             .WithCluster(ClusterConfig
-                .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionIdentityLookup()));
+                .Setup("MyCluster", new SeedNodeClusterProvider(), new PartitionIdentityLookup()));
 
+        system.EventStream.Subscribe<ClusterTopology>(e => {
+                Console.WriteLine($"{DateTime.Now:O} My members {e.TopologyHash}");
+            }
+        );
+        
         await system
             .Cluster()
-            .StartClientAsync();
+            .StartMemberAsync();
+
+        await system.Cluster().JoinSeed("127.0.0.1", 8090);
 
         Console.WriteLine("Started");
         await Task.Delay(2000);
@@ -36,16 +43,18 @@ class Program
 
         var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
         
-        var res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
+        var res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
         Console.WriteLine(res.Message);
 
-        res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
+        res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
         Console.WriteLine(res.Message);
-        
+
         Console.CancelKeyPress += async (e, y) => {
             Console.WriteLine("Shutting Down...");
             await system.Cluster().ShutdownAsync();
         };
+
+
         
         await Task.Delay(-1);
     }

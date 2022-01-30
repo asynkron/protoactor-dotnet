@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 using ClusterHelloWorld.Messages;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
+using Proto.Cluster.Seed;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using static System.Threading.Tasks.Task;
@@ -42,12 +42,16 @@ namespace Node2
             // Required to allow unencrypted GrpcNet connections
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
-                .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor)
-                )
+                .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(8090).WithProtoMessages(ProtosReflection.Descriptor))
                 .WithCluster(ClusterConfig
-                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionIdentityLookup())
+                    .Setup("MyCluster", new SeedNodeClusterProvider(), new PartitionIdentityLookup())
                     .WithClusterKind(HelloGrainActor.GetClusterKind((ctx, identity) => new HelloGrain(ctx, identity.Identity)))
                 );
+            
+            system.EventStream.Subscribe<ClusterTopology>(e => {
+                    Console.WriteLine($"{DateTime.Now:O} My members {e.TopologyHash}");
+                }
+            );
 
             await system
                 .Cluster()
@@ -62,6 +66,8 @@ namespace Node2
                     .ShutdownAsync();
             };
 
+
+            
             await Delay(-1);
         }
     }

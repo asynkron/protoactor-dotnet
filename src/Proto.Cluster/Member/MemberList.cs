@@ -53,6 +53,7 @@ namespace Proto.Cluster
         private TaskCompletionSource<bool> _startedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly object _lock = new();
         private IConsensusHandle<ulong>? _topologyConsensus;
+        public Member Self { get; }
 
         public Task Started => _startedTcs.Task;
 
@@ -61,6 +62,15 @@ namespace Proto.Cluster
             _cluster = cluster;
             _system = _cluster.System;
             _root = _system.Root;
+            var (host, port) = _cluster.System.GetAddress();
+            Self = new Member
+            {
+                Id = _cluster.System.Id,
+                Host = host,
+                Port = port,
+                Kinds = { _cluster.GetClusterKinds() }
+            };
+            
             _eventStream = _system.EventStream;
             _eventStream.Subscribe<GossipUpdate>(u => {
                     if (u.Key != "topology") return;

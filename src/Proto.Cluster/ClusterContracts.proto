@@ -125,10 +125,6 @@ message ClusterTopologyNotification {
   string leader_id = 3;
 }
 
-message GracefulShutdown {
-  string member_id = 3;
-}
-
 message MemberHeartbeat {
   ActorStatistics actor_statistics=1;
 }

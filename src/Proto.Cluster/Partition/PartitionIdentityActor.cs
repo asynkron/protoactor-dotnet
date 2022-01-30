@@ -38,7 +38,6 @@ namespace Proto.Cluster.Partition
         private HashSet<string> _currentMemberAddresses = new();
 
         private ClusterTopology? _deltaTopology;
-        private OperatingState _operatingState = OperatingState.NoTopology;
         private TaskCompletionSource<ulong>? _rebalanceTcs;
         private HandoverSink? _currentHandover;
         private Stopwatch? _rebalanceTimer;
