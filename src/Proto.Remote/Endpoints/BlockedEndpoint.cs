@@ -1,22 +1,20 @@
 // -----------------------------------------------------------------------
-//   <copyright file="BannedEndpoint.cs" company="Asynkron AB">
+//   <copyright file="BlockedEndpoint.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2021 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote
 {
-    public class BannedEndpoint : IEndpoint
+    public class BlockedEndpoint : IEndpoint
     {
         private readonly ActorSystem _system;
-        public BannedEndpoint(ActorSystem system) => _system = system;
+        public BlockedEndpoint(ActorSystem system) => _system = system;
         public Channel<RemoteMessage> Outgoing { get; } = Channel.CreateUnbounded<RemoteMessage>();
         public ConcurrentStack<RemoteMessage> OutgoingStash { get; } = new();
         public ValueTask DisposeAsync()

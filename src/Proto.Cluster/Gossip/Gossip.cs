@@ -124,7 +124,7 @@ namespace Proto.Cluster.Gossip
         {
             var logger = _logger?.BeginMethodScope();
 
-            PurgeBannedMembers();
+            PurgeBlockedMembers();
 
             foreach (var member in _otherMembers)
             {
@@ -156,13 +156,13 @@ namespace Proto.Cluster.Gossip
             }
         }
 
-        private void PurgeBannedMembers()
+        private void PurgeBlockedMembers()
         {
-            var banned = _getBlockedMembers();
+            var blockedMembers = _getBlockedMembers();
 
             foreach (var memberId in _state.Members.Keys.ToArray())
             {
-                if (banned.Contains(memberId))
+                if (blockedMembers.Contains(memberId))
                 {
                     _state.Members.Remove(memberId);
                 }

@@ -11,15 +11,15 @@ namespace Proto.Cluster.Data
     [PublicAPI]
     public class LeaderInfo
     {
-        public LeaderInfo(Guid memberId, string host, int port, string[] bannedMembers)
+        public LeaderInfo(Guid memberId, string host, int port, string[] blockedMembers)
         {
             MemberId = memberId;
             Host = host ?? throw new ArgumentNullException(nameof(host));
             Port = port;
-            BannedMembers = bannedMembers;
+            BlockedMembers = blockedMembers;
         }
 
-        public string[] BannedMembers { get; }
+        public string[] BlockedMembers { get; }
 
         public string Address => Host + ":" + Port;
         public Guid MemberId { get; }

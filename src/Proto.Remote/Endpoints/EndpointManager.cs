@@ -20,13 +20,13 @@ namespace Proto.Remote
         private readonly IChannelProvider _channelProvider;
         private readonly ConcurrentDictionary<string, IEndpoint> _serverEndpoints = new();
         private readonly ConcurrentDictionary<string, IEndpoint> _clientEndpoints = new();
-        private readonly ConcurrentDictionary<string, DateTime> _bannedAddresses = new();
-        private readonly ConcurrentDictionary<string, DateTime> _bannedClientSystemIds = new();
+        private readonly ConcurrentDictionary<string, DateTime> _blockedAddresses = new();
+        private readonly ConcurrentDictionary<string, DateTime> _blockedClientSystemIds = new();
         private readonly EventStreamSubscription<object>? _endpointTerminatedEvnSub;
         private readonly RemoteConfigBase _remoteConfig;
         private readonly object _synLock = new();
         private readonly ActorSystem _system;
-        private readonly IEndpoint _bannedEndpoint;
+        private readonly IEndpoint _blockedEndpoint;
         internal RemoteMessageHandler RemoteMessageHandler { get; }
 
         public EndpointManager(ActorSystem system, RemoteConfigBase remoteConfig, IChannelProvider channelProvider)
@@ -36,7 +36,7 @@ namespace Proto.Remote
             _remoteConfig = remoteConfig;
             _channelProvider = channelProvider;
             _endpointTerminatedEvnSub = _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated, Dispatchers.DefaultDispatcher);
-            _bannedEndpoint = new BannedEndpoint(system);
+            _blockedEndpoint = new BlockedEndpoint(system);
             RemoteMessageHandler = new RemoteMessageHandler(this, _system, _remoteConfig.Serialization, _remoteConfig);
         }
 
@@ -83,11 +83,11 @@ namespace Proto.Remote
                 {
                     endpoint.DisposeAsync().GetAwaiter().GetResult();
 
-                    if (evt.OnError && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _bannedAddresses.TryAdd(evt.Address, DateTime.UtcNow))
+                    if (evt.OnError && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _blockedAddresses.TryAdd(evt.Address, DateTime.UtcNow))
                     {
                         _ = SafeTask.Run(async () => {
                             await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value).ConfigureAwait(false);
-                            _bannedAddresses.TryRemove(evt.Address, out var _);
+                            _blockedAddresses.TryRemove(evt.Address, out var _);
                         });
                     }
                 }
@@ -95,11 +95,11 @@ namespace Proto.Remote
                 {
                     endpoint.DisposeAsync().GetAwaiter().GetResult();
 
-                    if (evt.OnError && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _bannedClientSystemIds.TryAdd(evt.ActorSystemId, DateTime.UtcNow))
+                    if (evt.OnError && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue && _blockedClientSystemIds.TryAdd(evt.ActorSystemId, DateTime.UtcNow))
                     {
                         _ = SafeTask.Run(async () => {
                             await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value).ConfigureAwait(false);
-                            _bannedClientSystemIds.TryRemove(evt.ActorSystemId, out var _);
+                            _blockedClientSystemIds.TryRemove(evt.ActorSystemId, out var _);
                         });
                     }
                 }
@@ -111,11 +111,11 @@ namespace Proto.Remote
             if (address is null)
             {
                 Logger.LogError("[{SystemAddress}] Tried to get endpoint for null address",_system.Address);
-                return _bannedEndpoint;
+                return _blockedEndpoint;
             }
             
-            if (_cancellationTokenSource.IsCancellationRequested || _bannedAddresses.ContainsKey(address))
-                return _bannedEndpoint;
+            if (_cancellationTokenSource.IsCancellationRequested || _blockedAddresses.ContainsKey(address))
+                return _blockedEndpoint;
 
             if (_serverEndpoints.TryGetValue(address, out var endpoint))
             {
@@ -147,11 +147,11 @@ namespace Proto.Remote
             if (systemId is null)
             {
                 Logger.LogError("[{SystemAddress}] Tried to get endpoint for null systemId",_system.Address);
-                return _bannedEndpoint;
+                return _blockedEndpoint;
             }
             
-            if (_cancellationTokenSource.IsCancellationRequested || _bannedClientSystemIds.ContainsKey(systemId))
-                return _bannedEndpoint;
+            if (_cancellationTokenSource.IsCancellationRequested || _blockedClientSystemIds.ContainsKey(systemId))
+                return _blockedEndpoint;
 
             if (_clientEndpoints.TryGetValue(systemId, out var endpoint))
             {
@@ -173,25 +173,25 @@ namespace Proto.Remote
         }
         internal IEndpoint GetServerEndpoint(string address)
         {
-            if (_cancellationTokenSource.IsCancellationRequested || _bannedAddresses.ContainsKey(address))
-                return _bannedEndpoint;
+            if (_cancellationTokenSource.IsCancellationRequested || _blockedAddresses.ContainsKey(address))
+                return _blockedEndpoint;
 
             if (_serverEndpoints.TryGetValue(address, out var endpoint))
             {
                 return endpoint;
             }
-            return _bannedEndpoint;
+            return _blockedEndpoint;
         }
         internal IEndpoint GetClientEndpoint(string systemId)
         {
-            if (_cancellationTokenSource.IsCancellationRequested || _bannedClientSystemIds.ContainsKey(systemId))
-                return _bannedEndpoint;
+            if (_cancellationTokenSource.IsCancellationRequested || _blockedClientSystemIds.ContainsKey(systemId))
+                return _blockedEndpoint;
 
             if (_clientEndpoints.TryGetValue(systemId, out var endpoint))
             {
                 return endpoint;
             }
-            return _bannedEndpoint;
+            return _blockedEndpoint;
         }
         private void SpawnActivator()
         {
