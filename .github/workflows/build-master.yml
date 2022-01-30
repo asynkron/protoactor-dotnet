@@ -35,6 +35,8 @@ jobs:
           - "tests/Proto.OpenTelemetry.Tests/*.csproj"
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.Identity.Tests/*.csproj"
+          - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
+          - "tests/Proto.Cluster.PartitionActivator.Tests/*.csproj"
           # - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
