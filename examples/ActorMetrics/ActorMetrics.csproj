@@ -13,7 +13,7 @@
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus" Version="1.2.0-rc1" />
         <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc8" />
         <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc8" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.2" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     </ItemGroup>
 
     <ItemGroup>

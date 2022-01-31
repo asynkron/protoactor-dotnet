@@ -80,7 +80,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Timeouts_should_give_timeout_exception()
+        public async Task Timeouts_should_give_timeout_exception()
         {
             var pid = Context.Spawn(Props.FromFunc(async ctx => {
                         if (ctx.Sender is not null)
@@ -102,13 +102,13 @@ namespace Proto.Tests
                 Context.Request(pid, i, future.Pid);
             }
 
-            futures.Invoking(async f => {
+            await futures.Invoking(async f => {
                     using var cts = new CancellationTokenSource(50);
                     // ReSharper disable once AccessToDisposedClosure
                     var tasks = f.Select(future => future.GetTask(cts.Token));
                     return await Task.WhenAll(tasks);
                 }
-            ).Should().Throw<TimeoutException>();
+            ).Should().ThrowAsync<TimeoutException>();
         }
     }
 }

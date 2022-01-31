@@ -90,7 +90,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void NoReenterAfterNonCancellableToken()
+        public async Task NoReenterAfterNonCancellableToken()
         {
             var props = Props.FromProducer(() => new ReenterAfterCancellationActor());
 
@@ -98,10 +98,10 @@ namespace Proto.Tests
 
             var request = new ReenterAfterCancellationActor.Request(CancellationToken.None);
 
-            Context.Invoking(async ctx
+            await Context.Invoking(async ctx
                     => await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request, TimeSpan.FromMilliseconds(500))
                 ).Should()
-                .ThrowExactly<TimeoutException>();
+                .ThrowExactlyAsync<TimeoutException>();
         }
 
         [Fact]
