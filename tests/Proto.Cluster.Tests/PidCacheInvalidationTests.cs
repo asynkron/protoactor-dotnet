@@ -32,7 +32,7 @@ namespace Proto.Cluster.Tests
             cachedPid.Should().NotBeNull();
             await remoteMember.RequestAsync<object>(id, EchoActor.Kind, new Die(), CancellationToken.None);
 
-            await Task.Delay(1000); // PidCache is asynchronously cleared, allow the system to purge it
+            await Task.Delay(2000); // PidCache is asynchronously cleared, allow the system to purge it
 
             var cachedPidAfterStopping = GetFromPidCache(remoteMember, id);
 

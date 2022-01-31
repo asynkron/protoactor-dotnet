@@ -5,11 +5,12 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Consul" Version="1.6.10.3" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />

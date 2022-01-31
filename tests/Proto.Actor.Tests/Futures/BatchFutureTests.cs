@@ -75,7 +75,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Timeouts_should_give_timeout_exception()
+        public async Task Timeouts_should_give_timeout_exception()
         {
             var pid = Context.Spawn(Props.FromFunc(async ctx => {
                         if (ctx.Sender is not null)
@@ -99,8 +99,8 @@ namespace Proto.Tests
                 Context.Request(pid, i, future.Pid);
             }
 
-            futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }
-            ).Should().Throw<TimeoutException>();
+            await futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }
+            ).Should().ThrowAsync<TimeoutException>();
         }
 
         [Fact]

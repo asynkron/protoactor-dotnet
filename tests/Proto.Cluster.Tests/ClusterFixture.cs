@@ -171,8 +171,8 @@ namespace Proto.Cluster.Tests
                 GetPidTimeout = TimeSpan.FromSeconds(2),
                 HandoverChunkSize = 1000,
                 RebalanceRequestTimeout = TimeSpan.FromSeconds(1),
-                Mode = PartitionIdentityLookup.Mode.Push
-            });
+                Mode = PartitionIdentityLookup.Mode.Pull
+        });
 
         async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
     }

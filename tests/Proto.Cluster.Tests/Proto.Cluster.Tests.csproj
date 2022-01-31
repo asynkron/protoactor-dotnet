@@ -12,7 +12,7 @@
     <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Divergic.Logging.Xunit" Version="3.6.0" />
+    <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
     <PackageReference Include="GitHubActionsTestLogger" Version="1.2.0" />
     <PackageReference Include="Grpc.Tools" Version="2.42.0" PrivateAssets="All" />
     <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" />
@@ -21,7 +21,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Interactive.Async" Version="5.0.0" />
+    <PackageReference Include="System.Interactive.Async" Version="5.1.0" />
+    <PackageReference Update="FluentAssertions" Version="6.4.0" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="*.proto" />

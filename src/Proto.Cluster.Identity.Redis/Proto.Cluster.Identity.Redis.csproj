@@ -16,6 +16,7 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
+      <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
     </ItemGroup>
 
 </Project>

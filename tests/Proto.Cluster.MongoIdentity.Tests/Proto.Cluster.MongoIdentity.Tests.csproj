@@ -14,12 +14,13 @@
     <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Divergic.Logging.Xunit" Version="3.6.0" />
+    <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
     <PackageReference Include="GitHubActionsTestLogger" Version="1.2.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Update="FluentAssertions" Version="6.4.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />

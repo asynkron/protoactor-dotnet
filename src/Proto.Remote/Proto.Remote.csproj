@@ -6,14 +6,15 @@
     <TargetFrameworks>net5.0;net6.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Grpc.Core" Version="2.40.0" />
-    <PackageReference Include="Grpc.HealthCheck" Version="2.40.0" />
+    <PackageReference Include="Grpc.Core" Version="2.43.0" />
+    <PackageReference Include="Grpc.HealthCheck" Version="2.43.0" />
     <PackageReference Include="Grpc.Tools" Version="2.40.0" PrivateAssets="All" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Text.Json" Version="5.0.2" />
+    <PackageReference Include="System.Text.Json" Version="6.0.1" />
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
