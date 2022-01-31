@@ -165,7 +165,7 @@ namespace Proto.Cluster.Tests
         protected abstract IClusterProvider GetClusterProvider();
 
         protected virtual IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionIdentityLookup(TimeSpan.FromSeconds(3),
-            TimeSpan.FromSeconds(2), new PartitionConfig(false, 1000, TimeSpan.FromSeconds(1), PartitionIdentityLookup.Mode.Push)
+            TimeSpan.FromSeconds(2), new PartitionConfig(false, 1000, TimeSpan.FromSeconds(1), PartitionIdentityLookup.Mode.Pull)
         );
 
         async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
