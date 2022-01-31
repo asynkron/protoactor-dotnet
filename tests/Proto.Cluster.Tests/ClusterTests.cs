@@ -53,6 +53,20 @@ namespace Proto.Cluster.Tests
             response.Should().NotBeNull();
             response.Message.Should().Be(msg);
         }
+        
+        [Fact]
+        public async Task SupportsMessageEnvelopeResponses()
+        {
+            var timeout = new CancellationTokenSource(20000).Token;
+
+            const string msg = "Hello-message-envelope";
+            var response = await Members.First().RequestAsync<MessageEnvelope>(CreateIdentity("message-envelope"), EchoActor.Kind,
+                new Ping() {Message = msg, }, timeout
+            );
+            response.Should().NotBeNull();
+            response.Should().BeOfType<MessageEnvelope>();
+            response.Message.Should().BeOfType<Pong>();
+        }
 
         [Fact]
         public async Task StateIsReplicatedAcrossCluster()

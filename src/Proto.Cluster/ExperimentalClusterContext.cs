@@ -224,6 +224,10 @@ namespace Proto.Cluster
                 case null: return (ResponseStatus.Ok, default);
                 case T t:  return (ResponseStatus.Ok, t);
                 default:
+                    if (typeof(T) == typeof(MessageEnvelope))
+                    {
+                        return (ResponseStatus.Ok, (T) (object) MessageEnvelope.Wrap(result));
+                    }
                     Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", message.GetType(), typeof(T));
                     return (ResponseStatus.InvalidResponse, default);
             }
