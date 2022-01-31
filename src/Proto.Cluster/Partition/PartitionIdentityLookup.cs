@@ -16,19 +16,25 @@ namespace Proto.Cluster.Partition
         private Cluster _cluster = null!;
         private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityLookup>();
         private PartitionManager _partitionManager = null!;
-        private readonly TimeSpan _identityHandoverTimeout;
         private readonly TimeSpan _getPidTimeout;
         private readonly PartitionConfig _config;
 
-        public PartitionIdentityLookup() : this(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1))
+        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout) : this(new PartitionConfig
+        {
+            GetPidTimeout = getPidTimeout,
+            RebalanceRequestTimeout = identityHandoverTimeout
+        })
+        {
+        }
+        
+        public PartitionIdentityLookup() : this(new PartitionConfig())
         {
         }
 
-        public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout, PartitionConfig? config = null)
+        public PartitionIdentityLookup(PartitionConfig? config)
         {
-            _config = config ?? new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1));
-            _identityHandoverTimeout = identityHandoverTimeout;
-            _getPidTimeout = getPidTimeout;
+            _config = config ?? new PartitionConfig();
+            _getPidTimeout = _config.GetPidTimeout;
         }
 
         public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken notUsed)
@@ -124,7 +130,7 @@ namespace Proto.Cluster.Partition
         public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
         {
             _cluster = cluster;
-            _partitionManager = new PartitionManager(cluster, isClient, _identityHandoverTimeout, _config);
+            _partitionManager = new PartitionManager(cluster, isClient, _config);
             _partitionManager.Setup();
             return Task.CompletedTask;
         }
@@ -143,7 +149,7 @@ namespace Proto.Cluster.Partition
             Pull,
 
             /// <summary>
-            /// Each activation owner publishes activations to the current identity owner
+            /// Experimental: Each activation owner publishes activations to the current identity owner
             /// </summary>
             Push
         }
@@ -151,7 +157,7 @@ namespace Proto.Cluster.Partition
         public enum Send
         {
             /// <summary>
-            /// Only identities which have changed owner since the last completed topology rebalance are sent.
+            /// Experimental: Only identities which have changed owner since the last completed topology rebalance are sent.
             /// </summary>
             Delta,
 

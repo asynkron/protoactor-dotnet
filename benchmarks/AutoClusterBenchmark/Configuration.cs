@@ -67,7 +67,7 @@ namespace ClusterExperiment1
         }
 
         private static InMemAgent Agent = null!;
-        
+
         private static TestProviderOptions Options = new()
         {
             DeregisterCritical = TimeSpan.FromSeconds(10),
@@ -79,11 +79,17 @@ namespace ClusterExperiment1
         {
             Agent = new();
         }
-        
+
         private static IClusterProvider ClusterProvider() => new TestProvider(Options, Agent);
 
-        private static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5),
-            new PartitionConfig(false, 5000, TimeSpan.FromSeconds(1), PartitionIdentityLookup.Mode.Push)
+        private static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(
+            new PartitionConfig
+            {
+                RebalanceActivationsCompletionTimeout = TimeSpan.FromSeconds(5),
+                GetPidTimeout = TimeSpan.FromSeconds(5),
+                RebalanceRequestTimeout = TimeSpan.FromSeconds(1),
+                Mode = PartitionIdentityLookup.Mode.Push,
+            }
         );
 
         public static async Task<Cluster> SpawnMember()
