@@ -48,7 +48,7 @@ namespace Proto.Tests
 
             completed.Should().BeTrue("Or we did not get a response when poisoning a live pid");
 
-            system.Root.Invoking(ctx => ctx.RequestAsync<string>(pid, message)).Should().ThrowExactly<DeadLetterException>();
+            await system.Root.Invoking(ctx => ctx.RequestAsync<string>(pid, message)).Should().ThrowExactlyAsync<DeadLetterException>();
         }
     }
 }

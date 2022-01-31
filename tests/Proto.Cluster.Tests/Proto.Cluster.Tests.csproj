@@ -21,7 +21,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Interactive.Async" Version="5.0.0" />
+    <PackageReference Include="System.Interactive.Async" Version="5.1.0" />
+    <PackageReference Update="FluentAssertions" Version="6.4.0" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="*.proto" />

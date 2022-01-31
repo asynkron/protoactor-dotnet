@@ -26,8 +26,8 @@ namespace Proto.Tests
             response.Should().Be(message);
             await context.PoisonAsync(echoPid);
 
-            context.Invoking(c => c.RequestAsync<string>(echoPid, message)).Should()
-                .ThrowExactly<DeadLetterException>();
+            await context.Invoking(c => c.RequestAsync<string>(echoPid, message)).Should()
+                .ThrowExactlyAsync<DeadLetterException>();
         }
 
         [Fact]

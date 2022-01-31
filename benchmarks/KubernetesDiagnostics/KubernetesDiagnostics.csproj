@@ -8,14 +8,14 @@
     
     <ItemGroup>
       <PackageReference Include="KubernetesClient" Version="7.0.8" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
       <PackageReference Include="MongoDB.Driver" Version="2.13.1" />
-      <PackageReference Include="Proto.Cluster.Identity.MongoDb" Version="0.24.0" />
-        <PackageReference Include="Proto.Cluster.Identity.Redis" Version="0.24.0" />
-      <PackageReference Include="Proto.Cluster.Kubernetes" Version="0.20.0" />
-        <PackageReference Include="Proto.Cluster.Consul" Version="0.24.0" />
-      <PackageReference Include="Proto.Remote.GrpcNet" Version="0.24.0" />
-        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.24.0" />
+      <PackageReference Include="Proto.Cluster.Identity.MongoDb" Version="0.26.0" />
+        <PackageReference Include="Proto.Cluster.Identity.Redis" Version="0.26.0" />
+      <PackageReference Include="Proto.Cluster.Kubernetes" Version="0.26.0" />
+        <PackageReference Include="Proto.Cluster.Consul" Version="0.26.0" />
+      <PackageReference Include="Proto.Remote.GrpcNet" Version="0.26.0" />
+        <PackageReference Include="Proto.Remote.GrpcCore" Version="0.26.0" />
       <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
     </ItemGroup>
 

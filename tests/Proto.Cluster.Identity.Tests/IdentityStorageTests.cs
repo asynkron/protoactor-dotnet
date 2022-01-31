@@ -139,13 +139,13 @@ namespace Proto.Cluster.Identity.Tests
 
             var otherPid = Activate(activator, identity);
 
-            _storage.Invoking(storage =>
+            await _storage.Invoking(storage =>
                 storage.StoreActivation(activator.Id, new SpawnLock("someLockId", identity), otherPid, timeout)
-            ).Should().Throw<LockNotFoundException>();
+            ).Should().ThrowAsync<LockNotFoundException>();
         }
 
         [Fact]
-        public void CannotStoreWithoutLock()
+        public async Task CannotStoreWithoutLock()
         {
             var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var activator = GetFakeActivator();
@@ -153,9 +153,9 @@ namespace Proto.Cluster.Identity.Tests
             var spawnLock = new SpawnLock("not-a-lock", identity);
             var pid = Activate(activator, identity);
 
-            _storage.Invoking(storage =>
+            await _storage.Invoking(storage =>
                 storage.StoreActivation(activator.Id, spawnLock, pid, timeout)
-            ).Should().Throw<LockNotFoundException>();
+            ).Should().ThrowAsync<LockNotFoundException>();
         }
 
         [Fact]
