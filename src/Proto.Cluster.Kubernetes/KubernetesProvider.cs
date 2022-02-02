@@ -135,8 +135,8 @@ namespace Proto.Cluster.Kubernetes
                 await _kubernetes.ReplacePodLabels(_podName, KubernetesExtensions.GetKubeNamespace(), labels);
             }
             catch (HttpOperationException e)
-            {
-                Logger.LogError(e, "[Cluster][KubernetesProvider] Unable to update pod labels, registration failed");
+            {            
+                Logger.LogError(e, "[Cluster][KubernetesProvider] Unable to update pod labels, registration failed. Labels : {Labels}", labels);
                 throw;
             }
         }
