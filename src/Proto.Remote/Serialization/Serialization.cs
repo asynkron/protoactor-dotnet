@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="Serialization.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//       Copyright (C) 2015-2022 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -33,6 +33,7 @@ namespace Proto.Remote
         private List<SerializerItem> _serializers = new();
         private readonly ConcurrentDictionary<Type, TypeSerializerItem> _serializerLookup = new();
         internal readonly Dictionary<string, MessageParser> TypeLookup = new();
+        internal readonly ConcurrentDictionary<string, (ByteString bytes, string typename, object instance, int serializerId)> Cache = new();
 
         public const int SERIALIZER_ID_PROTOBUF = 0;
         public const int SERIALIZER_ID_JSON = 1;
@@ -92,8 +93,16 @@ namespace Proto.Remote
         {
             var serializer = FindSerializerToUse(message);
             var typename = serializer.Serializer.GetTypeName(message);
+            if (message is ICachedSerialization && Cache.TryGetValue(typename, out var cached))
+            {
+                return (cached.bytes, typename, cached.serializerId);
+            }
             var serializerId = serializer.SerializerId;
             var bytes = serializer.Serializer.Serialize(message);
+            if (message is ICachedSerialization)
+            {
+                Cache.TryAdd(typename, (bytes, typename, message, serializerId));
+            }
             return (bytes, typename, serializerId);
         }
 
@@ -121,12 +130,19 @@ namespace Proto.Remote
 
         public object Deserialize(string typeName, ByteString bytes, int serializerId)
         {
+            if (Cache.TryGetValue(typeName, out var cachedMessage))
+                return cachedMessage.instance;
             foreach (var serializerItem in _serializers)
             {
                 if (serializerItem.SerializerId == serializerId)
-                    return serializerItem.Serializer.Deserialize(
+                {
+                    var message = serializerItem.Serializer.Deserialize(
                         bytes,
                         typeName);
+                    if (message is ICachedSerialization)
+                        Cache.TryAdd(typeName, (bytes, typeName, message, serializerId));
+                    return message;
+                }
             }
 
             throw new Exception($"Couldn't find serializerId: {serializerId} for typeName: {typeName}");

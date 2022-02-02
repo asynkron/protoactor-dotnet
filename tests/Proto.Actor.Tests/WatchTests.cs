@@ -8,19 +8,19 @@ namespace Proto.Tests
 {
     public class WatchTests
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
-
         [Fact]
         public async Task MultipleStopsTriggerSingleTerminated()
         {
-            var counter = 0;
-            var childProps = Props.FromFunc(context => {
-                    switch (context.Message)
+            await using var system = new ActorSystem();
+            var context = system.Root;
+
+            long counter = 0;
+            var childProps = Props.FromFunc(ctx => {
+                    switch (ctx.Message)
                     {
                         case Started _:
-                            context.Stop(context.Self);
-                            context.Stop(context.Self);
+                            ctx.Stop(ctx.Self);
+                            ctx.Stop(ctx.Self);
                             break;
                     }
 
@@ -28,11 +28,11 @@ namespace Proto.Tests
                 }
             );
 
-            Context.Spawn(Props.FromFunc(context => {
-                        switch (context.Message)
+            context.Spawn(Props.FromFunc(ctx => {
+                        switch (ctx.Message)
                         {
                             case Started _:
-                                context.Spawn(childProps);
+                                ctx.Spawn(childProps);
                                 break;
                             case Terminated _:
                                 Interlocked.Increment(ref counter);
@@ -45,21 +45,24 @@ namespace Proto.Tests
             );
 
             await Task.Delay(1000);
-            Assert.Equal(1, counter);
+            Assert.Equal(1, Interlocked.Read(ref counter));
         }
 
         [Fact]
-        public async void CanWatchLocalActors()
+        public async Task CanWatchLocalActors()
         {
-            var watchee = Context.Spawn(Props.FromProducer(() => new DoNothingActor())
+            await using var system = new ActorSystem();
+            var context = system.Root;
+
+            var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor())
                 .WithMailbox(() => new TestMailbox())
             );
-            var watcher = Context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
+            var watcher = context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
                 .WithMailbox(() => new TestMailbox())
             );
 
-            await Context.StopAsync(watchee);
-            var terminatedMessageReceived = await Context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
+            await context.StopAsync(watchee);
+            var terminatedMessageReceived = await context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
             Assert.True(terminatedMessageReceived);
         }
 
@@ -70,15 +73,15 @@ namespace Proto.Tests
 
             public LocalActor(PID watchee) => _watchee = watchee;
 
-            public Task ReceiveAsync(IContext context)
+            public Task ReceiveAsync(IContext ctx)
             {
-                switch (context.Message)
+                switch (ctx.Message)
                 {
                     case Started _:
-                        context.Watch(_watchee);
+                        ctx.Watch(_watchee);
                         break;
                     case string msg when msg == "?":
-                        context.Respond(_terminateReceived);
+                        ctx.Respond(_terminateReceived);
                         break;
                     case Terminated _:
                         _terminateReceived = true;

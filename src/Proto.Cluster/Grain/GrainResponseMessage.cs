@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="GrainResponseMessage.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -9,10 +9,12 @@ using Proto.Remote;
 
 namespace Proto.Cluster
 {
-    public record GrainResponseMessage(IMessage ResponseMessage)  : IRootSerializable
+    public record GrainResponseMessage(IMessage? ResponseMessage) : IRootSerializable
     {
         public IRootSerialized Serialize(ActorSystem system)
         {
+            if (ResponseMessage is null) return new GrainResponse();
+
             var ser = system.Serialization();
             var (data, typeName, serializerId) = ser.Serialize(ResponseMessage);
 #if DEBUG
@@ -26,5 +28,4 @@ namespace Proto.Cluster
             };
         }
     }
-
 }

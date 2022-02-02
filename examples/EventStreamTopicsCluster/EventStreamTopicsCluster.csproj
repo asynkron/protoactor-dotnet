@@ -12,4 +12,17 @@
       <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Grpc.Tools" Version="2.42.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Protobuf Include="messages.proto" />
+    </ItemGroup>
+
 </Project>

@@ -1,15 +1,15 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="MemberList.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.Protobuf.WellKnownTypes;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
@@ -33,16 +33,16 @@ namespace Proto.Cluster
         private readonly ActorSystem _system;
         private bool _stopping = false;
         private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
-        private TaskCompletionSource<bool> _topologyConsensus = new (TaskCreationOptions.RunContinuationsAsynchronously);
-        private ImmutableDictionary<string,MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
+        private ImmutableDictionary<string, MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
 
-       // private Member? _leader;
+        // private Member? _leader;
 
         //TODO: the members here are only from the cluster provider
         //The partition lookup broadcasts and use broadcasted information
         //meaning the partition infra might be ahead of this list.
         //come up with a good solution to keep all this in sync
         private ImmutableMemberSet _activeMembers = ImmutableMemberSet.Empty;
+        private CancellationTokenSource? _currentTopologyTokenSource;
 
         private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
@@ -50,44 +50,50 @@ namespace Proto.Cluster
 
         private int _nextMemberIndex;
 
+        private TaskCompletionSource<bool> _startedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly object _lock = new();
+        private IConsensusHandle<ulong>? _topologyConsensus;
+        public Member Self { get; }
+
+        public Task Started => _startedTcs.Task;
+
         public MemberList(Cluster cluster)
         {
             _cluster = cluster;
             _system = _cluster.System;
             _root = _system.Root;
+            var (host, port) = _cluster.System.GetAddress();
+            Self = new Member
+            {
+                Id = _cluster.System.Id,
+                Host = host,
+                Port = port,
+                Kinds = { _cluster.GetClusterKinds() }
+            };
+            
             _eventStream = _system.EventStream;
             _eventStream.Subscribe<GossipUpdate>(u => {
-                    if (u.Key != "topology") return;
-            
-                    //get banned members from all other member states, and merge that with our own banned set
+                    if (u.Key != GossipKeys.Topology) return;
+
+                    //get blocked members from all other member states, and merge that with our own blocked set
                     var topology = u.Value.Unpack<ClusterTopology>();
-                    var banned = topology.Banned.ToArray();
-                    UpdateBannedMembers(banned);
+                    var blocked = topology.Blocked.ToArray();
+                    UpdateBlockedMembers(blocked);
                 }
             );
         }
 
-        public ImmutableHashSet<string> BannedMembers { get; private set; } = ImmutableHashSet<string>.Empty;
+        public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m => m.Id).ToImmutableHashSet();
 
-        public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m=>m.Id).ToImmutableHashSet();
+        internal void InitializeTopologyConsensus() => _topologyConsensus =
+            _cluster.Gossip.RegisterConsensusCheck<ClusterTopology, ulong>(GossipKeys.Topology, topology => topology.TopologyHash);
 
-        public async Task<bool> TopologyConsensus(CancellationToken ct)
-        {
-            while (!ct.IsCancellationRequested)
-            {
-                var t = _topologyConsensus.Task;
-                // ReSharper disable once MethodSupportsCancellation
-                await Task.WhenAny(t, Task.Delay(500));
-                if (t.IsCompleted)
-                    return true;                
-            }
-
-            return false;
-        }
+        public Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct)
+            => _topologyConsensus?.TryGetConsensus(ct) ?? Task.FromResult<(bool consensus, ulong topologyHash)>(default);
 
         public Member? GetActivator(string kind, string requestSourceAddress)
         {
-            lock (this)
+            lock (_lock)
             {
                 if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
                     return memberStrategy.GetActivator(requestSourceAddress);
@@ -97,19 +103,21 @@ namespace Proto.Cluster
             }
         }
 
-        public void UpdateBannedMembers(string[] bannedMembers)
+        public void UpdateBlockedMembers(string[] blockedMembers)
         {
-            lock (this)
-            {
-                //update banned members
-                var before = BannedMembers;
-                BannedMembers = BannedMembers.Union(bannedMembers);
+            var blockList = _system.Remote().BlockList;
 
-                if (before != BannedMembers)
+            lock (_lock)
+            {
+                //update blocked members
+                var before = blockList.BlockedMembers;
+                blockList.Block(blockedMembers);
+
+                if (before != blockList.BlockedMembers)
                 {
-                    Logger.LogDebug("Updating banned members via gossip");
+                    Logger.LogDebug("Updating blocked members via gossip");
                 }
-                
+
                 //then run the usual topology logic
                 UpdateClusterTopology(_activeMembers.Members);
             }
@@ -119,11 +127,13 @@ namespace Proto.Cluster
 
         public void UpdateClusterTopology(IReadOnlyCollection<Member> members)
         {
-            lock (this)
+            var blockList = _system.Remote().BlockList;
+
+            lock (_lock)
             {
                 Logger.LogDebug("[MemberList] Updating Cluster Topology");
-                
-                if (BannedMembers.Contains(_system.Id))
+
+                if (blockList.IsBlocked(_system.Id))
                 {
                     if (_stopping)
                     {
@@ -131,35 +141,38 @@ namespace Proto.Cluster
                     }
 
                     _stopping = true;
-                    Logger.LogCritical("I have been banned, exiting {Id}", MemberId);
+                    Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
                     _ = _cluster.ShutdownAsync();
                     return;
                 }
 
                 //TLDR:
-                //this method basically filters out any member status in the banned list
+                //this method filters out any member status in the blocked list
                 //then makes a delta between new and old members
                 //notifying the cluster accordingly which members left or joined
 
-                var activeMembers = new ImmutableMemberSet(members).Except(BannedMembers);
+                var activeMembers = new ImmutableMemberSet(members).Except(blockList.BlockedMembers);
 
                 if (activeMembers.Equals(_activeMembers))
                 {
                     return;
                 }
+                // Cancel any work based on the previous topology
+                _currentTopologyTokenSource?.Cancel();
+                _currentTopologyTokenSource = new CancellationTokenSource();
 
                 var left = _activeMembers.Except(activeMembers);
                 var joined = activeMembers.Except(_activeMembers);
-                BannedMembers = BannedMembers.Union(left.Members.Select(m=>m.Id));
+                blockList.Block(left.Members.Select(m => m.Id));
                 _activeMembers = activeMembers;
-                
+
                 //notify that these members left
                 foreach (var memberThatLeft in left.Members)
                 {
                     MemberLeave(memberThatLeft);
                     TerminateMember(memberThatLeft);
                 }
-                
+
                 //notify that these members joined
                 foreach (var memberThatJoined in joined.Members)
                 {
@@ -172,18 +185,26 @@ namespace Proto.Cluster
                     Members = {activeMembers.Members},
                     Left = {left.Members},
                     Joined = {joined.Members},
-                    Banned = { BannedMembers }
+                    Blocked = {blockList.BlockedMembers},
+                    TopologyValidityToken = _currentTopologyTokenSource.Token
                 };
-                
+
                 Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
-                
+
                 if (topology.Joined.Any()) Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
 
                 if (topology.Left.Any()) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
-                
-                BroadcastTopologyChanges(topology);
-            }
 
+                BroadcastTopologyChanges(topology);
+
+                if (!_startedTcs.Task.IsCompleted)
+                {
+                    if (activeMembers.Contains(_system.Id))
+                    {
+                        _startedTcs.TrySetResult(true);
+                    }
+                }
+            }
 
             void MemberLeave(Member memberThatLeft)
             {
@@ -240,17 +261,16 @@ namespace Proto.Cluster
 
         private void BroadcastTopologyChanges(ClusterTopology topology)
         {
-            
             _system.Logger()?.LogDebug("MemberList sending state");
-            _cluster.Gossip.SetState("topology", topology);
+            _cluster.Gossip.SetState(GossipKeys.Topology, topology);
             _eventStream.Publish(topology);
-        
+
             //Console.WriteLine($"{_system.Id} Broadcasting {topology.TopologyHash} - {topology.Members.Count}");
         }
 
         private void TerminateMember(Member memberThatLeft)
         {
-            var endpointTerminated = new EndpointTerminatedEvent {Address = memberThatLeft.Address};
+            var endpointTerminated = new EndpointTerminatedEvent(false, memberThatLeft.Address, memberThatLeft.Id);
             Logger.LogDebug("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
         }
@@ -266,9 +286,9 @@ namespace Proto.Cluster
                 //use that strategy
                 return clusterKind.Strategy;
             }
-            
+
             //otherwise, use whatever member strategy the default builder says
-            return _cluster.Config!.MemberStrategyBuilder(_cluster, kind) ?? new SimpleMemberStrategy();
+            return _cluster.Config.MemberStrategyBuilder(_cluster, kind) ?? new SimpleMemberStrategy();
         }
 
         /// <summary>
@@ -296,7 +316,7 @@ namespace Proto.Cluster
         }
 
         public bool ContainsMemberId(string memberId) => _activeMembers.Contains(memberId);
-
+        
         public bool TryGetMember(string memberId, out Member? value) => _activeMembers.Lookup.TryGetValue(memberId, out value);
 
         public bool TryGetMemberIndexByAddress(string address, out int value) => _indexByAddress.TryGetValue(address, out value);
@@ -304,21 +324,9 @@ namespace Proto.Cluster
         public bool TryGetMemberByIndex(int memberIndex, out Member? value) => _membersByIndex.TryGetValue(memberIndex, out value);
 
         public Member[] GetAllMembers() => _activeMembers.Members.ToArray();
+
         public Member[] GetOtherMembers() => _activeMembers.Members.Where(m => m.Id != _system.Id).ToArray();
-
-        internal void TrySetTopologyConsensus()
-        {
-            //if not set, set it, if already set, keep it set
-            _topologyConsensus.TrySetResult(true);
-        }
-
-        public void TryResetTopologyConsensus()
-        {
-            //only replace if the task is completed
-            if (_topologyConsensus.Task.IsCompleted)
-            {
-                _topologyConsensus = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            }
-        }
+        
+        public Member[] GetMembersByKind(string kind) => _activeMembers.Members.Where(m => m.Kinds.Contains(kind)).ToArray();
     }
 }

@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="DeviceActor.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading.Tasks;
@@ -17,7 +17,7 @@ namespace KafkaVirtualActorIngress
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            ClusterInit ci      => OnClusterInit(ci),
+            Started _           => OnStarted(context),
             SomeMessage sm      => OnSomeMessage(context, sm),
             SomeOtherMessage sm => OnSomeOtherMessage(context, sm),
             _                   => Task.CompletedTask
@@ -59,9 +59,9 @@ namespace KafkaVirtualActorIngress
             //db.save(_deviceId, _state);
             Task.CompletedTask;
 
-        private async Task OnClusterInit(ClusterInit clusterInit)
+        private async Task OnStarted(IContext ctx)
         {
-            _deviceId = clusterInit.Identity;
+            _deviceId = ctx.ClusterIdentity()!.Identity;
             _state = await LoadState();
         }
 

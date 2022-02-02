@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="IContext.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -90,5 +90,25 @@ namespace Proto
         /// <param name="target">the Task to await</param>
         /// <param name="action">the continuation to call once the task is completed</param>
         void ReenterAfter(Task target, Action action);
+
+        /// <summary>
+        /// Captures the current MessageOrEnvelope for the ActorContext
+        /// </summary>
+        /// <returns>The Captured Context</returns>
+        CapturedContext Capture();
+
+        /// <summary>
+        /// Apply a captured context
+        /// This overwrites the context current state with the state from the captured context
+        /// </summary>
+        /// <param name="capturedContext">The context to apply</param>
+        void Apply(CapturedContext capturedContext);
+
+        /// <summary>
+        /// Calls the callback on token cancellation. If CancellationToken is non-cancellable, this is a noop.
+        /// </summary>
+        /// <param name="cancellationToken">The CancellationToken to continue after</param>
+        /// <param name="onCancelled">The callback</param>
+        void ReenterAfterCancellation(CancellationToken cancellationToken, Action onCancelled);
     }
 }

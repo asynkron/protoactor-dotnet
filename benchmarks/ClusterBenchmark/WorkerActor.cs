@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
 // <copyright file="HelloActor.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
 using Proto;

@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class SupervisionTests_ExponentialBackoff
+    public class SupervisionTestsExponentialBackoff
     {
         [Fact]
         public void FailureOutsideWindow_ResetsFailureCount()

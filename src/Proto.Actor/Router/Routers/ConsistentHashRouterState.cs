@@ -1,10 +1,11 @@
 // -----------------------------------------------------------------------
 // <copyright file="ConsistentHashRouterState.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Proto.Router.Routers
@@ -14,9 +15,8 @@ namespace Proto.Router.Routers
         private readonly Func<string, uint> _hash;
         private readonly Func<object, string>? _messageHasher;
         private readonly int _replicaCount;
-        private readonly Dictionary<string, PID> _routeeMap = new();
         private readonly ISenderContext _senderContext;
-        private HashRing? _hashRing;
+        private HashRing<PID>? _hashRing;
 
         public ConsistentHashRouterState(
             ISenderContext senderContext,
@@ -31,21 +31,10 @@ namespace Proto.Router.Routers
             _messageHasher = messageHasher;
         }
 
-        public override HashSet<PID> GetRoutees() => _routeeMap.Values.ToHashSet();
-
         public override void SetRoutees(PID[] routees)
         {
-            _routeeMap.Clear();
-            var nodes = new List<string>();
-
-            foreach (var pid in routees)
-            {
-                var nodeName = pid.ToString();
-                nodes.Add(nodeName);
-                _routeeMap[nodeName] = pid;
-            }
-
-            _hashRing = new HashRing(nodes, _hash, _replicaCount);
+            base.SetRoutees(routees);
+            _hashRing = new HashRing<PID>(routees, pid => pid.ToString(), _hash, _replicaCount);
         }
 
         public override void RouteMessage(object message)
@@ -57,8 +46,7 @@ namespace Proto.Router.Routers
             if (env.message is IHashable hashable)
             {
                 var key = hashable.HashBy();
-                var node = _hashRing.GetNode(key);
-                var routee = _routeeMap[node];
+                var routee = _hashRing.GetNode(key);
 
                 //by design, just forward message
                 _senderContext.Send(routee, message);
@@ -66,8 +54,7 @@ namespace Proto.Router.Routers
             else if (_messageHasher is not null)
             {
                 var key = _messageHasher(message);
-                var node = _hashRing.GetNode(key);
-                var routee = _routeeMap[node];
+                var routee = _hashRing.GetNode(key);
 
                 //by design, just forward message
                 _senderContext.Send(routee, message);

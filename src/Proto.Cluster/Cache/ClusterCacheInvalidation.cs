@@ -1,8 +1,9 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="ClusterCacheInvalidation.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
@@ -34,7 +35,7 @@ namespace Proto.Cluster.Cache
 
         public Cluster Cluster { get; }
 
-        private bool IsRemote(PID? sender) => sender?.Address != null && !sender.Address.Equals(Cluster.System.Address);
+        private bool IsRemote(PID? sender) => sender?.Address != null && !sender.Address.Equals(Cluster.System.Address, StringComparison.InvariantCulture);
 
         private void Invalidate(ClusterIdentity identity, PID activation, BitArray activeRemotes)
         {
@@ -43,10 +44,12 @@ namespace Proto.Cluster.Cache
                 ClusterIdentity = identity,
                 Pid = activation
             };
-            var remotesToInvalidate = Cluster.MemberList.GetAllMembers()
-                .Select(m => Cluster.MemberList.GetMetaMember(m.Id))
-                .Where(m => activeRemotes.Length > m!.Index && activeRemotes[m.Index])
-                .Select(m => m!.Member.Address);
+            var remotesToInvalidate = Cluster
+                .MemberList
+                .GetAllMembers()
+                .Select(m => Cluster.MemberList.GetMetaMember(m.Id)!)
+                .Where(m => activeRemotes.Length > m.Index && activeRemotes[m.Index])
+                .Select(m => m.Member.Address);
 
             foreach (var address in remotesToInvalidate)
             {

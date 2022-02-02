@@ -1,10 +1,11 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="BaseFutureTests.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Proto.Future;
@@ -12,11 +13,9 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public abstract class BaseFutureTests
+    public abstract class BaseFutureTests : ActorTestBase
     {
         protected const int BatchSize = 1000;
-        protected static readonly ActorSystem System = new();
-        protected static readonly RootContext Context = System.Root;
 
         protected abstract IFuture GetFuture();
 
@@ -68,7 +67,7 @@ namespace Proto.Tests
 
             var futures = new IFuture[BatchSize];
 
-            for (int i = 0; i < BatchSize; i++)
+            for (var i = 0; i < BatchSize; i++)
             {
                 var future = GetFuture();
                 Context.Request(pid, i, future.Pid);
@@ -81,7 +80,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Timeouts_should_give_timeout_exception()
+        public async Task Timeouts_should_give_timeout_exception()
         {
             var pid = Context.Spawn(Props.FromFunc(async ctx => {
                         if (ctx.Sender is not null)
@@ -96,15 +95,20 @@ namespace Proto.Tests
             var batchSize = 1000;
             var futures = new IFuture[batchSize];
 
-            for (int i = 0; i < batchSize; i++)
+            for (var i = 0; i < batchSize; i++)
             {
                 var future = GetFuture();
                 futures[i] = future;
                 Context.Request(pid, i, future.Pid);
             }
 
-            futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.GetTask(CancellationTokens.WithTimeout(50)))); }
-            ).Should().Throw<TimeoutException>();
+            await futures.Invoking(async f => {
+                    using var cts = new CancellationTokenSource(50);
+                    // ReSharper disable once AccessToDisposedClosure
+                    var tasks = f.Select(future => future.GetTask(cts.Token));
+                    return await Task.WhenAll(tasks);
+                }
+            ).Should().ThrowAsync<TimeoutException>();
         }
     }
 }

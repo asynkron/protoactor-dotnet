@@ -1,42 +1,51 @@
 // -----------------------------------------------------------------------
 // <copyright file="ClusterMetrics.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System.Diagnostics.Metrics;
 using Proto.Metrics;
-using Ubiquitous.Metrics;
 
 namespace Proto.Cluster.Metrics
 {
-    public class ClusterMetrics
+    public static class ClusterMetrics
     {
-        public readonly IGaugeMetric ClusterActorGauge;
-        public readonly IHistogramMetric ClusterActorSpawnHistogram;
-        public readonly IHistogramMetric ClusterRequestHistogram;
-        public readonly ICountMetric ClusterRequestRetryCount;
-        public readonly IGaugeMetric ClusterTopologyEventGauge;
-        public readonly IHistogramMetric ClusterResolvePidHistogram;
+        public static readonly Histogram<double> ClusterActorSpawnDuration =
+            ProtoMetrics.Meter.CreateHistogram<double>("protocluster_virtualactor_spawn_duration", unit: "seconds",
+                description: "Time it takes to spawn a virtual actor"
+            );
 
-        public ClusterMetrics(ProtoMetrics metrics)
+        public static readonly Histogram<double> ClusterRequestDuration = ProtoMetrics.Meter.CreateHistogram<double>(
+            "protocluster_virtualactor_requestasync_duration", unit: "seconds",
+            description: "Cluster request duration"
+        );
+
+        public static readonly Counter<long> ClusterRequestRetryCount = ProtoMetrics.Meter.CreateCounter<long>(
+            "protocluster_virtualactor_requestasync_retry_count",
+            description: "Number of retries after failed cluster requests"
+        );
+
+        public static readonly Histogram<double> ClusterResolvePidDuration =
+            ProtoMetrics.Meter.CreateHistogram<double>("protocluster_resolve_pid_duration", unit: "seconds",
+                description: "Time it takes to resolve a pid"
+            );
+
+        public static readonly ObservableGaugeWrapper<long> VirtualActorsCount = new();
+        public static readonly ObservableGaugeWrapper<long> ClusterMembersCount = new();
+
+        static ClusterMetrics()
         {
-            ClusterActorGauge = metrics.CreateGauge("protocluster_virtualactors", "", "id", "address", "clusterkind");
-
-            ClusterActorSpawnHistogram =
-                metrics.CreateHistogram("protocluster_virtualactor_spawn_duration_seconds", "", "id", "address", "clusterkind");
-
-            ClusterRequestHistogram = metrics.CreateHistogram("protocluster_virtualactor_requestasync_duration_seconds", "", "id", "address",
-                "clusterkind", "messagetype", "pidsource"
+            ProtoMetrics.Meter.CreateObservableGauge(
+                "protocluster_virtualactors",
+                VirtualActorsCount.Observe,
+                description: "Number of active virtual actors on this node"
             );
 
-            ClusterRequestRetryCount = metrics.CreateCount("protocluster_virtualactor_requestasync_retry_count", "", "id", "address", "clusterkind",
-                "messagetype"
+            ProtoMetrics.Meter.CreateObservableGauge(
+                "protocluster_members_count",
+                ClusterMembersCount.Observe,
+                description: "Number of cluster members as seen by this node"
             );
-
-            ClusterTopologyEventGauge = metrics.CreateGauge("protocluster_topology_events", "", "id", "address", "membershiphashcode");
-            
-            ClusterResolvePidHistogram =
-                metrics.CreateHistogram("protocluster_resolve_pid_duration_seconds", "", "id", "address", "clusterkind");
-
         }
     }
 }

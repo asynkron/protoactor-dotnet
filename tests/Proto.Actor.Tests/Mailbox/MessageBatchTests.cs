@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="MessageBatchTests.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
@@ -12,11 +12,6 @@ namespace Proto.Mailbox.Tests
 {
     public class MessageBatchTests
     {
-        class MyMessageBatch : IMessageBatch
-        {
-            public IReadOnlyCollection<object> GetMessages() => new[] {"hello", "world", "batch"};
-        }
-
         [Fact]
         public async Task CanUnpackMessagesFromBatchAndReceiveInOrder()
         {
@@ -26,10 +21,7 @@ namespace Proto.Mailbox.Tests
 
             var system = new ActorSystem();
             var props = Props.FromFunc(ctx => {
-                    if (ctx.Message is string str)
-                    {
-                        messages.Add(str);
-                    }
+                    if (ctx.Message is string str) messages.Add(str);
 
                     return Task.CompletedTask;
                 }
@@ -41,6 +33,11 @@ namespace Proto.Mailbox.Tests
 
             var expected = new[] {"hello", "world", "batch"};
             messages.Should().ContainInOrder(expected);
+        }
+
+        private class MyMessageBatch : IMessageBatch
+        {
+            public IReadOnlyCollection<object> GetMessages() => new[] {"hello", "world", "batch"};
         }
     }
 }

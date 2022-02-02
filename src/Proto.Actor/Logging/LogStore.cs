@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="LogStore.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -18,7 +18,7 @@ namespace Proto.Logging
         private readonly object _lock = new();
         private readonly List<LogStoreEntry> _entries = new();
 
-        public void Append(LogLevel logLevel, string category, string template, Exception? x, object[] args)
+        public void Append(LogLevel logLevel, string category, string template, Exception? x, params object[] args)
         {
             lock (_lock)
             {

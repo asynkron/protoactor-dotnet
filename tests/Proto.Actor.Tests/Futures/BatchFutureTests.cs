@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Proto.Future;
@@ -7,11 +8,8 @@ using Xunit;
 
 namespace Proto.Tests
 {
-    public class BatchFutureTests
+    public class BatchFutureTests : ActorTestBase
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
-
         [Fact]
         public async Task Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()
         {
@@ -22,9 +20,8 @@ namespace Proto.Tests
                 )
             );
 
-            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.WithTimeout(1000));
+            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.FromSeconds(5));
             var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
-
 
             Context.Request(pid, "hello", future.Pid);
 
@@ -42,7 +39,7 @@ namespace Proto.Tests
                 )
             );
 
-            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.WithTimeout(1000));
+            using var batch = new FutureBatchProcess(System, 1, CancellationTokens.FromSeconds(5));
             var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
 
             Context.Request(pid, "hello", future.Pid);
@@ -61,11 +58,11 @@ namespace Proto.Tests
                 )
             );
 
-            var batchSize = 1000;
-            using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.WithTimeout(batchSize));
+            var batchSize = 100;
+            using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.FromSeconds(5));
             var futures = new IFuture[batchSize];
 
-            for (int i = 0; i < batchSize; i++)
+            for (var i = 0; i < batchSize; i++)
             {
                 var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
                 Context.Request(pid, i, future.Pid);
@@ -78,7 +75,7 @@ namespace Proto.Tests
         }
 
         [Fact]
-        public void Timeouts_should_give_timeout_exception()
+        public async Task Timeouts_should_give_timeout_exception()
         {
             var pid = Context.Spawn(Props.FromFunc(async ctx => {
                         if (ctx.Sender is not null)
@@ -91,18 +88,19 @@ namespace Proto.Tests
             );
 
             var batchSize = 1000;
-            using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.WithTimeout(50));
+            using var cts = new CancellationTokenSource(50);
+            using var batch = new FutureBatchProcess(System, batchSize, cts.Token);
             var futures = new IFuture[batchSize];
 
-            for (int i = 0; i < batchSize; i++)
+            for (var i = 0; i < batchSize; i++)
             {
                 var future = batch.TryGetFuture() ?? throw new Exception("Not able to get future");
                 futures[i] = future;
                 Context.Request(pid, i, future.Pid);
             }
 
-            futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }
-            ).Should().Throw<TimeoutException>();
+            await futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }
+            ).Should().ThrowAsync<TimeoutException>();
         }
 
         [Fact]
@@ -114,21 +112,21 @@ namespace Proto.Tests
                     }
                 )
             );
-            const int size = 1000;
+            const int size = 100;
 
-            var cancellationToken = CancellationTokens.WithTimeout(1000);
+            var cancellationToken = CancellationTokens.FromSeconds(5);
             using var batchContext = System.Root.CreateBatchContext(size, cancellationToken);
 
             var tasks = new Task<object>[size];
 
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 tasks[i] = batchContext.RequestAsync<object>(pid, i, cancellationToken);
             }
 
             var replies = await Task.WhenAll(tasks);
 
-            replies.Should().BeInAscendingOrder().And.HaveCount(1000);
+            replies.Should().BeInAscendingOrder().And.HaveCount(size);
         }
     }
 }

@@ -54,7 +54,7 @@ namespace KafkaVirtualActorIngress
                     };
 
                     var task = cluster
-                        .RequestAsync<Ack>(message.DeviceId, "device", m, CancellationTokens.WithTimeout(5000));
+                        .RequestAsync<Ack>(message.DeviceId, "device", m, CancellationTokens.FromSeconds(5));
 
                     tasks.Add(task);
                 }

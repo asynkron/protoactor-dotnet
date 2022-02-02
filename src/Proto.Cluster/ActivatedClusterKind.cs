@@ -1,6 +1,6 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="ClusterKind.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading;
@@ -9,8 +9,7 @@ namespace Proto.Cluster
 {
     public record ActivatedClusterKind
     {
-        
-        private int _count;
+        private long _count;
 
         internal ActivatedClusterKind(string name, Props props, IMemberStrategy? strategy)
         {
@@ -23,7 +22,10 @@ namespace Proto.Cluster
         public Props Props { get; }
         public IMemberStrategy? Strategy { get; }
 
-        internal int Inc() => Interlocked.Increment(ref _count);
-        internal int Dec() => Interlocked.Decrement(ref _count);
+        internal long Inc() => Interlocked.Increment(ref _count);
+
+        internal long Dec() => Interlocked.Decrement(ref _count);
+
+        internal long Count => Interlocked.Read(ref _count);
     }
 }

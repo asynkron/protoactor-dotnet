@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="InMemAgent.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -57,5 +57,7 @@ namespace Proto.Cluster.Testing
             //TODO: this is racy, but yolo for now
             if (_services.TryGetValue(id, out var service)) service.TTL = DateTimeOffset.Now;
         }
+
+        public void ForceUpdate() => OnStatusUpdate(EventArgs.Empty);
     }
 }

@@ -5,12 +5,16 @@ import "google/protobuf/any.proto";
 
 
 message GossipRequest {
+  string member_id = 2;
   GossipState state = 1;
 }
 
 //Ack a gossip request
 message GossipResponse {
   GossipState state = 1;
+}
+
+message GossipResponseAck { // Or just use empty GossipResponse?
 }
 
 //two GossipState objects can be merged
@@ -35,6 +39,7 @@ message GossipState {
 message GossipKeyValue {
   int64 sequence_number = 2; //version is local to the owner member
   google.protobuf.Any value = 4; //value is any format
+  int64  local_timestamp_unix_milliseconds = 5;
 }
 
 //represents a value that can be sent in form of a delta change

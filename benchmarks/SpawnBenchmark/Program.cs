@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -58,7 +58,12 @@ namespace SpawnBenchmark
                 case long res: {
                     _sum += res;
                     _replies--;
-                    if (_replies == 0) context.Send(_replyTo, _sum);
+
+                    if (_replies == 0)
+                    {
+                        context.Send(_replyTo, _sum);
+                        context.Stop(context.Self);
+                    }
                     return Task.CompletedTask;
                 }
                 default:
@@ -95,7 +100,6 @@ namespace SpawnBenchmark
                 var res = t.Result;
                 Console.WriteLine(sw.Elapsed);
                 Console.WriteLine(res);
-                context.StopAsync(pid).Wait();
                 Task.Delay(500).Wait();
             }
 

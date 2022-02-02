@@ -1,17 +1,18 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
 using ClusterHelloWorld.Messages;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
+using Proto.Cluster.Seed;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using static Proto.CancellationTokens;
 using ProtosReflection =ClusterHelloWorld.Messages.ProtosReflection;
 
@@ -19,34 +20,40 @@ class Program
 {
     private static async Task Main()
     {
+        Proto.Log.SetLoggerFactory(
+            LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
+        
+        // Required to allow unencrypted GrpcNet connections
+        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         var system = new ActorSystem()
-            .WithRemote(GrpcCoreRemoteConfig
-                .BindToLocalhost()
-                .WithProtoMessages(ProtosReflection.Descriptor))
+            .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
             .WithCluster(ClusterConfig
-                .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionIdentityLookup()));
+                .Setup("MyCluster", new SeedNodeClusterProvider(), new PartitionIdentityLookup()));
 
+        system.EventStream.Subscribe<ClusterTopology>(e => {
+                Console.WriteLine($"{DateTime.Now:O} My members {e.TopologyHash}");
+            }
+        );
+        
         await system
             .Cluster()
-            .StartClientAsync();
+            .StartMemberAsync();
+
+        await system.Cluster().JoinSeed("127.0.0.1", 8090);
 
         Console.WriteLine("Started");
-        await Task.Delay(2000);
-
 
         var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
         
-        var res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
+        var res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
         Console.WriteLine(res.Message);
 
-        res = await helloGrain.SayHello(new HelloRequest(), WithTimeout(5000));
+        res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
         Console.WriteLine(res.Message);
-        
-        Console.CancelKeyPress += async (e, y) => {
-            Console.WriteLine("Shutting Down...");
-            await system.Cluster().ShutdownAsync();
-        };
-        
-        await Task.Delay(-1);
+
+        Console.WriteLine("Press enter to exit");
+        Console.ReadLine();
+        Console.WriteLine("Shutting Down...");
+        await system.Cluster().ShutdownAsync();
     }
 }

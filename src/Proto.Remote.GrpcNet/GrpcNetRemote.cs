@@ -28,12 +28,14 @@ namespace Proto.Remote.GrpcNet
         {
             System = system;
             _config = config;
-            system.Metrics.Register(new RemoteMetrics(system.Metrics));
             System.Extensions.Register(this);
             System.Extensions.Register(config.Serialization);
         }
 
         public bool Started { get; private set; }
+        
+        public BlockList BlockList { get; } = new();
+        
         public RemoteConfigBase Config => _config;
         public ActorSystem System { get; }
 
@@ -46,7 +48,7 @@ namespace Proto.Remote.GrpcNet
 
                 var channelProvider = new GrpcNetChannelProvider(_config);
                 _endpointManager = new EndpointManager(System, Config, channelProvider);
-                _endpointReader = new EndpointReader(System, _endpointManager, Config.Serialization);
+                _endpointReader = new EndpointReader(System, _endpointManager);
                 _healthCheck = new HealthServiceImpl();
 
                 if (!IPAddress.TryParse(Config.Host, out var ipAddress))
@@ -59,7 +61,7 @@ namespace Proto.Remote.GrpcNet
                             if (_config.ConfigureKestrel == null)
                             {
                                 serverOptions.Listen(ipAddress, Config.Port,
-                                    listenOptions => { listenOptions.Protocols = HttpProtocols.Http2; }
+                                    listenOptions => listenOptions.Protocols = HttpProtocols.Http2
                                 );
                             }
                             else

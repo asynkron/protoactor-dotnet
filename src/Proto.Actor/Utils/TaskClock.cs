@@ -1,6 +1,6 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="TaskClock.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -14,7 +14,12 @@ namespace Proto.Utils
         private readonly TimeSpan _bucketSize;
         private readonly TimeSpan _updateInterval;
         private readonly CancellationToken _ct;
-        public Task CurrentBucket { get; private set; } = Task.CompletedTask;
+        private Task _currentBucket = Task.CompletedTask;
+
+        public Task CurrentBucket {
+            get => Volatile.Read(ref _currentBucket);
+            private set => Volatile.Write(ref _currentBucket, value);
+        }
         public TaskClock(TimeSpan timeout, TimeSpan updateInterval, CancellationToken ct)
         {
             _bucketSize = timeout + updateInterval;
@@ -24,22 +29,21 @@ namespace Proto.Utils
 
         public void Start()
         {
-            CurrentBucket = Task.Delay(_bucketSize,_ct);
+            CurrentBucket = Task.Delay(_bucketSize, _ct);
             _ = SafeTask.Run(async () => {
-                    while (!_ct.IsCancellationRequested)
+                while (!_ct.IsCancellationRequested)
+                {
+                    try
                     {
-                        try
-                        {
-                            CurrentBucket = Task.Delay(_bucketSize, _ct);
-                            await Task.Delay(_updateInterval, _ct);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            //pass, expected
-                        }
+                        CurrentBucket = Task.Delay(_bucketSize, _ct);
+                        await Task.Delay(_updateInterval, _ct);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        //pass, expected
                     }
                 }
-            );
+            });
         }
     }
 }

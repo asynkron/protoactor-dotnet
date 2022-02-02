@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
+        <OutputType>Exe</OutputType>
+        <LangVersion>9</LangVersion>
+        <RootNamespace>ClusterExperiment1</RootNamespace>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
+        <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.Kubernetes\Proto.Cluster.Kubernetes.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Remote.GrpcNet\Proto.Remote.GrpcNet.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DotNet.Testcontainers" Version="1.5.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.42.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
+        <PackageReference Include="MongoDB.Driver" Version="2.13.1" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.1.0" />
+        <PackageReference Include="Serilog" Version="2.10.0" />
+        <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="messages.proto" GrpcServices="Server" />
+    </ItemGroup>
+    
+
+</Project>

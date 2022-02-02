@@ -1,17 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
     <IsPackable>true</IsPackable>
     <Nullable>enable</Nullable>
     <LangVersion>9</LangVersion>
+    <TargetFrameworks>net5.0;net6.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Grpc.Tools" Version="2.38.1" PrivateAssets="All" />
+    <PackageReference Include="Grpc.Tools" Version="2.42.0" PrivateAssets="All" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Proto.Remote\Proto.Remote.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Protobuf Include="SeedContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
     <Protobuf Include="ClusterContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
     <Protobuf Include="GossipContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
     <Protobuf Include="PubSubContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />

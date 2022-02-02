@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Persistence.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -193,12 +193,6 @@ namespace Proto.Persistence
         public Task DeleteEventsAsync(long inclusiveToIndex) =>
             _eventStore.DeleteEventsAsync(_actorId, inclusiveToIndex);
 
-        [Obsolete("Use ManualSnapshots instead", false)]
-        private class NoSnapshots : ISnapshotStrategy
-        {
-            public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => false;
-        }
-        
         private class ManualSnapshots : ISnapshotStrategy
         {
             public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => false;

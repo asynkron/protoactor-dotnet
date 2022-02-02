@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="SharedFutureTests.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -34,14 +34,12 @@ namespace Proto.Tests
         [Fact]
         public void Should_not_give_out_more_futures_than_size_allows()
         {
-            for (int i = 0; i < BatchSize; i++)
+            for (var i = 0; i < BatchSize; i++)
             {
                 GetFuture().Should().NotBeNull();
             }
 
             this.Invoking(it => it.GetFuture()).Should().Throw<Exception>();
         }
-        
-        
     }
 }

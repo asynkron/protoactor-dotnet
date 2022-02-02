@@ -8,12 +8,12 @@ namespace Proto.Tests
 {
     public class DisposableActorTests
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
-
         [Fact]
-        public void WhenActorRestarted_DisposeIsCalled()
+        public async Task WhenActorRestarted_DisposeIsCalled()
         {
+            await using var system = new ActorSystem();
+            var context = system.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
@@ -23,15 +23,18 @@ namespace Proto.Tests
             var props = Props.FromProducer(() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Context.Spawn(props);
-            Context.Send(parent, "crash");
+            var parent = context.Spawn(props);
+            context.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.True(disposeCalled);
         }
 
         [Fact]
-        public void WhenActorRestarted_DisposeAsyncIsCalled()
+        public async Task WhenActorRestarted_DisposeAsyncIsCalled()
         {
+            await using var system = new ActorSystem();
+            var context = system.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
@@ -41,15 +44,18 @@ namespace Proto.Tests
             var props = Props.FromProducer(() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Context.Spawn(props);
-            Context.Send(parent, "crash");
+            var parent = context.Spawn(props);
+            context.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.True(disposeCalled);
         }
 
         [Fact]
-        public void WhenActorResumed_DisposeIsNotCalled()
+        public async Task WhenActorResumed_DisposeIsNotCalled()
         {
+            await using var system = new ActorSystem();
+            var context = system.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
@@ -59,15 +65,18 @@ namespace Proto.Tests
             var props = Props.FromProducer(() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Context.Spawn(props);
-            Context.Send(parent, "crash");
+            var parent = context.Spawn(props);
+            context.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.False(disposeCalled);
         }
 
         [Fact]
-        public void WhenActorResumed_DisposeAsyncIsNotCalled()
+        public async Task WhenActorResumed_DisposeAsyncIsNotCalled()
         {
+            await using var system = new ActorSystem();
+            var context = system.Root;
+
             var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
             var disposeCalled = false;
             var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
@@ -77,37 +86,46 @@ namespace Proto.Tests
             var props = Props.FromProducer(() => new SupervisingActor(childProps))
                 .WithMailbox(() => new TestMailbox())
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Context.Spawn(props);
-            Context.Send(parent, "crash");
+            var parent = context.Spawn(props);
+            context.Send(parent, "crash");
             childMailboxStats.Reset.Wait(1000);
             Assert.False(disposeCalled);
         }
 
         [Fact]
-        public async void WhenActorStopped_DisposeIsCalled()
+        public async Task WhenActorStopped_DisposeIsCalled()
         {
+            await using var system = new ActorSystem();
+            var context = system.Root;
+
             var disposeCalled = false;
             var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
-            var pid = Context.Spawn(props);
-            await Context.StopAsync(pid);
+            var pid = context.Spawn(props);
+            await context.StopAsync(pid);
             Assert.True(disposeCalled);
         }
 
         [Fact]
-        public async void WhenActorStopped_DisposeAsyncIsCalled()
+        public async Task WhenActorStopped_DisposeAsyncIsCalled()
         {
+            await using var system = new ActorSystem();
+            var context = system.Root;
+
             var disposeCalled = false;
             var props = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
                 .WithMailbox(() => new TestMailbox());
-            var pid = Context.Spawn(props);
-            await Context.StopAsync(pid);
+            var pid = context.Spawn(props);
+            await context.StopAsync(pid);
             Assert.True(disposeCalled);
         }
 
         [Fact]
-        public void WhenActorWithChildrenStopped_DisposeIsCalledInEachChild()
+        public async Task WhenActorWithChildrenStopped_DisposeIsCalledInEachChild()
         {
+            await using var system = new ActorSystem();
+            var context = system.Root;
+
             var child1Disposed = false;
             var child2Disposed = false;
             var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -119,9 +137,9 @@ namespace Proto.Tests
                 .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
             var parentProps = Props.FromProducer(() => new ParentWithMultipleChildrenActor(child1Props, child2Props))
                 .WithChildSupervisorStrategy(strategy);
-            var parent = Context.Spawn(parentProps);
+            var parent = context.Spawn(parentProps);
 
-            Context.Send(parent, "crash");
+            context.Send(parent, "crash");
 
             child1MailboxStats.Reset.Wait(1000);
             child2MailboxStats.Reset.Wait(1000);

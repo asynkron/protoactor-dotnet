@@ -1,14 +1,12 @@
 // -----------------------------------------------------------------------
 // <copyright file="ActorSystemConfig.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Diagnostics;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Ubiquitous.Metrics;
-using Ubiquitous.Metrics.NoMetrics;
 
 // ReSharper disable once CheckNamespace
 namespace Proto
@@ -18,7 +16,7 @@ namespace Proto
     {
         public TimeSpan DeadLetterThrottleInterval { get; init; }
 
-        public IMetricsProvider[] MetricsProviders { get; init; } = {new NoMetricsProvider()};
+        public bool MetricsEnabled { get; init; }
         public int DeadLetterThrottleCount { get; init; }
 
         public bool DeadLetterRequestLogging { get; set; } = true;
@@ -35,6 +33,7 @@ namespace Proto
         public static ActorSystemConfig Setup() => new();
 
         public Func<IActor, string> DiagnosticsSerializer { get; set; } = Diagnostics.DiagnosticsSerializer.Serialize;
+        public TimeSpan RequestAsyncTimeout { get; init; } = TimeSpan.FromSeconds(5);
 
         public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval) =>
             this with {DeadLetterThrottleInterval = deadLetterThrottleInterval};
@@ -48,7 +47,7 @@ namespace Proto
 
         public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
 
-        public ActorSystemConfig WithMetricsProviders(params IMetricsProvider[] providers) => this with {MetricsProviders = providers};
+        public ActorSystemConfig WithMetrics(bool enabled = true) => this with {MetricsEnabled = enabled};
 
         public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
         

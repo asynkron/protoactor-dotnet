@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="DIExtension.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -28,6 +28,6 @@ namespace Proto.DependencyInjection
         }
 
         // ReSharper disable once InconsistentNaming
-        public static IDependencyResolver DI(this ActorSystem system) => system.Extensions.Get<DIExtension>()!.Resolver;
+        public static IDependencyResolver DI(this ActorSystem system) => system.Extensions.GetRequired<DIExtension>().Resolver;
     }
 }

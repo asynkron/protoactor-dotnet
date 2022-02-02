@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="BatchingMailbox.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -18,8 +18,8 @@ namespace Proto.Mailbox
         private readonly int _batchSize;
         private readonly IMailboxQueue _systemMessages = new UnboundedMailboxQueue();
         private readonly IMailboxQueue _userMessages = new UnboundedMailboxQueue();
-        private IDispatcher? _dispatcher;
-        private IMessageInvoker? _invoker;
+        private IDispatcher _dispatcher = null!;
+        private IMessageInvoker _invoker = null!;
 
         private int _status = MailboxStatus.Idle;
         private bool _suspended;
@@ -68,7 +68,7 @@ namespace Proto.Mailbox
                         _                => _suspended
                     };
                     currentMessage = sys;
-                    await _invoker!.InvokeSystemMessageAsync(sys);
+                    await _invoker.InvokeSystemMessageAsync(sys);
                 }
 
                 if (!_suspended)
@@ -85,25 +85,25 @@ namespace Proto.Mailbox
                     if (batch.Count > 0)
                     {
                         currentMessage = batch;
-                        await _invoker!.InvokeUserMessageAsync(new MessageBatch(batch));
+                        await _invoker.InvokeUserMessageAsync(new MessageBatch(batch));
                     }
                 }
             }
             catch (Exception x)
             {
                 _suspended = true;
-                _invoker!.EscalateFailure(x, currentMessage);
+                _invoker.EscalateFailure(x, currentMessage);
             }
 
             Interlocked.Exchange(ref _status, MailboxStatus.Idle);
 
-            if (_systemMessages.HasMessages || _userMessages.HasMessages & !_suspended) Schedule();
+            if (_systemMessages.HasMessages || (_userMessages.HasMessages && !_suspended)) Schedule();
         }
 
         private void Schedule()
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
-                _dispatcher!.Schedule(RunAsync);
+                _dispatcher.Schedule(RunAsync);
         }
     }
 }

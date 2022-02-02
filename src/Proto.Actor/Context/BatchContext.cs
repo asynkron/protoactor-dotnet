@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="BatchContext.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -31,9 +31,8 @@ namespace Proto.Context
         public async Task<T> RequestAsync<T>(PID target, object message, CancellationToken ct)
         {
             using var future = GetFuture();
-            var messageEnvelope = new MessageEnvelope(message, future.Pid);
             ct.ThrowIfCancellationRequested();
-            _context.Send(target, messageEnvelope);
+            _context.Request(target, message, future.Pid);
             var task = ct == default || ct == _ct ? future.Task : future.GetTask(ct);
             var result = await task;
 
@@ -45,6 +44,11 @@ namespace Proto.Context
                 case T:
                     return (T) result!;
                 default:
+                    if (typeof(T) == typeof(MessageEnvelope))
+                    {
+                        return (T) (object) MessageEnvelope.Wrap(result);
+                    }
+
                     throw new InvalidOperationException(
                         $"Unexpected message. Was type {result.GetType()} but expected {typeof(T)}"
                     );

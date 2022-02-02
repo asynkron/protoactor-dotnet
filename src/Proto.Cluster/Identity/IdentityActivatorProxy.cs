@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="IdentityProxyWorker.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -102,6 +102,7 @@ namespace Proto.Cluster.Identity
                         {
                             Logger.LogDebug("Stale PID {Pid} from IdentityLookup when replacing {ClusterIdentity}. Will retry, attempt {Attempt} ", replacedPid, identity, attempt);
                             context.ReenterAfter(Task.Delay(50 * attempt), () => ReplaceActivation(identity, replacedPid, context, attempt + 1));
+                            return Task.CompletedTask;
                         }
                         else
                         {

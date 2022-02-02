@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="Guardians.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -55,7 +55,13 @@ namespace Proto
         public void RestartChildren(Exception reason, params PID[] pids) =>
             pids.SendSystemMessage(new Restart(reason), System);
 
-        public void StopChildren(params PID[] pids) => pids.Stop(System);
+        public void StopChildren(params PID[] pids)
+        {
+            foreach (var pid in pids)
+            {
+                System.Root.Stop(pid);
+            }
+        }
 
         public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
 

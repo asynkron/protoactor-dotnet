@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Props.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -15,9 +15,10 @@ namespace Proto
     [PublicAPI]
     public sealed record Props
     {
+        private static IActor NullProducer(ActorSystem _) => null!;
         public static readonly Props Empty = new();
 
-        public ProducerWithSystem Producer { get; init; } = _ => null!;
+        public ProducerWithSystem Producer { get; init; } = NullProducer;
         public MailboxProducer MailboxProducer { get; init; } = () => UnboundedMailbox.Create();
         public ISupervisorStrategy? GuardianStrategy { get; init; }
         public ISupervisorStrategy SupervisorStrategy { get; init; } = Supervision.DefaultStrategy;
@@ -143,7 +144,7 @@ namespace Proto
 
         internal PID Spawn(ActorSystem system, string name, PID? parent) => Spawner(system, name, this, parent);
 
-        public static Props FromProducer(Producer producer) => Empty.WithProducer(s => producer());
+        public static Props FromProducer(Producer producer) => Empty.WithProducer(_ => producer());
 
         public static Props FromProducer(ProducerWithSystem producer) => Empty.WithProducer(producer);
 

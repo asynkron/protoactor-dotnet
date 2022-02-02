@@ -1,10 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
+using Proto.Future;
 using Proto.Remote.Tests.Messages;
 using Xunit;
 
@@ -12,7 +14,6 @@ using Xunit;
 
 namespace Proto.Remote.Tests
 {
-    [Collection("RemoteTests")]
     public abstract class RemoteTests
     {
         private readonly IRemoteFixture _fixture;
@@ -28,10 +29,72 @@ namespace Proto.Remote.Tests
             var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
 
             var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
-                TimeSpan.FromMilliseconds(5000)
+                TimeSpan.FromSeconds(10)
             );
 
             Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
+        }
+
+        [Fact, DisplayTestMethodName]
+        public async Task CanForwardBetweenRemotes()
+        {
+            var remoteActor1 = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
+            var remoteActor2 = PID.FromAddress(_fixture.RemoteAddress2, "EchoActorInstance");
+
+            var response = await System.Root.RequestAsync<ForwardResponse>(remoteActor1, new Forward
+                    {Message = "Hi", Target = remoteActor2},
+                TimeSpan.FromSeconds(10)
+            );
+
+            response.Should().BeEquivalentTo(new ForwardResponse
+                {
+                    Message = "Hi", Sender = remoteActor2
+                }
+            );
+        }
+
+        [Fact, DisplayTestMethodName]
+        public async Task RemoteHandlesRequestIdsCorrectly()
+        {
+            const int messageCount = 200;
+            var timeout = new CancellationTokenSource(10000);
+            var batchContext = _fixture.ActorSystem.Root.CreateBatchContext(messageCount, timeout.Token);
+            // Batch futures are using the same process, but differentiate responses based on the request id
+            var requestIds = Enumerable.Range(1, messageCount).ToList();
+            List<(IFuture future, Ping message)> requests = requestIds
+                .Select(i => (batchContext.GetFuture(), new Ping {Message = i.ToString()})).ToList();
+
+            var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
+
+            // Send all request at once, to make sure they are batched in the remote
+            foreach (var request in requests)
+            {
+                System.Root.Request(remoteActor, request.message, request.future.Pid);
+            }
+
+            var responses = await Task.WhenAll(requests.Select(request => GetResponse(request.future)));
+
+            for (var index = 0; index < requests.Count; index++)
+            {
+                // Make sure that each request got the matched response
+                var ping = requests[index].message;
+                var pong = responses[index];
+                Assert.Equal($"{_fixture.RemoteAddress} " + ping.Message, pong.Message);
+            }
+
+            static async Task<Pong> GetResponse(IFuture future)
+            {
+                var response = await future.Task;
+
+                switch (response)
+                {
+                    case Proto.MessageEnvelope envelope: return (Pong) envelope.Message;
+                    case Pong pong:
+                        return pong;
+                    default:
+                        throw new ArgumentException(response?.ToString(), nameof(response));
+                }
+            }
         }
 
         [Fact, DisplayTestMethodName]
@@ -42,7 +105,7 @@ namespace Proto.Remote.Tests
             await Assert.ThrowsAsync<DeadLetterException>(
                 async () => {
                     await System.Root.RequestAsync<Pong>(unknownRemoteActor, new Ping {Message = "Hello"},
-                        TimeSpan.FromMilliseconds(2000)
+                        TimeSpan.FromSeconds(10)
                     );
                 }
             );
@@ -54,13 +117,28 @@ namespace Proto.Remote.Tests
             var remoteActorName = Guid.NewGuid().ToString();
 
             var remoteActorResp = await Remote.SpawnNamedAsync(
-                _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5)
+                _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
             );
             var remoteActor = remoteActorResp.Pid;
             var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
-                TimeSpan.FromMilliseconds(5000)
+                TimeSpan.FromSeconds(10)
             );
             Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
+        }
+
+        [Fact, DisplayTestMethodName]
+        public async Task CanSpawnActorOnClientRemote()
+        {
+            var remoteActorName = Guid.NewGuid().ToString();
+
+            var remoteActorResp = await Remote.SpawnNamedAsync(
+                _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
+            );
+            var remoteActor = remoteActorResp.Pid;
+            var pong = await System.Root.RequestAsync<SpawnOnMeAndPingResponse>(remoteActor, new SpawnOnMeAndPing(),
+                TimeSpan.FromSeconds(10)
+            );
+            Assert.Equal($"{_fixture.ActorSystem.Address} Hello", pong.Message);
         }
 
         [Fact, DisplayTestMethodName]
@@ -76,7 +154,7 @@ namespace Proto.Remote.Tests
                     () =>
                         System.Root.RequestAsync<bool>(
                             localActor, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
-                            TimeSpan.FromSeconds(5)
+                            TimeSpan.FromSeconds(10)
                         )
                 ),
                 "Watching actor did not receive Termination message"
@@ -98,7 +176,7 @@ namespace Proto.Remote.Tests
                     () =>
                         System.Root.RequestAsync<bool>(
                             localActor, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor1.Id),
-                            TimeSpan.FromSeconds(5)
+                            TimeSpan.FromSeconds(10)
                         )
                 ),
                 "Watching actor did not receive Termination message"
@@ -109,7 +187,7 @@ namespace Proto.Remote.Tests
                     () =>
                         System.Root.RequestAsync<bool>(
                             localActor, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor2.Id),
-                            TimeSpan.FromSeconds(5)
+                            TimeSpan.FromSeconds(10)
                         )
                 ),
                 "Watching actor did not receive Termination message"
@@ -130,7 +208,7 @@ namespace Proto.Remote.Tests
                     () =>
                         System.Root.RequestAsync<bool>(
                             localActor1, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
-                            TimeSpan.FromSeconds(5)
+                            TimeSpan.FromSeconds(10)
                         )
                 ),
                 "Watching actor did not receive Termination message"
@@ -141,7 +219,7 @@ namespace Proto.Remote.Tests
                     () =>
                         System.Root.RequestAsync<bool>(
                             localActor2, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
-                            TimeSpan.FromSeconds(5)
+                            TimeSpan.FromSeconds(10)
                         )
                 ),
                 "Watching actor did not receive Termination message"
@@ -164,7 +242,7 @@ namespace Proto.Remote.Tests
                     () =>
                         System.Root.RequestAsync<bool>(
                             localActor1, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
-                            TimeSpan.FromSeconds(5)
+                            TimeSpan.FromSeconds(10)
                         )
                 ),
                 "Watching actor did not receive Termination message"
@@ -174,7 +252,7 @@ namespace Proto.Remote.Tests
             Assert.False(
                 await System.Root.RequestAsync<bool>(
                     localActor2, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
-                    TimeSpan.FromSeconds(5)
+                    TimeSpan.FromSeconds(10)
                 ),
                 "Unwatch did not succeed."
             );
@@ -192,25 +270,89 @@ namespace Proto.Remote.Tests
                     () =>
                         System.Root.RequestAsync<bool>(localActor,
                             new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
-                            TimeSpan.FromSeconds(5)
+                            TimeSpan.FromSeconds(10)
                         )
                 ),
                 "Watching actor did not receive Termination message"
             );
             Assert.Equal(1,
                 await System.Root.RequestAsync<int>(localActor, new GetTerminatedMessagesCount(),
-                    TimeSpan.FromSeconds(5)
+                    TimeSpan.FromSeconds(10)
                 )
             );
         }
-        
+
         [Fact, DisplayTestMethodName]
         public async Task CanMakeRequestToRemoteActor()
         {
             var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
-            var res = await System.Root.RequestAsync<Touched>(remoteActor, new Touch(), TimeSpan.FromSeconds(5));
+            var res = await System.Root.RequestAsync<Touched>(remoteActor, new Touch(), TimeSpan.FromSeconds(10));
             res.Who.Should().BeEquivalentTo(remoteActor);
+        }
+
+        [Theory, DisplayTestMethodName]
+        [InlineData(true, 1, 1, 5)]
+        [InlineData(true, 2, 1, 5)]
+        [InlineData(true, 10, 100, 5)]
+        [InlineData(false, 1, 1, 5)]
+        [InlineData(false, 2, 1, 5)]
+        [InlineData(false, 10, 100, 5)]
+        public async Task ConcurrentMessagesWorks(bool remote, int messageCount, int messageSize, int timeoutSeconds)
+        {
+            if (_fixture is HostedGrpcNetWithCustomSerializerTests.Fixture)
+            {
+                //Skip 
+                return;
+            }
+
+            var rnd = new Random();
+            var tcs = new TaskCompletionSource<bool>();
+            long responseCount = 0;
+            var responseHandler = _fixture.ActorSystem.Root.Spawn(Props.FromFunc(ctx => {
+                        if (ctx.Message is Ack)
+                        {
+                            if (Interlocked.Increment(ref responseCount) == messageCount)
+                            {
+                                tcs.TrySetResult(true);
+                            }
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                )
+            );
+
+            var actor = remote ? await SpawnRemoteActor(_fixture.RemoteAddress) : SpawnLocalActor();
+
+            var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
+
+            for (var i = 0; i < messageCount; i++)
+            {
+                System.Root.Request(actor, NextMsg(), responseHandler);
+            }
+
+            await Task.WhenAny(tcs.Task, timeout);
+
+            var res = await System.Root.RequestAsync<Touched>(actor, new Touch(), TimeSpan.FromSeconds(1));
+            res.Should().NotBeNull("Remote should still be alive");
+            res.Who.Should().BeEquivalentTo(actor);
+
+            Interlocked.Read(ref responseCount).Should().Be(messageCount);
+
+            tcs.Task.IsCompletedSuccessfully.Should().BeTrue("All responses received");
+            Interlocked.Read(ref responseCount).Should().Be(messageCount);
+
+            BinaryMessage NextMsg()
+            {
+                var bytes = new byte[messageSize];
+                rnd.NextBytes(bytes);
+                return new BinaryMessage
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Payload = ByteString.CopyFrom(bytes)
+                };
+            }
         }
 
         [Fact]
@@ -223,19 +365,18 @@ namespace Proto.Remote.Tests
                 //Skip 
                 return;
             }
-            
 
             var remoteActorName = Guid.NewGuid().ToString();
 
             var remoteActorResp = await Remote.SpawnNamedAsync(
-                _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5)
+                _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
             );
             var remoteActor = remoteActorResp.Pid;
             var msg = new BinaryMessage()
             {
                 Id = "hello"
             };
-            
+
             var res = await System.Root.RequestAsync<Ack>(remoteActor, msg,
                 CancellationTokens.FromSeconds(5)
             );
@@ -247,10 +388,11 @@ namespace Proto.Remote.Tests
         private async Task<PID> SpawnRemoteActor(string address)
         {
             var remoteActorName = Guid.NewGuid().ToString();
-            var remoteActorResp =
-                await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(5));
+            var remoteActorResp = await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10));
             return remoteActorResp.Pid;
         }
+
+        private PID SpawnLocalActor() => System.Root.Spawn(RemoteFixture.EchoActorProps);
 
         private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
         {

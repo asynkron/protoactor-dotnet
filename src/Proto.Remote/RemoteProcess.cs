@@ -1,8 +1,12 @@
 // -----------------------------------------------------------------------
 //   <copyright file="RemoteProcess.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//       Copyright (C) 2015-2022 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
+
+using System;
+using System.Diagnostics;
+
 
 namespace Proto.Remote
 {
@@ -10,12 +14,15 @@ namespace Proto.Remote
     {
         private readonly EndpointManager _endpointManager;
         private readonly PID _pid;
-        private PID? _endpoint;
+        private readonly string? _systemId;
+        private long _lastUsedTick;
 
         public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
         {
             _endpointManager = endpointManager;
             _pid = pid;
+            pid.TryGetSystemId(system, out _systemId);
+            _lastUsedTick = Stopwatch.GetTimestamp();
         }
 
         protected internal override void SendUserMessage(PID _, object message) => Send(message);
@@ -24,39 +31,24 @@ namespace Proto.Remote
 
         private void Send(object msg)
         {
-            object message;
-            _endpoint ??= _endpointManager.GetEndpoint(_pid.Address);
-
+            // If the target endpoint is down or blocked, we get a BlockedEndpoint instance
+            var endpoint = _systemId is not null ? _endpointManager.GetClientEndpoint(_systemId) : _endpointManager.GetOrAddServerEndpoint(_pid.Address);
             switch (msg)
             {
                 case Watch w:
-                    if (_endpoint is null)
-                    {
-                        System.Root.Send(w.Watcher, new Terminated {Why = TerminatedReason.AddressTerminated, Who = _pid});
-                        return;
-                    }
-
-                    message = new RemoteWatch(w.Watcher, _pid);
+                    endpoint.RemoteWatch(_pid, w);
                     break;
                 case Unwatch uw:
-                    if (_endpoint is null) return;
-
-                    message = new RemoteUnwatch(uw.Watcher, _pid);
+                    endpoint.RemoteUnwatch(_pid, uw);
                     break;
                 default:
-                    var (m, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
-
-                    if (_endpoint is null)
-                    {
-                        System.EventStream.Publish(new DeadLetterEvent(_pid, m, sender));
-                        return;
-                    }
-
-                    message = new RemoteDeliver(header!, m, _pid, sender!);
+                    endpoint.SendMessage(_pid, msg);
                     break;
             }
-
-            System.Root.Send(_endpoint, message);
+            
+            _lastUsedTick = Stopwatch.GetTimestamp();
         }
+
+        internal long LastUsedTick => _lastUsedTick;
     }
 }

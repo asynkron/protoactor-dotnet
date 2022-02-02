@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="ConsulProvider.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -11,8 +11,6 @@ using Consul;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Proto.Cluster.Data;
-using Proto.Cluster.Events;
 
 namespace Proto.Cluster.Consul
 {
@@ -51,20 +49,20 @@ namespace Proto.Cluster.Consul
         private int _port;
         private bool _shutdown;
 
-        public ConsulProvider(ConsulProviderConfig config) : this(config, clientConfiguration => { })
+        public ConsulProvider(ConsulProviderConfig config) : this(config, _ => { })
         {
         }
 
         public ConsulProvider(ConsulProviderConfig config, Action<ConsulClientConfiguration> clientConfiguration)
         {
-            _serviceTtl = config!.ServiceTtl;
-            _refreshTtl = config!.RefreshTtl;
-            _deregisterCritical = config!.DeregisterCritical;
-            _blockingWaitTime = config!.BlockingWaitTime;
+            _serviceTtl = config.ServiceTtl;
+            _refreshTtl = config.RefreshTtl;
+            _deregisterCritical = config.DeregisterCritical;
+            _blockingWaitTime = config.BlockingWaitTime;
             _client = new ConsulClient(clientConfiguration);
         }
 
-        public ConsulProvider(IOptions<ConsulProviderConfig> options) : this(options.Value, clientConfiguration => { })
+        public ConsulProvider(IOptions<ConsulProviderConfig> options) : this(options.Value, _ => { })
         {
         }
 

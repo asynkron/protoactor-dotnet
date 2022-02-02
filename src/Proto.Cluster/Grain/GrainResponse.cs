@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
 // <copyright file="GrainResponse.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using Google.Protobuf;
 using Proto.Remote;
 
@@ -13,9 +12,11 @@ namespace Proto.Cluster
     {
         public IRootSerializable Deserialize(ActorSystem system)
         {
+            if (MessageData.IsEmpty) return new GrainResponseMessage(null);
+
             var ser = system.Serialization();
             var message = ser.Deserialize(MessageTypeName, MessageData, Serialization.SERIALIZER_ID_PROTOBUF);
-            return new GrainResponseMessage((IMessage)message);
+            return new GrainResponseMessage((IMessage) message);
         }
     }
 }

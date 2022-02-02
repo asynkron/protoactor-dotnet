@@ -8,7 +8,6 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.Redis;
-using Proto.Cluster.Partition;
 using Proto.Cluster.PubSub;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;

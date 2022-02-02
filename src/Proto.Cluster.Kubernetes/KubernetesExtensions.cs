@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="KubernetesExtensions.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -20,15 +20,6 @@ namespace Proto.Cluster.Kubernetes
     static class KubernetesExtensions
     {
         private static string cachedNamespace;
-
-        /// <summary>
-        ///     Find the container port for a given pod than matches the given port.
-        /// </summary>
-        /// <param name="pod">Kubernetes Pod object</param>
-        /// <param name="port">Port to find in container ports</param>
-        /// <returns></returns>
-        internal static V1ContainerPort FindPort(this V1Pod pod, int port)
-            => pod.Spec.Containers[0].Ports.FirstOrDefault(x => x.ContainerPort == port);
 
         /// <summary>
         ///     Replace pod labels

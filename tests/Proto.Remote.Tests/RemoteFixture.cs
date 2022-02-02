@@ -17,38 +17,43 @@ namespace Proto.Remote.Tests
     public interface IRemoteFixture : IAsyncLifetime
     {
         string RemoteAddress { get; }
+        string RemoteAddress2 { get; }
         IRemote Remote { get; }
         ActorSystem ActorSystem { get; }
-        IRemote ServerRemote { get; }
+        IRemote ServerRemote1 { get; }
         LogStore LogStore { get; }
     }
 
     public abstract class RemoteFixture : IRemoteFixture
     {
-        private static readonly Props EchoActorProps = Props.FromProducer(() => new EchoActor());
+        public static readonly Props EchoActorProps = Props.FromProducer(() => new EchoActor());
 
         private static LogStore _logStore = new();
         public LogStore LogStore { get; } = _logStore;
         
-        public string RemoteAddress => ServerRemote.System.Address;
+        public string RemoteAddress => ServerRemote1.System.Address;
+        public string RemoteAddress2 => ServerRemote2.System.Address;
 
         public IRemote Remote { get; protected set; }
         public ActorSystem ActorSystem => Remote.System;
 
-        public IRemote ServerRemote { get; protected set; }
+        public IRemote ServerRemote1 { get; protected set; }
+        public IRemote ServerRemote2 { get; protected set; }
 
         public virtual async Task InitializeAsync()
         {
-            await ServerRemote.StartAsync();
+            await ServerRemote1.StartAsync();
+            await ServerRemote2.StartAsync();
             await Remote.StartAsync();
-            ServerRemote.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
+            ServerRemote1.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
+            ServerRemote2.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
         }
+        
 
-        public virtual async Task DisposeAsync()
-        {
-            await Remote.ShutdownAsync();
-            await ServerRemote.ShutdownAsync();
-        }
+        public virtual Task DisposeAsync() => Task.WhenAll(Remote.ShutdownAsync(),
+            ServerRemote1.ShutdownAsync(),
+            ServerRemote2.ShutdownAsync()
+        );
 
         protected static TRemoteConfig ConfigureServerRemoteConfig<TRemoteConfig>(TRemoteConfig serverRemoteConfig)
             where TRemoteConfig : RemoteConfigBase =>
@@ -62,7 +67,8 @@ namespace Proto.Remote.Tests
                 .WithEndpointWriterMaxRetries(2)
                 .WithEndpointWriterRetryBackOff(TimeSpan.FromMilliseconds(10))
                 .WithEndpointWriterRetryTimeSpan(TimeSpan.FromSeconds(120))
-                .WithProtoMessages(Messages.ProtosReflection.Descriptor);
+                .WithProtoMessages(Messages.ProtosReflection.Descriptor)
+                .WithRemoteKinds(("EchoActor", EchoActorProps));
 
         protected static (IHost, HostedGrpcNetRemote) GetHostedGrpcNetRemote(GrpcNetRemoteConfig config)
         {
@@ -109,6 +115,13 @@ namespace Proto.Remote.Tests
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
             return new GrpcNetRemote(new ActorSystem(), config);
+        }
+        protected static GrpcNetClientRemote GetGrpcNetClientRemote(GrpcNetRemoteConfig config)
+        {
+#if NETCORE
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+#endif
+            return new GrpcNetClientRemote(new ActorSystem(), config);
         }
     }
 }

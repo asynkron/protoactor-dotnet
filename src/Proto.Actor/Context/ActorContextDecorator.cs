@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="ActorContextDecorator.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -71,6 +71,12 @@ namespace Proto
 
         public virtual void ReenterAfter(Task target, Action action) =>
             _context.ReenterAfter(target, action);
+
+        public CapturedContext Capture() => _context.Capture();
+
+        public void Apply(CapturedContext capturedContext) => _context.Apply(capturedContext);
+
+        public void ReenterAfterCancellation(CancellationToken cancellationToken, Action onCancelled) => _context.ReenterAfterCancellation(cancellationToken, onCancelled);
 
         public void Stop(PID pid) => _context.Stop(pid);
 

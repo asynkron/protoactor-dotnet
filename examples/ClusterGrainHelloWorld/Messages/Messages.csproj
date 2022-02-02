@@ -1,21 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <LangVersion>preview</LangVersion>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.15.7" />
-    <PackageReference Include="Proto.Cluster" Version="0.16.1-alpha.0.107" />
-    <PackageReference Include="ProtoGrainGenerator" Version="0.17.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.36.4" PrivateAssets="All" />
+    <PackageReference Include="Google.Protobuf" Version="3.19.4" />
+    <PackageReference Include="Grpc.Tools" Version="2.44.0-pre2" PrivateAssets="All" />
+    <PackageReference Include="Proto.Cluster.CodeGen" Version="0.26.1-alpha.0.56" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Protos.proto" />
   </ItemGroup>
-<!--  <ItemGroup>-->
-<!--    <ProjectReference Include="..\..\..\protobuf\ProtoGrainGenerator\ProtoGrainGenerator.csproj" />-->
-<!--  </ItemGroup>-->
+  <ItemGroup>
+    <ProtoGrain Include="Protos.proto" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+  </ItemGroup>
 
 </Project>

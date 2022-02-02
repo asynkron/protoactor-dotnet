@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Messages.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -10,6 +10,11 @@ using Proto.Mailbox;
 // ReSharper disable once CheckNamespace
 namespace Proto
 {
+    //marker interface for all built in message types
+    public interface InfrastructureMessage
+    {
+    }
+    
     //messages with this marker interface should not be deadletter logged
     public interface IIgnoreDeadLetterLogging
     {
@@ -19,7 +24,7 @@ namespace Proto
     {
     }
 
-    public sealed class Restarting
+    public sealed class Restarting : InfrastructureMessage
     {
         public static readonly Restarting Instance = new();
 
@@ -28,7 +33,7 @@ namespace Proto
         }
     }
 
-    public sealed partial class Touch : IAutoRespond
+    public sealed partial class Touch : IAutoRespond, InfrastructureMessage
     {
         public object GetAutoResponse(IContext context) => new Touched()
         {
@@ -36,7 +41,7 @@ namespace Proto
         };
     }
 
-    public sealed partial class PoisonPill : IIgnoreDeadLetterLogging
+    public sealed partial class PoisonPill : IIgnoreDeadLetterLogging, InfrastructureMessage
     {
         public static readonly PoisonPill Instance = new();
     }
@@ -132,4 +137,9 @@ namespace Proto
     }
 
     public record ProcessDiagnosticsRequest(TaskCompletionSource<string> Result) : SystemMessage;
+    
+    public static class Nothing
+    {
+        public static readonly Google.Protobuf.WellKnownTypes.Empty Instance = new();
+    }
 }

@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="GrainGen.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -20,7 +20,7 @@ namespace Proto.Cluster.CodeGen
         {
             _template = template;
         }
-        
+
         public override string Name => "Proto.Grain";
 
         protected override string DefaultFileExtension => ".cs";
@@ -40,19 +40,21 @@ namespace Proto.Cluster.CodeGen
                     .MessageTypes
                     .ToArray()
                     .Select(mt => new ProtoMessage
-                    {
-                        Name = mt.Name,
-                        Fields = mt.Fields.Select(f => new ProtoField()
                         {
-                            TypeName = f.TypeName,
-                            Name = f.Name,
-                            Number = f.Number,
-                            IsRepeated =  f.label == FieldDescriptorProto.Label.LabelRepeated,
-                            OneOfIndex = f.OneofIndex,
-                            Type = f.type,
-                            Object = ctx.TryFind<DescriptorProto>(f.TypeName),
-                        }).ToArray()
-                    })
+                            Name = mt.Name,
+                            Fields = mt.Fields.Select(f => new ProtoField()
+                                {
+                                    TypeName = f.TypeName,
+                                    Name = f.Name,
+                                    Number = f.Number,
+                                    IsRepeated = f.label == FieldDescriptorProto.Label.LabelRepeated,
+                                    OneOfIndex = f.OneofIndex,
+                                    Type = f.type,
+                                    Object = ctx.TryFind<DescriptorProto>(f.TypeName),
+                                }
+                            ).ToArray()
+                        }
+                    )
                     .ToArray(),
                 Services = file
                     .Services
@@ -69,8 +71,12 @@ namespace Proto.Cluster.CodeGen
                                         Name = m.Name,
                                         InputNameRaw = RemovePackageName(m.InputType),
                                         OutputNameRaw = RemovePackageName(m.OutputType),
-                                        InputObject = ctx.TryFind<DescriptorProto>(m.InputType),
-                                        OutputObject = ctx.TryFind<DescriptorProto>(m.OutputType),
+                                        InputObject = ctx.TryFind<DescriptorProto>(m.InputType)
+                                                   ?? throw new Exception($"Unable to resolve input parameter type for {s.Name}.{m}"),
+                                        OutputObject = ctx.TryFind<DescriptorProto>(m.OutputType)
+                                                    ?? throw new Exception($"Unable to resolve return type for {s.Name}.{m}"),
+                                        EmptyReturn = m.OutputType.Equals(".google.protobuf.Empty"),
+                                        EmptyParameter = m.InputType.Equals(".google.protobuf.Empty")
                                     }
                                 )
                                 .ToArray()
@@ -79,32 +85,32 @@ namespace Proto.Cluster.CodeGen
                     .ToArray()
             };
 
-            Handlebars.RegisterHelper("StringEquality", (output, options, context, arguments) => 
-            {
-                if (arguments.Length != 2)
-                {
-                    throw new HandlebarsException("{{#StringEquality}} helper must have exactly two arguments");
-                }
+            Handlebars.RegisterHelper("StringEquality", (output, options, context, arguments) => {
+                    if (arguments.Length != 2)
+                    {
+                        throw new HandlebarsException("{{#StringEquality}} helper must have exactly two arguments");
+                    }
 
-                var left = arguments.At<string>(0);
-                var right = arguments[1] as string;
-                if (left == right) options.Template(output, context);
-                else options.Inverse(output, context);
-            });
+                    var left = arguments.At<string>(0);
+                    var right = arguments[1] as string;
+                    if (left == right) options.Template(output, context);
+                    else options.Inverse(output, context);
+                }
+            );
 
             var f = Handlebars.Compile(_template);
-            
+
             var result = f(ast);
             ctx.WriteLine(result);
 
-            static string RemovePackageName(ReadOnlySpan<char> type)
+            static string RemovePackageName(string type)
             {
                 var index = type.LastIndexOf('.');
-                var res = type[(index + 1)..].ToString();
+                var res = type.Substring(index + 1);
 
                 if (res == "")
                 {
-                    return "MissingName" + type.ToString();
+                    return "MissingName " + type;
                 }
 
                 return res;

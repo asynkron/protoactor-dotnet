@@ -1,19 +1,18 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="PoisonTests.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Proto.Utils;
 using Xunit;
 
 namespace Proto.Tests
 {
     public class PoisonTests
     {
-        private static readonly ActorSystem System = new();
-        private static readonly RootContext Context = System.Root;
-
         private static readonly Props EchoProps = Props.FromFunc(ctx => {
                 if (ctx.Sender != null) ctx.Respond(ctx.Message!);
 
@@ -24,31 +23,32 @@ namespace Proto.Tests
         [Fact]
         public async Task PoisonReturnsIfPidDoesNotExist()
         {
-            var deadPid = PID.FromAddress(System.Address, "nowhere");
-            var timeout = Task.Delay(1000);
+            await using var system = new ActorSystem();
+            var deadPid = PID.FromAddress(system.Address, "nowhere");
 
-            var poisonTask = Context.PoisonAsync(deadPid);
+            var poisonTask = system.Root.PoisonAsync(deadPid);
 
-            await Task.WhenAny(timeout, poisonTask);
+            var completed = await poisonTask.WaitUpTo(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
 
-            poisonTask.IsCompleted.Should().BeTrue("Or we did not get a response when poisoning a missing pid");
+            completed.Should().BeTrue("Or we did not get a response when poisoning a missing pid");
         }
 
         [Fact]
         public async Task PoisonTerminatesActor()
         {
-            var pid = Context.Spawn(EchoProps);
+            await using var system = new ActorSystem();
+
+            var pid = system.Root.Spawn(EchoProps);
 
             const string message = "hello";
-            (await Context.RequestAsync<string>(pid, message)).Should().Be(message);
+            (await system.Root.RequestAsync<string>(pid, message).ConfigureAwait(false)).Should().Be(message);
 
-            var timeout = Task.Delay(1000);
-            var poisonTask = Context.PoisonAsync(pid);
-            await Task.WhenAny(timeout, poisonTask);
+            var poisonTask = system.Root.PoisonAsync(pid);
+            var completed = await poisonTask.WaitUpTo(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
 
-            poisonTask.IsCompleted.Should().BeTrue("Or we did not get a response when poisoning a live pid");
+            completed.Should().BeTrue("Or we did not get a response when poisoning a live pid");
 
-            Context.Invoking(ctx => ctx.RequestAsync<string>(pid, message)).Should().ThrowExactly<DeadLetterException>();
+            await system.Root.Invoking(ctx => ctx.RequestAsync<string>(pid, message)).Should().ThrowExactlyAsync<DeadLetterException>();
         }
     }
 }

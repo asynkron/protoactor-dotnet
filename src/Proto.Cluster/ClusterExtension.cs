@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="ClusterExtension.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -22,14 +22,41 @@ namespace Proto.Cluster
         }
 
         public static Cluster Cluster(this ActorSystem system)
-            => system.Extensions.Get<Cluster>() ?? throw new NotSupportedException("Cluster has not been configured");
+            => system.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
         public static Cluster Cluster(this IContext context)
-            => context.System.Extensions.Get<Cluster>() ?? throw new NotSupportedException("Cluster has not been configured");
+            => context.System.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
         public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct) =>
             //call cluster RequestAsync using actor context
-            context.System.Cluster()!.RequestAsync<T>(identity, kind, message, context, ct);
+            context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
+
+        public static void ClusterRequestReenter<T>(
+            this IContext context,
+            string identity,
+            string kind,
+            object message,
+            Func<Task<T>, Task> callback,
+            CancellationToken ct
+        )
+        {
+            //call cluster RequestReenter using actor context
+            var task = context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
+            context.ReenterAfter(task, callback);
+        }
+
+        public static void ClusterRequestReenter<T>(
+            this IContext context,
+            ClusterIdentity clusterIdentity,
+            object message,
+            Func<Task<T>, Task> callback,
+            CancellationToken ct
+        )
+        {
+            //call cluster RequestReenter using actor context
+            var task = context.System.Cluster().RequestAsync<T>(clusterIdentity, message, context, ct);
+            context.ReenterAfter(task, callback);
+        }
 
         public static Props WithClusterIdentity(this Props props, ClusterIdentity clusterIdentity)
             => props.WithOnInit(context => context.Set(clusterIdentity));
@@ -61,11 +88,11 @@ namespace Proto.Cluster
                 await baseReceive(ctx, startEnvelope);
                 var identity = ctx.Get<ClusterIdentity>();
                 var cluster = ctx.System.Cluster();
+#pragma warning disable 618
                 var grainInit = new ClusterInit(identity!, cluster);
+#pragma warning restore 618
                 var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-                var count = clusterKind.Inc();
-                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
-                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterKind.Name});
+                clusterKind.Inc();
                 await baseReceive(ctx, grainInitEnvelope);
             }
 
@@ -75,10 +102,20 @@ namespace Proto.Cluster
                 MessageEnvelope stopEnvelope
             )
             {
-                var count = clusterKind.Dec();
+                clusterKind.Dec();
                 var cluster = ctx.System.Cluster();
-                cluster.System.Metrics.Get<ClusterMetrics>().ClusterActorGauge
-                    .Set(count, new[] {cluster.System.Id, cluster.System.Address, clusterKind.Name});
+                var identity = ctx.Get<ClusterIdentity>();
+
+                if (identity is not null)
+                {
+                    ctx.System.EventStream.Publish(new ActivationTerminating
+                    {
+                        Pid = ctx.Self,
+                        ClusterIdentity = identity,
+                    });
+                    cluster.PidCache.RemoveByVal(identity, ctx.Self);
+                }
+
                 await baseReceive(ctx, stopEnvelope);
             }
         }

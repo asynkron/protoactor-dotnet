@@ -1,15 +1,16 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
 using chat.messages;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
-using static Proto.Remote.GrpcCore.GrpcCoreRemoteConfig;
+using Proto.Remote.GrpcNet;
+using static Proto.Remote.GrpcNet.GrpcNetRemoteConfig;
 
 namespace Client
 {
@@ -23,11 +24,16 @@ namespace Client
 
         private static void Main()
         {
+            Log.SetLoggerFactory(LoggerFactory.Create(c => c
+                .SetMinimumLevel(LogLevel.Information)
+                .AddConsole()
+            ));
             InitializeActorSystem();
             SpawnClient();
             ObtainServerPid();
             ConnectToServer();
             EvaluateCommands();
+            context.System.Remote().ShutdownAsync().GetAwaiter().GetResult();
         }
 
         private static void InitializeActorSystem()
@@ -38,7 +44,7 @@ namespace Client
 
             var system =
                 new ActorSystem()
-                    .WithRemote(config);
+                    .WithClientRemote(config);
 
             system
                 .Remote()

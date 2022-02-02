@@ -1,8 +1,11 @@
 // -----------------------------------------------------------------------
 // <copyright file="PartitionMemberSelector.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
+using System.Collections.Immutable;
+
 namespace Proto.Cluster.Partition
 {
     //this class is responsible for translating between Identity->member
@@ -10,21 +13,21 @@ namespace Proto.Cluster.Partition
     class PartitionMemberSelector
     {
         private readonly object _lock = new();
-        private readonly Rendezvous _rdv = new();
+        private MemberHashRing _rdv = new(ImmutableList<Member>.Empty);
+        private ulong _topologyHash;
 
-        public void Update(Member[] members)
+        public void Update(Member[] members, ulong topologyHash)
         {
-            lock (_lock) _rdv.UpdateMembers(members);
+            lock (_lock)
+            {
+                _rdv = new MemberHashRing(members);
+                _topologyHash = topologyHash;
+            }
         }
 
-        public string GetIdentityOwner(string key)
+        public (string owner, ulong topologyHash) GetIdentityOwner(string key)
         {
-            lock (_lock) return _rdv.GetOwnerMemberByIdentity(key);
-        }
-
-        public void DumpState()
-        {
-            lock (_lock) _rdv.Debug();
+            lock (_lock) return (_rdv.GetOwnerMemberByIdentity(key), _topologyHash);
         }
     }
 }

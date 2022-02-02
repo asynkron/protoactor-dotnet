@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="GrpcCoreRemote.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//       Copyright (C) 2015-2022 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -31,12 +31,13 @@ namespace Proto.Remote.GrpcCore
         {
             System = system;
             _config = config;
-            system.Metrics.Register(new RemoteMetrics(system.Metrics));
             System.Extensions.Register(this);
             System.Extensions.Register(config.Serialization);
         }
 
         public bool Started { get; private set; }
+
+        public BlockList BlockList { get; } = new();
         public ActorSystem System { get; }
         public RemoteConfigBase Config => _config;
 
@@ -49,7 +50,7 @@ namespace Proto.Remote.GrpcCore
 
                 var channelProvider = new GrpcCoreChannelProvider(_config);
                 _endpointManager = new EndpointManager(System, Config, channelProvider);
-                _endpointReader = new EndpointReader(System, _endpointManager, Config.Serialization);
+                _endpointReader = new EndpointReader(System, _endpointManager);
                 _healthCheck = new HealthServiceImpl();
                 _server = new Server
                 {

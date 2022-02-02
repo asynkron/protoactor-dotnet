@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Mailbox.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -48,7 +48,7 @@ namespace Proto.Mailbox
         private IDispatcher _dispatcher;
         private IMessageInvoker _invoker;
 
-        private int _status = MailboxStatus.Idle;
+        private long _status = MailboxStatus.Idle;
         private bool _suspended;
 
         public DefaultMailbox(
@@ -78,7 +78,7 @@ namespace Proto.Mailbox
             _invoker = NoopInvoker.Instance;
         }
 
-        public int Status => _status;
+        public int Status => (int)Interlocked.Read(ref _status);
 
         public int UserMessageCount => _userMailbox.Length;
 
@@ -273,7 +273,9 @@ namespace Proto.Mailbox
         private void Schedule()
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
-                _dispatcher.Schedule(RunAsync);
+            {
+                ThreadPool.UnsafeQueueUserWorkItem(_ => RunAsync(),null);
+            }
         }
     }
 

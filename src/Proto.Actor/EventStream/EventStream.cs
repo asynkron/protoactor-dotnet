@@ -1,18 +1,16 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="EventStream.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
 using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Proto.Logging;
 using Proto.Mailbox;
 using Proto.Utils;
 
@@ -25,6 +23,8 @@ namespace Proto
 
         internal EventStream(ActorSystem system)
         {
+            if (!_logger.IsEnabled(LogLevel.Information)) return;
+
             var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount, system.Config.DeadLetterThrottleInterval,
                 droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs", droppedLogs)
             );

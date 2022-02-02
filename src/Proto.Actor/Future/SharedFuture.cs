@@ -1,9 +1,10 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Futures.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -25,8 +26,7 @@ namespace Proto.Future
         /// </summary>
         private readonly int _maxRequestId;
 
-        private readonly ActorMetrics? _metrics;
-        private readonly string[]? _metricLabels;
+        private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
         private readonly Action? _onTimeout;
         private readonly Action? _onStarted;
 
@@ -39,12 +39,11 @@ namespace Proto.Future
 
             Pid = pid;
 
-            if (!system.Metrics.IsNoop)
+            if (system.Metrics.Enabled)
             {
-                _metrics = system.Metrics.Get<ActorMetrics>();
-                _metricLabels = new[] {System.Id, System.Address};
-                _onTimeout = () => _metrics.FuturesTimedOutCount.Inc(_metricLabels);
-                _onStarted = () => _metrics.FuturesStartedCount.Inc(_metricLabels);
+                _metricTags = new KeyValuePair<string, object?>[] {new("id", System.Id), new("address", System.Address)};
+                _onTimeout = () => ActorMetrics.FuturesTimedOutCount.Add(1, _metricTags);
+                _onStarted = () => ActorMetrics.FuturesStartedCount.Add(1, _metricTags);
             }
             else
             {
@@ -71,7 +70,15 @@ namespace Proto.Future
         private PID Pid { get; }
         public bool Stopping { get; private set; }
 
-        public int RequestsInFlight => (int) (_createdRequests - _completedRequests);
+        public int RequestsInFlight {
+            get {
+                // Read completedRequests first and createdRequests later so that we will
+                // never read the 2 vars in an order that would result in completedRequests > createdRequests.
+                long completed = Interlocked.Read(ref _completedRequests);
+                long created = Interlocked.Read(ref _createdRequests);
+                return (int) (created - completed);
+            }
+        }
 
         public IFuture? TryCreateHandle()
         {
@@ -124,7 +131,9 @@ namespace Proto.Future
                 _completedFutures.TryWrite(slot);
 
                 Interlocked.Increment(ref _completedRequests);
-                _metrics?.FuturesCompletedCount.Inc(_metricLabels);
+
+                if (System.Metrics.Enabled)
+                    ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
 
                 if (Stopping && RequestsInFlight == 0)
                     Stop(Pid);
@@ -230,8 +239,8 @@ namespace Proto.Future
         private class FutureHandle
         {
             public TaskCompletionSource<object>? CompletionSource { get; private set; }
-            private int _requestId;
-            public uint RequestId => (uint) _requestId;
+            private long _requestId;
+            public uint RequestId => (uint) Interlocked.Read(ref _requestId);
             private readonly SharedFutureProcess _parent;
 
             public FutureHandle(SharedFutureProcess parent, uint requestId)

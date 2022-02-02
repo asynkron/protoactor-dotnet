@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="IdentityStorageWorker.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -28,8 +28,6 @@ namespace Proto.Cluster.Identity
         private readonly ShouldThrottle _shouldThrottle;
         private readonly IIdentityStorage _storage;
         private readonly Dictionary<ClusterIdentity, List<PID>> _waitingRequests = new();
-
-        private IdentityMetrics Metrics => _cluster.System.Metrics.Get<IdentityMetrics>();
 
         public IdentityStorageWorker(IdentityStorageLookup storageLookup)
         {
@@ -108,12 +106,13 @@ namespace Proto.Cluster.Identity
                 var tries = 0;
                 PID? result = null;
                 SpawnLock? spawnLock = null;
-                
+
                 while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
                 {
                     try
                     {
-                        var activation = await _storage.TryGetExistingActivation(clusterIdentity, CancellationTokens.FromSeconds(5));
+                        using var tryGetCts = new CancellationTokenSource(_cluster.Config.ActorActivationTimeout);
+                        var activation = await _storage.TryGetExistingActivation(clusterIdentity, tryGetCts.Token);
 
                         //we got an existing activation, use this
                         if (activation != null)
@@ -132,11 +131,17 @@ namespace Proto.Cluster.Identity
                         spawnLock ??= await TryAcquireLock(clusterIdentity);
 
                         //we didn't get the lock, wait for activation to complete
-                        if (spawnLock == null) result = await WaitForActivation(clusterIdentity, CancellationTokens.FromSeconds(5));
+
+                        if (spawnLock == null)
+                        {
+                            using var cts = new CancellationTokenSource(_cluster.Config.ActorActivationTimeout);
+                            result = await WaitForActivation(clusterIdentity, cts.Token);
+                        }
                         else
                         {
+                            using var cts = new CancellationTokenSource(_cluster.Config.ActorActivationTimeout);
                             //we have the lock, spawn and return
-                            (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, CancellationTokens.FromSeconds(5));
+                            (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, cts.Token);
                         }
                     }
                     catch (OperationCanceledException e)
@@ -162,16 +167,26 @@ namespace Proto.Cluster.Identity
                 return result;
             }
 
-            return Metrics
-                .GetWithGlobalLockHistogram
-                .Observe(Inner, _cluster.System.Id, _cluster.System.Address, clusterIdentity.Kind);
+            if (!_cluster.System.Metrics.Enabled)
+                return Inner();
+
+            return IdentityMetrics.GetWithGlobalLockDuration.Observe(
+                Inner,
+                new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+            );
         }
 
         private Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity)
         {
             Task<SpawnLock?> Inner() => _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
 
-            return Metrics.TryAcquireLockHistogram.Observe(Inner, _cluster.System.Id, _cluster.System.Address, clusterIdentity.Kind);
+            if (!_cluster.System.Metrics.Enabled)
+                return Inner();
+
+            return IdentityMetrics.TryAcquireLockDuration.Observe(
+                Inner,
+                new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+            );
         }
 
         private Task<PID?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct)
@@ -185,10 +200,15 @@ namespace Proto.Cluster.Identity
                 );
                 return res;
             }
-            
-            return Metrics
-                .WaitForActivationHistogram
-                .Observe(Inner, _cluster.System.Id,_cluster.System.Address,clusterIdentity.Kind);
+
+            if (!_cluster.System.Metrics.Enabled)
+                return Inner();
+
+            return IdentityMetrics.WaitForActivationDuration
+                .Observe(
+                    Inner,
+                    new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+                );
         }
 
         private async Task<(PID?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
@@ -235,7 +255,6 @@ namespace Proto.Cluster.Identity
             //Clean up our mess..
             await _storage.RemoveLock(spawnLock, ct);
             return (null, null);
-
         }
 
         private async Task<PID?> ValidateAndMapToPid(ClusterIdentity clusterIdentity, StoredActivation? activation)
@@ -245,7 +264,7 @@ namespace Proto.Cluster.Identity
             var memberExists = _memberList.ContainsMemberId(activation.MemberId);
             if (memberExists) return activation.Pid;
 
-            if (StaleMembers.TryAdd(activation.MemberId!))
+            if (StaleMembers.TryAdd(activation.MemberId))
             {
                 _logger.LogWarning(
                     "Found placement lookup for {ClusterIdentity}, but Member {MemberId} is not part of cluster, dropping stale entries",
@@ -254,7 +273,7 @@ namespace Proto.Cluster.Identity
             }
 
             //let all requests try to remove, but only log on the first occurrence
-            await _storage.RemoveMember(activation.MemberId!, CancellationToken.None);
+            await _storage.RemoveMember(activation.MemberId, CancellationToken.None);
             return null;
         }
     }

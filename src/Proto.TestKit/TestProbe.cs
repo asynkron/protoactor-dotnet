@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="TestProbe.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -65,8 +65,7 @@ namespace Proto.TestKit
 
             if (_messageQueue.TryTake(out var o, time))
             {
-                throw new TestKitException($"Waited {time.Seconds} seconds and received a message of type {o.GetType()}"
-                );
+                throw new TestKitException($"Waited {time.Seconds} seconds and received a message of type {o.GetType()}");
             }
         }
 

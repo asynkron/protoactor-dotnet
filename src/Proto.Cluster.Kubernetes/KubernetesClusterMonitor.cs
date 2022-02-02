@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="KubernetesClusterMonitor.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -11,7 +11,6 @@ using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Rest;
-using Proto.Cluster.Events;
 using static Proto.Cluster.Kubernetes.Messages;
 using static Proto.Cluster.Kubernetes.ProtoLabels;
 

@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="BoundedMailboxQueue.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading;
@@ -12,11 +12,11 @@ namespace Proto.Mailbox
     {
         private readonly Channel<object> _messages;
         private volatile bool _hasMessages;
-        private int _length;
+        private long _length;
 
         public BoundedMailboxQueue(int size) => _messages = Channel.CreateBounded<object>(size);
 
-        public int Length => _length;
+        public int Length => (int)Interlocked.Read(ref _length);
 
         public void Push(object message)
         {

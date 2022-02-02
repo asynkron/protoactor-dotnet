@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="ClusterExtensions.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading;
@@ -16,9 +16,9 @@ namespace Proto.Cluster
             => cluster.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, cluster.System.Root, ct);
 
         public static Task<T> RequestAsync<T>(this Cluster cluster, string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
-            cluster.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct)!;
+            cluster.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
         
         public static Task<T> RequestAsync<T>(this Cluster cluster, ClusterIdentity clusterIdentity, object message, CancellationToken ct) =>
-            cluster.RequestAsync<T>(clusterIdentity, message, cluster.System.Root, ct)!;
+            cluster.RequestAsync<T>(clusterIdentity, message, cluster.System.Root, ct);
     }
 }

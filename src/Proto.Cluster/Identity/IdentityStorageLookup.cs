@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proto.Cluster.Identity
@@ -7,7 +6,6 @@ namespace Proto.Cluster.Identity
     public class IdentityStorageLookup : IIdentityLookup
     {
         private const string PlacementActorName = "placement-activator";
-        private static readonly int PidClusterIdentityStartIndex = PlacementActorName.Length + 1;
         private bool _isClient;
         private string _memberId = string.Empty;
         private PID _placementActor = null!;
@@ -36,8 +34,6 @@ namespace Proto.Cluster.Identity
             MemberList = cluster.MemberList;
             _isClient = isClient;
             await Storage.Init();
-
-            cluster.System.Metrics.Register(new IdentityMetrics(cluster.System.Metrics));
 
             var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
             _worker = _system.Root.Spawn(workerProps);

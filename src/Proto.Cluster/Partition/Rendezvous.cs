@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Rendezvous.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -84,6 +84,30 @@ namespace Proto.Cluster.Partition
             {
                 Console.WriteLine(m.Info);
             }
+        }
+        
+        public string GetOwnerMemberByIdentity(ClusterIdentity ci)
+        {
+            //TODO: memoize
+            var members = _members.Where(m => m.Info.Kinds.Contains(ci.Kind));
+
+            var keyBytes = Encoding.UTF8.GetBytes(ci.Identity);
+
+            uint maxScore = 0;
+            Member? maxNode = null;
+
+            foreach (var member in members)
+            {
+                var hashBytes = member.Hash;
+                var score = RdvHash(hashBytes, keyBytes);
+
+                if (score <= maxScore) continue;
+
+                maxScore = score;
+                maxNode = member.Info;
+            }
+
+            return maxNode?.Address ?? "";
         }
     }
 }

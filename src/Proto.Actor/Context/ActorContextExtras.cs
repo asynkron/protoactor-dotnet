@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="ActorContextExtras.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -18,7 +18,7 @@ namespace Proto
     //because most actors do not need any of this, it is extra state that comes at a cost
     //most actors are short lived, no children. no stash, no timers
     //therefore we only use this extra state when needed, to keep actors as lightweight as possible
-    public class ActorContextExtras
+    public sealed class ActorContextExtras: IDisposable
     {
         public ActorContextExtras(IContext context) => Context = context;
 
@@ -51,5 +51,11 @@ namespace Proto
         public void Watch(PID watcher) => Watchers = Watchers.Add(watcher);
 
         public void Unwatch(PID watcher) => Watchers = Watchers.Remove(watcher);
+
+        public void Dispose()
+        {
+            ReceiveTimeoutTimer?.Dispose();
+            CancellationTokenSource.Dispose();
+        }
     }
 }

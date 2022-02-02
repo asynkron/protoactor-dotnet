@@ -76,7 +76,7 @@ namespace Proto.Mailbox.Tests
             var msg1 = new TestMessageWithTaskCompletionSource();
 
             mailbox.PostSystemMessage(msg1);
-            
+
             //make sure the message is being processed by the mailboxHandler
             //e.g. await mailboxHandler.GotMessage()
             await Task.Delay(10);
@@ -84,7 +84,7 @@ namespace Proto.Mailbox.Tests
             //fail the current task being processed
             var taskException = new Exception();
             msg1.TaskCompletionSource.SetException(taskException);
-            
+
             await mailboxHandler.HasFailures;
 
             Assert.Single(mailboxHandler.EscalatedFailures);
@@ -136,10 +136,10 @@ namespace Proto.Mailbox.Tests
             var msg1 = new TestMessageWithTaskCompletionSource();
 
             mailbox.PostUserMessage(msg1);
-            
+
             //this is a async message
             await Task.Delay(10);
-            
+
             msg1.TaskCompletionSource.SetCanceled();
             await mailboxHandler.HasFailures;
 
@@ -158,7 +158,7 @@ namespace Proto.Mailbox.Tests
 
             //post the test message to the mailbox
             mailbox.PostSystemMessage(msg1);
-            
+
             //this is a async message
             await Task.Delay(10);
             msg1.TaskCompletionSource.SetCanceled();

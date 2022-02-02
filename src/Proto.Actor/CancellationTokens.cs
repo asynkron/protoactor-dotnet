@@ -1,19 +1,18 @@
 // -----------------------------------------------------------------------
 // <copyright file="CancellationTokens.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using Proto.Utils;
 
 namespace Proto
 {
     
     public static class CancellationTokens
     {
-        private record TokenEntry(DateTimeOffset timestamp, CancellationToken token);
+        private record TokenEntry(DateTimeOffset Timestamp, CancellationToken Token);
         
         private static readonly ConcurrentDictionary<int, TokenEntry> Tokens = new();
 
@@ -29,18 +28,19 @@ namespace Proto
 
             while (true)
             {
-                var x = Tokens.GetOrAdd(seconds, ValueFactory)!;
+                var x = Tokens.GetOrAdd(seconds, ValueFactory);
 
                 //is the entry expired?
                 //token reuse expire after 500ms
-                if (x.timestamp >= DateTimeOffset.Now.AddMilliseconds(-500))
+                if (x.Timestamp >= DateTimeOffset.Now.AddMilliseconds(-500))
                 {
-                    return x.token;
+                    return x.Token;
                 }
 
                 Tokens.TryRemove(seconds, out _);
             }
         }
+        [Obsolete("Use and dispose CancellationTokenSource, or use CancellationTokens.FromSeconds",true)]
         public static CancellationToken WithTimeout(int ms) => new CancellationTokenSource(ms).Token;
         public static CancellationToken WithTimeout(TimeSpan timeSpan) => new CancellationTokenSource(timeSpan).Token;
     }

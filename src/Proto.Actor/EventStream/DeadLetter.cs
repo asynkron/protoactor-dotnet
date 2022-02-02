@@ -1,17 +1,14 @@
 // -----------------------------------------------------------------------
 // <copyright file="DeadLetter.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-
-// ReSharper disable once CheckNamespace
-
-// ReSharper disable once CheckNamespace
 
 using System;
 using JetBrains.Annotations;
 using Proto.Metrics;
 
+// ReSharper disable once CheckNamespace
 namespace Proto
 {
     [PublicAPI]
@@ -34,7 +31,8 @@ namespace Proto
         public PID? Sender { get; }
         public MessageHeader Header { get; }
 
-        public override string ToString() => $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
+        public override string ToString()
+            => $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
     }
 
     public class DeadLetterProcess : Process
@@ -45,20 +43,33 @@ namespace Proto
 
         protected internal override void SendUserMessage(PID pid, object message)
         {
-            System.Metrics.Get<ActorMetrics>().DeadletterCount.Inc(new[] {System.Id, System.Address, message.GetType().Name});
             var (msg, sender, header) = MessageEnvelope.Unwrap(message);
+
+            if (System.Metrics.Enabled)
+            {
+                ActorMetrics.DeadletterCount.Add(1,
+                    new("id", System.Id), new("address", System.Address),
+                    new("messagetype", msg.GetType().Name)
+                );
+            }
+
             System.EventStream.Publish(new DeadLetterEvent(pid, msg, sender, header));
             if (sender is null) return;
 
-            System.Root.Send(sender, msg is PoisonPill
-                ? new Terminated {Who = pid, Why = TerminatedReason.NotFound}
-                : new DeadLetterResponse {Target = pid}
-            );
+            System.Root.Send(sender,new DeadLetterResponse {Target = pid});
         }
 
         protected internal override void SendSystemMessage(PID pid, object message)
         {
-            System.Metrics.Get<ActorMetrics>().DeadletterCount.Inc(new[] {System.Id, System.Address, message.GetType().Name});
+            if (System.Metrics.Enabled)
+                ActorMetrics.DeadletterCount.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", message.GetType().Name));
+
+            //trying to watch a dead pid returns terminated, NotFound
+            if (message is Watch watch)
+            {
+                System.Root.Send(watch.Watcher, new Terminated {Who = pid, Why = TerminatedReason.NotFound});
+            }
+            
             System.EventStream.Publish(new DeadLetterEvent(pid, message, null, null));
         }
     }

@@ -1,20 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
     <LangVersion>9</LangVersion>
-    <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+    <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
     <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Divergic.Logging.Xunit" Version="3.6.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.38.1" PrivateAssets="All" />
+    <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
+    <PackageReference Include="GitHubActionsTestLogger" Version="1.2.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.42.0" PrivateAssets="All" />
     <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" />
-    <PackageReference Include="System.Interactive.Async" Version="5.0.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.1.0" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="System.Interactive.Async" Version="5.1.0" />
+    <PackageReference Update="FluentAssertions" Version="6.4.0" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="*.proto" />

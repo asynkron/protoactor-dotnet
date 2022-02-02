@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenTracing;
 using OpenTracing.Propagation;
+using Proto.Mailbox;
 
 namespace Proto.OpenTracing
 {
@@ -27,6 +28,9 @@ namespace Proto.OpenTracing
 
         public override void Request(PID target, object message)
             => OpenTracingMethodsDecorators.Request(target, message, _sendSpanSetup, _tracer, () => base.Request(target, message));
+        
+        public override void Request(PID target, object message, PID sender)
+            => OpenTracingMethodsDecorators.Request(target, message, sender, _sendSpanSetup, _tracer, () => base.Request(target, message, sender));
 
         public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => OpenTracingMethodsDecorators.RequestAsync(target, message, _sendSpanSetup, _tracer,
@@ -64,6 +68,8 @@ namespace Proto.OpenTracing
                 () => base.RequestAsync<T>(target, message, cancellationToken)
             );
 
+        public override void Request(PID target, object message, PID sender) => OpenTracingMethodsDecorators.Request(target, message, _sendSpanSetup, _tracer, () => base.Request(target, message, sender));
+
         public override void Forward(PID target)
             => OpenTracingMethodsDecorators.Forward(target, base.Message, _sendSpanSetup, _tracer, () => base.Forward(target));
 
@@ -98,6 +104,28 @@ namespace Proto.OpenTracing
             try
             {
                 ProtoTags.TargetPID.Set(scope.Span, target.ToString());
+                request();
+            }
+            catch (Exception ex)
+            {
+                ex.SetupSpan(scope.Span);
+                throw;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Request(PID target, object message, PID sender, SpanSetup sendSpanSetup, ITracer tracer, Action request)
+        {
+            using var scope = tracer.BuildStartedScope(tracer.ActiveSpan?.Context, nameof(Request), message, sendSpanSetup);
+
+            try
+            {
+                ProtoTags.TargetPID.Set(scope.Span, target.ToString());
+
+                if (sender is not null)
+                {
+                    ProtoTags.SenderPID.Set(scope.Span, sender.ToString());
+                }
                 request();
             }
             catch (Exception ex)
@@ -146,9 +174,13 @@ namespace Proto.OpenTracing
         {
             var message = envelope.Message;
 
-            var parentSpanCtx = envelope.Header != null
-                ? tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()))
-                : null;
+            if (message is SystemMessage)
+            {
+                await receive().ConfigureAwait(false);
+                return;
+            }
+            
+            var parentSpanCtx = tracer.Extract(BuiltinFormats.TextMap, new TextMapExtractAdapter(envelope.Header.ToDictionary()));
 
             using var scope = tracer.BuildStartedScope(parentSpanCtx, nameof(Receive), message, receiveSpanSetup);
 

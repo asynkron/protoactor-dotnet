@@ -1,51 +1,55 @@
 // -----------------------------------------------------------------------
 // <copyright file="ActorMetrics.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using Ubiquitous.Metrics;
+
+using System.Diagnostics.Metrics;
 
 namespace Proto.Metrics
 {
-    public class ActorMetrics
+    public static class ActorMetrics
     {
-        public readonly ICountMetric ActorFailureCount; //done
-        public readonly IGaugeMetric ActorMailboxLength;
-        public readonly IHistogramMetric ActorMessageReceiveHistogram; //done
-        public readonly ICountMetric ActorRestartedCount;              //done
-
         //Actors
-        public readonly ICountMetric ActorSpawnCount;   //done
-        public readonly ICountMetric ActorStoppedCount; //done
+        public static readonly Counter<long> ActorFailureCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoactor_actor_failure_count", description: "Number of detected and escalated failures");
+
+        public static readonly Histogram<long> ActorMailboxLength = ProtoMetrics.Meter.CreateHistogram<long>("protoactor_actor_mailbox_length",
+            description: "Histogram of queue lengths across all actor instances"
+        );
+
+        public static readonly Histogram<double> ActorMessageReceiveDuration =
+            ProtoMetrics.Meter.CreateHistogram<double>("protoactor_actor_messagereceive_duration", "seconds", "Time spent in actor's receive handler"
+            );
+
+        public static readonly Counter<long> ActorRestartedCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoactor_actor_restarted_count", description: "Number of restarted actors");
+
+        public static readonly Counter<long> ActorSpawnCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoactor_actor_spawn_count", description: "Number of spawned actor instances");
+
+        public static readonly Counter<long> ActorStoppedCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoactor_actor_stopped_count", description: "Number of stopped actors");
 
         //Deadletters
-        public readonly ICountMetric DeadletterCount;       //done
-        public readonly ICountMetric FuturesCompletedCount; //done
+        public static readonly Counter<long> DeadletterCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoactor_deadletter_count", description: "Number of messages sent to deadletter process");
+
+        public static readonly Counter<long> FuturesCompletedCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoactor_future_completed_count", description: "Number of completed futures");
 
         //Futures
-        public readonly ICountMetric FuturesStartedCount;  //done
-        public readonly ICountMetric FuturesTimedOutCount; //done
+        public static readonly Counter<long> FuturesStartedCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoactor_future_started_count", description: "Number of started futures");
+
+        public static readonly Counter<long> FuturesTimedOutCount =
+            ProtoMetrics.Meter.CreateCounter<long>("protoactor_future_timedout_count", description: "Number of futures that timed out");
 
         //Threadpool
-        public readonly IHistogramMetric ThreadPoolLatencyHistogram; //done
-
-        public ActorMetrics(ProtoMetrics metrics)
-        {
-            ThreadPoolLatencyHistogram = metrics.CreateHistogram("protoactor_threadpool_latency_duration_seconds", "", "id", "address");
-            DeadletterCount = metrics.CreateCount("protoactor_deadletter_count", "", "id", "address", "messagetype");
-            ActorSpawnCount = metrics.CreateCount("protoactor_actor_spawn_count", "", "id", "address", "actortype");
-            ActorStoppedCount = metrics.CreateCount("protoactor_actor_stopped_count", "", "id", "address", "actortype");
-            ActorRestartedCount = metrics.CreateCount("protoactor_actor_restarted_count", "", "id", "address", "actortype");
-            ActorFailureCount = metrics.CreateCount("protoactor_actor_failure_count", "", "id", "address", "actortype");
-
-            ActorMailboxLength = metrics.CreateGauge("protoactor_actor_mailbox_length", "", "id", "address", "actortype");
-
-            ActorMessageReceiveHistogram = metrics.CreateHistogram("protoactor_actor_messagereceive_duration_seconds", "", "id", "address",
-                "actortype", "messagetype"
-            );
-            FuturesStartedCount = metrics.CreateCount("protoactor_future_started_count", "", "id", "address");
-            FuturesTimedOutCount = metrics.CreateCount("protoactor_future_timedout_count", "", "id", "address");
-            FuturesCompletedCount = metrics.CreateCount("protoactor_future_completed_count", "", "id", "address");
-        }
+        public static readonly Histogram<double> ThreadPoolLatency = ProtoMetrics.Meter.CreateHistogram<double>(
+            "protoactor_threadpool_latency_duration",
+            "seconds",
+            "Latency of the thread pool measured as time required to spawn a new task"
+        );
     }
 }

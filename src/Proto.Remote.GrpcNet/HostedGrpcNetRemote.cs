@@ -9,7 +9,7 @@ namespace Proto.Remote.GrpcNet
 {
     public class HostedGrpcNetRemote : IRemote
     {
-        private readonly object _lock = new(); 
+        private readonly object _lock = new();
         private readonly GrpcNetRemoteConfig _config;
         private readonly EndpointManager _endpointManager;
         private readonly ILogger _logger;
@@ -23,7 +23,6 @@ namespace Proto.Remote.GrpcNet
         {
             System = system;
             _config = config;
-            system.Metrics.Register(new RemoteMetrics(system.Metrics));
             _endpointManager = endpointManager;
             _logger = logger;
             System.Extensions.Register(this);
@@ -35,6 +34,8 @@ namespace Proto.Remote.GrpcNet
         public ActorSystem System { get; }
         public bool Started { get; private set; }
 
+        public BlockList BlockList { get; } = new();
+
         public Task StartAsync()
         {
             lock (_lock)
@@ -42,7 +43,7 @@ namespace Proto.Remote.GrpcNet
                 if (Started)
                     return Task.CompletedTask;
 
-                var uri = ServerAddressesFeature?.Addresses.Select(address => new Uri(address)).FirstOrDefault();
+                var uri = _config.UriChooser(ServerAddressesFeature?.Addresses.Select(address => new Uri(address)));
                 var boundPort = uri?.Port ?? Config.Port;
                 var host = uri?.Host ?? Config.Host;
                 System.SetAddress(Config.AdvertisedHost ?? host,

@@ -1,16 +1,17 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="EndpointReader.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//       Copyright (C) 2015-2022 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Proto.Diagnostics;
-using Proto.Mailbox;
 using Proto.Remote.Metrics;
 
 namespace Proto.Remote
@@ -18,173 +19,204 @@ namespace Proto.Remote
     public class EndpointReader : Remoting.RemotingBase
     {
         private static readonly ILogger Logger = Log.CreateLogger<EndpointReader>();
-        private readonly LogLevel _deserializationErrorLogLevel;
         private readonly EndpointManager _endpointManager;
-        private readonly Serialization _serialization;
         private readonly ActorSystem _system;
 
-        public EndpointReader(ActorSystem system, EndpointManager endpointManager, Serialization serialization)
+        public EndpointReader(ActorSystem system, EndpointManager endpointManager)
         {
             _system = system;
             _endpointManager = endpointManager;
-            _serialization = serialization;
-            _deserializationErrorLogLevel = _system.Remote().Config.DeserializationErrorLogLevel;
         }
 
-        public override Task<ConnectResponse> Connect(ConnectRequest request, ServerCallContext context)
+        public override async Task Receive(
+            IAsyncStreamReader<RemoteMessage> requestStream,
+            IServerStreamWriter<RemoteMessage> responseStream,
+            ServerCallContext context
+        )
         {
             if (_endpointManager.CancellationToken.IsCancellationRequested)
             {
-                Logger.LogWarning("[EndpointReader] Attempt to connect to the suspended reader has been rejected");
+                Logger.LogWarning("[{SystemAddress}] Attempt to connect to the suspended reader has been rejected", _system.Address);
 
                 throw new RpcException(Status.DefaultCancelled, "Suspended");
             }
 
-            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointConnectedCount.Inc(new[] {_system.Id, _system.Address, context.Peer});
-
-            Logger.LogDebug("[EndpointReader] Accepted connection request from {Remote} to {Local}", context.Peer,
-                context.Host
-            );
-
-            return Task.FromResult(
-                new ConnectResponse
-                {
-                    // NOTE: This is here for backward compatibility. Current version of Serialization
-                    // implementation doesn't utilize the default serializer idea.
-                    DefaultSerializerId = Serialization.SERIALIZER_ID_PROTOBUF,
-                }
-            );
-        }
-
-        public override async Task Receive(
-            IAsyncStreamReader<MessageBatch> requestStream,
-            IServerStreamWriter<Unit> responseStream,
-            ServerCallContext context
-        )
-        {
-            using var cancellationTokenRegistration = _endpointManager.CancellationToken.Register(() => {
-                    Logger.LogDebug("[EndpointReader] Telling to {Address} to stop", context.Peer);
-
-                    try
-                    {
-                        _ = responseStream.WriteAsync(new Unit());
+            using (_endpointManager.CancellationToken.Register(async () => {
+                        try
+                        {
+                            await responseStream.WriteAsync(new RemoteMessage
+                                {
+                                    DisconnectRequest = new DisconnectRequest()
+                                }
+                            ).ConfigureAwait(false);
+                        }
+                        catch (Exception)
+                        {
+                            Logger.LogWarning("[{SystemAddress}] Failed to write disconnect message to the stream", _system.Address);
+                        }
                     }
-                    catch (Exception e)
-                    {
-                        Logger.LogError(e, "[EndpointReader] Didn't tell to {Address} to stop", context.Peer);
-                    }
-                }
-            );
-
-            var targets = new PID[100];
-
-            while (await requestStream.MoveNext(context.CancellationToken).ConfigureAwait(false))
+                ))
             {
-                if (_endpointManager.CancellationToken.IsCancellationRequested)
+                IEndpoint endpoint;
+                string? address = null;
+                string systemId;
+
+                if (_system.Metrics.Enabled)
                 {
-                    // We read all the messages ignoring them to gracefully end the request
-                    continue;
+                    RemoteMetrics.RemoteEndpointConnectedCount
+                        .Add(1, new("id", _system.Id), new("address", _system.Address), new("destinationaddress", context.Peer));
                 }
 
-                var batch = requestStream.Current;
+                Logger.LogDebug("[{SystemAddress}] Accepted connection request from {Remote} to {Local}",
+                    _system.Address, context.Peer, context.Host
+                );
 
-                // Logger.LogDebug("[EndpointReader] Received a batch of {Count} messages from {Remote}",
-                //     batch.TargetNames.Count, context.Peer
-                // );
+                if (await requestStream.MoveNext().ConfigureAwait(false) &&
+                    requestStream.Current.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectRequest)
+                    throw new RpcException(Status.DefaultCancelled, "Expected connection message");
 
-                //only grow pid lookup if needed
-                if (batch.TargetNames.Count > targets.Length) targets = new PID[batch.TargetNames.Count];
+                var connectRequest = requestStream.Current.ConnectRequest;
 
-                for (var i = 0; i < batch.TargetNames.Count; i++)
+                var cancellationTokenSource = new CancellationTokenSource();
+
+                switch (connectRequest.ConnectionTypeCase)
                 {
-                    var pid = PID.FromAddress(_system.Address, batch.TargetNames[i]);
-                    pid.Ref(_system);
-                    targets[i] = pid;
-                }
+                    case ConnectRequest.ConnectionTypeOneofCase.ClientConnection: {
+                        var clientConnection = connectRequest.ClientConnection;
 
-                var typeNames = batch.TypeNames.ToArray();
+                        if (_system.Remote().BlockList.IsBlocked(clientConnection.SystemId))
+                        {
+                            Logger.LogWarning("[{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
+                            await responseStream.WriteAsync(new RemoteMessage
+                                {
+                                    ConnectResponse = new ConnectResponse
+                                    {
+                                        Blocked = true,
+                                        MemberId = _system.Id
+                                    }
+                                }
+                            ).ConfigureAwait(false);
+                            return;
+                        }
 
-                var m = _system.Metrics.Get<RemoteMetrics>().RemoteDeserializedMessageCount;
+                        await responseStream.WriteAsync(new RemoteMessage
+                            {
+                                ConnectResponse = new ConnectResponse
+                                {
+                                    MemberId = _system.Id
+                                }
+                            }
+                        ).ConfigureAwait(false);
+                        systemId = clientConnection.SystemId;
+                        endpoint = _endpointManager.GetOrAddClientEndpoint(systemId);
+                        _ = Task.Run(async () => {
+                                try
+                                {
+                                    while (!cancellationTokenSource.Token.IsCancellationRequested)
+                                    {
+                                        while (!cancellationTokenSource.Token.IsCancellationRequested &&
+                                               endpoint.OutgoingStash.TryPop(out var message))
+                                        {
+                                            try
+                                            {
+                                                await responseStream.WriteAsync(message).ConfigureAwait(false);
+                                            }
+                                            catch (Exception)
+                                            {
+                                                _ = endpoint.OutgoingStash.Append(message);
+                                                throw;
+                                            }
+                                        }
 
-                foreach (var envelope in batch.Envelopes)
-                {
-                    var target = targets[envelope.Target];
+                                        while (endpoint.OutgoingStash.IsEmpty && !cancellationTokenSource.Token.IsCancellationRequested)
+                                        {
+                                            var message = await endpoint.Outgoing.Reader.ReadAsync(cancellationTokenSource.Token)
+                                                .ConfigureAwait(false);
 
-                    if (envelope.RequestId != default)
-                    {
-                        target = target.WithRequestId(envelope.RequestId);
-                    }
-                    var typeName = typeNames[envelope.TypeId];
-
-                    if (!_system.Metrics.IsNoop) m.Inc(new[] {_system.Id, _system.Address, typeName});
-
-                    object message;
-
-                    try
-                    {
-                        message =
-                            _serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
-
-                        //translate from on-the-wire representation to in-process representation
-                        //this only applies to root level messages, and never on nested child messages
-                        if (message is IRootSerialized serialized) message = serialized.Deserialize(_system);
-                    }
-                    catch (Exception)
-                    {
-                        Logger.Log(_deserializationErrorLogLevel, "[EndpointReader] Unable to deserialize message with {Type} from {Remote}",
-                            typeName, context.Peer
+                                            try
+                                            {
+                                                // Logger.LogInformation($"Sending {message}");
+                                                await responseStream.WriteAsync(message).ConfigureAwait(false);
+                                            }
+                                            catch (Exception)
+                                            {
+                                                _ = endpoint.OutgoingStash.Append(message);
+                                                throw;
+                                            }
+                                        }
+                                    }
+                                }
+                                catch (OperationCanceledException)
+                                {
+                                    Logger.LogDebug("[{SystemAddress}] Writer closed for {systemId}", _system.Address, systemId);
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.LogWarning(e, "[{SystemAddress}] Writing error to {systemId}", _system.Address, systemId);
+                                }
+                            }
                         );
-                        continue;
                     }
+                        break;
+                    case ConnectRequest.ConnectionTypeOneofCase.ServerConnection: {
+                        var serverConnection = connectRequest.ServerConnection;
 
-                    switch (message)
+                        if (_system.Remote().BlockList.IsBlocked(serverConnection.SystemId))
+                        {
+                            Logger.LogWarning("[{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
+                            await responseStream.WriteAsync(new RemoteMessage
+                                {
+                                    ConnectResponse = new ConnectResponse
+                                    {
+                                        Blocked = true,
+                                        MemberId = _system.Id
+                                    }
+                                }
+                            ).ConfigureAwait(false);
+                            return;
+                        }
+
+                        await responseStream.WriteAsync(new RemoteMessage
+                            {
+                                ConnectResponse = new ConnectResponse
+                                {
+                                    MemberId = _system.Id
+                                }
+                            }
+                        ).ConfigureAwait(false);
+                        address = serverConnection.Adress;
+                        systemId = serverConnection.SystemId;
+                        endpoint = _endpointManager.GetOrAddServerEndpoint(address);
+                    }
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                try
+                {
+                    while (await requestStream.MoveNext().ConfigureAwait(false))
                     {
-                        case Terminated msg:
-                            Terminated(msg, target);
-                            break;
-                        case SystemMessage sys:
-                            SystemMessage(sys, target);
-                            break;
-                        default:
-                            ReceiveMessages(envelope, message, target);
-                            break;
+                        var currentMessage = requestStream.Current;
+                        if (_endpointManager.CancellationToken.IsCancellationRequested)
+                            continue;
+
+                        _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage);
+                    }
+                }
+                finally
+                {
+                    cancellationTokenSource.Cancel();
+                    if (address is null && systemId is not null)
+                        _system.EventStream.Publish(new EndpointTerminatedEvent(false, null, systemId));
+
+                    if (_system.Metrics.Enabled)
+                    {
+                        RemoteMetrics.RemoteEndpointDisconnectedCount
+                            .Add(1, new("id", _system.Id), new("address", _system.Address), new("destinationaddress", context.Peer));
                     }
                 }
             }
-
-            _system.Metrics.Get<RemoteMetrics>().RemoteEndpointDisconnectedCount.Inc(new[] {_system.Id, _system.Address, context.Peer});
-            Logger.LogDebug("[EndpointReader] Stream closed by {Remote}", context.Peer);
-        }
-
-        private void ReceiveMessages(MessageEnvelope envelope, object message, PID target)
-        {
-            Proto.MessageHeader? header = null;
-
-            if (envelope.MessageHeader is not null) header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
-
-            // Logger.LogDebug("[EndpointReader] Forwarding remote user message {@Message}", message);
-            var localEnvelope = new Proto.MessageEnvelope(message, envelope.Sender, header);
-            _system.Root.Send(target, localEnvelope);
-        }
-
-        private void SystemMessage(SystemMessage sys, PID target) =>
-            // Logger.LogDebug(
-            //     "[EndpointReader] Forwarding remote system message {@MessageType}:{@Message}",
-            //     sys.GetType().Name, sys
-            // );
-            target.SendSystemMessage(_system, sys);
-
-        private void Terminated(Terminated msg, PID target)
-        {
-            // Logger.LogDebug(
-            //     "[EndpointReader] Forwarding remote endpoint termination request for {Who}", msg.Who
-            // );
-
-            var rt = new RemoteTerminate(target, msg.Who);
-            var endpoint = _endpointManager.GetEndpoint(rt.Watchee.Address);
-            if (endpoint is null) return;
-
-            _system.Root.Send(endpoint, rt);
         }
 
         public override Task<ListProcessesResponse> ListProcesses(ListProcessesRequest request, ServerCallContext context)
@@ -193,7 +225,7 @@ namespace Proto.Remote
             {
                 throw new Exception("RemoteDiagnostics is not enabled");
             }
-            
+
             var pids = _system.ProcessRegistry.SearchByName(request.Name).ToArray();
             return Task.FromResult(new ListProcessesResponse()
                 {
@@ -202,14 +234,17 @@ namespace Proto.Remote
             );
         }
 
-        public override async Task<GetProcessDiagnosticsResponse> GetProcessDiagnostics(GetProcessDiagnosticsRequest request, ServerCallContext context)
+        public override async Task<GetProcessDiagnosticsResponse> GetProcessDiagnostics(
+            GetProcessDiagnosticsRequest request,
+            ServerCallContext context
+        )
         {
             if (!_system.Remote().Config.RemoteDiagnostics)
             {
                 throw new Exception("RemoteDiagnostics is not enabled");
             }
-            
-            var res = await DiagnosticTools.GetDiagnosticsString(_system, request.Pid);
+
+            var res = await DiagnosticTools.GetDiagnosticsString(_system, request.Pid).ConfigureAwait(false);
             return new GetProcessDiagnosticsResponse()
             {
                 DiagnosticsString = res

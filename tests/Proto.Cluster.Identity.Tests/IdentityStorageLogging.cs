@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="IdentityStorageLogging.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -66,7 +66,7 @@ namespace Proto.Cluster.Identity
 
             try
             {
-                _logger.LogInformation("{Method}: {Subject} before",
+                _logger.LogInformation("{Method}: {Subject} before {Elapsed}",
                     method, subject, timer.Elapsed
                 );
                 await call();

@@ -1,10 +1,9 @@
 // -----------------------------------------------------------------------
 // <copyright file="TopicActor.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -28,7 +27,7 @@ namespace Proto.Cluster.PubSub
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            ClusterInit ci             => OnClusterInit(context),
+            Started _                  => OnClusterInit(context),
             SubscribeRequest sub       => OnSubscribe(context, sub),
             UnsubscribeRequest unsub   => OnUnsubscribe(context, unsub),
             ProducerBatchMessage batch => OnProducerBatch(context, batch),
@@ -73,7 +72,7 @@ namespace Proto.Cluster.PubSub
         private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s) => s.IdentityCase switch
         {
             SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult((s, s.Pid)),
-            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => GetClusterIdentityPid(context, s)!,
+            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => GetClusterIdentityPid(context, s),
             _                                                    => throw new ArgumentOutOfRangeException()
         };
 

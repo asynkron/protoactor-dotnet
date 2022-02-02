@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="Generator.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
@@ -20,7 +20,7 @@ namespace Proto.Cluster.CodeGen
             
             var inputReader = input.OpenText();
             var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
-            var relativePath = Path.GetRelativePath(rootPath, defaultOutputName);
+            var relativePath = PathPolyfill.GetRelativePath(rootPath, defaultOutputName);
             
             set.Add(relativePath, true, inputReader);
             set.Process();

@@ -1,15 +1,11 @@
 // -----------------------------------------------------------------------
 // <copyright file="MessageHeaderTests.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Google.Protobuf;
 using Proto.Utils;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,12 +14,6 @@ namespace Proto.Tests.Headers
 {
     public class MessageHeaderTests
     {
-        public record SomeRequest();
-
-        public record SomeResponse();
-
-        public record StartMessage();
-
         private readonly ITestOutputHelper _testOutputHelper;
 
         public MessageHeaderTests(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
@@ -78,7 +68,7 @@ namespace Proto.Tests.Headers
             var root = system
                 .Root
                 .WithHeaders(headers)
-                .WithSenderMiddleware((Func<Sender, Sender>) PropagateHeaders);
+                .WithSenderMiddleware(PropagateHeaders);
 
             root.Send(pid2, new StartMessage());
 
@@ -94,7 +84,7 @@ namespace Proto.Tests.Headers
         [Fact]
         public async Task Actors_can_reply_with_headers()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var echo = Props.FromFunc(ctx => {
                     if (ctx.Sender is not null && ctx.Message is not null)
                     {
@@ -117,12 +107,9 @@ namespace Proto.Tests.Headers
         [Fact]
         public async Task RequestAsync_honors_message_envelopes()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var echo = Props.FromFunc(ctx => {
-                    if (ctx.Sender is not null && ctx.Headers.Count == 1)
-                    {
-                        ctx.Respond(ctx.Headers["foo"]);
-                    }
+                    if (ctx.Sender is not null && ctx.Headers.Count == 1) ctx.Respond(ctx.Headers["foo"]);
 
                     return Task.CompletedTask;
                 }
@@ -136,5 +123,11 @@ namespace Proto.Tests.Headers
 
             response.Should().Be("bar");
         }
+
+        public record SomeRequest;
+
+        public record SomeResponse;
+
+        public record StartMessage;
     }
 }

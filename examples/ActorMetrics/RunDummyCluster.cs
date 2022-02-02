@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="Foo.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -13,7 +13,6 @@ using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcCore;
 using Some.Namespace;
-using Ubiquitous.Metrics.Prometheus;
 
 namespace ActorMetrics
 {
@@ -23,7 +22,7 @@ namespace ActorMetrics
         {
             var l = LoggerFactory.Create(x => x.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
-            var config = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
+            var config = ActorSystemConfig.Setup().WithMetrics();
 
             var remoteConfig = GrpcCoreRemoteConfig
                 .BindToLocalhost()
@@ -38,6 +37,8 @@ namespace ActorMetrics
             var system = new ActorSystem(config)
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
+            
+            Console.WriteLine($"System 1 Id {system.Id}");
 
             system
                 .Cluster()
@@ -45,7 +46,7 @@ namespace ActorMetrics
 
             var props = Props.FromProducer(() => new MyActor());
 
-            var config2 = ActorSystemConfig.Setup().WithMetricsProviders(new PrometheusConfigurator());
+            var config2 = ActorSystemConfig.Setup().WithMetrics();
 
             var remoteConfig2 = GrpcCoreRemoteConfig
                 .BindToLocalhost()
@@ -62,6 +63,8 @@ namespace ActorMetrics
                 .WithRemote(remoteConfig2)
                 .WithCluster(clusterConfig2);
 
+            Console.WriteLine($"System 2 Id {system2.Id}");
+
             system2
                 .Cluster()
                 .StartMemberAsync();
@@ -73,7 +76,7 @@ namespace ActorMetrics
                     {
                         await Task.Delay(r.Next(1, 2000));
                         await system.Cluster().RequestAsync<SomeResponse>($"someactor{r.Next(1, 100)}", "somekind", new SomeRequest(),
-                            CancellationTokens.WithTimeout(5000)
+                            CancellationTokens.FromSeconds(5)
                         );
                     }
                 }

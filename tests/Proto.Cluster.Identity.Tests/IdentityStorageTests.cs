@@ -12,6 +12,7 @@ namespace Proto.Cluster.Identity.Tests
 {
     public abstract class IdentityStorageTests : IDisposable
     {
+        private const int TimeoutMs = 2000;
         private static int testId = 1;
         private readonly IIdentityStorage _storage;
         private readonly IIdentityStorage _storageInstance2;
@@ -45,7 +46,7 @@ namespace Proto.Cluster.Identity.Tests
         [Fact]
         public async Task GlobalLockActivatesOnceOnly()
         {
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
             const int attempts = 10;
 
@@ -61,7 +62,7 @@ namespace Proto.Cluster.Identity.Tests
         [Fact]
         public async Task GlobalLockActivatesOnceOnlyAcrossMultipleClients()
         {
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var identity = new ClusterIdentity {Kind = "thing", Identity = "1234"};
             const int attempts = 10;
 
@@ -83,7 +84,7 @@ namespace Proto.Cluster.Identity.Tests
         public async Task CannotTakeLockWhenAlreadyActivated()
         {
             var activator = GetFakeActivator();
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
             var spawnLock = await _storage.TryAcquireLock(identity, timeout);
             var pid = Activate(activator, identity);
@@ -92,8 +93,8 @@ namespace Proto.Cluster.Identity.Tests
             var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(activator.Id);
-            activation!.Pid.Should().BeEquivalentTo(pid);
+            activation?.MemberId.Should().Be(activator.Id);
+            activation?.Pid.Should().BeEquivalentTo(pid);
 
             var noLock = await _storage.TryAcquireLock(identity, timeout);
 
@@ -103,7 +104,7 @@ namespace Proto.Cluster.Identity.Tests
         [Fact]
         public async Task CanDeleteSpawnLocks()
         {
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
 
             var spawnLock = await _storage.TryAcquireLock(identity, timeout);
@@ -120,47 +121,47 @@ namespace Proto.Cluster.Identity.Tests
         [Fact]
         public async Task CanStoreActivation()
         {
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout);
 
             var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(activator.Id);
-            activation!.Pid.Should().BeEquivalentTo(pid);
+            activation?.MemberId.Should().Be(activator.Id);
+            activation?.Pid.Should().BeEquivalentTo(pid);
         }
 
         [Fact]
         public async Task CannotStoreOverExisting()
         {
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var (activator, identity, _) = await GetActivatedClusterIdentity(timeout);
 
             var otherPid = Activate(activator, identity);
 
-            _storage.Invoking(storage =>
+            await _storage.Invoking(storage =>
                 storage.StoreActivation(activator.Id, new SpawnLock("someLockId", identity), otherPid, timeout)
-            ).Should().Throw<LockNotFoundException>();
+            ).Should().ThrowAsync<LockNotFoundException>();
         }
 
         [Fact]
-        public void CannotStoreWithoutLock()
+        public async Task CannotStoreWithoutLock()
         {
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var activator = GetFakeActivator();
             var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
             var spawnLock = new SpawnLock("not-a-lock", identity);
             var pid = Activate(activator, identity);
 
-            _storage.Invoking(storage =>
+            await _storage.Invoking(storage =>
                 storage.StoreActivation(activator.Id, spawnLock, pid, timeout)
-            ).Should().Throw<LockNotFoundException>();
+            ).Should().ThrowAsync<LockNotFoundException>();
         }
 
         [Fact]
         public async Task CanRemoveActivation()
         {
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout);
 
             var activation = await _storage.TryGetExistingActivation(identity, timeout);
@@ -170,8 +171,8 @@ namespace Proto.Cluster.Identity.Tests
             var afterRemoval = await _storage.TryGetExistingActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(activator.Id);
-            activation!.Pid.Should().BeEquivalentTo(pid);
+            activation?.MemberId.Should().Be(activator.Id);
+            activation?.Pid.Should().BeEquivalentTo(pid);
 
             afterRemoval.Should().BeNull();
         }
@@ -179,7 +180,7 @@ namespace Proto.Cluster.Identity.Tests
         [Fact]
         public async Task DoesNotRemoveIfIdDoesNotMatch()
         {
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout);
 
             var differentPid = Activate(activator, identity);
@@ -191,8 +192,8 @@ namespace Proto.Cluster.Identity.Tests
             var afterRemoval = await _storage.TryGetExistingActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(activator.Id);
-            activation!.Pid.Should().BeEquivalentTo(pid);
+            activation?.MemberId.Should().Be(activator.Id);
+            activation?.Pid.Should().BeEquivalentTo(pid);
 
             afterRemoval.Should().NotBeNull("Removal pid did not match id, even if it matched cluster identity");
         }
@@ -200,7 +201,7 @@ namespace Proto.Cluster.Identity.Tests
         [Fact]
         public async Task CanRemoveByMember()
         {
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var (activator, identity, _) = await GetActivatedClusterIdentity(timeout);
 
             await _storage.RemoveMember(activator.Id, timeout);
@@ -213,7 +214,7 @@ namespace Proto.Cluster.Identity.Tests
         [Fact]
         public async Task WillNotRemoveCurrentActivationByPrevMember()
         {
-            var timeout = new CancellationTokenSource(1000).Token;
+            var timeout = new CancellationTokenSource(TimeoutMs).Token;
             var (originalActivator, identity, origPid) = await GetActivatedClusterIdentity(timeout);
 
             await _storage.RemoveActivation(identity, origPid, timeout);
@@ -225,8 +226,8 @@ namespace Proto.Cluster.Identity.Tests
             var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(newActivator.Id);
-            activation!.Pid.Should().BeEquivalentTo(newPid);
+            activation?.MemberId.Should().Be(newActivator.Id);
+            activation?.Pid.Should().BeEquivalentTo(newPid);
         }
 
         [Theory, InlineData(200, 10000)]
@@ -275,7 +276,7 @@ namespace Proto.Cluster.Identity.Tests
         public async Task CanWaitForActivation()
         {
             var activator = GetFakeActivator();
-            var timeout = CancellationTokens.WithTimeout(15 * 1000);
+            var timeout = CancellationTokens.FromSeconds(15);
             var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
             var spawnLock = await _storage.TryAcquireLock(identity, timeout);
             var pid = Activate(activator, identity);
@@ -288,8 +289,8 @@ namespace Proto.Cluster.Identity.Tests
             var activation = await _storage.WaitForActivation(identity, timeout);
 
             activation.Should().NotBeNull();
-            activation!.MemberId.Should().Be(activator.Id);
-            activation!.Pid.Should().BeEquivalentTo(pid);
+            activation?.MemberId.Should().Be(activator.Id);
+            activation?.Pid.Should().BeEquivalentTo(pid);
         }
 
         [Fact]

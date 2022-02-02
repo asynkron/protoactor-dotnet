@@ -65,7 +65,7 @@ namespace Proto.Cluster.Identity.MongoDb
 
             //Stale lock. just delete it and let cluster retry
             // _logger.LogDebug($"Stale lock: {pidLookupEntity.Key}");
-            await RemoveLock(new SpawnLock(lockId!, clusterIdentity), CancellationToken.None);
+            await RemoveLock(new SpawnLock(lockId, clusterIdentity), CancellationToken.None);
             return null;
         }
 

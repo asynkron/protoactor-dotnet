@@ -1,9 +1,8 @@
 // -----------------------------------------------------------------------
 // <copyright file="Messages.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -37,6 +36,7 @@ namespace Proto.Cluster.PubSub
                 {
                     MessageData = messageData,
                     TypeId = typeIndex,
+                    SerializerId = serializerId
                 };
                 
                 batch.Envelopes.Add(producerMessage);

@@ -9,9 +9,9 @@ namespace Proto.Tests
     public class PropsTests
     {
         [Fact]
-        public void Can_pass_ActorSystem_via_Props()
+        public async Task Can_pass_ActorSystem_via_Props()
         {
-            var system = new ActorSystem();
+            await using var system = new ActorSystem();
             var props = Props.FromProducer(s => new ActorWithSystem(s));
             var actor = (ActorWithSystem) props.Producer(system);
             Assert.Same(system, actor.System);

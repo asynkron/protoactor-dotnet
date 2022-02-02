@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="KubernetesProvider.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -91,7 +91,7 @@ namespace Proto.Cluster.Kubernetes
 
         public async Task RegisterMemberAsync()
         {
-            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed);
+            await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
 
             static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
 
@@ -106,10 +106,6 @@ namespace Proto.Cluster.Kubernetes
             if (pod is null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
 
             Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: " + pod.Namespace());
-
-            var matchingPort = pod.FindPort(_port);
-
-            if (matchingPort is null) Logger.LogWarning("[Cluster][KubernetesProvider] Registration port doesn't match any of the container ports");
 
             Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: " + _port);
 

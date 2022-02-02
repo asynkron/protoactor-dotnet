@@ -1,87 +1,74 @@
 // -----------------------------------------------------------------------
 // <copyright file="TaskExtensions.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Proto.Utils
 {
     public static class TaskExtensions
     {
-        public static async Task<TResult> WithTimeout<TResult>(this Task<TResult> task, TimeSpan timeout)
+        public static async Task<TResult> WithTimeout<TResult>(this Task<TResult> task, TimeSpan timeout, CancellationToken? ct = null)
         {
-            using var timeoutCancellationTokenSource = new CancellationTokenSource();
-
-            var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token));
-            if (completedTask != task) throw new TimeoutException("The operation has timed out.");
-
-            timeoutCancellationTokenSource.Cancel();
-            return await task; // Very important in order to propagate exceptions
-        }
-
-       
-    }
-
-    public static class Retry
-    {
-        public static async Task<T> Try<T>(Func<Task<T>> body, int retryCount = 10, int backoffMilliSeconds = 100, Action<int,Exception>? onError=null, Action<Exception>? onFailed=null)
-        {
-            for (var i = 0; i < retryCount; i++)
+            if (!task.IsCompleted)
             {
-                try
-                {
-                    var res = await body();
-                    return res;
-                }
-                catch(Exception x)
-                {
-                    onError?.Invoke(i,x);
-                    
-                    if (i == retryCount - 1)
-                    {
-                        onFailed?.Invoke(x);
-                        throw;
-                    }
+                using var timeoutCancellationTokenSource =
+                    ct is not null ? CancellationTokenSource.CreateLinkedTokenSource(ct.Value) : new CancellationTokenSource();
 
-                    await Task.Delay(i * backoffMilliSeconds);
-                }
+                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token)).ConfigureAwait(false);
+                if (completedTask != task) throw new TimeoutException("The operation has timed out.");
+
+                timeoutCancellationTokenSource.Cancel();
             }
 
-            throw new Exception("This should never happen...");
+            return await task.ConfigureAwait(false); // Very important in order to propagate exceptions
         }
-        
-        public static async Task Try(Func<Task> body, int retryCount = 10, int backoffMilliSeconds = 100, Action<int,Exception>? onError=null, Action<Exception>? onFailed=null, bool ignoreFailure=false)
+
+        /// <summary>
+        /// Waits up to given timeout, returns true if task completed, false if it timed out
+        /// </summary>
+        public static async Task<bool> WaitUpTo(this Task task, TimeSpan timeout, CancellationToken? ct = null)
         {
-            for (var i = 0; i < retryCount; i++)
+            if (!task.IsCompleted)
             {
-                try
-                {
-                    await body();
-                    return;
-                }
-                catch(Exception x)
-                {
-                    onError?.Invoke(i,x);
-                    
-                    if (i == retryCount - 1)
-                    {
-                        onFailed?.Invoke(x);
+                using var timeoutCancellationTokenSource =
+                    ct is not null ? CancellationTokenSource.CreateLinkedTokenSource(ct.Value) : new CancellationTokenSource();
 
-                        if (ignoreFailure)
-                            return;
+                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token)).ConfigureAwait(false);
+                if (completedTask != task) return false;
 
-                        throw;
-                    }
-
-                    await Task.Delay(i * backoffMilliSeconds);
-                }
+                timeoutCancellationTokenSource.Cancel();
             }
 
-            throw new Exception("This should never happen...");
+            await task.ConfigureAwait(false); // Very important in order to propagate exceptions
+            return true;
+        }
+
+        /// <summary>
+        /// Waits up to given timeout, returns (true,value) if task completed, (false, default) if it timed out
+        /// </summary>
+        public static async Task<(bool completed, TResult result)> WaitUpTo<TResult>(
+            this Task<TResult> task,
+            TimeSpan timeout,
+            CancellationToken? ct = null
+        )
+        {
+            if (!task.IsCompleted)
+            {
+                using var timeoutCancellationTokenSource =
+                    ct is not null ? CancellationTokenSource.CreateLinkedTokenSource(ct.Value) : new CancellationTokenSource();
+
+                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token)).ConfigureAwait(false);
+                if (completedTask != task) return (false, default);
+
+                timeoutCancellationTokenSource.Cancel();
+            }
+
+            var result = await task.ConfigureAwait(false); // Very important in order to propagate exceptions
+            return (true, result);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="TestProvider.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using Microsoft.Extensions.Logging;
-using Proto.Cluster.Data;
 
 namespace Proto.Cluster.Testing
 {
@@ -17,11 +16,9 @@ namespace Proto.Cluster.Testing
         private static readonly ILogger Logger = Log.CreateLogger<TestProvider>();
         private readonly InMemAgent _agent;
         private readonly TestProviderOptions _options;
-        private string _clusterName;
 
         private string _id;
         private MemberList _memberList;
-        private ActorSystem _system;
         private Timer _ttlReportTimer;
 
         public TestProvider(TestProviderOptions options, InMemAgent agent)
@@ -33,12 +30,9 @@ namespace Proto.Cluster.Testing
         public Task StartMemberAsync(Cluster cluster)
         {
             var memberList = cluster.MemberList;
-            var clusterName = cluster.Config.ClusterName;
             var (host, port) = cluster.System.GetAddress();
             var kinds = cluster.GetClusterKinds();
             _id = cluster.System.Id;
-            _clusterName = clusterName;
-            _system = cluster.System;
             _memberList = memberList;
             _agent.StatusUpdate += AgentOnStatusUpdate;
             StartTtlTimer();
@@ -58,12 +52,11 @@ namespace Proto.Cluster.Testing
         public Task StartClientAsync(Cluster cluster)
         {
             var memberList = cluster.MemberList;
-            var clusterName = cluster.Config.ClusterName;
 
             _id = cluster.System.Id;
-            _clusterName = clusterName;
-            _system = cluster.System;
             _memberList = memberList;
+            _agent.StatusUpdate += AgentOnStatusUpdate;
+            _agent.ForceUpdate();
 
             return Task.CompletedTask;
         }
@@ -72,12 +65,10 @@ namespace Proto.Cluster.Testing
         {
             Logger.LogDebug("Unregistering service {Service}", _id);
 
-            _ttlReportTimer.Stop();
+            _ttlReportTimer?.Stop();
             _agent.DeregisterService(_id);
             return Task.CompletedTask;
         }
-
-        public Task UpdateClusterState(ClusterState state) => throw new NotImplementedException();
 
         private void AgentOnStatusUpdate(object sender, EventArgs e) => NotifyStatuses();
 
@@ -92,7 +83,7 @@ namespace Proto.Cluster.Testing
                         x => {
                             var member = new Member
                             {
-                                Id = x.ID.ToString(),
+                                Id = x.ID,
                                 Host = x.Host,
                                 Port = x.Port
                             };
@@ -108,7 +99,7 @@ namespace Proto.Cluster.Testing
         private void StartTtlTimer()
         {
             _ttlReportTimer = new Timer(_options.RefreshTtl.TotalMilliseconds);
-            _ttlReportTimer.Elapsed += (sender, args) => { RefreshTTL(); };
+            _ttlReportTimer.Elapsed += (_, _) => RefreshTTL();
             _ttlReportTimer.Enabled = true;
             _ttlReportTimer.AutoReset = true;
             _ttlReportTimer.Start();

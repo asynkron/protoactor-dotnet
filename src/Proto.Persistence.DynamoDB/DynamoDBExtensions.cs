@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
-//  <copyright file="DynamoDBHelper.cs" company="Asynkron HB">
-//      Copyright (C) 2015-2018 Asynkron HB All rights reserved
+//  <copyright file="DynamoDBHelper.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 

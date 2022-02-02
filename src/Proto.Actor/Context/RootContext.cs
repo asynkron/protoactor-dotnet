@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="RootContext.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -75,28 +75,7 @@ namespace Proto
         //because DecoratorContexts needs to go this way if we want to intercept this method for the context
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
-
-        public void Stop(PID? pid)
-        {
-            if (pid is null) return;
-
-            var reff = System.ProcessRegistry.Get(pid);
-            reff.Stop(pid);
-        }
-
-        public Task StopAsync(PID pid)
-        {
-            var future = System.Future.Get();
-            pid.SendSystemMessage(System, new Watch(future.Pid));
-            Stop(pid);
-
-            return future.Task;
-        }
-
-        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
-
-        public Task PoisonAsync(PID pid) => RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
-
+        
         public RootContext WithHeaders(MessageHeader headers) =>
             this with {Headers = headers};
 
@@ -130,5 +109,33 @@ namespace Proto
         }
 
         public IFuture GetFuture() => System.Future.Get();
+        
+        public void Stop(PID? pid)
+        {
+            if (pid is null) return;
+
+            var reff = System.ProcessRegistry.Get(pid);
+            reff.Stop(pid);
+        }
+
+        public Task StopAsync(PID pid)
+        {
+            var future = System.Future.Get();
+            pid.SendSystemMessage(System, new Watch(future.Pid));
+            Stop(pid);
+
+            return future.Task;
+        }
+        
+        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
+
+        public Task PoisonAsync(PID pid)
+        {
+            var future = System.Future.Get();
+            pid.SendSystemMessage(System, new Watch(future.Pid));
+            Poison(pid);
+
+            return future.Task;
+        }
     }
 }

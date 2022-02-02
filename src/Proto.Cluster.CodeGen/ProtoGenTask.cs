@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,7 +27,7 @@ namespace Proto.Cluster.CodeGen
             Log.LogMessage(MessageImportance.High, $"Intermediate OutputPath: {IntermediateOutputPath}");
             var projectDirectory = Path.GetDirectoryName(projectFile)!;
             
-            var potatoDirectory = Path.Combine(IntermediateOutputPath!, "protopotato");
+            var potatoDirectory = Path.Combine(IntermediateOutputPath, "protopotato");
             EnsureDirExistsAndIsEmpty(potatoDirectory);
 
             if (ProtoFile.Any())
@@ -55,7 +56,7 @@ namespace Proto.Cluster.CodeGen
         private static void EnsureDirExistsAndIsEmpty(string? potatoDirectory)
         {
             Directory.CreateDirectory(potatoDirectory);
-            DirectoryInfo di = new(potatoDirectory);
+            DirectoryInfo di = new DirectoryInfo(potatoDirectory);
 
             foreach (FileInfo file in di.GetFiles())
             {
@@ -73,24 +74,34 @@ namespace Proto.Cluster.CodeGen
             if (!templateFiles.Any())
             {
                 var template = Template.DefaultTemplate;
-                GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template);
+                var outputFileName = OutputFileName.GetOutputFileName(inputFileInfo);
+                
+                GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template, outputFileName);
             }
             else
             {
                 foreach (var templateFile in templateFiles)
                 {
                     var template = File.ReadAllText(templateFile.FullName, Encoding.Default);
-                    GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template);
+                    var outputFileName = OutputFileName.GetOutputFileName(inputFileInfo, templateFile);
+                    
+                    GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template, outputFileName);
                 }
             }
         }
 
-        private void GenerateFile(string projectDirectory, string objDirectory, FileInfo inputFileInfo, DirectoryInfo[] importPaths, string template)
+        private void GenerateFile(
+            string projectDirectory,
+            string objDirectory,
+            FileInfo inputFileInfo,
+            DirectoryInfo[] importPaths,
+            string template,
+            string outputFileName
+        )
         {
-            var guidName = Guid.NewGuid().ToString("N");
-            var outputFile = Path.Combine(objDirectory, $"{guidName}.cs");
-            Log.LogMessage(MessageImportance.High, $"Output file path: {outputFile}");
-            var outputFileInfo = new FileInfo(outputFile);
+            var outputFilePath = Path.Combine(objDirectory, outputFileName);
+            Log.LogMessage(MessageImportance.High, $"Output file path: {outputFilePath}");
+            var outputFileInfo = new FileInfo(outputFilePath);
             Generator.Generate(inputFileInfo, outputFileInfo, importPaths, Log, projectDirectory, template);
         }
 
@@ -98,9 +109,9 @@ namespace Proto.Cluster.CodeGen
         {
             var importPaths =
                 additionalImportDirsString
-                    .Split(";", StringSplitOptions.RemoveEmptyEntries)
+                    .Split(new[] {";"}, StringSplitOptions.RemoveEmptyEntries)
                     .Select(p => p.Trim())
-                    .Select(p => Path.GetRelativePath(projectDirectory, p))
+                    .Select(p => PathPolyfill.GetRelativePath(projectDirectory, p))
                     .Select(p => new DirectoryInfo(p)).ToArray();
 
             foreach (var importPath in importPaths)
@@ -115,9 +126,9 @@ namespace Proto.Cluster.CodeGen
         {
             var templateFilesArr =
                 templateFilesString
-                    .Split(";", StringSplitOptions.RemoveEmptyEntries)
+                    .Split(new[] {";"}, StringSplitOptions.RemoveEmptyEntries)
                     .Select(p => p.Trim())
-                    .Select(p => Path.GetRelativePath(projectDirectory, p))
+                    .Select(p => PathPolyfill.GetRelativePath(projectDirectory, p))
                     .Select(p => new FileInfo(p))
                     .ToArray();
 

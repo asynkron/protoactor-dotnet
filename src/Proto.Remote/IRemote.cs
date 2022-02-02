@@ -8,9 +8,8 @@ namespace Proto.Remote
         RemoteConfigBase Config { get; }
         ActorSystem System { get; }
         bool Started { get; }
-
+        BlockList BlockList { get; }
         Task ShutdownAsync(bool graceful = true);
-
         Task StartAsync();
     }
 }

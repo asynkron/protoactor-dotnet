@@ -1,11 +1,10 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="PidCacheInvalidationTests.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
@@ -33,7 +32,7 @@ namespace Proto.Cluster.Tests
             cachedPid.Should().NotBeNull();
             await remoteMember.RequestAsync<object>(id, EchoActor.Kind, new Die(), CancellationToken.None);
 
-            await Task.Delay(1000); // PidCache is asynchronously cleared, allow the system to purge it
+            await Task.Delay(2000); // PidCache is asynchronously cleared, allow the system to purge it
 
             var cachedPidAfterStopping = GetFromPidCache(remoteMember, id);
 

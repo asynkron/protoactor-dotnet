@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="ISenderContext.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -74,6 +74,7 @@ namespace Proto
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender
         /// </summary>
+        /// <param name="self">the context used to issue the request</param>
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
         public static void Request(this ISenderContext self, PID target, object message) =>
@@ -83,24 +84,46 @@ namespace Proto
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
         ///     This operation can be awaited.
         /// </summary>
+        /// <param name="self">the context used to issue the request</param>
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
         /// <typeparam name="T">Expected return message type</typeparam>
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
         public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message) =>
-            self.RequestAsync<T>(target, message, CancellationToken.None);
+            self.RequestAsync<T>(target, message, self.System.Config.RequestAsyncTimeout);
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
         ///     This operation can be awaited.
         /// </summary>
+        /// <param name="self">the context used to issue the request</param>
         /// <param name="target">The target PID</param>
         /// <param name="message">The message to send</param>
         /// <param name="timeout">Timeout for the request</param>
         /// <typeparam name="T">Expected return message type</typeparam>
         /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
-        public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
-            => self.RequestAsync<T>(target, message, CancellationTokens.WithTimeout(timeout));
+        public static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
+        {
+            using var cts = new CancellationTokenSource(timeout);
+            var res = await self.RequestAsync<T>(target, message, cts.Token);
+            return res;
+        }
+
+        /// <summary>
+        ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
+        ///     Once the request completes, the callback is scheduled to run in the actors concurrency constraint.
+        /// </summary>
+        /// <param name="self">the context used to issue the request</param>
+        /// <param name="target">The target PID</param>
+        /// <param name="message">The message to send</param>
+        /// <param name="callback"></param>
+        /// <param name="ct"></param>
+        /// <typeparam name="T">Expected return message type</typeparam>
+        public static void RequestReenter<T>(this IContext self, PID target, object message, Func<Task<T>, Task> callback, CancellationToken ct)
+        {
+            var task = self.RequestAsync<T>(target, message, ct);
+            self.ReenterAfter(task, callback);
+        }
 
         /// <summary>
         ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.

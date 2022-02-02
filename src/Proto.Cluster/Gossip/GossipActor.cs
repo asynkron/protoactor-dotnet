@@ -1,53 +1,82 @@
 // -----------------------------------------------------------------------
 // <copyright file="GossipActor.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2021 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Threading.Tasks;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
+using Proto.Context;
 using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
     public class GossipActor : IActor
     {
-        private readonly TimeSpan _gossipRequestTimeout;
         private static readonly ILogger Logger = Log.CreateLogger<GossipActor>();
-        private long _localSequenceNo;
-        private GossipState _state = new();
-        private readonly Random _rnd = new();
-        private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
+        private readonly TimeSpan _gossipRequestTimeout;
+        private readonly IGossip _internal;
 
-        public GossipActor(TimeSpan gossipRequestTimeout) => _gossipRequestTimeout = gossipRequestTimeout;
+        // lookup from state key -> consensus checks
+
+        public GossipActor(
+            TimeSpan gossipRequestTimeout,
+            string myId,
+            Func<ImmutableHashSet<string>> getBlockedMembers,
+            InstanceLogger? instanceLogger,
+            int gossipFanout,
+            int gossipMaxSend
+        )
+        {
+            _gossipRequestTimeout = gossipRequestTimeout;
+            _internal = new Gossip(myId, gossipFanout, gossipMaxSend, getBlockedMembers, instanceLogger);
+        }
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            SetGossipStateKey setState     => OnSetGossipStateKey(context, setState),
-            GetGossipStateRequest getState => OnGetGossipStateKey(context, getState),
-            GossipRequest gossipRequest    => OnGossipRequest(context, gossipRequest),
-            SendGossipStateRequest         => OnSendGossipState(context),
-            _                              => Task.CompletedTask
+            SetGossipStateKey setState         => OnSetGossipStateKey(context, setState),
+            GetGossipStateRequest getState     => OnGetGossipStateKey(context, getState),
+            GetGossipStateEntryRequest getState     => OnGetGossipStateEntryKey(context, getState),
+            GetGossipStateSnapshot getSnapshot => OnGetGossipStateSnapshot(context),
+            GossipRequest gossipRequest        => OnGossipRequest(context, gossipRequest),
+            SendGossipStateRequest             => OnSendGossipState(context),
+            AddConsensusCheck request          => OnAddConsensusCheck(context, request),
+            ClusterTopology clusterTopology    => OnClusterTopology(clusterTopology),
+            _                                  => Task.CompletedTask
         };
+
+        private Task OnGetGossipStateEntryKey(IContext context, GetGossipStateEntryRequest getState)
+        {
+            var state = _internal.GetStateEntry(getState.Key);
+            var res = new GetGossipStateEntryResponse(state);
+            context.Respond(res);
+            return Task.CompletedTask;
+        }
+
+        private Task OnGetGossipStateSnapshot(IContext context)
+        {
+            var state = _internal.GetStateSnapshot();
+            context.Respond(state);
+            return Task.CompletedTask;
+        }
+
+        private Task OnClusterTopology(ClusterTopology clusterTopology) =>
+            _internal.UpdateClusterTopology(clusterTopology);
+
+        private Task OnAddConsensusCheck(IContext context, AddConsensusCheck msg)
+        {
+            var id = Guid.NewGuid().ToString();
+            _internal.AddConsensusCheck(id, msg.Check);
+            context.ReenterAfterCancellation(msg.Token, () => _internal.RemoveConsensusCheck(id));
+
+            return Task.CompletedTask;
+        }
 
         private Task OnGetGossipStateKey(IContext context, GetGossipStateRequest getState)
         {
-            var entries = ImmutableDictionary<string, Any>.Empty;
-            var key = getState.Key;
-
-            foreach (var (memberId, memberState) in _state.Members)
-            {
-                if (memberState.Values.TryGetValue(key, out var value))
-                {
-                    entries = entries.SetItem(memberId, value.Value);
-                }
-            }
-
-            var res = new GetGossipStateResponse(entries);
+            var state = _internal.GetState(getState.Key);
+            var res = new GetGossipStateResponse(state);
             context.Respond(res);
             return Task.CompletedTask;
         }
@@ -57,50 +86,57 @@ namespace Proto.Cluster.Gossip
             var logger = context.Logger()?.BeginScope<GossipActor>();
             logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
-            var remoteState = gossipRequest.State;
-            var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState);
+            ReceiveState(context, gossipRequest.State);
 
-            if (updates.Any())
+            //it's OK, we might not just yet be aware of this member yet....
+            
+            // if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
+            // {
+            //     Logger.LogWarning("Got gossip request from unknown member {MemberId}", gossipRequest.MemberId);
+            //
+            //     // Nothing to send, do not provide sender or state payload
+            //     context.Respond(new GossipResponse());
+            //     return Task.CompletedTask;
+            // }
+
+            var memberState = _internal.GetMemberStateDelta(gossipRequest.MemberId);
+
+            if (!memberState.HasState)
             {
-                foreach (var update in updates)
-                {
-                    context.System.EventStream.Publish(update);
-                }
+                Logger.LogDebug("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
 
-                _state = newState;
-                CheckConsensus(context);
+                // Nothing to send, do not provide sender or state payload
+                context.Respond(new GossipResponse());
+                return Task.CompletedTask;
             }
 
-            //Ack, we got it
-            context.Respond(new GossipResponse());
+            context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
+                {
+                    State = memberState.State
+                }, task => ReenterAfterResponseAck(context, task, memberState), context.CancellationToken
+            );
+
             return Task.CompletedTask;
         }
 
-        private void CheckConsensus(IContext context)
+        private void ReceiveState(IContext context, GossipState remoteState)
         {
-            var allMembers = context.System.Cluster().MemberList.GetMembers();
+            var updates = _internal.ReceiveState(remoteState);
 
-            var (consensus, hash) = GossipStateManagement.CheckConsensus(context, _state, context.System.Id, allMembers);
-
-            if (!consensus)
+            foreach (var update in updates)
             {
-                context.Cluster().MemberList.TryResetTopologyConsensus();
-                return;
+                context.System.EventStream.Publish(update);
             }
-
-            context.Cluster().MemberList.TrySetTopologyConsensus();
         }
 
         private Task OnSetGossipStateKey(IContext context, SetGossipStateKey setStateKey)
         {
-            var logger = context.Logger()?.BeginMethodScope();
+            var (key, message) = setStateKey;
+            _internal.SetState(key, message);
 
-            GossipStateManagement.SetKey(_state, setStateKey.Key, setStateKey.Value, context.System.Id, ref _localSequenceNo);
-            logger?.LogDebug("Setting state key {Key} - {Value} - {State}", setStateKey.Key, setStateKey.Value, _state);
-            Logger.LogDebug("Setting state key {Key} - {Value} - {State}", setStateKey.Key, setStateKey.Value, _state);
-            if (!_state.Members.ContainsKey(context.System.Id))
+            if (context.Sender != null)
             {
-                logger?.LogCritical("State corrupt");
+                context.Respond(new SetGossipStateResponse());
             }
 
             return Task.CompletedTask;
@@ -108,108 +144,100 @@ namespace Proto.Cluster.Gossip
 
         private Task OnSendGossipState(IContext context)
         {
-            var logger = context.Logger()?.BeginMethodScope();
-            var members = context.System.Cluster().MemberList.GetOtherMembers();
-
-            PurgeBannedMembers(context);
-
-            foreach (var member in members)
-            {
-                GossipStateManagement.EnsureMemberStateExists(_state, member.Id);
-            }
-
-            var fanOutMembers = PickRandomFanOutMembers(members, context.System.Cluster().Config.GossipFanout);
-
-            foreach (var member in fanOutMembers)
-            {
-                //fire and forget, we handle results in ReenterAfter
-                SendGossipForMember(context, member, logger);
-            }
-
-            CheckConsensus(context);
+            _internal.SendState((memberState, member, logger) => SendGossipForMember(context, member, logger, memberState));
             context.Respond(new SendGossipStateResponse());
             return Task.CompletedTask;
         }
 
-        private void PurgeBannedMembers(IContext context)
-        {
-            var banned = context.Cluster().MemberList.BannedMembers;
-
-            foreach (var memberId in _state.Members.Keys.ToArray()) 
-            {
-                if (banned.Contains(memberId))
-                {
-                    _state.Members.Remove(memberId);
-                }
-            }
-        }
-
-        private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger)
+        private void SendGossipForMember(IContext context, Member member, InstanceLogger? logger, MemberStateDelta memberStateDelta)
         {
             var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
-            var (pendingOffsets, stateForMember) = GossipStateManagement.FilterGossipStateForMember(_state, _committedOffsets, member.Id);
-
-            //if we dont have any state to send, don't send it...
-            if (pendingOffsets == _committedOffsets)
-            {
-                return;
-            }
 
             logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
             Logger.LogDebug("Sending GossipRequest to {MemberId}", member.Id);
 
             //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
-            var t = context.RequestAsync<GossipResponse>(pid, new GossipRequest
+
+            // This will return a GossipResponse, but since we need could need to get the sender, we do not unpack it from the MessageEnvelope
+            context.RequestReenter<MessageEnvelope>(pid, new GossipRequest
                 {
-                    State = stateForMember,
-                }, CancellationTokens.WithTimeout(_gossipRequestTimeout)
-            );
-
-            context.ReenterAfter(t, async tt => {
-                    try
-                    {
-                        await tt;
-
-                        foreach (var (key, sequenceNumber) in pendingOffsets)
-                        {
-                            //TODO: this needs to be improved with filter state on sender side, and then Ack from here
-                            //update our state with the data from the remote node
-                            //GossipStateManagement.MergeState(_state, response.State, out var newState);
-                            //_state = newState;
-
-                            if (!_committedOffsets.ContainsKey(key) || _committedOffsets[key] < pendingOffsets[key])
-                            {
-                                _committedOffsets = _committedOffsets.SetItem(key, sequenceNumber);
-                            }
-                        }
-                    }
-                    catch (DeadLetterException)
-                    {
-                        logger?.LogWarning("DeadLetter");
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        logger?.LogWarning("Timeout");
-                    }
-                    catch (TimeoutException)
-                    {
-                        logger?.LogWarning("Timeout");
-                    }
-                    catch (Exception x)
-                    {
-                        logger?.LogError(x, "OnSendGossipState failed");
-                        Logger.LogError(x, "OnSendGossipState failed");
-                    }
-                }
+                    MemberId = context.System.Id,
+                    State = memberStateDelta.State
+                },
+                task => GossipReenterAfterSend(context, task, memberStateDelta),
+                CancellationTokens.WithTimeout(_gossipRequestTimeout)
             );
         }
 
-        private List<Member> PickRandomFanOutMembers(Member[] members, int fanOutBy) =>
-            members
-                .Select(m => (member: m, index: _rnd.Next()))
-                .OrderBy(m => m.index)
-                .Take(fanOutBy)
-                .Select(m => m.member)
-                .ToList();
+        private async Task GossipReenterAfterSend(IContext context, Task<MessageEnvelope> task, MemberStateDelta delta)
+        {
+            var logger = context.Logger();
+
+            try
+            {
+                await task;
+                var envelope = task.Result;
+
+                if (envelope.Message is GossipResponse response)
+                {
+                    delta.CommitOffsets();
+
+                    if (response.State is not null)
+                    {
+                        ReceiveState(context, response.State!);
+
+                        if (envelope.Sender is not null)
+                        {
+                            context.Send(envelope.Sender, new GossipResponseAck());
+                        }
+                    }
+                }
+            }
+            catch (DeadLetterException)
+            {
+                logger?.LogWarning("DeadLetter");
+            }
+            catch (OperationCanceledException)
+            {
+                logger?.LogWarning("Timeout");
+            }
+            catch (TimeoutException)
+            {
+                logger?.LogWarning("Timeout");
+            }
+            catch (Exception x)
+            {
+                logger?.LogError(x, "OnSendGossipState failed");
+                Logger.LogError(x, "OnSendGossipState failed");
+            }
+        }
+
+        private async Task ReenterAfterResponseAck(IContext context, Task<GossipResponseAck> task, MemberStateDelta delta)
+        {
+            var logger = context.Logger();
+
+            try
+            {
+                await task;
+                delta.CommitOffsets();
+            }
+            catch (DeadLetterException)
+            {
+                logger?.LogWarning("DeadLetter");
+            }
+            catch (OperationCanceledException)
+            {
+                logger?.LogWarning("Timeout");
+            }
+            catch (TimeoutException)
+            {
+                logger?.LogWarning("Timeout");
+            }
+            catch (Exception x)
+            {
+                logger?.LogError(x, "OnSendGossipState failed");
+                Logger.LogError(x, "OnSendGossipState failed");
+            }
+        }
     }
 }

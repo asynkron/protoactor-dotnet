@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Grpc.HealthCheck;
 using Grpc.Net.Client;
 using JetBrains.Annotations;
@@ -16,15 +17,24 @@ namespace Proto.Remote.GrpcNet
         public static GrpcNetRemoteConfig WithChannelOptions(this GrpcNetRemoteConfig config, GrpcChannelOptions options)
             => config with {ChannelOptions = options};
 
+        public static GrpcNetRemoteConfig WithUriChooser(this GrpcNetRemoteConfig config, Func<IEnumerable<Uri>?, Uri?> uriChooser)
+            => config with {UriChooser = uriChooser};
+
         public static ActorSystem WithRemote(this ActorSystem system, GrpcNetRemoteConfig remoteConfig)
         {
             var _ = new GrpcNetRemote(system, remoteConfig);
             return system;
         }
 
+        public static ActorSystem WithClientRemote(this ActorSystem system, GrpcNetRemoteConfig remoteConfig)
+        {
+            var _ = new GrpcNetClientRemote(system, remoteConfig);
+            return system;
+        }
+
         public static IServiceCollection AddRemote(this IServiceCollection services, Func<IServiceProvider, GrpcNetRemoteConfig> configure)
         {
-            services.AddSingleton(sp => configure(sp));
+            services.AddSingleton(configure);
             AddAllServices(services);
             return services;
         }
@@ -36,6 +46,18 @@ namespace Proto.Remote.GrpcNet
         {
             services.AddSingleton(config);
             AddAllServices(services);
+            return services;
+        }
+
+        public static IServiceCollection AddClientRemote(
+            this IServiceCollection services,
+            GrpcNetRemoteConfig config
+        )
+        {
+            services.AddSingleton(config);
+            services.TryAddSingleton<ActorSystem>();
+            services.AddSingleton<IRemote, GrpcNetClientRemote>();
+            services.AddSingleton<RemoteHostedService>();
             return services;
         }
 
@@ -63,6 +85,7 @@ namespace Proto.Remote.GrpcNet
         {
             var hostedRemote = applicationBuilder.ApplicationServices.GetRequiredService<HostedGrpcNetRemote>();
             hostedRemote.ServerAddressesFeature = applicationBuilder.ServerFeatures.Get<IServerAddressesFeature>();
+            applicationBuilder.UseRouting();
             applicationBuilder.UseEndpoints(c => AddProtoRemoteEndpoint(c));
         }
 

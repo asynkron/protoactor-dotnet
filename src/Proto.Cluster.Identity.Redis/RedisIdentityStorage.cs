@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="RedisIdentityStorage.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -14,7 +14,7 @@ using StackExchange.Redis;
 
 namespace Proto.Cluster.Identity.Redis
 {
-    public class RedisIdentityStorage : IIdentityStorage
+    public sealed class RedisIdentityStorage : IIdentityStorage
     {
         private static readonly ILogger Logger = Log.CreateLogger<RedisIdentityStorage>();
 
@@ -236,7 +236,7 @@ namespace Proto.Cluster.Identity.Redis
             {
                 if (uniqueIdentity == null || address == null || memberId == null) throw new ArgumentException();
 
-                Activation = new StoredActivation(memberId!, PID.FromAddress(address!, uniqueIdentity!));
+                Activation = new StoredActivation(memberId, PID.FromAddress(address, uniqueIdentity));
             }
 
             public ActivationStatus(string? lockId) => ActiveLockId = lockId;

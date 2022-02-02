@@ -16,7 +16,7 @@ namespace Proto.TestKit.Tests
             var b = CreateTestProbe();
 
             a.Context.AtLeastOnceDelivery(b, "hi");
-            b.GetNextMessage<string>(x => x.Equals("hi"));
+            b.GetNextMessage<string>(x => x.Equals("hi", StringComparison.InvariantCulture));
             b.Respond(new Confirmation());
 
             a.ExpectNoMessage();
@@ -50,7 +50,7 @@ namespace Proto.TestKit.Tests
             Send(Probe, "hi");
             HundredTimes(i => Send(Probe, i));
 
-            this.Invoking(_ => FishForMessage<string>(x => x.Equals("bye")))
+            this.Invoking(_ => FishForMessage<string>(x => x.Equals("bye", StringComparison.InvariantCulture)))
                 .Should().Throw<TestKitException>().WithMessage("Message not found");
         }
 
@@ -71,7 +71,7 @@ namespace Proto.TestKit.Tests
             Send(Probe, "hi");
             HundredTimes(i => Send(Probe, i));
 
-            FishForMessage<string>(x => x.Equals("hi"));
+            FishForMessage<string>(x => x.Equals("hi", StringComparison.InvariantCulture));
         }
 
         [Fact]
@@ -104,7 +104,7 @@ namespace Proto.TestKit.Tests
         public void GetFailsCondition()
         {
             Send(Probe, "hi");
-            this.Invoking(_ => GetNextMessage<string>(x => x.Equals("bye")))
+            this.Invoking(_ => GetNextMessage<string>(x => x.Equals("bye", StringComparison.InvariantCulture)))
                 .Should().Throw<TestKitException>().WithMessage("Condition not met");
         }
 

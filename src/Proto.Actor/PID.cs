@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="PID.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using Google.Protobuf;
@@ -28,7 +28,7 @@ namespace Proto
         {
             if (_process is not null)
             {
-                if (_process is ActorProcess actorProcess && actorProcess.IsDead) _process = null;
+                if (_process is ActorProcess {IsDead: true}) _process = null;
 
                 return _process;
             }
@@ -38,6 +38,8 @@ namespace Proto
 
             return _process;
         }
+
+        internal Process? CurrentRef => _process;
 
         internal void SendUserMessage(ActorSystem system, object message)
         {

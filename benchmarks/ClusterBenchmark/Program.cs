@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -12,7 +12,6 @@ using ClusterExperiment1.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Partition;
 using Proto.Utils;
 
 namespace ClusterExperiment1
@@ -32,7 +31,7 @@ namespace ClusterExperiment1
 
         public static async Task Main(string[] args)
         {
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+            //AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             //    ThreadPool.SetMinThreads(500, 500);
             Request = new HelloRequest();
             Configuration.SetupLogger(LogLevel.Error);
@@ -40,7 +39,9 @@ namespace ClusterExperiment1
             if (args.Length > 0)
             {
                 // InteractiveOutput = args[0] == "1";
-
+                
+                var l = typeof(Program).Assembly.Location;
+                Console.WriteLine($"Worker running {l}");
                 var worker = await Configuration.SpawnMember();
                 AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
                 Thread.Sleep(Timeout.Infinite);
@@ -86,7 +87,7 @@ namespace ClusterExperiment1
             }
             else
             {
-                Console.WriteLine("1) Protobuf serializer");
+                Console.WriteLine("1) Protobuf serializer (default)");
                 Console.WriteLine("2) Json serializer");
 
                 if (Console.ReadLine() == "2")
@@ -163,12 +164,12 @@ namespace ClusterExperiment1
             _ = SafeTask.Run(async () => {
                     var semaphore = new AsyncSemaphore(50);
                     var cluster = await Configuration.SpawnClient();
-                    var rnd = new Random();
-
+                    // var rnd = new Random();
+                    var i = 0;
                     while (true)
                     {
-                        var id = "myactor" + rnd.Next(0, actorCount);
-                        semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.WithTimeout(20_000)));
+                        var id = "myactor" + (i++ % actorCount);
+                        semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.FromSeconds(20)));
                     }
                 }
             );
@@ -277,17 +278,19 @@ namespace ClusterExperiment1
 
             _ = SafeTask.Run(async () => {
                     var cluster = await Configuration.SpawnClient();
-                    var rnd = new Random();
+                    // var rnd = new Random();
                     var semaphore = new AsyncSemaphore(5);
-
+                    var i = 0;
                     while (true)
                     {
-                        semaphore.Wait(() => RunBatch(rnd, cluster));
+                        var b = i;
+                        semaphore.Wait(() => RunBatch(b, cluster));
+                        i = (i + batchSize) % actorCount;
                     }
                 }
             );
 
-            async Task RunBatch(Random? rnd, Cluster cluster)
+            async Task RunBatch(int startIndex, Cluster cluster)
             {
                 var requests = new List<Task>();
 
@@ -298,7 +301,7 @@ namespace ClusterExperiment1
                     var ctx = cluster.System.Root.CreateBatchContext(batchSize,ct);
                     for (var i = 0; i < batchSize; i++)
                     {
-                        var id = identities![rnd!.Next(0, actorCount)];
+                        var id = identities[(startIndex + i) % identities.Length];
                         var request = SendRequest(cluster, id, ct, ctx);
 
                         requests.Add(request);
@@ -324,7 +327,7 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
-                        var ct = CancellationTokens.WithTimeout(20_000);
+                        var ct = CancellationTokens.FromSeconds(20);
                         var res = await SendRequest(cluster, id, ct);
 
                         if (!res)
@@ -356,7 +359,7 @@ namespace ClusterExperiment1
                     while (true)
                     {
                         var id = "myactor" + rnd.Next(0, actorCount);
-                        var ct = CancellationTokens.WithTimeout(20_000);
+                        var ct = CancellationTokens.FromSeconds(20);
                         await SendRequest(cluster, id, ct);
                     }
                 }
@@ -376,7 +379,7 @@ namespace ClusterExperiment1
                 followers.Add(p);
             }
 
-            await Task.Delay(15000);
+            await Task.Delay(4000);
 
             startClient();
             Console.WriteLine("Client started...");

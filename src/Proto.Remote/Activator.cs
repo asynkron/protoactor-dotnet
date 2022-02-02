@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="Activator.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//       Copyright (C) 2015-2022 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
@@ -32,7 +32,13 @@ namespace Proto.Remote
                     try
                     {
                         var pid = _system.Root.SpawnNamed(props, name);
-                        context.System.Metrics.Get<RemoteMetrics>().RemoteActorSpawnCount.Inc(new[] {_system.Id, _system.Address, msg.Kind});
+
+                        if (_system.Metrics.Enabled)
+                        {
+                            RemoteMetrics.RemoteActorSpawnCount
+                                .Add(1, new("id", _system.Id), new("address", _system.Address), new("kind", msg.Kind));
+                        }
+
                         var response = new ActorPidResponse {Pid = pid};
                         context.Respond(response);
                     }

@@ -1,9 +1,10 @@
 // -----------------------------------------------------------------------
 // <copyright file="ActorSystem.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -16,10 +17,11 @@ using Proto.Utils;
 namespace Proto
 {
     [PublicAPI]
-    public class ActorSystem
+    public sealed class ActorSystem : IAsyncDisposable
     {
-        internal const string NoHost = "nonhost";
-        private CancellationTokenSource _cts = new();
+        public const string NoHost = "nonhost";
+        public const string Client = "$client";
+        private readonly CancellationTokenSource _cts = new();
         private string _host = NoHost;
         private int _port;
 
@@ -35,11 +37,10 @@ namespace Proto
             DeadLetter = new DeadLetterProcess(this);
             Guardians = new Guardians(this);
             EventStream = new EventStream(this);
-            Metrics = new ProtoMetrics(config.MetricsProviders);
+            Metrics = new ProtoMetrics(config.MetricsEnabled);
             ProcessRegistry.TryAdd("eventstream", new EventStreamProcess(this));
             Extensions = new ActorSystemExtensions(this);
             DeferredFuture = new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
-
             RunThreadPoolStats();
         }
 
@@ -71,20 +72,23 @@ namespace Proto
 
         private void RunThreadPoolStats()
         {
+            var metricTags = new KeyValuePair<string, object?>[]{ new("id", Id), new("address", Address)};
+
             var logger = Log.CreateLogger(nameof(ThreadPoolStats));
             _ = ThreadPoolStats.Run(TimeSpan.FromSeconds(5),
                 t => {
                     //collect the latency metrics
-                    Metrics.InternalActorMetrics.ThreadPoolLatencyHistogram.Observe(t, new[] {Id, Address});
+                    if(Metrics.Enabled)
+                        ActorMetrics.ThreadPoolLatency.Record(t.TotalSeconds, metricTags);
 
                     //does it take longer than 1 sec for a task to start executing?
                     if (t <= Config.ThreadPoolStatsTimeout) return;
 
                     if (Config.DeveloperThreadPoolStatsLogging)
                     {
-                        Console.WriteLine($"System {Id} - ThreadPool is running hot, ThreadPool latency {t}");    
+                        Console.WriteLine($"System {Id} - ThreadPool is running hot, ThreadPool latency {t}");
                     }
-                        
+
                     logger.LogWarning("System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}", Id, t);
                 }, _cts.Token
             );
@@ -103,11 +107,19 @@ namespace Proto
             Address = $"{host}:{port}";
         }
 
+        public void SetClientAddress() => Address = $"{Client}/{Id}";
+
         public RootContext NewRoot(MessageHeader? headers = null, params Func<Sender, Sender>[] middleware) =>
             new(this, headers, middleware);
 
         public (string Host, int Port) GetAddress() => (_host, _port);
 
         public Props ConfigureProps(Props props) => Config.ConfigureProps(props);
+
+        public async ValueTask DisposeAsync()
+        {
+            await ShutdownAsync();
+            _cts.Dispose();
+        }
     }
 }

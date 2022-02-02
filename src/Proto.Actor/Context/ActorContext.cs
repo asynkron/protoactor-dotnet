@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="ActorContext.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -15,18 +15,20 @@ using Microsoft.Extensions.Logging;
 using Proto.Diagnostics;
 using Proto.Future;
 using Proto.Mailbox;
+using Proto.Metrics;
 
 namespace Proto.Context
 {
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         private static readonly ImmutableHashSet<PID> EmptyChildren = ImmutableHashSet<PID>.Empty;
+        private readonly IMailbox _mailbox;
         private readonly Props _props;
 
         private ActorContextExtras? _extras;
-        private readonly IMailbox _mailbox;
         private object? _messageOrEnvelope;
         private ContextState _state;
+        private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
 
         public ActorContext(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)
         {
@@ -40,15 +42,24 @@ namespace Proto.Context
             Self = self;
 
             Actor = IncarnateActor();
+
+            if (System.Metrics.Enabled)
+            {
+                _metricTags = new KeyValuePair<string, object?>[]
+                    {new("id", System.Id), new("address", System.Address), new("actortype", Actor.GetType().Name)};
+
+                ActorMetrics.ActorSpawnCount.Add(1, _metricTags);
+            }
         }
 
         private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
 
         public ActorSystem System { get; }
         public CancellationToken CancellationToken => EnsureExtras().CancellationTokenSource.Token;
+        public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
         IReadOnlyCollection<PID> IContext.Children => Children;
 
-        public IActor? Actor { get; private set; }
+        public IActor Actor { get; private set; }
         public PID? Parent { get; }
         public PID Self { get; }
 
@@ -69,10 +80,7 @@ namespace Proto.Context
         {
             if (Sender is not null)
             {
-                if (Logger.IsEnabled(LogLevel.Debug))
-                {
-                    Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
-                }
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
 
                 SendUserMessage(Sender, message);
             }
@@ -99,8 +107,7 @@ namespace Proto.Context
         {
             if (obj is null) throw new NullReferenceException(nameof(obj));
 
-            EnsureExtras();
-            _extras!.Store.Add<T>(obj);
+            EnsureExtras().Store.Add<T>(obj);
         }
 
         public void Remove<T>() => _extras?.Store.Remove<T>();
@@ -116,20 +123,16 @@ namespace Proto.Context
 
             ReceiveTimeout = duration;
 
-            EnsureExtras();
-            _extras!.StopReceiveTimeoutTimer();
+            var extras = EnsureExtras();
+            extras.StopReceiveTimeoutTimer();
 
-            if (_extras.ReceiveTimeoutTimer is null)
+            if (extras.ReceiveTimeoutTimer is null)
             {
-                _extras.InitReceiveTimeoutTimer(
-                    new Timer(
-                        ReceiveTimeoutCallback!, null!, ReceiveTimeout,
-                        ReceiveTimeout
-                    )
+                extras.InitReceiveTimeoutTimer(
+                    new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout)
                 );
             }
-            else
-                _extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
+            else extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
         }
 
         public void CancelReceiveTimeout()
@@ -149,7 +152,7 @@ namespace Proto.Context
             switch (_messageOrEnvelope)
             {
                 case null:
-                    Logger.LogWarning("Message is null.");
+                    Logger.LogWarning("Message is null");
                     return;
                 case SystemMessage _:
                     Logger.LogWarning("SystemMessage cannot be forwarded. {Message}", _messageOrEnvelope);
@@ -170,6 +173,33 @@ namespace Proto.Context
         //because DecoratorContexts needs to go this way if we want to intercept this method for the context
         public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
             => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
+
+        /// <summary>
+        /// Calls the callback on token cancellation. If CancellationToken is non-cancellable, this is a noop.
+        /// </summary>
+        public void ReenterAfterCancellation(CancellationToken token, Action onCancelled)
+        {
+            if (token.IsCancellationRequested)
+            {
+                ReenterAfter(Task.CompletedTask, onCancelled);
+                return;
+            }
+
+            // Noop
+            if (!token.CanBeCanceled) return;
+
+            var tcs = new TaskCompletionSource<bool>();
+            var registration = token.Register(() => tcs.SetResult(true));
+
+            // Ensures registration is disposed with the actor
+            var inceptionRegistration = CancellationToken.Register(() => registration.Dispose());
+
+            ReenterAfter(tcs.Task, () => {
+                    inceptionRegistration.Dispose();
+                    onCancelled();
+                }
+            );
+        }
 
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
@@ -199,43 +229,19 @@ namespace Proto.Context
             return DefaultReceive();
         }
 
-        public void Stop(PID pid)
-        {
-            if (!System.Metrics.IsNoop)
-            {
-                System.Metrics.InternalActorMetrics.ActorStoppedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
-            }
-
-            pid.Stop(System);
-        }
-
-        public Task StopAsync(PID pid)
-        {
-            var future = System.Future.Get();
-
-            pid.SendSystemMessage(System, new Watch(future.Pid));
-            Stop(pid);
-            // ReSharper disable once MethodSupportsCancellation
-            return future.Task;
-        }
-
-        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
-
-        public Task PoisonAsync(PID pid) => RequestAsync<Terminated>(pid, PoisonPill.Instance, CancellationToken.None);
-
-        public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
+        public IFuture GetFuture() => System.Future.Get();
 
         public void EscalateFailure(Exception reason, object? message)
         {
             if (System.Config.DeveloperSupervisionLogging)
             {
-                Console.WriteLine($"[Supervision] Actor {Self} : {Actor?.GetType().Name} failed with message:{message} exception:{reason}");
-                Logger.LogError("[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}", Self,
-                    Actor?.GetType().Name, message, reason
+                Console.WriteLine($"[Supervision] Actor {Self} : {Actor.GetType().Name} failed with message:{message} exception:{reason}");
+                Logger.LogError(reason, "[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}", Self,
+                    Actor.GetType().Name, message, reason
                 );
             }
 
-            System.Metrics.InternalActorMetrics.ActorFailureCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
+            ActorMetrics.ActorFailureCount.Add(1, _metricTags);
             var failure = new Failure(Self, reason, EnsureExtras().RestartStatistics, message);
             Self.SendSystemMessage(System, SuspendMailbox.Instance);
 
@@ -271,47 +277,34 @@ namespace Proto.Context
             }
         }
 
-        private ValueTask HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
-        {
-            var diagnosticsString = "ActorType:" + Actor?.GetType().Name + "\n";
-
-            if (Actor is IActorDiagnostics diagnosticsActor)
-            {
-                diagnosticsString += diagnosticsActor.GetDiagnosticsString();
-            }
-            else
-            {
-                var res = System.Config.DiagnosticsSerializer(Actor!);
-                diagnosticsString += res;
-            }
-
-            processDiagnosticsRequest.Result.SetResult(diagnosticsString);
-
-            return default;
-        }
-
         public ValueTask InvokeUserMessageAsync(object msg)
         {
-            if (System.Metrics.IsNoop)
-            {
-                return InternalInvokeUserMessageAsync(msg);
-            }
+            if (!System.Metrics.Enabled) return InternalInvokeUserMessageAsync(msg);
 
-            return Await(this, msg);
+            return Await(this, msg, _metricTags);
 
             //static, don't create a closure
-            static async ValueTask Await(ActorContext self, object msg)
+            static async ValueTask Await(ActorContext self, object msg, KeyValuePair<string, object?>[] metricTags)
             {
-                self.System.Metrics.InternalActorMetrics.ActorMailboxLength.Set(self._mailbox.UserMessageCount,
-                    new[] {self.System.Id, self.System.Address, self.Actor!.GetType().Name}
-                );
+                if (self.System.Metrics.Enabled)
+                {
+                    ActorMetrics.ActorMailboxLength.Record(
+                        self._mailbox.UserMessageCount,
+                        metricTags
+                    );
+                }
 
                 var sw = Stopwatch.StartNew();
                 await self.InternalInvokeUserMessageAsync(msg);
                 sw.Stop();
-                self.System.Metrics.InternalActorMetrics.ActorMessageReceiveHistogram.Observe(sw,
-                    new[] {self.System.Id, self.System.Address, self.Actor!.GetType().Name, MessageEnvelope.UnwrapMessage(msg)!.GetType().Name}
-                );
+
+                if (self.System.Metrics.Enabled && metricTags.Length == 3)
+                {
+                    ActorMetrics.ActorMessageReceiveDuration.Record(sw.Elapsed.TotalSeconds,
+                        metricTags[0], metricTags[1], metricTags[2],
+                        new("messagetype", MessageEnvelope.UnwrapMessage(msg)?.GetType().Name ?? "{null}")
+                    );
+                }
             }
         }
 
@@ -324,6 +317,25 @@ namespace Proto.Context
 
         public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
 
+        private ValueTask HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
+        {
+            var diagnosticsString = "ActorType:" + Actor.GetType().Name + "\n";
+
+            if (Actor is IActorDiagnostics diagnosticsActor)
+            {
+                diagnosticsString += diagnosticsActor.GetDiagnosticsString();
+            }
+            else
+            {
+                var res = System.Config.DiagnosticsSerializer(Actor);
+                diagnosticsString += res;
+            }
+
+            processDiagnosticsRequest.Result.SetResult(diagnosticsString);
+
+            return default;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ValueTask InternalInvokeUserMessageAsync(object msg)
         {
@@ -334,12 +346,12 @@ namespace Proto.Context
                 return default;
             }
 
-            if (ReceiveTimeout > TimeSpan.Zero)
-            {
-                var notInfluenceTimeout = msg is INotInfluenceReceiveTimeout;
-                var influenceTimeout = !notInfluenceTimeout;
+            var influenceReceiveTimeout = false;
 
-                if (influenceTimeout) _extras?.StopReceiveTimeoutTimer();
+            if (ReceiveTimeout > TimeSpan.Zero && MessageEnvelope.UnwrapMessage(msg) is not INotInfluenceReceiveTimeout)
+            {
+                influenceReceiveTimeout = true;
+                _extras?.StopReceiveTimeoutTimer();
             }
 
             Task t;
@@ -362,17 +374,25 @@ namespace Proto.Context
 
             if (t.IsCompletedSuccessfully)
             {
-                _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
+                if (influenceReceiveTimeout)
+                {
+                    _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
+                }
+
                 return default;
             }
 
-            return Await(this, t);
+            return Await(this, t, influenceReceiveTimeout);
 
             //static, dont create closure
-            static async ValueTask Await(ActorContext self, Task t)
+            static async ValueTask Await(ActorContext self, Task t, bool resetReceiveTimeout)
             {
                 await t;
-                self._extras?.ResetReceiveTimeoutTimer(self.ReceiveTimeout);
+
+                if (resetReceiveTimeout)
+                {
+                    self._extras?.ResetReceiveTimeoutTimer(self.ReceiveTimeout);
+                }
             }
         }
 
@@ -414,13 +434,13 @@ namespace Proto.Context
             {
                 PoisonPill               => HandlePoisonPill(),
                 IAutoRespond autoRespond => HandleAutoRespond(autoRespond),
-                _                        => Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
+                _                        => Actor.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
             };
 
         private Task HandleAutoRespond(IAutoRespond autoRespond)
         {
             // receive normally
-            var res = Actor!.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this);
+            var res = Actor.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this);
             //then respond automatically
             var response = autoRespond.GetAutoResponse(this);
             Respond(response);
@@ -430,8 +450,6 @@ namespace Proto.Context
 
         private Task HandlePoisonPill()
         {
-            if (Sender != null) HandleWatch(new Watch(Sender));
-
             Stop(Self);
             return Task.CompletedTask;
         }
@@ -453,14 +471,7 @@ namespace Proto.Context
         private IActor IncarnateActor()
         {
             _state = ContextState.Alive;
-            var actor = _props.Producer(System);
-
-            if (!System.Metrics.IsNoop)
-            {
-                System.Metrics.InternalActorMetrics.ActorSpawnCount.Inc(new[] {System.Id, System.Address, actor.GetType().Name});
-            }
-
-            return actor;
+            return _props.Producer(System);
         }
 
         private async ValueTask HandleRestartAsync()
@@ -470,10 +481,8 @@ namespace Proto.Context
             await InvokeUserMessageAsync(Restarting.Instance);
             await StopAllChildren();
 
-            if (!System.Metrics.IsNoop)
-            {
-                System.Metrics.InternalActorMetrics.ActorRestartedCount.Inc(new[] {System.Id, System.Address, Actor!.GetType().Name});
-            }
+            if (System.Metrics.Enabled)
+                ActorMetrics.ActorRestartedCount.Add(1, _metricTags);
         }
 
         private ValueTask HandleUnwatch(Unwatch uw)
@@ -496,6 +505,8 @@ namespace Proto.Context
         {
             switch (Actor)
             {
+                //TODO: add test for this
+                // ReSharper disable once SuspiciousTypeConversion.Global
                 case ISupervisorStrategy supervisor:
                     supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
                     break;
@@ -550,7 +561,13 @@ namespace Proto.Context
 
         private ValueTask StopAllChildren()
         {
-            _extras?.Children.Stop(System);
+            if (_extras != null)
+            {
+                foreach (var pid in _extras.Children)
+                {
+                    System.Root.Stop(pid);
+                }
+            }
 
             return TryRestartOrStopAsync();
         }
@@ -564,15 +581,12 @@ namespace Proto.Context
             CancelReceiveTimeout();
 
             //all children are now stopped, should we restart or stop ourselves?
-            switch (_state)
+            return _state switch
             {
-                case ContextState.Restarting:
-                    return RestartAsync();
-                case ContextState.Stopping:
-                    return FinalizeStopAsync();
-                default:
-                    return default;
-            }
+                ContextState.Restarting => RestartAsync(),
+                ContextState.Stopping   => FinalizeStopAsync(),
+                _                       => default
+            };
         }
 
         //Last and final termination step
@@ -581,6 +595,8 @@ namespace Proto.Context
             System.ProcessRegistry.Remove(Self);
             //This is intentional
             await InvokeUserMessageAsync(Stopped.Instance);
+
+            _extras?.Dispose();
 
             await DisposeActorIfDisposable();
 
@@ -629,13 +645,43 @@ namespace Proto.Context
             return default;
         }
 
-        private void ReceiveTimeoutCallback(object state)
+        private void ReceiveTimeoutCallback(object? state)
         {
             if (_extras?.ReceiveTimeoutTimer is null) return;
 
             SendUserMessage(Self, Proto.ReceiveTimeout.Instance);
         }
 
-        public IFuture GetFuture() => System.Future.Get();
+        public CapturedContext Capture() => new(MessageEnvelope.Wrap(_messageOrEnvelope!), this);
+
+        public void Apply(CapturedContext capturedContext) => _messageOrEnvelope = capturedContext.MessageEnvelope;
+
+        public void Stop(PID pid)
+        {
+            if (System.Metrics.Enabled)
+                ActorMetrics.ActorStoppedCount.Add(1, _metricTags);
+
+            pid.Stop(System);
+        }
+
+        public Task StopAsync(PID pid)
+        {
+            var future = System.Future.Get();
+
+            pid.SendSystemMessage(System, new Watch(future.Pid));
+            Stop(pid);
+            return future.Task;
+        }
+
+        public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
+
+        public Task PoisonAsync(PID pid)
+        {
+            var future = System.Future.Get();
+
+            pid.SendSystemMessage(System, new Watch(future.Pid));
+            Poison(pid);
+            return future.Task;
+        }
     }
 }

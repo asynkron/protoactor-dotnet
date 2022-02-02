@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="LocalAffinityPropsExtensions.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2020 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -55,7 +55,7 @@ namespace Proto.Cluster
                             envelope.Message.GetType(), sender
                         );
                         context.MarkForRelocation();
-                        context.System.Root.PoisonAsync(self).ContinueWith(_ => ActivateByProxy(context, sender!.Address, context.Get<ClusterIdentity>()!, self));
+                        context.System.Root.PoisonAsync(self).ContinueWith(_ => ActivateByProxy(context, sender.Address, context.Get<ClusterIdentity>()!, self));
                     }
 
                     return task;

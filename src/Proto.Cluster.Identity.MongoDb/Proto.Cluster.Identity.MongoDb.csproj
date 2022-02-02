@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <LangVersion>9</LangVersion>
-        <TargetFrameworks>netstandard2.1;net5.0</TargetFrameworks>
+        <TargetFrameworks>net5.0;net6.0;netstandard2.1</TargetFrameworks>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
@@ -11,7 +11,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MongoDB.Driver" Version="2.13.0-beta1" />
+      <PackageReference Include="MongoDB.Driver" Version="2.13.1" />
+      <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
     </ItemGroup>
 
 </Project>

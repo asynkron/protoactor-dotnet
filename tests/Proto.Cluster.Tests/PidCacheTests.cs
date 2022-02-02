@@ -1,10 +1,14 @@
 #nullable enable
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
+using Proto.Cluster.Partition;
+using Proto.Cluster.Testing;
+using Proto.Remote.GrpcCore;
 using Xunit;
 
 namespace Proto.Cluster.Tests
@@ -30,7 +34,6 @@ namespace Proto.Cluster.Tests
         public async Task PurgesPidCacheOnNullResponse()
         {
             var system = new ActorSystem();
-            system.Metrics.Register(new ClusterMetrics(system.Metrics));
             var props = Props.FromProducer(() => new EchoActor());
             var deadPid = system.Root.SpawnNamed(props, "stopped");
             var alivePid = system.Root.SpawnNamed(props, "alive");
@@ -42,7 +45,7 @@ namespace Proto.Cluster.Tests
             var logger = Log.CreateLogger("dummylog");
             var clusterIdentity = new ClusterIdentity {Identity = "identity", Kind = "kind"};
             pidCache.TryAdd(clusterIdentity, deadPid);
-            var requestAsyncStrategy = new DefaultClusterContext(dummyIdentityLookup, pidCache, new ClusterContextConfig(), system.Shutdown);
+            var requestAsyncStrategy = new DefaultClusterContext(system, dummyIdentityLookup, pidCache, new ClusterContextConfig(), system.Shutdown);
 
             var res = await requestAsyncStrategy.RequestAsync<Pong>(clusterIdentity, new Ping {Message = "msg"}, system.Root,
                 new CancellationTokenSource(6000).Token
@@ -53,5 +56,34 @@ namespace Proto.Cluster.Tests
             foundInCache.Should().BeTrue();
             pidInCache.Should().BeEquivalentTo(alivePid);
         }
+
+        [Fact]
+        public async Task PurgesPidCacheOnVirtualActorShutdown()
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var system = new ActorSystem()
+                .WithRemote(GrpcCoreRemoteConfig.BindToLocalhost())
+                .WithCluster(GetClusterConfig());
+
+            var cluster = system.Cluster();
+            await cluster.StartMemberAsync();
+
+            var identity = ClusterIdentity.Create("", "echo");
+
+            await cluster.RequestAsync<Ack>(identity, new Die(), timeout.Token);
+
+            // Let the system purge the terminated PID,
+            await Task.Delay(50);
+
+            cluster.PidCache.TryGet(identity, out _).Should().BeFalse();
+        }
+
+        ClusterConfig GetClusterConfig() => ClusterConfig
+            .Setup(
+                "MyCluster",
+                new TestProvider(new TestProviderOptions(), new InMemAgent()),
+                new PartitionIdentityLookup()
+            )
+            .WithClusterKind("echo", Props.FromProducer(() => new EchoActor()));
     }
 }
