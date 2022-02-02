@@ -28,7 +28,7 @@ class Program
         var system = new ActorSystem()
             .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
             .WithCluster(ClusterConfig
-                .Setup("MyCluster", new SeedNodeClusterProvider(), new PartitionIdentityLookup()));
+                .Setup("MyCluster", new SeedNodeClusterProvider(knownHosts: ("127.0.0.1", 8090)), new PartitionIdentityLookup()));
 
         system.EventStream.Subscribe<ClusterTopology>(e => {
                 Console.WriteLine($"{DateTime.Now:O} My members {e.TopologyHash}");
@@ -38,8 +38,6 @@ class Program
         await system
             .Cluster()
             .StartMemberAsync();
-
-        await system.Cluster().JoinSeed("127.0.0.1", 8090);
 
         Console.WriteLine("Started");
 
