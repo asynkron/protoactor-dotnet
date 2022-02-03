@@ -21,7 +21,7 @@ namespace {{CsNamespace}}
     public static partial class GrainExtensions
     {
         {{#each Services}}
-        public static {{Name}}Client Get{{Name}}(this Cluster cluster, string identity) => new {{Name}}Client(cluster, identity);
+        public static {{Name}}Client Get{{Name}}(this Cluster.Cluster cluster, string identity) => new {{Name}}Client(cluster, identity);
 
         public static {{Name}}Client Get{{Name}}(this IContext context, string identity) => new {{Name}}Client(context.System.Cluster(), identity);
         {{/each}}
@@ -32,7 +32,7 @@ namespace {{CsNamespace}}
     {
         protected IContext Context {get;}
         protected ActorSystem System => Context.System;
-        protected Cluster Cluster => Context.System.Cluster();
+        protected Cluster.Cluster Cluster => Context.System.Cluster();
     
         protected {{Name}}Base(IContext context)
         {
@@ -72,9 +72,9 @@ namespace {{CsNamespace}}
     public class {{Name}}Client
     {
         private readonly string _id;
-        private readonly Cluster _cluster;
+        private readonly Cluster.Cluster _cluster;
 
-        public {{Name}}Client(Cluster cluster, string id)
+        public {{Name}}Client(Cluster.Cluster cluster, string id)
         {
             _id = id;
             _cluster = cluster;
