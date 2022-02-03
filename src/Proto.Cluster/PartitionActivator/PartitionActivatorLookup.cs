@@ -8,12 +8,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
+using Proto.Cluster.Partition;
 
 namespace Proto.Cluster.PartitionActivator
 {
     public class PartitionActivatorLookup : IIdentityLookup
     {
-        private static readonly ILogger Logger = Log.CreateLogger<PartitionActivatorLookup>();
+        private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityLookup>();
         private readonly TimeSpan _getPidTimeout;
         private Cluster _cluster = null!;
         private PartitionActivatorManager _partitionManager = null!;

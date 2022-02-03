@@ -48,7 +48,7 @@ namespace Node2
             var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
                 .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(8090).WithProtoMessages(ProtosReflection.Descriptor))
                 .WithCluster(ClusterConfig
-                    .Setup("MyCluster", new SeedNodeClusterProvider(knownHosts: ("127.0.0.1", 8090)), new PartitionIdentityLookup())
+                    .Setup("MyCluster", new SeedNodeClusterProvider(), new PartitionIdentityLookup())
                     .WithClusterKind(HelloGrainActor.GetClusterKind((ctx, identity) => new HelloGrain(ctx, identity.Identity)))
                 );
             
