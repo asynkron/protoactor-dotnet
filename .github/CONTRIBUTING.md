@@ -1,6 +1,6 @@
 # How to contribute in the project and submit your own code
 
-## Contributor Licencse Agreements
+## Contributor License Agreements
 
 TODO
 
