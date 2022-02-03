@@ -25,6 +25,7 @@ TODO
 8. Trunk version is treated as stable when:
    * Documentation is prepared
    * All tests are green
+   * TODO
 
 9. All the changes must be aligned with the planned roadmap
 
