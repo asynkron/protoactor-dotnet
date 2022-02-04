@@ -6,6 +6,16 @@ TODO
 
 ## Contribution policies
 
+### General policies
+
+1. Project is using [semantic versioning](https://semver.org/)
+
+2. Breaking changes should be avoided if possible
+
+3. All stable versions should have detailed change log
+
+4. In case of major version change, migration guidance should be prepared
+
 ### Creating new features / experimenting with existing one
 
 1. Experimental features live on feature branches and get their own unstable packages
@@ -30,11 +40,3 @@ TODO
 9. All the changes must be aligned with the planned roadmap
 
 10. Roadmap plan is prepared based on community feedback
-
-11. Project is using [semantic versioning](https://semver.org/)
-
-12. Breaking changes should be avoided if possible
-
-13. All stable versions should have detailed change log
-
-14. In case of major version change, migration0 guidance should be prepared
