@@ -16,16 +16,19 @@ namespace Proto
         private readonly List<Func<PID, Process>> _hostResolvers = new();
         private readonly HashedConcurrentDictionary _localProcesses = new();
         private int _sequenceId;
-
-        public IEnumerable<PID> SearchByName(string name)
+        
+        public IEnumerable<PID> Find(Func<string, bool> predicate)
         {
-            var res = _localProcesses.Where(kvp => kvp.key.Contains(name, StringComparison.InvariantCultureIgnoreCase));
+            var res = _localProcesses.Where(kvp => predicate(kvp.key));
 
             foreach (var (id, process) in res)
             {
                 yield return new PID(System.Address, id, process);
             }
         }
+
+        public IEnumerable<PID> Find(string pattern) => 
+            Find(s => s.Contains(pattern, StringComparison.InvariantCultureIgnoreCase));
 
         public ProcessRegistry(ActorSystem system) => System = system;
 

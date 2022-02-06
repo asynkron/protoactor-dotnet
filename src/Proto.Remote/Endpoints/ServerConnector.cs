@@ -82,7 +82,7 @@ namespace Proto.Remote
                                 {
                                     ServerConnection = new ServerConnection
                                     {
-                                        Adress = _system.Address,
+                                        Address = _system.Address,
                                         SystemId = _system.Id
                                     }
                                 }
