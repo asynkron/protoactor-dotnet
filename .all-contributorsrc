@@ -31,6 +31,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "potterdai",
+      "name": "Potter Dai",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3758951?v=4",
+      "profile": "https://github.com/potterdai",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
