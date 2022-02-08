@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 //   <copyright file="Endpoint.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2022 Asynkron AB All rights reserved
 //   </copyright>
@@ -136,12 +136,15 @@ namespace Proto.Remote
                             //this only applies to root level messages, and never on nested child messages
                             if (message is IRootSerialized serialized) message = serialized.Deserialize(System);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
                             if (Logger.IsEnabled(_deserializationErrorLogLevel))
-                                Logger.Log(_deserializationErrorLogLevel, "[{SystemAddress}] Unable to deserialize message with {Type}",
-                                    System.Address, typeName
-                                );
+                                Logger.Log(
+                                    _deserializationErrorLogLevel,
+                                    ex,
+                                    "[{SystemAddress}] Unable to deserialize message with {Type}",
+                                    System.Address,
+                                    typeName);
                             continue;
                         }
 
