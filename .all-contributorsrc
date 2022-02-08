@@ -41,11 +41,20 @@
         "code"
       ]
     },
-    {
+        {
       "login": "tomliversidge",
       "name": "Tom Liversidge",
       "avatar_url": "https://avatars.githubusercontent.com/u/1437372?v=4",
       "profile": "https://github.com/tomliversidge",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "alexeyzimarev",
+      "name": "Alexey Zimarev",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2821205?v=4",
+      "profile": "http://www.zimarev.com",
       "contributions": [
         "code"
       ]
