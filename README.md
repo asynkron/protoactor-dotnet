@@ -120,7 +120,6 @@ Our awesome sponsors:
 <!-- prettier-ignore-end -->
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
-  <img src="https://contributors-img.firebaseapp.com/image?repo=AsynkronIT/protoactor-dotnet" />
 </a>
 
 Made with [contributors-img](https://contributors-img.firebaseapp.com).
