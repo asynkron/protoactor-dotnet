@@ -1,7 +1,7 @@
-| Status | History |
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
+| Status | History |
 | :---   | :---    |
 | ![Build status](https://ci.appveyor.com/api/projects/status/cmpnw19ur8j25xn4/branch/master?svg=true)|![Build history](https://buildstats.info/github/chart/asynkron/protoactor-dotnet)|
 
