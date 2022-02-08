@@ -1,7 +1,6 @@
 ## Expected Behavior
 
 
-<!-- If this issue is a feature request remove text below -->
 ## Actual Behavior
 
 
