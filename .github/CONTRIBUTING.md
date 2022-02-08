@@ -2,7 +2,14 @@
 
 ## Contributor License Agreements
 
-TODO
+This is the CLA required to be signed by all contributors:
+https://gist.github.com/rogeralsing/4f4eed4d0b583da04ab6d0b48a3b9abf
+
+
+> At Asynkron, we manage a lot of open source projects and we’re required to have agreements with everyone who takes part in them.
+It’s the easiest way for you to give us permission to use your contributions. 
+In effect, you’re giving us a licence, but you still own the copyright — so you retain the right to modify your code and use it in other projects.
+
 
 ## Contribution policies
 
