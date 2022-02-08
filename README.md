@@ -1,5 +1,5 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 | Status | History |
 | :---   | :---    |
@@ -106,6 +106,9 @@ Our awesome sponsors:
     <td align="center"><a href="https://github.com/tomliversidge"><img src="https://avatars.githubusercontent.com/u/1437372?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tom Liversidge</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=tomliversidge" title="Code">💻</a></td>
     <td align="center"><a href="http://www.zimarev.com"><img src="https://avatars.githubusercontent.com/u/2821205?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alexey Zimarev</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=alexeyzimarev" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/adamhathcock"><img src="https://avatars.githubusercontent.com/u/527620?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Adam Hathcock</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=adamhathcock" title="Code">💻</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="http://www.kompilera.se/"><img src="https://avatars.githubusercontent.com/u/5316125?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Söderberg</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=raskolnikoov" title="Code">💻</a></td>
   </tr>
 </table>
 
