@@ -1,5 +1,5 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 | Status | History |
 | :---   | :---    |
@@ -103,6 +103,7 @@ Our awesome sponsors:
     <td align="center"><a href="https://github.com/mhelleborg"><img src="https://avatars.githubusercontent.com/u/13994978?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Magne Helleborg</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=mhelleborg" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/cpx86"><img src="https://avatars.githubusercontent.com/u/209890?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Christian Palmstierna</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=cpx86" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/potterdai"><img src="https://avatars.githubusercontent.com/u/3758951?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Potter Dai</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=potterdai" title="Code">💻</a></td>
+    <td align="center"><a href="http://www.zimarev.com"><img src="https://avatars.githubusercontent.com/u/2821205?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alexey Zimarev</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=alexeyzimarev" title="Code">💻</a></td>
   </tr>
 </table>
 
