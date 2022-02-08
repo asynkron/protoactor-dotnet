@@ -67,6 +67,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "raskolnikoov",
+      "name": "Daniel Söderberg",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5316125?v=4",
+      "profile": "http://www.kompilera.se/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
