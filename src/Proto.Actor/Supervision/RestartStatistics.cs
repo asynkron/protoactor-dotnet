@@ -28,7 +28,18 @@ namespace Proto
 
         public void Reset() => _failureTimes.Clear();
 
-        public int NumberOfFailures(TimeSpan? within) =>
-            within.HasValue ? _failureTimes.Count(a => DateTimeOffset.UtcNow - a < within) : _failureTimes.Count;
+        public int NumberOfFailures(TimeSpan? within)
+        {
+            if (!within.HasValue)
+                return _failureTimes.Count;
+            var result = 0;
+            foreach (var failureTime in _failureTimes)
+            {
+                if (DateTimeOffset.UtcNow - failureTime < within)
+                    result++;
+            }
+
+            return result;
+        }
     }
 }
