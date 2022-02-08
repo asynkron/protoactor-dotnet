@@ -1,5 +1,5 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-10-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 | Status | History |
 | :---   | :---    |
@@ -110,6 +110,7 @@ Our awesome sponsors:
   <tr>
     <td align="center"><a href="http://www.kompilera.se/"><img src="https://avatars.githubusercontent.com/u/5316125?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Söderberg</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=raskolnikoov" title="Code">💻</a></td>
     <td align="center"><a href="https://www.eventuallyconsultant.com"><img src="https://avatars.githubusercontent.com/u/2705498?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jérôme Rouaix</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=jrouaix" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/Damian-P"><img src="https://avatars.githubusercontent.com/u/1333962?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Piechowicz Damian</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=Damian-P" title="Code">💻</a></td>
   </tr>
 </table>
 
