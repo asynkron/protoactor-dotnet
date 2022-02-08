@@ -1,5 +1,5 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 | Status | History |
 | :---   | :---    |
@@ -100,6 +100,7 @@ Our awesome sponsors:
 <table>
   <tr>
     <td align="center"><a href="http://asynkron.se"><img src="https://avatars.githubusercontent.com/u/647031?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Roger Johansson</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=rogeralsing" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/mhelleborg"><img src="https://avatars.githubusercontent.com/u/13994978?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Magne Helleborg</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=mhelleborg" title="Code">💻</a></td>
   </tr>
 </table>
 
