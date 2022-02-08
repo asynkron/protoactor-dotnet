@@ -1,4 +1,7 @@
 | Status | History |
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 | :---   | :---    |
 | ![Build status](https://ci.appveyor.com/api/projects/status/cmpnw19ur8j25xn4/branch/master?svg=true)|![Build history](https://buildstats.info/github/chart/asynkron/protoactor-dotnet)|
 
@@ -91,6 +94,19 @@ Our awesome sponsors:
 ## Contributors
 
 <a href="https://github.com/AsynkronIT/protoactor-dotnet/graphs/contributors">
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="http://asynkron.se"><img src="https://avatars.githubusercontent.com/u/647031?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Roger Johansson</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=rogeralsing" title="Code">💻</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
   <img src="https://contributors-img.firebaseapp.com/image?repo=AsynkronIT/protoactor-dotnet" />
 </a>
 
