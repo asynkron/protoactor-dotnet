@@ -40,6 +40,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "alexeyzimarev",
+      "name": "Alexey Zimarev",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2821205?v=4",
+      "profile": "http://www.zimarev.com",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
