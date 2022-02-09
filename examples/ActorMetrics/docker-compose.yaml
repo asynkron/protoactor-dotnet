@@ -14,4 +14,4 @@ services:
       - 3000:3000
     volumes:
       - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yaml
-      - ./grafana/dashboards:/dashboards
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards/

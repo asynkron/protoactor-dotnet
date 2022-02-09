@@ -1,41 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
-  "__elements": [],
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "8.3.5"
-    },
-    {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -58,7 +21,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
+  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -111,7 +74,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "P1809F7CD0C75ACF3"
           },
           "exemplar": true,
           "expr": "avg(protocluster_members_count)",
@@ -195,7 +158,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "P1809F7CD0C75ACF3"
           },
           "exemplar": true,
           "expr": "sum(protocluster_virtualactors) by (clusterkind)",
@@ -279,7 +242,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "P1809F7CD0C75ACF3"
           },
           "exemplar": true,
           "expr": "histogram_quantile(0.99, sum(rate(protoactor_threadpool_latency_duration_seconds_bucket[$__rate_interval])) by(id, le))",
@@ -363,7 +326,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "P1809F7CD0C75ACF3"
           },
           "exemplar": true,
           "expr": "sum(rate(protocluster_virtualactor_requestasync_duration_seconds_count[$__rate_interval])) by (clusterkind)",
@@ -447,7 +410,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "P1809F7CD0C75ACF3"
           },
           "exemplar": true,
           "expr": "histogram_quantile(0.95, sum(rate(protocluster_virtualactor_requestasync_duration_seconds_bucket[$__rate_interval])) by (clusterkind, le))",
@@ -531,7 +494,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "P1809F7CD0C75ACF3"
           },
           "exemplar": true,
           "expr": "rate(protoactor_actor_spawn_count{}[$__interval])",
@@ -615,7 +578,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "P1809F7CD0C75ACF3"
           },
           "exemplar": true,
           "expr": "sum(rate(protocluster_resolve_pid_duration_seconds_count[$__rate_interval])) by (clusterkind)",
@@ -699,7 +662,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "P1809F7CD0C75ACF3"
           },
           "exemplar": true,
           "expr": "histogram_quantile(0.95, sum(rate(protocluster_resolve_pid_duration_seconds_bucket[$__rate_interval])) by (clusterkind, le))",
@@ -783,7 +746,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "P1809F7CD0C75ACF3"
           },
           "exemplar": true,
           "expr": "rate(protoactor_actor_mailbox_length_count{}[$__interval])",
@@ -867,7 +830,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "P1809F7CD0C75ACF3"
           },
           "exemplar": true,
           "expr": "histogram_quantile(0.95, sum(rate(protoactor_actor_messagereceive_duration_seconds_bucket{}[$__rate_interval])) by (actortype, le))",
@@ -893,7 +856,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "Proto Actor sample dashboard",
-  "uid": "KeDsQJa7k",
-  "version": 4,
+  "uid": "KeDsQJa7k1111",
+  "version": 1,
   "weekStart": ""
 }
