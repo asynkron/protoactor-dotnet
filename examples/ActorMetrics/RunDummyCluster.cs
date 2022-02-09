@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
+using Proto.Cluster.Seed;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using Some.Namespace;
 
 namespace ActorMetrics
@@ -24,13 +24,14 @@ namespace ActorMetrics
             Log.SetLoggerFactory(l);
             var config = ActorSystemConfig.Setup().WithMetrics();
 
-            var remoteConfig = GrpcCoreRemoteConfig
+            var remoteConfig = GrpcNetRemoteConfig
                 .BindToLocalhost()
-                .WithProtoMessages(MessagesReflection.Descriptor);
+                .WithProtoMessages(MessagesReflection.Descriptor)
+                .WithProtoMessages(SeedContractsReflection.Descriptor);
 
             var clusterConfig =
                 ClusterConfig
-                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://127.0.0.1:8500/")),
+                    .Setup("MyCluster", new SeedNodeClusterProvider(),
                         new PartitionIdentityLookup()
                     );
 
@@ -40,21 +41,26 @@ namespace ActorMetrics
             
             Console.WriteLine($"System 1 Id {system.Id}");
 
-            system
-                .Cluster()
-                .StartMemberAsync();
+            var memberCluster1 = system
+                .Cluster();
+
+            memberCluster1
+                .StartMemberAsync()
+                .GetAwaiter()
+                .GetResult();
 
             var props = Props.FromProducer(() => new MyActor());
 
             var config2 = ActorSystemConfig.Setup().WithMetrics();
 
-            var remoteConfig2 = GrpcCoreRemoteConfig
+            var remoteConfig2 = GrpcNetRemoteConfig
                 .BindToLocalhost()
-                .WithProtoMessages(MessagesReflection.Descriptor);
+                .WithProtoMessages(MessagesReflection.Descriptor)
+                .WithProtoMessages(SeedContractsReflection.Descriptor);
 
             var clusterConfig2 =
                 ClusterConfig
-                    .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig(), c => c.Address = new Uri("http://127.0.0.1:8500/")),
+                    .Setup("MyCluster", new SeedNodeClusterProvider(),
                         new PartitionIdentityLookup()
                     )
                     .WithClusterKind("somekind", props);
@@ -65,17 +71,31 @@ namespace ActorMetrics
 
             Console.WriteLine($"System 2 Id {system2.Id}");
 
-            system2
-                .Cluster()
-                .StartMemberAsync();
+            var memberCluster2 = system2
+                .Cluster();
+
+            memberCluster2
+                .StartMemberAsync()
+                .GetAwaiter()
+                .GetResult(); ;
+
+            memberCluster2
+                .JoinSeed(system.GetAddress())
+                .GetAwaiter()
+                .GetResult();
 
             _ = SafeTask.Run(async () => {
                     var r = new Random();
 
+                    await Task.Delay(5000);
+
                     while (true)
                     {
                         await Task.Delay(r.Next(1, 2000));
-                        await system.Cluster().RequestAsync<SomeResponse>($"someactor{r.Next(1, 100)}", "somekind", new SomeRequest(),
+
+                        var identity = $"someactor{r.Next(1, 100)}";
+
+                        await system.Cluster().RequestAsync<SomeResponse>(identity, "somekind", new SomeRequest(),
                             CancellationTokens.FromSeconds(5)
                         );
                     }

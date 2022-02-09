@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <LangVersion>9</LangVersion>
     </PropertyGroup>
 
@@ -10,21 +10,25 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="OpenTelemetry.Exporter.Prometheus" Version="1.2.0-rc1" />
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc8" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc8" />
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus" Version="1.2.0-rc2" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc9" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc9" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+      <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
       <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
+      <ProjectReference Include="..\..\src\Proto.Remote.GrpcNet\Proto.Remote.GrpcNet.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <Protobuf Include="Messages.proto" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="grafana\dashboards\" />
     </ItemGroup>
 
 </Project>
