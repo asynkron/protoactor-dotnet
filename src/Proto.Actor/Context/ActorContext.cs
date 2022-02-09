@@ -401,9 +401,15 @@ namespace Proto.Context
 
         //Note to self, the message must be sent no-matter if the task failed or not.
         //do not mess this up by first awaiting and then sending on success only
-        private void ScheduleContinuation(Task target, Continuation cont) =>
+        private void ScheduleContinuation(Task target, Continuation cont)
+        {
+            // We pass System.Shutdown to ContinueWith so that when the ActorSystem is shutdown,
+            // continuations will not execute anymore.
             // ReSharper disable once MethodSupportsCancellation
-            _ = target.ContinueWith(_ => Self.SendSystemMessage(System, cont));
+            _ = target.ContinueWith(
+                _ => Self.SendSystemMessage(System, cont),
+                System.Shutdown);
+        }
 
         private static ValueTask HandleUnknownSystemMessage(object msg)
         {
