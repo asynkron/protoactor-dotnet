@@ -27,12 +27,12 @@ namespace Proto.Tests.Diagnostics
 
             var props = Props.FromProducer(() => new MyDiagnosticsActor());
 
-            var pids = system.ProcessRegistry.SearchByName("MyActor");
+            var pids = system.ProcessRegistry.Find("MyActor");
             Assert.Empty(pids);
 
             context.SpawnNamed(props, "MyActor");
 
-            pids = system.ProcessRegistry.SearchByName("MyActor");
+            pids = system.ProcessRegistry.Find("MyActor");
             Assert.Single(pids);
         }
 

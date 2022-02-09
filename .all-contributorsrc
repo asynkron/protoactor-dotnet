@@ -1,0 +1,123 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "rogeralsing",
+      "name": "Roger Johansson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/647031?v=4",
+      "profile": "http://asynkron.se",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "mhelleborg",
+      "name": "Magne Helleborg",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13994978?v=4",
+      "profile": "https://github.com/mhelleborg",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "cpx86",
+      "name": "Christian Palmstierna",
+      "avatar_url": "https://avatars.githubusercontent.com/u/209890?v=4",
+      "profile": "https://github.com/cpx86",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "potterdai",
+      "name": "Potter Dai",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3758951?v=4",
+      "profile": "https://github.com/potterdai",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "tomliversidge",
+      "name": "Tom Liversidge",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1437372?v=4",
+      "profile": "https://github.com/tomliversidge",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "alexeyzimarev",
+      "name": "Alexey Zimarev",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2821205?v=4",
+      "profile": "http://www.zimarev.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "adamhathcock",
+      "name": "Adam Hathcock",
+      "avatar_url": "https://avatars.githubusercontent.com/u/527620?v=4",
+      "profile": "https://github.com/adamhathcock",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "raskolnikoov",
+      "name": "Daniel Söderberg",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5316125?v=4",
+      "profile": "http://www.kompilera.se/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "jrouaix",
+      "name": "Jérôme Rouaix",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2705498?v=4",
+      "profile": "https://www.eventuallyconsultant.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Damian-P",
+      "name": "Piechowicz Damian",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1333962?v=4",
+      "profile": "https://github.com/Damian-P",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "alexpantyukhin",
+      "name": "Alexander Pantyukhin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6513121?v=4",
+      "profile": "https://github.com/alexpantyukhin",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "sudsy",
+      "name": "Sudsy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1631623?v=4",
+      "profile": "http://www.lighthouselogic.com/",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "protoactor-dotnet",
+  "projectOwner": "asynkron",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}

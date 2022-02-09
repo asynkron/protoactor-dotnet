@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -150,22 +151,24 @@ namespace Proto.Mailbox
             }
         }
 
-        private Task RunAsync()
+        private static Task RunAsync(DefaultMailbox mailbox)
         {
-            var task = ProcessMessages();
+            var task = mailbox.ProcessMessages();
 
             if (!task.IsCompletedSuccessfully)
             {
-                return Await(this, task);
+                return Await(mailbox, task);
             }
 
-            Interlocked.Exchange(ref _status, MailboxStatus.Idle);
+            Interlocked.Exchange(ref mailbox._status, MailboxStatus.Idle);
 
-            if (_systemMessages.HasMessages || !_suspended && _userMailbox.HasMessages)
-                Schedule();
+            if (mailbox._systemMessages.HasMessages || !mailbox._suspended && mailbox._userMailbox.HasMessages)
+            {
+                mailbox.Schedule();
+            }
             else
             {
-                foreach (var t in _stats)
+                foreach (var t in mailbox._stats)
                 {
                     t.MailboxEmpty();
                 }
@@ -180,7 +183,9 @@ namespace Proto.Mailbox
                 Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
 
                 if (self._systemMessages.HasMessages || !self._suspended && self._userMailbox.HasMessages)
+                {
                     self.Schedule();
+                }
                 else
                 {
                     foreach (var t in self._stats)
@@ -274,8 +279,19 @@ namespace Proto.Mailbox
         {
             if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
             {
-                ThreadPool.UnsafeQueueUserWorkItem(_ => RunAsync(),null);
+#if NET5_0_OR_GREATER
+                ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this ,false);
+#else
+                ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this);
+#endif
             }
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void RunWrapper(object state)
+        {
+            var y = (DefaultMailbox) state;
+            RunAsync(y);
         }
     }
 

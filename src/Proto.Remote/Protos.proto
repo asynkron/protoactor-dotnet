@@ -63,11 +63,10 @@ message ClientConnection {
 
 message ServerConnection {
   string SystemId = 1;
-  string Adress = 2;
+  string Address = 2;
 }
 
 message ConnectResponse {
-  //int32 default_serializer_id = 1; Obsoleted
   string member_id = 2;
   bool blocked = 3;
 }
@@ -79,7 +78,14 @@ service Remoting {
 }
 
 message ListProcessesRequest {
-  string name = 1;
+  string pattern = 1;
+  ListProcessesMatchType type = 2;
+}
+
+enum ListProcessesMatchType {
+  MatchPartOfString = 0;
+  MatchExactString = 1;
+  MatchRegex = 2;
 }
 
 message ListProcessesResponse {

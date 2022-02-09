@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -184,7 +185,7 @@ namespace Proto.Remote
                                 }
                             }
                         ).ConfigureAwait(false);
-                        address = serverConnection.Adress;
+                        address = serverConnection.Address;
                         systemId = serverConnection.SystemId;
                         endpoint = _endpointManager.GetOrAddServerEndpoint(address);
                     }
@@ -226,12 +227,36 @@ namespace Proto.Remote
                 throw new Exception("RemoteDiagnostics is not enabled");
             }
 
-            var pids = _system.ProcessRegistry.SearchByName(request.Name).ToArray();
-            return Task.FromResult(new ListProcessesResponse()
-                {
-                    Pids = {pids}
+            switch (request.Type)
+            {
+                case ListProcessesMatchType.MatchPartOfString: {
+                    var pids = _system.ProcessRegistry.Find(request.Pattern).ToArray();
+                    return Task.FromResult(new ListProcessesResponse()
+                        {
+                            Pids = {pids}
+                        }
+                    );
                 }
-            );
+                case ListProcessesMatchType.MatchExactString: {
+                    var pids = _system.ProcessRegistry.Find(id => id == request.Pattern).ToArray();
+                    return Task.FromResult(new ListProcessesResponse()
+                        {
+                            Pids = {pids}
+                        }
+                    );
+                }
+                case ListProcessesMatchType.MatchRegex: {
+                    var regex = new Regex(request.Pattern);
+                
+                    var pids = _system.ProcessRegistry.Find(id => regex.IsMatch(id)).ToArray();
+                    return Task.FromResult(new ListProcessesResponse()
+                        {
+                            Pids = {pids}
+                        }
+                    );
+                }
+                default: throw new ArgumentOutOfRangeException();
+            }
         }
 
         public override async Task<GetProcessDiagnosticsResponse> GetProcessDiagnostics(
