@@ -17,6 +17,7 @@ using Proto.Remote.Metrics;
 namespace Proto.Remote.GrpcCore
 {
     [PublicAPI]
+    [Obsolete(ObsoleteInformation.Text)]
     public class GrpcCoreRemote : IRemote
     {
         private readonly object _lock = new();

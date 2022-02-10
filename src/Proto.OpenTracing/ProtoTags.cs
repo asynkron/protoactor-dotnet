@@ -1,7 +1,9 @@
-﻿using OpenTracing.Tag;
+﻿using System;
+using OpenTracing.Tag;
 
 namespace Proto.OpenTracing
 {
+    [Obsolete(ObsoleteInformation.Text)]
     public static class ProtoTags
     {
         /// <summary>
