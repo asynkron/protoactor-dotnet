@@ -126,14 +126,18 @@ namespace Proto
 
     public class Continuation : SystemMessage
     {
-        public Continuation(Func<Task>? fun, object? message)
+        public Continuation(Func<Task>? fun, object? message, IActor actor)
         {
             Action = fun ?? throw new ArgumentNullException(nameof(fun));
             Message = message ?? throw new ArgumentNullException(nameof(message));
+            Actor = actor ?? throw new ArgumentNullException(nameof(actor));
         }
 
         public Func<Task> Action { get; }
         public object Message { get; }
+        // This is used to track if actor was re-created or not.
+        // If set to null, continuation always executes.
+        public IActor Actor { get; }
     }
 
     public record ProcessDiagnosticsRequest(TaskCompletionSource<string> Result) : SystemMessage;
