@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -190,6 +190,53 @@ namespace Proto.Tests
             await Context.PoisonAsync(pid);
             Assert.True(correct);
             Assert.Equal(100000, counter);
+        }
+
+        [Fact]
+        public async Task DropReenterContinuationAfterRestart()
+        {
+            bool restarted = false;
+            bool completionExecuted = false;
+            var props = Props.FromFunc(async ctx => {
+                switch (ctx.Message)
+                {
+                    case "start":
+                        CancellationTokenSource cts = new();
+                        ctx.ReenterAfter(
+                            Task.Delay(-1, cts.Token),
+                            () => {
+                                completionExecuted = true;
+                            });
+                        ctx.Self.SendSystemMessage(ctx.System, new Restart(new Exception()));
+                        // Release the cancellation token after restart gets processed.
+                        cts.Cancel();
+                        ctx.Respond(true);
+                        break;
+                    case Restarting:
+                        restarted = true;
+                        break;
+                    case "waitstate":
+                        // Wait a while to make sure that Completion really didn't execute.
+                        Task.Delay(50);
+                        while (!ctx.CancellationToken.IsCancellationRequested)
+                        {
+                            await Task.Yield();
+                            if (restarted && !completionExecuted)
+                            {
+                                ctx.Respond(true);
+                                break;
+                            }
+                        }
+                        break;
+                }
+            }
+            );
+
+            var pid = Context.Spawn(props);
+
+            await Context.RequestAsync<bool>(pid, "start", TimeSpan.FromSeconds(5));
+            var res = await Context.RequestAsync<bool>(pid, "waitstate", TimeSpan.FromSeconds(5));
+            Assert.True(res);
         }
 
         private class ReenterAfterCancellationActor : IActor

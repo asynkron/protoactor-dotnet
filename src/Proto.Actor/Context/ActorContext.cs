@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="ActorContext.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -204,7 +204,7 @@ namespace Proto.Context
         public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
         {
             var msg = _messageOrEnvelope;
-            var cont = new Continuation(() => action(target), msg);
+            var cont = new Continuation(() => action(target), msg, Actor);
 
             ScheduleContinuation(target, cont);
         }
@@ -217,8 +217,9 @@ namespace Proto.Context
                 () => {
                     action();
                     return Task.CompletedTask;
-                }, msg
-            );
+                },
+                msg,
+                Actor);
 
             ScheduleContinuation(target, cont);
         }
@@ -420,8 +421,23 @@ namespace Proto.Context
 
         private async ValueTask HandleContinuation(Continuation cont)
         {
-            _messageOrEnvelope = cont.Message;
-            await cont.Action();
+            // Don't execute the continuation if the actor instance changed.
+            // Without this, Continuation's Action closure would execute with
+            // an older Actor instance.
+            if (cont.Actor == Actor ||
+                cont.Actor == null)
+            {
+                _messageOrEnvelope = cont.Message;
+                await cont.Action();
+            }
+            else
+            {
+                if (Logger.IsEnabled(LogLevel.Warning))
+                    Logger.LogWarning(
+                        "{Self} Dropping Continuation (ReenterAfter) of {Message} in {Pid}",
+                        Self,
+                        MessageEnvelope.UnwrapMessage(cont.Message));
+            }
         }
 
         private ActorContextExtras EnsureExtras()
