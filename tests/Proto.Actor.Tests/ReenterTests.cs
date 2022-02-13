@@ -216,7 +216,7 @@ namespace Proto.Tests
                         restarted = true;
                         break;
                     case "waitstate":
-                        // Wait a while to 
+                        // Wait a while to make sure that Completion really didn't execute.
                         Task.Delay(50);
                         while (!ctx.CancellationToken.IsCancellationRequested)
                         {
