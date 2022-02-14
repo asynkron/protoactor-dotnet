@@ -434,7 +434,7 @@ namespace Proto.Context
             {
                 if (Logger.IsEnabled(LogLevel.Warning))
                     Logger.LogWarning(
-                        "{Self} Dropping Continuation (ReenterAfter) of {Message} in {Pid}",
+                        "{Self} Dropping Continuation (ReenterAfter) of {Message}",
                         Self,
                         MessageEnvelope.UnwrapMessage(cont.Message));
             }
