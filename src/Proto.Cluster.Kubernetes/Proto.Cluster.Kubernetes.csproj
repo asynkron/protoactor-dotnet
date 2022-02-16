@@ -6,8 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="KubernetesClient" Version="6.0.8" />
-        <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="6.0.1" />
+        <PackageReference Include="JsonPatch.Net" Version="1.1.2" />
+        <PackageReference Include="KubernetesClient" Version="7.0.12" />
         <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

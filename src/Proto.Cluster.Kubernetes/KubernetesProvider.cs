@@ -132,7 +132,7 @@ namespace Proto.Cluster.Kubernetes
 
             try
             {
-                await _kubernetes.ReplacePodLabels(_podName, KubernetesExtensions.GetKubeNamespace(), labels);
+                await _kubernetes.ReplacePodLabels(_podName, KubernetesExtensions.GetKubeNamespace(), pod, labels);
             }
             catch (HttpOperationException e)
             {            
@@ -180,12 +180,13 @@ namespace Proto.Cluster.Kubernetes
 
             var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
 
+            var labels = new Dictionary<string, string>();
             foreach (var kind in _kinds)
             {
                 try
                 {
                     var labelKey = $"{LabelKind}-{kind}";
-                    pod.SetLabel(labelKey, null);
+                    labels.TryAdd(labelKey, null);
                 }
                 catch (Exception x)
                 {
@@ -193,9 +194,9 @@ namespace Proto.Cluster.Kubernetes
                 }
             }
 
-            pod.SetLabel(LabelCluster, null);
+            labels.TryAdd(LabelCluster, null);
 
-            await _kubernetes.ReplacePodLabels(_podName, kubeNamespace, pod.Labels());
+            await _kubernetes.ReplacePodLabels(_podName, kubeNamespace,pod, labels);
 
             cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
         }
