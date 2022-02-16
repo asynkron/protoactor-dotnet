@@ -7,10 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Json.Patch;
 using k8s;
 using k8s.Models;
-using Microsoft.AspNetCore.JsonPatch;
 using static Proto.Cluster.Kubernetes.ProtoLabels;
 
 // ReSharper disable InvertIf
@@ -27,17 +28,21 @@ namespace Proto.Cluster.Kubernetes
         /// <param name="kubernetes">Kubernetes client</param>
         /// <param name="podName">Name of the pod</param>
         /// <param name="podNamespace">Namespace of the pod</param>
+        /// <param name="pod">the pod that should be patched</param>
         /// <param name="labels">Labels collection. All labels will be replaced by the new labels.</param>
         /// <returns></returns>
         internal static Task<V1Pod> ReplacePodLabels(
             this IKubernetes kubernetes,
             string podName,
             string podNamespace,
+            V1Pod pod,
             IDictionary<string, string> labels
         )
         {
-            var patch = new JsonPatchDocument<V1Pod>();
-            patch.Replace(x => x.Metadata.Labels, labels);
+            var old = JsonSerializer.SerializeToDocument(pod);
+            pod.Metadata.Labels = labels;
+            var expected = JsonSerializer.SerializeToDocument(pod);
+            var patch = old.CreatePatch(expected);
             return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch, V1Patch.PatchType.JsonPatch), podName, podNamespace);
         }
 
