@@ -180,13 +180,13 @@ namespace Proto.Cluster.Kubernetes
 
             var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
 
-            var labels = new Dictionary<string, string>();
+            var labels = new Dictionary<string, string>(pod.Metadata.Labels);
             foreach (var kind in _kinds)
             {
                 try
                 {
                     var labelKey = $"{LabelKind}-{kind}";
-                    labels.TryAdd(labelKey, null);
+                    labels.Remove(labelKey);
                 }
                 catch (Exception x)
                 {
@@ -194,7 +194,7 @@ namespace Proto.Cluster.Kubernetes
                 }
             }
 
-            labels.TryAdd(LabelCluster, null);
+            labels.Remove(LabelCluster);
 
             await _kubernetes.ReplacePodLabels(_podName, kubeNamespace,pod, labels);
 
