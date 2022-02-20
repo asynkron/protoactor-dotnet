@@ -21,10 +21,10 @@ namespace Proto.Context
 {
     public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
+        private static readonly ILogger Logger = Log.CreateLogger<ActorContext>();
         private static readonly ImmutableHashSet<PID> EmptyChildren = ImmutableHashSet<PID>.Empty;
         private readonly IMailbox _mailbox;
         private readonly Props _props;
-
         private ActorContextExtras? _extras;
         private object? _messageOrEnvelope;
         private ContextState _state;
@@ -52,7 +52,7 @@ namespace Proto.Context
             }
         }
 
-        private static ILogger Logger { get; } = Log.CreateLogger<ActorContext>();
+     
 
         public ActorSystem System { get; }
         public CancellationToken CancellationToken => EnsureExtras().CancellationTokenSource.Token;
@@ -93,10 +93,18 @@ namespace Proto.Context
             if (props.GuardianStrategy is not null)
                 throw new ArgumentException("Props used to spawn child cannot have GuardianStrategy.");
 
-            var pid = props.Spawn(System, $"{Self.Id}/{name}", Self);
-            EnsureExtras().AddChild(pid);
+            try
+            {
+                var pid = props.Spawn(System, $"{Self.Id}/{name}", Self);
+                EnsureExtras().AddChild(pid);
 
-            return pid;
+                return pid;
+            }
+            catch (Exception x)
+            {
+                Logger.LogError(x, "{Self} Failed to spawn child actor {Name}", Self, name);
+                throw;
+            }
         }
 
         public void Watch(PID pid) => pid.SendSystemMessage(System, new Watch(Self));
