@@ -8,6 +8,11 @@ namespace Proto.Tests
 {
     public class PropsTests
     {
+        public class DummyActor : IActor
+        {
+            public Task ReceiveAsync(IContext context) => throw new NotImplementedException();
+        }
+        
         [Fact]
         public async Task Can_pass_ActorSystem_via_Props()
         {
@@ -84,7 +89,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithProducer_Then_mutate_Producer()
         {
-            static IActor Producer(ActorSystem _, IContext __) => null!;
+            static IActor Producer(ActorSystem _, IContext __) => new DummyActor();
 
             var props = new Props();
             var props2 = props.WithProducer(Producer);
