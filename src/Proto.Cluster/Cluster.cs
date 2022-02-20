@@ -16,6 +16,7 @@ using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
 using Proto.Cluster.PubSub;
+using Proto.Cluster.Seed;
 using Proto.Extensions;
 using Proto.Remote;
 
@@ -41,6 +42,8 @@ namespace Proto.Cluster
             serialization.RegisterFileDescriptor(GossipContractsReflection.Descriptor);
             serialization.RegisterFileDescriptor(PubSubContractsReflection.Descriptor);
             serialization.RegisterFileDescriptor(GrainContractsReflection.Descriptor);
+            serialization.RegisterFileDescriptor(SeedContractsReflection.Descriptor);
+            serialization.RegisterFileDescriptor(EmptyReflection.Descriptor);
 
             Gossip = new Gossiper(this);
             PidCache = new PidCache();
