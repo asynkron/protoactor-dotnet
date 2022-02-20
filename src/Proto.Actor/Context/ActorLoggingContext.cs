@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -49,19 +50,93 @@ namespace Proto
             var message = envelope.Message;
 
             var logLevel = GetLogLevel(message);
-            _logger.Log(logLevel, "Actor {Self} {ActorType} received message {Message}", Self, ActorType, message);
+
+            if (_logger.IsEnabled(logLevel))
+            {
+                _logger.Log(logLevel, "Actor {Self} {ActorType} received message {MessageType}:{Message} from {Sender}", Self, ActorType, message.GetType().Name,
+                    message, 
+                    SenderOrNone(envelope)
+                );
+            }
 
             try
             {
                 await base.Receive(envelope);
-                _logger.Log(logLevel, "Actor {Self} {ActorType} completed message {Message}", Self, ActorType, message);
+
+                if (_logger.IsEnabled(logLevel))
+                {
+                    _logger.Log(logLevel, "Actor {Self} {ActorType} completed message {MessageType}:{Message} from {Sender}", Self, ActorType,
+                        message.GetType().Name,
+                        message,
+                        SenderOrNone(envelope)
+                    );
+                }
             }
             catch (Exception x)
             {
-                _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed during message {Message}", Self, ActorType, message);
+                if (_logger.IsEnabled(_exceptionLogLevel))
+                {
+                    _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed during message {MessageType}:{Message} from {Sender}", Self, ActorType,
+                        message.GetType().Name, message, 
+                        SenderOrNone(envelope)
+                    );
+                }
+
                 throw;
             }
         }
+
+        public override void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
+        {
+            base.ReenterAfter(target, action);
+        }
+
+        public override void ReenterAfter(Task target, Action action)
+        {
+            base.ReenterAfter(target, action);
+        }
+
+        public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
+        {
+            T response;
+            if (_logger.IsEnabled(_logLevel))
+            {
+                _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending ReqeustAsync {MessageType}:{Message} to {Target}", Self, ActorType,
+                    message.GetType().Name, message, target
+                );
+            }
+
+            try
+            {
+                response = await base.RequestAsync<T>(target, message, cancellationToken);
+
+                if (_logger.IsEnabled(_logLevel))
+                {
+                    _logger.Log(_logLevel, "Actor {Self} {ActorType} Got response {Response} to {MessageType}:{Message} from {Target}", Self,
+                        ActorType,
+                        response, message.GetType().Name, message, target
+                    );
+                }
+
+                return response;
+            }
+            catch (Exception x)
+            {
+                if (_logger.IsEnabled(_exceptionLogLevel))
+                {
+                    _logger.Log(_exceptionLogLevel, x,
+                        "Actor {Self} {ActorType} Got exception waiting for RequestAsync response of {MessageType}:{Message} from {Target}", Self,
+                        ActorType,
+                        message.GetType().Name, message, target
+                    );
+                }
+
+                throw;
+            }
+        }
+ 
+
+        private static string SenderOrNone(MessageEnvelope envelope) => envelope.Sender?.ToString() ?? "[No Sender]";
 
         private LogLevel GetLogLevel(object message)
         {
@@ -74,12 +149,22 @@ namespace Proto
             try
             {
                 var pid = base.SpawnNamed(props, name);
-                _logger.LogInformation("Actor {Self} {ActorType} Spawned child actor {Name} with PID {Pid}", Self, ActorType, name, pid);
+
+                if (_logger.IsEnabled(_logLevel))
+                {
+                    _logger.Log(_logLevel, "Actor {Self} {ActorType} Spawned child actor {Name} with PID {Pid}", Self, ActorType, name, pid
+                    );
+                }
+
                 return pid;
             }
             catch (Exception x)
             {
-                _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed when spawning child actor {Name}", Self, ActorType, name);
+                if (_logger.IsEnabled(_exceptionLogLevel))
+                {
+                    _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed when spawning child actor {Name}", Self, ActorType, name);
+                }
+
                 throw;
             }
         }
@@ -87,9 +172,18 @@ namespace Proto
         public override void Respond(object message)
         {
             var logLevel = GetLogLevel(message);
-            _logger.Log(logLevel, "Actor {Self} {ActorType} responded with {Message} to {Sender}", Self, ActorType, message, Sender);
+
+            if (_logger.IsEnabled(logLevel))
+            {
+                _logger.Log(logLevel, "Actor {Self} {ActorType} responded with {MessageType}:{Message} to {Sender}", Self, ActorType,
+                    message.GetType().Name, message, Sender
+                );
+            }
+
             base.Respond(message);
         }
+        
+        
 
         private string ActorType => Actor?.GetType().Name ?? "None";
     }

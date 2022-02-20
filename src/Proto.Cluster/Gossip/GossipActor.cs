@@ -196,14 +196,17 @@ namespace Proto.Cluster.Gossip
             catch (DeadLetterException)
             {
                 logger?.LogWarning("DeadLetter");
+                Logger.LogWarning("DeadLetter in GossipReenterAfterSend");
             }
             catch (OperationCanceledException)
             {
                 logger?.LogWarning("Timeout");
+                Logger.LogWarning("Timeout in GossipReenterAfterSend");
             }
             catch (TimeoutException)
             {
                 logger?.LogWarning("Timeout");
+                Logger.LogWarning("Timeout in GossipReenterAfterSend");
             }
             catch (Exception x)
             {
@@ -224,14 +227,17 @@ namespace Proto.Cluster.Gossip
             catch (DeadLetterException)
             {
                 logger?.LogWarning("DeadLetter");
+                Logger.LogWarning("DeadLetter in GossipReenterAfterSend");
             }
             catch (OperationCanceledException)
             {
                 logger?.LogWarning("Timeout");
+                Logger.LogWarning("Timeout in GossipReenterAfterSend");
             }
             catch (TimeoutException)
             {
                 logger?.LogWarning("Timeout");
+                Logger.LogWarning("Timeout in GossipReenterAfterSend");
             }
             catch (Exception x)
             {
