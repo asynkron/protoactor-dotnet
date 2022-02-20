@@ -17,9 +17,15 @@ namespace Proto
 
         public static async Task Run(Func<Task> body, CancellationToken cancellationToken = default, [CallerMemberName] string name = "")
         {
+            Task? t = null;
             try
             {
-                await Task.Run(body, cancellationToken);
+                t = Task.Run(body, cancellationToken);
+                await t;
+            }
+            catch (TaskCanceledException e) when (e.Task == t)
+            {
+                //pass. do not log if our own task was cancelled
             }
             catch (Exception x)
             {
