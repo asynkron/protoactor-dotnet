@@ -16,11 +16,9 @@ namespace Proto.DependencyInjection
 
         public DependencyResolver(IServiceProvider services) => _services = services;
 
-        public Props PropsFor<TActor>() where TActor : IActor =>
-            Props.FromProducer(() => _services.GetService<TActor>()!);
+        public Props PropsFor<TActor>() where TActor : IActor => PropsFor(typeof(TActor));
 
         public Props PropsFor(Type actorType) => Props.FromProducer(() => {
-
                 try
                 {
                     return (IActor) _services.GetRequiredService(actorType);
