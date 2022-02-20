@@ -85,7 +85,7 @@ namespace Proto
             this with {Producer = (system, _) => producer(system)};
         
         public Props WithProducer(ProducerWithSystemAndContext producer) =>
-            this with {Producer = (system, context) => producer(system, context)};
+            this with {Producer = producer};
 
         public Props WithDispatcher(IDispatcher dispatcher) =>
             this with {Dispatcher = dispatcher};
