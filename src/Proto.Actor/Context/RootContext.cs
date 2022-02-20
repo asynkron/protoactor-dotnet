@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 using Proto.Future;
 using Proto.Utils;
 
@@ -20,6 +21,7 @@ namespace Proto
     [PublicAPI]
     public sealed record RootContext : IRootContext
     {
+        private static readonly ILogger Logger = Log.CreateLogger<RootContext>();
         public RootContext(ActorSystem system)
         {
             System = system;
@@ -55,10 +57,18 @@ namespace Proto
 
         public PID SpawnNamed(Props props, string name)
         {
-            var parent = props.GuardianStrategy is not null
-                ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
-                : null;
-            return props.Spawn(System, name, parent);
+            try
+            {
+                var parent = props.GuardianStrategy is not null
+                    ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
+                    : null;
+                return props.Spawn(System, name, parent);
+            }
+            catch (Exception x)
+            {
+                Logger.LogError(x, "RootContext Failed to spawn child actor {Name}", name);
+                throw;
+            }
         }
 
         public object? Message => null;
