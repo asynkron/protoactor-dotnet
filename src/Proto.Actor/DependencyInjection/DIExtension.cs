@@ -17,6 +17,7 @@ namespace Proto.DependencyInjection
         public IDependencyResolver Resolver { get; }
     }
 
+    [PublicAPI]
     public static class Extensions
     {
         public static ActorSystem WithServiceProvider(this ActorSystem actorSystem, IServiceProvider serviceProvider)
