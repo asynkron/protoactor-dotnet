@@ -13,7 +13,7 @@ namespace Proto.Tests
         {
             await using var system = new ActorSystem();
             var props = Props.FromProducer(s => new ActorWithSystem(s));
-            var actor = (ActorWithSystem) props.Producer(system);
+            var actor = (ActorWithSystem) props.Producer(system, null!);
             Assert.Same(system, actor.System);
         }
 
@@ -84,7 +84,7 @@ namespace Proto.Tests
         [Fact]
         public void Given_Props_When_WithProducer_Then_mutate_Producer()
         {
-            static IActor Producer(ActorSystem s) => null!;
+            static IActor Producer(ActorSystem _, IContext __) => null!;
 
             var props = new Props();
             var props2 = props.WithProducer(Producer);

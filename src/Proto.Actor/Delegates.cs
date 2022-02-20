@@ -20,6 +20,8 @@ namespace Proto
     public delegate IActor Producer();
 
     public delegate IActor ProducerWithSystem(ActorSystem system);
+    
+    public delegate IActor ProducerWithSystemAndContext(ActorSystem system, IContext context);
 
     public delegate IMailbox MailboxProducer();
 }
