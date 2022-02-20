@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -85,6 +86,56 @@ namespace Proto
             }
         }
 
+        public override void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
+        {
+            base.ReenterAfter(target, action);
+        }
+
+        public override void ReenterAfter(Task target, Action action)
+        {
+            base.ReenterAfter(target, action);
+        }
+
+        public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
+        {
+            T response;
+            if (_logger.IsEnabled(_logLevel))
+            {
+                _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending ReqeustAsync {MessageType}:{Message} to {Target}", Self, ActorType,
+                    message.GetType().Name, message, target
+                );
+            }
+
+            try
+            {
+                response = await base.RequestAsync<T>(target, message, cancellationToken);
+
+                if (_logger.IsEnabled(_logLevel))
+                {
+                    _logger.Log(_logLevel, "Actor {Self} {ActorType} Got response {Response} to {MessageType}:{Message} from {Target}", Self,
+                        ActorType,
+                        response, message.GetType().Name, message, target
+                    );
+                }
+
+                return response;
+            }
+            catch (Exception x)
+            {
+                if (_logger.IsEnabled(_exceptionLogLevel))
+                {
+                    _logger.Log(_exceptionLogLevel, x,
+                        "Actor {Self} {ActorType} Got exception waiting for RequestAsync response of {MessageType}:{Message} from {Target}", Self,
+                        ActorType,
+                        message.GetType().Name, message, target
+                    );
+                }
+
+                throw;
+            }
+        }
+ 
+
         private static string SenderOrNone(MessageEnvelope envelope) => envelope.Sender?.ToString() ?? "[No Sender]";
 
         private LogLevel GetLogLevel(object message)
@@ -131,6 +182,8 @@ namespace Proto
 
             base.Respond(message);
         }
+        
+        
 
         private string ActorType => Actor?.GetType().Name ?? "None";
     }
