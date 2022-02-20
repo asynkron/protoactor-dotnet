@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="ActorSystem.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -119,7 +119,12 @@ namespace Proto
         public async ValueTask DisposeAsync()
         {
             await ShutdownAsync();
-            _cts.Dispose();
+
+            // NOTE: We don't dispose _cts here on purpose, as doing so causes
+            // ObjectDisposedException to be thrown from certain background task
+            // loops, such as the Gossip loop. Given our usage of the Shutdown token
+            // this is not a memory leak.
+            //_cts.Dispose();
         }
     }
 }
