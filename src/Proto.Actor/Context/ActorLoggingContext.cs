@@ -49,19 +49,43 @@ namespace Proto
             var message = envelope.Message;
 
             var logLevel = GetLogLevel(message);
-            _logger.Log(logLevel, "Actor {Self} {ActorType} received message {Message}", Self, ActorType, message);
+
+            if (_logger.IsEnabled(logLevel))
+            {
+                _logger.Log(logLevel, "Actor {Self} {ActorType} received message {MessageType}:{Message} from {Sender}", Self, ActorType, message.GetType().Name,
+                    message, 
+                    SenderOrNone(envelope)
+                );
+            }
 
             try
             {
                 await base.Receive(envelope);
-                _logger.Log(logLevel, "Actor {Self} {ActorType} completed message {Message}", Self, ActorType, message);
+
+                if (_logger.IsEnabled(logLevel))
+                {
+                    _logger.Log(logLevel, "Actor {Self} {ActorType} completed message {MessageType}:{Message} from {Sender}", Self, ActorType,
+                        message.GetType().Name,
+                        message,
+                        SenderOrNone(envelope)
+                    );
+                }
             }
             catch (Exception x)
             {
-                _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed during message {Message}", Self, ActorType, message);
+                if (_logger.IsEnabled(_exceptionLogLevel))
+                {
+                    _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed during message {MessageType}:{Message} from {Sender}", Self, ActorType,
+                        message.GetType().Name, message, 
+                        SenderOrNone(envelope)
+                    );
+                }
+
                 throw;
             }
         }
+
+        private static string SenderOrNone(MessageEnvelope envelope) => envelope.Sender?.ToString() ?? "[No Sender]";
 
         private LogLevel GetLogLevel(object message)
         {
@@ -74,12 +98,22 @@ namespace Proto
             try
             {
                 var pid = base.SpawnNamed(props, name);
-                _logger.LogInformation("Actor {Self} {ActorType} Spawned child actor {Name} with PID {Pid}", Self, ActorType, name, pid);
+
+                if (_logger.IsEnabled(_logLevel))
+                {
+                    _logger.Log(_logLevel, "Actor {Self} {ActorType} Spawned child actor {Name} with PID {Pid}", Self, ActorType, name, pid
+                    );
+                }
+
                 return pid;
             }
             catch (Exception x)
             {
-                _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed when spawning child actor {Name}", Self, ActorType, name);
+                if (_logger.IsEnabled(_exceptionLogLevel))
+                {
+                    _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed when spawning child actor {Name}", Self, ActorType, name);
+                }
+
                 throw;
             }
         }
@@ -87,7 +121,14 @@ namespace Proto
         public override void Respond(object message)
         {
             var logLevel = GetLogLevel(message);
-            _logger.Log(logLevel, "Actor {Self} {ActorType} responded with {Message} to {Sender}", Self, ActorType, message, Sender);
+
+            if (_logger.IsEnabled(logLevel))
+            {
+                _logger.Log(logLevel, "Actor {Self} {ActorType} responded with {MessageType}:{Message} to {Sender}", Self, ActorType,
+                    message.GetType().Name, message, Sender
+                );
+            }
+
             base.Respond(message);
         }
 
