@@ -48,7 +48,7 @@ namespace Proto.Cluster.Partition
         {
             if (_config.Mode != PartitionIdentityLookup.Mode.Push) return Task.CompletedTask;
 
-            Logger.LogDebug("[PartitionIdentity] Got topology {TopologyHash}, waiting for current activations to complete", msg.TopologyHash);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionIdentity] Got topology {TopologyHash}, waiting for current activations to complete", msg.TopologyHash);
 
             var cancellationToken = msg.TopologyValidityToken!.Value;
             // TODO: Configurable timeout
@@ -67,7 +67,7 @@ namespace Proto.Cluster.Partition
 
         private async Task Rebalance(IContext context, ClusterTopology msg)
         {
-            Logger.LogDebug("[PartitionIdentity] Initiating rebalance publish for topology {TopologyHash}", msg.TopologyHash);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionIdentity] Initiating rebalance publish for topology {TopologyHash}", msg.TopologyHash);
 
             try
             {

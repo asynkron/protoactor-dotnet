@@ -69,7 +69,7 @@ namespace Proto.Cluster
 
                     if (pid is null)
                     {
-                        Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
+                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
                         await Task.Delay(i * 20, CancellationToken.None);
                         continue;
                     }
@@ -106,7 +106,7 @@ namespace Proto.Cluster
                         else
                         {
                             if (!context.System.Shutdown.IsCancellationRequested)
-                                Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
                             _pidCache.RemoveByVal(clusterIdentity, pid);
                         }
                     }
@@ -119,7 +119,7 @@ namespace Proto.Cluster
                     catch (Exception x)
                     {
                         if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                            Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
                         _pidCache.RemoveByVal(clusterIdentity, pid);
                         RefreshFuture();
                         await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
@@ -218,7 +218,7 @@ namespace Proto.Cluster
             {
                 case DeadLetterResponse:
                     if (!context.System.Shutdown.IsCancellationRequested)
-                        Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
+                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
 
                     return (ResponseStatus.DeadLetter, default);
                 case null: return (ResponseStatus.Ok, default);

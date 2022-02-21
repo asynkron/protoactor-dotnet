@@ -74,7 +74,7 @@ namespace Proto.Cluster.Partition
         private Task OnPartitionCompleted(PartitionCompleted response, IContext context)
         {
             context.Send(_partitionIdentityPid!, response);
-            Logger.LogDebug("[PartitionIdentity] Completed pulling partition {Address}, {ChunkCount} chunks received",
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionIdentity] Completed pulling partition {Address}, {ChunkCount} chunks received",
                 response.MemberAddress, response.Chunks.Count
             );
             _remainingPartitions.Remove(response.MemberAddress);

@@ -115,7 +115,7 @@ namespace Proto.Cluster
 
                 if (before != blockList.BlockedMembers)
                 {
-                    Logger.LogDebug("Updating blocked members via gossip");
+                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Updating blocked members via gossip");
                 }
 
                 //then run the usual topology logic
@@ -131,7 +131,7 @@ namespace Proto.Cluster
 
             lock (_lock)
             {
-                Logger.LogDebug("[MemberList] Updating Cluster Topology");
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[MemberList] Updating Cluster Topology");
 
                 if (blockList.IsBlocked(_system.Id))
                 {
@@ -141,7 +141,7 @@ namespace Proto.Cluster
                     }
 
                     _stopping = true;
-                    Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
+                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
                     _ = _cluster.ShutdownAsync();
                     return;
                 }
@@ -189,7 +189,7 @@ namespace Proto.Cluster
                     TopologyValidityToken = _currentTopologyTokenSource.Token
                 };
 
-                Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
 
                 if (topology.Joined.Any()) Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
 
@@ -271,7 +271,7 @@ namespace Proto.Cluster
         private void TerminateMember(Member memberThatLeft)
         {
             var endpointTerminated = new EndpointTerminatedEvent(false, memberThatLeft.Address, memberThatLeft.Id);
-            Logger.LogDebug("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
             _cluster.System.EventStream.Publish(endpointTerminated);
         }
 

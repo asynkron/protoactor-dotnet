@@ -15,22 +15,22 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    internal class Gossip
+    class Gossip
         : IGossip
     {
         private static readonly ILogger Logger = Log.CreateLogger<Gossip>();
-        private long _localSequenceNo;
-        private GossipState _state = new();
-        private readonly Random _rnd = new();
-        private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
-        private ImmutableHashSet<string> _activeMemberIds = ImmutableHashSet<string>.Empty;
-        private Member[] _otherMembers = Array.Empty<Member>();
         private readonly ConsensusChecks _consensusChecks = new();
-        private readonly string _myId;
         private readonly Func<ImmutableHashSet<string>> _getBlockedMembers;
-        private readonly InstanceLogger? _logger;
         private readonly int _gossipFanout;
         private readonly int _gossipMaxSend;
+        private readonly InstanceLogger? _logger;
+        private readonly string _myId;
+        private readonly Random _rnd = new();
+        private ImmutableHashSet<string> _activeMemberIds = ImmutableHashSet<string>.Empty;
+        private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
+        private long _localSequenceNo;
+        private Member[] _otherMembers = Array.Empty<Member>();
+        private GossipState _state = new();
 
         public Gossip(string myId, int gossipFanout, int gossipMaxSend, Func<ImmutableHashSet<string>> getBlockedMembers, InstanceLogger? logger)
         {
@@ -57,7 +57,7 @@ namespace Proto.Cluster.Gossip
             check.Check(_state, _activeMemberIds);
         }
 
-        public void RemoveConsensusCheck(string id) => 
+        public void RemoveConsensusCheck(string id) =>
             _consensusChecks.Remove(id);
 
         public GossipState GetStateSnapshot() => _state.Clone();
@@ -68,10 +68,7 @@ namespace Proto.Cluster.Gossip
 
             foreach (var (memberId, memberState) in _state.Members)
             {
-                if (memberState.Values.TryGetValue(key, out var value))
-                {
-                    entries = entries.SetItem(memberId, value.Value);
-                }
+                if (memberState.Values.TryGetValue(key, out var value)) entries = entries.SetItem(memberId, value.Value);
             }
 
             return entries;
@@ -88,22 +85,6 @@ namespace Proto.Cluster.Gossip
             return updates.ToImmutableList();
         }
 
-        private void CheckConsensus(string updatedKey)
-        {
-            foreach (var consensusCheck in _consensusChecks.GetByUpdatedKey(updatedKey))
-            {
-                consensusCheck.Check(_state, _activeMemberIds);
-            }
-        }
-
-        private void CheckConsensus(IEnumerable<string> updatedKeys)
-        {
-            foreach (var consensusCheck in _consensusChecks.GetByUpdatedKeys(updatedKeys))
-            {
-                consensusCheck.Check(_state, _activeMemberIds);
-            }
-        }
-
         public void SetState(string key, IMessage message)
         {
             var logger = _logger?.BeginMethodScope();
@@ -111,10 +92,7 @@ namespace Proto.Cluster.Gossip
             logger?.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
             Logger.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
 
-            if (!_state.Members.ContainsKey(_myId))
-            {
-                logger?.LogCritical("State corrupt");
-            }
+            if (!_state.Members.ContainsKey(_myId)) logger?.LogCritical("State corrupt");
 
             CheckConsensus(key);
         }
@@ -134,38 +112,20 @@ namespace Proto.Cluster.Gossip
             var randomMembers = _otherMembers.OrderByRandom(_rnd);
 
             var fanoutCount = 0;
+
             foreach (var member in randomMembers)
             {
                 //TODO: we can chunk up sends here
                 //instead of sending less state, we can send all of it, but in chunks
                 var memberState = GetMemberStateDelta(member.Id);
-                if (!memberState.HasState)
-                {
-                    continue;
-                }
-                
+                if (!memberState.HasState) continue;
+
                 //fire and forget, we handle results in ReenterAfter
                 sendStateToMember(memberState, member, logger);
-                
+
                 fanoutCount++;
 
-                if (fanoutCount == _gossipFanout)
-                {
-                    break;
-                }
-            }
-        }
-
-        private void PurgeBlockedMembers()
-        {
-            var blockedMembers = _getBlockedMembers();
-
-            foreach (var memberId in _state.Members.Keys.ToArray())
-            {
-                if (blockedMembers.Contains(memberId))
-                {
-                    _state.Members.Remove(memberId);
-                }
+                if (fanoutCount == _gossipFanout) break;
             }
         }
 
@@ -181,7 +141,7 @@ namespace Proto.Cluster.Gossip
                 .Members
                 .Where(m => m.Key != targetMemberId) //we dont need to send back state to the owner of the state
                 .OrderByRandom(_rnd, m => m.Key == _myId);
-            
+
             foreach (var (memberId, memberState1) in members)
             {
                 //create an empty state
@@ -212,16 +172,51 @@ namespace Proto.Cluster.Gossip
                     pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
                 }
 
-                if (count > _gossipMaxSend)
-                {
-                    break;
-                }
+                if (count > _gossipMaxSend) break;
             }
 
             //make sure to clone to make it a separate copy, avoid race conditions on mutate
             var hasState = _committedOffsets != pendingOffsets;
             var memberState = new MemberStateDelta(targetMemberId, hasState, newState, () => CommitPendingOffsets(pendingOffsets));
             return memberState;
+        }
+
+        public ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key)
+        {
+            var entries = ImmutableDictionary<string, GossipKeyValue>.Empty;
+
+            foreach (var (memberId, memberState) in _state.Members)
+            {
+                if (memberState.Values.TryGetValue(key, out var value)) entries = entries.SetItem(memberId, value);
+            }
+
+            return entries;
+        }
+
+        private void CheckConsensus(string updatedKey)
+        {
+            foreach (var consensusCheck in _consensusChecks.GetByUpdatedKey(updatedKey))
+            {
+                consensusCheck.Check(_state, _activeMemberIds);
+            }
+        }
+
+        private void CheckConsensus(IEnumerable<string> updatedKeys)
+        {
+            foreach (var consensusCheck in _consensusChecks.GetByUpdatedKeys(updatedKeys))
+            {
+                consensusCheck.Check(_state, _activeMemberIds);
+            }
+        }
+
+        private void PurgeBlockedMembers()
+        {
+            var blockedMembers = _getBlockedMembers();
+
+            foreach (var memberId in _state.Members.Keys.ToArray())
+            {
+                if (blockedMembers.Contains(memberId)) _state.Members.Remove(memberId);
+            }
         }
 
         private void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets)
@@ -234,25 +229,8 @@ namespace Proto.Cluster.Gossip
                 //_state = newState;
 
                 if (!_committedOffsets.ContainsKey(key) || _committedOffsets[key] < pendingOffsets[key])
-                {
                     _committedOffsets = _committedOffsets.SetItem(key, sequenceNumber);
-                }
             }
-        }
-        
-        public ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key)
-        {
-            var entries = ImmutableDictionary<string, GossipKeyValue>.Empty;
-
-            foreach (var (memberId, memberState) in _state.Members)
-            {
-                if (memberState.Values.TryGetValue(key, out var value))
-                {
-                    entries = entries.SetItem(memberId, value);
-                }
-            }
-
-            return entries;
         }
     }
 }

@@ -17,37 +17,12 @@ namespace Proto.Cluster.Gossip
         Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken);
     }
 
-    internal class GossipConsensusHandle<T> : IConsensusHandle<T>
+    class GossipConsensusHandle<T> : IConsensusHandle<T>
     {
+        private readonly Action _deregister;
         private TaskCompletionSource<T> _consensusTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        private readonly Action _deregister;
-
         public GossipConsensusHandle(Action deregister) => _deregister = deregister;
-
-        internal void TrySetConsensus(object consensus)
-        {
-            var tcs = Volatile.Read(ref _consensusTcs);
-            if (tcs.Task.IsCompleted && tcs.Task.Result?.Equals(consensus) != true)
-            {
-                TryResetConsensus();
-            }
-
-            //if not set, set it, if already set, keep it set
-            tcs.TrySetResult((T) consensus);
-        }
-
-        public void TryResetConsensus()
-        {
-            //only replace if the task is completed
-            var current = Volatile.Read(ref _consensusTcs);
-
-            if (current.Task.IsCompleted)
-            {
-                var taskCompletionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-                Interlocked.CompareExchange(ref _consensusTcs, taskCompletionSource, current);
-            }
-        }
 
         public async Task<(bool consensus, T value)> TryGetConsensus(CancellationToken ct)
         {
@@ -67,5 +42,26 @@ namespace Proto.Cluster.Gossip
             => Volatile.Read(ref _consensusTcs).Task.WaitUpTo(maxWait, cancellationToken);
 
         public void Dispose() => _deregister();
+
+        internal void TrySetConsensus(object consensus)
+        {
+            var tcs = Volatile.Read(ref _consensusTcs);
+            if (tcs.Task.IsCompleted && tcs.Task.Result?.Equals(consensus) != true) TryResetConsensus();
+
+            //if not set, set it, if already set, keep it set
+            tcs.TrySetResult((T) consensus);
+        }
+
+        public void TryResetConsensus()
+        {
+            //only replace if the task is completed
+            var current = Volatile.Read(ref _consensusTcs);
+
+            if (current.Task.IsCompleted)
+            {
+                var taskCompletionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+                Interlocked.CompareExchange(ref _consensusTcs, taskCompletionSource, current);
+            }
+        }
     }
 }

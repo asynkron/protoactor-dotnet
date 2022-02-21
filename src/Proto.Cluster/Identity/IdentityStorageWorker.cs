@@ -214,7 +214,7 @@ namespace Proto.Cluster.Identity
         private async Task<(PID?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
         {
             //we own the lock
-            _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", spawnLock.ClusterIdentity.Identity,
+            if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", spawnLock.ClusterIdentity.Identity,
                 spawnLock.ClusterIdentity.Kind
             );
 

@@ -7,6 +7,5 @@ namespace Proto.Cluster.Gossip
 {
     public interface IDeltaValue
     {
-        
     }
 }

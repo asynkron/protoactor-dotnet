@@ -51,7 +51,7 @@ namespace Proto.Cluster
         public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
         {
             var start = Stopwatch.StartNew();
-            Logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);
             var i = 0;
 
             var future = context.GetFuture();
@@ -76,7 +76,7 @@ namespace Proto.Cluster
 
                     if (pid is null)
                     {
-                        Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
+                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
                         await Task.Delay(++i * 20, CancellationToken.None);
                         continue;
                     }
@@ -201,7 +201,7 @@ namespace Proto.Cluster
                 }
 
                 if (!context.System.Shutdown.IsCancellationRequested)
-                    Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
                 _pidCache.RemoveByVal(clusterIdentity, pid);
 
                 return (ResponseStatus.TimedOut, default);
@@ -213,7 +213,7 @@ namespace Proto.Cluster
             catch (Exception x)
             {
                 if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                    Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
                 _pidCache.RemoveByVal(clusterIdentity, pid);
                 return (ResponseStatus.Exception, default);
             }
@@ -252,7 +252,7 @@ namespace Proto.Cluster
             {
                 case DeadLetterResponse:
                     if (!context.System.Shutdown.IsCancellationRequested)
-                        Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
+                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
 
                     return (ResponseStatus.DeadLetter, default);
                 case null: return (ResponseStatus.Ok, default);
