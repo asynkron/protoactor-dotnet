@@ -94,7 +94,7 @@ namespace Proto.Cluster.Partition
         private Task OnPartitionFailed(PartitionFailed response, IContext context)
         {
             Logger.LogWarning("[PartitionIdentity] Retrying member {Member}, failed with {Reason}", response.MemberAddress, response.Reason);
-            StartRebalanceFromMember(_request!, context, response.MemberAddress);
+            context.ReenterAfter(Task.Delay(200, _cancellationToken), () => StartRebalanceFromMember(_request!, context, response.MemberAddress));
             return Task.CompletedTask;
         }
 
