@@ -100,14 +100,12 @@ namespace Proto.Cluster.Identity
                     {
                         if (attempt <= MaxReplaceAttempts)
                         {
-                            Logger.LogDebug("Stale PID {Pid} from IdentityLookup when replacing {ClusterIdentity}. Will retry, attempt {Attempt} ", replacedPid, identity, attempt);
+                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Stale PID {Pid} from IdentityLookup when replacing {ClusterIdentity}. Will retry, attempt {Attempt} ", replacedPid, identity, attempt);
                             context.ReenterAfter(Task.Delay(50 * attempt), () => ReplaceActivation(identity, replacedPid, context, attempt + 1));
                             return Task.CompletedTask;
                         }
-                        else
-                        {
-                            Logger.LogWarning("Stale PID {Pid} from IdentityLookup when replacing {ClusterIdentity}. Retries exhausted", replacedPid, identity);
-                        }
+
+                        Logger.LogWarning("Stale PID {Pid} from IdentityLookup when replacing {ClusterIdentity}. Retries exhausted", replacedPid, identity);
                     }
 
                     Respond(context, activation);

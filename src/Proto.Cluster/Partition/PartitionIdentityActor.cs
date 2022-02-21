@@ -264,7 +264,7 @@ namespace Proto.Cluster.Partition
 
                     if (allNodesCompletedActivations)
                     {
-                        Logger.LogDebug("[PartitionIdentity] {SystemId} All nodes OK, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
+                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionIdentity] {SystemId} All nodes OK, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
                             _cluster.System.Id, TopologyHash, consensusResult.Result.topologyHash, timer.Elapsed
                         );
                     }
@@ -350,7 +350,7 @@ namespace Proto.Cluster.Partition
                 _spawns.Remove(clusterIdentity);
             }
 
-            Logger.LogDebug("[PartitionIdentity] Removed {Count} spawns targeting previous members", spawningOnLeftMembers.Count);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionIdentity] Removed {Count} spawns targeting previous members", spawningOnLeftMembers.Count);
         }
 
         private void SetReadyToRebalanceIfNoMoreWaitingSpawns()
@@ -450,7 +450,7 @@ namespace Proto.Cluster.Partition
             }
 
             //we get this via broadcast to all nodes, remove if we have it, or ignore
-            Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Terminated {Pid}", msg.Pid);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Terminated {Pid}", msg.Pid);
 
             if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var existingActivation) && existingActivation.Equals(msg.Pid))
             {

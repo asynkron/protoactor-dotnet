@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Threading;
 
 namespace Proto.Cluster.Gossip
 {
@@ -27,7 +26,10 @@ namespace Proto.Cluster.Gossip
             return (true, first);
         }
 
-        internal static (IConsensusHandle<T> handle, ConsensusCheck check) Build<T>(this IConsensusCheckDefinition<T> consensusDefinition, Action cancel)
+        internal static (IConsensusHandle<T> handle, ConsensusCheck check) Build<T>(
+            this IConsensusCheckDefinition<T> consensusDefinition,
+            Action cancel
+        )
             where T : notnull
         {
             var handle = new GossipConsensusHandle<T>(cancel);

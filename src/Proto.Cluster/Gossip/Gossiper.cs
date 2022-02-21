@@ -23,8 +23,9 @@ namespace Proto.Cluster.Gossip
     public record GetGossipStateRequest(string Key);
 
     public record GetGossipStateResponse(ImmutableDictionary<string, Any> State);
-    
+
     public record GetGossipStateEntryRequest(string Key);
+
     public record GetGossipStateEntryResponse(ImmutableDictionary<string, GossipKeyValue> State);
 
     public record SetGossipStateKey(string Key, IMessage Value);
@@ -37,24 +38,24 @@ namespace Proto.Cluster.Gossip
 
     public record AddConsensusCheck(ConsensusCheck Check, CancellationToken Token);
 
-    public record GetGossipStateSnapshot();
+    public record GetGossipStateSnapshot;
 
     public class Gossiper
     {
         public const string GossipActorName = "gossip";
-        private readonly Cluster _cluster;
-        private readonly RootContext _context;
 
         private static readonly ILogger Logger = Log.CreateLogger<Gossiper>();
+        private readonly Cluster _cluster;
+        private readonly RootContext _context;
         private PID _pid = null!;
-
-        public Task<GossipState> GetStateSnapshot() => _context.RequestAsync<GossipState>(_pid, new GetGossipStateSnapshot());
 
         public Gossiper(Cluster cluster)
         {
             _cluster = cluster;
             _context = _cluster.System.Root;
         }
+
+        public Task<GossipState> GetStateSnapshot() => _context.RequestAsync<GossipState>(_pid, new GetGossipStateSnapshot());
 
         public async Task<ImmutableDictionary<string, T>> GetState<T>(string key) where T : IMessage, new()
         {
@@ -72,8 +73,8 @@ namespace Proto.Cluster.Gossip
 
             return typed;
         }
-        
-        public async Task<ImmutableDictionary<string, GossipKeyValue>> GetStateEntry(string key) 
+
+        public async Task<ImmutableDictionary<string, GossipKeyValue>> GetStateEntry(string key)
         {
             _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
 
@@ -86,33 +87,31 @@ namespace Proto.Cluster.Gossip
         // Will not wait for completed state update
         public void SetState(string key, IMessage value)
         {
-            Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
             _context.System.Logger()?.LogDebug("Gossiper setting state to {Pid}", _pid);
 
-            if (_pid == null)
-            {
-                return;
-            }
+            if (_pid == null) return;
 
             _context.Send(_pid, new SetGossipStateKey(key, value));
         }
 
         public Task SetStateAsync(string key, IMessage value)
         {
-            Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
             _context.System.Logger()?.LogDebug("Gossiper setting state to {Pid}", _pid);
 
-            if (_pid == null)
-            {
-                return Task.CompletedTask;
-            }
+            if (_pid == null) return Task.CompletedTask;
 
             return _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value));
         }
 
         internal Task StartAsync()
         {
-            var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id, () => _cluster.Remote.BlockList.BlockedMembers, _cluster.System.Logger(),_cluster.Config.GossipFanout, _cluster.Config.GossipMaxSend));
+            var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id,
+                    () => _cluster.Remote.BlockList.BlockedMembers, _cluster.System.Logger(), _cluster.Config.GossipFanout,
+                    _cluster.Config.GossipMaxSend
+                )
+            );
             _pid = _context.SpawnNamed(props, GossipActorName);
             _cluster.System.EventStream.Subscribe<ClusterTopology>(topology => _context.Send(_pid, topology));
             Logger.LogInformation("Started Cluster Gossip");
@@ -131,15 +130,16 @@ namespace Proto.Cluster.Gossip
                 try
                 {
                     await Task.Delay(_cluster.Config.GossipInterval);
-                    
+
                     await BlockExpiredHeartbeats();
 
                     await BlockGracefullyLeft();
 
-                    await SetStateAsync(GossipKeys.Heartbeat, new MemberHeartbeat()
-                    {
-                        ActorStatistics = GetActorStatistics()
-                    });
+                    await SetStateAsync(GossipKeys.Heartbeat, new MemberHeartbeat
+                        {
+                            ActorStatistics = GetActorStatistics()
+                        }
+                    );
 
                     await SendStateAsync();
                 }
@@ -193,14 +193,10 @@ namespace Proto.Cluster.Gossip
             return stats;
         }
 
-        public class ConsensusCheckBuilder<T>: IConsensusCheckDefinition<T>
+        public class ConsensusCheckBuilder<T> : IConsensusCheckDefinition<T>
         {
-            private readonly ImmutableList<(string, Func<Any, T?>)> _getConsensusValues;
-
             private readonly Lazy<ConsensusCheck<T>> _check;
-            public ConsensusCheck<T> Check => _check.Value;
-
-            public IImmutableSet<string> AffectedKeys => _getConsensusValues.Select(it => it.Item1).ToImmutableHashSet();
+            private readonly ImmutableList<(string, Func<Any, T?>)> _getConsensusValues;
 
             private ConsensusCheckBuilder(ImmutableList<(string, Func<Any, T?>)> getValues)
             {
@@ -213,6 +209,10 @@ namespace Proto.Cluster.Gossip
                 _getConsensusValues = ImmutableList.Create<(string, Func<Any, T?>)>((key, getValue));
                 _check = new Lazy<ConsensusCheck<T>>(Build, LazyThreadSafetyMode.PublicationOnly);
             }
+
+            public ConsensusCheck<T> Check => _check.Value;
+
+            public IImmutableSet<string> AffectedKeys => _getConsensusValues.Select(it => it.Item1).ToImmutableHashSet();
 
             public static ConsensusCheckBuilder<T> Create<TE>(string key, Func<TE, T?> getValue) where TE : IMessage, new()
                 => new(key, MapFromAny(getValue));
@@ -228,7 +228,7 @@ namespace Proto.Cluster.Gossip
             )
             {
                 var (key, unpack) = valueTuple;
-                return (kv) => {
+                return kv => {
                     var (member, state) = kv;
                     var value = state.Values.TryGetValue(key, out var any) ? unpack(any.Value) : default;
                     return (member, key, value);
@@ -244,10 +244,7 @@ namespace Proto.Cluster.Gossip
                         var memberStates = GetValidMemberStates(state, ids);
 
                         // Missing state, cannot have consensus
-                        if (memberStates.Length < ids.Count)
-                        {
-                            return default;
-                        }
+                        if (memberStates.Length < ids.Count) return default;
 
                         var valueTuples = memberStates.Select(mapToValue);
                         // ReSharper disable PossibleMultipleEnumeration
@@ -273,9 +270,7 @@ namespace Proto.Cluster.Gossip
                     var memberStates = GetValidMemberStates(state, ids);
 
                     if (memberStates.Length < ids.Count) // Not all members have state..
-                    {
                         return default;
-                    }
 
                     var valueTuples = memberStates
                         .SelectMany(memberState => mappers.Select(mapper => mapper(memberState)));
@@ -305,7 +300,6 @@ namespace Proto.Cluster.Gossip
         public IConsensusHandle<TV> RegisterConsensusCheck<T, TV>(string key, Func<T, TV?> getValue) where T : notnull, IMessage, new()
             => RegisterConsensusCheck(ConsensusCheckBuilder<TV>.Create(key, getValue));
 
-
         public IConsensusHandle<T> RegisterConsensusCheck<T>(IConsensusCheckDefinition<T> consensusDefinition) where T : notnull
         {
             var cts = new CancellationTokenSource();
@@ -314,7 +308,7 @@ namespace Proto.Cluster.Gossip
 
             return consensusHandle;
         }
-        
+
         private async Task SendStateAsync()
         {
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse

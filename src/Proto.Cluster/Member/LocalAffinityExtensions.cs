@@ -51,7 +51,7 @@ namespace Proto.Cluster
                     )
                     {
                         var self = context.Self;
-                        Logger.LogDebug("Relocating {ActorPid}, because of {MessageType} from {Sender}", context.Self,
+                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Relocating {ActorPid}, because of {MessageType} from {Sender}", context.Self,
                             envelope.Message.GetType(), sender
                         );
                         context.MarkForRelocation();

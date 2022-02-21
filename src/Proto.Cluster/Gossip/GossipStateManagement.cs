@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
@@ -14,7 +13,7 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
 {
-    internal static class GossipStateManagement
+    static class GossipStateManagement
     {
         private static readonly ILogger Logger = Log.CreateLogger("GossipStateManagement");
 
@@ -38,7 +37,12 @@ namespace Proto.Cluster.Gossip
             return memberState;
         }
 
-        public static IReadOnlyCollection<GossipUpdate> MergeState(GossipState localState, GossipState remoteState, out GossipState newState, out HashSet<string> updatedKeys)
+        public static IReadOnlyCollection<GossipUpdate> MergeState(
+            GossipState localState,
+            GossipState remoteState,
+            out GossipState newState,
+            out HashSet<string> updatedKeys
+        )
         {
             newState = localState.Clone();
             var updates = new List<GossipUpdate>();
@@ -57,6 +61,7 @@ namespace Proto.Cluster.Gossip
                         entry.Value.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                         updatedKeys.Add(entry.Key);
                     }
+
                     continue;
                 }
 
@@ -141,6 +146,7 @@ namespace Proto.Cluster.Gossip
                 }
 
                 var ownValue = GetConsensusValue(ownMemberState);
+
                 if (ownValue is null)
                 {
                     logger?.LogDebug("I don't have any value for {Key}", valueKey);
@@ -158,12 +164,10 @@ namespace Proto.Cluster.Gossip
 
                     var consensusValue = GetConsensusValue(memberState);
 
-                    if (consensusValue is null || !ownValue.Equals(consensusValue))
-                    {
-                        return (false, default);
-                    }
+                    if (consensusValue is null || !ownValue.Equals(consensusValue)) return (false, default);
                 }
-                Logger.LogDebug("Reached Consensus {Key}:{Value} - {State}", valueKey,ownValue, state);
+
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Reached Consensus {Key}:{Value} - {State}", valueKey, ownValue, state);
                 return (true, ownValue);
             }
             catch (Exception x)

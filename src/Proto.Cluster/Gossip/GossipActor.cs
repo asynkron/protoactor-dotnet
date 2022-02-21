@@ -7,7 +7,6 @@ using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Context;
 using Proto.Logging;
 
 namespace Proto.Cluster.Gossip
@@ -35,15 +34,15 @@ namespace Proto.Cluster.Gossip
 
         public Task ReceiveAsync(IContext context) => context.Message switch
         {
-            SetGossipStateKey setState         => OnSetGossipStateKey(context, setState),
-            GetGossipStateRequest getState     => OnGetGossipStateKey(context, getState),
-            GetGossipStateEntryRequest getState     => OnGetGossipStateEntryKey(context, getState),
-            GetGossipStateSnapshot getSnapshot => OnGetGossipStateSnapshot(context),
-            GossipRequest gossipRequest        => OnGossipRequest(context, gossipRequest),
-            SendGossipStateRequest             => OnSendGossipState(context),
-            AddConsensusCheck request          => OnAddConsensusCheck(context, request),
-            ClusterTopology clusterTopology    => OnClusterTopology(clusterTopology),
-            _                                  => Task.CompletedTask
+            SetGossipStateKey setState          => OnSetGossipStateKey(context, setState),
+            GetGossipStateRequest getState      => OnGetGossipStateKey(context, getState),
+            GetGossipStateEntryRequest getState => OnGetGossipStateEntryKey(context, getState),
+            GetGossipStateSnapshot getSnapshot  => OnGetGossipStateSnapshot(context),
+            GossipRequest gossipRequest         => OnGossipRequest(context, gossipRequest),
+            SendGossipStateRequest              => OnSendGossipState(context),
+            AddConsensusCheck request           => OnAddConsensusCheck(context, request),
+            ClusterTopology clusterTopology     => OnClusterTopology(clusterTopology),
+            _                                   => Task.CompletedTask
         };
 
         private Task OnGetGossipStateEntryKey(IContext context, GetGossipStateEntryRequest getState)
@@ -85,11 +84,11 @@ namespace Proto.Cluster.Gossip
         {
             var logger = context.Logger()?.BeginScope<GossipActor>();
             logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
-            Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
             ReceiveState(context, gossipRequest.State);
 
             //it's OK, we might not just yet be aware of this member yet....
-            
+
             // if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
             // {
             //     Logger.LogWarning("Got gossip request from unknown member {MemberId}", gossipRequest.MemberId);
@@ -103,7 +102,8 @@ namespace Proto.Cluster.Gossip
 
             if (!memberState.HasState)
             {
-                Logger.LogDebug("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
+                if (Logger.IsEnabled(LogLevel.Debug))
+                    Logger.LogDebug("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
 
                 // Nothing to send, do not provide sender or state payload
                 context.Respond(new GossipResponse());
@@ -134,10 +134,7 @@ namespace Proto.Cluster.Gossip
             var (key, message) = setStateKey;
             _internal.SetState(key, message);
 
-            if (context.Sender != null)
-            {
-                context.Respond(new SetGossipStateResponse());
-            }
+            if (context.Sender != null) context.Respond(new SetGossipStateResponse());
 
             return Task.CompletedTask;
         }
@@ -154,7 +151,7 @@ namespace Proto.Cluster.Gossip
             var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
 
             logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
-            Logger.LogDebug("Sending GossipRequest to {MemberId}", member.Id);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Sending GossipRequest to {MemberId}", member.Id);
 
             //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
 
@@ -186,10 +183,7 @@ namespace Proto.Cluster.Gossip
                     {
                         ReceiveState(context, response.State!);
 
-                        if (envelope.Sender is not null)
-                        {
-                            context.Send(envelope.Sender, new GossipResponseAck());
-                        }
+                        if (envelope.Sender is not null) context.Send(envelope.Sender, new GossipResponseAck());
                     }
                 }
             }
