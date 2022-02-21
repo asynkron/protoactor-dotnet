@@ -19,6 +19,9 @@ namespace Proto.Cluster.Partition
     /// </summary>
     class PartitionIdentityRebalanceWorker : IActor, IDisposable
     {
+        private const string ReasonTimeout = "Timeout";
+        private const string ReasonDeadletter = "DeadLetter";
+
         private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityActor>();
         private readonly TimeSpan _handoverTimeout;
         private readonly CancellationToken _cancellationToken;
@@ -74,9 +77,10 @@ namespace Proto.Cluster.Partition
         private Task OnPartitionCompleted(PartitionCompleted response, IContext context)
         {
             context.Send(_partitionIdentityPid!, response);
-            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionIdentity] Completed pulling partition {Address}, {ChunkCount} chunks received",
-                response.MemberAddress, response.Chunks.Count
-            );
+            if (Logger.IsEnabled(LogLevel.Debug))
+                Logger.LogDebug("[PartitionIdentity] Completed pulling partition {Address}, {ChunkCount} chunks received",
+                    response.MemberAddress, response.Chunks.Count
+                );
             _remainingPartitions.Remove(response.MemberAddress);
 
             if (_remainingPartitions.Count == 0)
@@ -93,8 +97,22 @@ namespace Proto.Cluster.Partition
 
         private Task OnPartitionFailed(PartitionFailed response, IContext context)
         {
-            Logger.LogWarning("[PartitionIdentity] Retrying member {Member}, failed with {Reason}", response.MemberAddress, response.Reason);
-            StartRebalanceFromMember(_request!, context, response.MemberAddress);
+            switch (response.Reason)
+            {
+                case ReasonTimeout:
+                    Logger.LogWarning("[PartitionIdentity] Partition {Member} timed out, retrying", response.MemberAddress);
+                    StartRebalanceFromMember(_request!, context, response.MemberAddress);
+                    break;
+
+                case ReasonDeadletter:
+                default:
+                    Logger.LogWarning("[PartitionIdentity] Partition {Member} unreachable", response.MemberAddress);
+                    context.ReenterAfter(Task.Delay(200, _cancellationToken),
+                        () => StartRebalanceFromMember(_request!, context, response.MemberAddress)
+                    );
+                    break;
+            }
+
             return Task.CompletedTask;
         }
 
@@ -139,10 +157,10 @@ namespace Proto.Cluster.Partition
                         OnIdentityHandover(msg, context);
                         break;
                     case ReceiveTimeout:
-                        FailPartition("Timeout");
+                        FailPartition(ReasonTimeout);
                         break;
                     case DeadLetterResponse:
-                        FailPartition("DeadLetter");
+                        FailPartition(ReasonDeadletter);
                         break;
                 }
 
