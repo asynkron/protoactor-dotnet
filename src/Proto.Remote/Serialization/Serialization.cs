@@ -85,7 +85,10 @@ namespace Proto.Remote
         {
             foreach (var msg in fd.MessageTypes)
             {
-                TypeLookup.Add(msg.FullName, msg.Parser);
+                if (!TypeLookup.ContainsKey(msg.FullName))
+                {
+                    TypeLookup.Add(msg.FullName, msg.Parser);
+                }
             }
         }
 
