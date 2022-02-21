@@ -1,5 +1,5 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-12-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-13-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 | Status | History |
 | :---   | :---    |
@@ -113,6 +113,7 @@ Our awesome sponsors:
     <td align="center"><a href="https://github.com/Damian-P"><img src="https://avatars.githubusercontent.com/u/1333962?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Piechowicz Damian</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=Damian-P" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/alexpantyukhin"><img src="https://avatars.githubusercontent.com/u/6513121?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alexander Pantyukhin</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=alexpantyukhin" title="Code">💻</a></td>
     <td align="center"><a href="http://www.lighthouselogic.com/"><img src="https://avatars.githubusercontent.com/u/1631623?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sudsy</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=sudsy" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/DenizPiri"><img src="https://avatars.githubusercontent.com/u/519796?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Deniz Piri</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=DenizPiri" title="Code">💻</a></td>
   </tr>
 </table>
 
