@@ -14,29 +14,54 @@ namespace Proto.Cluster.Seed
 {
     public class SeedNodeClusterProvider : IClusterProvider
     {
-        private readonly TimeSpan _heartbeatExpiration;
         private readonly CancellationTokenSource _cts = new();
         private PID? _pid;
         private Cluster? _cluster;
-        private static readonly ILogger Logger = Log.CreateLogger<SeedNodeClusterProvider>(); 
+        private static readonly ILogger Logger = Log.CreateLogger<SeedNodeClusterProvider>();
 
-        public SeedNodeClusterProvider(TimeSpan? heartbeatExpiration=null) => 
-            _heartbeatExpiration = heartbeatExpiration ?? TimeSpan.FromSeconds(5);
+        private readonly SeedNodeClusterProviderOptions _options;
 
-        public Task StartMemberAsync(Cluster cluster)
+        public SeedNodeClusterProvider(SeedNodeClusterProviderOptions? options = null) => _options = options ?? new();
+
+        public async Task StartMemberAsync(Cluster cluster)
         {
-            _pid = cluster.System.Root.SpawnNamed(SeedNodeActor.Props(), "seed");
             _cluster = cluster;
-
-            return Task.CompletedTask;
+            _pid = cluster.System.Root.SpawnNamed(SeedNodeActor.Props(_options), SeedNodeActor.Name);
+            cluster.System.EventStream.Subscribe<GossipUpdate>(x => x.Key == GossipKeys.Topology, x => cluster.System.Root.Send(_pid, x));
+            cluster.System.EventStream.Subscribe<ClusterTopology>(cluster.System.Root, _pid);
+            var result = await cluster.System.Root.RequestAsync<object>(_pid, new Connect(), _cts.Token);
+            switch (result)
+            {
+                case Connected connected:
+                    Logger.LogInformation("Connected to seed node {MemberAddress}", connected.Member.Address);
+                    break;
+                default:
+                    throw new Exception("Failed to join any seed node");
+            }
         }
 
-        public Task StartClientAsync(Cluster cluster) => Task.CompletedTask;
+        public async Task StartClientAsync(Cluster cluster)
+        {
+            _cluster = cluster;
+            _pid = cluster.System.Root.SpawnNamed(SeedClientNodeActor.Props(_options), SeedClientNodeActor.Name);
+            var result = await cluster.System.Root.RequestAsync<object>(_pid, new Connect(), _cts.Token);
+            switch (result)
+            {
+                case Connected connected:
+                    Logger.LogInformation("Connected to seed node {MemberAddress}", connected.Member.Address);
+                    break;
+                default:
+                    throw new Exception("Failed to join any seed node");
+            }
+        }
 
         public async Task ShutdownAsync(bool graceful)
         {
-            await _cluster!.System.Root.StopAsync(_pid!);
-           _cts.Cancel();
+            if (_pid is not null && _cluster is not null)
+            {
+                await _cluster.System.Root.StopAsync(_pid).ConfigureAwait(false);
+            }
+            _cts.Cancel();
         }
     }
 }

@@ -107,7 +107,12 @@ namespace Proto
             Address = $"{host}:{port}";
         }
 
-        public void SetClientAddress() => Address = $"{Client}/{Id}";
+        public void SetClientAddress()
+        {
+            Address = $"{Client}/{Id}";
+            _host = Address;
+            _port = 0;
+        }
 
         public RootContext NewRoot(MessageHeader? headers = null, params Func<Sender, Sender>[] middleware) =>
             new(this, headers, middleware);

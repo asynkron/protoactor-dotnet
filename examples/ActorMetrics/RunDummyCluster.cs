@@ -60,7 +60,7 @@ namespace ActorMetrics
 
             var clusterConfig2 =
                 ClusterConfig
-                    .Setup("MyCluster", new SeedNodeClusterProvider(),
+                    .Setup("MyCluster", new SeedNodeClusterProvider(new(system.GetAddress())),
                         new PartitionIdentityLookup()
                     )
                     .WithClusterKind("somekind", props);
@@ -76,11 +76,6 @@ namespace ActorMetrics
 
             memberCluster2
                 .StartMemberAsync()
-                .GetAwaiter()
-                .GetResult(); ;
-
-            memberCluster2
-                .JoinSeed(system.GetAddress())
                 .GetAwaiter()
                 .GetResult();
 
