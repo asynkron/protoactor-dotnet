@@ -7,6 +7,10 @@ message JoinRequest {
   cluster.Member joiner = 1;
 }
 
+message JoinAsClientRequest {
+  string systemId = 1;
+}
+
 message JoinResponse {
-  
+  cluster.Member member = 1;
 }
