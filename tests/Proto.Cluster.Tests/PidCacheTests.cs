@@ -8,7 +8,7 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using Xunit;
 
 namespace Proto.Cluster.Tests

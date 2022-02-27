@@ -12,7 +12,6 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
-using Proto.Remote.GrpcCore;
 
 namespace HostedService
 {

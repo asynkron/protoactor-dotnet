@@ -8,7 +8,6 @@
     <ItemGroup>
       <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
       <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
     </ItemGroup>
 
     <ItemGroup>

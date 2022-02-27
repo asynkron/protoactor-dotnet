@@ -9,7 +9,7 @@ using Proto.Cluster.Consul;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.Redis;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
 
 using MyMessagesReflection = KafkaVirtualActorIngress.Messages.MyMessagesReflection;

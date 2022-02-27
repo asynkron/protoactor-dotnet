@@ -24,7 +24,6 @@ using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.OpenTelemetry;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using Serilog;
 using Serilog.Events;

@@ -9,7 +9,7 @@
     <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
     <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />

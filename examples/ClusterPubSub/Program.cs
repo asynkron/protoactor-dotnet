@@ -10,7 +10,7 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.PubSub;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using Proto.Utils;
 using StackExchange.Redis;
 

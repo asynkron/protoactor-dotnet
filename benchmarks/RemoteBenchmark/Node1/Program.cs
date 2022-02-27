@@ -14,7 +14,6 @@ using Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using ProtosReflection = Messages.ProtosReflection;
 
