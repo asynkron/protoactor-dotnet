@@ -74,8 +74,6 @@ namespace ClusterExperiment1
                 .WithGossipFanOut(3);
         }
 
-        // private static GrpcNetRemoteConfig GetRemoteConfig() => GetRemoteConfigGrpcCore();
-
         private static GrpcNetRemoteConfig GetRemoteConfig()
         {
             var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
@@ -94,22 +92,6 @@ namespace ClusterExperiment1
                         }
                     }
                 )
-                .WithProtoMessages(MessagesReflection.Descriptor)
-                .WithEndpointWriterMaxRetries(2);
-
-            return remoteConfig;
-        }
-
-        private static GrpcNetRemoteConfig GetRemoteConfigGrpcCore()
-        {
-            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
-            var port = int.Parse(portStr);
-            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfigBase.Localhost;
-            var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
-
-            var remoteConfig = GrpcNetRemoteConfig
-                .BindTo(host, port)
-                .WithAdvertisedHost(advertisedHost)
                 .WithProtoMessages(MessagesReflection.Descriptor)
                 .WithEndpointWriterMaxRetries(2);
 
