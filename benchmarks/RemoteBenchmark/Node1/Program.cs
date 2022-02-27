@@ -92,10 +92,10 @@ class Program
         }
         else
         {
-            var remoteConfig = GrpcCoreRemoteConfig
+            var remoteConfig = GrpcNetRemoteConfig
                 .BindTo(advertisedHost)
                 .WithProtoMessages(ProtosReflection.Descriptor);
-            remote = new GrpcCoreRemote(system, remoteConfig);
+            remote = new GrpcNetRemote(system, remoteConfig);
         }
 
         await remote.StartAsync();

@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
-using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using Xunit;
 
@@ -105,9 +104,7 @@ namespace Proto.Remote.Tests
             var host = hostBuilder.Start();
             return (host, host.Services.GetRequiredService<HostedGrpcNetRemote>());
         }
-
-        protected static GrpcCoreRemote GetGrpcCoreRemote(GrpcCoreRemoteConfig config) =>
-            new(new ActorSystem(), config);
+        
 
         protected static GrpcNetRemote GetGrpcNetRemote(GrpcNetRemoteConfig config)
         {

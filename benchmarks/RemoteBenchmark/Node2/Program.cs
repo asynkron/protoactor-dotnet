@@ -97,11 +97,11 @@ namespace Node2
             }
             else
             {
-                var remoteConfig = GrpcCoreRemoteConfig
+                var remoteConfig = GrpcNetRemoteConfig
                    .BindTo(advertisedHost, 12000)
                    .WithProtoMessages(ProtosReflection.Descriptor)
                    .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
-                remote = new GrpcCoreRemote(system, remoteConfig);
+                remote = new GrpcNetRemote(system, remoteConfig);
 
             }
 

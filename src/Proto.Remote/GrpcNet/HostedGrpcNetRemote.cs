@@ -121,30 +121,13 @@ namespace Proto.Remote.GrpcNet
             return endpoints.MapGrpcService<Remoting.RemotingBase>();
         }
 
-        public static void UseProtoRemote(this IApplicationBuilder applicationBuilder)
-        {
-            var hostedRemote = applicationBuilder.ApplicationServices.GetRequiredService<HostedGrpcNetRemote>();
-            hostedRemote.ServerAddressesFeature = applicationBuilder.ServerFeatures.Get<IServerAddressesFeature>();
-            applicationBuilder.UseRouting();
-            applicationBuilder.UseEndpoints(c => AddProtoRemoteEndpoint(c));
-        }
-
         public static IServiceCollection AddRemote(this IServiceCollection services, Func<IServiceProvider, GrpcNetRemoteConfig> configure)
         {
             services.AddSingleton(configure);
             AddAllServices(services);
             return services;
         }
-
- public static IServiceCollection AddRemote(
-            this IServiceCollection services,
-            GrpcNetRemoteConfig config
-        )
-        {
-            services.AddSingleton(config);
-            AddAllServices(services);
-            return services;
-        }
+        
 
         public static void UseProtoRemote(this IApplicationBuilder applicationBuilder, Action<GrpcServiceEndpointConventionBuilder> configure)
         {

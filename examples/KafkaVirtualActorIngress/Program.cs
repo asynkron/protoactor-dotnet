@@ -112,7 +112,7 @@ namespace KafkaVirtualActorIngress
         //TODO: Uncomment to enable metrics
         //  .WithMetricsProviders(new StatsdConfigurator(new[] { new Label("service", "my-system-name") }));
 
-        private static GrpcCoreRemoteConfig GetRemoteConfig() => GrpcCoreRemoteConfig
+        private static GrpcNetRemoteConfig GetRemoteConfig() => GrpcNetRemoteConfig
             .BindTo("127.0.0.1")
             //   .WithAdvertisedHost("the hostname or ip of this pod")
             .WithProtoMessages(MyMessagesReflection.Descriptor);

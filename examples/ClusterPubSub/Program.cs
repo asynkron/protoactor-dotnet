@@ -120,7 +120,7 @@ namespace ClusterPubSub
             .WithRemote(GetRemoteConfig())
             .WithCluster(GetClusterConfig());
 
-        private static GrpcCoreRemoteConfig GetRemoteConfig() => GrpcCoreRemoteConfig
+        private static GrpcNetRemoteConfig GetRemoteConfig() => GrpcNetRemoteConfig
             .BindToLocalhost()
             .WithProtoMessages(ClusterPubSub.ProtosReflection.Descriptor);
 

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Identity;
-using Proto.Cluster.Metrics;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
 using Proto.Remote.GrpcNet;
@@ -62,7 +61,7 @@ namespace Proto.Cluster.Tests
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             var system = new ActorSystem()
-                .WithRemote(GrpcCoreRemoteConfig.BindToLocalhost())
+                .WithRemote(GrpcNetRemoteConfig.BindToLocalhost())
                 .WithCluster(GetClusterConfig());
 
             var cluster = system.Cluster();

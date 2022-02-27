@@ -13,7 +13,7 @@
     <PackageReference Update="FluentAssertions" Version="6.4.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
     <ProjectReference Include="..\..\src\Proto.Remote.GrpcNet\Proto.Remote.GrpcNet.csproj" />
     <ProjectReference Include="..\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj" />
   </ItemGroup>

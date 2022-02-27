@@ -12,6 +12,7 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
+using Proto.Remote.GrpcNet;
 
 namespace HostedService
 {
@@ -46,7 +47,7 @@ namespace HostedService
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
             var identityLookup = new IdentityStorageLookup(new MongoIdentityStorage("foo", pids, 150));
             var sys = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3).WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1)))
-                .WithRemote(GrpcCoreRemoteConfig.BindToLocalhost(9090))
+                .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))
                 .WithCluster(ClusterConfig.Setup("test", clusterProvider, identityLookup)
                     .WithClusterKind("kind", Props.FromFunc(ctx => {
                                 if (ctx.Message is int i) ctx.Respond(i * 2);

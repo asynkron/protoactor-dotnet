@@ -31,7 +31,7 @@ namespace EventStreamTopicsCluster
             var l = LoggerFactory.Create(x => x.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
             
-            var remoteConfig = GrpcCoreRemoteConfig
+            var remoteConfig = GrpcNetRemoteConfig
                 .BindToLocalhost()
                 .WithProtoMessages(MessagesReflection.Descriptor);
 
