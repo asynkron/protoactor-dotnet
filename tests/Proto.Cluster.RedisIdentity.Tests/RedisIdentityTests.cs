@@ -19,6 +19,9 @@ namespace Proto.Cluster.RedisIdentity.Tests
     {
         public RedisIdentityClusterFixture() : base(3)
         {
+#if NETCORE
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+#endif
         }
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)

@@ -45,7 +45,9 @@ namespace Proto.Cluster.Tests
 
         protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
         {
+#if NETCORE
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+#endif
             _clusterSize = clusterSize;
             _configure = configure;
             ClusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";

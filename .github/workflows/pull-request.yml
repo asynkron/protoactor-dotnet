@@ -54,14 +54,14 @@ jobs:
 #          - net6.0
 #          - net5.0
         test:
-#          - "tests/Proto.Actor.Tests/*.csproj"
-#          - "tests/Proto.Remote.Tests/*.csproj"
-#          - "tests/Proto.Persistence.Tests/*.csproj"
+          - "tests/Proto.Actor.Tests/*.csproj"
+          - "tests/Proto.Remote.Tests/*.csproj"
+          - "tests/Proto.Persistence.Tests/*.csproj"
           - "tests/Proto.Cluster.Tests/*.csproj"
-#          - "tests/Proto.Cluster.Identity.Tests/*.csproj"
-          # - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
-        #  - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
-#          - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
+          - "tests/Proto.Cluster.Identity.Tests/*.csproj"
+          - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
+          - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
+          - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
 
     steps:
       - uses: actions/checkout@v1
