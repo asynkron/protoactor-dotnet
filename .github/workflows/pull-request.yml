@@ -50,16 +50,16 @@ jobs:
     strategy:
       matrix:
         dotnet:
+          - netcoreapp3.1
           - net6.0
           - net5.0
-          - netcoreapp3.1
         test:
           - "tests/Proto.Actor.Tests/*.csproj"
           - "tests/Proto.Remote.Tests/*.csproj"
           - "tests/Proto.Persistence.Tests/*.csproj"
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.Identity.Tests/*.csproj"
-          # - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
+          - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
 
@@ -82,4 +82,4 @@ jobs:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }}
+          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} -l "console;verbosity=detailed"

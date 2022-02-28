@@ -24,7 +24,6 @@ using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.OpenTelemetry;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using Serilog;
 using Serilog.Events;
@@ -75,8 +74,6 @@ namespace ClusterExperiment1
                 .WithGossipFanOut(3);
         }
 
-        // private static GrpcCoreRemoteConfig GetRemoteConfig() => GetRemoteConfigGrpcCore();
-
         private static GrpcNetRemoteConfig GetRemoteConfig()
         {
             var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
@@ -95,22 +92,6 @@ namespace ClusterExperiment1
                         }
                     }
                 )
-                .WithProtoMessages(MessagesReflection.Descriptor)
-                .WithEndpointWriterMaxRetries(2);
-
-            return remoteConfig;
-        }
-
-        private static GrpcCoreRemoteConfig GetRemoteConfigGrpcCore()
-        {
-            var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
-            var port = int.Parse(portStr);
-            var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfigBase.Localhost;
-            var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
-
-            var remoteConfig = GrpcCoreRemoteConfig
-                .BindTo(host, port)
-                .WithAdvertisedHost(advertisedHost)
                 .WithProtoMessages(MessagesReflection.Descriptor)
                 .WithEndpointWriterMaxRetries(2);
 

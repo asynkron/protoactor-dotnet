@@ -16,6 +16,9 @@ namespace Proto.Cluster.MongoIdentity.Tests
     {
         public MongoIdentityClusterFixture() : base(3, config => config with {ActorActivationTimeout = TimeSpan.FromSeconds(10)})
         {
+#if NETCOREAPP3_1
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+#endif
         }
 
         protected override IIdentityLookup GetIdentityLookup(string clusterName)

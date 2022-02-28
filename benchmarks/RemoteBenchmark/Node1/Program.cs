@@ -14,7 +14,6 @@ using Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using ProtosReflection = Messages.ProtosReflection;
 
@@ -31,23 +30,19 @@ class Program
         );
 
         var logger = Log.CreateLogger<Program>();
-#if NETCORE
+#if NETCOREAPP3_1
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
 
-        Console.WriteLine("Enter 0 to use GrpcNet provider (Default)");
-        Console.WriteLine("Enter 1 to use GrpcCore provider");
-        if (!int.TryParse(Console.ReadLine(), out var provider))
-            provider = 0;
+
 
         var serverRemote = 0;
-        if (provider == 0)
-        {
-            Console.WriteLine("Enter 0 to use Server to Server communication (Default)");
-            Console.WriteLine("Enter 1 to use Client to Remote communication");
-            if (!int.TryParse(Console.ReadLine(), out serverRemote))
-                serverRemote = 0;
-        }
+
+        Console.WriteLine("Enter 0 to use Server to Server communication (Default)");
+        Console.WriteLine("Enter 1 to use Client to Remote communication");
+        if (!int.TryParse(Console.ReadLine(), out serverRemote))
+            serverRemote = 0;
+        
 
         var advertisedHost = "";
 
@@ -72,32 +67,24 @@ class Program
 
         IRemote remote;
 
-        if (provider == 0)
-        {
-            var remoteConfig = GrpcNetRemoteConfig
-               .BindTo(advertisedHost)
-               .WithChannelOptions(new GrpcChannelOptions
-               {
-                   CompressionProviders = new[]
-                       {
-                            new GzipCompressionProvider(CompressionLevel.Fastest)
-                       }
-               }
-               )
-               .WithEndpointWriterMaxRetries(3)
-               .WithProtoMessages(ProtosReflection.Descriptor);
-            if (serverRemote == 0)
-                remote = new GrpcNetRemote(system, remoteConfig);
-            else
-                remote = new GrpcNetClientRemote(system, remoteConfig);
-        }
+
+        var remoteConfig = GrpcNetRemoteConfig
+           .BindTo(advertisedHost)
+           .WithChannelOptions(new GrpcChannelOptions
+           {
+               CompressionProviders = new[]
+                   {
+                        new GzipCompressionProvider(CompressionLevel.Fastest)
+                   }
+           }
+           )
+           .WithEndpointWriterMaxRetries(3)
+           .WithProtoMessages(ProtosReflection.Descriptor);
+        if (serverRemote == 0)
+            remote = new GrpcNetRemote(system, remoteConfig);
         else
-        {
-            var remoteConfig = GrpcCoreRemoteConfig
-                .BindTo(advertisedHost)
-                .WithProtoMessages(ProtosReflection.Descriptor);
-            remote = new GrpcCoreRemote(system, remoteConfig);
-        }
+            remote = new GrpcNetClientRemote(system, remoteConfig);
+
 
         await remote.StartAsync();
 

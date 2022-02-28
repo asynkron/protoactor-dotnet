@@ -13,7 +13,7 @@ using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
 
 namespace KubernetesDiagnostics
@@ -65,7 +65,7 @@ namespace KubernetesDiagnostics
                //     .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
                //     .WithDeveloperSupervisionLogging(true)
                 )
-                .WithRemote(GrpcCoreRemoteConfig
+                .WithRemote(GrpcNetRemoteConfig
                     .BindTo(host, port)
                     .WithAdvertisedHost(advertisedHost)
                     .WithEndpointWriterMaxRetries(2)

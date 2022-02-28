@@ -10,7 +10,7 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.PubSub;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using Proto.Utils;
 using StackExchange.Redis;
 
@@ -120,7 +120,7 @@ namespace ClusterPubSub
             .WithRemote(GetRemoteConfig())
             .WithCluster(GetClusterConfig());
 
-        private static GrpcCoreRemoteConfig GetRemoteConfig() => GrpcCoreRemoteConfig
+        private static GrpcNetRemoteConfig GetRemoteConfig() => GrpcNetRemoteConfig
             .BindToLocalhost()
             .WithProtoMessages(ClusterPubSub.ProtosReflection.Descriptor);
 

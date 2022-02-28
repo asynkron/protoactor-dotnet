@@ -9,20 +9,19 @@
     <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
     <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
     <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
-    <PackageReference Include="GitHubActionsTestLogger" Version="1.2.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.42.0" PrivateAssets="All" />
+    <PackageReference Include="Grpc.Tools" Version="2.44.0" PrivateAssets="All" />
     <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" />
     <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.1.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Interactive.Async" Version="5.1.0" />
-    <PackageReference Update="FluentAssertions" Version="6.4.0" />
+    <PackageReference Include="System.Interactive.Async" Version="6.0.1" />
+    <PackageReference Update="FluentAssertions" Version="6.5.1" />
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.1.0" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="*.proto" />

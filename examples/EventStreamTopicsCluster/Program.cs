@@ -8,7 +8,7 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 
 
 namespace EventStreamTopicsCluster
@@ -31,7 +31,7 @@ namespace EventStreamTopicsCluster
             var l = LoggerFactory.Create(x => x.AddConsole().SetMinimumLevel(LogLevel.Information));
             Log.SetLoggerFactory(l);
             
-            var remoteConfig = GrpcCoreRemoteConfig
+            var remoteConfig = GrpcNetRemoteConfig
                 .BindToLocalhost()
                 .WithProtoMessages(MessagesReflection.Descriptor);
 

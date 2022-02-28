@@ -35,7 +35,7 @@ jobs:
           - "tests/Proto.OpenTelemetry.Tests/*.csproj"
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.Identity.Tests/*.csproj"
-          # - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
+          - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
 
@@ -53,7 +53,7 @@ jobs:
           dotnet-version: "3.1.x"
 
       - name: Run tests ${{ matrix.test }}
-        timeout-minutes: 7
+        timeout-minutes: 15
         env:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000

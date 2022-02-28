@@ -12,7 +12,6 @@ using Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
 using Proto.Remote.GrpcNet;
 using ProtosReflection = Messages.ProtosReflection;
 
@@ -58,14 +57,10 @@ namespace Node2
                 )
             );
 
-#if NETCORE
+#if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
 
-            Console.WriteLine("Enter 0 to use GrpcNet provider (Default)");
-            Console.WriteLine("Enter 1 to use GrpcCore provider");
-            if (!int.TryParse(Console.ReadLine(), out var provider))
-                provider = 0;
 
             Console.WriteLine("Enter Advertised Host (Default = 127.0.0.1)");
             var advertisedHost = Console.ReadLine().Trim();
@@ -78,33 +73,21 @@ namespace Node2
             var system = new ActorSystem(actorSystemConfig);
             var context = new RootContext(system);
             IRemote remote;
-
-            if (provider == 0)
-            {
-                var remoteConfig = GrpcNetRemoteConfig
-                    .BindTo(advertisedHost, 12000)
-                    .WithChannelOptions(new GrpcChannelOptions
-                    {
-                        CompressionProviders = new ICompressionProvider[]
-                            {
-                                new GzipCompressionProvider(CompressionLevel.Fastest)
-                             }
-                    }
-                     )
-                     .WithEndpointWriterMaxRetries(3)
-                     .WithProtoMessages(ProtosReflection.Descriptor)
-                     .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
-                remote = new GrpcNetRemote(system, remoteConfig);
-            }
-            else
-            {
-                var remoteConfig = GrpcCoreRemoteConfig
-                   .BindTo(advertisedHost, 12000)
-                   .WithProtoMessages(ProtosReflection.Descriptor)
-                   .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
-                remote = new GrpcCoreRemote(system, remoteConfig);
-
-            }
+            
+            var remoteConfig = GrpcNetRemoteConfig
+                .BindTo(advertisedHost, 12000)
+                .WithChannelOptions(new GrpcChannelOptions
+                {
+                    CompressionProviders = new ICompressionProvider[]
+                        {
+                            new GzipCompressionProvider(CompressionLevel.Fastest)
+                         }
+                }
+                 )
+                 .WithEndpointWriterMaxRetries(3)
+                 .WithProtoMessages(ProtosReflection.Descriptor)
+                 .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
+            remote = new GrpcNetRemote(system, remoteConfig);
 
             await remote.StartAsync();
             context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");

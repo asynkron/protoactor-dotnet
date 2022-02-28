@@ -12,7 +12,7 @@
       <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
       <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
       <ProjectReference Include="..\..\src\Proto.OpenTracing\Proto.OpenTracing.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj" />
+      <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
     </ItemGroup>
 
     <ItemGroup>

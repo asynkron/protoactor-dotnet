@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Logging;
-using Proto.Remote.Metrics;
+
 
 namespace Proto.Remote.GrpcNet
 {

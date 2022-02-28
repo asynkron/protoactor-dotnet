@@ -14,7 +14,7 @@ using Proto.Cluster.Testing;
 using Proto.Logging;
 using Proto.OpenTelemetry;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 using Xunit;
 
 // ReSharper disable ClassNeverInstantiated.Global
@@ -45,6 +45,9 @@ namespace Proto.Cluster.Tests
 
         protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
         {
+#if NETCOREAPP3_1
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+#endif
             _clusterSize = clusterSize;
             _configure = configure;
             ClusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
@@ -145,8 +148,8 @@ namespace Proto.Cluster.Tests
             system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{Message}", e.GetType().Name, e); }
             );
 
-            var remoteConfig = GrpcCoreRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
-            var _ = new GrpcCoreRemote(system, remoteConfig);
+            var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
+            var _ = new GrpcNetRemote(system, remoteConfig);
 
             var cluster = new Cluster(system, config);
 
