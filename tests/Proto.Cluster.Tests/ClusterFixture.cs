@@ -45,7 +45,7 @@ namespace Proto.Cluster.Tests
 
         protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
         {
-#if NETCORE
+#if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
             _clusterSize = clusterSize;

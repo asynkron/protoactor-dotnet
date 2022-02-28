@@ -57,7 +57,7 @@ namespace Node2
                 )
             );
 
-#if NETCORE
+#if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
 

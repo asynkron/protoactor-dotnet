@@ -19,7 +19,7 @@ namespace Proto.Cluster.RedisIdentity.Tests
     {
         public RedisIdentityClusterFixture() : base(3)
         {
-#if NETCORE
+#if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
         }

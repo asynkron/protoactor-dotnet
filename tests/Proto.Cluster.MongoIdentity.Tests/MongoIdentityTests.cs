@@ -16,7 +16,7 @@ namespace Proto.Cluster.MongoIdentity.Tests
     {
         public MongoIdentityClusterFixture() : base(3, config => config with {ActorActivationTimeout = TimeSpan.FromSeconds(10)})
         {
-#if NETCORE
+#if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
         }

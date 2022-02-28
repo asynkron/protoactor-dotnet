@@ -30,7 +30,7 @@ class Program
         );
 
         var logger = Log.CreateLogger<Program>();
-#if NETCORE
+#if NETCOREAPP3_1
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
 

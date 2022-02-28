@@ -71,7 +71,7 @@ namespace Proto.Remote.Tests
 
         protected static (IHost, HostedGrpcNetRemote) GetHostedGrpcNetRemote(GrpcNetRemoteConfig config)
         {
-#if NETCORE
+#if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
             var hostBuilder = Host.CreateDefaultBuilder(Array.Empty<string>())
@@ -108,14 +108,14 @@ namespace Proto.Remote.Tests
 
         protected static GrpcNetRemote GetGrpcNetRemote(GrpcNetRemoteConfig config)
         {
-#if NETCORE
+#if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
             return new GrpcNetRemote(new ActorSystem(), config);
         }
         protected static GrpcNetClientRemote GetGrpcNetClientRemote(GrpcNetRemoteConfig config)
         {
-#if NETCORE
+#if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
             return new GrpcNetClientRemote(new ActorSystem(), config);
