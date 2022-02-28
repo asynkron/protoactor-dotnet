@@ -1,15 +1,9 @@
-#if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Logging;
-using Grpc.HealthCheck;
-using JetBrains.Annotations;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+
 
 namespace Proto.Remote.GrpcNet
 {
@@ -92,61 +86,3 @@ namespace Proto.Remote.GrpcNet
         }
     }
 }
-
-
-
-
-namespace Proto.Remote.GrpcNet
-{
-    [PublicAPI]
-    public static class Extensions2
-    {
-        private static void AddAllServices(IServiceCollection services)
-        {
-            services.TryAddSingleton<ActorSystem>();
-            services.AddHostedService<RemoteHostedService>();
-            services.AddSingleton<HostedGrpcNetRemote>();
-            services.AddSingleton<IRemote, HostedGrpcNetRemote>(sp => sp.GetRequiredService<HostedGrpcNetRemote>());
-            services.AddSingleton<EndpointManager>();
-            services.AddSingleton<RemoteConfigBase, GrpcNetRemoteConfig>(sp => sp.GetRequiredService<GrpcNetRemoteConfig>());
-            services.AddSingleton<EndpointReader, EndpointReader>();
-            services.AddSingleton(sp => sp.GetRequiredService<GrpcNetRemoteConfig>().Serialization);
-            services.AddSingleton<Remoting.RemotingBase, EndpointReader>(sp => sp.GetRequiredService<EndpointReader>());
-            services.AddSingleton<IChannelProvider, GrpcNetChannelProvider>();
-        }
-
-        private static GrpcServiceEndpointConventionBuilder AddProtoRemoteEndpoint(IEndpointRouteBuilder endpoints)
-        {
-            endpoints.MapGrpcService<HealthServiceImpl>();
-            return endpoints.MapGrpcService<Remoting.RemotingBase>();
-        }
-
-        public static IServiceCollection AddRemote(this IServiceCollection services, Func<IServiceProvider, GrpcNetRemoteConfig> configure)
-        {
-            services.AddSingleton(configure);
-            AddAllServices(services);
-            return services;
-        }
-        
-
-        public static void UseProtoRemote(this IApplicationBuilder applicationBuilder, Action<GrpcServiceEndpointConventionBuilder> configure)
-        {
-            var hostedRemote = applicationBuilder.ApplicationServices.GetRequiredService<HostedGrpcNetRemote>();
-            hostedRemote.ServerAddressesFeature = applicationBuilder.ServerFeatures.Get<IServerAddressesFeature>();
-            applicationBuilder.UseEndpoints(c => configure(AddProtoRemoteEndpoint(c)));
-        }
-
-public static IServiceCollection AddClientRemote(
-            this IServiceCollection services,
-            GrpcNetRemoteConfig config
-        )
-        {
-            services.AddSingleton(config);
-            services.TryAddSingleton<ActorSystem>();
-            services.AddSingleton<IRemote, GrpcNetClientRemote>();
-            services.AddSingleton<RemoteHostedService>();
-            return services;
-        }
-    }
-}
-#endif
