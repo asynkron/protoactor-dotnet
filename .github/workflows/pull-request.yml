@@ -51,8 +51,8 @@ jobs:
       matrix:
         dotnet:
           - netcoreapp3.1
-#          - net6.0
-#          - net5.0
+          - net6.0
+          - net5.0
         test:
           - "tests/Proto.Actor.Tests/*.csproj"
           - "tests/Proto.Remote.Tests/*.csproj"
