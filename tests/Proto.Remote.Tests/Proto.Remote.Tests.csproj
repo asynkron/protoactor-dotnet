@@ -5,7 +5,10 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
-    <PackageReference Include="GitHubActionsTestLogger" Version="1.2.0" />
+    <PackageReference Include="GitHubActionsTestLogger" Version="1.3.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
