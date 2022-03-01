@@ -4,7 +4,7 @@
     <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Consul" Version="1.6.10.3" />
+    <PackageReference Include="Consul" Version="1.6.10.4" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
       <PrivateAssets>all</PrivateAssets>
