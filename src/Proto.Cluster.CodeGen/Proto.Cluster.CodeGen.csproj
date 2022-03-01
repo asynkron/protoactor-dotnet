@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Handlebars.Net" Version="2.0.9" />
+    <PackageReference Include="Handlebars.Net" Version="2.1.0" />
     <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.0-beta-20204-02" PrivateAssets="All" />
     <PackageReference Include="protobuf-net" Version="3.0.101" />

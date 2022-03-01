@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Handlebars.Net" Version="2.0.9" />
+        <PackageReference Include="Handlebars.Net" Version="2.1.0" />
         <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
         <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
           <PrivateAssets>all</PrivateAssets>
