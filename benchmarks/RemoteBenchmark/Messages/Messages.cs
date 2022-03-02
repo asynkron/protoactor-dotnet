@@ -6,13 +6,12 @@
 using Google.Protobuf;
 using Proto.Remote;
 
-namespace Messages
+namespace Messages;
+
+public partial class Ping : ICachedSerialization
 {
-    public partial class Ping : ICachedSerialization
-    {
-    }
+}
     
-    public partial class Pong : ICachedSerialization
-    {
-    }
+public partial class Pong : ICachedSerialization
+{
 }

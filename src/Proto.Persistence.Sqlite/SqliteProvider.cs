@@ -5,174 +5,173 @@ using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 
-namespace Proto.Persistence.Sqlite
+namespace Proto.Persistence.Sqlite;
+
+public class SqliteProvider : IProvider
 {
-    public class SqliteProvider : IProvider
+    private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
+    private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+    private readonly SqliteConnectionStringBuilder _connectionStringBuilder;
+
+    public SqliteProvider(SqliteConnectionStringBuilder connectionStringBuilder)
     {
-        private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
-        private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
-        private readonly SqliteConnectionStringBuilder _connectionStringBuilder;
+        _connectionStringBuilder = connectionStringBuilder;
 
-        public SqliteProvider(SqliteConnectionStringBuilder connectionStringBuilder)
+        using var connection = new SqliteConnection(ConnectionString);
+
+        connection.Open();
+
+        using var initEventsCommand = connection.CreateCommand();
+
+        initEventsCommand.CommandText = "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
+        initEventsCommand.ExecuteNonQuery();
+
+        using var initSnapshotsCommand = connection.CreateCommand();
+
+        initSnapshotsCommand.CommandText =
+            "CREATE TABLE IF NOT EXISTS Snapshots (Id TEXT, ActorName TEXT, SnapshotIndex REAL, SnapshotData TEXT)";
+        initSnapshotsCommand.ExecuteNonQuery();
+    }
+
+    private string ConnectionString => $"{_connectionStringBuilder}";
+
+    public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
+    {
+        using var connection = new SqliteConnection(ConnectionString);
+
+        await connection.OpenAsync();
+
+        using var deleteCommand = CreateCommand(
+            connection,
+            "DELETE FROM Events WHERE ActorName = $actorName AND EventIndex <= $inclusiveToIndex",
+            ("$actorName", actorName),
+            ("$inclusiveToIndex", inclusiveToIndex)
+        );
+
+        await deleteCommand.ExecuteNonQueryAsync();
+    }
+
+    public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
+    {
+        using var connection = new SqliteConnection(ConnectionString);
+
+        await connection.OpenAsync();
+
+        using var deleteCommand = CreateCommand(
+            connection,
+            "DELETE FROM Snapshots WHERE ActorName = $actorName AND SnapshotIndex <= $inclusiveToIndex",
+            ("$actorName", actorName),
+            ("$inclusiveToIndex", inclusiveToIndex)
+        );
+
+        await deleteCommand.ExecuteNonQueryAsync();
+    }
+
+    public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+    {
+        using var connection = new SqliteConnection(ConnectionString);
+
+        await connection.OpenAsync();
+
+        using var selectCommand = CreateCommand(
+            connection,
+            "SELECT EventIndex, EventData FROM Events WHERE ActorName = $ActorName AND EventIndex >= $IndexStart AND EventIndex <= $IndexEnd ORDER BY EventIndex ASC",
+            ("$ActorName", actorName),
+            ("$IndexStart", indexStart),
+            ("$IndexEnd", indexEnd)
+        );
+
+        var indexes = new List<long>();
+
+        using var reader = await selectCommand.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
         {
-            _connectionStringBuilder = connectionStringBuilder;
+            indexes.Add(Convert.ToInt64(reader["EventIndex"]));
 
-            using var connection = new SqliteConnection(ConnectionString);
-
-            connection.Open();
-
-            using var initEventsCommand = connection.CreateCommand();
-
-            initEventsCommand.CommandText = "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
-            initEventsCommand.ExecuteNonQuery();
-
-            using var initSnapshotsCommand = connection.CreateCommand();
-
-            initSnapshotsCommand.CommandText =
-                "CREATE TABLE IF NOT EXISTS Snapshots (Id TEXT, ActorName TEXT, SnapshotIndex REAL, SnapshotData TEXT)";
-            initSnapshotsCommand.ExecuteNonQuery();
+            callback(JsonConvert.DeserializeObject<object>(reader["EventData"].ToString(), AutoTypeSettings));
         }
 
-        private string ConnectionString => $"{_connectionStringBuilder}";
+        return indexes.Any() ? indexes.LastOrDefault() : -1;
+    }
 
-        public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
+    public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
+    {
+        object snapshot = null;
+        long index = 0;
+
+        using var connection = new SqliteConnection(ConnectionString);
+
+        await connection.OpenAsync();
+
+        using var selectCommand = CreateCommand(
+            connection,
+            "SELECT SnapshotIndex, SnapshotData FROM Snapshots WHERE ActorName = $ActorName ORDER BY SnapshotIndex DESC LIMIT 1",
+            ("$ActorName", actorName)
+        );
+
+        using var reader = await selectCommand.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
         {
-            using var connection = new SqliteConnection(ConnectionString);
-
-            await connection.OpenAsync();
-
-            using var deleteCommand = CreateCommand(
-                connection,
-                "DELETE FROM Events WHERE ActorName = $actorName AND EventIndex <= $inclusiveToIndex",
-                ("$actorName", actorName),
-                ("$inclusiveToIndex", inclusiveToIndex)
-            );
-
-            await deleteCommand.ExecuteNonQueryAsync();
+            snapshot = JsonConvert.DeserializeObject<object>(reader["SnapshotData"].ToString(), AutoTypeSettings);
+            index = Convert.ToInt64(reader["SnapshotIndex"]);
         }
 
-        public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-        {
-            using var connection = new SqliteConnection(ConnectionString);
+        return (snapshot, index);
+    }
 
-            await connection.OpenAsync();
+    public async Task<long> PersistEventAsync(string actorName, long index, object @event)
+    {
+        var item = new Event(
+            actorName, index, JsonConvert.SerializeObject(@event, AllTypeSettings)
+        );
 
-            using var deleteCommand = CreateCommand(
-                connection,
-                "DELETE FROM Snapshots WHERE ActorName = $actorName AND SnapshotIndex <= $inclusiveToIndex",
-                ("$actorName", actorName),
-                ("$inclusiveToIndex", inclusiveToIndex)
-            );
+        using var connection = new SqliteConnection(ConnectionString);
 
-            await deleteCommand.ExecuteNonQueryAsync();
-        }
+        await connection.OpenAsync();
 
-        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
-        {
-            using var connection = new SqliteConnection(ConnectionString);
+        using var insertCommand = CreateCommand(
+            connection,
+            "INSERT INTO Events (Id, ActorName, EventIndex, EventData) VALUES ($Id, $ActorName, $EventIndex, $EventData)",
+            ("$Id", item.Id),
+            ("$ActorName", item.ActorName),
+            ("$EventIndex", item.EventIndex),
+            ("$EventData", item.EventData)
+        );
 
-            await connection.OpenAsync();
+        await insertCommand.ExecuteNonQueryAsync();
 
-            using var selectCommand = CreateCommand(
-                connection,
-                "SELECT EventIndex, EventData FROM Events WHERE ActorName = $ActorName AND EventIndex >= $IndexStart AND EventIndex <= $IndexEnd ORDER BY EventIndex ASC",
-                ("$ActorName", actorName),
-                ("$IndexStart", indexStart),
-                ("$IndexEnd", indexEnd)
-            );
+        return index++;
+    }
 
-            var indexes = new List<long>();
+    public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
+    {
+        var item = new Snapshot(
+            actorName, index, JsonConvert.SerializeObject(snapshot, AllTypeSettings)
+        );
 
-            using var reader = await selectCommand.ExecuteReaderAsync();
+        using var connection = new SqliteConnection(ConnectionString);
 
-            while (await reader.ReadAsync())
-            {
-                indexes.Add(Convert.ToInt64(reader["EventIndex"]));
+        await connection.OpenAsync();
 
-                callback(JsonConvert.DeserializeObject<object>(reader["EventData"].ToString(), AutoTypeSettings));
-            }
+        using var insertCommand = CreateCommand(
+            connection,
+            "INSERT INTO Snapshots (Id, ActorName, SnapshotIndex, SnapshotData) VALUES ($Id, $ActorName, $SnapshotIndex, $SnapshotData)",
+            ("$Id", item.Id),
+            ("$ActorName", item.ActorName),
+            ("$SnapshotIndex", item.SnapshotIndex),
+            ("$SnapshotData", item.SnapshotData)
+        );
 
-            return indexes.Any() ? indexes.LastOrDefault() : -1;
-        }
+        await insertCommand.ExecuteNonQueryAsync();
+    }
 
-        public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
-        {
-            object snapshot = null;
-            long index = 0;
-
-            using var connection = new SqliteConnection(ConnectionString);
-
-            await connection.OpenAsync();
-
-            using var selectCommand = CreateCommand(
-                connection,
-                "SELECT SnapshotIndex, SnapshotData FROM Snapshots WHERE ActorName = $ActorName ORDER BY SnapshotIndex DESC LIMIT 1",
-                ("$ActorName", actorName)
-            );
-
-            using var reader = await selectCommand.ExecuteReaderAsync();
-
-            while (await reader.ReadAsync())
-            {
-                snapshot = JsonConvert.DeserializeObject<object>(reader["SnapshotData"].ToString(), AutoTypeSettings);
-                index = Convert.ToInt64(reader["SnapshotIndex"]);
-            }
-
-            return (snapshot, index);
-        }
-
-        public async Task<long> PersistEventAsync(string actorName, long index, object @event)
-        {
-            var item = new Event(
-                actorName, index, JsonConvert.SerializeObject(@event, AllTypeSettings)
-            );
-
-            using var connection = new SqliteConnection(ConnectionString);
-
-            await connection.OpenAsync();
-
-            using var insertCommand = CreateCommand(
-                connection,
-                "INSERT INTO Events (Id, ActorName, EventIndex, EventData) VALUES ($Id, $ActorName, $EventIndex, $EventData)",
-                ("$Id", item.Id),
-                ("$ActorName", item.ActorName),
-                ("$EventIndex", item.EventIndex),
-                ("$EventData", item.EventData)
-            );
-
-            await insertCommand.ExecuteNonQueryAsync();
-
-            return index++;
-        }
-
-        public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
-        {
-            var item = new Snapshot(
-                actorName, index, JsonConvert.SerializeObject(snapshot, AllTypeSettings)
-            );
-
-            using var connection = new SqliteConnection(ConnectionString);
-
-            await connection.OpenAsync();
-
-            using var insertCommand = CreateCommand(
-                connection,
-                "INSERT INTO Snapshots (Id, ActorName, SnapshotIndex, SnapshotData) VALUES ($Id, $ActorName, $SnapshotIndex, $SnapshotData)",
-                ("$Id", item.Id),
-                ("$ActorName", item.ActorName),
-                ("$SnapshotIndex", item.SnapshotIndex),
-                ("$SnapshotData", item.SnapshotData)
-            );
-
-            await insertCommand.ExecuteNonQueryAsync();
-        }
-
-        private static SqliteCommand CreateCommand(SqliteConnection connection, string command, params (string Name, object Value)[] parameters)
-        {
-            var sqliteCommand = connection.CreateCommand();
-            sqliteCommand.CommandText = command;
-            sqliteCommand.Parameters.AddRange(parameters.Select(x => new SqliteParameter(x.Name, x.Value)));
-            return sqliteCommand;
-        }
+    private static SqliteCommand CreateCommand(SqliteConnection connection, string command, params (string Name, object Value)[] parameters)
+    {
+        var sqliteCommand = connection.CreateCommand();
+        sqliteCommand.CommandText = command;
+        sqliteCommand.Parameters.AddRange(parameters.Select(x => new SqliteParameter(x.Name, x.Value)));
+        return sqliteCommand;
     }
 }

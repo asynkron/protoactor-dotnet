@@ -7,50 +7,49 @@ using System;
 using System.Threading.Tasks;
 using Proto;
 
-namespace EscalateSupervision
+namespace EscalateSupervision;
+
+class Program
 {
-    class Program
+    private static void Main(string[] args)
     {
-        private static void Main(string[] args)
-        {
-            var childProps = Props.FromFunc(context => {
+        var childProps = Props.FromFunc(context => {
+                Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
+
+                switch (context.Message)
+                {
+                    case Started _:
+                        throw new Exception("child failure");
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+
+        var rootProps = Props.FromFunc(context => {
                     Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
 
                     switch (context.Message)
                     {
                         case Started _:
-                            throw new Exception("child failure");
+                            context.SpawnNamed(childProps, "child");
+                            break;
+                        case Terminated terminated:
+                            Console.WriteLine($"Terminated {terminated.Who}");
+                            break;
                     }
 
                     return Task.CompletedTask;
                 }
+            )
+            .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 0,
+                    null
+                )
             );
 
-            var rootProps = Props.FromFunc(context => {
-                        Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
+        var rootContext = new RootContext(new ActorSystem());
+        rootContext.SpawnNamed(rootProps, "root");
 
-                        switch (context.Message)
-                        {
-                            case Started _:
-                                context.SpawnNamed(childProps, "child");
-                                break;
-                            case Terminated terminated:
-                                Console.WriteLine($"Terminated {terminated.Who}");
-                                break;
-                        }
-
-                        return Task.CompletedTask;
-                    }
-                )
-                .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 0,
-                        null
-                    )
-                );
-
-            var rootContext = new RootContext(new ActorSystem());
-            rootContext.SpawnNamed(rootProps, "root");
-
-            Console.ReadLine();
-        }
+        Console.ReadLine();
     }
 }

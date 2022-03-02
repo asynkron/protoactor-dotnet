@@ -6,28 +6,27 @@
 
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace Proto.Persistence.MongoDB
+namespace Proto.Persistence.MongoDB;
+
+class Event
 {
-    class Event
+    public Event(string actorName, long eventIndex, object data)
     {
-        public Event(string actorName, long eventIndex, object data)
-        {
-            ActorName = actorName;
-            EventIndex = eventIndex;
-            Data = data;
-            Id = $"{actorName}-event-{eventIndex}";
-        }
-
-        [BsonElement]
-        public string ActorName { get; set; }
-
-        [BsonElement]
-        public long EventIndex { get; set; }
-
-        [BsonElement]
-        public object Data { get; set; }
-
-        [BsonId]
-        public string Id { get; set; }
+        ActorName = actorName;
+        EventIndex = eventIndex;
+        Data = data;
+        Id = $"{actorName}-event-{eventIndex}";
     }
+
+    [BsonElement]
+    public string ActorName { get; set; }
+
+    [BsonElement]
+    public long EventIndex { get; set; }
+
+    [BsonElement]
+    public object Data { get; set; }
+
+    [BsonId]
+    public string Id { get; set; }
 }
