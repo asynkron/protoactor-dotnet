@@ -1,9 +1,8 @@
 ﻿using BenchmarkDotNet.Running;
 
-namespace ClusterMicroBenchmarks
+namespace ClusterMicroBenchmarks;
+
+class Program
 {
-    class Program
-    {
-        static void Main() => BenchmarkRunner.Run<ConcurrentSpawnBenchmark>();
-    }
+    static void Main() => BenchmarkRunner.Run<ConcurrentSpawnBenchmark>();
 }

@@ -6,25 +6,24 @@
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Proto.Tests
+namespace Proto.Tests;
+
+public abstract class ActorTestBase : IAsyncLifetime
 {
-    public abstract class ActorTestBase : IAsyncLifetime
+    protected readonly RootContext Context;
+    protected readonly ActorSystem System;
+
+    protected ActorTestBase()
     {
-        protected readonly RootContext Context;
-        protected readonly ActorSystem System;
-
-        protected ActorTestBase()
-        {
-            System = new ActorSystem();
-            Context = System.Root;
-        }
-
-        public Task InitializeAsync() => Task.CompletedTask;
-
-        public async Task DisposeAsync() => await System.ShutdownAsync();
-
-        protected PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(forwarder));
-
-        protected PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
+        System = new ActorSystem();
+        Context = System.Root;
     }
+
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync() => await System.ShutdownAsync();
+
+    protected PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(forwarder));
+
+    protected PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
 }

@@ -1,9 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace Proto.TestFixtures
+namespace Proto.TestFixtures;
+
+public class DoNothingActor : IActor
 {
-    public class DoNothingActor : IActor
-    {
-        public Task ReceiveAsync(IContext context) => Task.CompletedTask;
-    }
+    public Task ReceiveAsync(IContext context) => Task.CompletedTask;
 }

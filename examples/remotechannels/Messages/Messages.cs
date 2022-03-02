@@ -1,7 +1,6 @@
-﻿namespace Messages
-{
-    public record MyMessage(int Value){}
+﻿namespace Messages;
 
-    public record Subscribe();
-    public record Subscribed();
-}
+public record MyMessage(int Value){}
+
+public record Subscribe();
+public record Subscribed();

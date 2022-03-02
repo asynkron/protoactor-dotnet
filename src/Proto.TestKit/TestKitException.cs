@@ -5,12 +5,11 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Proto.TestKit
+namespace Proto.TestKit;
+
+public class TestKitException : Exception
 {
-    public class TestKitException : Exception
+    public TestKitException(string message) : base(message)
     {
-        public TestKitException(string message) : base(message)
-        {
-        }
     }
 }

@@ -1,10 +1,9 @@
 using System.Threading.Tasks;
 
-namespace Proto.TestFixtures
+namespace Proto.TestFixtures;
+
+public class TestMessageWithTaskCompletionSource
 {
-    public class TestMessageWithTaskCompletionSource
-    {
-        public TaskCompletionSource<int> TaskCompletionSource { get; set; } = new();
-        public string Message { get; set; }
-    }
+    public TaskCompletionSource<int> TaskCompletionSource { get; set; } = new();
+    public string Message { get; set; }
 }

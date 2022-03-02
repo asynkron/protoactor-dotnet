@@ -11,56 +11,55 @@ using ClusterTest.Messages;
 using FluentAssertions;
 using Xunit;
 
-namespace Proto.Cluster.Tests
+namespace Proto.Cluster.Tests;
+
+public class PidCacheInvalidationTests : IClassFixture<InMemoryPidCacheInvalidationClusterFixture>
 {
-    public class PidCacheInvalidationTests : IClassFixture<InMemoryPidCacheInvalidationClusterFixture>
+    private InMemoryPidCacheInvalidationClusterFixture ClusterFixture { get; }
+
+    private IList<Cluster> Members => ClusterFixture.Members;
+
+    public PidCacheInvalidationTests(InMemoryPidCacheInvalidationClusterFixture clusterFixture) => ClusterFixture = clusterFixture;
+
+    [Fact]
+    public async Task PidCacheInvalidatesCorrectly()
     {
-        private InMemoryPidCacheInvalidationClusterFixture ClusterFixture { get; }
+        const string id = "1";
 
-        private IList<Cluster> Members => ClusterFixture.Members;
+        var remoteMember = await GetRemoteMemberFromActivation(id);
+        var cachedPid = GetFromPidCache(remoteMember, id);
 
-        public PidCacheInvalidationTests(InMemoryPidCacheInvalidationClusterFixture clusterFixture) => ClusterFixture = clusterFixture;
+        cachedPid.Should().NotBeNull();
+        await remoteMember.RequestAsync<object>(id, EchoActor.Kind, new Die(), CancellationToken.None);
 
-        [Fact]
-        public async Task PidCacheInvalidatesCorrectly()
-        {
-            const string id = "1";
+        await Task.Delay(2000); // PidCache is asynchronously cleared, allow the system to purge it
 
-            var remoteMember = await GetRemoteMemberFromActivation(id);
-            var cachedPid = GetFromPidCache(remoteMember, id);
+        var cachedPidAfterStopping = GetFromPidCache(remoteMember, id);
 
-            cachedPid.Should().NotBeNull();
-            await remoteMember.RequestAsync<object>(id, EchoActor.Kind, new Die(), CancellationToken.None);
+        cachedPidAfterStopping.Should().BeNull();
+    }
 
-            await Task.Delay(2000); // PidCache is asynchronously cleared, allow the system to purge it
-
-            var cachedPidAfterStopping = GetFromPidCache(remoteMember, id);
-
-            cachedPidAfterStopping.Should().BeNull();
-        }
-
-        private static PID GetFromPidCache(Cluster remoteMember, string id)
-        {
-            remoteMember.PidCache.TryGet(new ClusterIdentity
-                {
-                    Identity = id,
-                    Kind = EchoActor.Kind
-                }, out var activation
-            );
-            return activation;
-        }
-
-        private async Task<Cluster> GetRemoteMemberFromActivation(string id)
-        {
-            foreach (var member in Members)
+    private static PID GetFromPidCache(Cluster remoteMember, string id)
+    {
+        remoteMember.PidCache.TryGet(new ClusterIdentity
             {
-                var response = await member.RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), CancellationToken.None);
+                Identity = id,
+                Kind = EchoActor.Kind
+            }, out var activation
+        );
+        return activation;
+    }
 
-                // Get the first member which does not have the activation local to it.
-                if (!response.Address.Equals(member.System.Address, StringComparison.OrdinalIgnoreCase)) return member;
-            }
+    private async Task<Cluster> GetRemoteMemberFromActivation(string id)
+    {
+        foreach (var member in Members)
+        {
+            var response = await member.RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), CancellationToken.None);
 
-            throw new Exception("Something wrong here..");
+            // Get the first member which does not have the activation local to it.
+            if (!response.Address.Equals(member.System.Address, StringComparison.OrdinalIgnoreCase)) return member;
         }
+
+        throw new Exception("Something wrong here..");
     }
 }
