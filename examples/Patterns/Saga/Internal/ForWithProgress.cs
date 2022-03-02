@@ -5,40 +5,39 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Saga.Internal
+namespace Saga.Internal;
+
+public class ForWithProgress
 {
-    public class ForWithProgress
+    private readonly int _everyNth;
+    private readonly bool _runBothOnEvery;
+    private readonly bool _runOnStart;
+    private readonly int _total;
+
+    public ForWithProgress(int total, int everyNth, bool runBothOnEvery, bool runOnStart)
     {
-        private readonly int _everyNth;
-        private readonly bool _runBothOnEvery;
-        private readonly bool _runOnStart;
-        private readonly int _total;
+        _runBothOnEvery = runBothOnEvery;
+        _runOnStart = runOnStart;
+        _total = total;
+        _everyNth = everyNth;
+    }
 
-        public ForWithProgress(int total, int everyNth, bool runBothOnEvery, bool runOnStart)
+    public void EveryNth(Action<int> everyNthAction, Action<int, bool> everyAction)
+    {
+        for (var i = 1; i < _total + 1; i++)
         {
-            _runBothOnEvery = runBothOnEvery;
-            _runOnStart = runOnStart;
-            _total = total;
-            _everyNth = everyNth;
+            var must = MustRunNth(i);
+            if (must) everyNthAction(i);
+            if (must && !_runBothOnEvery) continue;
+
+            everyAction(i, must);
         }
-
-        public void EveryNth(Action<int> everyNthAction, Action<int, bool> everyAction)
-        {
-            for (var i = 1; i < _total + 1; i++)
-            {
-                var must = MustRunNth(i);
-                if (must) everyNthAction(i);
-                if (must && !_runBothOnEvery) continue;
-
-                everyAction(i, must);
-            }
             
-            bool MustRunNth(int current) => current switch
-            {
-                0 when _runOnStart => true,
-                0                  => false,
-                _                  => current % _everyNth == 0
-            };
-        }
+        bool MustRunNth(int current) => current switch
+        {
+            0 when _runOnStart => true,
+            0                  => false,
+            _                  => current % _everyNth == 0
+        };
     }
 }

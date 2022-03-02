@@ -8,21 +8,20 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Proto.Cluster;
 
-namespace ClusterExperiment1
+namespace ClusterExperiment1;
+
+public interface IRunMember
 {
-    public interface IRunMember
-    {
-        Task Start();
+    Task Start();
 
-        Task Kill();
-    }
+    Task Kill();
+}
 
-    public class RunMemberInProcGraceful : IRunMember
-    {
-        private Cluster? _cluster;
+public class RunMemberInProcGraceful : IRunMember
+{
+    private Cluster? _cluster;
 
-        public async Task Start() => _cluster = await Configuration.SpawnMember();
+    public async Task Start() => _cluster = await Configuration.SpawnMember();
 
-        public async Task Kill() => await _cluster!.ShutdownAsync();
-    }
+    public async Task Kill() => await _cluster!.ShutdownAsync();
 }

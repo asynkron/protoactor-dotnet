@@ -3,20 +3,19 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Router.Routers
+namespace Proto.Router.Routers;
+
+class BroadcastRouterState : RouterState
 {
-    class BroadcastRouterState : RouterState
+    private readonly ISenderContext _senderContext;
+
+    internal BroadcastRouterState(ISenderContext senderContext) => _senderContext = senderContext;
+
+    public override void RouteMessage(object message)
     {
-        private readonly ISenderContext _senderContext;
-
-        internal BroadcastRouterState(ISenderContext senderContext) => _senderContext = senderContext;
-
-        public override void RouteMessage(object message)
+        foreach (var pid in GetRoutees())
         {
-            foreach (var pid in GetRoutees())
-            {
-                _senderContext.Send(pid, message);
-            }
+            _senderContext.Send(pid, message);
         }
     }
 }

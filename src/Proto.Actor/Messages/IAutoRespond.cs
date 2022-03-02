@@ -3,10 +3,9 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto
+namespace Proto;
+
+public interface IAutoRespond
 {
-    public interface IAutoRespond
-    {
-        object GetAutoResponse(IContext context);
-    }
+    object GetAutoResponse(IContext context);
 }

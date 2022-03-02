@@ -5,10 +5,9 @@
 // -----------------------------------------------------------------------
 using BenchmarkDotNet.Running;
 
-namespace ProtoActorBenchmarks
+namespace ProtoActorBenchmarks;
+
+public static class Program
 {
-    public static class Program
-    {
-        public static void Main() => BenchmarkRunner.Run<SkyNetBenchmark>();
-    }
+    public static void Main() => BenchmarkRunner.Run<SkyNetBenchmark>();
 }

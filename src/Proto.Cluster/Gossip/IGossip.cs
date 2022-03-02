@@ -9,54 +9,53 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Proto.Logging;
 
-namespace Proto.Cluster.Gossip
+namespace Proto.Cluster.Gossip;
+
+/// <summary>
+///     memberStateDelta is the delta state
+///     member is the target member
+///     logger is the instance logger
+/// </summary>
+public delegate void SendStateAction(MemberStateDelta memberStateDelta, Member member, InstanceLogger? logger);
+
+interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
 {
+}
+
+interface IGossipCore
+{
+    Task UpdateClusterTopology(ClusterTopology clusterTopology);
+
     /// <summary>
-    ///     memberStateDelta is the delta state
-    ///     member is the target member
-    ///     logger is the instance logger
+    ///     Called when a member receives a gossip
     /// </summary>
-    public delegate void SendStateAction(MemberStateDelta memberStateDelta, Member member, InstanceLogger? logger);
+    /// <param name="remoteState"></param>
+    /// <returns></returns>
+    ImmutableList<GossipUpdate> ReceiveState(GossipState remoteState);
 
-    interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
-    {
-    }
+    /// <summary>
+    ///     Sends the gossip to a random set of receiving members
+    /// </summary>
+    /// <param name="sendStateToMember"></param>
+    void SendState(SendStateAction sendStateToMember);
 
-    interface IGossipCore
-    {
-        Task UpdateClusterTopology(ClusterTopology clusterTopology);
+    MemberStateDelta GetMemberStateDelta(string targetMemberId);
+}
 
-        /// <summary>
-        ///     Called when a member receives a gossip
-        /// </summary>
-        /// <param name="remoteState"></param>
-        /// <returns></returns>
-        ImmutableList<GossipUpdate> ReceiveState(GossipState remoteState);
+interface IGossipConsensusChecker
+{
+    void AddConsensusCheck(string id, ConsensusCheck check);
 
-        /// <summary>
-        ///     Sends the gossip to a random set of receiving members
-        /// </summary>
-        /// <param name="sendStateToMember"></param>
-        void SendState(SendStateAction sendStateToMember);
+    void RemoveConsensusCheck(string id);
+}
 
-        MemberStateDelta GetMemberStateDelta(string targetMemberId);
-    }
+interface IGossipStateStore
+{
+    GossipState GetStateSnapshot();
 
-    interface IGossipConsensusChecker
-    {
-        void AddConsensusCheck(string id, ConsensusCheck check);
+    ImmutableDictionary<string, Any> GetState(string key);
 
-        void RemoveConsensusCheck(string id);
-    }
+    ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key);
 
-    interface IGossipStateStore
-    {
-        GossipState GetStateSnapshot();
-
-        ImmutableDictionary<string, Any> GetState(string key);
-
-        ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key);
-
-        void SetState(string key, IMessage value);
-    }
+    void SetState(string key, IMessage value);
 }

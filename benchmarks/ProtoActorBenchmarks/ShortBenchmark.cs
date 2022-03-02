@@ -9,28 +9,27 @@ using BenchmarkDotNet.Attributes;
 using Proto;
 using Proto.Mailbox;
 
-namespace ProtoActorBenchmarks
+namespace ProtoActorBenchmarks;
+
+[MemoryDiagnoser, InProcess]
+public class ShortBenchmark
 {
-    [MemoryDiagnoser, InProcess]
-    public class ShortBenchmark
+    private RootContext _context;
+    private PID _echoActor;
+    private Props _echoProps;
+    private TimeSpan _timeout;
+
+    [GlobalSetup]
+    public void Setup()
     {
-        private RootContext _context;
-        private PID _echoActor;
-        private Props _echoProps;
-        private TimeSpan _timeout;
+        _context = new RootContext(new ActorSystem());
 
-        [GlobalSetup]
-        public void Setup()
-        {
-            _context = new RootContext(new ActorSystem());
-
-            _echoProps = Props.FromProducer(() => new EchoActor2())
-                .WithMailbox(() => BoundedMailbox.Create(2048));
-            _echoActor = _context.Spawn(_echoProps);
-            _timeout = TimeSpan.FromSeconds(5);
-        }
-
-        [Benchmark]
-        public Task InProcessPingPong() => _context.RequestAsync<string>(_echoActor, "ping", _timeout);
+        _echoProps = Props.FromProducer(() => new EchoActor2())
+            .WithMailbox(() => BoundedMailbox.Create(2048));
+        _echoActor = _context.Spawn(_echoProps);
+        _timeout = TimeSpan.FromSeconds(5);
     }
+
+    [Benchmark]
+    public Task InProcessPingPong() => _context.RequestAsync<string>(_echoActor, "ping", _timeout);
 }

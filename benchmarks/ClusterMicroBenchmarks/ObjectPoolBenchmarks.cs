@@ -7,64 +7,63 @@ using System.Collections.Concurrent;
 using System.Threading.Channels;
 using BenchmarkDotNet.Attributes;
 
-namespace ClusterMicroBenchmarks
+namespace ClusterMicroBenchmarks;
+
+[MemoryDiagnoser, InProcess]
+public class ObjectPoolBenchmarks
 {
-    [MemoryDiagnoser, InProcess]
-    public class ObjectPoolBenchmarks
+    [Params(1000, 5000)]
+    public int Items { get; set; }
+
+    private ConcurrentBag<object> Bag { get; set; }
+    private ChannelWriter<object> ChannelWriter { get; set; }
+    private ChannelReader<object> ChannelReader { get; set; }
+    private object[] Objects { get; set; }
+
+    [GlobalSetup]
+    public void Setup()
     {
-        [Params(1000, 5000)]
-        public int Items { get; set; }
+        Bag = new ConcurrentBag<object>();
+        Objects = new object[Items];
+        var channel = System.Threading.Channels.Channel.CreateUnbounded<object>();
+        ChannelWriter = channel.Writer;
+        ChannelReader = channel.Reader;
 
-        private ConcurrentBag<object> Bag { get; set; }
-        private ChannelWriter<object> ChannelWriter { get; set; }
-        private ChannelReader<object> ChannelReader { get; set; }
-        private object[] Objects { get; set; }
-
-        [GlobalSetup]
-        public void Setup()
+        for (var i = 0; i < Items; i++)
         {
-            Bag = new ConcurrentBag<object>();
-            Objects = new object[Items];
-            var channel = System.Threading.Channels.Channel.CreateUnbounded<object>();
-            ChannelWriter = channel.Writer;
-            ChannelReader = channel.Reader;
+            object obj = new();
+            Bag.Add(obj);
+            ChannelWriter.TryWrite(obj);
+        }
+    }
 
-            for (var i = 0; i < Items; i++)
-            {
-                object obj = new();
-                Bag.Add(obj);
-                ChannelWriter.TryWrite(obj);
-            }
+    [Benchmark]
+    public void Channel()
+    {
+        for (var i = 0; i < Items; i++)
+        {
+            ChannelReader.TryRead(out var obj);
+            Objects[i] = obj;
         }
 
-        [Benchmark]
-        public void Channel()
+        for (var i = 0; i < Items; i++)
         {
-            for (var i = 0; i < Items; i++)
-            {
-                ChannelReader.TryRead(out var obj);
-                Objects[i] = obj;
-            }
+            ChannelWriter.TryWrite(Objects[i]);
+        }
+    }
 
-            for (var i = 0; i < Items; i++)
-            {
-                ChannelWriter.TryWrite(Objects[i]);
-            }
+    [Benchmark]
+    public void ConcurrentBag()
+    {
+        for (var i = 0; i < Items; i++)
+        {
+            Bag.TryTake(out var obj);
+            Objects[i] = obj;
         }
 
-        [Benchmark]
-        public void ConcurrentBag()
+        for (var i = 0; i < Items; i++)
         {
-            for (var i = 0; i < Items; i++)
-            {
-                Bag.TryTake(out var obj);
-                Objects[i] = obj;
-            }
-
-            for (var i = 0; i < Items; i++)
-            {
-                Bag.Add(Objects[i]);
-            }
+            Bag.Add(Objects[i]);
         }
     }
 }

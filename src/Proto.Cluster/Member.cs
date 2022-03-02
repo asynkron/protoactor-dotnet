@@ -5,13 +5,12 @@
 // -----------------------------------------------------------------------
 using JetBrains.Annotations;
 
-namespace Proto.Cluster
-{
-    [PublicAPI]
-    public partial class Member
-    {
-        public string Address => Host + ":" + Port;
+namespace Proto.Cluster;
 
-        public string ToLogString() => $"Member Address:{Address} ID:{Id}";
-    }
+[PublicAPI]
+public partial class Member
+{
+    public string Address => Host + ":" + Port;
+
+    public string ToLogString() => $"Member Address:{Address} ID:{Id}";
 }

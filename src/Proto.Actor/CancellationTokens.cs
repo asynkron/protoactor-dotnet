@@ -7,41 +7,39 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 
-namespace Proto
+namespace Proto;
+
+public static class CancellationTokens
 {
-    
-    public static class CancellationTokens
-    {
-        private record TokenEntry(DateTimeOffset Timestamp, CancellationToken Token);
+    private record TokenEntry(DateTimeOffset Timestamp, CancellationToken Token);
         
-        private static readonly ConcurrentDictionary<int, TokenEntry> Tokens = new();
+    private static readonly ConcurrentDictionary<int, TokenEntry> Tokens = new();
 
-        public static CancellationToken FromSeconds(int seconds)
-        {
-            if (seconds < 1) throw new ArgumentOutOfRangeException(nameof(seconds));
+    public static CancellationToken FromSeconds(int seconds)
+    {
+        if (seconds < 1) throw new ArgumentOutOfRangeException(nameof(seconds));
             
-            static TokenEntry ValueFactory(int seconds)
-            {
-                var cts = new CancellationTokenSource(seconds * 1000);
-                return new TokenEntry(DateTimeOffset.Now, cts.Token);
-            }
-
-            while (true)
-            {
-                var x = Tokens.GetOrAdd(seconds, ValueFactory);
-
-                //is the entry expired?
-                //token reuse expire after 500ms
-                if (x.Timestamp >= DateTimeOffset.Now.AddMilliseconds(-500))
-                {
-                    return x.Token;
-                }
-
-                Tokens.TryRemove(seconds, out _);
-            }
+        static TokenEntry ValueFactory(int seconds)
+        {
+            var cts = new CancellationTokenSource(seconds * 1000);
+            return new TokenEntry(DateTimeOffset.Now, cts.Token);
         }
-        [Obsolete("Use and dispose CancellationTokenSource, or use CancellationTokens.FromSeconds",true)]
-        public static CancellationToken WithTimeout(int ms) => new CancellationTokenSource(ms).Token;
-        public static CancellationToken WithTimeout(TimeSpan timeSpan) => new CancellationTokenSource(timeSpan).Token;
+
+        while (true)
+        {
+            var x = Tokens.GetOrAdd(seconds, ValueFactory);
+
+            //is the entry expired?
+            //token reuse expire after 500ms
+            if (x.Timestamp >= DateTimeOffset.Now.AddMilliseconds(-500))
+            {
+                return x.Token;
+            }
+
+            Tokens.TryRemove(seconds, out _);
+        }
     }
+    [Obsolete("Use and dispose CancellationTokenSource, or use CancellationTokens.FromSeconds",true)]
+    public static CancellationToken WithTimeout(int ms) => new CancellationTokenSource(ms).Token;
+    public static CancellationToken WithTimeout(TimeSpan timeSpan) => new CancellationTokenSource(timeSpan).Token;
 }

@@ -10,87 +10,86 @@ using System.Text;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Logging
+namespace Proto.Logging;
+
+[PublicAPI]
+public class LogStore
 {
-    [PublicAPI]
-    public class LogStore
+    private readonly object _lock = new();
+    private readonly List<LogStoreEntry> _entries = new();
+
+    public void Append(LogLevel logLevel, string category, string template, Exception? x, params object[] args)
     {
-        private readonly object _lock = new();
-        private readonly List<LogStoreEntry> _entries = new();
-
-        public void Append(LogLevel logLevel, string category, string template, Exception? x, params object[] args)
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                _entries.Add(new LogStoreEntry(_entries.Count, DateTimeOffset.Now, logLevel, category, template,x, args));
-            }
+            _entries.Add(new LogStoreEntry(_entries.Count, DateTimeOffset.Now, logLevel, category, template,x, args));
         }
+    }
 
-        public IReadOnlyList<LogStoreEntry> GetEntries()
+    public IReadOnlyList<LogStoreEntry> GetEntries()
+    {
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                return _entries.ToList();
-            }
+            return _entries.ToList();
         }
+    }
 
-        public LogStoreEntry? FindEntry(string partialTemplate)
+    public LogStoreEntry? FindEntry(string partialTemplate)
+    {
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                var entry = GetEntries().FirstOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
-                return entry;
-            }
+            var entry = GetEntries().FirstOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+            return entry;
         }
+    }
         
-        public LogStoreEntry? FindLastEntry(string partialTemplate)
+    public LogStoreEntry? FindLastEntry(string partialTemplate)
+    {
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                var entry = GetEntries().LastOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
-                return entry;
-            }
+            var entry = GetEntries().LastOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+            return entry;
         }
+    }
 
-        public LogStoreEntry? FindEntryByCategory(string partialCategory, string partialTemplate)
+    public LogStoreEntry? FindEntryByCategory(string partialCategory, string partialTemplate)
+    {
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                var entry = GetEntries().FirstOrDefault(e => e.Category.Contains(partialCategory, StringComparison.InvariantCulture) && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
-                return entry;
-            }
+            var entry = GetEntries().FirstOrDefault(e => e.Category.Contains(partialCategory, StringComparison.InvariantCulture) && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+            return entry;
         }
+    }
         
-        public LogStoreEntry? FindLastEntryByCategory(string partialCategory, string partialTemplate)
+    public LogStoreEntry? FindLastEntryByCategory(string partialCategory, string partialTemplate)
+    {
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                var entry = GetEntries().LastOrDefault(e => e.Category.Contains(partialCategory, StringComparison.InvariantCulture) && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
-                return entry;
-            }
+            var entry = GetEntries().LastOrDefault(e => e.Category.Contains(partialCategory, StringComparison.InvariantCulture) && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+            return entry;
+        }
+    }
+
+    public void Clear()
+    {
+        lock (_lock)
+        {
+            _entries.Clear();
+        }
+    }
+
+
+    public string ToFormattedString()
+    {
+        var sb = new StringBuilder();
+        var entries = GetEntries();
+
+        foreach (var entry in entries)
+        {
+            var str = entry.ToFormattedString();
+            sb.AppendLine(str);
         }
 
-        public void Clear()
-        {
-            lock (_lock)
-            {
-                _entries.Clear();
-            }
-        }
-
-
-        public string ToFormattedString()
-        {
-            var sb = new StringBuilder();
-            var entries = GetEntries();
-
-            foreach (var entry in entries)
-            {
-                var str = entry.ToFormattedString();
-                sb.AppendLine(str);
-            }
-
-            return sb.ToString();
-        }
+        return sb.ToString();
     }
 }

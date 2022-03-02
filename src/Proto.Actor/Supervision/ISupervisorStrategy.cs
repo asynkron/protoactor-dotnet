@@ -6,10 +6,9 @@
 using System;
 
 // ReSharper disable once CheckNamespace
-namespace Proto
+namespace Proto;
+
+public interface ISupervisorStrategy
 {
-    public interface ISupervisorStrategy
-    {
-        void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause, object? message);
-    }
+    void HandleFailure(ISupervisor supervisor, PID child, RestartStatistics rs, Exception cause, object? message);
 }

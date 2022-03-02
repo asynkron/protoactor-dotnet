@@ -6,15 +6,14 @@
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Proto.Cluster
+namespace Proto.Cluster;
+
+[PublicAPI]
+public interface IClusterProvider
 {
-    [PublicAPI]
-    public interface IClusterProvider
-    {
-        Task StartMemberAsync(Cluster cluster);
+    Task StartMemberAsync(Cluster cluster);
 
-        Task StartClientAsync(Cluster cluster);
+    Task StartClientAsync(Cluster cluster);
 
-        Task ShutdownAsync(bool graceful);
-    }
+    Task ShutdownAsync(bool graceful);
 }

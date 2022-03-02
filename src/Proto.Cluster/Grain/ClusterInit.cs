@@ -5,22 +5,21 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Proto.Cluster
+namespace Proto.Cluster;
+
+[Obsolete("Replace with 'Started' lifecycle message. '.ClusterIdentity()' and '.Cluster()' is available on IContext")]
+public class ClusterInit
 {
-    [Obsolete("Replace with 'Started' lifecycle message. '.ClusterIdentity()' and '.Cluster()' is available on IContext")]
-    public class ClusterInit
+    public ClusterInit(ClusterIdentity clusterIdentity, Cluster cluster)
     {
-        public ClusterInit(ClusterIdentity clusterIdentity, Cluster cluster)
-        {
-            ClusterIdentity = clusterIdentity;
-            Cluster = cluster;
-        }
-
-        public ClusterIdentity ClusterIdentity { get; }
-
-        public string Identity => ClusterIdentity.Identity;
-        public string Kind => ClusterIdentity.Kind;
-
-        public Cluster Cluster { get; }
+        ClusterIdentity = clusterIdentity;
+        Cluster = cluster;
     }
+
+    public ClusterIdentity ClusterIdentity { get; }
+
+    public string Identity => ClusterIdentity.Identity;
+    public string Kind => ClusterIdentity.Kind;
+
+    public Cluster Cluster { get; }
 }

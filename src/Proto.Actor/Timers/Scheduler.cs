@@ -3,84 +3,83 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Proto.Timers
+namespace Proto.Timers;
+
+[PublicAPI]
+public class Scheduler
 {
-    [PublicAPI]
-    public class Scheduler
+    private readonly ISenderContext _context;
+
+    public Scheduler(ISenderContext context) => _context = context;
+
+    public CancellationTokenSource SendOnce(TimeSpan delay, PID target, object message)
     {
-        private readonly ISenderContext _context;
+        var cts = new CancellationTokenSource();
 
-        public Scheduler(ISenderContext context) => _context = context;
+        _ = SafeTask.Run(async () => {
+                await Task.Delay(delay, cts.Token);
 
-        public CancellationTokenSource SendOnce(TimeSpan delay, PID target, object message)
-        {
-            var cts = new CancellationTokenSource();
+                _context.Send(target, message);
+            }, cts.Token
+        );
 
-            _ = SafeTask.Run(async () => {
-                    await Task.Delay(delay, cts.Token);
+        return cts;
+    }
 
-                    _context.Send(target, message);
-                }, cts.Token
-            );
+    public CancellationTokenSource SendRepeatedly(TimeSpan interval, PID target, object message) =>
+        SendRepeatedly(interval, interval, target, message);
 
-            return cts;
-        }
+    public CancellationTokenSource SendRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
+    {
+        var cts = new CancellationTokenSource();
 
-        public CancellationTokenSource SendRepeatedly(TimeSpan interval, PID target, object message) =>
-            SendRepeatedly(interval, interval, target, message);
+        _ = SafeTask.Run(async () => {
+                await Task.Delay(delay, cts.Token);
 
-        public CancellationTokenSource SendRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
-        {
-            var cts = new CancellationTokenSource();
-
-            _ = SafeTask.Run(async () => {
-                    await Task.Delay(delay, cts.Token);
-
-                    async Task Trigger()
+                async Task Trigger()
+                {
+                    while (true)
                     {
-                        while (true)
-                        {
-                            if (cts.IsCancellationRequested)
-                                return;
+                        if (cts.IsCancellationRequested)
+                            return;
 
-                            _context.Send(target, message);
+                        _context.Send(target, message);
 
-                            await Task.Delay(interval, cts.Token);
-                        }
+                        await Task.Delay(interval, cts.Token);
                     }
+                }
 
-                    await Trigger();
-                }, cts.Token
-            );
+                await Trigger();
+            }, cts.Token
+        );
 
-            return cts;
-        }
+        return cts;
+    }
 
-        public CancellationTokenSource RequestRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
-        {
-            var cts = new CancellationTokenSource();
+    public CancellationTokenSource RequestRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
+    {
+        var cts = new CancellationTokenSource();
 
-            _ = SafeTask.Run(async () => {
-                    await Task.Delay(delay, cts.Token);
+        _ = SafeTask.Run(async () => {
+                await Task.Delay(delay, cts.Token);
 
-                    async Task Trigger()
+                async Task Trigger()
+                {
+                    while (true)
                     {
-                        while (true)
-                        {
-                            if (cts.IsCancellationRequested)
-                                return;
+                        if (cts.IsCancellationRequested)
+                            return;
 
-                            _context.Request(target, message);
+                        _context.Request(target, message);
 
-                            await Task.Delay(interval, cts.Token);
-                        }
+                        await Task.Delay(interval, cts.Token);
                     }
+                }
 
-                    await Trigger();
-                }, cts.Token
-            );
+                await Trigger();
+            }, cts.Token
+        );
 
-            return cts;
-        }
+        return cts;
     }
 }

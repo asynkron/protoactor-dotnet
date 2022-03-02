@@ -7,66 +7,65 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto.Utils
+namespace Proto.Utils;
+
+public class AsyncSemaphore
 {
-    public class AsyncSemaphore
+    private readonly SemaphoreSlim _semaphore;
+
+    public AsyncSemaphore(int maxConcurrency) => _semaphore = new SemaphoreSlim(
+        maxConcurrency,
+        maxConcurrency
+    );
+
+    public async Task<T> WaitAsync<T>(Func<Task<T>> producer)
     {
-        private readonly SemaphoreSlim _semaphore;
+        await _semaphore.WaitAsync();
 
-        public AsyncSemaphore(int maxConcurrency) => _semaphore = new SemaphoreSlim(
-            maxConcurrency,
-            maxConcurrency
-        );
-
-        public async Task<T> WaitAsync<T>(Func<Task<T>> producer)
+        try
         {
-            await _semaphore.WaitAsync();
-
-            try
-            {
-                var task = producer();
-                var result = await task;
-                return result;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
+            var task = producer();
+            var result = await task;
+            return result;
         }
-
-        public async Task WaitAsync(Func<Task> producer)
+        finally
         {
-            await _semaphore.WaitAsync();
-
-            try
-            {
-                var task = producer();
-                await task;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
+            _semaphore.Release();
         }
+    }
 
-        public void Wait(Func<Task> producer)
+    public async Task WaitAsync(Func<Task> producer)
+    {
+        await _semaphore.WaitAsync();
+
+        try
         {
-            //block caller
-            _semaphore.Wait();
+            var task = producer();
+            await task;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
 
-            _ = SafeTask.Run(async () => {
-                    try
-                    {
-                        var task = producer();
-                        await task;
-                    }
-                    finally
-                    {
-                        //release once the async flow is done
-                        _semaphore.Release();
-                    }
+    public void Wait(Func<Task> producer)
+    {
+        //block caller
+        _semaphore.Wait();
+
+        _ = SafeTask.Run(async () => {
+                try
+                {
+                    var task = producer();
+                    await task;
                 }
-            );
-        }
+                finally
+                {
+                    //release once the async flow is done
+                    _semaphore.Release();
+                }
+            }
+        );
     }
 }

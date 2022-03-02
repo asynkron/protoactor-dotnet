@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Proto.Cluster.Gossip
-{
-    public record MemberStateDelta(string TargetMemberId, bool HasState, GossipState State, Action CommitOffsets);
-}
+namespace Proto.Cluster.Gossip;
+
+public record MemberStateDelta(string TargetMemberId, bool HasState, GossipState State, Action CommitOffsets);

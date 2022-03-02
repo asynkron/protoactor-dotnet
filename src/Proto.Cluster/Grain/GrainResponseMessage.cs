@@ -7,25 +7,24 @@ using System;
 using Google.Protobuf;
 using Proto.Remote;
 
-namespace Proto.Cluster
-{
-    public record GrainResponseMessage(IMessage? ResponseMessage) : IRootSerializable
-    {
-        public IRootSerialized Serialize(ActorSystem system)
-        {
-            if (ResponseMessage is null) return new GrainResponse();
+namespace Proto.Cluster;
 
-            var ser = system.Serialization();
-            var (data, typeName, serializerId) = ser.Serialize(ResponseMessage);
+public record GrainResponseMessage(IMessage? ResponseMessage) : IRootSerializable
+{
+    public IRootSerialized Serialize(ActorSystem system)
+    {
+        if (ResponseMessage is null) return new GrainResponse();
+
+        var ser = system.Serialization();
+        var (data, typeName, serializerId) = ser.Serialize(ResponseMessage);
 #if DEBUG
             if (serializerId != Serialization.SERIALIZER_ID_PROTOBUF)
                 throw new Exception($"Grains must use ProtoBuf types: {ResponseMessage.GetType().FullName}");
 #endif
-            return new GrainResponse
-            {
-                MessageData = data,
-                MessageTypeName = typeName,
-            };
-        }
+        return new GrainResponse
+        {
+            MessageData = data,
+            MessageTypeName = typeName,
+        };
     }
 }

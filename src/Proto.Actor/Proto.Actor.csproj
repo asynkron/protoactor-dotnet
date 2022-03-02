@@ -3,7 +3,7 @@
     <RootNamespace>Proto</RootNamespace>
     <Nullable>enable</Nullable>
     <IsPackable>true</IsPackable>
-    <LangVersion>9</LangVersion>
+    <LangVersion>10</LangVersion>
     <TargetFrameworks>net5.0;net6.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
 

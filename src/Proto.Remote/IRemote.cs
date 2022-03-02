@@ -1,15 +1,14 @@
 using System.Threading.Tasks;
 using Proto.Extensions;
 
-namespace Proto.Remote
+namespace Proto.Remote;
+
+public interface IRemote : IActorSystemExtension<IRemote>
 {
-    public interface IRemote : IActorSystemExtension<IRemote>
-    {
-        RemoteConfigBase Config { get; }
-        ActorSystem System { get; }
-        bool Started { get; }
-        BlockList BlockList { get; }
-        Task ShutdownAsync(bool graceful = true);
-        Task StartAsync();
-    }
+    RemoteConfigBase Config { get; }
+    ActorSystem System { get; }
+    bool Started { get; }
+    BlockList BlockList { get; }
+    Task ShutdownAsync(bool graceful = true);
+    Task StartAsync();
 }

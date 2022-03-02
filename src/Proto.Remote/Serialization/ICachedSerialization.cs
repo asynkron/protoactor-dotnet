@@ -5,9 +5,8 @@
 // -----------------------------------------------------------------------
 using Google.Protobuf;
 
-namespace Proto.Remote
+namespace Proto.Remote;
+
+public interface ICachedSerialization
 {
-    public interface ICachedSerialization
-    {
-    }
 }

@@ -4,48 +4,47 @@ using Proto.TestFixtures;
 using Xunit;
 using static Proto.TestFixtures.Receivers;
 
-namespace Proto.Tests
+namespace Proto.Tests;
+
+public class PidTests
 {
-    public class PidTests
+    [Fact]
+    public async Task Given_ActorNotDead_Ref_ShouldReturnIt()
     {
-        [Fact]
-        public async Task Given_ActorNotDead_Ref_ShouldReturnIt()
-        {
-            await using var system = new ActorSystem();
-            var context = system.Root;
-            var pid = context.Spawn(Props.FromFunc(EmptyReceive));
+        await using var system = new ActorSystem();
+        var context = system.Root;
+        var pid = context.Spawn(Props.FromFunc(EmptyReceive));
 
-            var p = pid.Ref(system);
+        var p = pid.Ref(system);
 
-            Assert.NotNull(p);
-        }
+        Assert.NotNull(p);
+    }
 
-        [Fact]
-        public async Task Given_ActorDied_Ref_ShouldNotReturnIt()
-        {
-            await using var system = new ActorSystem();
-            var context = system.Root;
+    [Fact]
+    public async Task Given_ActorDied_Ref_ShouldNotReturnIt()
+    {
+        await using var system = new ActorSystem();
+        var context = system.Root;
 
-            var pid = context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
-            await context.StopAsync(pid);
+        var pid = context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
+        await context.StopAsync(pid);
 
-            var p = pid.Ref(system);
+        var p = pid.Ref(system);
 
-            Assert.Null(p);
-        }
+        Assert.Null(p);
+    }
 
-        [Fact]
-        public async Task Given_OtherProcess_Ref_ShouldReturnIt()
-        {
-            await using var system = new ActorSystem();
+    [Fact]
+    public async Task Given_OtherProcess_Ref_ShouldReturnIt()
+    {
+        await using var system = new ActorSystem();
 
-            var id = Guid.NewGuid().ToString();
-            var p = new TestProcess(system);
-            var (pid, _) = system.ProcessRegistry.TryAdd(id, p);
+        var id = Guid.NewGuid().ToString();
+        var p = new TestProcess(system);
+        var (pid, _) = system.ProcessRegistry.TryAdd(id, p);
 
-            var p2 = pid.Ref(system);
+        var p2 = pid.Ref(system);
 
-            Assert.Same(p, p2);
-        }
+        Assert.Same(p, p2);
     }
 }

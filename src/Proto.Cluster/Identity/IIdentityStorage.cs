@@ -7,75 +7,74 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto.Cluster.Identity
+namespace Proto.Cluster.Identity;
+
+public interface IIdentityStorage : IDisposable
 {
-    public interface IIdentityStorage : IDisposable
+    public Task<StoredActivation?> TryGetExistingActivation(
+        ClusterIdentity clusterIdentity,
+        CancellationToken ct
+    );
+
+    public Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct);
+
+    /// <summary>
+    ///     Wait on lock, return activation when present. Responsible for deleting stale locks
+    /// </summary>
+    /// <param name="clusterIdentity"></param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    public Task<StoredActivation?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct);
+
+    public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct);
+
+    public Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken ct);
+
+    public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct);
+
+    public Task RemoveMember(string memberId, CancellationToken ct);
+
+    public Task Init();
+}
+
+public class SpawnLock
+{
+    public SpawnLock(string lockId, ClusterIdentity clusterIdentity)
     {
-        public Task<StoredActivation?> TryGetExistingActivation(
-            ClusterIdentity clusterIdentity,
-            CancellationToken ct
-        );
-
-        public Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct);
-
-        /// <summary>
-        ///     Wait on lock, return activation when present. Responsible for deleting stale locks
-        /// </summary>
-        /// <param name="clusterIdentity"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        public Task<StoredActivation?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct);
-
-        public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct);
-
-        public Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken ct);
-
-        public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct);
-
-        public Task RemoveMember(string memberId, CancellationToken ct);
-
-        public Task Init();
+        LockId = lockId;
+        ClusterIdentity = clusterIdentity;
     }
 
-    public class SpawnLock
-    {
-        public SpawnLock(string lockId, ClusterIdentity clusterIdentity)
-        {
-            LockId = lockId;
-            ClusterIdentity = clusterIdentity;
-        }
+    public string LockId { get; }
+    public ClusterIdentity ClusterIdentity { get; }
+}
 
-        public string LockId { get; }
-        public ClusterIdentity ClusterIdentity { get; }
+public class StoredActivation
+{
+    public StoredActivation(string memberId, PID pid)
+    {
+        MemberId = memberId;
+        Pid = pid;
     }
 
-    public class StoredActivation
-    {
-        public StoredActivation(string memberId, PID pid)
-        {
-            MemberId = memberId;
-            Pid = pid;
-        }
+    public PID Pid { get; }
+    public string MemberId { get; }
+}
 
-        public PID Pid { get; }
-        public string MemberId { get; }
+public class StorageFailure : Exception
+{
+    public StorageFailure(string message) : base(message)
+    {
     }
 
-    public class StorageFailure : Exception
+    public StorageFailure(string message, Exception innerException) : base(message, innerException)
     {
-        public StorageFailure(string message) : base(message)
-        {
-        }
-
-        public StorageFailure(string message, Exception innerException) : base(message, innerException)
-        {
-        }
     }
+}
 
-    public class LockNotFoundException : StorageFailure
+public class LockNotFoundException : StorageFailure
+{
+    public LockNotFoundException(string message) : base(message)
     {
-        public LockNotFoundException(string message) : base(message)
-        {
-        }
     }
 }

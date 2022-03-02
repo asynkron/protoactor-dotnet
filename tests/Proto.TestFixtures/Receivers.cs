@@ -6,10 +6,9 @@
 
 using System.Threading.Tasks;
 
-namespace Proto.TestFixtures
+namespace Proto.TestFixtures;
+
+public static class Receivers
 {
-    public static class Receivers
-    {
-        public static readonly Receive EmptyReceive = c => Task.CompletedTask;
-    }
+    public static readonly Receive EmptyReceive = c => Task.CompletedTask;
 }

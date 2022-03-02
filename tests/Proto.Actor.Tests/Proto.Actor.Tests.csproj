@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
     <PropertyGroup Label="Configuration">
         <RootNamespace>Proto.Tests</RootNamespace>
-        <LangVersion>9</LangVersion>
+        <LangVersion>10</LangVersion>
         <OutputType>Library</OutputType>
         <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
         <Nullable>enable</Nullable>

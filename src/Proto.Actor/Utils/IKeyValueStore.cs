@@ -7,16 +7,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Proto.Utils
+namespace Proto.Utils;
+
+[PublicAPI]
+public interface IKeyValueStore<T>
 {
-    [PublicAPI]
-    public interface IKeyValueStore<T>
-    {
-        Task<T> GetAsync(string id, CancellationToken ct);
+    Task<T> GetAsync(string id, CancellationToken ct);
 
-        Task SetAsync(string id, T state, CancellationToken ct);
+    Task SetAsync(string id, T state, CancellationToken ct);
 
-        Task ClearAsync(string id, CancellationToken ct);
+    Task ClearAsync(string id, CancellationToken ct);
 
-    }
 }

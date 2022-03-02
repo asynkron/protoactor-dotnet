@@ -10,95 +10,94 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Deduplication
+namespace Proto.Deduplication;
+
+public delegate bool TryGetDeduplicationKey<T>(MessageEnvelope envelope, out T? key);
+
+public class DeduplicationContext<T> : ActorContextDecorator where T : IEquatable<T>
 {
-    public delegate bool TryGetDeduplicationKey<T>(MessageEnvelope envelope, out T? key);
+    private readonly DeDuplicator<T> _deDuplicator;
 
-    public class DeduplicationContext<T> : ActorContextDecorator where T : IEquatable<T>
+    public DeduplicationContext(IContext context, TimeSpan deDuplicationWindow, TryGetDeduplicationKey<T> deduplicateBy) : base(context
+    ) => _deDuplicator = new DeDuplicator<T>(deDuplicationWindow, deduplicateBy);
+
+    public override Task Receive(MessageEnvelope envelope) => _deDuplicator.DeDuplicate(envelope, () => base.Receive(envelope));
+}
+
+/// <summary>
+///     Will deduplicate on a sender id if the sender is an unnamed actor (ie a FutureProcess)
+/// </summary>
+class DeDuplicator<T> where T : IEquatable<T>
+
+{
+    private readonly TryGetDeduplicationKey<T> _getDeduplicationKey;
+    private readonly ILogger _logger = Log.CreateLogger<DeDuplicator<T>>();
+
+    private readonly Dictionary<T, long> _processed = new(50);
+    private readonly long _ttl;
+    private long _cleanedAt;
+    private long _lastCheck;
+    private long _oldest;
+
+    public DeDuplicator(TimeSpan deduplicationWindow, TryGetDeduplicationKey<T> getDeduplicationKey)
     {
-        private readonly DeDuplicator<T> _deDuplicator;
-
-        public DeduplicationContext(IContext context, TimeSpan deDuplicationWindow, TryGetDeduplicationKey<T> deduplicateBy) : base(context
-        ) => _deDuplicator = new DeDuplicator<T>(deDuplicationWindow, deduplicateBy);
-
-        public override Task Receive(MessageEnvelope envelope) => _deDuplicator.DeDuplicate(envelope, () => base.Receive(envelope));
+        _getDeduplicationKey = getDeduplicationKey;
+        _ttl = Stopwatch.Frequency * (long) deduplicationWindow.TotalSeconds;
     }
 
-    /// <summary>
-    ///     Will deduplicate on a sender id if the sender is an unnamed actor (ie a FutureProcess)
-    /// </summary>
-    class DeDuplicator<T> where T : IEquatable<T>
-
+    public async Task DeDuplicate(MessageEnvelope envelope, Func<Task> continuation)
     {
-        private readonly TryGetDeduplicationKey<T> _getDeduplicationKey;
-        private readonly ILogger _logger = Log.CreateLogger<DeDuplicator<T>>();
-
-        private readonly Dictionary<T, long> _processed = new(50);
-        private readonly long _ttl;
-        private long _cleanedAt;
-        private long _lastCheck;
-        private long _oldest;
-
-        public DeDuplicator(TimeSpan deduplicationWindow, TryGetDeduplicationKey<T> getDeduplicationKey)
+        if (_getDeduplicationKey(envelope, out var key))
         {
-            _getDeduplicationKey = getDeduplicationKey;
-            _ttl = Stopwatch.Frequency * (long) deduplicationWindow.TotalSeconds;
-        }
+            var now = Stopwatch.GetTimestamp();
+            var cutoff = now - _ttl;
 
-        public async Task DeDuplicate(MessageEnvelope envelope, Func<Task> continuation)
-        {
-            if (_getDeduplicationKey(envelope, out var key))
+            if (IsDuplicate(key!, cutoff))
             {
-                var now = Stopwatch.GetTimestamp();
-                var cutoff = now - _ttl;
-
-                if (IsDuplicate(key!, cutoff))
-                {
-                    _logger.LogInformation("Request de-duplicated");
-                    return;
-                }
-
-                await continuation();
-                CleanIfNeeded(cutoff, now);
-                _lastCheck = now;
-                Add(key!, now);
+                _logger.LogInformation("Request de-duplicated");
                 return;
             }
 
             await continuation();
+            CleanIfNeeded(cutoff, now);
+            _lastCheck = now;
+            Add(key!, now);
+            return;
         }
 
-        private bool IsDuplicate(T key, long cutoff)
-            => _lastCheck > cutoff && _processed.TryGetValue(key, out var ticks) && ticks >= cutoff;
+        await continuation();
+    }
 
-        private void Add(T key, long now)
+    private bool IsDuplicate(T key, long cutoff)
+        => _lastCheck > cutoff && _processed.TryGetValue(key, out var ticks) && ticks >= cutoff;
+
+    private void Add(T key, long now)
+    {
+        if (_processed.Count == 0) _oldest = now;
+
+        _processed.Add(key, now);
+    }
+
+    private void CleanIfNeeded(long cutoff, long now)
+    {
+        if (_lastCheck < cutoff)
         {
-            if (_processed.Count == 0) _oldest = now;
-
-            _processed.Add(key, now);
+            _processed.Clear();
+            _cleanedAt = now;
+            _oldest = 0;
         }
-
-        private void CleanIfNeeded(long cutoff, long now)
+        else if (_processed.Count >= 50 && _cleanedAt < _oldest)
         {
-            if (_lastCheck < cutoff)
-            {
-                _processed.Clear();
-                _cleanedAt = now;
-                _oldest = 0;
-            }
-            else if (_processed.Count >= 50 && _cleanedAt < _oldest)
-            {
-                var oldest = long.MaxValue;
+            var oldest = long.MaxValue;
 
-                foreach (var (key, timestamp) in _processed.ToList())
-                {
-                    if (timestamp < cutoff) _processed.Remove(key);
-                    else oldest = Math.Min(timestamp, oldest);
-                }
-
-                _cleanedAt = now;
-                _oldest = oldest;
+            foreach (var (key, timestamp) in _processed.ToList())
+            {
+                if (timestamp < cutoff) _processed.Remove(key);
+                else oldest = Math.Min(timestamp, oldest);
             }
+
+            _cleanedAt = now;
+            _oldest = oldest;
         }
     }
 }

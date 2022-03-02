@@ -6,18 +6,17 @@
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Proto.Diagnostics
+namespace Proto.Diagnostics;
+
+[PublicAPI]
+public static  class DiagnosticTools
 {
-    [PublicAPI]
-    public static  class DiagnosticTools
+    public static async Task<string> GetDiagnosticsString(ActorSystem system, PID pid)
     {
-        public static async Task<string> GetDiagnosticsString(ActorSystem system, PID pid)
-        {
-            var tcs = new TaskCompletionSource<string>();
-            var request = new ProcessDiagnosticsRequest(tcs);
-            pid.SendSystemMessage(system, request);
-            var res = await tcs.Task;
-            return res;
-        }
+        var tcs = new TaskCompletionSource<string>();
+        var request = new ProcessDiagnosticsRequest(tcs);
+        pid.SendSystemMessage(system, request);
+        var res = await tcs.Task;
+        return res;
     }
 }

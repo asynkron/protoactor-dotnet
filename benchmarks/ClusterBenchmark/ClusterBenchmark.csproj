@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
         <OutputType>Exe</OutputType>
-        <LangVersion>9</LangVersion>
+        <LangVersion>10</LangVersion>
         <RootNamespace>ClusterExperiment1</RootNamespace>
         <Nullable>enable</Nullable>
     </PropertyGroup>

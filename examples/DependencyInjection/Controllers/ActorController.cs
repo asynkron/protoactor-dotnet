@@ -9,61 +9,60 @@ using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.DependencyInjection;
 
-namespace DependencyInjection.Controllers
+namespace DependencyInjection.Controllers;
+
+public class DependencyInjectedActor : IActor
 {
-    public class DependencyInjectedActor : IActor
-    {
-        private readonly ILogger<DependencyInjectedActor> _logger;
+    private readonly ILogger<DependencyInjectedActor> _logger;
 
-        public DependencyInjectedActor(ILogger<DependencyInjectedActor> logger) =>
-            //dependency injected arguments here
-            _logger = logger;
+    public DependencyInjectedActor(ILogger<DependencyInjectedActor> logger) =>
+        //dependency injected arguments here
+        _logger = logger;
 
-        public Task ReceiveAsync(IContext context) =>
-            context.Message switch
-            {
-                HelloRequest msg => OnHelloMessage(msg, context),
-                _                => Task.CompletedTask
-            };
-
-        private Task OnHelloMessage(HelloRequest msg, IContext context)
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
-            _logger.LogInformation("Got request");
+            HelloRequest msg => OnHelloMessage(msg, context),
+            _                => Task.CompletedTask
+        };
 
-            var greeting = $"Hello to you {msg.Name}";
-            context.Respond(new HelloResponse(greeting));
-            return Task.CompletedTask;
-        }
+    private Task OnHelloMessage(HelloRequest msg, IContext context)
+    {
+        _logger.LogInformation("Got request");
+
+        var greeting = $"Hello to you {msg.Name}";
+        context.Respond(new HelloResponse(greeting));
+        return Task.CompletedTask;
     }
+}
 
-    public record HelloRequest(string Name);
+public record HelloRequest(string Name);
 
-    public record HelloResponse(string Greeting);
+public record HelloResponse(string Greeting);
 
-    [ApiController, Route("[controller]")]
-    public class ActorController : ControllerBase
+[ApiController, Route("[controller]")]
+public class ActorController : ControllerBase
+{
+    private readonly ActorSystem _actorSystem;
+
+    public ActorController(ActorSystem actorSystem) => _actorSystem = actorSystem;
+
+    [HttpGet]
+    public async Task<string> Get()
     {
-        private readonly ActorSystem _actorSystem;
+        //Get props for dependency injected actor 
+        var props = _actorSystem.DI().PropsFor<DependencyInjectedActor>();
 
-        public ActorController(ActorSystem actorSystem) => _actorSystem = actorSystem;
+        //spawn the actor
+        var pid = _actorSystem.Root.Spawn(props);
 
-        [HttpGet]
-        public async Task<string> Get()
-        {
-            //Get props for dependency injected actor 
-            var props = _actorSystem.DI().PropsFor<DependencyInjectedActor>();
+        //send a request and await the response
+        var response = await _actorSystem.Root.RequestAsync<HelloResponse>(pid, new HelloRequest("Proto.Actor"));
 
-            //spawn the actor
-            var pid = _actorSystem.Root.Spawn(props);
+        //stop the actor
+        await _actorSystem.Root.StopAsync(pid);
 
-            //send a request and await the response
-            var response = await _actorSystem.Root.RequestAsync<HelloResponse>(pid, new HelloRequest("Proto.Actor"));
-
-            //stop the actor
-            await _actorSystem.Root.StopAsync(pid);
-
-            //return the result
-            return response.Greeting;
-        }
+        //return the result
+        return response.Greeting;
     }
 }

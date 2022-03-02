@@ -6,10 +6,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto.Cluster
+namespace Proto.Cluster;
+
+public interface IClusterContext
 {
-    public interface IClusterContext
-    {
-        Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct);
-    }
+    Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct);
 }

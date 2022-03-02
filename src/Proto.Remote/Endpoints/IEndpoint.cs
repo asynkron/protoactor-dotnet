@@ -9,15 +9,14 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Channels;
 
-namespace Proto.Remote
+namespace Proto.Remote;
+
+public interface IEndpoint : IAsyncDisposable
 {
-    public interface IEndpoint : IAsyncDisposable
-    {
-        Channel<RemoteMessage> Outgoing { get; }
-        ConcurrentStack<RemoteMessage> OutgoingStash { get; }
-        void SendMessage(PID pid, object message);
-        void RemoteTerminate(PID target, Terminated terminated);
-        void RemoteWatch(PID pid, Watch watch);
-        void RemoteUnwatch(PID pid, Unwatch unwatch);
-    }
+    Channel<RemoteMessage> Outgoing { get; }
+    ConcurrentStack<RemoteMessage> OutgoingStash { get; }
+    void SendMessage(PID pid, object message);
+    void RemoteTerminate(PID target, Terminated terminated);
+    void RemoteWatch(PID pid, Watch watch);
+    void RemoteUnwatch(PID pid, Unwatch unwatch);
 }

@@ -5,13 +5,12 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
-namespace Proto
+namespace Proto;
+
+public enum SupervisorDirective
 {
-    public enum SupervisorDirective
-    {
-        Resume,
-        Restart,
-        Stop,
-        Escalate
-    }
+    Resume,
+    Restart,
+    Stop,
+    Escalate
 }

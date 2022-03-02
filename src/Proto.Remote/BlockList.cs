@@ -7,29 +7,28 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using Proto.Utils;
 
-namespace Proto.Remote
+namespace Proto.Remote;
+
+public class BlockList
 {
-    public class BlockList
+    private readonly object _lock = new();
+
+    public ImmutableHashSet<string> BlockedMembers { get; private set; } = ImmutableHashSet<string>.Empty;
+    public void Block(string memberId)
     {
-        private readonly object _lock = new();
-
-        public ImmutableHashSet<string> BlockedMembers { get; private set; } = ImmutableHashSet<string>.Empty;
-        public void Block(string memberId)
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                BlockedMembers = BlockedMembers.Add(memberId);
-            }
+            BlockedMembers = BlockedMembers.Add(memberId);
         }
-
-        public void Block(IEnumerable<string> memberIds)
-        {
-            lock (_lock)
-            {
-                BlockedMembers = BlockedMembers.Union(memberIds);
-            }
-        }
-
-        public bool IsBlocked(string memberId) => BlockedMembers.Contains(memberId);
     }
+
+    public void Block(IEnumerable<string> memberIds)
+    {
+        lock (_lock)
+        {
+            BlockedMembers = BlockedMembers.Union(memberIds);
+        }
+    }
+
+    public bool IsBlocked(string memberId) => BlockedMembers.Contains(memberId);
 }

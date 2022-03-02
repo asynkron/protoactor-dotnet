@@ -7,7 +7,7 @@
     <!-- set the version automatically -->
     <VersionPrefix>0.1.0</VersionPrefix>
     <VersionSuffix>build$([System.DateTime]::Now.ToString('yyyyMMdd-HHmm'))</VersionSuffix>
-    <LangVersion>9</LangVersion>
+    <LangVersion>10</LangVersion>
     <!-- we're targeting .NET Standard 2.0 because Visual Studio uses MSBuild based on .NET Famework, which supports at most .NET Standard 2.0 -->
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>

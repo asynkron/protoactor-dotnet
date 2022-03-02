@@ -1,9 +1,8 @@
 using Grpc.Core;
 
-namespace Proto.Remote
+namespace Proto.Remote;
+
+public interface IChannelProvider
 {
-    public interface IChannelProvider
-    {
-        ChannelBase GetChannel(string address);
-    }
+    ChannelBase GetChannel(string address);
 }

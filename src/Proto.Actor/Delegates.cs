@@ -7,21 +7,20 @@ using System.Threading.Tasks;
 using Proto.Mailbox;
 
 // ReSharper disable once CheckNamespace
-namespace Proto
-{
-    public delegate Task Receive(IContext context);
+namespace Proto;
 
-    public delegate Task Receiver(IReceiverContext context, MessageEnvelope envelope);
+public delegate Task Receive(IContext context);
 
-    public delegate Task Sender(ISenderContext context, PID target, MessageEnvelope envelope);
+public delegate Task Receiver(IReceiverContext context, MessageEnvelope envelope);
 
-    public delegate PID Spawner(ActorSystem system, string id, Props props, PID? parent);
+public delegate Task Sender(ISenderContext context, PID target, MessageEnvelope envelope);
 
-    public delegate IActor Producer();
+public delegate PID Spawner(ActorSystem system, string id, Props props, PID? parent);
 
-    public delegate IActor ProducerWithSystem(ActorSystem system);
+public delegate IActor Producer();
+
+public delegate IActor ProducerWithSystem(ActorSystem system);
     
-    public delegate IActor ProducerWithSystemAndContext(ActorSystem system, IContext context);
+public delegate IActor ProducerWithSystemAndContext(ActorSystem system, IContext context);
 
-    public delegate IMailbox MailboxProducer();
-}
+public delegate IMailbox MailboxProducer();

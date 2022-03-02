@@ -3,12 +3,11 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Cluster.CodeGen.model
-{
-    public class ProtoMessage
-    {
-        public string Name { get; set; } = null!;
+namespace Proto.Cluster.CodeGen.model;
 
-        public ProtoField[] Fields { get; set; } = null!;
-    }
+public class ProtoMessage
+{
+    public string Name { get; set; } = null!;
+
+    public ProtoField[] Fields { get; set; } = null!;
 }

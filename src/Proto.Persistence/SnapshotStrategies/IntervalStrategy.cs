@@ -3,14 +3,13 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Persistence.SnapshotStrategies
+namespace Proto.Persistence.SnapshotStrategies;
+
+public class IntervalStrategy : ISnapshotStrategy
 {
-    public class IntervalStrategy : ISnapshotStrategy
-    {
-        private readonly int _eventsPerSnapshot;
+    private readonly int _eventsPerSnapshot;
 
-        public IntervalStrategy(int eventsPerSnapshot) => _eventsPerSnapshot = eventsPerSnapshot;
+    public IntervalStrategy(int eventsPerSnapshot) => _eventsPerSnapshot = eventsPerSnapshot;
 
-        public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => persistedEvent.Index % _eventsPerSnapshot == 0;
-    }
+    public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => persistedEvent.Index % _eventsPerSnapshot == 0;
 }

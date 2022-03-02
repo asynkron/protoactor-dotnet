@@ -5,28 +5,27 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Proto.Persistence.SnapshotStrategies
+namespace Proto.Persistence.SnapshotStrategies;
+
+public class TimeStrategy : ISnapshotStrategy
 {
-    public class TimeStrategy : ISnapshotStrategy
+    private readonly Func<DateTime> _getNow;
+    private readonly TimeSpan _interval;
+    private DateTime _lastTaken;
+
+    public TimeStrategy(TimeSpan interval, Func<DateTime>? getNow = null)
     {
-        private readonly Func<DateTime> _getNow;
-        private readonly TimeSpan _interval;
-        private DateTime _lastTaken;
+        _interval = interval;
+        _getNow = getNow ?? (() => DateTime.Now);
+        _lastTaken = _getNow();
+    }
 
-        public TimeStrategy(TimeSpan interval, Func<DateTime>? getNow = null)
-        {
-            _interval = interval;
-            _getNow = getNow ?? (() => DateTime.Now);
-            _lastTaken = _getNow();
-        }
+    public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
+    {
+        var now = _getNow();
+        if (_lastTaken.Add(_interval) > now) return false;
 
-        public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
-        {
-            var now = _getNow();
-            if (_lastTaken.Add(_interval) > now) return false;
-
-            _lastTaken = now;
-            return true;
-        }
+        _lastTaken = now;
+        return true;
     }
 }

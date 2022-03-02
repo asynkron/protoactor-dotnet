@@ -7,20 +7,19 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Proto.Logging
+namespace Proto.Logging;
+
+[PublicAPI]
+public sealed class NullLoggerFactory : ILoggerFactory
 {
-    [PublicAPI]
-    public sealed class NullLoggerFactory : ILoggerFactory
+    public ILogger CreateLogger(string name) => NullLogger.Instance;
+
+    public void AddProvider(ILoggerProvider provider)
     {
-        public ILogger CreateLogger(string name) => NullLogger.Instance;
+    }
 
-        public void AddProvider(ILoggerProvider provider)
-        {
-        }
-
-        // ReSharper disable once CA1816
-        public void Dispose()
-        {
-        }
+    // ReSharper disable once CA1816
+    public void Dispose()
+    {
     }
 }

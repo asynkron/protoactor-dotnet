@@ -6,10 +6,9 @@
 using System.Threading.Tasks;
 
 // ReSharper disable once CheckNamespace
-namespace Proto
+namespace Proto;
+
+public interface IReceiverContext : IInfoContext
 {
-    public interface IReceiverContext : IInfoContext
-    {
-        Task Receive(MessageEnvelope envelope);
-    }
+    Task Receive(MessageEnvelope envelope);
 }

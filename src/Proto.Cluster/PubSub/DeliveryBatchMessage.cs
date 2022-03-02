@@ -5,20 +5,19 @@
 // -----------------------------------------------------------------------
 using Proto.Remote;
 
-namespace Proto.Cluster.PubSub
-{
-    public record DeliveryBatchMessage(Subscribers subscribers, ProducerBatchMessage ProducerBatch) : IRootSerializable
-    {
-        public IRootSerialized Serialize(ActorSystem system) => new DeliveryBatch
-        {
-            Subscribers = subscribers,
-            Batch = (ProducerBatch)ProducerBatch.Serialize(system),
-        };
-    }
+namespace Proto.Cluster.PubSub;
 
-    public partial class DeliveryBatch: IRootSerialized
+public record DeliveryBatchMessage(Subscribers subscribers, ProducerBatchMessage ProducerBatch) : IRootSerializable
+{
+    public IRootSerialized Serialize(ActorSystem system) => new DeliveryBatch
     {
-        public IRootSerializable Deserialize(ActorSystem system) => 
-            new DeliveryBatchMessage(Subscribers, (ProducerBatchMessage) Batch.Deserialize(system));
-    }
+        Subscribers = subscribers,
+        Batch = (ProducerBatch)ProducerBatch.Serialize(system),
+    };
+}
+
+public partial class DeliveryBatch: IRootSerialized
+{
+    public IRootSerializable Deserialize(ActorSystem system) => 
+        new DeliveryBatchMessage(Subscribers, (ProducerBatchMessage) Batch.Deserialize(system));
 }

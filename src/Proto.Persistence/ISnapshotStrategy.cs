@@ -3,10 +3,9 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Persistence
+namespace Proto.Persistence;
+
+public interface ISnapshotStrategy
 {
-    public interface ISnapshotStrategy
-    {
-        bool ShouldTakeSnapshot(PersistedEvent persistedEvent);
-    }
+    bool ShouldTakeSnapshot(PersistedEvent persistedEvent);
 }
