@@ -5,14 +5,13 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Proto.Persistence.SnapshotStrategies
+namespace Proto.Persistence.SnapshotStrategies;
+
+public class EventTypeStrategy : ISnapshotStrategy
 {
-    public class EventTypeStrategy : ISnapshotStrategy
-    {
-        private readonly Type _eventType;
+    private readonly Type _eventType;
 
-        public EventTypeStrategy(Type eventType) => _eventType = eventType;
+    public EventTypeStrategy(Type eventType) => _eventType = eventType;
 
-        public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => persistedEvent.Data.GetType() == _eventType;
-    }
+    public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => persistedEvent.Data.GetType() == _eventType;
 }

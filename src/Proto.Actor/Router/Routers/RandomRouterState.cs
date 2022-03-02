@@ -5,24 +5,23 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Proto.Router.Routers
+namespace Proto.Router.Routers;
+
+class RandomRouterState : RouterState
 {
-    class RandomRouterState : RouterState
+    private readonly Random _random;
+    private readonly ISenderContext _senderContext;
+
+    public RandomRouterState(ISenderContext senderContext, int? seed)
     {
-        private readonly Random _random;
-        private readonly ISenderContext _senderContext;
+        _random = seed.HasValue ? new Random(seed.Value) : new Random();
+        _senderContext = senderContext;
+    }
 
-        public RandomRouterState(ISenderContext senderContext, int? seed)
-        {
-            _random = seed.HasValue ? new Random(seed.Value) : new Random();
-            _senderContext = senderContext;
-        }
-
-        public override void RouteMessage(object message)
-        {
-            var i = _random.Next(Values.Count);
-            var pid = Values[i];
-            _senderContext.Send(pid, message);
-        }
+    public override void RouteMessage(object message)
+    {
+        var i = _random.Next(Values.Count);
+        var pid = Values[i];
+        _senderContext.Send(pid, message);
     }
 }

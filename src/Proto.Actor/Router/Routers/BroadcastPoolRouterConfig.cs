@@ -3,15 +3,14 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Router.Routers
+namespace Proto.Router.Routers;
+
+record BroadcastPoolRouterConfig : PoolRouterConfig
 {
-    record BroadcastPoolRouterConfig : PoolRouterConfig
-    {
-        private readonly ISenderContext _senderContext;
+    private readonly ISenderContext _senderContext;
 
-        public BroadcastPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps)
-            : base(poolSize, routeeProps) => _senderContext = senderContext;
+    public BroadcastPoolRouterConfig(ISenderContext senderContext, int poolSize, Props routeeProps)
+        : base(poolSize, routeeProps) => _senderContext = senderContext;
 
-        protected override RouterState CreateRouterState() => new BroadcastRouterState(_senderContext);
-    }
+    protected override RouterState CreateRouterState() => new BroadcastRouterState(_senderContext);
 }

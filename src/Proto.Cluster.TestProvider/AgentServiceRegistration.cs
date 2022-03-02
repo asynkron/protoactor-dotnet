@@ -3,13 +3,12 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Cluster.Testing
+namespace Proto.Cluster.Testing;
+
+public class AgentServiceRegistration
 {
-    public class AgentServiceRegistration
-    {
-        public string ID { get; set; }
-        public string Host { get; set; }
-        public int Port { get; set; }
-        public string[] Kinds { get; set; }
-    }
+    public string ID { get; set; }
+    public string Host { get; set; }
+    public int Port { get; set; }
+    public string[] Kinds { get; set; }
 }

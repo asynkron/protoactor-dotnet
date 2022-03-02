@@ -5,12 +5,11 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Proto.DependencyInjection
-{
-    public interface IDependencyResolver
-    {
-        Props PropsFor<TActor>() where TActor : IActor;
+namespace Proto.DependencyInjection;
 
-        Props PropsFor(Type actorType);
-    }
+public interface IDependencyResolver
+{
+    Props PropsFor<TActor>() where TActor : IActor;
+
+    Props PropsFor(Type actorType);
 }

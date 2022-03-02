@@ -5,27 +5,26 @@
 // -----------------------------------------------------------------------
 using System.Threading;
 
-namespace Proto.Cluster
+namespace Proto.Cluster;
+
+public record ActivatedClusterKind
 {
-    public record ActivatedClusterKind
+    private long _count;
+
+    internal ActivatedClusterKind(string name, Props props, IMemberStrategy? strategy)
     {
-        private long _count;
-
-        internal ActivatedClusterKind(string name, Props props, IMemberStrategy? strategy)
-        {
-            Name = name;
-            Props = props.WithClusterKind(this);
-            Strategy = strategy;
-        }
-
-        public string Name { get; }
-        public Props Props { get; }
-        public IMemberStrategy? Strategy { get; }
-
-        internal long Inc() => Interlocked.Increment(ref _count);
-
-        internal long Dec() => Interlocked.Decrement(ref _count);
-
-        internal long Count => Interlocked.Read(ref _count);
+        Name = name;
+        Props = props.WithClusterKind(this);
+        Strategy = strategy;
     }
+
+    public string Name { get; }
+    public Props Props { get; }
+    public IMemberStrategy? Strategy { get; }
+
+    internal long Inc() => Interlocked.Increment(ref _count);
+
+    internal long Dec() => Interlocked.Decrement(ref _count);
+
+    internal long Count => Interlocked.Read(ref _count);
 }

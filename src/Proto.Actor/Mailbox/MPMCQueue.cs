@@ -8,108 +8,107 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto.Mailbox
+namespace Proto.Mailbox;
+
+[StructLayout(LayoutKind.Explicit, Size = 192, CharSet = CharSet.Ansi)]
+public class MPMCQueue
 {
-    [StructLayout(LayoutKind.Explicit, Size = 192, CharSet = CharSet.Ansi)]
-    public class MPMCQueue
+    [FieldOffset(0)] private readonly Cell[] _buffer;
+
+    [FieldOffset(8)] private readonly int _bufferMask;
+
+    [FieldOffset(128)] private int _dequeuePos;
+
+    [FieldOffset(64)] private int _enqueuePos;
+
+    public MPMCQueue(int bufferSize)
     {
-        [FieldOffset(0)] private readonly Cell[] _buffer;
+        if (bufferSize < 2) throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
 
-        [FieldOffset(8)] private readonly int _bufferMask;
+        if ((bufferSize & (bufferSize - 1)) != 0)
+            throw new ArgumentException($"{nameof(bufferSize)} should be a power of 2");
 
-        [FieldOffset(128)] private int _dequeuePos;
+        _bufferMask = bufferSize - 1;
+        _buffer = new Cell[bufferSize];
 
-        [FieldOffset(64)] private int _enqueuePos;
-
-        public MPMCQueue(int bufferSize)
+        for (var i = 0; i < bufferSize; i++)
         {
-            if (bufferSize < 2) throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
+            _buffer[i] = new Cell(i, null);
+        }
 
-            if ((bufferSize & (bufferSize - 1)) != 0)
-                throw new ArgumentException($"{nameof(bufferSize)} should be a power of 2");
+        _enqueuePos = 0;
+        _dequeuePos = 0;
+    }
 
-            _bufferMask = bufferSize - 1;
-            _buffer = new Cell[bufferSize];
+    public int Count => _enqueuePos - _dequeuePos;
 
-            for (var i = 0; i < bufferSize; i++)
+    private bool TryEnqueue(object item)
+    {
+        do
+        {
+            var buffer = _buffer;
+            var pos = _enqueuePos;
+            var index = pos & _bufferMask;
+            var cell = buffer[index];
+
+            if (cell.Sequence == pos && Interlocked.CompareExchange(ref _enqueuePos, pos + 1, pos) == pos)
             {
-                _buffer[i] = new Cell(i, null);
+                buffer[index].Element = item;
+                Volatile.Write(ref buffer[index].Sequence, pos + 1);
+                return true;
             }
 
-            _enqueuePos = 0;
-            _dequeuePos = 0;
-        }
+            if (cell.Sequence < pos) return false;
+        } while (true);
+    }
 
-        public int Count => _enqueuePos - _dequeuePos;
-
-        private bool TryEnqueue(object item)
+    public void Enqueue(object item)
+    {
+        while (true)
         {
-            do
-            {
-                var buffer = _buffer;
-                var pos = _enqueuePos;
-                var index = pos & _bufferMask;
-                var cell = buffer[index];
+            if (TryEnqueue(item)) break;
 
-                if (cell.Sequence == pos && Interlocked.CompareExchange(ref _enqueuePos, pos + 1, pos) == pos)
-                {
-                    buffer[index].Element = item;
-                    Volatile.Write(ref buffer[index].Sequence, pos + 1);
-                    return true;
-                }
-
-                if (cell.Sequence < pos) return false;
-            } while (true);
+            Task.Delay(1)
+                .Wait(); // Could be Thread.Sleep(1) or Thread.SpinWait() if the assembly is not portable lib.
         }
+    }
 
-        public void Enqueue(object item)
+    public bool TryDequeue(out object? result)
+    {
+        do
         {
-            while (true)
-            {
-                if (TryEnqueue(item)) break;
+            var buffer = _buffer;
+            var bufferMask = _bufferMask;
+            var pos = _dequeuePos;
+            var index = pos & bufferMask;
+            var cell = buffer[index];
 
-                Task.Delay(1)
-                    .Wait(); // Could be Thread.Sleep(1) or Thread.SpinWait() if the assembly is not portable lib.
+            if (cell.Sequence == pos + 1 && Interlocked.CompareExchange(ref _dequeuePos, pos + 1, pos) == pos)
+            {
+                result = cell.Element;
+                buffer[index].Element = null;
+                Volatile.Write(ref buffer[index].Sequence, pos + bufferMask + 1);
+                return true;
             }
-        }
 
-        public bool TryDequeue(out object? result)
-        {
-            do
+            if (cell.Sequence < pos + 1)
             {
-                var buffer = _buffer;
-                var bufferMask = _bufferMask;
-                var pos = _dequeuePos;
-                var index = pos & bufferMask;
-                var cell = buffer[index];
-
-                if (cell.Sequence == pos + 1 && Interlocked.CompareExchange(ref _dequeuePos, pos + 1, pos) == pos)
-                {
-                    result = cell.Element;
-                    buffer[index].Element = null;
-                    Volatile.Write(ref buffer[index].Sequence, pos + bufferMask + 1);
-                    return true;
-                }
-
-                if (cell.Sequence < pos + 1)
-                {
-                    result = default;
-                    return false;
-                }
-            } while (true);
-        }
-
-        [StructLayout(LayoutKind.Explicit, Size = 16, CharSet = CharSet.Ansi)]
-        private struct Cell
-        {
-            [FieldOffset(0)] public int Sequence;
-            [FieldOffset(8)] public object? Element;
-
-            public Cell(int sequence, object? element)
-            {
-                Sequence = sequence;
-                Element = element;
+                result = default;
+                return false;
             }
+        } while (true);
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16, CharSet = CharSet.Ansi)]
+    private struct Cell
+    {
+        [FieldOffset(0)] public int Sequence;
+        [FieldOffset(8)] public object? Element;
+
+        public Cell(int sequence, object? element)
+        {
+            Sequence = sequence;
+            Element = element;
         }
     }
 }

@@ -3,11 +3,11 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Cluster.CodeGen
+namespace Proto.Cluster.CodeGen;
+
+public static class Template
 {
-    public static class Template
-    {
-        public const string DefaultTemplate = @"
+    public const string DefaultTemplate = @"
 #nullable enable
 using System;
 using System.Threading;
@@ -206,5 +206,4 @@ namespace {{CsNamespace}}
 	{{/each}}	
 }
 ";
-    }
 }

@@ -8,126 +8,110 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto.Mailbox
+namespace Proto.Mailbox;
+
+static class MailboxStatus
 {
-    static class MailboxStatus
+    public const int Idle = 0;
+    public const int Busy = 1;
+}
+
+public interface IMailbox
+{
+    int UserMessageCount { get; }
+
+    void PostUserMessage(object msg);
+
+    void PostSystemMessage(object msg);
+
+    void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher);
+
+    void Start();
+}
+
+public static class BoundedMailbox
+{
+    public static IMailbox Create(int size, params IMailboxStatistics[] stats) =>
+        new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
+}
+
+public static class UnboundedMailbox
+{
+    public static IMailbox Create(params IMailboxStatistics[] stats) =>
+        new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
+}
+
+public sealed class DefaultMailbox : IMailbox
+{
+    private readonly IMailboxStatistics[] _stats;
+    private readonly IMailboxQueue _systemMessages;
+    private readonly IMailboxQueue _userMailbox;
+    private IDispatcher _dispatcher;
+    private IMessageInvoker _invoker;
+
+    private long _status = MailboxStatus.Idle;
+    private bool _suspended;
+
+    public DefaultMailbox(
+        IMailboxQueue systemMessages,
+        IMailboxQueue userMailbox
+    )
     {
-        public const int Idle = 0;
-        public const int Busy = 1;
+        _systemMessages = systemMessages;
+        _userMailbox = userMailbox;
+        _stats = Array.Empty<IMailboxStatistics>();
+
+        _dispatcher = NoopDispatcher.Instance;
+        _invoker = NoopInvoker.Instance;
     }
 
-    public interface IMailbox
+    public DefaultMailbox(
+        IMailboxQueue systemMessages,
+        IMailboxQueue userMailbox,
+        params IMailboxStatistics[] stats
+    )
     {
-        int UserMessageCount { get; }
+        _systemMessages = systemMessages;
+        _userMailbox = userMailbox;
+        _stats = stats;
 
-        void PostUserMessage(object msg);
-
-        void PostSystemMessage(object msg);
-
-        void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher);
-
-        void Start();
+        _dispatcher = NoopDispatcher.Instance;
+        _invoker = NoopInvoker.Instance;
     }
 
-    public static class BoundedMailbox
+    public int Status => (int)Interlocked.Read(ref _status);
+
+    public int UserMessageCount => _userMailbox.Length;
+
+    public void PostUserMessage(object msg)
     {
-        public static IMailbox Create(int size, params IMailboxStatistics[] stats) =>
-            new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
-    }
-
-    public static class UnboundedMailbox
-    {
-        public static IMailbox Create(params IMailboxStatistics[] stats) =>
-            new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
-    }
-
-    public sealed class DefaultMailbox : IMailbox
-    {
-        private readonly IMailboxStatistics[] _stats;
-        private readonly IMailboxQueue _systemMessages;
-        private readonly IMailboxQueue _userMailbox;
-        private IDispatcher _dispatcher;
-        private IMessageInvoker _invoker;
-
-        private long _status = MailboxStatus.Idle;
-        private bool _suspended;
-
-        public DefaultMailbox(
-            IMailboxQueue systemMessages,
-            IMailboxQueue userMailbox
-        )
+        // if the message is a batch message, we unpack the content as individual messages in the mailbox
+        // feature Aka: Samkuvertering in Swedish...
+        if (msg is IMessageBatch  || msg is MessageEnvelope e && e.Message is IMessageBatch)
         {
-            _systemMessages = systemMessages;
-            _userMailbox = userMailbox;
-            _stats = Array.Empty<IMailboxStatistics>();
+            var batch = (IMessageBatch)MessageEnvelope.UnwrapMessage(msg)!;
+            var messages = batch.GetMessages();
 
-            _dispatcher = NoopDispatcher.Instance;
-            _invoker = NoopInvoker.Instance;
-        }
-
-        public DefaultMailbox(
-            IMailboxQueue systemMessages,
-            IMailboxQueue userMailbox,
-            params IMailboxStatistics[] stats
-        )
-        {
-            _systemMessages = systemMessages;
-            _userMailbox = userMailbox;
-            _stats = stats;
-
-            _dispatcher = NoopDispatcher.Instance;
-            _invoker = NoopInvoker.Instance;
-        }
-
-        public int Status => (int)Interlocked.Read(ref _status);
-
-        public int UserMessageCount => _userMailbox.Length;
-
-        public void PostUserMessage(object msg)
-        {
-            // if the message is a batch message, we unpack the content as individual messages in the mailbox
-            // feature Aka: Samkuvertering in Swedish...
-            if (msg is IMessageBatch  || msg is MessageEnvelope e && e.Message is IMessageBatch)
+            foreach (var message in messages)
             {
-                var batch = (IMessageBatch)MessageEnvelope.UnwrapMessage(msg)!;
-                var messages = batch.GetMessages();
-
-                foreach (var message in messages)
+                _userMailbox.Push(message);
+                foreach (var t in _stats)
                 {
-                    _userMailbox.Push(message);
-                    foreach (var t in _stats)
-                    {
-                        t.MessagePosted(message);
-                    }
+                    t.MessagePosted(message);
                 }
+            }
                 
-                _userMailbox.Push(msg);
-                foreach (var t in _stats)
-                {
-                    t.MessagePosted(msg);
-                }
-
-                Schedule();
-            }
-            else
+            _userMailbox.Push(msg);
+            foreach (var t in _stats)
             {
-                _userMailbox.Push(msg);
-
-                foreach (var t in _stats)
-                {
-                    t.MessagePosted(msg);
-                }
-
-                Schedule();
+                t.MessagePosted(msg);
             }
+
+            Schedule();
         }
-
-        public void PostSystemMessage(object msg)
+        else
         {
-            _systemMessages.Push(msg);
-
-            if (msg is Stop)
-                _invoker?.CancellationTokenSource?.Cancel();
+            _userMailbox.Push(msg);
 
             foreach (var t in _stats)
             {
@@ -136,188 +120,203 @@ namespace Proto.Mailbox
 
             Schedule();
         }
+    }
 
-        public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher)
+    public void PostSystemMessage(object msg)
+    {
+        _systemMessages.Push(msg);
+
+        if (msg is Stop)
+            _invoker?.CancellationTokenSource?.Cancel();
+
+        foreach (var t in _stats)
         {
-            _invoker = invoker;
-            _dispatcher = dispatcher;
+            t.MessagePosted(msg);
         }
 
-        public void Start()
+        Schedule();
+    }
+
+    public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher)
+    {
+        _invoker = invoker;
+        _dispatcher = dispatcher;
+    }
+
+    public void Start()
+    {
+        foreach (var t in _stats)
         {
-            foreach (var t in _stats)
+            t.MailboxStarted();
+        }
+    }
+
+    private static Task RunAsync(DefaultMailbox mailbox)
+    {
+        var task = mailbox.ProcessMessages();
+
+        if (!task.IsCompletedSuccessfully)
+        {
+            return Await(mailbox, task);
+        }
+
+        Interlocked.Exchange(ref mailbox._status, MailboxStatus.Idle);
+
+        if (mailbox._systemMessages.HasMessages || !mailbox._suspended && mailbox._userMailbox.HasMessages)
+        {
+            mailbox.Schedule();
+        }
+        else
+        {
+            foreach (var t in mailbox._stats)
             {
-                t.MailboxStarted();
+                t.MailboxEmpty();
             }
         }
 
-        private static Task RunAsync(DefaultMailbox mailbox)
+        return Task.CompletedTask;
+
+        static async Task Await(DefaultMailbox self, ValueTask task)
         {
-            var task = mailbox.ProcessMessages();
+            await task;
+                
+            Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
 
-            if (!task.IsCompletedSuccessfully)
+            if (self._systemMessages.HasMessages || !self._suspended && self._userMailbox.HasMessages)
             {
-                return Await(mailbox, task);
-            }
-
-            Interlocked.Exchange(ref mailbox._status, MailboxStatus.Idle);
-
-            if (mailbox._systemMessages.HasMessages || !mailbox._suspended && mailbox._userMailbox.HasMessages)
-            {
-                mailbox.Schedule();
+                self.Schedule();
             }
             else
             {
-                foreach (var t in mailbox._stats)
+                foreach (var t in self._stats)
                 {
                     t.MailboxEmpty();
                 }
             }
-
-            return Task.CompletedTask;
-
-            static async Task Await(DefaultMailbox self, ValueTask task)
-            {
-                await task;
-                
-                Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
-
-                if (self._systemMessages.HasMessages || !self._suspended && self._userMailbox.HasMessages)
-                {
-                    self.Schedule();
-                }
-                else
-                {
-                    foreach (var t in self._stats)
-                    {
-                        t.MailboxEmpty();
-                    }
-                }
-            }
         }
+    }
 
-        private ValueTask ProcessMessages()
+    private ValueTask ProcessMessages()
+    {
+        object? msg = null;
+
+        try
         {
-            object? msg = null;
-
-            try
+            for (var i = 0; i < _dispatcher.Throughput; i++)
             {
-                for (var i = 0; i < _dispatcher.Throughput; i++)
+                msg = _systemMessages.Pop();
+
+                if (msg is not null)
                 {
-                    msg = _systemMessages.Pop();
-
-                    if (msg is not null)
+                    _suspended = msg switch
                     {
-                        _suspended = msg switch
-                        {
-                            SuspendMailbox => true,
-                            ResumeMailbox  => false,
-                            _              => _suspended
-                        };
+                        SuspendMailbox => true,
+                        ResumeMailbox  => false,
+                        _              => _suspended
+                    };
 
-                        var t = _invoker.InvokeSystemMessageAsync(msg);
+                    var t = _invoker.InvokeSystemMessageAsync(msg);
 
-                        if (!t.IsCompletedSuccessfully)
-                        {
-                            return Await(msg, t, this);
-                        }
-
-                        foreach (var t1 in _stats)
-                        {
-                            t1.MessageReceived(msg);
-                        }
-
-                        continue;
+                    if (!t.IsCompletedSuccessfully)
+                    {
+                        return Await(msg, t, this);
                     }
 
-                    if (_suspended) break;
-
-                    msg = _userMailbox.Pop();
-
-                    if (msg is not null)
+                    foreach (var t1 in _stats)
                     {
-                        var t= _invoker.InvokeUserMessageAsync(msg);
-
-                        if (!t.IsCompletedSuccessfully)
-                        {
-                            return Await(msg, t, this);
-                        }
-
-                        foreach (var t1 in _stats)
-                        {
-                            t1.MessageReceived(msg);
-                        }
+                        t1.MessageReceived(msg);
                     }
-                    else
-                        break;
+
+                    continue;
                 }
-            }
-            catch (Exception e)
-            {
-                _invoker.EscalateFailure(e, msg);
-            }
-            return default;
 
-            static async ValueTask Await(object msg, ValueTask task, DefaultMailbox self)
-            {
-                try
+                if (_suspended) break;
+
+                msg = _userMailbox.Pop();
+
+                if (msg is not null)
                 {
-                    await task;
-                    foreach (var t1 in self._stats)
+                    var t= _invoker.InvokeUserMessageAsync(msg);
+
+                    if (!t.IsCompletedSuccessfully)
+                    {
+                        return Await(msg, t, this);
+                    }
+
+                    foreach (var t1 in _stats)
                     {
                         t1.MessageReceived(msg);
                     }
                 }
-                catch (Exception e)
-                {
-                    self._invoker.EscalateFailure(e, msg);
-                }
+                else
+                    break;
             }
         }
-
-        private void Schedule()
+        catch (Exception e)
         {
-            if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
+            _invoker.EscalateFailure(e, msg);
+        }
+        return default;
+
+        static async ValueTask Await(object msg, ValueTask task, DefaultMailbox self)
+        {
+            try
             {
+                await task;
+                foreach (var t1 in self._stats)
+                {
+                    t1.MessageReceived(msg);
+                }
+            }
+            catch (Exception e)
+            {
+                self._invoker.EscalateFailure(e, msg);
+            }
+        }
+    }
+
+    private void Schedule()
+    {
+        if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
+        {
 #if NET5_0_OR_GREATER
-                ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this ,false);
+            ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this ,false);
 #else
                 ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this);
 #endif
-            }
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void RunWrapper(object state)
-        {
-            var y = (DefaultMailbox) state;
-            RunAsync(y);
         }
     }
+        
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void RunWrapper(object state)
+    {
+        var y = (DefaultMailbox) state;
+        RunAsync(y);
+    }
+}
+
+/// <summary>
+///     Extension point for getting notifications about mailbox events
+/// </summary>
+public interface IMailboxStatistics
+{
+    /// <summary>
+    ///     This method is invoked when the mailbox is started
+    /// </summary>
+    void MailboxStarted();
 
     /// <summary>
-    ///     Extension point for getting notifications about mailbox events
+    ///     This method is invoked when a message is posted to the mailbox.
     /// </summary>
-    public interface IMailboxStatistics
-    {
-        /// <summary>
-        ///     This method is invoked when the mailbox is started
-        /// </summary>
-        void MailboxStarted();
+    void MessagePosted(object message);
 
-        /// <summary>
-        ///     This method is invoked when a message is posted to the mailbox.
-        /// </summary>
-        void MessagePosted(object message);
+    /// <summary>
+    ///     This method is invoked when a message has been received by the invoker associated with the mailbox.
+    /// </summary>
+    void MessageReceived(object message);
 
-        /// <summary>
-        ///     This method is invoked when a message has been received by the invoker associated with the mailbox.
-        /// </summary>
-        void MessageReceived(object message);
-
-        /// <summary>
-        ///     This method is invoked when all messages in the mailbox have been received.
-        /// </summary>
-        void MailboxEmpty();
-    }
+    /// <summary>
+    ///     This method is invoked when all messages in the mailbox have been received.
+    /// </summary>
+    void MailboxEmpty();
 }

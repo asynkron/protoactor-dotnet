@@ -5,18 +5,17 @@
 // -----------------------------------------------------------------------
 using System.Collections.Concurrent;
 
-namespace Proto.Mailbox
+namespace Proto.Mailbox;
+
+public class UnboundedMailboxQueue : IMailboxQueue
 {
-    public class UnboundedMailboxQueue : IMailboxQueue
-    {
-        private readonly ConcurrentQueue<object> _messages = new();
+    private readonly ConcurrentQueue<object> _messages = new();
 
-        public int Length => _messages.Count;
+    public int Length => _messages.Count;
 
-        public void Push(object message) => _messages.Enqueue(message);
+    public void Push(object message) => _messages.Enqueue(message);
 
-        public object? Pop() => _messages.TryDequeue(out var message) ? message : null;
+    public object? Pop() => _messages.TryDequeue(out var message) ? message : null;
 
-        public bool HasMessages => !_messages.IsEmpty;
-    }
+    public bool HasMessages => !_messages.IsEmpty;
 }

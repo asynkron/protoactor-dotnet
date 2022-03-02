@@ -5,16 +5,15 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
-namespace Proto
+namespace Proto;
+
+public interface IContextStore
 {
-    public interface IContextStore
-    {
-        T? Get<T>();
+    T? Get<T>();
 
-        void Set<T>(T obj) => Set<T, T>(obj);
+    void Set<T>(T obj) => Set<T, T>(obj);
 
-        void Set<T, TI>(TI obj) where TI : T;
+    void Set<T, TI>(TI obj) where TI : T;
 
-        void Remove<T>();
-    }
+    void Remove<T>();
 }

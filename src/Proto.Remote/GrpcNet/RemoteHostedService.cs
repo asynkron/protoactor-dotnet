@@ -10,35 +10,34 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 
-namespace Proto.Remote.GrpcNet
+namespace Proto.Remote.GrpcNet;
+
+[UsedImplicitly]
+[SuppressMessage(category:"", checkId:"CA1812")]
+class RemoteHostedService : IHostedService
 {
-    [UsedImplicitly]
-    [SuppressMessage(category:"", checkId:"CA1812")]
-    class RemoteHostedService : IHostedService
+    private readonly IHostApplicationLifetime _appLifetime;
+    private readonly IRemote _remote;
+
+    public RemoteHostedService(
+        IHostApplicationLifetime appLifetime,
+        IRemote remote
+    )
     {
-        private readonly IHostApplicationLifetime _appLifetime;
-        private readonly IRemote _remote;
-
-        public RemoteHostedService(
-            IHostApplicationLifetime appLifetime,
-            IRemote remote
-        )
-        {
-            _appLifetime = appLifetime;
-            _remote = remote;
-        }
-
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            _appLifetime.ApplicationStopping.Register(OnStopping);
-            _appLifetime.ApplicationStarted.Register(OnStarted);
-            return Task.CompletedTask;
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-        private void OnStarted() => _remote.StartAsync().GetAwaiter().GetResult();
-
-        private void OnStopping() => _remote.ShutdownAsync().GetAwaiter().GetResult();
+        _appLifetime = appLifetime;
+        _remote = remote;
     }
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        _appLifetime.ApplicationStopping.Register(OnStopping);
+        _appLifetime.ApplicationStarted.Register(OnStarted);
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    private void OnStarted() => _remote.StartAsync().GetAwaiter().GetResult();
+
+    private void OnStopping() => _remote.ShutdownAsync().GetAwaiter().GetResult();
 }

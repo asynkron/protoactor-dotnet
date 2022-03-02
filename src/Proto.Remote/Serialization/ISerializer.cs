@@ -5,16 +5,15 @@
 // -----------------------------------------------------------------------
 using Google.Protobuf;
 
-namespace Proto.Remote
+namespace Proto.Remote;
+
+public interface ISerializer
 {
-    public interface ISerializer
-    {
-        ByteString Serialize(object obj);
+    ByteString Serialize(object obj);
 
-        object Deserialize(ByteString bytes, string typeName);
+    object Deserialize(ByteString bytes, string typeName);
 
-        string GetTypeName(object message);
+    string GetTypeName(object message);
 
-        bool CanSerialize(object obj);
-    }
+    bool CanSerialize(object obj);
 }

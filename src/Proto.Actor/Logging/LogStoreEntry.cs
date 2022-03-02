@@ -7,28 +7,27 @@ using System;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Logging
+namespace Proto.Logging;
+
+[PublicAPI]
+public record LogStoreEntry(
+    int Index,
+    DateTimeOffset Timestamp,
+    LogLevel LogLevel,
+    string Category,
+    string Template,
+    Exception? Exception,
+    object[] Args
+)
 {
-    [PublicAPI]
-    public record LogStoreEntry(
-        int Index,
-        DateTimeOffset Timestamp,
-        LogLevel LogLevel,
-        string Category,
-        string Template,
-        Exception? Exception,
-        object[] Args
-    )
+    public bool IsBefore(LogStoreEntry other) => Index < other.Index;
+
+    public bool IsAfter(LogStoreEntry other) => Index > other.Index;
+
+    public string ToFormattedString()
     {
-        public bool IsBefore(LogStoreEntry other) => Index < other.Index;
-
-        public bool IsAfter(LogStoreEntry other) => Index > other.Index;
-
-        public string ToFormattedString()
-        {
-            var formatter = new LogValuesFormatter(Template);
-            var str = formatter.Format(Args);
-            return $"[{Timestamp:hh:mm:ss.fff}] [{Category}][{LogLevel}] {str} {Exception}";
-        }
+        var formatter = new LogValuesFormatter(Template);
+        var str = formatter.Format(Args);
+        return $"[{Timestamp:hh:mm:ss.fff}] [{Category}][{LogLevel}] {str} {Exception}";
     }
 }

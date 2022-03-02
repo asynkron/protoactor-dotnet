@@ -7,57 +7,56 @@ using System.Collections.Generic;
 using System.Linq;
 using Proto.Remote;
 
-namespace Proto.Cluster.PubSub
+namespace Proto.Cluster.PubSub;
+
+public record TopicBatchMessage(IReadOnlyCollection<object> Envelopes) :  IRootSerializable , IMessageBatch, IAutoRespond
 {
-    public record TopicBatchMessage(IReadOnlyCollection<object> Envelopes) :  IRootSerializable , IMessageBatch, IAutoRespond
+    public object GetAutoResponse(IContext context) => new PublishResponse();
+        
+    public IReadOnlyCollection<object> GetMessages() => Envelopes;
+        
+    public IRootSerialized Serialize(ActorSystem system)
     {
-        public object GetAutoResponse(IContext context) => new PublishResponse();
-        
-        public IReadOnlyCollection<object> GetMessages() => Envelopes;
-        
-        public IRootSerialized Serialize(ActorSystem system)
+        var s = system.Serialization();
+
+        var batch = new TopicBatchRequest();
+        foreach (var message in Envelopes)
         {
-            var s = system.Serialization();
+                
+            var (messageData, typeName, serializerId) = s.Serialize(message);
+            var typeIndex = batch.TypeNames.IndexOf(typeName);
 
-            var batch = new TopicBatchRequest();
-            foreach (var message in Envelopes)
+            if (typeIndex == -1)
             {
-                
-                var (messageData, typeName, serializerId) = s.Serialize(message);
-                var typeIndex = batch.TypeNames.IndexOf(typeName);
-
-                if (typeIndex == -1)
-                {
-                    batch.TypeNames.Add(typeName);
-                    typeIndex = batch.TypeNames.Count - 1;
-                }
-
-                var topicEnvelope = new TopicEnvelope
-                {
-                    MessageData = messageData,
-                    TypeId = typeIndex,
-                    SerializerId = serializerId,
-                };
-                
-                batch.Envelopes.Add(topicEnvelope);
+                batch.TypeNames.Add(typeName);
+                typeIndex = batch.TypeNames.Count - 1;
             }
 
-            return batch;
+            var topicEnvelope = new TopicEnvelope
+            {
+                MessageData = messageData,
+                TypeId = typeIndex,
+                SerializerId = serializerId,
+            };
+                
+            batch.Envelopes.Add(topicEnvelope);
         }
+
+        return batch;
     }
+}
 
-    public partial class TopicBatchRequest : IRootSerialized
+public partial class TopicBatchRequest : IRootSerialized
+{
+    public IRootSerializable Deserialize(ActorSystem system)
     {
-        public IRootSerializable Deserialize(ActorSystem system)
-        {
-            var ser = system.Serialization();
-            //deserialize messages in the envelope
-            var messages = Envelopes
-                .Select(e => ser
-                    .Deserialize(TypeNames[e.TypeId], e.MessageData, e.SerializerId))
-                .ToList();
+        var ser = system.Serialization();
+        //deserialize messages in the envelope
+        var messages = Envelopes
+            .Select(e => ser
+                .Deserialize(TypeNames[e.TypeId], e.MessageData, e.SerializerId))
+            .ToList();
 
-            return new TopicBatchMessage(messages);
-        }
+        return new TopicBatchMessage(messages);
     }
 }

@@ -10,42 +10,41 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Proto.Cluster.CodeGen
+namespace Proto.Cluster.CodeGen;
+
+public static class OutputFileName
 {
-    public static class OutputFileName
+    public static string GetOutputFileName(FileInfo inputFile, FileInfo? templateFile = null)
     {
-        public static string GetOutputFileName(FileInfo inputFile, FileInfo? templateFile = null)
-        {
-            var baseName = Path.GetFileNameWithoutExtension(inputFile.Name);
+        var baseName = Path.GetFileNameWithoutExtension(inputFile.Name);
             
-            // hashcode is generated to avoid duplicate output file names, but also so file
-            // names are deterministic (random output file names break in Visual Studio)
-            var hash = GetHash(inputFile, templateFile);
+        // hashcode is generated to avoid duplicate output file names, but also so file
+        // names are deterministic (random output file names break in Visual Studio)
+        var hash = GetHash(inputFile, templateFile);
 
-            return $"{baseName}-{hash}.cs";
-        }
+        return $"{baseName}-{hash}.cs";
+    }
         
-        private static string GetHash(FileInfo inputFile, FileInfo? templateFile)
-        {
-            // MD5 is used as .GetHashCode() is not deterministic between runs
-            using var incrementalHash = IncrementalHash.CreateHash(HashAlgorithmName.MD5);
+    private static string GetHash(FileInfo inputFile, FileInfo? templateFile)
+    {
+        // MD5 is used as .GetHashCode() is not deterministic between runs
+        using var incrementalHash = IncrementalHash.CreateHash(HashAlgorithmName.MD5);
             
+        incrementalHash.AppendData(
+            Encoding.Unicode.GetBytes(inputFile.FullName)
+        );
+
+        if (templateFile is not null)
+        {
             incrementalHash.AppendData(
-                Encoding.Unicode.GetBytes(inputFile.FullName)
+                Encoding.Unicode.GetBytes(templateFile.FullName)
             );
-
-            if (templateFile is not null)
-            {
-                incrementalHash.AppendData(
-                    Encoding.Unicode.GetBytes(templateFile.FullName)
-                );
-            }
-
-            var hashCodeFormattedBytes = incrementalHash
-                .GetHashAndReset()
-                .Select(@byte => @byte.ToString("X2", CultureInfo.InvariantCulture));
-
-            return string.Concat(hashCodeFormattedBytes);
         }
+
+        var hashCodeFormattedBytes = incrementalHash
+            .GetHashAndReset()
+            .Select(@byte => @byte.ToString("X2", CultureInfo.InvariantCulture));
+
+        return string.Concat(hashCodeFormattedBytes);
     }
 }

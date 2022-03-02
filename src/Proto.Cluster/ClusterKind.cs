@@ -6,16 +6,15 @@
 using System;
 using JetBrains.Annotations;
 
-namespace Proto.Cluster
+namespace Proto.Cluster;
+
+[PublicAPI]
+public record ClusterKind(string Name, Props Props)
 {
-    [PublicAPI]
-    public record ClusterKind(string Name, Props Props)
-    {
-        public Func<Cluster, IMemberStrategy>? StrategyBuilder { get; init; }
+    public Func<Cluster, IMemberStrategy>? StrategyBuilder { get; init; }
 
-        public ClusterKind WithMemberStrategy(Func<Cluster, IMemberStrategy> strategyBuilder)
-            => this with {StrategyBuilder = strategyBuilder};
+    public ClusterKind WithMemberStrategy(Func<Cluster, IMemberStrategy> strategyBuilder)
+        => this with {StrategyBuilder = strategyBuilder};
 
-        internal ActivatedClusterKind Build(Cluster cluster) => new(Name, Props, StrategyBuilder?.Invoke(cluster));
-    }
+    internal ActivatedClusterKind Build(Cluster cluster) => new(Name, Props, StrategyBuilder?.Invoke(cluster));
 }

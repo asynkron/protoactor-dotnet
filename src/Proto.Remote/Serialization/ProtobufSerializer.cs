@@ -7,44 +7,43 @@ using System;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Remote
+namespace Proto.Remote;
+
+public class ProtobufSerializer : ISerializer
 {
-    public class ProtobufSerializer : ISerializer
+    private readonly Serialization _serialization;
+
+    public ProtobufSerializer(Serialization serialization) => _serialization = serialization;
+
+    public ByteString Serialize(object obj)
     {
-        private readonly Serialization _serialization;
+        var message = obj as IMessage;
+        return message.ToByteString();
+    }
 
-        public ProtobufSerializer(Serialization serialization) => _serialization = serialization;
+    public object Deserialize(ByteString bytes, string typeName)
+    {
+        var parser = _serialization.TypeLookup[typeName];
+        var o = parser.ParseFrom(bytes);
+        return o;
+    }
 
-        public ByteString Serialize(object obj)
+    public string GetTypeName(object obj)
+    {
+        if (obj is IMessage message)
+            return message.Descriptor.FullName;
+
+        throw new ArgumentException("obj must be of type IMessage", nameof(obj));
+    }
+
+    public bool CanSerialize(object obj)
+    {
+        if (obj is IMessage message)
         {
-            var message = obj as IMessage;
-            return message.ToByteString();
+            if (_serialization.TypeLookup.ContainsKey(message.Descriptor.FullName))
+                return true;
+            Log.CreateLogger<Serialization>().LogWarning("Descriptor for message type {descriptor} not registered", message.Descriptor.Name);
         }
-
-        public object Deserialize(ByteString bytes, string typeName)
-        {
-            var parser = _serialization.TypeLookup[typeName];
-            var o = parser.ParseFrom(bytes);
-            return o;
-        }
-
-        public string GetTypeName(object obj)
-        {
-            if (obj is IMessage message)
-                return message.Descriptor.FullName;
-
-            throw new ArgumentException("obj must be of type IMessage", nameof(obj));
-        }
-
-        public bool CanSerialize(object obj)
-        {
-            if (obj is IMessage message)
-            {
-                if (_serialization.TypeLookup.ContainsKey(message.Descriptor.FullName))
-                    return true;
-                Log.CreateLogger<Serialization>().LogWarning("Descriptor for message type {descriptor} not registered", message.Descriptor.Name);
-            }
-            return false;
-        }
+        return false;
     }
 }

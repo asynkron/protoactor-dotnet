@@ -5,11 +5,10 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Proto.Cluster.Gossip
+namespace Proto.Cluster.Gossip;
+
+public partial class GossipKeyValue
 {
-    public partial class GossipKeyValue
-    {
-        public DateTimeOffset LocalTimestamp => DateTimeOffset.FromUnixTimeMilliseconds(LocalTimestampUnixMilliseconds);
-        public TimeSpan Age => DateTimeOffset.UtcNow - LocalTimestamp;
-    }
+    public DateTimeOffset LocalTimestamp => DateTimeOffset.FromUnixTimeMilliseconds(LocalTimestampUnixMilliseconds);
+    public TimeSpan Age => DateTimeOffset.UtcNow - LocalTimestamp;
 }

@@ -5,44 +5,43 @@
 // -----------------------------------------------------------------------
 using System.Threading;
 
-namespace Proto.Cluster
+namespace Proto.Cluster;
+
+public class RoundRobinMemberSelector
 {
-    public class RoundRobinMemberSelector
+    private readonly IMemberStrategy _memberStrategy;
+    private int _val;
+
+    public RoundRobinMemberSelector(IMemberStrategy memberStrategy) => _memberStrategy = memberStrategy;
+
+    public string GetMemberAddress()
     {
-        private readonly IMemberStrategy _memberStrategy;
-        private int _val;
+        var members = _memberStrategy.GetAllMembers();
+        var l = members.Count;
 
-        public RoundRobinMemberSelector(IMemberStrategy memberStrategy) => _memberStrategy = memberStrategy;
-
-        public string GetMemberAddress()
+        switch (l)
         {
-            var members = _memberStrategy.GetAllMembers();
-            var l = members.Count;
-
-            switch (l)
-            {
-                case 0: return "";
-                case 1: return members[0].Address;
-                default: {
-                    var nv = Interlocked.Increment(ref _val);
-                    return members[nv % l].Address;
-                }
+            case 0: return "";
+            case 1: return members[0].Address;
+            default: {
+                var nv = Interlocked.Increment(ref _val);
+                return members[nv % l].Address;
             }
         }
+    }
 
-        public Member? GetMember()
+    public Member? GetMember()
+    {
+        var members = _memberStrategy.GetAllMembers();
+        var l = members.Count;
+
+        switch (l)
         {
-            var members = _memberStrategy.GetAllMembers();
-            var l = members.Count;
-
-            switch (l)
-            {
-                case 0: return null;
-                case 1: return members[0];
-                default: {
-                    var nv = Interlocked.Increment(ref _val);
-                    return members[nv % l];
-                }
+            case 0: return null;
+            case 1: return members[0];
+            default: {
+                var nv = Interlocked.Increment(ref _val);
+                return members[nv % l];
             }
         }
     }

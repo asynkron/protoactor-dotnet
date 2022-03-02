@@ -7,40 +7,39 @@ using System.Collections.Immutable;
 using System.Linq;
 using Proto.Cluster.Partition;
 
-namespace Proto.Cluster
+namespace Proto.Cluster;
+
+public interface IMemberStrategy
 {
-    public interface IMemberStrategy
+    ImmutableList<Member> GetAllMembers();
+
+    void AddMember(Member member);
+
+    void RemoveMember(Member member);
+
+    Member? GetActivator(string senderAddress);
+}
+
+class SimpleMemberStrategy : IMemberStrategy
+{
+    private readonly RoundRobinMemberSelector _selector;
+    private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
+
+    public SimpleMemberStrategy() => _selector = new RoundRobinMemberSelector(this);
+
+    public ImmutableList<Member> GetAllMembers() => _members;
+
+    //TODO: account for Member.MemberId
+    public void AddMember(Member member)
     {
-        ImmutableList<Member> GetAllMembers();
+        // Avoid adding the same member twice
+        if (_members.Any(x => x.Address == member.Address)) return;
 
-        void AddMember(Member member);
-
-        void RemoveMember(Member member);
-
-        Member? GetActivator(string senderAddress);
+        _members = _members.Add(member);
     }
 
-    class SimpleMemberStrategy : IMemberStrategy
-    {
-        private readonly RoundRobinMemberSelector _selector;
-        private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
+    //TODO: account for Member.MemberId
+    public void RemoveMember(Member member) => _members = _members.RemoveAll(x => x.Address == member.Address);
 
-        public SimpleMemberStrategy() => _selector = new RoundRobinMemberSelector(this);
-
-        public ImmutableList<Member> GetAllMembers() => _members;
-
-        //TODO: account for Member.MemberId
-        public void AddMember(Member member)
-        {
-            // Avoid adding the same member twice
-            if (_members.Any(x => x.Address == member.Address)) return;
-
-            _members = _members.Add(member);
-        }
-
-        //TODO: account for Member.MemberId
-        public void RemoveMember(Member member) => _members = _members.RemoveAll(x => x.Address == member.Address);
-
-        public Member? GetActivator(string senderAddress) => _selector.GetMember();
-    }
+    public Member? GetActivator(string senderAddress) => _selector.GetMember();
 }

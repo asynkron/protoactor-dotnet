@@ -3,13 +3,12 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto
+namespace Proto;
+
+public interface ISystemContext
 {
-    public interface ISystemContext
-    {
-        /// <summary>
-        ///     Gets the actor system this actor was spawned in.
-        /// </summary>
-        public ActorSystem System { get; }
-    }
+    /// <summary>
+    ///     Gets the actor system this actor was spawned in.
+    /// </summary>
+    public ActorSystem System { get; }
 }

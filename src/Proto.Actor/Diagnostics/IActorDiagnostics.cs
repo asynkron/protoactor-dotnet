@@ -3,10 +3,9 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Diagnostics
+namespace Proto.Diagnostics;
+
+public interface IActorDiagnostics
 {
-    public interface IActorDiagnostics
-    {
-        string GetDiagnosticsString();
-    }
+    string GetDiagnosticsString();
 }

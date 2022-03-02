@@ -5,40 +5,39 @@
 // -----------------------------------------------------------------------
 using System;
 
-namespace Proto.Cluster.Consul
+namespace Proto.Cluster.Consul;
+
+public sealed record ConsulProviderConfig
 {
-    public sealed record ConsulProviderConfig
-    {
-        /// <summary>
-        ///     Default value is 3 seconds
-        /// </summary>
-        public TimeSpan ServiceTtl { get; init; } = TimeSpan.FromSeconds(10);
+    /// <summary>
+    ///     Default value is 3 seconds
+    /// </summary>
+    public TimeSpan ServiceTtl { get; init; } = TimeSpan.FromSeconds(10);
 
-        /// <summary>
-        ///     Default value is 1 second
-        /// </summary>
-        public TimeSpan RefreshTtl { get; init; } = TimeSpan.FromSeconds(1);
+    /// <summary>
+    ///     Default value is 1 second
+    /// </summary>
+    public TimeSpan RefreshTtl { get; init; } = TimeSpan.FromSeconds(1);
 
-        /// <summary>
-        ///     Default value is 10 seconds
-        /// </summary>
-        public TimeSpan DeregisterCritical { get; init; } = TimeSpan.FromSeconds(30);
+    /// <summary>
+    ///     Default value is 10 seconds
+    /// </summary>
+    public TimeSpan DeregisterCritical { get; init; } = TimeSpan.FromSeconds(30);
 
-        /// <summary>
-        ///     Default value is 20 seconds
-        /// </summary>
-        public TimeSpan BlockingWaitTime { get; init; } = TimeSpan.FromSeconds(20);
+    /// <summary>
+    ///     Default value is 20 seconds
+    /// </summary>
+    public TimeSpan BlockingWaitTime { get; init; } = TimeSpan.FromSeconds(20);
 
-        public ConsulProviderConfig WithServiceTtl(TimeSpan serviceTtl) =>
-            this with {ServiceTtl = serviceTtl};
+    public ConsulProviderConfig WithServiceTtl(TimeSpan serviceTtl) =>
+        this with {ServiceTtl = serviceTtl};
 
-        public ConsulProviderConfig WithRefreshTtl(TimeSpan refreshTtl) =>
-            this with {RefreshTtl = refreshTtl};
+    public ConsulProviderConfig WithRefreshTtl(TimeSpan refreshTtl) =>
+        this with {RefreshTtl = refreshTtl};
 
-        public ConsulProviderConfig WithDeregisterCritical(TimeSpan deregisterCritical) =>
-            this with {DeregisterCritical = deregisterCritical};
+    public ConsulProviderConfig WithDeregisterCritical(TimeSpan deregisterCritical) =>
+        this with {DeregisterCritical = deregisterCritical};
 
-        public ConsulProviderConfig WithBlockingWaitTime(TimeSpan blockingWaitTime) =>
-            this with {BlockingWaitTime = blockingWaitTime};
-    }
+    public ConsulProviderConfig WithBlockingWaitTime(TimeSpan blockingWaitTime) =>
+        this with {BlockingWaitTime = blockingWaitTime};
 }

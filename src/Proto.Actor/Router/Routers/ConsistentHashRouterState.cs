@@ -8,63 +8,62 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Proto.Router.Routers
+namespace Proto.Router.Routers;
+
+class ConsistentHashRouterState : RouterState
 {
-    class ConsistentHashRouterState : RouterState
+    private readonly Func<string, uint> _hash;
+    private readonly Func<object, string>? _messageHasher;
+    private readonly int _replicaCount;
+    private readonly ISenderContext _senderContext;
+    private HashRing<PID>? _hashRing;
+
+    public ConsistentHashRouterState(
+        ISenderContext senderContext,
+        Func<string, uint> hash,
+        int replicaCount,
+        Func<object, string>? messageHasher
+    )
     {
-        private readonly Func<string, uint> _hash;
-        private readonly Func<object, string>? _messageHasher;
-        private readonly int _replicaCount;
-        private readonly ISenderContext _senderContext;
-        private HashRing<PID>? _hashRing;
+        _senderContext = senderContext;
+        _hash = hash;
+        _replicaCount = replicaCount;
+        _messageHasher = messageHasher;
+    }
 
-        public ConsistentHashRouterState(
-            ISenderContext senderContext,
-            Func<string, uint> hash,
-            int replicaCount,
-            Func<object, string>? messageHasher
-        )
+    public override void SetRoutees(PID[] routees)
+    {
+        base.SetRoutees(routees);
+        _hashRing = new HashRing<PID>(routees, pid => pid.ToString(), _hash, _replicaCount);
+    }
+
+    public override void RouteMessage(object message)
+    {
+        if (_hashRing is null) throw new InvalidOperationException("Routees not set");
+
+        var env = MessageEnvelope.Unwrap(message);
+
+        if (env.message is IHashable hashable)
         {
-            _senderContext = senderContext;
-            _hash = hash;
-            _replicaCount = replicaCount;
-            _messageHasher = messageHasher;
+            var key = hashable.HashBy();
+            var routee = _hashRing.GetNode(key);
+
+            //by design, just forward message
+            _senderContext.Send(routee, message);
         }
-
-        public override void SetRoutees(PID[] routees)
+        else if (_messageHasher is not null)
         {
-            base.SetRoutees(routees);
-            _hashRing = new HashRing<PID>(routees, pid => pid.ToString(), _hash, _replicaCount);
+            var key = _messageHasher(message);
+            var routee = _hashRing.GetNode(key);
+
+            //by design, just forward message
+            _senderContext.Send(routee, message);
         }
-
-        public override void RouteMessage(object message)
+        else
         {
-            if (_hashRing is null) throw new InvalidOperationException("Routees not set");
-
-            var env = MessageEnvelope.Unwrap(message);
-
-            if (env.message is IHashable hashable)
-            {
-                var key = hashable.HashBy();
-                var routee = _hashRing.GetNode(key);
-
-                //by design, just forward message
-                _senderContext.Send(routee, message);
-            }
-            else if (_messageHasher is not null)
-            {
-                var key = _messageHasher(message);
-                var routee = _hashRing.GetNode(key);
-
-                //by design, just forward message
-                _senderContext.Send(routee, message);
-            }
-            else
-            {
-                throw new NotSupportedException(
-                    $"Message of type '{message.GetType().Name}' does not implement IHashable"
-                );
-            }
+            throw new NotSupportedException(
+                $"Message of type '{message.GetType().Name}' does not implement IHashable"
+            );
         }
     }
 }

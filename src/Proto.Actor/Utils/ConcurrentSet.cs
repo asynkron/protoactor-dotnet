@@ -7,21 +7,20 @@ using System.Collections.Concurrent;
 using System.Linq;
 using JetBrains.Annotations;
 
-namespace Proto.Utils
+namespace Proto.Utils;
+
+[PublicAPI]
+public class ConcurrentSet<T>
 {
-    [PublicAPI]
-    public class ConcurrentSet<T>
-    {
-        private readonly ConcurrentDictionary<T, byte> _inner = new();
+    private readonly ConcurrentDictionary<T, byte> _inner = new();
 
-        public bool Contains(T key) => _inner.ContainsKey(key);
+    public bool Contains(T key) => _inner.ContainsKey(key);
 
-        public void Add(T key) => _inner.TryAdd(key, 1);
+    public void Add(T key) => _inner.TryAdd(key, 1);
 
-        public bool TryAdd(T key) => _inner.TryAdd(key, 1);
+    public bool TryAdd(T key) => _inner.TryAdd(key, 1);
 
-        public void Remove(T key) => _inner.TryRemove(key, out _);
+    public void Remove(T key) => _inner.TryRemove(key, out _);
 
-        public T[] ToArray() => _inner.Keys.ToArray();
-    }
+    public T[] ToArray() => _inner.Keys.ToArray();
 }

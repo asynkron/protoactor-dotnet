@@ -7,23 +7,22 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Proto.Router.Routers
+namespace Proto.Router.Routers;
+
+public abstract class RouterState
 {
-    public abstract class RouterState
+    protected HashSet<PID> Routees = new();
+    protected ImmutableList<PID> Values = ImmutableList<PID>.Empty;
+
+    public virtual HashSet<PID> GetRoutees() => Routees;
+
+    protected ImmutableList<PID> GetValues() => Values;
+
+    public virtual void SetRoutees(PID[] routees)
     {
-        protected HashSet<PID> Routees = new();
-        protected ImmutableList<PID> Values = ImmutableList<PID>.Empty;
-
-        public virtual HashSet<PID> GetRoutees() => Routees;
-
-        protected ImmutableList<PID> GetValues() => Values;
-
-        public virtual void SetRoutees(PID[] routees)
-        {
-            Routees = routees.ToHashSet();
-            Values = routees.ToImmutableList();
-        }
-
-        public abstract void RouteMessage(object message);
+        Routees = routees.ToHashSet();
+        Values = routees.ToImmutableList();
     }
+
+    public abstract void RouteMessage(object message);
 }

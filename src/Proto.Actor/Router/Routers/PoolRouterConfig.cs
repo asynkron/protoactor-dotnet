@@ -5,15 +5,14 @@
 // -----------------------------------------------------------------------
 using System.Linq;
 
-namespace Proto.Router.Routers
+namespace Proto.Router.Routers;
+
+abstract record PoolRouterConfig(int PoolSize, Props RouteeProps) : RouterConfig
 {
-    abstract record PoolRouterConfig(int PoolSize, Props RouteeProps) : RouterConfig
-    {
-        public override void OnStarted(IContext context, RouterState router) =>
-            router.SetRoutees(Enumerable
-                .Range(0, PoolSize)
-                .Select(_ => context.Spawn(RouteeProps))
-                .ToArray()
-            );
-    }
+    public override void OnStarted(IContext context, RouterState router) =>
+        router.SetRoutees(Enumerable
+            .Range(0, PoolSize)
+            .Select(_ => context.Spawn(RouteeProps))
+            .ToArray()
+        );
 }

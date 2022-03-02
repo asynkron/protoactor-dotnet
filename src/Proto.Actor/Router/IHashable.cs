@@ -3,10 +3,9 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-namespace Proto.Router
+namespace Proto.Router;
+
+public interface IHashable
 {
-    public interface IHashable
-    {
-        string HashBy();
-    }
+    string HashBy();
 }

@@ -6,17 +6,16 @@
 using Google.Protobuf;
 using Proto.Remote;
 
-namespace Proto.Cluster
-{
-    public partial class GrainResponse : IRootSerialized
-    {
-        public IRootSerializable Deserialize(ActorSystem system)
-        {
-            if (MessageData.IsEmpty) return new GrainResponseMessage(null);
+namespace Proto.Cluster;
 
-            var ser = system.Serialization();
-            var message = ser.Deserialize(MessageTypeName, MessageData, Serialization.SERIALIZER_ID_PROTOBUF);
-            return new GrainResponseMessage((IMessage) message);
-        }
+public partial class GrainResponse : IRootSerialized
+{
+    public IRootSerializable Deserialize(ActorSystem system)
+    {
+        if (MessageData.IsEmpty) return new GrainResponseMessage(null);
+
+        var ser = system.Serialization();
+        var message = ser.Deserialize(MessageTypeName, MessageData, Serialization.SERIALIZER_ID_PROTOBUF);
+        return new GrainResponseMessage((IMessage) message);
     }
 }

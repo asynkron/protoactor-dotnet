@@ -4,9 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Proto.Cluster.Seed
-{
-    public record Connect();
-    public record Connected(Member Member);
-    public record FailedToConnect();
-}
+namespace Proto.Cluster.Seed;
+
+public record Connect();
+public record Connected(Member Member);
+public record FailedToConnect();

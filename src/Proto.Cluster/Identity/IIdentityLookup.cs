@@ -6,16 +6,15 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Proto.Cluster.Identity
+namespace Proto.Cluster.Identity;
+
+public interface IIdentityLookup
 {
-    public interface IIdentityLookup
-    {
-        Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
+    Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct);
 
-        Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct);
+    Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct);
 
-        Task SetupAsync(Cluster cluster, string[] kinds, bool isClient);
+    Task SetupAsync(Cluster cluster, string[] kinds, bool isClient);
 
-        Task ShutdownAsync();
-    }
+    Task ShutdownAsync();
 }

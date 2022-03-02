@@ -7,71 +7,70 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Proto.Cluster.Gossip
+namespace Proto.Cluster.Gossip;
+
+public delegate void OnGossipStateUpdated(GossipState state, ImmutableHashSet<string> members);
+
+public record ConsensusCheck(OnGossipStateUpdated Check, IImmutableSet<string> AffectedKeys);
+
+public class ConsensusChecks
 {
-    public delegate void OnGossipStateUpdated(GossipState state, ImmutableHashSet<string> members);
+    private readonly Dictionary<string, HashSet<string>> _affectedChecksByStateKey = new();
+    private readonly Dictionary<string, ConsensusCheck> _consensusChecks = new();
 
-    public record ConsensusCheck(OnGossipStateUpdated Check, IImmutableSet<string> AffectedKeys);
+    public IEnumerable<ConsensusCheck> Get => _consensusChecks.Values;
 
-    public class ConsensusChecks
+    public IEnumerable<ConsensusCheck> GetByUpdatedKey(string key)
     {
-        private readonly Dictionary<string, HashSet<string>> _affectedChecksByStateKey = new();
-        private readonly Dictionary<string, ConsensusCheck> _consensusChecks = new();
+        if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds)) return affectedIds.Select(id => _consensusChecks[id]);
 
-        public IEnumerable<ConsensusCheck> Get => _consensusChecks.Values;
+        return ImmutableList<ConsensusCheck>.Empty;
+    }
 
-        public IEnumerable<ConsensusCheck> GetByUpdatedKey(string key)
+    public IEnumerable<ConsensusCheck> GetByUpdatedKeys(IEnumerable<string> keys)
+    {
+        var ids = new HashSet<string>();
+
+        foreach (var key in keys)
         {
-            if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds)) return affectedIds.Select(id => _consensusChecks[id]);
-
-            return ImmutableList<ConsensusCheck>.Empty;
+            if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds)) ids.UnionWith(affectedIds);
         }
 
-        public IEnumerable<ConsensusCheck> GetByUpdatedKeys(IEnumerable<string> keys)
+        return ids.Select(id => _consensusChecks[id]);
+    }
+
+    public void Add(string id, ConsensusCheck consensusCheck)
+    {
+        _consensusChecks[id] = consensusCheck;
+        RegisterAffectedKeys(id, consensusCheck.AffectedKeys);
+    }
+
+    public void Remove(string id)
+    {
+        if (_consensusChecks.Remove(id)) UnRegisterAffectedKeys(id);
+    }
+
+    private void RegisterAffectedKeys(string id, IEnumerable<string> keys)
+    {
+        foreach (var key in keys)
         {
-            var ids = new HashSet<string>();
+            if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds)) affectedIds.Add(id);
+            else _affectedChecksByStateKey[key] = new HashSet<string> {id};
+        }
+    }
 
-            foreach (var key in keys)
-            {
-                if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds)) ids.UnionWith(affectedIds);
-            }
+    private void UnRegisterAffectedKeys(string id)
+    {
+        var empty = new HashSet<string>();
 
-            return ids.Select(id => _consensusChecks[id]);
+        foreach (var (key, ids) in _affectedChecksByStateKey)
+        {
+            if (ids.Remove(id) && ids.Count == 0) empty.Add(key);
         }
 
-        public void Add(string id, ConsensusCheck consensusCheck)
+        foreach (var key in empty)
         {
-            _consensusChecks[id] = consensusCheck;
-            RegisterAffectedKeys(id, consensusCheck.AffectedKeys);
-        }
-
-        public void Remove(string id)
-        {
-            if (_consensusChecks.Remove(id)) UnRegisterAffectedKeys(id);
-        }
-
-        private void RegisterAffectedKeys(string id, IEnumerable<string> keys)
-        {
-            foreach (var key in keys)
-            {
-                if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds)) affectedIds.Add(id);
-                else _affectedChecksByStateKey[key] = new HashSet<string> {id};
-            }
-        }
-
-        private void UnRegisterAffectedKeys(string id)
-        {
-            var empty = new HashSet<string>();
-
-            foreach (var (key, ids) in _affectedChecksByStateKey)
-            {
-                if (ids.Remove(id) && ids.Count == 0) empty.Add(key);
-            }
-
-            foreach (var key in empty)
-            {
-                _affectedChecksByStateKey.Remove(key);
-            }
+            _affectedChecksByStateKey.Remove(key);
         }
     }
 }

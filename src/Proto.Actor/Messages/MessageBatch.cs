@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
 
-namespace Proto
-{
-    public record MessageBatch(IReadOnlyCollection<object> Messages);
-}
+namespace Proto;
+
+public record MessageBatch(IReadOnlyCollection<object> Messages);

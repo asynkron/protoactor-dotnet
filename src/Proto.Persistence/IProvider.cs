@@ -6,27 +6,26 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Proto.Persistence
+namespace Proto.Persistence;
+
+public interface ISnapshotStore
 {
-    public interface ISnapshotStore
-    {
-        Task<(object? Snapshot, long Index)> GetSnapshotAsync(string actorName);
+    Task<(object? Snapshot, long Index)> GetSnapshotAsync(string actorName);
 
-        Task PersistSnapshotAsync(string actorName, long index, object snapshot);
+    Task PersistSnapshotAsync(string actorName, long index, object snapshot);
 
-        Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex);
-    }
+    Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex);
+}
 
-    public interface IEventStore
-    {
-        Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback);
+public interface IEventStore
+{
+    Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback);
 
-        Task<long> PersistEventAsync(string actorName, long index, object @event);
+    Task<long> PersistEventAsync(string actorName, long index, object @event);
 
-        Task DeleteEventsAsync(string actorName, long inclusiveToIndex);
-    }
+    Task DeleteEventsAsync(string actorName, long inclusiveToIndex);
+}
 
-    public interface IProvider : IEventStore, ISnapshotStore
-    {
-    }
+public interface IProvider : IEventStore, ISnapshotStore
+{
 }

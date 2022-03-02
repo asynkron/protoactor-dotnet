@@ -5,16 +5,15 @@
 // -----------------------------------------------------------------------
 using System.Threading.Tasks;
 
-namespace Proto
-{
-    public record CapturedContext(MessageEnvelope MessageEnvelope, IContext Context){
-        public async Task Receive()
-        {
-            var current = Context.Capture();
-            await Context.Receive(MessageEnvelope);
-            current.Apply();
-        }
+namespace Proto;
 
-        public void Apply() => Context.Apply(this);
+public record CapturedContext(MessageEnvelope MessageEnvelope, IContext Context){
+    public async Task Receive()
+    {
+        var current = Context.Capture();
+        await Context.Receive(MessageEnvelope);
+        current.Apply();
     }
+
+    public void Apply() => Context.Apply(this);
 }
