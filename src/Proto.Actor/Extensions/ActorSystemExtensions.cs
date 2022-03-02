@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="ActorSystemExtensions.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -19,13 +19,17 @@ namespace Proto.Extensions
         public T? Get<T>() where T : IActorSystemExtension
         {
             var id = IActorSystemExtension<T>.Id;
-            return (T) _extensions[id];
+            if (id < _extensions.Length)
+                return (T) _extensions[id];
+            return default;
         }
         
         public T GetRequired<T>(string? notFoundMessage=null) where T : IActorSystemExtension
         {
             var id = IActorSystemExtension<T>.Id;
-            var res =  (T) _extensions[id];
+            T? res = default;
+            if (id < _extensions.Length)
+                res = (T) _extensions[id];
 
             if (res is null)
             {
