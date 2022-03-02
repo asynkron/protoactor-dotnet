@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <LangVersion>8</LangVersion>
+    <LangVersion>10</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

@@ -1,18 +1,17 @@
-﻿namespace Proto.Persistence.RavenDB
-{
-    class Snapshot
-    {
-        public Snapshot(string actorName, long index, object data)
-        {
-            ActorName = actorName;
-            Index = index;
-            Data = data;
-            Id = $"{actorName}-snapshot-{index}";
-        }
+﻿namespace Proto.Persistence.RavenDB;
 
-        public string ActorName { get; }
-        public long Index { get; }
-        public object Data { get; }
-        public string Id { get; }
+class Snapshot
+{
+    public Snapshot(string actorName, long index, object data)
+    {
+        ActorName = actorName;
+        Index = index;
+        Data = data;
+        Id = $"{actorName}-snapshot-{index}";
     }
+
+    public string ActorName { get; }
+    public long Index { get; }
+    public object Data { get; }
+    public string Id { get; }
 }

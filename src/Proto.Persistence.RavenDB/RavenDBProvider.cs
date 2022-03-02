@@ -5,87 +5,86 @@ using Raven.Client.Documents;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations;
 
-namespace Proto.Persistence.RavenDB
+namespace Proto.Persistence.RavenDB;
+
+public class RavenDBProvider : IProvider
 {
-    public class RavenDBProvider : IProvider
+    private readonly IDocumentStore _store;
+
+    public RavenDBProvider(IDocumentStore store)
     {
-        private readonly IDocumentStore _store;
+        _store = store;
 
-        public RavenDBProvider(IDocumentStore store)
+        SetupIndexes();
+    }
+
+    public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
+    {
+        using var session = _store.OpenAsyncSession();
+
+        var events = await session.Query<Event>()
+            .Where(x => x.ActorName == actorName)
+            .Where(x => x.Index >= indexStart && x.Index <= indexEnd)
+            .OrderBy(x => x.Index)
+            .ToListAsync();
+
+        foreach (var @event in events)
         {
-            _store = store;
-
-            SetupIndexes();
+            callback(@event.Data);
         }
 
-        public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
-        {
-            using var session = _store.OpenAsyncSession();
+        return events.LastOrDefault()?.Index ?? -1;
+    }
 
-            var events = await session.Query<Event>()
-                .Where(x => x.ActorName == actorName)
-                .Where(x => x.Index >= indexStart && x.Index <= indexEnd)
-                .OrderBy(x => x.Index)
-                .ToListAsync();
+    public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
+    {
+        using var session = _store.OpenAsyncSession();
 
-            foreach (var @event in events)
-            {
-                callback(@event.Data);
-            }
+        var snapshot = await session.Query<Snapshot>()
+            .Where(x => x.ActorName == actorName)
+            .OrderByDescending(x => x.Index)
+            .FirstOrDefaultAsync();
 
-            return events.LastOrDefault()?.Index ?? -1;
-        }
+        return snapshot != null ? (snapshot.Data, snapshot.Index) : (null, 0);
+    }
 
-        public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
-        {
-            using var session = _store.OpenAsyncSession();
+    public async Task<long> PersistEventAsync(string actorName, long index, object @event)
+    {
+        using var session = _store.OpenAsyncSession();
 
-            var snapshot = await session.Query<Snapshot>()
-                .Where(x => x.ActorName == actorName)
-                .OrderByDescending(x => x.Index)
-                .FirstOrDefaultAsync();
+        await session.StoreAsync(new Event(actorName, index, @event));
 
-            return snapshot != null ? (snapshot.Data, snapshot.Index) : (null, 0);
-        }
+        await session.SaveChangesAsync();
 
-        public async Task<long> PersistEventAsync(string actorName, long index, object @event)
-        {
-            using var session = _store.OpenAsyncSession();
+        return index++;
+    }
 
-            await session.StoreAsync(new Event(actorName, index, @event));
+    public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
+    {
+        using var session = _store.OpenAsyncSession();
 
-            await session.SaveChangesAsync();
+        await session.StoreAsync(new Snapshot(actorName, index, snapshot));
 
-            return index++;
-        }
+        await session.SaveChangesAsync();
+    }
 
-        public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
-        {
-            using var session = _store.OpenAsyncSession();
+    public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
+        => _store.Operations.SendAsync(
+            new DeleteByQueryOperation<Event>("DeleteEventIndex",
+                x => x.ActorName == actorName && x.Index <= inclusiveToIndex
+            )
+        );
 
-            await session.StoreAsync(new Snapshot(actorName, index, snapshot));
+    public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
+        => _store.Operations.SendAsync(
+            new DeleteByQueryOperation<Snapshot>("DeleteSnapshotIndex",
+                x => x.ActorName == actorName && x.Index <= inclusiveToIndex
+            )
+        );
 
-            await session.SaveChangesAsync();
-        }
-
-        public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
-            => _store.Operations.SendAsync(
-                new DeleteByQueryOperation<Event>("DeleteEventIndex",
-                    x => x.ActorName == actorName && x.Index <= inclusiveToIndex
-                )
-            );
-
-        public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-            => _store.Operations.SendAsync(
-                new DeleteByQueryOperation<Snapshot>("DeleteSnapshotIndex",
-                    x => x.ActorName == actorName && x.Index <= inclusiveToIndex
-                )
-            );
-
-        private void SetupIndexes()
-        {
-            IndexCreation.CreateIndexes(typeof(DeleteEventIndex).Assembly, _store);
-            IndexCreation.CreateIndexes(typeof(DeleteSnapshotIndex).Assembly, _store);
-        }
+    private void SetupIndexes()
+    {
+        IndexCreation.CreateIndexes(typeof(DeleteEventIndex).Assembly, _store);
+        IndexCreation.CreateIndexes(typeof(DeleteSnapshotIndex).Assembly, _store);
     }
 }

@@ -1,7 +1,7 @@
 <Project ToolsVersion="15.0">
 
     <PropertyGroup>
-        <LangVersion>8</LangVersion>
+        <LangVersion>10</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>

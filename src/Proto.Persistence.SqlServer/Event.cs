@@ -1,18 +1,17 @@
-﻿namespace Proto.Persistence.SqlServer
-{
-    class Event
-    {
-        public Event(string actorName, long eventIndex, object eventData)
-        {
-            ActorName = actorName;
-            EventIndex = eventIndex;
-            EventData = eventData;
-            Id = $"{actorName}-event-{eventIndex}";
-        }
+﻿namespace Proto.Persistence.SqlServer;
 
-        public string ActorName { get; }
-        public long EventIndex { get; }
-        public object EventData { get; }
-        public string Id { get; }
+class Event
+{
+    public Event(string actorName, long eventIndex, object eventData)
+    {
+        ActorName = actorName;
+        EventIndex = eventIndex;
+        EventData = eventData;
+        Id = $"{actorName}-event-{eventIndex}";
     }
+
+    public string ActorName { get; }
+    public long EventIndex { get; }
+    public object EventData { get; }
+    public string Id { get; }
 }

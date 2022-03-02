@@ -8,7 +8,7 @@
     <PackageIcon>logo.png</PackageIcon>
     <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
     <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
-    <LangVersion>8</LangVersion>
+    <LangVersion>10</LangVersion>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
