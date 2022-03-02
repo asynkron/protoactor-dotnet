@@ -7,7 +7,7 @@
 
     <ItemGroup>
         <PackageReference Include="JsonPatch.Net" Version="1.1.2" />
-        <PackageReference Include="KubernetesClient" Version="7.0.12" />
+        <PackageReference Include="KubernetesClient" Version="7.0.15" />
         <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
