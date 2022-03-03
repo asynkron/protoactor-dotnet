@@ -69,19 +69,20 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "6.0.x"
-          include-prerelease: true
+          include-prerelease: true         
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "5.0.x"
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "3.1.x"
+          source-url: https://nuget.pkg.github.com/asynkron/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}             
 
       - name: Create and push NuGet package
         run: |
           dotnet pack ProtoActor.sln -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
           # dotnet nuget push nuget/**/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-          dotnet nuget push nuget/**/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/asynkron/protoactor-dotnet/index.json --skip-duplicate
-          
-          
+          dotnet nuget push nuget/**/*.nupkg --skip-duplicate
           
