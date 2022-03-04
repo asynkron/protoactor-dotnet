@@ -23,12 +23,10 @@ jobs:
           dotnet-version: "5.0.x"
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "3.1.x"
-        env:
-          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}             
+          dotnet-version: "3.1.x"         
 
       - name: Create and push NuGet package
         run: |
           dotnet pack ProtoActor.sln -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
-          dotnet nuget push nuget/**/*.nupkg --api-key ${{secrets.GITHUB_TOKEN}} --source https://nuget.pkg.github.com/asynkron/protoactor-dotnet/index.json  --skip-duplicate
-          
+          echo why this fails?
+          dotnet nuget push nuget/**/*.nupkg --api-key ${{secrets.GITHUB_TOKEN}} --source https://nuget.pkg.github.com/asynkron/protoactor-dotnet/index.json  --skip-duplicate        
