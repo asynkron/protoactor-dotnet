@@ -25,8 +25,7 @@ jobs:
         with:
           dotnet-version: "3.1.x"         
 
-      - name: Create and push NuGet package
-        run: |
-          dotnet pack ProtoActor.sln -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
-          echo why this fails?
-          dotnet nuget push nuget/**/*.nupkg --api-key ${{secrets.GITHUB_TOKEN}} --source https://nuget.pkg.github.com/asynkron/protoactor-dotnet/index.json  --skip-duplicate        
+      - name: build
+        run: dotnet pack ProtoActor.sln -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+      - name: push
+        run: dotnet nuget push nuget/**/*.nupkg --api-key ${{secrets.GITHUB_TOKEN}} --source --source "https://nuget.pkg.github.com/asynkron/protoactor-dotnet/index.json" --skip-duplicate        
