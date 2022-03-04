@@ -1,0 +1,45 @@
+<MudListItem @onclick="Toggle">
+    <MudButton @onclick="Toggle" Variant="Variant.Outlined" Color="Color.Info" style="max-width: 20px !important;min-width: 20px !important;" >
+        <div style="font-size: 10px; min-width: 20px;min-height: 20px;display: inline-block; padding-left: 2px;padding-top: 4px;">
+            @if (Expanded)
+            {
+                <span class="oi oi-caret-bottom" aria-hidden="true"></span>
+            }
+            else
+            {
+                <span class="oi oi-caret-right" aria-hidden="true"></span>
+            }
+        </div>
+    </MudButton>
+    <span style="padding-left: 16px">
+        <b>
+            @Text
+        </b>
+    </span>
+</MudListItem>
+
+@if (Expanded)
+{
+    <div class="py-2 px-4" >
+        @ChildContent
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public bool Expanded { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string Text { get; set; }
+
+    private void Toggle()
+    {
+        Expanded = !Expanded;
+    }
+
+}

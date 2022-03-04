@@ -1,0 +1,16 @@
+<InfoBlock>
+    <div>
+        <b>Actor Statistics</b>
+    </div>
+    @foreach (var k in State.ActorStatistics.ActorCount)
+    {
+        <div>Kind: @k.Key, Count @k.Value</div>
+    }
+</InfoBlock>
+
+@code {
+
+    [Parameter]
+    public MemberHeartbeat State { get; set; }
+
+}

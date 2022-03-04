@@ -1,0 +1,57 @@
+@page "/ActorDiagram"
+@using MudBlazor
+@using Proto.Cluster.Dashboard
+@using Proto.Cluster.Dashboard.Shared
+@using Proto.Remote
+@inject ActorSystem System
+<h3>ActorDiagram</h3>
+@if (_root != null)
+{
+    <MudTreeView ServerData="LoadServerData" Items="_root.Children">
+        <ItemTemplate>
+            <MudTreeViewItem Value="@context" LoadingIconColor="Color.Info" Text="@context.Name" EndText="abc" EndTextTypo="@Typo.caption"/>
+        </ItemTemplate>
+    </MudTreeView>
+}
+
+@code {
+
+    private TreeNode _root;
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        
+        var members = System.Cluster().MemberList.GetAllMembers();
+
+        var pids = new List<PID>();
+        foreach (var member in members)
+        {
+            var client = GetClient(member);
+            var res =await client.ListProcessesAsync(new ListProcessesRequest() { Pattern = "" });
+            pids.AddRange(res.Pids);
+        }
+
+        var x = pids.Select(p => p.Address + "/" + p.Id).ToArray();
+        var root = new TreeNode();
+        foreach (var id in x)
+        {
+            var parts = id.Split("/");
+            var tn = parts.Aggregate(root, (current, part) => current.GetChild(part));
+        }
+        _root = root;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Remoting.RemotingClient GetClient(Member member)
+    {
+        var channel = Grpc.Net.Client.GrpcChannel.ForAddress("http://" + member.Address);
+        var client = new Remoting.RemotingClient(channel);
+        return client;
+    }
+
+    private Task<HashSet<TreeNode>> LoadServerData(TreeNode parentNode)
+    {
+        return Task.FromResult(parentNode.Children);
+    }
+
+}

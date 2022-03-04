@@ -1,0 +1,104 @@
+@using MudBlazor
+@using Proto.Cluster.Gossip
+@inject ActorSystem System
+@if (_members != null)
+{
+    <div class="pa-4" >
+    <MudTextField Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Filled.Search"
+                  Label="Search"
+                  Variant="Variant.Outlined"
+                  @bind-Value="_search"
+                  DebounceInterval="100"
+                  OnDebounceIntervalElapsed="UpdateSearch">
+    </MudTextField>
+    <div class="mt-2 mb-4">
+        <MudText Color="Color.Info">Showing @(SearchMembers().Count()) of @(_members.Count()) members</MudText>
+    </div>
+
+    @foreach (var member in SearchMembers())
+    {
+        <div @onclick="() => MemberSelected(member)" class="py-2">
+            <MemberCard Member="member"></MemberCard>
+        </div>
+    }
+    </div>
+}
+
+@code {
+    private GossipState? _gossipState;
+    private readonly CancellationTokenSource _cts = new();
+    private bool _disposed;
+    private Member[]? _members;
+    private Member? _member;
+    private readonly MudTheme Theme = new();
+    private string _search = "";
+
+    [Parameter]
+    public EventCallback<Member> OnMemberSelected { get; set; }
+
+    [Parameter]
+    public EventCallback<GossipState> OnGossipState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _ = Task.Run(RunLoop, _cts.Token);
+        await base.OnInitializedAsync();
+    }
+
+    private async Task MemberSelected(Member member)
+    {
+        _member = member;
+        await OnMemberSelected.InvokeAsync(member);
+    }
+
+    private async Task GossipState(GossipState gossipState)
+    {
+        _gossipState = gossipState;
+        await OnGossipState.InvokeAsync(gossipState);
+    }
+
+    private async Task RunLoop()
+    {
+        while (!_cts.Token.IsCancellationRequested)
+        {
+            try
+            {
+                _gossipState = await System.Cluster().Gossip.GetStateSnapshot();
+                _members = System.Cluster().MemberList.GetAllMembers();
+                await InvokeAsync(async () => { await GossipState(_gossipState); });
+                await Task.Delay(100);
+            }
+            catch (Exception x)
+            {
+                Console.WriteLine(x);
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+    }
+
+    public void Dispose(bool disposing)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+        if (disposing)
+        {
+            _cts.Cancel();
+        }
+        _disposed = true;
+    }
+
+    private IEnumerable<Member> SearchMembers() => _members.Where(m => m.Id.Contains(_search) || m.Address.Contains(_search));
+
+    private async Task UpdateSearch()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

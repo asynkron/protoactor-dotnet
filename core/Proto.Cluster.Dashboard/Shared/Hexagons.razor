@@ -1,0 +1,96 @@
+@using Proto.Cluster.Gossip
+<style>
+   .main {
+     display:flex;
+     --s: 180px;  /* size  */
+     --m: 4px;    /* margin */
+     --f: calc(1.732 * var(--s) + 4 * var(--m)  - 1px);
+     --b: 4px;
+   }
+   
+   .container {
+     font-size: 0; /*disable white space between inline block element */
+   }
+   
+   .container .hex {
+     width: var(--s);
+     margin: var(--m);
+     height: calc(var(--s)*1.1547); 
+     display: inline-block;
+     font-size:initial;
+     clip-path: polygon(0% 25%, 0% 75%, 50% 100%, 100% 75%, 100% 25%, 50% 0%);
+     background: #4a8b26;
+     margin-bottom: calc(var(--m) - var(--s)*0.2885); 
+     stroke: #0a53be;
+   }
+   
+   .container .hex .hex-border {
+        position: absolute;
+       height: inherit;
+       width: inherit;
+       display: inline-block;       
+   }
+   .container .hex .hex-border .hex-content {
+   padding-top: 65px;
+   padding-left: 10px;
+    position: absolute;
+    top:  var(--b);
+    left:  var(--b);
+    right:  var(--b);
+    bottom:  var(--b);
+    
+    background-color: #5baa2f;
+    font-size: small;
+    text-overflow: ellipsis;
+    color: white;
+    
+    clip-path: polygon(0% 25%, 0% 75%, 50% 100%, 100% 75%, 100% 25%, 50% 0%);
+    /*border: 2px solid green;*/
+
+   }
+
+   .container::before {
+     content: "";
+     width: calc(var(--s)/2 + var(--m));
+     float: left;
+     height: 120%;
+     shape-outside: repeating-linear-gradient(     
+                      #0000 0 calc(var(--f) - 3px),      
+                      #000  0 var(--f));
+   }
+
+    
+</style>
+<div style="padding: 20px; margin: 20px">
+    <div class="main">
+        <div class="container">
+            @foreach (var member in Members)
+            {
+                <div class="hex">
+                    <div class="hex-border">
+                        <div class="hex-content">
+                            <div>ID: @member.Id.Substring(0, 15) ...</div>
+                            <div>Address: @member.Address</div>
+                            <div>
+                                <sub>Kinds: @string.Join(", ", member.Kinds)</sub>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public Member[] Members { get; set; }
+    
+    [Parameter]
+    public GossipState GossipState { get; set; }
+
+    private MemberHeartbeat GetHeartbeat(string memberId) => 
+        GossipState.Members[memberId].Values["heartbeat"].Value.Unpack<MemberHeartbeat>();
+
+}

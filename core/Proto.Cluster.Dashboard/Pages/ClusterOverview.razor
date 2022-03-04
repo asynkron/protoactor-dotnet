@@ -1,0 +1,124 @@
+﻿@page "/ClusterOverview"
+@using MudBlazor
+@using Proto.Cluster.Gossip
+@inject ActorSystem System
+<PageTitle>Counter</PageTitle>
+<MudText Typo="Typo.h5">Virtual Actor Count</MudText>
+<MudRadioGroup @bind-SelectedOption="@SelectedOption">
+    <MudRadio Option="@("1")" Color="Color.Primary">Group by Kind</MudRadio>
+    <MudRadio Option="@("2")" Color="Color.Secondary">Group by Member</MudRadio>
+    <MudRadio Option="@("3")" Color="Color.Tertiary">Aggregated</MudRadio>
+</MudRadioGroup>
+
+<MudChart ChartType="ChartType.Bar" LegendPosition="Position.Bottom" ChartSeries="@Series" XAxisLabels="@XAxisLabels.ToArray()" Width="100%" Height="350px">
+	<CustomGraphics>
+
+	</CustomGraphics>
+</MudChart>
+
+
+@code {
+    private string SelectedOption = "1";
+    private List<ChartSeries> Series = new();
+    private List<string> XAxisLabels = new();
+    
+    private readonly CancellationTokenSource _cts = new();
+    private bool _disposed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _ = Task.Run(RunLoop, _cts.Token);
+        await base.OnInitializedAsync();
+    }
+    
+    private async Task RunLoop()
+    {
+        while (!_cts.Token.IsCancellationRequested)
+        {
+            var memberHeartbeats = await System.Cluster().Gossip.GetState<MemberHeartbeat>(GossipKeys.Heartbeat);
+            var stats = (from x in memberHeartbeats
+                let memberId = x.Key
+                from y in x.Value.ActorStatistics.ActorCount
+                select (MemberId: memberId, Kind: y.Key, Count: y.Value))
+                .ToList();
+                    
+            var statsByKind = stats.ToLookup(t => t.Kind, t => t);
+            var statsByMember = stats.ToLookup(t => t.MemberId, t => t);
+                
+            Series.Clear();
+            XAxisLabels.Clear();
+
+
+            switch (SelectedOption)
+            {
+                case "1":
+                {
+                    foreach (var label in statsByKind)
+                    {
+                        XAxisLabels.Add(Trim(label.Key));
+                    }
+
+                    foreach (var series in statsByMember)
+                    {
+                        Series.Add(new ChartSeries() { Name = Trim(series.Key), Data = series.Select(l => (double)l.Count).ToArray(), });
+                    }
+                    break;
+                }
+                case "2":
+                {
+                    foreach (var label in statsByMember)
+                    {
+                        XAxisLabels.Add(Trim(label.Key));
+                    }
+
+                    foreach (var series in statsByKind)
+                    {
+                        Series.Add(new ChartSeries() { Name = Trim(series.Key), Data = series.Select(l => (double)l.Count).ToArray(), });
+                    }
+                    break;
+                }
+                case "3":
+                {
+                    foreach (var label in statsByKind)
+                    {
+                        XAxisLabels.Add(label.Key);
+                    }
+                
+                    Series.Add(new ChartSeries { Name = "Aggregated", Data = statsByKind.Select(series => series.Sum(l => (double)l.Count)).ToArray() });
+                    break;
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+            await Task.Delay(100);
+        }
+    }
+
+    private string Trim(string text)
+    {
+        var max = 10;
+        if (text.Length < max)
+        {
+            return text;
+        }
+        return text.Substring(0, max) + "...";
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+    }
+
+    public void Dispose(bool disposing)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+        if (disposing)
+        {
+            _cts.Cancel();
+        }
+        _disposed = true;
+    }
+}

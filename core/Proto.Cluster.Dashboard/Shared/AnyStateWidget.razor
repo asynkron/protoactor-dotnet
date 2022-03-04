@@ -1,0 +1,13 @@
+@using Google.Protobuf.WellKnownTypes
+<InfoBlock>
+
+    <span>Type:</span>
+    @State.TypeUrl
+</InfoBlock>
+
+@code {
+
+    [Parameter]
+    public Any State { get; set; }
+
+}
