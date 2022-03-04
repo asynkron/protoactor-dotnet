@@ -28,4 +28,4 @@ jobs:
       - name: build
         run: dotnet pack ProtoActor.sln -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
       - name: push
-        run: dotnet nuget push nuget/**/*.nupkg --api-key ${{secrets.GITHUB_TOKEN}} --source --source "https://nuget.pkg.github.com/asynkron/protoactor-dotnet/index.json" --skip-duplicate        
+        run: dotnet nuget push nuget/**/*.nupkg --api-key ${{secrets.GITHUB_TOKEN}} --source "https://nuget.pkg.github.com/asynkron/protoactor-dotnet/index.json" --skip-duplicate        
