@@ -74,9 +74,9 @@
     private GossipState? _state;
     private string _search = "";
     private bool _open = false;
-    private PID[] _pids;
-    private PID _pid;
-    private string _diagnostics;
+    private PID[] _pids= null!;
+    private PID _pid= null!;
+    private string _diagnostics= null!;
 
     private Task MemberSelected(Member member)
     {

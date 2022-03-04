@@ -29,7 +29,7 @@
     private GossipState? _gossipState;
     private readonly CancellationTokenSource _cts = new();
     private bool _disposed;
-    private Member[]? _members;
+    private Member[]? _members = null!;
     private Member? _member;
     private readonly MudTheme Theme = new();
     private string _search = "";
@@ -94,7 +94,7 @@
         _disposed = true;
     }
 
-    private IEnumerable<Member> SearchMembers() => _members.Where(m => m.Id.Contains(_search) || m.Address.Contains(_search));
+    private IEnumerable<Member> SearchMembers() => _members!.Where(m => m.Id.Contains(_search) || m.Address.Contains(_search));
 
     private async Task UpdateSearch()
     {

@@ -39,9 +39,9 @@
 @code {
 
     [Parameter]
-    public string MemberId { get; set; }
+    public string MemberId { get; set; } = null!;
 
     [Parameter]
-    public GossipState.Types.GossipMemberState State { get; set; }
+    public GossipState.Types.GossipMemberState State { get; set; } = null!;
 
 }

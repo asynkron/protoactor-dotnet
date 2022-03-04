@@ -14,9 +14,11 @@
 
     <ItemGroup>
         <PackageReference Include="MudBlazor" Version="6.0.6" />
-        <PackageReference Include="Proto.Cluster" Version="0.27.1-alpha.0.6" />
-        <PackageReference Include="Proto.Cluster.TestProvider" Version="0.27.1-alpha.0.6" />
-        <PackageReference Include="Proto.Remote.GrpcNet" Version="0.27.1-alpha.0.6" />
+
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
     </ItemGroup>
 
 </Project>

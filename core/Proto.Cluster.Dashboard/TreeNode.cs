@@ -14,7 +14,7 @@ public class TreeNodeComparer : IEqualityComparer<TreeNode>
     public int GetHashCode(TreeNode item)
     {
         return StringComparer.InvariantCultureIgnoreCase
-            .GetHashCode(item.Name);
+            .GetHashCode(item.Name!);
 
     }
 }
