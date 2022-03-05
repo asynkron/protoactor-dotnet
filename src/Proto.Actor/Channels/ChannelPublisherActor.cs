@@ -14,7 +14,7 @@ namespace Proto.Channels;
 public static class ChannelPublisher
 {
     /// <summary>
-    /// Starts a new publisher actor
+    ///     Starts a new publisher actor
     /// </summary>
     /// <param name="context">The parent context used to spawn the actor</param>
     /// <param name="channel">The source channel</param>
@@ -37,6 +37,7 @@ public static class ChannelPublisher
         return pid;
     }
 }
+
 [PublicAPI]
 public class ChannelPublisherActor<T> : IActor
 {
@@ -51,6 +52,7 @@ public class ChannelPublisherActor<T> : IActor
                 {
                     context.Poison(sub);
                 }
+
                 break;
             case PID subscriber:
                 _subscribers.Add(subscriber);
@@ -64,8 +66,10 @@ public class ChannelPublisherActor<T> : IActor
                 {
                     context.Send(sub, typed);
                 }
+
                 break;
         }
+
         return Task.CompletedTask;
     }
 }

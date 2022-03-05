@@ -13,7 +13,7 @@ namespace Proto.Channels;
 public static class ChannelSubscriber
 {
     /// <summary>
-    /// Starts a new subscriber actor
+    ///     Starts a new subscriber actor
     /// </summary>
     /// <param name="context">The parent context used to spawn</param>
     /// <param name="publisher">The PID of the publisher actor to subscribe to</param>
@@ -27,12 +27,12 @@ public static class ChannelSubscriber
         return pid;
     }
 }
-    
+
 [PublicAPI]
 public class ChannelSubscriberActor<T> : IActor
 {
-    private readonly PID _publisher;
     private readonly Channel<T> _channel;
+    private readonly PID _publisher;
 
     public ChannelSubscriberActor(PID publisher, Channel<T> channel)
     {

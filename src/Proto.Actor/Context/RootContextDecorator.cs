@@ -5,11 +5,13 @@
 // -----------------------------------------------------------------------
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Proto.Future;
 
 // ReSharper disable once CheckNamespace
 namespace Proto;
 
+[PublicAPI]
 public abstract class RootContextDecorator : IRootContext
 {
     private readonly IRootContext _context;
