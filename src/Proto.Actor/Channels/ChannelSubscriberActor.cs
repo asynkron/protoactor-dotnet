@@ -12,6 +12,14 @@ namespace Proto.Channels;
 [PublicAPI]
 public static class ChannelSubscriber
 {
+    /// <summary>
+    /// Starts a new subscriber actor
+    /// </summary>
+    /// <param name="context">The parent context used to spawn</param>
+    /// <param name="publisher">The PID of the publisher actor to subscribe to</param>
+    /// <param name="channel">The channel to write messages to</param>
+    /// <typeparam name="T">The Type of channel elements</typeparam>
+    /// <returns></returns>
     public static PID StartNew<T>(IRootContext context, PID publisher, Channel<T> channel)
     {
         var props = Props.FromProducer(() => new ChannelSubscriberActor<T>(publisher, channel));

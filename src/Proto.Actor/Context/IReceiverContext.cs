@@ -10,5 +10,10 @@ namespace Proto;
 
 public interface IReceiverContext : IInfoContext
 {
+    /// <summary>
+    /// Receive abstraction used in middlewares
+    /// </summary>
+    /// <param name="envelope">The received envelope</param>
+    /// <returns></returns>
     Task Receive(MessageEnvelope envelope);
 }

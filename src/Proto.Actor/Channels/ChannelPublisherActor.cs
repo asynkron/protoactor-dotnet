@@ -13,6 +13,14 @@ namespace Proto.Channels;
 [PublicAPI]
 public static class ChannelPublisher
 {
+    /// <summary>
+    /// Starts a new publisher actor
+    /// </summary>
+    /// <param name="context">The parent context used to spawn the actor</param>
+    /// <param name="channel">The source channel</param>
+    /// <param name="name">The name of the publisher actor</param>
+    /// <typeparam name="T">The Type of the channel elements</typeparam>
+    /// <returns></returns>
     public static PID StartNew<T>(IRootContext context, Channel<T> channel, string name)
     {
         var props = Props.FromProducer(() => new ChannelPublisherActor<T>());

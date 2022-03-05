@@ -14,27 +14,80 @@ namespace Proto;
 [PublicAPI]
 public record ActorSystemConfig
 {
+    /// <summary>
+    /// The interval used to trigger DeadLetter throttling
+    /// </summary>
     public TimeSpan DeadLetterThrottleInterval { get; init; }
-
-    public bool MetricsEnabled { get; init; }
+    
+    /// <summary>
+    /// The counter used to trigger DeadLetter throttling
+    /// DeadLetter throttling triggers when there are DeadLetterThrottleCount deadletters in DeadLetterThrottleInterval time
+    /// </summary>
     public int DeadLetterThrottleCount { get; init; }
 
+    /// <summary>
+    /// Enables logging for DeadLetter responses in Request/RequestAsync
+    /// When disabled, the requesting code is responsible for logging manually
+    /// </summary>
     public bool DeadLetterRequestLogging { get; set; } = true;
+    
+    /// <summary>
+    /// Developer debugging feature, enables extended logging for actor supervision failures
+    /// </summary>
     public bool DeveloperSupervisionLogging { get; init; }
+    
+    /// <summary>
+    /// Enables actor metrics
+    /// </summary>
+    public bool MetricsEnabled { get; init; }
 
-    public Func<Props, Props> ConfigureProps { get; init; } = props => props; 
+    /// <summary>
+    /// Allows ActorSystem-wide augmentation of any Props
+    /// All props are translated via this function
+    /// </summary>
+    public Func<Props, Props> ConfigureProps { get; init; } = props => props;
 
+    /// <summary>
+    /// Enables SharedFutures
+    /// SharedFutures allows the ActorSystem to avoid registering a new temporary process for each request
+    /// Instead registering a SharedFuture that can handle multiple requests internally
+    /// </summary>
     public bool SharedFutures { get; init; }
+    
+    /// <summary>
+    /// Sets the number of requests that can be handled by a SharedFuture
+    /// </summary>
     public int SharedFutureSize { get; init; } = 5000;
 
+    /// <summary>
+    /// Measures the time it takes from scheduling a Task, until the task starts to execute
+    /// If this deadline expires, the ActorSystem logs that the threadpool is running hot
+    /// </summary>
     public TimeSpan ThreadPoolStatsTimeout { get; init; } = TimeSpan.FromSeconds(1);
+    
+    /// <summary>
+    /// Enables more extensive threadpool stats logging
+    /// </summary>
     public bool DeveloperThreadPoolStatsLogging { get; init; }
 
+    /// <summary>
+    /// Creates a new default ActorSystemConfig
+    /// </summary>
+    /// <returns>The new ActorSystemConfig</returns>
     public static ActorSystemConfig Setup() => new();
 
+    /// <summary>
+    /// Function used to serialize actor state to a diagnostics string
+    /// Can be used together with RemoteDiagnostics to view the state of remote actors
+    /// </summary>
     public Func<IActor, string> DiagnosticsSerializer { get; set; } = Diagnostics.DiagnosticsSerializer.Serialize;
+    
+    /// <summary>
+    /// The default timeout for RequestAsync calls 
+    /// </summary>
     public TimeSpan RequestAsyncTimeout { get; init; } = TimeSpan.FromSeconds(5);
 
+    
     public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval) =>
         this with {DeadLetterThrottleInterval = deadLetterThrottleInterval};
 
