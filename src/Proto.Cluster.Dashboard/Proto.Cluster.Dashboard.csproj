@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>10</LangVersion>
+        <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
+        <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MudBlazor" Version="6.0.6" />
+
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
+    </ItemGroup>
+
+</Project>

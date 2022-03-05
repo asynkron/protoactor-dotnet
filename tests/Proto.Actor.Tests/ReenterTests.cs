@@ -217,7 +217,7 @@ public class ReenterTests : ActorTestBase
                         break;
                     case "waitstate":
                         // Wait a while to make sure that Completion really didn't execute.
-                        Task.Delay(50);
+                        await Task.Delay(50);
                         while (!ctx.CancellationToken.IsCancellationRequested)
                         {
                             await Task.Yield();

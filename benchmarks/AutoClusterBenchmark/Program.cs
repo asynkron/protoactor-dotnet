@@ -117,7 +117,7 @@ public static class Program
             
         var logger = Log.CreateLogger(nameof(Program));
 
-        _ = SafeTask.Run(async () => {
+        _ = SafeTask.Run(() => {
                    
                 var rnd = new Random();
                 var semaphore = new AsyncSemaphore(5);
@@ -126,6 +126,8 @@ public static class Program
                 {
                     semaphore.Wait(() => RunBatch(rnd, cluster));
                 }
+
+                return Task.CompletedTask;
             }
         );
 

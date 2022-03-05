@@ -21,7 +21,9 @@ public sealed class ActorSystem : IAsyncDisposable
 {
     public const string NoHost = "nonhost";
     public const string Client = "$client";
+#pragma warning disable CA2213
     private readonly CancellationTokenSource _cts = new();
+#pragma warning restore CA2213
     private string _host = NoHost;
     private int _port;
 
