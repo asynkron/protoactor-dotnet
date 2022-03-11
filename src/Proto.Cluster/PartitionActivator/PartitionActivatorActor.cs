@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="PartitionActivatorActor.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -128,8 +128,9 @@ public class PartitionActivatorActor : IActor
         }
         else
         {
-            var kind = _cluster.GetClusterKind(msg.Kind);
-            var pid = context.Spawn(kind.Props);
+            var clusterKind = _cluster.GetClusterKind(msg.Kind);
+            var clusterProps = clusterKind.Props.WithClusterIdentity(msg.ClusterIdentity);
+            var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.Identity);
             _actors.Add(msg.ClusterIdentity, pid);
             context.Respond(new ActivationResponse
                 {
