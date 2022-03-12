@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="PartitionActivatorLookup.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -32,7 +32,7 @@ public class PartitionActivatorLookup : IIdentityLookup
     {
         using var cts = new CancellationTokenSource(_getPidTimeout);
         //Get address to node owning this ID
-        var owner = _partitionManager.Selector.GetOwner(clusterIdentity);
+        var owner = _partitionManager.Selector.GetOwnerAddress(clusterIdentity);
         if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Identity belongs to {Address}", owner);
         if (string.IsNullOrEmpty(owner)) return null;
 

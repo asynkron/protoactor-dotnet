@@ -65,7 +65,7 @@ public class PartitionActivatorActor : IActor
         _topologyHash = msg.TopologyHash;
             
         var toRemove = _actors
-            .Where(kvp => _manager.Selector.GetOwner(kvp.Key) != _cluster.System.Id)
+            .Where(kvp => _manager.Selector.GetOwnerAddress(kvp.Key) != _cluster.System.Address)
             .Select(kvp => kvp.Key)
             .ToList();
 
@@ -100,7 +100,7 @@ public class PartitionActivatorActor : IActor
     {
          
         //who owns this?
-        var ownerAddress = _manager.Selector.GetOwner(msg.ClusterIdentity);
+        var ownerAddress = _manager.Selector.GetOwnerAddress(msg.ClusterIdentity);
 
         //is it not me?
         if (ownerAddress != _myAddress)
