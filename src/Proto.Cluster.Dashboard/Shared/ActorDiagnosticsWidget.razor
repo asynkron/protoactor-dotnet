@@ -1,0 +1,21 @@
+<MudPaper Class="pa-2 my-2">
+    <MudText Typo="Typo.h5">Diagnostics for PID: @PidId</MudText>
+    <MudAlert Severity="Severity.Info" NoIcon style="overflow: scroll">
+        <pre>
+            <code>
+            @Diagnostics
+            </code>
+        </pre>
+    </MudAlert>
+</MudPaper>
+
+@code {
+    
+    [Parameter]
+    public string? PidId { get; set; }
+    
+    [Parameter]
+    public string? Diagnostics { get; set; }
+    
+
+}

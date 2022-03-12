@@ -1,19 +1,18 @@
 @page "/ClusterState"
-@using MudBlazor
-@using Proto.Cluster.Dashboard.Shared
 @using Proto.Cluster.Gossip
 @using Proto.Remote
-@inject ActorSystem System
+@using Grpc.Net.Client
+@using Proto.Cluster.Dashboard.Shared
 <PageTitle>Cluster State</PageTitle>
 
 <MemberSearch OnMemberSelected="MemberSelected" OnGossipState="GossipState"></MemberSearch>
 
-<MudDrawer @bind-Open="@_open" Anchor="Anchor.Right" Variant="DrawerVariant.Temporary" ClipMode="DrawerClipMode.Never" Elevation="2" Width="80%" >
+<MudDrawer @bind-Open="@_open" Anchor="Anchor.Right" Variant="DrawerVariant.Temporary" ClipMode="DrawerClipMode.Never" Elevation="2" Width="80%">
     @if (_state != null && _member != null)
     {
         var memberState = _state.Members[_member.Id];
         <div class="pa-0">
-        <MemberCard Outlined="false" Square="true" Member="_member"></MemberCard>
+            <MemberCard Outlined="false" Square="true" Member="_member"></MemberCard>
         </div>
         <MudTabs Rounded="false" Color="Color.Secondary" SliderColor="Color.Info">
             <MudTabPanel Text="State">
@@ -24,19 +23,16 @@
             <MudTabPanel Text="Actors">
                 <MudCard Square>
                     <MudCardHeader>
-                        
                         <MudTextField Adornment="Adornment.Start"
                                       AdornmentIcon="@Icons.Filled.Search"
                                       Label="Search"
                                       Variant="Variant.Outlined"
                                       @bind-Value="_search"
-                                      TextChanged="SearchActors"
-                                      />
-                        
+                                      TextChanged="SearchActors"/>
+
                     </MudCardHeader>
-                                        
                 </MudCard>
-                
+
                 <div Class="pa-2">
                     <MudPaper Elevation="2" Class="my-2" Style="max-height: 300px;overflow-y: scroll">
                         <MudList Clickable="true" Dense>
@@ -51,12 +47,7 @@
                     </MudPaper>
                     @if (_pid != null)
                     {
-                        <MudPaper Class="pa-2 my-2">
-                            <MudText Typo="Typo.h5">Diagnostics for PID: @_pid.Id</MudText>
-                            <MudAlert Severity="Severity.Info" NoIcon>
-                                @_diagnostics
-                            </MudAlert>
-                        </MudPaper>
+                        <ActorDiagnosticsWidget PidId="@_pid.Id" Diagnostics="@_diagnostics"/>
                     }
                 </div>
             </MudTabPanel>
@@ -73,10 +64,10 @@
     private Member? _member;
     private GossipState? _state;
     private string _search = "";
-    private bool _open = false;
-    private PID[] _pids= null!;
-    private PID _pid= null!;
-    private string _diagnostics= null!;
+    private bool _open;
+    private PID[]? _pids;
+    private PID? _pid;
+    private string _diagnostics = null!;
 
     private Task MemberSelected(Member member)
     {
@@ -94,13 +85,17 @@
     private async Task SearchActors()
     {
         var client = GetClient();
-        var res = await client.ListProcessesAsync(new ListProcessesRequest() { Pattern = _search , Type = ListProcessesMatchType.MatchPartOfString});
+        var res = await client.ListProcessesAsync(new ListProcessesRequest
+        {
+            Pattern = _search,
+            Type = ListProcessesMatchType.MatchPartOfString
+        });
         _pids = res.Pids.OrderBy(p => p.Id).ToArray();
     }
 
     private Remoting.RemotingClient GetClient()
     {
-        var channel = Grpc.Net.Client.GrpcChannel.ForAddress("http://" + _member!.Address);
+        var channel = GrpcChannel.ForAddress($"http://{_member!.Address}");
         var client = new Remoting.RemotingClient(channel);
         return client;
     }
@@ -110,8 +105,12 @@
         _pid = pid;
         _diagnostics = "";
         var client = GetClient();
-        var res = await client.GetProcessDiagnosticsAsync(new GetProcessDiagnosticsRequest() { Pid = pid });
+        var res = await client.GetProcessDiagnosticsAsync(new GetProcessDiagnosticsRequest
+        {
+            Pid = pid
+        });
         Console.WriteLine(res.DiagnosticsString);
         _diagnostics = res.DiagnosticsString;
     }
+
 }

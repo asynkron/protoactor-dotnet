@@ -1,33 +1,34 @@
 @page "/ActorDiagram"
-@using MudBlazor
-@using Proto.Cluster.Dashboard
-@using Proto.Cluster.Dashboard.Shared
 @using Proto.Remote
+@using Grpc.Net.Client
 @inject ActorSystem System
 <h3>ActorDiagram</h3>
 @if (_root != null)
 {
     <MudTreeView ServerData="LoadServerData" Items="_root.Children">
         <ItemTemplate>
-            <MudTreeViewItem Value="@context" LoadingIconColor="Color.Info" Text="@context.Name" EndText="abc" EndTextTypo="@Typo.caption"/>
+            <MudTreeViewItem Value="@context" LoadingIconColor="Color.Info" Text="@context.Name"/>
         </ItemTemplate>
     </MudTreeView>
 }
 
 @code {
+    private TreeNode? _root;
 
-    private TreeNode _root = null!;
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        
+
         var members = System.Cluster().MemberList.GetAllMembers();
 
         var pids = new List<PID>();
         foreach (var member in members)
         {
             var client = GetClient(member);
-            var res =await client.ListProcessesAsync(new ListProcessesRequest() { Pattern = "" });
+            var res = await client.ListProcessesAsync(new ListProcessesRequest
+            {
+                Pattern = ""
+            });
             pids.AddRange(res.Pids);
         }
 
@@ -36,7 +37,7 @@
         foreach (var id in x)
         {
             var parts = id.Split("/");
-            var tn = parts.Aggregate(root, (current, part) => current.GetChild(part));
+            _ = parts.Aggregate(root, (current, part) => current.GetChild(part));
         }
         _root = root;
         await InvokeAsync(StateHasChanged);
@@ -44,14 +45,12 @@
 
     private Remoting.RemotingClient GetClient(Member member)
     {
-        var channel = Grpc.Net.Client.GrpcChannel.ForAddress("http://" + member.Address);
+        var channel = GrpcChannel.ForAddress("http://" + member.Address);
         var client = new Remoting.RemotingClient(channel);
         return client;
     }
 
-    private Task<HashSet<TreeNode>> LoadServerData(TreeNode parentNode)
-    {
-        return Task.FromResult(parentNode.Children);
-    }
+    private Task<HashSet<TreeNode>> LoadServerData(TreeNode parentNode) =>
+        Task.FromResult(parentNode.Children);
 
 }
