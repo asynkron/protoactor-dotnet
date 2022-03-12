@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="PidCache.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -106,7 +106,7 @@ public class PidCache
     public int RemoveByMember(Member member)
         => RemoveByPredicate(pair => member.Address.Equals(pair.Value.Address, StringComparison.InvariantCulture));
 
-    private int RemoveByPredicate(Func<KeyValuePair<ClusterIdentity, PID>, bool> predicate)
+    internal int RemoveByPredicate(Func<KeyValuePair<ClusterIdentity, PID>, bool> predicate)
     {
         var toBeRemoved = _cacheDict.Where(predicate).ToList();
         if (toBeRemoved.Count == 0) return 0;
