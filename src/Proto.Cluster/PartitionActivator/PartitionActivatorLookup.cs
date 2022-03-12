@@ -33,7 +33,7 @@ public class PartitionActivatorLookup : IIdentityLookup
         using var cts = new CancellationTokenSource(_getPidTimeout);
         //Get address to node owning this ID
         var owner = _partitionManager.Selector.GetOwnerAddress(clusterIdentity);
-        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Identity belongs to {Address}", owner);
+        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionActivator] Identity belongs to {Address}", owner);
         if (string.IsNullOrEmpty(owner)) return null;
 
         var remotePid = PartitionActivatorManager.RemotePartitionActivatorActor(owner);
@@ -44,7 +44,7 @@ public class PartitionActivatorLookup : IIdentityLookup
             ClusterIdentity = clusterIdentity
         };
 
-        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Requesting remote PID from {Partition}:{Remote} {@Request}", owner, remotePid, req
+        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionActivator] Requesting remote PID from {Partition}:{Remote} {@Request}", owner, remotePid, req
         );
 
         try
@@ -57,17 +57,17 @@ public class PartitionActivatorLookup : IIdentityLookup
         //TODO: decide if we throw or return null
         catch (DeadLetterException)
         {
-            Logger.LogInformation("Remote PID request deadletter {@Request}, identity Owner {Owner}", req, owner);
+            Logger.LogInformation("[PartitionActivator] Remote PID request deadletter {@Request}, identity Owner {Owner}", req, owner);
             return null;
         }
         catch (TimeoutException)
         {
-            Logger.LogInformation("Remote PID request timeout {@Request}, identity Owner {Owner}", req, owner);
+            Logger.LogInformation("[PartitionActivator] Remote PID request timeout {@Request}, identity Owner {Owner}", req, owner);
             return null;
         }
         catch (Exception e)
         {
-            Logger.LogError(e, "Error occured requesting remote PID {@Request}, identity Owner {Owner}", req, owner);
+            Logger.LogError(e, "[PartitionActivator] Error occured requesting remote PID {@Request}, identity Owner {Owner}", req, owner);
             return null;
         }
     }
