@@ -19,7 +19,7 @@ public class PartitionActivatorActor : IActor
     private readonly ShouldThrottle _wrongPartitionLogThrottle = Throttle.Create(1, TimeSpan.FromSeconds(1), wrongNodeCount => {
             if (wrongNodeCount > 1)
             {
-                Logger.LogWarning("Forwarded {SpawnCount} attempts to spawn on wrong node", wrongNodeCount);
+                Logger.LogWarning("[PartitionActivator] Forwarded {SpawnCount} attempts to spawn on wrong node", wrongNodeCount);
             }
         }
     );
@@ -65,7 +65,7 @@ public class PartitionActivatorActor : IActor
         _topologyHash = msg.TopologyHash;
             
         var toRemove = _actors
-            .Where(kvp => _manager.Selector.GetOwner(kvp.Key) != _cluster.System.Id)
+            .Where(kvp => _manager.Selector.GetOwnerAddress(kvp.Key) != _cluster.System.Address)
             .Select(kvp => kvp.Key)
             .ToList();
 
@@ -90,7 +90,7 @@ public class PartitionActivatorActor : IActor
             return Task.CompletedTask;
         }
         //we get this via broadcast to all nodes, remove if we have it, or ignore
-        Logger.LogTrace("[PartitionIdentityActor] Terminated {Pid}", msg.Pid);
+        Logger.LogTrace("[PartitionActivator] Terminated {Pid}", msg.Pid);
         _actors.Remove(msg.ClusterIdentity);
 
         return Task.CompletedTask;
@@ -100,7 +100,7 @@ public class PartitionActivatorActor : IActor
     {
          
         //who owns this?
-        var ownerAddress = _manager.Selector.GetOwner(msg.ClusterIdentity);
+        var ownerAddress = _manager.Selector.GetOwnerAddress(msg.ClusterIdentity);
 
         //is it not me?
         if (ownerAddress != _myAddress)
@@ -110,7 +110,7 @@ public class PartitionActivatorActor : IActor
 
             if (_wrongPartitionLogThrottle().IsOpen())
             {
-                Logger.LogWarning("Tried to spawn on wrong node, forwarding");
+                Logger.LogWarning("[PartitionActivator] Tried to spawn on wrong node, forwarding");
             }
             context.Forward(ownerPid);
 

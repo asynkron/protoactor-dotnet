@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="PartitionMemberSelector.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -25,7 +25,7 @@ class PartitionActivatorSelector
         }
     }
 
-    public string GetOwner(ClusterIdentity key)
+    public string GetOwnerAddress(ClusterIdentity key)
     {
         lock (_lock) return _rdv.GetOwnerMemberByIdentity(key);
     }
