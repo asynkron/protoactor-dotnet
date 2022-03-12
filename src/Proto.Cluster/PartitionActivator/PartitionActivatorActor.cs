@@ -62,13 +62,14 @@ public class PartitionActivatorActor : IActor
             return;
             
         _topologyHash = msg.TopologyHash;
-            
+
         var toRemove = _actors
             .Where(kvp => _manager.Selector.GetOwnerAddress(kvp.Key) != _cluster.System.Address)
             .Select(kvp => kvp.Key)
             .ToList();
 
         //stop and remove all actors we don't own anymore
+        Logger.LogWarning("[PartitionActivator] ClusterTopology - Stopping {actorCount} actors", toRemove.Count);
         var stopping = new List<Task>();
         foreach (var ci in toRemove)
         {
@@ -80,6 +81,12 @@ public class PartitionActivatorActor : IActor
 
         //await graceful shutdown of all actors we no longer own
         await Task.WhenAll(stopping);
+        Logger.LogWarning("[PartitionActivator] ClusterTopology - Stopped {actorCount} actors", toRemove.Count);
+
+        // Remove all cached PIDs from PidCache that now points to
+        // an address where the ClusterIdentity doesn't belong.
+        _cluster.PidCache.RemoveByPredicate(cache =>
+            _manager.Selector.GetOwnerAddress(cache.Key) != cache.Value.Address);
     }
         
     private Task OnActivationTerminated(ActivationTerminated msg, IContext context)
