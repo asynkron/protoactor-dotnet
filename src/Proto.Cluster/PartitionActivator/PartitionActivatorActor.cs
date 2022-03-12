@@ -39,11 +39,9 @@ public class PartitionActivatorActor : IActor
     private Task OnStarted(IContext context)
     {
         var self = context.Self;
-        _cluster.System.EventStream.Subscribe<ActivationTerminated>(e => {
-                
-            _cluster.System.Root.Send(self,e);
-        });
-            
+        _cluster.System.EventStream.Subscribe<ActivationTerminated>(e => _cluster.System.Root.Send(self,e));
+        _cluster.System.EventStream.Subscribe<ActivationTerminating>(e => _cluster.System.Root.Send(self, e));
+
         return Task.CompletedTask;
     }
 
@@ -53,6 +51,7 @@ public class PartitionActivatorActor : IActor
             Started                  => OnStarted(context),
             ActivationRequest msg    => OnActivationRequest(msg, context),
             ActivationTerminated msg => OnActivationTerminated(msg, context),
+            ActivationTerminating msg => OnActivationTerminating(msg, context),
             ClusterTopology msg      => OnClusterTopology(msg, context),
             _                        => Task.CompletedTask
         };
@@ -85,20 +84,42 @@ public class PartitionActivatorActor : IActor
         
     private Task OnActivationTerminated(ActivationTerminated msg, IContext context)
     {
+        _cluster.PidCache.RemoveByVal(msg.ClusterIdentity, msg.Pid);
+
+        // we get this via broadcast to all nodes, remove if we have it, or ignore
+        if (Logger.IsEnabled(LogLevel.Trace))
+            Logger.LogTrace("[PartitionActivator] Terminated {Pid}", msg.Pid);
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnActivationTerminating(ActivationTerminating msg, IContext context)
+    {
+        // ActivationTerminating is sent to the local EventStream when a
+        // local cluster actor stops.
+
         if (!_actors.ContainsKey(msg.ClusterIdentity))
-        {
             return Task.CompletedTask;
-        }
-        //we get this via broadcast to all nodes, remove if we have it, or ignore
-        Logger.LogTrace("[PartitionActivator] Terminated {Pid}", msg.Pid);
+
+        if (Logger.IsEnabled(LogLevel.Trace))
+            Logger.LogTrace("[PartitionActivator] Terminating {Pid}", msg.Pid);
+
         _actors.Remove(msg.ClusterIdentity);
+
+        // Broadcast ActivationTerminated to all nodes so that PidCaches gets
+        // cleared correctly.
+        var activationTerminated = new ActivationTerminated
+        {
+            Pid = msg.Pid,
+            ClusterIdentity = msg.ClusterIdentity,
+        };
+        _cluster.MemberList.BroadcastEvent(activationTerminated);
 
         return Task.CompletedTask;
     }
 
     private Task OnActivationRequest(ActivationRequest msg, IContext context)
     {
-         
         //who owns this?
         var ownerAddress = _manager.Selector.GetOwnerAddress(msg.ClusterIdentity);
 
@@ -116,8 +137,6 @@ public class PartitionActivatorActor : IActor
 
             return Task.CompletedTask;
         }
-            
-            
 
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
         {
