@@ -1,30 +1,59 @@
 @page "/ActorDiagram"
 @using Proto.Remote
 @using Grpc.Net.Client
+@using MudBlazor.Extensions
+@using Proto.Cluster.Dashboard.Shared
 @inject ActorSystem System
-<h3>ActorDiagram</h3>
+
 
 <MudGrid >
     <MudItem xs="6">
         @if (_root != null)
         {
-            <MudTreeView ServerData="LoadServerData" Items="_root.Children" MultiSelection="false" CanHover="true" @bind-SelectedValue="SelectedValue">
+            <MudTreeView
+                ServerData="LoadServerData" 
+                Items="_root.Children" 
+                MultiSelection="false" 
+                CanHover="true"
+                SelectedValueChanged="(TreeNode node) => SelectedValueChanged(node)"
+            >
                 <ItemTemplate>
-                    <MudTreeViewItem Icon="@Icons.Filled.Label" IconColor="Color.Success" Value="@context" LoadingIconColor="Color.Info" Text="@context.Name"/>
+                    <MudTreeViewItem 
+                        Icon="@Icons.Filled.Label" 
+                        IconColor="Color.Success" 
+                        Value="@context" 
+                        LoadingIconColor="Color.Info" 
+                        Text="@context.Name"
+                        />
                 </ItemTemplate>
             </MudTreeView>
         }
     </MudItem>
     <MudItem xs="6">
-        Display actor details here
+
+        @if (_selected != null)
+        {
+            <ActorDiagnosticsWidget PidId="@_selected.Pid.Id" Diagnostics="hello"/>
+        }
     </MudItem>
 
 </MudGrid>
 
 @code {
     private TreeNode? _root;
-    TreeNode? SelectedValue { get; set; }
-    
+    private TreeNode? _selected;
+
+    private void SelectedValueChanged(TreeNode x)
+    {
+        if (x == null)
+        {
+            return;
+        }
+        
+        _selected = x;
+        StateHasChanged();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
