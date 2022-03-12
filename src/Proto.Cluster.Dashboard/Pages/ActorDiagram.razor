@@ -1,56 +1,53 @@
 @page "/ActorDiagram"
 @using Proto.Remote
 @using Grpc.Net.Client
-@using MudBlazor.Extensions
 @using Proto.Cluster.Dashboard.Shared
 @inject ActorSystem System
 
-
-<MudGrid >
-    <MudItem xs="6">
-        @if (_root != null)
-        {
+<div class="pa-4">
+    @if (_root != null)
+    {
+        <MudPaper Elevation="2">
             <MudTreeView
-                ServerData="LoadServerData" 
-                Items="_root.Children" 
-                MultiSelection="false" 
+                Height="300px"
+                MaxHeight="300px"
+                ServerData="LoadServerData"
+                Items="_root.Children"
+                MultiSelection="false"
                 CanHover="true"
-                SelectedValueChanged="(TreeNode node) => SelectedValueChanged(node)"
-            >
+                SelectedValueChanged="(TreeNode node) => SelectedValueChanged(node)">
                 <ItemTemplate>
-                    <MudTreeViewItem 
-                        Icon="@Icons.Filled.Label" 
-                        IconColor="Color.Success" 
-                        Value="@context" 
-                        LoadingIconColor="Color.Info" 
-                        Text="@context.Name"
-                        />
+                    <MudTreeViewItem
+                        Icon="@Icons.Filled.Label"
+                        IconColor="Color.Success"
+                        Value="@context"
+                        LoadingIconColor="Color.Info"
+                        Text="@context.Name"/>
                 </ItemTemplate>
             </MudTreeView>
-        }
-    </MudItem>
-    <MudItem xs="6">
+        </MudPaper>
+    }
 
-        @if (_selected != null)
-        {
-            <ActorDiagnosticsWidget PidId="@_selected.Pid.Id" Diagnostics="hello"/>
-        }
-    </MudItem>
-
-</MudGrid>
+    @if (_selected?.Pid != null)
+    {
+        <ActorDiagnosticsWidget PidId="@_selected.Pid.Id" Diagnostics="@_diagnostics"/>
+    }
+</div>
 
 @code {
     private TreeNode? _root;
     private TreeNode? _selected;
+    private string? _diagnostics;
 
-    private void SelectedValueChanged(TreeNode x)
+    private void SelectedValueChanged(TreeNode? x)
     {
-        if (x == null)
+        if (x?.Pid == null)
         {
             return;
         }
-        
+
         _selected = x;
+        _ = GetDiagnostics(x.Pid);
         StateHasChanged();
     }
 
@@ -63,7 +60,7 @@
         var pids = new List<PID>();
         foreach (var member in members)
         {
-            var client = GetClient(member);
+            var client = GetClient(member.Address);
             var res = await client.ListProcessesAsync(new ListProcessesRequest
             {
                 Pattern = ""
@@ -80,11 +77,24 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private Remoting.RemotingClient GetClient(Member member)
+    private Remoting.RemotingClient GetClient(string address)
     {
-        var channel = GrpcChannel.ForAddress("http://" + member.Address);
+        var channel = GrpcChannel.ForAddress($"http://{address}");
         var client = new Remoting.RemotingClient(channel);
         return client;
+    }
+
+    private async Task GetDiagnostics(PID pid)
+    {
+        _diagnostics = "";
+        var client = GetClient(pid.Address);
+        var res = await client.GetProcessDiagnosticsAsync(new GetProcessDiagnosticsRequest
+        {
+            Pid = pid
+        });
+        Console.WriteLine(res.DiagnosticsString);
+        _diagnostics = res.DiagnosticsString;
+        StateHasChanged();
     }
 
     private Task<HashSet<TreeNode>> LoadServerData(TreeNode parentNode) =>

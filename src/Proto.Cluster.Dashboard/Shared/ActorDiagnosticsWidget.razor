@@ -1,12 +1,10 @@
-<MudPaper Class="pa-2 my-2">
+<MudPaper Class="pa-4 my-2" Elevation="2">
     <MudText Typo="Typo.h5">Diagnostics for PID: @PidId</MudText>
-    <MudAlert Severity="Severity.Info" NoIcon style="overflow: scroll">
-        <pre>
-            <code>
-            @Diagnostics
-            </code>
-        </pre>
-    </MudAlert>
+    
+    <pre style="white-space: pre-wrap;word-wrap: break-word;background-color: #00000020;" class="pa-4">
+        @Diagnostics
+    </pre>
+    
 </MudPaper>
 
 @code {
