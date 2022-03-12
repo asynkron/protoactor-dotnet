@@ -3,18 +3,28 @@
 @using Grpc.Net.Client
 @inject ActorSystem System
 <h3>ActorDiagram</h3>
-@if (_root != null)
-{
-    <MudTreeView ServerData="LoadServerData" Items="_root.Children">
-        <ItemTemplate>
-            <MudTreeViewItem Value="@context" LoadingIconColor="Color.Info" Text="@context.Name"/>
-        </ItemTemplate>
-    </MudTreeView>
-}
+
+<MudGrid >
+    <MudItem xs="6">
+        @if (_root != null)
+        {
+            <MudTreeView ServerData="LoadServerData" Items="_root.Children" MultiSelection="false" CanHover="true" @bind-SelectedValue="SelectedValue">
+                <ItemTemplate>
+                    <MudTreeViewItem Icon="@Icons.Filled.Label" IconColor="Color.Success" Value="@context" LoadingIconColor="Color.Info" Text="@context.Name"/>
+                </ItemTemplate>
+            </MudTreeView>
+        }
+    </MudItem>
+    <MudItem xs="6">
+        Display actor details here
+    </MudItem>
+
+</MudGrid>
 
 @code {
     private TreeNode? _root;
-
+    TreeNode? SelectedValue { get; set; }
+    
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -32,12 +42,10 @@
             pids.AddRange(res.Pids);
         }
 
-        var x = pids.Select(p => p.Address + "/" + p.Id).ToArray();
         var root = new TreeNode();
-        foreach (var id in x)
+        foreach (var pid in pids)
         {
-            var parts = id.Split("/");
-            _ = parts.Aggregate(root, (current, part) => current.GetChild(part));
+            var treeNode = root.GetChildFor(pid);
         }
         _root = root;
         await InvokeAsync(StateHasChanged);
