@@ -20,7 +20,7 @@
                 SelectedValueChanged="(TreeNode node) => SelectedValueChanged(node)">
                 <ItemTemplate>
                     <MudTreeViewItem
-                        Icon="@Icons.Filled.Label"
+                        Icon="@Icons.Filled.Circle"
                         IconColor="Color.Success"
                         Value="@context"
                         LoadingIconColor="Color.Info"
@@ -80,6 +80,9 @@
         var root = new TreeNode();
         foreach (var pid in pids)
         {
+            //ignore futures and internals
+            if (pid.Id.StartsWith("$")) continue;
+            
             var treeNode = root.GetChildFor(pid);
         }
         _root = root;
