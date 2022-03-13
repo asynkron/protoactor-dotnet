@@ -2,19 +2,21 @@
 @using Proto.Cluster.Gossip
 @inject ActorSystem System
 <PageTitle>Counter</PageTitle>
-<MudText Typo="Typo.h5">Virtual Actor Count</MudText>
-<MudRadioGroup @bind-SelectedOption="@SelectedOption">
-    <MudRadio Option="@("1")" Color="Color.Primary">Group by Kind</MudRadio>
-    <MudRadio Option="@("2")" Color="Color.Secondary">Group by Member</MudRadio>
-    <MudRadio Option="@("3")" Color="Color.Tertiary">Aggregated</MudRadio>
-</MudRadioGroup>
+<div class="px-4">
+    <MudPaper Outlined>
+        <MudRadioGroup @bind-SelectedOption="@SelectedOption">
+            <MudRadio Option="@("1")" Color="Color.Primary">Group by Kind</MudRadio>
+            <MudRadio Option="@("2")" Color="Color.Secondary">Group by Member</MudRadio>
+            <MudRadio Option="@("3")" Color="Color.Tertiary">Aggregated</MudRadio>
+        </MudRadioGroup>
+    </MudPaper>
+    
+    <MudChart ChartType="ChartType.Bar" LegendPosition="Position.Bottom" ChartSeries="@Series" XAxisLabels="@XAxisLabels.ToArray()" Width="100%" Height="350px">
+        <CustomGraphics>
 
-<MudChart ChartType="ChartType.Bar" LegendPosition="Position.Bottom" ChartSeries="@Series" XAxisLabels="@XAxisLabels.ToArray()" Width="100%" Height="350px">
-    <CustomGraphics>
-
-    </CustomGraphics>
-</MudChart>
-
+        </CustomGraphics>
+    </MudChart>
+</div>
 
 @code {
     private string SelectedOption = "1";
