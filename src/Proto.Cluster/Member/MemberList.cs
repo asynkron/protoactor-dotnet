@@ -301,7 +301,7 @@ public record MemberList
         {
             if (!includeSelf && id == _cluster.System.Id) continue;
 
-            var pid = PID.FromAddress(member.Address, "eventstream");
+            var pid = PID.FromAddress(member.Address, "$eventstream");
 
             try
             {
