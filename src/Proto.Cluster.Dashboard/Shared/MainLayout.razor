@@ -17,7 +17,7 @@
                              Icon="@Icons.Material.Filled.DarkMode" Color="@Color.Info" Title="Dark"
                              ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@Color.Warning" ToggledTitle="Light"/>
     </MudAppBar>
-    <MudDrawer @bind-Open="@_open" ClipMode="DrawerClipMode.Always" Elevation="2"  >
+    <MudDrawer @bind-Open="@_open" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="@DrawerVariant.Mini" OpenMiniOnHover="true" >
          <NavMenu/>
     </MudDrawer>
     <MudMainContent >
@@ -43,7 +43,7 @@
     }
 
     bool _dark = true;
-    bool _open = true;
+    bool _open = false;
 
     void ToggleDrawer()
     {
