@@ -123,7 +123,7 @@
         if (_selected?.Pid == null) return;
         
         var pidStr = _selected.Pid.ToString();
-        var url = Settings.LogSearchPattern!.Replace("%PID%", pidStr);
+        var url = Settings.TraceSearchPattern!.Replace("%PID%", pidStr);
         await JSRuntime.InvokeAsync<object>("open",  new object[]{ url, "_blank"});
     }
 }
