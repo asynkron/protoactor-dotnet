@@ -8,7 +8,6 @@ using Proto.Cluster.Dashboard;
 using Proto.Cluster.Seed;
 using Proto.Remote;
 
-
 var builder = WebApplication.CreateBuilder(args);
 var system = GetSystem();
 builder.Services.AddProtoActorDashboard(system, new DashboardSettings()
@@ -41,7 +40,7 @@ app.Run();
 
 ActorSystem GetSystem()
 {
-    Proto.Log.SetLoggerFactory(
+    Log.SetLoggerFactory(
         LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
     var port = 0;
     var advertisedHost = "localhost";
