@@ -8,7 +8,7 @@
 <div class="pa-4">
     @if (_root != null)
     {
-        <MudPaper Elevation="2">
+        <MudPaper Elevation="2" Outlined>
             <MudTreeView
                 
                 Height="300px"
@@ -36,7 +36,7 @@
     {
         @if (Settings != null)
         {
-            <MudPaper Elevation="2" class="mt-2 pa-4">
+            <MudPaper Elevation="2" class="mt-2 pa-4" Outlined>
                 <MudButton Color="Color.Info" StartIcon="@Icons.Filled.TableRows" Variant="Variant.Filled" OnClick="OpenLogs">Logs for this actor</MudButton>
                 <MudButton Color="Color.Info" StartIcon="@Icons.Filled.AccountTree" Variant="Variant.Filled" OnClick="OpenTraces">Traces for this actor</MudButton>
             </MudPaper>
@@ -45,7 +45,7 @@
     }
     else
     {
-        <MudPaper Elevation="2" class="mt-2 pa-4">
+        <MudPaper Elevation="2" class="mt-2 pa-4" Outlined>
             <MudAlert Variant="Variant.Filled" Severity="Severity.Info">
                 No Selection
             </MudAlert>

@@ -1,10 +1,12 @@
 ﻿@using MudBlazor
+@using MudBlazor.Utilities
 @inherits LayoutComponentBase
 
-<PageTitle>Proto.Cluster.Dashboard.Host</PageTitle>
-<MudThemeProvider IsDarkMode="@_dark"/>
+<PageTitle>Proto.Cluster.Dashboard</PageTitle>
+<MudThemeProvider Theme="@MyCustomTheme" IsDarkMode="@_dark" />
 <MudDialogProvider/>
 <MudSnackbarProvider/>
+
 
 <MudLayout>
     <MudAppBar>
@@ -25,6 +27,20 @@
 
 @code
 {
+    readonly MudTheme MyCustomTheme = new()
+    {
+        
+    };
+
+    protected override void OnInitialized()
+    {
+        MyCustomTheme.PaletteDark.Background = new MudColor("#0f1014");
+        MyCustomTheme.PaletteDark.Surface = new MudColor("#181b1f");
+        MyCustomTheme.PaletteDark.AppbarBackground = new MudColor("#181b1f");
+        MyCustomTheme.PaletteDark.DrawerBackground = new MudColor("#181b1f");
+        MyCustomTheme.PaletteDark.LinesDefault = new MudColor("#ccccdc12");
+        base.OnInitialized();
+    }
 
     bool _dark = true;
     bool _open = true;

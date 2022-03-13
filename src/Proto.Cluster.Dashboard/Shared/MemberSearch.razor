@@ -31,7 +31,7 @@
     private bool _disposed;
     private Member[]? _members = null!;
     private Member? _member;
-    private readonly MudTheme Theme = new();
+
     private string _search = "";
 
     [Parameter]
@@ -60,8 +60,7 @@
 
     private async Task RunLoop()
     {
-        //TODO: check for actor system killswitch
-        while (!_cts.Token.IsCancellationRequested)
+        while (!_cts.Token.IsCancellationRequested && ! System.Shutdown.IsCancellationRequested)
         {
             try
             {
