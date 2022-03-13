@@ -1,16 +1,7 @@
 <MudListItem @onclick="Toggle">
-    <MudButton @onclick="Toggle" Variant="Variant.Outlined" Color="Color.Info" style="max-width: 20px !important;min-width: 20px !important;" >
-        <div style="font-size: 10px; min-width: 20px;min-height: 20px;display: inline-block; padding-left: 2px;padding-top: 4px;">
-            @if (Expanded)
-            {
-                <span class="oi oi-caret-bottom" aria-hidden="true"></span>
-            }
-            else
-            {
-                <span class="oi oi-caret-right" aria-hidden="true"></span>
-            }
-        </div>
-    </MudButton>
+    <MudIconButton @onclick="Toggle" Variant="Variant.Outlined" Color="Color.Info" Icon="@(Expanded?Icons.Filled.ArrowDropDown:Icons.Filled.ArrowRight)" >
+    </MudIconButton>
+    
     <span style="padding-left: 16px">
         <b>
             @Text
