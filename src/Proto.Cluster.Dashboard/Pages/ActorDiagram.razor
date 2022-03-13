@@ -4,13 +4,13 @@
 @using Proto.Cluster.Dashboard.Shared
 @inject ActorSystem System
 @inject DashboardSettings Settings
-@inject NavigationManager NavManager
-@inject IJSRuntime JSRuntime;
+@inject IJSRuntime JsRuntime;
 <div class="pa-4">
     @if (_root != null)
     {
         <MudPaper Elevation="2">
             <MudTreeView
+                
                 Height="300px"
                 MaxHeight="300px"
                 ServerData="LoadServerData"
@@ -20,10 +20,12 @@
                 SelectedValueChanged="(TreeNode node) => SelectedValueChanged(node)">
                 <ItemTemplate>
                     <MudTreeViewItem
-                        Icon="@Icons.Filled.Circle"
+                        Icon="@(context.Pid==null?Icons.Filled.Computer:Icons.Filled.Circle)"
                         IconColor="Color.Success"
                         Value="@context"
                         LoadingIconColor="Color.Info"
+                        EndText="@context.Pid?.ToString()"
+                        EndTextTypo="Typo.caption"
                         Text="@context.Name"/>
                 </ItemTemplate>
             </MudTreeView>
@@ -41,6 +43,14 @@
         }
         <ActorDiagnosticsWidget PidId="@_selected.Pid.Id" Diagnostics="@_diagnostics"/>
     }
+    else
+    {
+        <MudPaper Elevation="2" class="mt-2 pa-4">
+            <MudAlert Variant="Variant.Filled" Severity="Severity.Info">
+                No Selection
+            </MudAlert>
+        </MudPaper>
+    }
 </div>
 
 @code {
@@ -50,6 +60,7 @@
 
     private void SelectedValueChanged(TreeNode? x)
     {
+        _selected = x;
         if (x?.Pid == null)
         {
             return;
@@ -57,7 +68,7 @@
 
         _selected = x;
         _ = GetDiagnostics(x.Pid);
-        StateHasChanged();
+
     }
 
     protected override async Task OnInitializedAsync()
@@ -118,7 +129,7 @@
         
         var pidStr = _selected.Pid.ToString();
         var url = Settings.LogSearchPattern!.Replace("%PID%", pidStr);
-        await JSRuntime.InvokeAsync<object>("open",  new object[]{ url, "_blank"});
+        await JsRuntime.InvokeAsync<object>("open",  new object[]{ url, "_blank"});
     }
 
     private async Task OpenTraces()
@@ -127,6 +138,6 @@
         
         var pidStr = _selected.Pid.ToString();
         var url = Settings.TraceSearchPattern!.Replace("%PID%", pidStr);
-        await JSRuntime.InvokeAsync<object>("open",  new object[]{ url, "_blank"});
+        await JsRuntime.InvokeAsync<object>("open",  new object[]{ url, "_blank"});
     }
 }
