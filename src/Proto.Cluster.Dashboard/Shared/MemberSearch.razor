@@ -3,25 +3,27 @@
 @inject ActorSystem System
 @if (_members != null)
 {
-    <div class="pa-4" >
-    <MudTextField Adornment="Adornment.Start"
-                  AdornmentIcon="@Icons.Filled.Search"
-                  Label="Search"
-                  Variant="Variant.Outlined"
-                  @bind-Value="_search"
-                  DebounceInterval="100"
-                  OnDebounceIntervalElapsed="UpdateSearch">
-    </MudTextField>
-    <div class="mt-2 mb-4">
-        <MudText Color="Color.Info">Showing @(SearchMembers().Count()) of @(_members.Count()) members</MudText>
-    </div>
-
-    @foreach (var member in SearchMembers())
-    {
-        <div @onclick="() => MemberSelected(member)" class="py-2">
-            <MemberCard Member="member"></MemberCard>
-        </div>
-    }
+    <div class="px-4">
+        <MudPaper Outlined Class="pa-4">
+            <MudTextField Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Filled.Search"
+                          Label="Search"
+                          Variant="Variant.Filled"
+                          @bind-Value="_search"
+                          DebounceInterval="100"
+                          OnDebounceIntervalElapsed="UpdateSearch">
+            </MudTextField>
+            <div class="mt-2 ">
+                <MudText Color="Color.Info">Showing @(SearchMembers().Count()) of @(_members.Count()) members</MudText>
+            </div>
+        </MudPaper>
+        
+        @foreach (var member in SearchMembers())
+        {
+            <div @onclick="() => MemberSelected(member)" class="py-2">
+                <MemberCard Member="member"></MemberCard>
+            </div>
+        }
     </div>
 }
 

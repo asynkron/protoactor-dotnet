@@ -6,18 +6,38 @@
 <MudThemeProvider Theme="@MyCustomTheme" IsDarkMode="@_dark" />
 <MudDialogProvider/>
 <MudSnackbarProvider/>
+<style>
 
+    .mud-drawer-mini {
+        border-right: 1px solid #ccccdc26;
+    }
+    .mud-nav-link.active {
+        /*border-left:4px solid #ff8833;*/
+    }
+    
+    .mud-nav-link.active::before {
+        display: block;
+        content: " ";
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        bottom: 0px;
+        width: 4px;
+        border-radius: 2px;
+        background-image: linear-gradient(0.01deg, rgb(141 62 245) 0.01%, rgb(255, 136, 51) 99.99%);
+    }
+    
+</style>
 
 <MudLayout>
-    <MudAppBar>
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        Proto.Actor Cluster Dashboard
+    <MudAppBar Elevation="0">
+        <h3>Proto.Actor Cluster Dashboard</h3>
         <MudSpacer />
         <MudToggleIconButton @bind-Toggled="@_dark" Edge="Edge.End"
                              Icon="@Icons.Material.Filled.DarkMode" Color="@Color.Info" Title="Dark"
                              ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@Color.Warning" ToggledTitle="Light"/>
     </MudAppBar>
-    <MudDrawer @bind-Open="@_open" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="@DrawerVariant.Mini" OpenMiniOnHover="true" >
+    <MudDrawer @bind-Open="@_open" ClipMode="DrawerClipMode.Never" Elevation="0" Variant="@DrawerVariant.Mini" OpenMiniOnHover="true" >
          <NavMenu/>
     </MudDrawer>
     <MudMainContent >
@@ -36,9 +56,10 @@
     {
         MyCustomTheme.PaletteDark.Background = new MudColor("#0f1014");
         MyCustomTheme.PaletteDark.Surface = new MudColor("#181b1f");
-        MyCustomTheme.PaletteDark.AppbarBackground = new MudColor("#181b1f");
+        MyCustomTheme.PaletteDark.AppbarBackground = new MudColor("#0f1014");
         MyCustomTheme.PaletteDark.DrawerBackground = new MudColor("#181b1f");
         MyCustomTheme.PaletteDark.LinesDefault = new MudColor("#ccccdc26");
+        
         base.OnInitialized();
     }
 
