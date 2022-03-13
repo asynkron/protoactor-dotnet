@@ -11,7 +11,11 @@ using Proto.Remote;
 
 var builder = WebApplication.CreateBuilder(args);
 var system = GetSystem();
-builder.Services.AddProtoActorDashboard(system);
+builder.Services.AddProtoActorDashboard(system, new DashboardSettings()
+{
+    LogSearchPattern = "",
+    TraceSearchPattern = ""
+});
 builder.Services.AddHostedService<ActorSystemHostedService>();
 // Add services to the container.
 builder.Services.AddRazorPages();

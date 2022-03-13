@@ -3,7 +3,9 @@
 @using Grpc.Net.Client
 @using Proto.Cluster.Dashboard.Shared
 @inject ActorSystem System
-
+@inject DashboardSettings Settings
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime;
 <div class="pa-4">
     @if (_root != null)
     {
@@ -30,6 +32,13 @@
 
     @if (_selected?.Pid != null)
     {
+        @if (Settings != null)
+        {
+            <MudPaper Elevation="2" class="mt-2 pa-4">
+                <MudButton Color="Color.Info" StartIcon="@Icons.Filled.TableRows" Variant="Variant.Filled" OnClick="OpenLogs">Logs for this actor</MudButton>
+                <MudButton Color="Color.Info" StartIcon="@Icons.Filled.AccountTree" Variant="Variant.Filled" OnClick="OpenTraces">Traces for this actor</MudButton>
+            </MudPaper>
+        }
         <ActorDiagnosticsWidget PidId="@_selected.Pid.Id" Diagnostics="@_diagnostics"/>
     }
 </div>
@@ -99,5 +108,21 @@
 
     private Task<HashSet<TreeNode>> LoadServerData(TreeNode parentNode) =>
         Task.FromResult(parentNode.Children);
+
+    private async Task OpenLogs()
+    {
+        if (_selected?.Pid == null) return;
+        
+        var pidStr = _selected.Pid.ToString();
+        var url = Settings.LogSearchPattern!.Replace("%PID%", pidStr);
+        await JSRuntime.InvokeAsync<object>("open",  new object[]{ url, "_blank"});
+    }
+
+    private async Task OpenTraces()
+    {
+        var url = Settings.TraceSearchPattern!;
+        await JSRuntime.InvokeAsync<object>("open",  new object[]{ url, "_blank"});
+
+    }
 
 }
