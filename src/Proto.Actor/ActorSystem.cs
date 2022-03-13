@@ -40,7 +40,7 @@ public sealed class ActorSystem : IAsyncDisposable
         Guardians = new Guardians(this);
         EventStream = new EventStream(this);
         Metrics = new ProtoMetrics(config.MetricsEnabled);
-        ProcessRegistry.TryAdd("eventstream", new EventStreamProcess(this));
+        ProcessRegistry.TryAdd("$eventstream", new EventStreamProcess(this));
         Extensions = new ActorSystemExtensions(this);
         DeferredFuture = new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
         RunThreadPoolStats();

@@ -36,7 +36,7 @@ class GuardianProcess : Process, ISupervisor
     {
         _supervisorStrategy = strategy;
 
-        var name = $"Guardian{System.ProcessRegistry.NextId()}";
+        var name = $"$guardian{System.ProcessRegistry.NextId()}";
         var (pid, ok) = System.ProcessRegistry.TryAdd(name, this);
 
         if (!ok) throw new ProcessNameExistException(name, pid);
