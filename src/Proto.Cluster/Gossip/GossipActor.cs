@@ -204,8 +204,8 @@ public class GossipActor : IActor
         }
         catch (Exception x)
         {
-            logger?.LogError(x, "OnSendGossipState failed");
-            Logger.LogError(x, "OnSendGossipState failed");
+            logger?.LogError(x, "GossipReenterAfterSend failed");
+            Logger.LogError(x, "GossipReenterAfterSend failed");
         }
     }
 
@@ -221,22 +221,22 @@ public class GossipActor : IActor
         catch (DeadLetterException)
         {
             logger?.LogWarning("DeadLetter");
-            Logger.LogWarning("DeadLetter in GossipReenterAfterSend");
+            Logger.LogWarning("DeadLetter in ReenterAfterResponseAck");
         }
         catch (OperationCanceledException)
         {
             logger?.LogWarning("Timeout");
-            Logger.LogWarning("Timeout in GossipReenterAfterSend");
+            Logger.LogWarning("Timeout in ReenterAfterResponseAck");
         }
         catch (TimeoutException)
         {
             logger?.LogWarning("Timeout");
-            Logger.LogWarning("Timeout in GossipReenterAfterSend");
+            Logger.LogWarning("Timeout in ReenterAfterResponseAck");
         }
         catch (Exception x)
         {
-            logger?.LogError(x, "OnSendGossipState failed");
-            Logger.LogError(x, "OnSendGossipState failed");
+            logger?.LogError(x, "ReenterAfterResponseAck failed");
+            Logger.LogError(x, "ReenterAfterResponseAck failed");
         }
     }
 }
