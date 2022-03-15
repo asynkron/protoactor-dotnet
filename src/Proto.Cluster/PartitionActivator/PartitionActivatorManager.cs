@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="PartitionManager.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -41,7 +41,7 @@ public class PartitionActivatorManager
                     if (e.TopologyHash == topologyHash) return;
 
                     topologyHash = e.TopologyHash;
-                    Selector.Update(e.Members.ToArray(),topologyHash);
+                    Selector.Update(e.Members.ToArray());
                 }
             );
         }
@@ -60,7 +60,7 @@ public class PartitionActivatorManager
 
                     topologyHash = e.TopologyHash;
 
-                    Selector.Update(e.Members.ToArray(),topologyHash);
+                    Selector.Update(e.Members.ToArray());
                     _context.Send(_partitionActivatorActor, e);
                 }
             );
