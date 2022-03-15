@@ -14,7 +14,10 @@ public class BlockList
 {
     private readonly object _lock = new();
 
-    public ImmutableHashSet<string> BlockedMembers { get; private set; } = ImmutableHashSet<string>.Empty;
+    public ImmutableHashSet<string> BlockedMembers  => _blockedMembers
+        .Where(kvp => kvp.Value > DateTime.UtcNow.AddHours(-1))
+        .Select(kvp => kvp.Key)
+        .ToImmutableHashSet();
 
     private ImmutableDictionary<string, DateTime> _blockedMembers  = ImmutableDictionary<string,DateTime>.Empty;
 
@@ -29,13 +32,8 @@ public class BlockList
                     _blockedMembers = _blockedMembers.Add(member, DateTime.UtcNow);
                 }
             }
-            
-            BlockedMembers = _blockedMembers
-                .Where(kvp => kvp.Value > DateTime.UtcNow.AddHours(-1))
-                .Select(kvp => kvp.Key)
-                .ToImmutableHashSet();
         }
     }
 
-    public bool IsBlocked(string memberId) => BlockedMembers.Contains(memberId);
+    public bool IsBlocked(string memberId) => _blockedMembers.ContainsKey(memberId);
 }
