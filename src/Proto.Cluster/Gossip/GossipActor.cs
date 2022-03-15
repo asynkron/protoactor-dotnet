@@ -110,7 +110,7 @@ public class GossipActor : IActor
             return Task.CompletedTask;
         }
 
-        context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
+        context.RequestReenter<GossipResponseAck>(gossipRequest.Sender, new GossipResponse
             {
                 State = memberState.State
             }, task => ReenterAfterResponseAck(context, task, memberState), context.CancellationToken
@@ -159,7 +159,8 @@ public class GossipActor : IActor
         context.RequestReenter<MessageEnvelope>(pid, new GossipRequest
             {
                 MemberId = context.System.Id,
-                State = memberStateDelta.State
+                State = memberStateDelta.State,
+                Sender = context.Self,
             },
             task => GossipReenterAfterSend(context, task, memberStateDelta),
             CancellationTokens.WithTimeout(_gossipRequestTimeout)
