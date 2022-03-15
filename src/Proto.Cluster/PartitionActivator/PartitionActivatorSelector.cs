@@ -3,9 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Proto.Cluster.PartitionActivator;
@@ -14,21 +12,21 @@ namespace Proto.Cluster.PartitionActivator;
 //this is the key algorithm for the distribution of actors within the cluster.
 class PartitionActivatorSelector
 {
-    private volatile ConcurrentDictionary<string, RendezvousFast> _hasherByKind = new();
+    private volatile ImmutableDictionary<string, RendezvousFast> _hasherByKind =
+        ImmutableDictionary<string, RendezvousFast>.Empty;
 
     public void Update(Member[] members)
     {
         // Precreate RendezvousFast hasher instances by each Kind the cluster supports.
-        Dictionary<string, RendezvousFast> newHasherByKind = members
+        var newHasherByKind = members
             .SelectMany(member => member.Kinds.Select(kind => (member, kind)))
             .GroupBy(v => v.kind)
-            .ToDictionary(
+            .ToImmutableDictionary(
                 v => v.Key,
                 v => new RendezvousFast(v.Select(t => t.member)));
 
-        // Assign at-once in an atomic manner rather than doing a Clear and re-assigning Keys
-        // as that would allow _hasherByKind to be read in inconsistent states by GetOwne
-        _hasherByKind = new(newHasherByKind);
+        // Assign at-once in an atomic manner, so that GetOwnerAddress is always thread-safe.
+        _hasherByKind = newHasherByKind;
     }
 
     public string GetOwnerAddress(ClusterIdentity key)
