@@ -14,7 +14,7 @@ namespace Proto.Cluster.PartitionActivator;
 
 public class PartitionActivatorLookup : IIdentityLookup
 {
-    private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityLookup>();
+    private static readonly ILogger Logger = Log.CreateLogger<PartitionActivatorLookup>();
     private readonly TimeSpan _getPidTimeout;
     private Cluster _cluster = null!;
     private PartitionActivatorManager _partitionManager = null!;
@@ -44,8 +44,7 @@ public class PartitionActivatorLookup : IIdentityLookup
             ClusterIdentity = clusterIdentity
         };
 
-        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionActivator] Requesting remote PID from {Partition}:{Remote} {@Request}", owner, remotePid, req
-        );
+        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionActivator] Requesting remote PID from {Partition}:{Remote} {@Request}", owner, remotePid, req);
 
         try
         {

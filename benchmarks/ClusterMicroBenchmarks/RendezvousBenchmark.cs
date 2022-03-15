@@ -9,6 +9,7 @@ using BenchmarkDotNet.Attributes;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Partition;
+using Proto.Cluster.PartitionActivator;
 using Proto.Router;
 
 namespace ClusterMicroBenchmarks;
@@ -25,6 +26,7 @@ public class RendezvousBenchmark
     private Rendezvous _rendezvous;
     private MemberHashRing _memberHashRing;
     private HashRing<Member> _hashRing;
+    private RendezvousFast _rendezvousFast;
 
     [GlobalSetup]
     public void Setup()
@@ -38,6 +40,7 @@ public class RendezvousBenchmark
         ).ToArray();
         _rendezvous = new Rendezvous();
         _rendezvous.UpdateMembers(members);
+        _rendezvousFast = new RendezvousFast(members);
         _memberHashRing = new MemberHashRing(members);
         _hashRing = new HashRing<Member>(members, member => member.Address, MurmurHash2.Hash, 50);
     }
@@ -46,6 +49,12 @@ public class RendezvousBenchmark
     public void Rendezvous()
     {
         var owner = _rendezvous.GetOwnerMemberByIdentity(TestId());
+    }
+
+    [Benchmark]
+    public void RendezvousFast()
+    {
+        var owner = _rendezvousFast.GetOwnerMemberByIdentity(TestId());
     }
 
     [Benchmark]
