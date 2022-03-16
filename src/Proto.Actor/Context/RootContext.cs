@@ -14,7 +14,11 @@ using Proto.Utils;
 
 namespace Proto;
 
-public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
+public interface ISharedContext : ISpawnerContext, ISenderContext, IStopperContext
+{
+}
+
+public interface IRootContext : ISharedContext
 {
 }
 
