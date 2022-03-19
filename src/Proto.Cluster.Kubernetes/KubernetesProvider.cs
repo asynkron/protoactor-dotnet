@@ -145,8 +145,8 @@ public class KubernetesProvider : IClusterProvider
     {
         var props = Props
             .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes, _config))
-            .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy)
-            .WithDispatcher(Dispatchers.SynchronousDispatcher);
+            .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+
         _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "kubernetes-cluster-monitor");
         _podName = KubernetesExtensions.GetPodName();
 

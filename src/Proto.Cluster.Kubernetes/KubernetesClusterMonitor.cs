@@ -25,7 +25,6 @@ class KubernetesClusterMonitor : IActor
     private readonly IKubernetes _kubernetes;
 
     private string _address;
-
     private string _clusterName;
     private string _podName;
     private bool _stopping;
@@ -33,6 +32,7 @@ class KubernetesClusterMonitor : IActor
     private Task<HttpOperationResponse<V1PodList>> _watcherTask;
     private bool _watching;
     private readonly KubernetesProviderConfig _config;
+    private DateTime _lastRestart;
 
     public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes,KubernetesProviderConfig config)
     {
@@ -117,9 +117,19 @@ class KubernetesClusterMonitor : IActor
 
         void Restart()
         {
+            _lastRestart = DateTime.UtcNow;
             _watching = false;
-            _watcher?.Dispose();
-            _watcherTask?.Dispose();
+
+            try
+            {
+                _watcher?.Dispose();
+                _watcherTask?.Dispose();
+            }
+            catch
+            {
+                // ignored
+            }
+
             context.Send(context.Self!, new StartWatchingCluster(_clusterName));
         }
 
