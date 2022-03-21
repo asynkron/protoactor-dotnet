@@ -10,7 +10,6 @@ using JetBrains.Annotations;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Rest;
 using Proto.Mailbox;
 using Proto.Utils;
 using static Proto.Cluster.Kubernetes.Messages;
@@ -134,8 +133,8 @@ public class KubernetesProvider : IClusterProvider
         {
             await _kubernetes.ReplacePodLabels(_podName, KubernetesExtensions.GetKubeNamespace(), pod, labels);
         }
-        catch (HttpOperationException e)
-        {            
+        catch (Exception e)
+        {
             Logger.LogError(e, "[Cluster][KubernetesProvider] Unable to update pod labels, registration failed. Labels : {Labels}", labels);
             throw;
         }

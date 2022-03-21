@@ -8,9 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using k8s;
+using k8s.Autorest;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Rest;
+
 using static Proto.Cluster.Kubernetes.Messages;
 using static Proto.Cluster.Kubernetes.ProtoLabels;
 
@@ -123,11 +124,19 @@ class KubernetesClusterMonitor : IActor
             try
             {
                 _watcher?.Dispose();
+            }
+            catch
+            {
+                Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _watcher");
+            }
+            
+            try
+            {
                 _watcherTask?.Dispose();
             }
             catch
             {
-                // ignored
+                Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _watcherTask");
             }
 
             context.Send(context.Self!, new StartWatchingCluster(_clusterName));
