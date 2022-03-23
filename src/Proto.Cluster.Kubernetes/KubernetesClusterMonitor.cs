@@ -23,7 +23,7 @@ class KubernetesClusterMonitor : IActor
     private readonly Cluster _cluster;
 
     private readonly Dictionary<string, V1Pod> _clusterPods = new();
-    private readonly IKubernetes _kubernetes;
+    private IKubernetes _kubernetes;
 
     private string _address;
     private string _clusterName;
@@ -34,7 +34,17 @@ class KubernetesClusterMonitor : IActor
     private bool _watching;
     private readonly KubernetesProviderConfig _config;
     private DateTime _lastRestart;
+    private readonly Func<IKubernetes> _factory;
 
+    public KubernetesClusterMonitor(Cluster cluster, Func<IKubernetes> kubernetesFactory,KubernetesProviderConfig config)
+    {
+        _cluster = cluster;
+        _factory = kubernetesFactory;
+        _kubernetes = _factory();
+        _config = config;
+    }
+    
+    [Obsolete("Use overload with kubernetesFactory argument instead",false)]
     public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes,KubernetesProviderConfig config)
     {
         _cluster = cluster;
@@ -70,14 +80,13 @@ class KubernetesClusterMonitor : IActor
             );
 
             _stopping = true;
-            _watcher.Dispose();
-            _watcherTask.Dispose();
+
+            DisposeWatcher();
+            DisposeWatcherTask();
         }
 
         return Task.CompletedTask;
     }
-        
-        
 
     private Task StartWatchingCluster(string clusterName, ISenderContext context)
     {
@@ -101,7 +110,9 @@ class KubernetesClusterMonitor : IActor
             if (_stopping) return;
 
             // We log it and attempt to watch again, overcome transient issues
-            Logger.LogWarning("[Cluster][KubernetesProvider] Unable to watch the cluster status: {Error}", ex.Message);
+            Logger.LogError(ex, "[Cluster][KubernetesProvider] Unable to watch the cluster status");
+
+            RecreateKubernetesClient();
             Restart();
         }
 
@@ -112,7 +123,6 @@ class KubernetesClusterMonitor : IActor
             if (_stopping) return;
                 
             Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Watcher has closed, restarting");
-
             Restart();
         }
 
@@ -121,28 +131,61 @@ class KubernetesClusterMonitor : IActor
             _lastRestart = DateTime.UtcNow;
             _watching = false;
 
-            try
-            {
-                _watcher?.Dispose();
-            }
-            catch
-            {
-                Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _watcher");
-            }
-            
-            try
-            {
-                _watcherTask?.Dispose();
-            }
-            catch
-            {
-                Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _watcherTask");
-            }
+            DisposeWatcher();
+            DisposeWatcherTask();
 
             context.Send(context.Self!, new StartWatchingCluster(_clusterName));
         }
 
         return Task.CompletedTask;
+    }
+
+    private void RecreateKubernetesClient()
+    {
+        if (_factory == null) return;
+
+        DisposeWatcher();
+        DisposeWatcherTask();
+        DisposeKubernetesClient();
+
+        Logger.LogWarning("[Cluster][KubernetesProvider] Recreating Kubernetes client due to connectivity error");
+        _kubernetes = _factory();
+    }
+
+    private void DisposeKubernetesClient()
+    {
+        try
+        {
+            _kubernetes.Dispose();
+        }
+        catch
+        {
+            Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _kubernetes");
+        }
+    }
+
+    private void DisposeWatcherTask()
+    {
+        try
+        {
+            _watcherTask?.Dispose();
+        }
+        catch
+        {
+            Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _watcherTask");
+        }
+    }
+
+    private void DisposeWatcher()
+    {
+        try
+        {
+            _watcher?.Dispose();
+        }
+        catch
+        {
+            Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _watcher");
+        }
     }
 
     private void Watch(WatchEventType eventType, V1Pod eventPod)
