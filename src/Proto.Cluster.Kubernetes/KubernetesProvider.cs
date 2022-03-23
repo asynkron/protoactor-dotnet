@@ -10,7 +10,6 @@ using JetBrains.Annotations;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
-using Proto.Mailbox;
 using Proto.Utils;
 using static Proto.Cluster.Kubernetes.Messages;
 using static Proto.Cluster.Kubernetes.ProtoLabels;
@@ -21,8 +20,6 @@ namespace Proto.Cluster.Kubernetes;
 public class KubernetesProvider : IClusterProvider
 {
     private static readonly ILogger Logger = Log.CreateLogger<KubernetesProvider>();
-
-    private readonly IKubernetes _kubernetes;
     private string _address;
     private Cluster _cluster;
 
@@ -35,17 +32,21 @@ public class KubernetesProvider : IClusterProvider
     private int _port;
     private readonly KubernetesProviderConfig _config;
 
-    public KubernetesProvider(IKubernetes kubernetes) : this(kubernetes, new KubernetesProviderConfig())
+    public KubernetesProvider() : this(new KubernetesProviderConfig())
     {
     }
 
-    public KubernetesProvider(IKubernetes kubernetes, KubernetesProviderConfig config)
+    public KubernetesProvider(KubernetesProviderConfig config)
     {
         if (KubernetesExtensions.GetKubeNamespace() is null)
             throw new InvalidOperationException("The application doesn't seem to be running in Kubernetes");
 
         _config = config;
-        _kubernetes = kubernetes;
+    }
+    
+    [Obsolete("Do not pass a Kubernetes client directly, pass Client factory as part of Config, or use Config defaults", true)]
+    public KubernetesProvider(IKubernetes kubernetes, KubernetesProviderConfig config)
+    {
     }
 
     public async Task StartMemberAsync(Cluster cluster)
@@ -99,14 +100,15 @@ public class KubernetesProvider : IClusterProvider
 
     public async Task RegisterMemberInner()
     {
+        var kubernetes = _config.ClientFactory();
         Logger.LogInformation("[Cluster][KubernetesProvider] Registering service {PodName} on {PodIp}", _podName, _address);
 
-        var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
+        var pod = await kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
         if (pod is null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
 
-        Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: " + pod.Namespace());
+        Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: {Namespace}", pod.Namespace());
 
-        Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: " + _port);
+        Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: {Port}" , _port);
 
         var existingLabels = pod.Metadata.Labels;
 
@@ -131,7 +133,7 @@ public class KubernetesProvider : IClusterProvider
 
         try
         {
-            await _kubernetes.ReplacePodLabels(_podName, KubernetesExtensions.GetKubeNamespace(), pod, labels);
+            await kubernetes.ReplacePodLabels(_podName, KubernetesExtensions.GetKubeNamespace(), pod, labels);
         }
         catch (Exception e)
         {
@@ -143,7 +145,7 @@ public class KubernetesProvider : IClusterProvider
     private void StartClusterMonitor()
     {
         var props = Props
-            .FromProducer(() => new KubernetesClusterMonitor(_cluster, _kubernetes, _config))
+            .FromProducer(() => new KubernetesClusterMonitor(_cluster, _config))
             .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
 
         _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "kubernetes-cluster-monitor");
@@ -173,11 +175,12 @@ public class KubernetesProvider : IClusterProvider
 
     private async Task DeregisterMemberInner(Cluster cluster)
     {
+        var kubernetes = _config.ClientFactory();
         Logger.LogInformation("[Cluster][KubernetesProvider] Unregistering service {PodName} on {PodIp}", _podName, _address);
 
         var kubeNamespace = KubernetesExtensions.GetKubeNamespace();
 
-        var pod = await _kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
+        var pod = await kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
 
         var labels = new Dictionary<string, string>(pod.Metadata.Labels);
         foreach (var kind in _kinds)
@@ -195,7 +198,7 @@ public class KubernetesProvider : IClusterProvider
 
         labels.Remove(LabelCluster);
 
-        await _kubernetes.ReplacePodLabels(_podName, kubeNamespace,pod, labels);
+        await kubernetes.ReplacePodLabels(_podName, kubeNamespace,pod, labels);
 
         cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
     }
