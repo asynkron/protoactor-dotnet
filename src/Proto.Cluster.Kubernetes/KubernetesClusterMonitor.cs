@@ -34,21 +34,11 @@ class KubernetesClusterMonitor : IActor
     private bool _watching;
     private readonly KubernetesProviderConfig _config;
     private DateTime _lastRestart;
-    private readonly Func<IKubernetes> _factory;
 
-    public KubernetesClusterMonitor(Cluster cluster, Func<IKubernetes> kubernetesFactory,KubernetesProviderConfig config)
+    public KubernetesClusterMonitor(Cluster cluster, KubernetesProviderConfig config)
     {
         _cluster = cluster;
-        _factory = kubernetesFactory;
-        _kubernetes = _factory();
-        _config = config;
-    }
-    
-    [Obsolete("Use overload with kubernetesFactory argument instead",false)]
-    public KubernetesClusterMonitor(Cluster cluster, IKubernetes kubernetes,KubernetesProviderConfig config)
-    {
-        _cluster = cluster;
-        _kubernetes = kubernetes;
+        _kubernetes = config.ClientFactory();
         _config = config;
     }
 
@@ -142,14 +132,12 @@ class KubernetesClusterMonitor : IActor
 
     private void RecreateKubernetesClient()
     {
-        if (_factory == null) return;
-
         DisposeWatcher();
         DisposeWatcherTask();
         DisposeKubernetesClient();
 
         Logger.LogWarning("[Cluster][KubernetesProvider] Recreating Kubernetes client due to connectivity error");
-        _kubernetes = _factory();
+        _kubernetes = _config.ClientFactory();
     }
 
     private void DisposeKubernetesClient()
