@@ -142,14 +142,14 @@ class KubernetesClusterMonitor : IActor
 
     private void RecreateKubernetesClient()
     {
-        if (_factory != null)
-        {
-            DisposeWatcher();
-            DisposeWatcherTask();
-            DisposeKubernetesClient();
-            
-            _kubernetes = _factory();
-        }
+        if (_factory == null) return;
+
+        DisposeWatcher();
+        DisposeWatcherTask();
+        DisposeKubernetesClient();
+
+        Logger.LogWarning("[Cluster][KubernetesProvider] Recreating Kubernetes client due to connectivity error");
+        _kubernetes = _factory();
     }
 
     private void DisposeKubernetesClient()
