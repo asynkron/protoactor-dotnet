@@ -14,6 +14,10 @@ Ultra-fast, distributed, cross-platform actors.
 
 [https://github.com/AsynkronIT/protoactor-bootcamp](https://github.com/AsynkronIT/protoactor-bootcamp)
 
+## Stats
+
+![Alt](https://repobeats.axiom.co/api/embed/c9c21a6a706eda331cc8a38e4f03a7a844ed95f3.svg "Repobeats analytics image")
+
 ## Installing
 
 Using NuGet Package Manager Console:
