@@ -6,7 +6,7 @@
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.19.4" />
     <PackageReference Include="Grpc.Tools" Version="2.44.0-pre2" PrivateAssets="All" />
-    <PackageReference Include="Proto.Cluster.CodeGen" Version="0.26.1-alpha.0.56" />
+    <PackageReference Include="Proto.Cluster.CodeGen" Version="0.29.0" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Protos.proto" />
