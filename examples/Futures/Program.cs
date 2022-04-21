@@ -21,7 +21,7 @@ class Program
         );
         var pid = context.Spawn(props);
 
-        var reply = await context.RequestAsync<object>(pid, "hello");
+        var reply = await context.RequestAsync<string>(pid, "hello");
         Console.WriteLine(reply);
         Console.ReadLine();
     }

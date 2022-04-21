@@ -21,10 +21,13 @@ class Message : IHashable
 
 class MyActor : IActor
 {
-    public Task ReceiveAsync(IContext context)
+    public async Task ReceiveAsync(IContext context)
     {
-        if (context.Message is Message msg) Console.WriteLine($"Actor {context.Self.Id} got message '{msg.Text}'.");
-        return Task.CompletedTask;
+        if (context.Message is Message msg)
+        {
+            Console.WriteLine($"Actor {context.Self.Id} got message '{msg.Text}'.");
+            await Task.Delay(500);
+        }
     }
 }
 
@@ -36,13 +39,13 @@ class Program
     {
         TestBroadcastPool();
         TestBroadcastGroup();
-
+        
         TestRandomPool();
         TestRandomGroup();
-
+        
         TestRoundRobinPool();
         TestRoundRobinGroup();
-
+        
         TestConsistentHashPool();
         TestConsistentHashGroup();
 
@@ -63,7 +66,7 @@ class Program
         for (var i = 0; i < 10; i++)
         {
             var pid = context.Spawn(props);
-            context.Send(pid, new Message {Text = $"{i % 4}"});
+            context.Send(pid, new Message {Text = $"{i}"});
         }
     }
 
