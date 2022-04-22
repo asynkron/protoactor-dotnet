@@ -20,6 +20,7 @@ public record ClusterContextConfig
     public TimeSpan ActorRequestTimeout { get; init; }
     public TimeSpan RequestLogThrottlePeriod { get; init; }
     public int MaxNumberOfEventsInRequestLogThrottlePeriod { get; init; }
+    public TimeSpan ActorRequestRetryInterval { get; init; }
 }
 
 public static class ClusterConfigExtensions
@@ -29,6 +30,7 @@ public static class ClusterConfigExtensions
         {
             ActorRequestTimeout = clusterConfig.ActorRequestTimeout,
             MaxNumberOfEventsInRequestLogThrottlePeriod = clusterConfig.MaxNumberOfEventsInRequestLogThrottlePeriod,
-            RequestLogThrottlePeriod = clusterConfig.RequestLogThrottlePeriod
+            RequestLogThrottlePeriod = clusterConfig.RequestLogThrottlePeriod,
+            ActorRequestRetryInterval= clusterConfig.ActorRequestRetryInterval
         };
 }
