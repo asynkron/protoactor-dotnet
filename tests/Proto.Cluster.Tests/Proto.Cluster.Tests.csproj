@@ -26,10 +26,5 @@
   <ItemGroup>
     <Protobuf Include="*.proto" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="xunit.runner.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
   
 </Project>
