@@ -10,6 +10,10 @@ env:
   DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
   TERM: xterm
   
+concurrency:
+  group: protoactor
+  cancel-in-progress: true  
+  
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -29,7 +33,7 @@ jobs:
       matrix:
         dotnet:
           - net6.0
-          - net5.0
+#          - net5.0
 #           - netcoreapp3.1
         test:
           - "tests/Proto.Actor.Tests/*.csproj"
@@ -51,9 +55,6 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "5.0.100"
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: "3.1.x"
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
@@ -76,9 +77,6 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "5.0.x"
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: "3.1.x"
           source-url: https://nuget.pkg.github.com/asynkron/index.json
         env:
           NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}             
