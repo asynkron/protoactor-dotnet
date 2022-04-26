@@ -26,4 +26,5 @@
   <ItemGroup>
     <Protobuf Include="*.proto" />
   </ItemGroup>
+  
 </Project>

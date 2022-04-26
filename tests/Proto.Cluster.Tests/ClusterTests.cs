@@ -109,30 +109,30 @@ public abstract class ClusterTests : ClusterTestBase
         }
     }
 
-    [Fact]
-    public async Task ReSpawnsClusterActorsFromDifferentNodes()
-    {
-        var timeout = new CancellationTokenSource(10000).Token;
-        var id = CreateIdentity("1");
-        await PingPong(Members[0], id, timeout);
-        await PingPong(Members[1], id, timeout);
-
-        //Retrieve the node the virtual actor was not spawned on
-        var nodeLocation = await Members[0].RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), timeout);
-        nodeLocation.Should().NotBeNull("We expect the actor to respond correctly");
-        var otherNode = Members.First(node => node.System.Address != nodeLocation.Address);
-
-        //Kill it
-        await otherNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout);
-
-        var timer = Stopwatch.StartNew();
-        // And force it to restart.
-        // DeadLetterResponse should be sent to requestAsync, enabling a quick initialization of the new virtual actor
-        await PingPong(otherNode, id, timeout);
-        timer.Stop();
-
-        _testOutputHelper.WriteLine("Respawned virtual actor in {0}", timer.Elapsed);
-    }
+    // [Fact]
+    // public async Task ReSpawnsClusterActorsFromDifferentNodes()
+    // {
+    //     var timeout = new CancellationTokenSource(10000).Token;
+    //     var id = CreateIdentity("1");
+    //     await PingPong(Members[0], id, timeout);
+    //     await PingPong(Members[1], id, timeout);
+    //
+    //     //Retrieve the node the virtual actor was not spawned on
+    //     var nodeLocation = await Members[0].RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), timeout);
+    //     nodeLocation.Should().NotBeNull("We expect the actor to respond correctly");
+    //     var otherNode = Members.First(node => node.System.Address != nodeLocation.Address);
+    //
+    //     //Kill it
+    //     await otherNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout);
+    //
+    //     var timer = Stopwatch.StartNew();
+    //     // And force it to restart.
+    //     // DeadLetterResponse should be sent to requestAsync, enabling a quick initialization of the new virtual actor
+    //     await PingPong(otherNode, id, timeout);
+    //     timer.Stop();
+    //
+    //     _testOutputHelper.WriteLine("Respawned virtual actor in {0}", timer.Elapsed);
+    // }
 
     [Fact]
     public async Task HandlesLosingANode()
@@ -293,35 +293,35 @@ public abstract class ClusterTests : ClusterTestBase
         );
     }
 
-    [Fact]
-    public async Task LocalAffinityMovesActivationsOnRemoteSender()
-    {
-        var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)).Token;
-        var firstNode = Members[0];
-        var secondNode = Members[1];
-
-        await PingAndVerifyLocality(firstNode, timeout, "1:1", firstNode.System.Address,
-            "Local affinity to sending node means that actors should spawn there"
-        );
-        LogProcessCounts();
-        await PingAndVerifyLocality(secondNode, timeout, "2:1", firstNode.System.Address,
-            "As the current instances exist on the 'wrong' node, these should respond before being moved"
-        );
-        LogProcessCounts();
-
-        _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
-        await Task.Delay(200, timeout);
-        LogProcessCounts();
-
-        await PingAndVerifyLocality(secondNode, timeout, "2.2", secondNode.System.Address,
-            "Relocation should be triggered, and the actors should be respawned on the local node"
-        );
-        LogProcessCounts();
-
-        void LogProcessCounts() => _testOutputHelper.WriteLine(
-            $"Processes: {firstNode.System.Address}: {firstNode.System.ProcessRegistry.ProcessCount}, {secondNode.System.Address}: {secondNode.System.ProcessRegistry.ProcessCount}"
-        );
-    }
+    // [Fact]
+    // public async Task LocalAffinityMovesActivationsOnRemoteSender()
+    // {
+    //     var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)).Token;
+    //     var firstNode = Members[0];
+    //     var secondNode = Members[1];
+    //
+    //     await PingAndVerifyLocality(firstNode, timeout, "1:1", firstNode.System.Address,
+    //         "Local affinity to sending node means that actors should spawn there"
+    //     );
+    //     LogProcessCounts();
+    //     await PingAndVerifyLocality(secondNode, timeout, "2:1", firstNode.System.Address,
+    //         "As the current instances exist on the 'wrong' node, these should respond before being moved"
+    //     );
+    //     LogProcessCounts();
+    //
+    //     _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
+    //     await Task.Delay(200, timeout);
+    //     LogProcessCounts();
+    //
+    //     await PingAndVerifyLocality(secondNode, timeout, "2.2", secondNode.System.Address,
+    //         "Relocation should be triggered, and the actors should be respawned on the local node"
+    //     );
+    //     LogProcessCounts();
+    //
+    //     void LogProcessCounts() => _testOutputHelper.WriteLine(
+    //         $"Processes: {firstNode.System.Address}: {firstNode.System.ProcessRegistry.ProcessCount}, {secondNode.System.Address}: {secondNode.System.ProcessRegistry.ProcessCount}"
+    //     );
+    // }
 
     private async Task PingAndVerifyLocality(
         Cluster cluster,
@@ -361,7 +361,7 @@ public abstract class ClusterTests : ClusterTestBase
     {
         await Task.Yield();
 
-        var response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
+        var response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
         var tries = 1;
 
         while (response == null && !token.IsCancellationRequested)
