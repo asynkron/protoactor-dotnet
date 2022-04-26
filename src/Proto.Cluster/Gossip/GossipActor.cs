@@ -98,23 +98,32 @@ public class GossipActor : IActor
         //     return Task.CompletedTask;
         // }
 
-        var memberState = _internal.GetMemberStateDelta(gossipRequest.MemberId);
+        // var memberState = _internal.GetMemberStateDelta(gossipRequest.MemberId);
+        //
+        // if (!memberState.HasState)
+        // {
+        //     if (Logger.IsEnabled(LogLevel.Debug))
+        //         Logger.LogDebug("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
+        //
+        //     // Nothing to send, do not provide sender or state payload
+        //     context.Respond(new GossipResponse());
+        //     return Task.CompletedTask;
+        // }
+        //
+        // var response = new GossipResponse
+        // {
+        //     State = memberState.State
+        // };
+        // context.Respond(response);
+        
+        //just ack, investigate why the 3 phase flow times out under load
+        context.Respond(new GossipResponse());
 
-        if (!memberState.HasState)
-        {
-            if (Logger.IsEnabled(LogLevel.Debug))
-                Logger.LogDebug("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
-
-            // Nothing to send, do not provide sender or state payload
-            context.Respond(new GossipResponse());
-            return Task.CompletedTask;
-        }
-
-        context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
-            {
-                State = memberState.State
-            }, task => ReenterAfterResponseAck(context, task, memberState), context.CancellationToken
-        );
+        // context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
+        //     {
+        //         State = memberState.State
+        //     }, task => ReenterAfterResponseAck(context, task, memberState), context.CancellationToken
+        // );
 
         return Task.CompletedTask;
     }

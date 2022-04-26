@@ -90,7 +90,7 @@ public static class SenderContextExtensions
     /// <typeparam name="T">Expected return message type</typeparam>
     /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
     public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message) =>
-        self.RequestAsync<T>(target, message, self.System.Config.RequestAsyncTimeout);
+        self.RequestAsync<T>(target, message, self.System.Config.ActorRequestTimeout);
 
     /// <summary>
     ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
