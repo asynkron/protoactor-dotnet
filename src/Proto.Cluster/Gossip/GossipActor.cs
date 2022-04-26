@@ -182,19 +182,22 @@ public class GossipActor : IActor
         try
         {
             await task;
-            var envelope = task.Result;
-
-            if (envelope.Message is GossipResponse response)
-            {
-                delta.CommitOffsets();
-
-                if (response.State is not null)
-                {
-                    ReceiveState(context, response.State!);
-
-                    if (envelope.Sender is not null) context.Send(envelope.Sender, new GossipResponseAck());
-                }
-            }
+            delta.CommitOffsets();
+            
+            // var envelope = task.Result;
+            //
+            //
+            // if (envelope.Message is GossipResponse response)
+            // {
+            //     delta.CommitOffsets();
+            //
+            //     if (response.State is not null)
+            //     {
+            //         ReceiveState(context, response.State!);
+            //
+            //         if (envelope.Sender is not null) context.Send(envelope.Sender, new GossipResponseAck());
+            //     }
+            // }
         }
         catch (DeadLetterException)
         {
