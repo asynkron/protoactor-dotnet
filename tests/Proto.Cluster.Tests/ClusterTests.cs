@@ -361,7 +361,7 @@ public abstract class ClusterTests : ClusterTestBase
     {
         await Task.Yield();
 
-        var response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
+        var response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
         var tries = 1;
 
         while (response == null && !token.IsCancellationRequested)
