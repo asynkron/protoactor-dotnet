@@ -156,7 +156,7 @@ public class GossipActor : IActor
         //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
 
         // This will return a GossipResponse, but since we need could need to get the sender, we do not unpack it from the MessageEnvelope
-        context.RequestReenter<MessageEnvelope>(pid, new GossipRequest
+        context.RequestReenter<object>(pid, new GossipRequest
             {
                 MemberId = context.System.Id,
                 State = memberStateDelta.State
@@ -166,16 +166,16 @@ public class GossipActor : IActor
         );
     }
 
-    private async Task GossipReenterAfterSend(IContext context, Task<MessageEnvelope> task, MemberStateDelta delta)
+    private async Task GossipReenterAfterSend(IContext context, Task<object> task, MemberStateDelta delta)
     {
         var logger = context.Logger();
 
         try
         {
             await task;
-            var envelope = task.Result;
+            var envelope = task.Result as MessageEnvelope;
 
-            if (envelope.Message is GossipResponse response)
+            if (envelope?.Message is GossipResponse response)
             {
                 delta.CommitOffsets();
 
