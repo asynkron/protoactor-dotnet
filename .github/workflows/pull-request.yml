@@ -2,6 +2,10 @@ name: Build and test PRs
 
 on: [pull_request]
 
+env:
+  DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
+  TERM: xterm  
+
 jobs:
   build:
     runs-on: ubuntu-latest
