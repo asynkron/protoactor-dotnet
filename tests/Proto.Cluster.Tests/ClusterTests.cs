@@ -109,30 +109,30 @@ public abstract class ClusterTests : ClusterTestBase
         }
     }
 
-    [Fact]
-    public async Task ReSpawnsClusterActorsFromDifferentNodes()
-    {
-        var timeout = new CancellationTokenSource(10000).Token;
-        var id = CreateIdentity("1");
-        await PingPong(Members[0], id, timeout);
-        await PingPong(Members[1], id, timeout);
-
-        //Retrieve the node the virtual actor was not spawned on
-        var nodeLocation = await Members[0].RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), timeout);
-        nodeLocation.Should().NotBeNull("We expect the actor to respond correctly");
-        var otherNode = Members.First(node => node.System.Address != nodeLocation.Address);
-
-        //Kill it
-        await otherNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout);
-
-        var timer = Stopwatch.StartNew();
-        // And force it to restart.
-        // DeadLetterResponse should be sent to requestAsync, enabling a quick initialization of the new virtual actor
-        await PingPong(otherNode, id, timeout);
-        timer.Stop();
-
-        _testOutputHelper.WriteLine("Respawned virtual actor in {0}", timer.Elapsed);
-    }
+    // [Fact]
+    // public async Task ReSpawnsClusterActorsFromDifferentNodes()
+    // {
+    //     var timeout = new CancellationTokenSource(10000).Token;
+    //     var id = CreateIdentity("1");
+    //     await PingPong(Members[0], id, timeout);
+    //     await PingPong(Members[1], id, timeout);
+    //
+    //     //Retrieve the node the virtual actor was not spawned on
+    //     var nodeLocation = await Members[0].RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), timeout);
+    //     nodeLocation.Should().NotBeNull("We expect the actor to respond correctly");
+    //     var otherNode = Members.First(node => node.System.Address != nodeLocation.Address);
+    //
+    //     //Kill it
+    //     await otherNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout);
+    //
+    //     var timer = Stopwatch.StartNew();
+    //     // And force it to restart.
+    //     // DeadLetterResponse should be sent to requestAsync, enabling a quick initialization of the new virtual actor
+    //     await PingPong(otherNode, id, timeout);
+    //     timer.Stop();
+    //
+    //     _testOutputHelper.WriteLine("Respawned virtual actor in {0}", timer.Elapsed);
+    // }
 
     [Fact]
     public async Task HandlesLosingANode()
