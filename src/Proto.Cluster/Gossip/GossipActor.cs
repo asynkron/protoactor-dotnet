@@ -37,7 +37,7 @@ public class GossipActor : IActor
         SetGossipStateKey setState          => OnSetGossipStateKey(context, setState),
         GetGossipStateRequest getState      => OnGetGossipStateKey(context, getState),
         GetGossipStateEntryRequest getState => OnGetGossipStateEntryKey(context, getState),
-        GetGossipStateSnapshot getSnapshot  => OnGetGossipStateSnapshot(context),
+        GetGossipStateSnapshot              => OnGetGossipStateSnapshot(context),
         GossipRequest gossipRequest         => OnGossipRequest(context, gossipRequest),
         SendGossipStateRequest              => OnSendGossipState(context),
         AddConsensusCheck request           => OnAddConsensusCheck(context, request),
@@ -165,7 +165,7 @@ public class GossipActor : IActor
         //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
 
         // This will return a GossipResponse, but since we need could need to get the sender, we do not unpack it from the MessageEnvelope
-        context.RequestReenter<MessageEnvelope>(pid, new GossipRequest
+        context.RequestReenter<GossipResponse>(pid, new GossipRequest
             {
                 MemberId = context.System.Id,
                 State = memberStateDelta.State
@@ -175,7 +175,7 @@ public class GossipActor : IActor
         );
     }
 
-    private async Task GossipReenterAfterSend(IContext context, Task<MessageEnvelope> task, MemberStateDelta delta)
+    private async Task GossipReenterAfterSend(IContext context, Task<GossipResponse> task, MemberStateDelta delta)
     {
         var logger = context.Logger();
 
@@ -221,34 +221,34 @@ public class GossipActor : IActor
         }
     }
 
-    private async Task ReenterAfterResponseAck(IContext context, Task<GossipResponseAck> task, MemberStateDelta delta)
-    {
-        var logger = context.Logger();
-
-        try
-        {
-            await task;
-            delta.CommitOffsets();
-        }
-        catch (DeadLetterException)
-        {
-            logger?.LogWarning("DeadLetter");
-            Logger.LogWarning("DeadLetter in ReenterAfterResponseAck");
-        }
-        catch (OperationCanceledException)
-        {
-            logger?.LogWarning("Timeout");
-            Logger.LogWarning("Timeout in ReenterAfterResponseAck");
-        }
-        catch (TimeoutException)
-        {
-            logger?.LogWarning("Timeout");
-            Logger.LogWarning("Timeout in ReenterAfterResponseAck");
-        }
-        catch (Exception x)
-        {
-            logger?.LogError(x, "ReenterAfterResponseAck failed");
-            Logger.LogError(x, "ReenterAfterResponseAck failed");
-        }
-    }
+    // private async Task ReenterAfterResponseAck(IContext context, Task<GossipResponseAck> task, MemberStateDelta delta)
+    // {
+    //     var logger = context.Logger();
+    //
+    //     try
+    //     {
+    //         await task;
+    //         delta.CommitOffsets();
+    //     }
+    //     catch (DeadLetterException)
+    //     {
+    //         logger?.LogWarning("DeadLetter");
+    //         Logger.LogWarning("DeadLetter in ReenterAfterResponseAck");
+    //     }
+    //     catch (OperationCanceledException)
+    //     {
+    //         logger?.LogWarning("Timeout");
+    //         Logger.LogWarning("Timeout in ReenterAfterResponseAck");
+    //     }
+    //     catch (TimeoutException)
+    //     {
+    //         logger?.LogWarning("Timeout");
+    //         Logger.LogWarning("Timeout in ReenterAfterResponseAck");
+    //     }
+    //     catch (Exception x)
+    //     {
+    //         logger?.LogError(x, "ReenterAfterResponseAck failed");
+    //         Logger.LogError(x, "ReenterAfterResponseAck failed");
+    //     }
+    // }
 }
