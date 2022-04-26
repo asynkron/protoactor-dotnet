@@ -98,32 +98,23 @@ public class GossipActor : IActor
         //     return Task.CompletedTask;
         // }
 
-        // var memberState = _internal.GetMemberStateDelta(gossipRequest.MemberId);
-        //
-        // if (!memberState.HasState)
-        // {
-        //     if (Logger.IsEnabled(LogLevel.Debug))
-        //         Logger.LogDebug("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
-        //
-        //     // Nothing to send, do not provide sender or state payload
-        //     context.Respond(new GossipResponse());
-        //     return Task.CompletedTask;
-        // }
-        //
-        // var response = new GossipResponse
-        // {
-        //     State = memberState.State
-        // };
-        // context.Respond(response);
-        
-        //just ack, investigate why the 3 phase flow times out under load
-        context.Respond(new GossipResponse());
+        var memberState = _internal.GetMemberStateDelta(gossipRequest.MemberId);
 
-        // context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
-        //     {
-        //         State = memberState.State
-        //     }, task => ReenterAfterResponseAck(context, task, memberState), context.CancellationToken
-        // );
+        if (!memberState.HasState)
+        {
+            if (Logger.IsEnabled(LogLevel.Debug))
+                Logger.LogDebug("Got gossip request from member {MemberId}, but no state was found", gossipRequest.MemberId);
+
+            // Nothing to send, do not provide sender or state payload
+            context.Respond(new GossipResponse());
+            return Task.CompletedTask;
+        }
+
+        context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
+            {
+                State = memberState.State
+            }, task => ReenterAfterResponseAck(context, task, memberState), context.CancellationToken
+        );
 
         return Task.CompletedTask;
     }
@@ -165,7 +156,7 @@ public class GossipActor : IActor
         //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
 
         // This will return a GossipResponse, but since we need could need to get the sender, we do not unpack it from the MessageEnvelope
-        context.RequestReenter<GossipResponse>(pid, new GossipRequest
+        context.RequestReenter<object>(pid, new GossipRequest
             {
                 MemberId = context.System.Id,
                 State = memberStateDelta.State
@@ -175,29 +166,26 @@ public class GossipActor : IActor
         );
     }
 
-    private async Task GossipReenterAfterSend(IContext context, Task<GossipResponse> task, MemberStateDelta delta)
+    private async Task GossipReenterAfterSend(IContext context, Task<object> task, MemberStateDelta delta)
     {
         var logger = context.Logger();
 
         try
         {
             await task;
-            delta.CommitOffsets();
-            
-            // var envelope = task.Result;
-            //
-            //
-            // if (envelope.Message is GossipResponse response)
-            // {
-            //     delta.CommitOffsets();
-            //
-            //     if (response.State is not null)
-            //     {
-            //         ReceiveState(context, response.State!);
-            //
-            //         if (envelope.Sender is not null) context.Send(envelope.Sender, new GossipResponseAck());
-            //     }
-            // }
+            var envelope = task.Result as MessageEnvelope;
+
+            if (envelope?.Message is GossipResponse response)
+            {
+                delta.CommitOffsets();
+
+                if (response.State is not null)
+                {
+                    ReceiveState(context, response.State!);
+
+                    if (envelope.Sender is not null) context.Send(envelope.Sender, new GossipResponseAck());
+                }
+            }
         }
         catch (DeadLetterException)
         {
@@ -221,34 +209,34 @@ public class GossipActor : IActor
         }
     }
 
-    // private async Task ReenterAfterResponseAck(IContext context, Task<GossipResponseAck> task, MemberStateDelta delta)
-    // {
-    //     var logger = context.Logger();
-    //
-    //     try
-    //     {
-    //         await task;
-    //         delta.CommitOffsets();
-    //     }
-    //     catch (DeadLetterException)
-    //     {
-    //         logger?.LogWarning("DeadLetter");
-    //         Logger.LogWarning("DeadLetter in ReenterAfterResponseAck");
-    //     }
-    //     catch (OperationCanceledException)
-    //     {
-    //         logger?.LogWarning("Timeout");
-    //         Logger.LogWarning("Timeout in ReenterAfterResponseAck");
-    //     }
-    //     catch (TimeoutException)
-    //     {
-    //         logger?.LogWarning("Timeout");
-    //         Logger.LogWarning("Timeout in ReenterAfterResponseAck");
-    //     }
-    //     catch (Exception x)
-    //     {
-    //         logger?.LogError(x, "ReenterAfterResponseAck failed");
-    //         Logger.LogError(x, "ReenterAfterResponseAck failed");
-    //     }
-    // }
+    private async Task ReenterAfterResponseAck(IContext context, Task<GossipResponseAck> task, MemberStateDelta delta)
+    {
+        var logger = context.Logger();
+
+        try
+        {
+            await task;
+            delta.CommitOffsets();
+        }
+        catch (DeadLetterException)
+        {
+            logger?.LogWarning("DeadLetter");
+            Logger.LogWarning("DeadLetter in ReenterAfterResponseAck");
+        }
+        catch (OperationCanceledException)
+        {
+            logger?.LogWarning("Timeout");
+            Logger.LogWarning("Timeout in ReenterAfterResponseAck");
+        }
+        catch (TimeoutException)
+        {
+            logger?.LogWarning("Timeout");
+            Logger.LogWarning("Timeout in ReenterAfterResponseAck");
+        }
+        catch (Exception x)
+        {
+            logger?.LogError(x, "ReenterAfterResponseAck failed");
+            Logger.LogError(x, "ReenterAfterResponseAck failed");
+        }
+    }
 }
