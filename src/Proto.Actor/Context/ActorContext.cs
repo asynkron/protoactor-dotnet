@@ -412,12 +412,27 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     //do not mess this up by first awaiting and then sending on success only
     private void ScheduleContinuation(Task target, Continuation cont)
     {
+        static async Task Continue(Task target, Continuation cont, IContext ctx)
+        {
+            try
+            {
+                await target.ConfigureAwait(false);
+            }
+            catch
+            {
+                // ignored
+            }
+
+            if (!ctx.System.Shutdown.IsCancellationRequested)
+            {
+                ctx.Self.SendSystemMessage(ctx.System, cont);
+            }
+        }
+      
         // We pass System.Shutdown to ContinueWith so that when the ActorSystem is shutdown,
         // continuations will not execute anymore.
         // ReSharper disable once MethodSupportsCancellation
-        _ = target.ContinueWith(
-            _ => Self.SendSystemMessage(System, cont),
-            System.Shutdown);
+        _ = Continue(target, cont, this);
     }
 
     private static ValueTask HandleUnknownSystemMessage(object msg)
