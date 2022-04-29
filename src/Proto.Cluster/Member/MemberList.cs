@@ -92,14 +92,12 @@ public record MemberList
 
     public Member? GetActivator(string kind, string requestSourceAddress)
     {
-        lock (_lock)
-        {
-            if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
-                return memberStrategy.GetActivator(requestSourceAddress);
+        //immutable, don't lock
+        if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
+            return memberStrategy.GetActivator(requestSourceAddress);
 
-            Logger.LogInformation("MemberList did not find any activator for kind '{Kind}'", kind);
-            return null;
-        }
+        Logger.LogInformation("MemberList did not find any activator for kind '{Kind}'", kind);
+        return null;
     }
 
     public void UpdateBlockedMembers(string[] blockedMembers)

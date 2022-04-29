@@ -25,6 +25,8 @@ public class TypeDictionary<TValue, TNamespace>
         _growthFactor = growthFactor >= 1 ? growthFactor : 1;
     }
 
+    //TODO: Set on ActorContext, does it need locking?
+    //Can we get around this?
     public void Add<TKey>(TValue value)
     {
         lock (_lockObject)
