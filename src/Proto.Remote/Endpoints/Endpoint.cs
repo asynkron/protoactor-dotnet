@@ -33,7 +33,7 @@ public abstract class Endpoint : IEndpoint
     protected readonly ActorSystem System;
     protected readonly string Address;
     protected readonly RemoteConfigBase RemoteConfig;
-    protected readonly ILogger Logger = Log.CreateLogger<Endpoint>();
+    private readonly ILogger _logger = Log.CreateLogger<Endpoint>();
     private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
     private readonly Channel<RemoteDeliver> _remoteDelivers = Channel.CreateUnbounded<RemoteDeliver>();
     private readonly object _synLock = new();
@@ -44,7 +44,7 @@ public abstract class Endpoint : IEndpoint
 
     public virtual async ValueTask DisposeAsync()
     {
-        Logger.LogDebug("[{SystemAddress}] Disposing endpoint {Address}", System.Address, Address);
+        _logger.LogDebug("[{SystemAddress}] Disposing endpoint {Address}", System.Address, Address);
         _remoteDelivers.Writer.TryComplete();
         _cancellationTokenSource.Cancel();
         Outgoing.Writer.TryComplete();
@@ -52,10 +52,10 @@ public abstract class Endpoint : IEndpoint
         await _sender.ConfigureAwait(false);
         _cancellationTokenSource.Dispose();
         GC.SuppressFinalize(this);
-        Logger.LogDebug("[{SystemAddress}] Disposed endpoint {Address}", System.Address, Address);
+        _logger.LogDebug("[{SystemAddress}] Disposed endpoint {Address}", System.Address, Address);
     }
 
-    protected void TerminateEndpoint()
+    private void TerminateEndpoint()
     {
         ClearWatchers();
         var droppedMessageCount = 0;
@@ -77,7 +77,7 @@ public abstract class Endpoint : IEndpoint
         }
 
         if (droppedMessageCount > 0)
-            Logger.LogInformation("[{SystemAddress}] Dropped {Count} messages for {Address}", System.Address, droppedMessageCount, Address);
+            _logger.LogInformation("[{SystemAddress}] Dropped {Count} messages for {Address}", System.Address, droppedMessageCount, Address);
     }
 
     private int DropMessagesInBatch(RemoteMessage remoteMessage)
@@ -87,7 +87,7 @@ public abstract class Endpoint : IEndpoint
         switch (remoteMessage.MessageTypeCase)
         {
             case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
-                Logger.LogWarning("[{SystemAddress}] Dropping disconnect request for {Address}", System.Address, Address);
+                _logger.LogWarning("[{SystemAddress}] Dropping disconnect request for {Address}", System.Address, Address);
                 break;
             case RemoteMessage.MessageTypeOneofCase.MessageBatch: {
                 var batch = remoteMessage.MessageBatch;
@@ -138,8 +138,8 @@ public abstract class Endpoint : IEndpoint
                     }
                     catch (Exception ex)
                     {
-                        if (Logger.IsEnabled(_deserializationErrorLogLevel))
-                            Logger.Log(
+                        if (_logger.IsEnabled(_deserializationErrorLogLevel))
+                            _logger.Log(
                                 _deserializationErrorLogLevel,
                                 ex,
                                 "[{SystemAddress}] Unable to deserialize message with {Type}",
@@ -233,17 +233,20 @@ public abstract class Endpoint : IEndpoint
     public void SendMessage(PID target, object msg)
     {
         var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
-        if (Logger.IsEnabled(LogLevel.Trace))
-            Logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {Message} to {Target} from {Sender}", System.Address,
+        if (_logger.IsEnabled(LogLevel.Trace))
+        {
+            _logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {Message} to {Target} from {Sender}", System.Address,
                 message.GetType().Name, message, target, sender
             );
+        }
+
         if (sender is not null && sender.TryTranslateToProxyPID(System, Address, out var clientPID))
             sender = clientPID;
-        var env = new RemoteDeliver(header, message, target, sender!);
+        var env = new RemoteDeliver(header, message, target, sender);
 
         if (CancellationToken.IsCancellationRequested || !_remoteDelivers.Writer.TryWrite(env))
         {
-            Logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {Message} to {Target} from {Sender}", System.Address,
+            _logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {Message} to {Target} from {Sender}", System.Address,
                 message.GetType().Name, message, target, sender
             );
             RejectRemoteDeliver(env);
@@ -283,7 +286,7 @@ public abstract class Endpoint : IEndpoint
         }
     }
 
-    public async Task RunAsync()
+    private async Task RunAsync()
     {
         while (!CancellationToken.IsCancellationRequested)
         {
@@ -309,7 +312,7 @@ public abstract class Endpoint : IEndpoint
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "[{SystemAddress}] Error in RunAsync", System.Address);
+                _logger.LogError(ex, "[{SystemAddress}] Error in RunAsync", System.Address);
             }
         }
     }
@@ -358,7 +361,7 @@ public abstract class Endpoint : IEndpoint
 
             if (message is null)
             {
-                Logger.LogError("Null message passed to EndpointActor, ignoring message");
+                _logger.LogError("Null message passed to EndpointActor, ignoring message");
                 continue;
             }
 
@@ -372,12 +375,12 @@ public abstract class Endpoint : IEndpoint
             }
             catch (CodedOutputStream.OutOfSpaceException oom)
             {
-                Logger.LogError(oom, "Message is too large {Message}", message.GetType().Name);
+                _logger.LogError(oom, "Message is too large {Message}", message.GetType().Name);
                 throw;
             }
             catch (Exception x)
             {
-                Logger.LogError(x, "Serialization failed for message {Message}", message.GetType().Name);
+                _logger.LogError(x, "Serialization failed for message {Message}", message.GetType().Name);
                 throw;
             }
 
