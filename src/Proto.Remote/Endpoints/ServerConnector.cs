@@ -72,6 +72,12 @@ public class ServerConnector
                 var channel = _channelProvider.GetChannel(_address);
                 var client = new Remoting.RemotingClient(channel);
                 using var call = client.Receive(_remoteConfig.CallOptions);
+                
+                if (_system.Metrics.Enabled)
+                {
+                    RemoteMetrics.RemoteEndpointConnectedCount
+                        .Add(1, new("id", _system.Id), new("address", _system.Address), new("destinationaddress", _address));
+                }
 
                 switch (_connectorType)
                 {

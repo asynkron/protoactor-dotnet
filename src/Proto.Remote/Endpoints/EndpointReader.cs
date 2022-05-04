@@ -62,12 +62,6 @@ public class EndpointReader : Remoting.RemotingBase
             string? address = null;
             string systemId;
 
-            if (_system.Metrics.Enabled)
-            {
-                RemoteMetrics.RemoteEndpointConnectedCount
-                    .Add(1, new("id", _system.Id), new("address", _system.Address), new("destinationaddress", context.Peer));
-            }
-
             Logger.LogDebug("[{SystemAddress}] Accepted connection request from {Remote} to {Local}",
                 _system.Address, context.Peer, context.Host
             );
