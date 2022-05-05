@@ -62,6 +62,7 @@ public class EndpointReader : Remoting.RemotingBase
             string? address = null;
             string systemId;
 
+
             Logger.LogInformation("[EndpointReader][{SystemAddress}] Accepted connection request from {Remote} to {Local}",
                 _system.Address, context.Peer, context.Host
             );
