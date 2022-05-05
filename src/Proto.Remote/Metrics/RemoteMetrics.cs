@@ -10,6 +10,11 @@ namespace Proto.Remote.Metrics;
 
 public static class RemoteMetrics
 {
+    
+    public static readonly Histogram<double> RemoteWriteDuration =
+        ProtoMetrics.Meter.CreateHistogram<double>("protoremote_write_duration", "seconds", "Time spent writing to the network stream"
+        );
+    
     public static readonly Counter<long> RemoteActorSpawnCount =
         ProtoMetrics.Meter.CreateCounter<long>("protoremote_spawn_count", description: "Number of actors spawned over remote");
 

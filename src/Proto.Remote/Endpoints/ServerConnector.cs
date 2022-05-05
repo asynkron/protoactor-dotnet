@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -160,8 +161,19 @@ public class ServerConnector
                             {
                                 try
                                 {
-                                    // _logger.LogInformation($"Sending {message}");
-                                    await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
+                                    if (_system.Metrics.Enabled)
+                                    {
+                                        var sw = Stopwatch.StartNew();
+                                        await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
+                                        sw.Stop();
+                                        RemoteMetrics.RemoteWriteDuration.Record(sw.ElapsedMilliseconds, _metricTags);
+                                    }
+                                    else
+                                    {
+                                        await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
+                                    }
+                                    
+                                    
                                 }
                                 catch (Exception)
                                 {
