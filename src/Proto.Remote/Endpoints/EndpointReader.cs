@@ -37,7 +37,7 @@ public class EndpointReader : Remoting.RemotingBase
     {
         if (_endpointManager.CancellationToken.IsCancellationRequested)
         {
-            Logger.LogWarning("[{SystemAddress}] Attempt to connect to the suspended reader has been rejected", _system.Address);
+            Logger.LogWarning("[EndpointReader][{SystemAddress}] Attempt to connect to the suspended reader has been rejected", _system.Address);
 
             throw new RpcException(Status.DefaultCancelled, "Suspended");
         }
@@ -53,7 +53,7 @@ public class EndpointReader : Remoting.RemotingBase
                        }
                        catch (Exception)
                        {
-                           Logger.LogWarning("[{SystemAddress}] Failed to write disconnect message to the stream", _system.Address);
+                           Logger.LogWarning("[EndpointReader][{SystemAddress}] Failed to write disconnect message to the stream", _system.Address);
                        }
                    }
                ))
@@ -62,7 +62,7 @@ public class EndpointReader : Remoting.RemotingBase
             string? address = null;
             string systemId;
 
-            Logger.LogDebug("[{SystemAddress}] Accepted connection request from {Remote} to {Local}",
+            Logger.LogInformation("[EndpointReader][{SystemAddress}] Accepted connection request from {Remote} to {Local}",
                 _system.Address, context.Peer, context.Host
             );
 
@@ -81,7 +81,7 @@ public class EndpointReader : Remoting.RemotingBase
 
                     if (_system.Remote().BlockList.IsBlocked(clientConnection.SystemId))
                     {
-                        Logger.LogWarning("[{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
+                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
                         await responseStream.WriteAsync(new RemoteMessage
                             {
                                 ConnectResponse = new ConnectResponse
@@ -143,11 +143,11 @@ public class EndpointReader : Remoting.RemotingBase
                             }
                             catch (OperationCanceledException)
                             {
-                                Logger.LogDebug("[{SystemAddress}] Writer closed for {systemId}", _system.Address, systemId);
+                                Logger.LogDebug("[EndpointReader][{SystemAddress}] Writer closed for {SystemId}", _system.Address, systemId);
                             }
                             catch (Exception e)
                             {
-                                Logger.LogWarning(e, "[{SystemAddress}] Writing error to {systemId}", _system.Address, systemId);
+                                Logger.LogWarning(e, "[EndpointReader][{SystemAddress}] Writing error to {SystemId}", _system.Address, systemId);
                             }
                         }
                     );
@@ -158,7 +158,7 @@ public class EndpointReader : Remoting.RemotingBase
 
                     if (_system.Remote().BlockList.IsBlocked(serverConnection.SystemId))
                     {
-                        Logger.LogWarning("[{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
+                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
                         await responseStream.WriteAsync(new RemoteMessage
                             {
                                 ConnectResponse = new ConnectResponse
@@ -204,12 +204,6 @@ public class EndpointReader : Remoting.RemotingBase
                 cancellationTokenSource.Cancel();
                 if (address is null && systemId is not null)
                     _system.EventStream.Publish(new EndpointTerminatedEvent(false, null, systemId));
-
-                if (_system.Metrics.Enabled)
-                {
-                    RemoteMetrics.RemoteEndpointDisconnectedCount
-                        .Add(1, new("id", _system.Id), new("address", _system.Address), new("destinationaddress", context.Peer));
-                }
             }
         }
     }
