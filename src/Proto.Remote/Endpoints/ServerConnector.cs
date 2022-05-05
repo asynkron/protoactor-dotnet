@@ -68,7 +68,7 @@ public class ServerConnector
         {
             try
             {
-                _logger.LogInformation("[{SystemAddress}] Connecting to {Address}...", _system.Address, _address);
+                _logger.LogInformation("[{SystemAddress}] Connecting to {Address}", _system.Address, _address);
                 var channel = _channelProvider.GetChannel(_address);
                 var client = new Remoting.RemotingClient(channel);
                 using var call = client.Receive(_remoteConfig.CallOptions);
@@ -209,16 +209,16 @@ public class ServerConnector
                     }
                     catch (RpcException e) when (e.StatusCode == StatusCode.Cancelled)
                     {
-                        _logger.LogWarning("[{SystemAddress}] Reader cancelled for {Address}", _system.Address, _address);
+                        _logger.LogWarning("[ServerConnector][{SystemAddress}] Reader cancelled for {Address}", _system.Address, _address);
                     }
                     catch (Exception e)
                     {
-                        _logger.LogWarning("[{SystemAddress}] Error in reader for {Address} {Reason}", _system.Address, _address, e.GetType().Name);
+                        _logger.LogWarning("[ServerConnector][{SystemAddress}] Error in reader for {Address} {Reason}", _system.Address, _address, e.GetType().Name);
                         cancellationTokenSource.Cancel();
                         throw;
                     }
                 });
-                _logger.LogInformation("[{SystemAddress}] Connected to {Address}", _system.Address, _address);
+                _logger.LogInformation("[ServerConnector][{SystemAddress}] Connected to {Address}", _system.Address, _address);
                 await writer.ConfigureAwait(false);
                 cancellationTokenSource.Cancel();
                 await call.RequestStream.CompleteAsync().ConfigureAwait(false);
@@ -226,21 +226,21 @@ public class ServerConnector
                     
                 if (_system.Metrics.Enabled)
                     RemoteMetrics.RemoteEndpointDisconnectedCount.Add(1, _metricTags);
-
-                _logger.LogInformation("[{SystemAddress}] Disconnected from {Address}", _system.Address, _address);
+                
+                _logger.LogInformation("[ServerConnector][{SystemAddress}] Disconnected from {Address}", _system.Address, _address);
             }
             catch (Exception e)
             {
                 if (actorSystemId is not null && _system.Remote().BlockList.IsBlocked(actorSystemId))
                 {
-                    _logger.LogDebug("[{SystemAddress}] dropped connection to blocked member {ActorSystemId}/{Address}", _system.Address, actorSystemId, _address);
+                    _logger.LogDebug("[ServerConnector][{SystemAddress}] dropped connection to blocked member {ActorSystemId}/{Address}", _system.Address, actorSystemId, _address);
                     var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
                     _system.EventStream.Publish(terminated);
                     break;
                 }
                 if (ShouldStop(rs))
                 {
-                    _logger.LogError(e,"[{SystemAddress}] Stopping connection to {Address} after retries expired because of {Reason}", _system.Address, _address, e.GetType().Name);
+                    _logger.LogError(e,"[ServerConnector][{SystemAddress}] Stopping connection to {Address} after retries expired because of {Reason}", _system.Address, _address, e.GetType().Name);
                     var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
                     _system.EventStream.Publish(terminated);
                     break;
@@ -251,7 +251,7 @@ public class ServerConnector
                     var noise = _random.Next(500);
                     var duration = TimeSpan.FromMilliseconds(backoff + noise);
                     await Task.Delay(duration).ConfigureAwait(false);
-                    _logger.LogWarning("[{SystemAddress}] Restarting endpoint connection to {Address} after {Duration} because of {Reason} ({Retries} / {MaxRetries})", _system.Address, _address, duration, e.GetType().Name, rs.FailureCount, _maxNrOfRetries);
+                    _logger.LogWarning("[ServerConnector][{SystemAddress}] Restarting endpoint connection to {Address} after {Duration} because of {Reason} ({Retries} / {MaxRetries})", _system.Address, _address, duration, e.GetType().Name, rs.FailureCount, _maxNrOfRetries);
                 }
             }
         }
