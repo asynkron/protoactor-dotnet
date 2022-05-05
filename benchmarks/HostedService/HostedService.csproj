@@ -6,7 +6,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.9" NoWarn="NU1605" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="5.0.9" NoWarn="NU1605" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.4" NoWarn="NU1605" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     </ItemGroup>
 
