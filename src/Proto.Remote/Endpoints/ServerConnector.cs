@@ -166,7 +166,7 @@ public class ServerConnector
                                         var sw = Stopwatch.StartNew();
                                         await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
                                         sw.Stop();
-                                        RemoteMetrics.RemoteWriteDuration.Record(sw.ElapsedMilliseconds, _metricTags);
+                                        RemoteMetrics.RemoteWriteDuration.Record(sw.Elapsed.TotalSeconds, _metricTags);
                                     }
                                     else
                                     {

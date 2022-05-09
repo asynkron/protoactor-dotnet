@@ -159,7 +159,7 @@ public class GossipActor : IActor
         context.RequestReenter<object>(pid, new GossipRequest
             {
                 MemberId = context.System.Id,
-                State = memberStateDelta.State
+                State = memberStateDelta.State.Clone(), //ensure we have a copy and not send state that might mutate
             },
             task => GossipReenterAfterSend(context, task, memberStateDelta),
             CancellationTokens.WithTimeout(_gossipRequestTimeout)
