@@ -120,6 +120,7 @@ public class ServerConnector
                 if (connectResponse.Blocked)
                 {
                     _logger.LogError("[{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, we are blocked", _system.Address, connectResponse.MemberId, _address);
+                    await _system.ShutdownAsync();
                     var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
                     _system.EventStream.Publish(terminated);
                     return;

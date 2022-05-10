@@ -19,6 +19,7 @@ namespace Proto;
 [PublicAPI]
 public sealed class ActorSystem : IAsyncDisposable
 {
+    private static readonly ILogger Logger = Log.CreateLogger<ActorSystem>();
     public const string NoHost = "nonhost";
     public const string Client = "$client";
 #pragma warning disable CA2213
@@ -98,7 +99,16 @@ public sealed class ActorSystem : IAsyncDisposable
 
     public Task ShutdownAsync()
     {
-        _cts.Cancel();
+        try
+        {
+            Logger.LogInformation("Shutting down actor system {Id}", Id);
+            _cts.Cancel();
+        }
+        catch
+        {
+            //pass
+        }
+
         return Task.CompletedTask;
     }
 
