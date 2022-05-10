@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Proto.Context;
 using Proto.Future;
 
@@ -58,6 +59,7 @@ public interface ISenderContext : IInfoContext
 
 public static class SenderContextExtensions
 {
+    private static readonly ILogger Logger = Log.CreateLogger(nameof(SenderContextExtensions));
     /// <summary>
     /// Creates a batch context for sending a set of requests from the same thread context.
     /// This is useful if you have several messages which shares a cancellation scope (same cancellationToken).
@@ -173,6 +175,10 @@ public static class SenderContextExtensions
         switch (messageResult)
         {
             case DeadLetterResponse:
+                if (self.System.Config.DeadLetterResponseLogging)
+                {
+                    Logger.LogError("BatchContext {Self} got DeadLetterResponse for PID {Pid}", self.Self , target);
+                }
                 throw new DeadLetterException(target);
             case null:
             case T:

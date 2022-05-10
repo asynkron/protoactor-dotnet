@@ -81,6 +81,7 @@ public record ActorSystemConfig
     ///     The default timeout for RequestAsync calls
     /// </summary>
     public TimeSpan ActorRequestTimeout { get; init; } = TimeSpan.FromSeconds(5);
+    public bool DeadLetterResponseLogging { get; init; } = false;
 
     /// <summary>
     ///     Creates a new default ActorSystemConfig
@@ -112,6 +113,8 @@ public record ActorSystemConfig
     public ActorSystemConfig WithDeveloperThreadPoolStatsLogging(bool enabled) => this with {DeveloperThreadPoolStatsLogging = enabled};
 
     public ActorSystemConfig WithActorRequestTimeout(TimeSpan timeout) => this with {ActorRequestTimeout = timeout};
+
+    public ActorSystemConfig WithDeadLetterResponseLogging(bool enabled) => this with {DeadLetterResponseLogging = enabled};
 }
 
 //Not part of the contract, but still shipped out of the box
