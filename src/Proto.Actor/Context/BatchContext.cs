@@ -39,6 +39,10 @@ public sealed class BatchContext : ISenderContext, IDisposable
         switch (result)
         {
             case DeadLetterResponse:
+                if (_context.System.Config.DeadLetterResponseLogging)
+                {
+                    Logger.LogError("BatchContext {Self} got DeadLetterResponse for PID {Pid}", _context.Self , target);
+                }
                 throw new DeadLetterException(target);
             case null:
             case T:
