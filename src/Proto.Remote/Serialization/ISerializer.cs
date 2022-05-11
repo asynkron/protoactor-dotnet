@@ -3,17 +3,15 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using Google.Protobuf;
 
 namespace Proto.Remote;
 
 public interface ISerializer
 {
-    ByteString Serialize(object obj);
-
-    object Deserialize(ByteString bytes, string typeName);
-
+    ReadOnlySpan<byte> Serialize(object obj);
+    object Deserialize(ReadOnlySpan<byte> bytes, string typeName);
     string GetTypeName(object message);
-
     bool CanSerialize(object obj);
 }

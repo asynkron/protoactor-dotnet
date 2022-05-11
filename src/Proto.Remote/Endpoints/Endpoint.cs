@@ -128,7 +128,7 @@ public abstract class Endpoint : IEndpoint
 
                     try
                     {
-                        message = RemoteConfig.Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+                        message = RemoteConfig.Serialization.Deserialize(typeName, envelope.MessageData.Span, envelope.SerializerId);
 
                         // _logger.LogDebug("Received (Type) {Message}", message.GetType(), message);
 
@@ -365,7 +365,7 @@ public abstract class Endpoint : IEndpoint
                 continue;
             }
 
-            ByteString bytes;
+            ReadOnlySpan<byte> bytes;
             string typeName;
             int serializerId;
 
@@ -407,7 +407,7 @@ public abstract class Endpoint : IEndpoint
 
             var envelope = new MessageEnvelope
             {
-                MessageData = bytes,
+                MessageData = ByteString.CopyFrom(bytes),
                 Sender = senderId,
                 Target = targetId,
                 TypeId = typeId,

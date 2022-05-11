@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
 using System.Linq;
+using Google.Protobuf;
 using Proto.Remote;
 
 namespace Proto.Cluster.PubSub;
@@ -34,7 +35,7 @@ public record TopicBatchMessage(IReadOnlyCollection<object> Envelopes) :  IRootS
 
             var topicEnvelope = new TopicEnvelope
             {
-                MessageData = messageData,
+                MessageData = ByteString.CopyFrom(messageData),
                 TypeId = typeIndex,
                 SerializerId = serializerId,
             };
@@ -54,7 +55,7 @@ public partial class TopicBatchRequest : IRootSerialized
         //deserialize messages in the envelope
         var messages = Envelopes
             .Select(e => ser
-                .Deserialize(TypeNames[e.TypeId], e.MessageData, e.SerializerId))
+                .Deserialize(TypeNames[e.TypeId], e.MessageData.Span, e.SerializerId))
             .ToList();
 
         return new TopicBatchMessage(messages);

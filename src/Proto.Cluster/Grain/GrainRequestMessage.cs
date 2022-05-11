@@ -26,7 +26,7 @@ public record GrainRequestMessage(int MethodIndex, IMessage? RequestMessage) : I
         return new GrainRequest
         {
             MethodIndex = MethodIndex,
-            MessageData = data,
+            MessageData = ByteString.CopyFrom(data),
             MessageTypeName = typeName,
         };
     }

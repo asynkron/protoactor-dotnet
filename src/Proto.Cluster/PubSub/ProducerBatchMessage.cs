@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Proto.Remote;
 
 namespace Proto.Cluster.PubSub;
@@ -34,7 +35,7 @@ public class ProducerBatchMessage :  IRootSerializable
 
             var producerMessage = new ProducerEnvelope
             {
-                MessageData = messageData,
+                MessageData = ByteString.CopyFrom(messageData),
                 TypeId = typeIndex,
                 SerializerId = serializerId
             };
@@ -54,7 +55,7 @@ public partial class ProducerBatch : IRootSerialized
         //deserialize messages in the envelope
         var messages = Envelopes
             .Select(e => ser
-                .Deserialize(TypeNames[e.TypeId], e.MessageData, e.SerializerId))
+                .Deserialize(TypeNames[e.TypeId], e.MessageData.Span, e.SerializerId))
             .ToList();
 
         var res = new ProducerBatchMessage();

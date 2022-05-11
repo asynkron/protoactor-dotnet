@@ -20,7 +20,7 @@ public partial class GrainRequest : IRootSerialized
         }
 
         var ser = system.Serialization();
-        var message = ser.Deserialize(MessageTypeName, MessageData, Serialization.SERIALIZER_ID_PROTOBUF);
+        var message = ser.Deserialize(MessageTypeName, MessageData.Span, Serialization.SERIALIZER_ID_PROTOBUF);
             
         return new GrainRequestMessage(MethodIndex, (IMessage) message);
     }
