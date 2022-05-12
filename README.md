@@ -97,6 +97,8 @@ Made with [contributors-img](https://contributors-img.web.app).
 
 ## Partners, Sponsors, and Contributor Companies
 
-Asynkron AB - Founder and owner of Proto.Actor
-Helleborg AS - Core contributor team
-Etteplan - Sponsoring tutorials, documentation 
+<!-- make pretty with logos etc -->
+
+* Asynkron AB - Founder and owner of Proto.Actor
+* Helleborg AS - Core contributor team
+* Etteplan - Sponsoring tutorials, documentation 
