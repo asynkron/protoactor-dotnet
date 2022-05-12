@@ -102,4 +102,5 @@ Made with [contributors-img](https://contributors-img.web.app).
 * Asynkron AB - Founder and owner of Proto.Actor
 * Helleborg AS - Core contributor team
 * Ubiquitous AS - Core contributor team
+* Ahoy Games - Core contributor team
 * Etteplan - Sponsoring tutorials, documentation 
