@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.19.4" />
-    <PackageReference Include="Grpc.Tools" Version="2.42.0" PrivateAssets="All" />
+    <PackageReference Include="Grpc.Tools" Version="2.46.1" PrivateAssets="All" />
     <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
