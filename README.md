@@ -99,10 +99,10 @@ Made with [contributors-img](https://contributors-img.web.app).
 
 <!-- make pretty with logos etc -->
 
-|                             | Name         | Role                                     |
-| --------------------------- | ------------ | ---------------------------------------- |
-| ![](/.images/asynkron.png   | width=100)   | [Asynkron AB](https://asynkron.se)       | Founder and owner of Proto.Actor      |
-|                             | Helleborg AS | Core contributor team                    |
-| ![](/.images/ubiquitous.png | width=100)   | [Ubiquitous AS](https://ubiquitous.no/)  | Core contributor team                 |
-| ![](/.images/ahoy.svg       | width=100)   | [Ahoy Games](https://www.ahoygames.com/) | Core contributor team                 |
-| ![](/.images/etteplan.png   | width=100)   | [Etteplan](https://www.etteplan.com/)    | Contributing tutorials, documentation |
+| Name                                     | Role                                  |
+| ---------------------------------------- | ------------------------------------- |
+| [Asynkron AB](https://asynkron.se)       | Founder and owner of Proto.Actor      |
+| Helleborg AS                             | Core contributor team                 |
+| [Ubiquitous AS](https://ubiquitous.no/)  | Core contributor team                 |
+| [Ahoy Games](https://www.ahoygames.com/) | Core contributor team                 |
+| [Etteplan](https://www.etteplan.com/)    | Contributing tutorials, documentation |
