@@ -99,8 +99,10 @@ Made with [contributors-img](https://contributors-img.web.app).
 
 <!-- make pretty with logos etc -->
 
-* Asynkron AB - Founder and owner of Proto.Actor
-* Helleborg AS - Core contributor team
-* Ubiquitous AS - Core contributor team
-* Ahoy Games - Core contributor team
-* Etteplan - Sponsoring tutorials, documentation 
+|     | Name                                     | Role                                  |
+| --- | ---------------------------------------- | ------------------------------------- |
+|     | [Asynkron AB](https://asynkron.se)       | Founder and owner of Proto.Actor      |
+|     | Helleborg AS                             | Core contributor team                 |
+|     | [Ubiquitous AS](https://ubiquitous.no/)  | Core contributor team                 |
+|     | [Ahoy Games](https://www.ahoygames.com/) | Core contributor team                 |
+|     | [Etteplan](https://www.etteplan.com/)    | Contributing tutorials, documentation |
