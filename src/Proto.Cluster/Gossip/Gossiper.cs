@@ -143,6 +143,17 @@ public class Gossiper
 
                 await SendStateAsync();
             }
+            catch (DeadLetterException)
+            {
+                if (_cluster.System.Shutdown.IsCancellationRequested)
+                {
+                    //pass. this is expected, system is shutting down
+                }
+                else
+                {
+                    Logger.LogError("Gossip loop failed, Gossip actor has stopped");
+                }
+            }
             catch (Exception x)
             {
                 Logger.LogError(x, "Gossip loop failed");
