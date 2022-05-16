@@ -26,11 +26,10 @@ public record ClusterConfig
         MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
         RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
         GossipInterval = TimeSpan.FromMilliseconds(300);
-        GossipRequestTimeout = TimeSpan.FromMilliseconds(500);
+        GossipRequestTimeout = TimeSpan.FromMilliseconds(1500);
         GossipFanout = 3;
         GossipMaxSend = 50;
         HeartbeatExpiration = TimeSpan.FromSeconds(10);
-        ClusterRequestDeDuplication = true;
         ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
         IdentityLookup = identityLookup;
         MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
@@ -63,11 +62,7 @@ public record ClusterConfig
     public IIdentityLookup IdentityLookup { get; }
     public TimeSpan GossipInterval { get; init; }
     public TimeSpan GossipRequestTimeout { get; init; }
-
-    public bool ClusterRequestDeDuplication { get; init; }
-
     public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
-
     public TimeSpan RemotePidCacheTimeToLive { get; set; }
     public TimeSpan RemotePidCacheClearInterval { get; set; }
         

@@ -148,7 +148,7 @@ class KubernetesClusterMonitor : IActor
         }
         catch
         {
-            Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _kubernetes");
+            //pass
         }
     }
 
