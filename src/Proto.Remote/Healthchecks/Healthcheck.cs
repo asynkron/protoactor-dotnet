@@ -22,7 +22,7 @@ public class ActorSystemHealthCheck : IHealthCheck
     public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = new()) =>
         _system.Shutdown.IsCancellationRequested switch
         {
-            true => Task.FromResult(HealthCheckResult.Unhealthy()),
+            true => Task.FromResult(HealthCheckResult.Unhealthy("ActorSystem has been stopped")),
             _    => Task.FromResult(HealthCheckResult.Healthy())
         };
 }
