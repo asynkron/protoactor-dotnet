@@ -90,6 +90,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         {
             _tracerProvider?.Dispose();
             await Task.WhenAll(Members.ToList().Select(cluster => cluster.ShutdownAsync())).ConfigureAwait(false);
+            Members.Clear(); // prevent multiple shutdown attempts if dispose is called multiple times
         }
         catch (Exception e)
         {
