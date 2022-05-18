@@ -63,7 +63,7 @@ class Program
             }
         );
 
-        for (int j = 0; j < subscriberCount; j++)
+        for (var j = 0; j < subscriberCount; j++)
         {
             var pid1 = system.Root.Spawn(props);
             //subscribe the pid to the my-topic
@@ -98,7 +98,7 @@ class Program
         Console.WriteLine("Running...");
         var messageCount = 1_000_000;
 
-        for (int i = 0; i < messageCount; i++)
+        for (var i = 0; i < messageCount; i++)
         {
             tasks.Add(p.ProduceAsync(new SomeMessage
                     {

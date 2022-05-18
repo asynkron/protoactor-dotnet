@@ -11,14 +11,13 @@ public class PubSubManager
 {
     public const string PubSubDeliveryName = "pubsub-delivery";
     private readonly Cluster _cluster;
-    private PID? _pid;
 
     public PubSubManager(Cluster cluster) => _cluster = cluster;
 
     public Task StartAsync()
     {
         var props = Props.FromProducer(() => new PubSubMemberDeliveryActor());
-        _pid = _cluster.System.Root.SpawnNamed(props, PubSubDeliveryName);
+        _cluster.System.Root.SpawnNamed(props, PubSubDeliveryName);
 
         return Task.CompletedTask;
     }

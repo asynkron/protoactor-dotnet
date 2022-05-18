@@ -12,37 +12,98 @@ namespace Proto.Cluster.PubSub;
 [PublicAPI]
 public static class PubSubExtensions
 {
-    public static Producer Producer(this Cluster cluster,string topic) => new(cluster,topic);
+    public static Producer Producer(this Cluster cluster, string topic) => new(cluster, topic);
 
     // Subscribe Cluster Identity
-    public static async Task Subscribe(this Cluster cluster,  string topic, string subscriberIdentity, string subscriberKind) => _ = await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest()
-        {
-            Subscriber = new SubscriberIdentity
+    public static async Task Subscribe(
+        this Cluster cluster,
+        string topic,
+        string subscriberIdentity,
+        string subscriberKind,
+        CancellationToken ct = default
+    )
+    {
+        await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
             {
-                ClusterIdentity = new ClusterIdentity
+                Subscriber = new SubscriberIdentity
                 {
-                    Identity = subscriberIdentity,
-                    Kind = subscriberKind
+                    ClusterIdentity = ClusterIdentity.Create(subscriberIdentity, subscriberKind)
                 }
-            }
-        }, CancellationToken.None
-    );
+            }, ct
+        );
+    }
+
+    public static async Task Subscribe(this Cluster cluster, string topic, ClusterIdentity ci, CancellationToken ct = default)
+    {
+        await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+            {
+                Subscriber = new SubscriberIdentity
+                {
+                    ClusterIdentity = ci
+                }
+            }, ct
+        );
+    }
 
     //Subscribe PID
-    public static async Task Subscribe(this Cluster cluster,  string topic, PID subscriber) => _ = await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
-        {
-            Subscriber = new SubscriberIdentity
+    public static Task Subscribe(this Cluster cluster, string topic, PID subscriber, CancellationToken ct = default) =>
+        cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
             {
-                Pid = subscriber
-            }
-        }, CancellationToken.None
-    );
+                Subscriber = new SubscriberIdentity
+                {
+                    Pid = subscriber
+                }
+            }, ct
+        );
 
     //Subscribe Receive function, ad-hoc actor
-    public static Task Subscribe(this Cluster cluster, string topic, Receive receive)
+    public static async Task<PID> Subscribe(this Cluster cluster, string topic, Receive receive)
     {
         var props = Props.FromFunc(receive);
         var pid = cluster.System.Root.Spawn(props);
-        return cluster.Subscribe(topic, pid);
-    } 
+        await cluster.Subscribe(topic, pid);
+        return pid;
+    }
+
+    public static async Task Unsubscribe(this Cluster cluster, string topic, PID subscriber, CancellationToken ct = default)
+    {
+        await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+            {
+                Subscriber = new SubscriberIdentity
+                {
+                    Pid = subscriber
+                }
+            }, ct
+        );
+    }
+
+    public static async Task Unsubscribe(this Cluster cluster, string topic, ClusterIdentity subscriber, CancellationToken ct = default)
+    {
+        await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+            {
+                Subscriber = new SubscriberIdentity
+                {
+                    ClusterIdentity = subscriber
+                }
+            }, ct
+        );
+    }
+
+    public static async Task Unsubscribe(
+        this Cluster cluster,
+        string topic,
+        string subscriberIdentity,
+        string subscriberKind,
+        CancellationToken ct = default
+    )
+    {
+        await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+            {
+                Subscriber = new SubscriberIdentity
+                {
+                    ClusterIdentity = ClusterIdentity.Create(subscriberIdentity, subscriberKind)
+                }
+            }, ct
+        );
+    }
 }
