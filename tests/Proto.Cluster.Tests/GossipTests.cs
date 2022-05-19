@@ -14,14 +14,18 @@ using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
 using Proto.Logging;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests;
 
 public class GossipTests
 {
-    // private readonly ITestOutputHelper _testOutputHelper;
+    private readonly ITestOutputHelper _testOutputHelper;
     //
-    // protected GossipTests(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
+    protected GossipTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
 
     private const string GossipStateKey = "test-state";
     private const string TopologyStateKey = "topology-test-state";
@@ -109,6 +113,8 @@ public class GossipTests
             .BeEquivalentTo((false, (string) null), "We should be able to read our writes, and locally we do not have consensus");
 
         await Task.Delay(5000);
+        
+        await clusterFixture.Members.DumpClusterState(_testOutputHelper);
         await ShouldBeNotHaveConsensus(consensusChecks);
     }
 
