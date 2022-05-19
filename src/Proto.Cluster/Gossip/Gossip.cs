@@ -43,8 +43,10 @@ class Gossip
 
     public Task UpdateClusterTopology(ClusterTopology clusterTopology)
     {
-        _otherMembers = clusterTopology.Members.Where(m => m.Id != _myId).ToArray();
-        _activeMemberIds = clusterTopology.Members.Select(m => m.Id).ToImmutableHashSet();
+        //TODO: optimize
+        var blocked = _getBlockedMembers();
+        _otherMembers = clusterTopology.Members.Where(m => m.Id != _myId && !blocked.Contains(m.Id)).ToArray();
+        _activeMemberIds = clusterTopology.Members.Where(m => !blocked.Contains(m.Id)).Select(m => m.Id).ToImmutableHashSet();
         SetState(GossipKeys.Topology, clusterTopology);
         return Task.CompletedTask;
     }
@@ -60,12 +62,19 @@ class Gossip
     public void RemoveConsensusCheck(string id) =>
         _consensusChecks.Remove(id);
 
-    public GossipState GetStateSnapshot() => _state.Clone();
+    public GossipState GetStateSnapshot()
+    {
+        //TODO: Optimize
+        PurgeBlockedMembers();
+        return _state.Clone();
+    }
 
     public ImmutableDictionary<string, Any> GetState(string key)
     {
         var entries = ImmutableDictionary<string, Any>.Empty;
-
+        
+        //TODO: Optimize
+        PurgeBlockedMembers();
         foreach (var (memberId, memberState) in _state.Members)
         {
             if (memberState.Values.TryGetValue(key, out var value)) entries = entries.SetItem(memberId, value.Value);
@@ -81,6 +90,9 @@ class Gossip
         if (updates.Count == 0) return ImmutableList<GossipUpdate>.Empty;
 
         _state = newState;
+        
+        //TODO: Optimize
+        PurgeBlockedMembers();
         CheckConsensus(updatedKeys);
         return updates.ToImmutableList();
     }
@@ -92,6 +104,8 @@ class Gossip
         logger?.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
         Logger.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
 
+        //TODO: Optimize
+        PurgeBlockedMembers();
         if (!_state.Members.ContainsKey(_myId)) logger?.LogCritical("State corrupt");
 
         CheckConsensus(key);
@@ -102,6 +116,7 @@ class Gossip
     {
         var logger = _logger?.BeginMethodScope();
 
+        //TODO: Optimize
         PurgeBlockedMembers();
 
         foreach (var member in _otherMembers)
