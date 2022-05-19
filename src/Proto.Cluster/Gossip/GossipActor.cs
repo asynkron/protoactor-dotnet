@@ -29,7 +29,7 @@ public class GossipActor : IActor
     )
     {
         _gossipRequestTimeout = gossipRequestTimeout;
-        _internal = new Gossip(myId, gossipFanout, gossipMaxSend, getBlockedMembers, instanceLogger);
+        _internal = new Gossip(myId, gossipFanout, gossipMaxSend, instanceLogger);
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch
