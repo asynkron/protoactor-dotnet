@@ -94,6 +94,7 @@ public class GossipTests
 
         SetGossipState(clusterFixture.Members, initialValue);
 
+        await clusterFixture.Members.DumpClusterState(_testOutputHelper);
         await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
 
         var firstMember = clusterFixture.Members[0];
