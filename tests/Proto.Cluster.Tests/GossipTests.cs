@@ -97,18 +97,18 @@ public class GossipTests
         var firstMember = clusterFixture.Members[0];
         var firstMemberConsensus = consensusChecks[0];
 
-        var logStore = new LogStore();
-        firstMember.System.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
+        // var logStore = new LogStore();
+        // firstMember.System.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
         // Sets a now inconsistent state on the first node
         await firstMember.Gossip.SetStateAsync(GossipStateKey, new SomeGossipState {Key = otherValue});
 
-        var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(2000));
+        var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(5000));
 
         afterSettingDifferingState.Should()
             .BeEquivalentTo((false, (string) null), "We should be able to read our writes, and locally we do not have consensus");
 
-        await Task.Delay(2000);
+        await Task.Delay(5000);
         await ShouldBeNotHaveConsensus(consensusChecks);
     }
 
