@@ -40,7 +40,8 @@ public class GossipTests
         var consensusChecks = fixtureMembers.Select(CreateConsensusCheck).ToList();
 
         SetGossipState(fixtureMembers, initialValue);
-
+        
+        await clusterFixture.Members.DumpClusterState(_testOutputHelper);
         await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
     }
 
@@ -122,6 +123,7 @@ public class GossipTests
         var results = await Task.WhenAll(consensusChecks.Select(it => it.TryGetConsensus(CancellationTokens.FromSeconds(5))))
             .ConfigureAwait(false);
 
+        
         foreach (var (consensus, consensusValue) in results)
         {
             consensus.Should().BeTrue("Since all nodes have the same value, they should agree on a consensus");
