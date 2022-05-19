@@ -104,23 +104,21 @@ public class Gossiper
         _context.Send(_pid, new SetGossipStateKey(key, value));
     }
 
-    public Task SetStateAsync(string key, IMessage value)
+    public async Task SetStateAsync(string key, IMessage value)
     {
         if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
         _context.System.Logger()?.LogDebug("Gossiper setting state to {Pid}", _pid);
 
-        if (_pid == null) return Task.CompletedTask;
+        if (_pid == null) return;
 
         try
         {
-            return _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value));
+            await _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value));
         }
         catch (DeadLetterException)
         {
           //ignore, we are shutting down  
         }
-
-        return Task.CompletedTask;
     }
 
     internal Task StartAsync()

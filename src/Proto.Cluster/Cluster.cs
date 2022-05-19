@@ -176,6 +176,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         await Gossip.SetStateAsync("cluster:left", new Empty());
             
         //TODO: improve later, await at least two gossip cycles
+        
         await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2);
             
         if (_clusterKindObserver != null)
