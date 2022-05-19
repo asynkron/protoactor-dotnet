@@ -37,8 +37,19 @@ public abstract class ClusterTests : ClusterTestBase
         var consensus = await Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
             .WaitUpTo(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
 
-        _testOutputHelper.WriteLine(LogStore.ToFormattedString());
+        foreach (var c in Members)
+        {
+            var topology = await c.Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
+            _testOutputHelper.WriteLine("Member " + c.System.Id);
+
+            foreach (var kvp in topology)
+            {
+                _testOutputHelper.WriteLine("\tData {0} - {1}", kvp.Key, kvp.Value.TopologyHash);
+            }
+        }
+        
         consensus.completed.Should().BeTrue("All members should have gotten consensus on the same topology hash");
+        _testOutputHelper.WriteLine(LogStore.ToFormattedString());
     }
 
     [Fact]
