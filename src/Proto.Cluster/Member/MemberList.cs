@@ -102,6 +102,7 @@ public record MemberList
 
     public void UpdateBlockedMembers(string[] blockedMembers)
     {
+        Logger.LogInformation("Updating blocked members via gossip {Blocked}", blockedMembers);
         var blockList = _system.Remote().BlockList;
 
         lock (_lock)
@@ -109,11 +110,6 @@ public record MemberList
             //update blocked members
             var before = blockList.BlockedMembers;
             blockList.Block(blockedMembers);
-
-            if (before != blockList.BlockedMembers)
-            {
-                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Updating blocked members via gossip");
-            }
 
             //then run the usual topology logic
             UpdateClusterTopology(_activeMembers.Members);
@@ -268,7 +264,7 @@ public record MemberList
     private void TerminateMember(Member memberThatLeft)
     {
         var endpointTerminated = new EndpointTerminatedEvent(false, memberThatLeft.Address, memberThatLeft.Id);
-        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
+        if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
         _cluster.System.EventStream.Publish(endpointTerminated);
     }
 
