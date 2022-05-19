@@ -168,12 +168,12 @@ public abstract class ClusterTests : ClusterTestBase
                 }
             }
         );
-        await Task.Delay(200);
+        await Task.Delay(2000);
         _testOutputHelper.WriteLine("Terminating node");
         await ClusterFixture.RemoveNode(victim);
         _testOutputHelper.WriteLine("Spawning node");
         await ClusterFixture.SpawnNode();
-        await Task.Delay(1000);
+        await Task.Delay(2000);
         cts.Cancel();
         await worker;
     }
