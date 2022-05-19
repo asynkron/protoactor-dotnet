@@ -172,6 +172,7 @@ public class Cluster : IActorSystemExtension<Cluster>
 
     public async Task ShutdownAsync(bool graceful = true)
     {
+        
         await Gossip.SetStateAsync("cluster:left", new Empty());
             
         //TODO: improve later, await at least two gossip cycles

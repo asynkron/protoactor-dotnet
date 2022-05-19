@@ -78,9 +78,18 @@ public class Gossiper
     {
         _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
 
-        var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid, new GetGossipStateEntryRequest(key));
+        try
+        {
+            var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid, new GetGossipStateEntryRequest(key));
 
-        return res.State;
+            return res.State;
+        }
+        catch (DeadLetterException)
+        {
+            //ignore, we are shutting down  
+        }
+
+        return ImmutableDictionary<string, GossipKeyValue>.Empty;
     }
 
     // Send message to update member state
@@ -102,7 +111,16 @@ public class Gossiper
 
         if (_pid == null) return Task.CompletedTask;
 
-        return _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value));
+        try
+        {
+            return _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value));
+        }
+        catch (DeadLetterException)
+        {
+          //ignore, we are shutting down  
+        }
+
+        return Task.CompletedTask;
     }
 
     internal Task StartAsync()
