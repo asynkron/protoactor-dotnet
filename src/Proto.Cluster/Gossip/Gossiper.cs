@@ -61,17 +61,27 @@ public class Gossiper
     {
         _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
 
-        var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
-
-        var dict = res.State;
-        var typed = ImmutableDictionary<string, T>.Empty;
-
-        foreach (var (k, value) in dict)
+        try
         {
-            typed = typed.SetItem(k, value.Unpack<T>());
+            var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
+
+
+            var dict = res.State;
+            var typed = ImmutableDictionary<string, T>.Empty;
+
+            foreach (var (k, value) in dict)
+            {
+                typed = typed.SetItem(k, value.Unpack<T>());
+            }
+
+            return typed;
+        }
+        catch (DeadLetterException)
+        {
+            //pass, system is shutting down
         }
 
-        return typed;
+        return ImmutableDictionary<string, T>.Empty;
     }
 
     public async Task<ImmutableDictionary<string, GossipKeyValue>> GetStateEntry(string key)
