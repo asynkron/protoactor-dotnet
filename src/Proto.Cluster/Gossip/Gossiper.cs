@@ -61,26 +61,45 @@ public class Gossiper
     {
         _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
 
-        var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
-
-        var dict = res.State;
-        var typed = ImmutableDictionary<string, T>.Empty;
-
-        foreach (var (k, value) in dict)
+        try
         {
-            typed = typed.SetItem(k, value.Unpack<T>());
+            var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
+
+
+            var dict = res.State;
+            var typed = ImmutableDictionary<string, T>.Empty;
+
+            foreach (var (k, value) in dict)
+            {
+                typed = typed.SetItem(k, value.Unpack<T>());
+            }
+
+            return typed;
+        }
+        catch (DeadLetterException)
+        {
+            //pass, system is shutting down
         }
 
-        return typed;
+        return ImmutableDictionary<string, T>.Empty;
     }
 
     public async Task<ImmutableDictionary<string, GossipKeyValue>> GetStateEntry(string key)
     {
         _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
 
-        var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid, new GetGossipStateEntryRequest(key));
+        try
+        {
+            var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid, new GetGossipStateEntryRequest(key));
 
-        return res.State;
+            return res.State;
+        }
+        catch (DeadLetterException)
+        {
+            //ignore, we are shutting down  
+        }
+
+        return ImmutableDictionary<string, GossipKeyValue>.Empty;
     }
 
     // Send message to update member state
@@ -95,14 +114,21 @@ public class Gossiper
         _context.Send(_pid, new SetGossipStateKey(key, value));
     }
 
-    public Task SetStateAsync(string key, IMessage value)
+    public async Task SetStateAsync(string key, IMessage value)
     {
         if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
         _context.System.Logger()?.LogDebug("Gossiper setting state to {Pid}", _pid);
 
-        if (_pid == null) return Task.CompletedTask;
+        if (_pid == null) return;
 
-        return _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value));
+        try
+        {
+            await _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value));
+        }
+        catch (DeadLetterException)
+        {
+          //ignore, we are shutting down  
+        }
     }
 
     internal Task StartAsync()
