@@ -367,8 +367,8 @@ public abstract class ClusterTests : ClusterTestBase
         while (response == null && !token.IsCancellationRequested)
         {
             await Task.Delay(200, token);
-            _testOutputHelper.WriteLine($"Retrying ping {kind}/{id}, attempt {++tries}");
-            response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
+            //_testOutputHelper.WriteLine($"Retrying ping {kind}/{id}, attempt {++tries}");
+            response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
         }
 
         response.Should().NotBeNull($"We expect a response before timeout on {kind}/{id}");
