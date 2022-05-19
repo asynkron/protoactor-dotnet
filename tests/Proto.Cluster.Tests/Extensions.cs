@@ -23,8 +23,15 @@ public static class Extensions
     {
         foreach (var c in members)
         {
-            var topology = await c.Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
             outputHelper.WriteLine("Member " + c.System.Id);
+            
+            if (c.System.Shutdown.IsCancellationRequested)
+            {
+                outputHelper.WriteLine("\tStopped");
+                continue;
+            }
+            var topology = await c.Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
+           
 
             foreach (var kvp in topology)
             {
