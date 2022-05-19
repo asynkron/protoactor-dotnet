@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
@@ -22,14 +21,13 @@ public class GossipActor : IActor
     public GossipActor(
         TimeSpan gossipRequestTimeout,
         string myId,
-        Func<ImmutableHashSet<string>> getBlockedMembers,
         InstanceLogger? instanceLogger,
         int gossipFanout,
         int gossipMaxSend
     )
     {
         _gossipRequestTimeout = gossipRequestTimeout;
-        _internal = new Gossip(myId, gossipFanout, gossipMaxSend, getBlockedMembers, instanceLogger);
+        _internal = new Gossip(myId, gossipFanout, gossipMaxSend, instanceLogger);
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch

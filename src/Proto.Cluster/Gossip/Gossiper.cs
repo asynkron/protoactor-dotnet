@@ -107,8 +107,7 @@ public class Gossiper
 
     internal Task StartAsync()
     {
-        var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id,
-                () => _cluster.Remote.BlockList.BlockedMembers, _cluster.System.Logger(), _cluster.Config.GossipFanout,
+        var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id, _cluster.System.Logger(), _cluster.Config.GossipFanout,
                 _cluster.Config.GossipMaxSend
             )
         );
