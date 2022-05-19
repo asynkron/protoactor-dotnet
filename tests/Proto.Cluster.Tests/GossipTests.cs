@@ -10,9 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
-using Proto.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,7 +20,7 @@ public class GossipTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
     //
-    protected GossipTests(ITestOutputHelper testOutputHelper)
+    public GossipTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
     }
