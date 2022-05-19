@@ -198,6 +198,8 @@ class Gossip
 
     public ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key)
     {
+        //TODO: Optimize
+        PurgeBlockedMembers();
         var entries = ImmutableDictionary<string, GossipKeyValue>.Empty;
 
         foreach (var (memberId, memberState) in _state.Members)
@@ -210,6 +212,8 @@ class Gossip
 
     private void CheckConsensus(string updatedKey)
     {
+        //TODO: Optimize
+        PurgeBlockedMembers();
         foreach (var consensusCheck in _consensusChecks.GetByUpdatedKey(updatedKey))
         {
             consensusCheck.Check(_state, _activeMemberIds);
@@ -218,6 +222,8 @@ class Gossip
 
     private void CheckConsensus(IEnumerable<string> updatedKeys)
     {
+        //TODO: Optimize
+        PurgeBlockedMembers();
         foreach (var consensusCheck in _consensusChecks.GetByUpdatedKeys(updatedKeys))
         {
             consensusCheck.Check(_state, _activeMemberIds);
