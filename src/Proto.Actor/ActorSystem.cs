@@ -23,7 +23,7 @@ public sealed class ActorSystem : IAsyncDisposable
     public const string NoHost = "nonhost";
     public const string Client = "$client";
 #pragma warning disable CA2213
-    private readonly CancellationTokenSource _cts = new();
+    private readonly Stopper _stopper = new();
 #pragma warning restore CA2213
     private string _host = NoHost;
     private int _port;
@@ -71,7 +71,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
     internal FutureFactory Future => DeferredFuture.Value;
 
-    public CancellationToken Shutdown => _cts.Token;
+    public CancellationToken Shutdown => _stopper.Token;
 
     private void RunThreadPoolStats()
     {
@@ -93,16 +93,16 @@ public sealed class ActorSystem : IAsyncDisposable
                 }
 
                 logger.LogWarning("System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}", Id, t);
-            }, _cts.Token
+            }, _stopper.Token
         );
     }
 
-    public Task ShutdownAsync()
+    public Task ShutdownAsync(string reason="")
     {
         try
         {
             Logger.LogInformation("Shutting down actor system {Id}", Id);
-            _cts.Cancel();
+            _stopper.Stop(reason);
         }
         catch
         {
