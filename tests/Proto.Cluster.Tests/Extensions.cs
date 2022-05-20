@@ -27,7 +27,7 @@ public static class Extensions
             
             if (c.System.Shutdown.IsCancellationRequested)
             {
-                outputHelper.WriteLine("\tStopped");
+                outputHelper.WriteLine("\tStopped " + c.System.Stopper.StoppedReason);
                 continue;
             }
             var topology = await c.Gossip.GetState<ClusterTopology>(GossipKeys.Topology);

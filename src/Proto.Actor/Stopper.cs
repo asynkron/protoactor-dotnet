@@ -10,13 +10,14 @@ namespace Proto;
 public class Stopper
 {
     private readonly CancellationTokenSource _cts = new();
-    private string _reason = "";
 
     public void Stop(string reason = "")
     {
         _cts.Cancel();
-        _reason = reason;
+        StoppedReason = reason;
     }
 
     public CancellationToken Token => _cts.Token;
+
+    public string StoppedReason { get; private set; } = "";
 }

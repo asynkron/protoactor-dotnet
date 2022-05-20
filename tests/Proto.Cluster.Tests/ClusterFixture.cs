@@ -104,7 +104,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         if (Members.Contains(member))
         {
             Members.Remove(member);
-            await member.ShutdownAsync(graceful).ConfigureAwait(false);
+            await member.ShutdownAsync(graceful, "Stopped by ClusterFixture").ConfigureAwait(false);
         }
         else throw new ArgumentException("No such member");
     }

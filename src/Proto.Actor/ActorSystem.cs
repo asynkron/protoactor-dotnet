@@ -22,9 +22,6 @@ public sealed class ActorSystem : IAsyncDisposable
     private static readonly ILogger Logger = Log.CreateLogger<ActorSystem>();
     public const string NoHost = "nonhost";
     public const string Client = "$client";
-#pragma warning disable CA2213
-    private readonly Stopper _stopper = new();
-#pragma warning restore CA2213
     private string _host = NoHost;
     private int _port;
 
@@ -34,6 +31,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
     public ActorSystem(ActorSystemConfig config)
     {
+        Stopper = new();
         Config = config ?? throw new ArgumentNullException(nameof(config));
         ProcessRegistry = new ProcessRegistry(this);
         Root = new RootContext(this);
@@ -57,6 +55,8 @@ public sealed class ActorSystem : IAsyncDisposable
 
     public RootContext Root { get; }
 
+    public Stopper Stopper { get; }
+
     public Guardians Guardians { get; }
 
     public DeadLetterProcess DeadLetter { get; }
@@ -71,7 +71,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
     internal FutureFactory Future => DeferredFuture.Value;
 
-    public CancellationToken Shutdown => _stopper.Token;
+    public CancellationToken Shutdown => Stopper.Token;
 
     private void RunThreadPoolStats()
     {
@@ -93,7 +93,7 @@ public sealed class ActorSystem : IAsyncDisposable
                 }
 
                 logger.LogWarning("System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}", Id, t);
-            }, _stopper.Token
+            }, Stopper.Token
         );
     }
 
@@ -102,7 +102,7 @@ public sealed class ActorSystem : IAsyncDisposable
         try
         {
             Logger.LogInformation("Shutting down actor system {Id}", Id);
-            _stopper.Stop(reason);
+            Stopper.Stop(reason);
         }
         catch
         {
