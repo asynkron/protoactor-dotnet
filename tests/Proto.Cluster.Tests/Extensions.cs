@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
@@ -17,26 +19,44 @@ public static class Extensions
         string kind = EchoActor.Kind
     )
         => cluster.RequestAsync<Pong>(id, kind, new Ping {Message = message}, token);
-    
-    
-    public static async Task DumpClusterState(this IEnumerable<Cluster> members, ITestOutputHelper outputHelper)
+
+    public static async Task<string> DumpClusterState(this IEnumerable<Cluster> members)
     {
+        var sb = new StringBuilder();
+        
         foreach (var c in members)
         {
-            outputHelper.WriteLine("Member " + c.System.Id);
-            
+            sb.AppendLine($"{Environment.NewLine}Member {c.System.Id}");
+
             if (c.System.Shutdown.IsCancellationRequested)
             {
-                outputHelper.WriteLine("\tStopped");
+                sb.AppendLine("\tStopped");
                 continue;
             }
-            var topology = await c.Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
-           
 
+            var topology = await c.Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
+
+            sb.AppendLine("\tGossip topology:");
             foreach (var kvp in topology)
             {
-                outputHelper.WriteLine("\tData {0} - {1}", kvp.Key, kvp.Value.TopologyHash);
+                sb.AppendLine($"\t\tData {kvp.Key} - {kvp.Value.TopologyHash}");
+            }
+
+            sb.AppendLine("\tMember list:");
+
+            foreach (var member in c.MemberList.GetMembers())
+            {
+                sb.AppendLine(($"\t\t{member}"));
+            }
+
+            sb.AppendLine("\tBlock list:");
+
+            foreach (var member in c.Remote.BlockList.BlockedMembers)
+            {
+                sb.AppendLine($"\t\t{member}");
             }
         }
+
+        return sb.ToString();
     }
 }

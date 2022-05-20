@@ -37,7 +37,7 @@ public abstract class ClusterTests : ClusterTestBase
         var consensus = await Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
             .WaitUpTo(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
 
-        await Members.DumpClusterState(_testOutputHelper);
+        _testOutputHelper.WriteLine(await Members.DumpClusterState());
         
         consensus.completed.Should().BeTrue("All members should have gotten consensus on the same topology hash");
         _testOutputHelper.WriteLine(LogStore.ToFormattedString());

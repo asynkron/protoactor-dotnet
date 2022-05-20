@@ -41,7 +41,7 @@ public class GossipTests
 
         SetGossipState(fixtureMembers, initialValue);
         
-        await clusterFixture.Members.DumpClusterState(_testOutputHelper);
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
         await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
     }
 
@@ -95,7 +95,7 @@ public class GossipTests
 
         SetGossipState(clusterFixture.Members, initialValue);
 
-        await clusterFixture.Members.DumpClusterState(_testOutputHelper);
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
         await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
 
         var firstMember = clusterFixture.Members[0];
@@ -114,7 +114,7 @@ public class GossipTests
 
         await Task.Delay(5000);
         
-        await clusterFixture.Members.DumpClusterState(_testOutputHelper);
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
         await ShouldBeNotHaveConsensus(consensusChecks);
     }
 
