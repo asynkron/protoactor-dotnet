@@ -202,6 +202,11 @@ public class Gossiper
 
     private async Task BlockExpiredHeartbeats()
     {
+        if (_cluster.Config.HeartbeatExpiration == TimeSpan.Zero)
+        {
+            return;
+        }
+        
         var t = await GetStateEntry(GossipKeys.Heartbeat);
 
         var blocked = (from x in t
