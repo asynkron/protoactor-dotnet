@@ -138,7 +138,8 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 GetClusterProvider(),
                 GetIdentityLookup(ClusterName)
             )
-            .WithClusterKinds(ClusterKinds);
+            .WithClusterKinds(ClusterKinds)
+            .WithHeartbeatExpiration(TimeSpan.Zero);
 
         config = configure?.Invoke(config) ?? config;
 
