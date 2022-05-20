@@ -114,10 +114,12 @@ public class GossipTests
         afterSettingDifferingState.Should()
             .BeEquivalentTo((false, (string) null), "We should be able to read our writes, and locally we do not have consensus");
 
+
         _testOutputHelper.WriteLine("Read our own writes...");
         await Task.Delay(5000);
         
         _testOutputHelper.WriteLine("Checking consensus...");
+
         await clusterFixture.Members.DumpClusterState(_testOutputHelper);
         await ShouldBeNotHaveConsensus(consensusChecks);
     }
