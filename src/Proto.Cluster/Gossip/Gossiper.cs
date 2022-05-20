@@ -13,6 +13,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
+using Proto.Remote;
 
 namespace Proto.Cluster.Gossip;
 
@@ -133,10 +134,8 @@ public class Gossiper
 
     internal Task StartAsync()
     {
-        var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id, _cluster.System.Logger(), _cluster.Config.GossipFanout,
-                _cluster.Config.GossipMaxSend
-            )
-        );
+        var props = Props.FromProducer(() => new GossipActor(_cluster.System, _cluster.Config.GossipRequestTimeout, _context.System.Id, _cluster.System.Logger(), _cluster.Config.GossipFanout,
+                _cluster.Config.GossipMaxSend));
         _pid = _context.SpawnNamed(props, GossipActorName);
         _cluster.System.EventStream.Subscribe<ClusterTopology>(topology => _context.Send(_pid, topology));
         Logger.LogInformation("Started Cluster Gossip");
@@ -190,13 +189,18 @@ public class Gossiper
     {
         var t2 = await GetStateEntry(GossipKeys.GracefullyLeft);
 
+        var blockList = _cluster.System.Remote().BlockList;
+        var alreadyBlocked = blockList.BlockedMembers;
         //don't ban ourselves. our gossip state will never reach other members then...
-        var gracefullyLeft = t2.Keys.Where(k => k != _cluster.System.Id).ToArray();
+        var gracefullyLeft = t2.Keys
+            .Where(k =>  !alreadyBlocked.Contains(k))
+            .Where(k => k != _cluster.System.Id )
+            .ToArray();
 
         if (gracefullyLeft.Any())
         {
             Logger.LogInformation("Blocking members due to gracefully leaving {Members}", gracefullyLeft);
-            _cluster.MemberList.UpdateBlockedMembers(gracefullyLeft);
+            blockList.Block(gracefullyLeft);
         }
     }
 
@@ -209,8 +213,13 @@ public class Gossiper
         
         var t = await GetStateEntry(GossipKeys.Heartbeat);
 
+        var blockList = _cluster.System.Remote().BlockList;
+        var alreadyBlocked = blockList.BlockedMembers;
+        
+        //new blocked members
         var blocked = (from x in t
                        where x.Value.Age > _cluster.Config.HeartbeatExpiration
+                       where !alreadyBlocked.Contains(x.Key)
                        select x.Key)
             .ToArray();
 
@@ -218,6 +227,7 @@ public class Gossiper
         {
             Logger.LogInformation("Blocking members due to expired heartbeat {Members}", blocked);
             _cluster.MemberList.UpdateBlockedMembers(blocked);
+            blockList.Block(blocked);
         }
     }
 

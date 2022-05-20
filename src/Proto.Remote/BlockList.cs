@@ -34,11 +34,12 @@ public class BlockList
         {
             foreach (var member in memberIds)
             {
-                if (!_blockedMembers.ContainsKey(member))
+                _blockedMembers = _blockedMembers.ContainsKey(member) switch
                 {
-                    _blockedMembers = _blockedMembers.Add(member, DateTime.UtcNow);
-                    _system.EventStream.Publish(new MemberBlocked(member));
-                }
+                    false => _blockedMembers.Add(member, DateTime.UtcNow),
+                    _     => _blockedMembers.SetItem(member, DateTime.UtcNow)
+                };
+                _system.EventStream.Publish(new MemberBlocked(member));
             }
         }
     }
