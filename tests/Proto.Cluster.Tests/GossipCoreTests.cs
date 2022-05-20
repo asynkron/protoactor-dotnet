@@ -43,7 +43,7 @@ public class GossipCoreTests
             members
                 .ToDictionary(
                     m => m.Id, 
-                    m => (Gossip: new Gossip.Gossip(m.Id, fanout, memberCount, null),
+                    m => (Gossip: new Gossip.Gossip(m.Id, fanout, memberCount, null, () => members.Select(m => m.Id).ToImmutableHashSet()),
                         Member: m));
 
         var sends = 0L;

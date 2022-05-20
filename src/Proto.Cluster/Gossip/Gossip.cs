@@ -23,6 +23,7 @@ class Gossip
     private readonly int _gossipFanout;
     private readonly int _gossipMaxSend;
     private readonly InstanceLogger? _logger;
+    private readonly  Func<ImmutableHashSet<string>> _getMembers;
     private readonly string _myId;
     private readonly Random _rnd = new();
     private ImmutableHashSet<string> _activeMemberIds = ImmutableHashSet<string>.Empty;
@@ -31,10 +32,11 @@ class Gossip
     private Member[] _otherMembers = Array.Empty<Member>();
     private GossipState _state = new();
 
-    public Gossip(string myId, int gossipFanout, int gossipMaxSend,  InstanceLogger? logger)
+    public Gossip(string myId, int gossipFanout, int gossipMaxSend,  InstanceLogger? logger, Func<ImmutableHashSet<string>> getMembers)
     {
         _myId = myId;
         _logger = logger;
+        _getMembers = getMembers;
         _gossipFanout = gossipFanout;
         _gossipMaxSend = gossipMaxSend;
     }
@@ -61,17 +63,12 @@ class Gossip
 
     public GossipState GetStateSnapshot()
     {
-        //TODO: Optimize
-        Purge();
         return _state.Clone();
     }
 
     public ImmutableDictionary<string, Any> GetState(string key)
     {
         var entries = ImmutableDictionary<string, Any>.Empty;
-        
-        //TODO: Optimize
-        Purge();
         foreach (var (memberId, memberState) in _state.Members)
         {
             if (memberState.Values.TryGetValue(key, out var value)) entries = entries.SetItem(memberId, value.Value);
@@ -101,8 +98,6 @@ class Gossip
         logger?.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
         Logger.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
 
-        //TODO: Optimize
-        Purge();
         if (!_state.Members.ContainsKey(_myId)) logger?.LogCritical("State corrupt");
 
         CheckConsensus(key);
@@ -112,9 +107,6 @@ class Gossip
     public void SendState(SendStateAction sendStateToMember)
     {
         var logger = _logger?.BeginMethodScope();
-
-        //TODO: Optimize
-        Purge();
 
         foreach (var member in _otherMembers)
         {
@@ -195,8 +187,7 @@ class Gossip
 
     public ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key)
     {
-        //TODO: Optimize
-        Purge();
+
         var entries = ImmutableDictionary<string, GossipKeyValue>.Empty;
 
         foreach (var (memberId, memberState) in _state.Members)
@@ -230,7 +221,7 @@ class Gossip
     private void Purge()
     {
         //find all members that have sent topology
-        var members = _state.Members.Where(m => m.Value.Values.ContainsKey(GossipKeys.Topology)).Select(m => m.Key).ToHashSet();
+        var members = _getMembers();
         foreach (var memberId in _state.Members.Keys.ToArray())
         {
             if (!members.Contains(memberId)) _state.Members.Remove(memberId);

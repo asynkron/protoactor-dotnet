@@ -13,12 +13,14 @@ namespace Proto.Cluster.Gossip;
 public class GossipActor : IActor
 {
     private static readonly ILogger Logger = Log.CreateLogger<GossipActor>();
+    private readonly ActorSystem _system;
     private readonly TimeSpan _gossipRequestTimeout;
     private readonly IGossip _internal;
 
     // lookup from state key -> consensus checks
 
     public GossipActor(
+        ActorSystem system,
         TimeSpan gossipRequestTimeout,
         string myId,
         InstanceLogger? instanceLogger,
@@ -26,8 +28,9 @@ public class GossipActor : IActor
         int gossipMaxSend
     )
     {
+        _system = system;
         _gossipRequestTimeout = gossipRequestTimeout;
-        _internal = new Gossip(myId, gossipFanout, gossipMaxSend, instanceLogger);
+        _internal = new Gossip(myId, gossipFanout, gossipMaxSend, instanceLogger, () => _system.Cluster().MemberList.GetMembers());
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch

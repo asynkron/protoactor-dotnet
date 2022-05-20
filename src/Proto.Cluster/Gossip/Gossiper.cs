@@ -134,10 +134,8 @@ public class Gossiper
 
     internal Task StartAsync()
     {
-        var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id, _cluster.System.Logger(), _cluster.Config.GossipFanout,
-                _cluster.Config.GossipMaxSend
-            )
-        );
+        var props = Props.FromProducer(() => new GossipActor(_cluster.System, _cluster.Config.GossipRequestTimeout, _context.System.Id, _cluster.System.Logger(), _cluster.Config.GossipFanout,
+                _cluster.Config.GossipMaxSend));
         _pid = _context.SpawnNamed(props, GossipActorName);
         _cluster.System.EventStream.Subscribe<ClusterTopology>(topology => _context.Send(_pid, topology));
         Logger.LogInformation("Started Cluster Gossip");
