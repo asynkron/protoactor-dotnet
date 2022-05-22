@@ -90,7 +90,7 @@ public class ServerConnector
                                 ServerConnection = new ServerConnection
                                 {
                                     Address = _system.Address,
-                                    SystemId = _system.Id
+                                    MemberId = _system.Id
                                 }
                             }
                         }).ConfigureAwait(false);
@@ -102,7 +102,7 @@ public class ServerConnector
                             {
                                 ClientConnection = new ClientConnection
                                 {
-                                    SystemId = _system.Id
+                                    MemberId = _system.Id
                                 }
                             }
                         }).ConfigureAwait(false);

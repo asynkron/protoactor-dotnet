@@ -80,7 +80,7 @@ public class EndpointReader : Remoting.RemotingBase
                 case ConnectRequest.ConnectionTypeOneofCase.ClientConnection: {
                     var clientConnection = connectRequest.ClientConnection;
 
-                    if (_system.Remote().BlockList.IsBlocked(clientConnection.SystemId))
+                    if (_system.Remote().BlockList.IsBlocked(clientConnection.MemberId))
                     {
                         Logger.LogWarning("[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
                         await responseStream.WriteAsync(new RemoteMessage
@@ -103,7 +103,7 @@ public class EndpointReader : Remoting.RemotingBase
                             }
                         }
                     ).ConfigureAwait(false);
-                    systemId = clientConnection.SystemId;
+                    systemId = clientConnection.MemberId;
                     endpoint = _endpointManager.GetOrAddClientEndpoint(systemId);
                     _ = Task.Run(async () => {
                             try
@@ -157,7 +157,7 @@ public class EndpointReader : Remoting.RemotingBase
                 case ConnectRequest.ConnectionTypeOneofCase.ServerConnection: {
                     var serverConnection = connectRequest.ServerConnection;
 
-                    if (_system.Remote().BlockList.IsBlocked(serverConnection.SystemId))
+                    if (_system.Remote().BlockList.IsBlocked(serverConnection.MemberId))
                     {
                         Logger.LogWarning("[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
                         await responseStream.WriteAsync(new RemoteMessage
@@ -181,7 +181,7 @@ public class EndpointReader : Remoting.RemotingBase
                         }
                     ).ConfigureAwait(false);
                     address = serverConnection.Address;
-                    systemId = serverConnection.SystemId;
+                    systemId = serverConnection.MemberId;
                     endpoint = _endpointManager.GetOrAddServerEndpoint(address);
                 }
                     break;
