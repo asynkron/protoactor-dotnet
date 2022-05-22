@@ -90,8 +90,9 @@ public class ServerConnector
                                 ServerConnection = new ServerConnection
                                 {
                                     Address = _system.Address,
-                                    MemberId = _system.Id
-                                }
+                                    MemberId = _system.Id,
+                                    BlockList = { _system.Remote().BlockList.BlockedMembers }
+                                },
                             }
                         }).ConfigureAwait(false);
                         break;

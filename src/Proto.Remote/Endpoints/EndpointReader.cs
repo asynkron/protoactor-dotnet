@@ -156,10 +156,12 @@ public class EndpointReader : Remoting.RemotingBase
                     break;
                 case ConnectRequest.ConnectionTypeOneofCase.ServerConnection: {
                     var serverConnection = connectRequest.ServerConnection;
+                    var shouldExit = false;
+                    var blocked = serverConnection.BlockList.ToHashSet();
 
                     if (_system.Remote().BlockList.IsBlocked(serverConnection.MemberId))
                     {
-                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
+                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Incoming attempt to connect was rejected, they are blocked", _system.Address);
                         await responseStream.WriteAsync(new RemoteMessage
                             {
                                 ConnectResponse = new ConnectResponse
@@ -169,6 +171,22 @@ public class EndpointReader : Remoting.RemotingBase
                                 }
                             }
                         ).ConfigureAwait(false);
+                        shouldExit = true;
+                    }
+
+                    if (blocked.Contains(_system.Id))
+                    {
+                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Incoming attempt to connect was rejected, we are blocked", _system.Address);
+                        shouldExit = true;
+                    }
+
+                    if (blocked.Any())
+                    {
+                        _system.Remote().BlockList.Block(blocked);
+                    }
+
+                    if (shouldExit)
+                    {
                         return;
                     }
 

@@ -53,6 +53,11 @@ message ConnectRequest {
   }
 }
 
+message ConnectResponse {
+  string member_id = 2;
+  bool blocked = 3;
+}
+
 message DisconnectRequest {
 
 }
@@ -64,12 +69,10 @@ message ClientConnection {
 message ServerConnection {
   string member_id = 1;
   string address = 2;
+  repeated string block_list = 3;
 }
 
-message ConnectResponse {
-  string member_id = 2;
-  bool blocked = 3;
-}
+
 
 service Remoting {
   rpc Receive (stream RemoteMessage) returns (stream RemoteMessage) {}
