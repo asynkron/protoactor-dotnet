@@ -69,7 +69,7 @@ public class ServerConnector
         {
             try
             {
-                _logger.LogInformation("[{SystemAddress}] Connecting to {Address}", _system.Address, _address);
+                _logger.LogInformation("[ServerConnector][{SystemAddress}] Connecting to {Address}", _system.Address, _address);
                 var channel = _channelProvider.GetChannel(_address);
                 var client = new Remoting.RemotingClient(channel);
                 using var call = client.Receive(_remoteConfig.CallOptions);
@@ -120,7 +120,7 @@ public class ServerConnector
                     
                 if (connectResponse.Blocked)
                 {
-                    _logger.LogError("[{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, we are blocked", _system.Address, connectResponse.MemberId, _address);
+                    _logger.LogError("[ServerConnector][{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, we are blocked", _system.Address, connectResponse.MemberId, _address);
                     //block self
                     _system.Remote().BlockList.Block(new[] {_system.Id});
                     var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
@@ -132,7 +132,7 @@ public class ServerConnector
 
                 if (_system.Remote().BlockList.IsBlocked(actorSystemId))
                 {
-                    _logger.LogError("[{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, they are blocked", _system.Address, connectResponse.MemberId, _address);
+                    _logger.LogError("[ServerConnector][{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, they are blocked", _system.Address, connectResponse.MemberId, _address);
                     var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
                     _system.EventStream.Publish(terminated);
                     return;
@@ -188,7 +188,7 @@ public class ServerConnector
                         }
                         catch (OperationCanceledException)
                         {
-                            _logger.LogDebug("[{SystemAddress}] Writer cancelled for {Address}", _system.Address, _address);
+                            _logger.LogDebug("[ServerConnector][{SystemAddress}] Writer cancelled for {Address}", _system.Address, _address);
                         }
                     }
                 });
@@ -203,24 +203,24 @@ public class ServerConnector
                             {
                                 case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
                                 {
-                                    _logger.LogDebug("[{SystemAddress}] Received disconnection request from {Address}", _system.Address, _address);
+                                    _logger.LogDebug("[ServerConnector][{SystemAddress}] Received disconnection request from {Address}", _system.Address, _address);
                                     var terminated = new EndpointTerminatedEvent(false, _address, actorSystemId);
                                     _system.EventStream.Publish(terminated);
                                     break;
                                 }
                                 default:
                                     if (_connectorType == Type.ServerSide)
-                                        _logger.LogWarning("[{SystemAddress}] Received {Message} from {_address}", _system.Address, currentMessage, _address);
+                                        _logger.LogWarning("[ServerConnector][{SystemAddress}] Received {Message} from {_address}", _system.Address, currentMessage, _address);
                                     else
                                         _remoteMessageHandler.HandleRemoteMessage(currentMessage);
                                     break;
                             }
                         }
-                        _logger.LogDebug("[{SystemAddress}] Reader finished for {Address}", _system.Address, _address);
+                        _logger.LogDebug("[ServerConnector][{SystemAddress}] Reader finished for {Address}", _system.Address, _address);
                     }
                     catch (OperationCanceledException)
                     {
-                        _logger.LogDebug("[{SystemAddress}] Reader cancelled for {Address}", _system.Address, _address);
+                        _logger.LogDebug("[ServerConnector][{SystemAddress}] Reader cancelled for {Address}", _system.Address, _address);
                     }
                     catch (RpcException e) when (e.StatusCode == StatusCode.Cancelled)
                     {
