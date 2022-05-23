@@ -15,7 +15,7 @@ public class PartitionActivatorManager
     private readonly Cluster _cluster;
 
 
-    private readonly IRootContext _context;
+    private readonly RootContext _context;
     private readonly bool _isClient;
     private readonly ActorSystem _system;
     private PID _partitionActivatorActor = null!;
@@ -49,7 +49,7 @@ public class PartitionActivatorManager
         {
             var partitionActivatorProps =
                 Props.FromProducer(() => new PartitionActivatorActor(_cluster, this));
-            _partitionActivatorActor = _context.SpawnNamed(partitionActivatorProps, PartitionActivatorActorName);
+            _partitionActivatorActor = _context.SpawnNamedSystem(partitionActivatorProps, PartitionActivatorActorName);
 
             //synchronous subscribe to keep accurate
 

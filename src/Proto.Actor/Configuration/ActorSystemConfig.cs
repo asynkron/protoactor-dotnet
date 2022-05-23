@@ -47,6 +47,12 @@ public record ActorSystemConfig
     ///     All props are translated via this function
     /// </summary>
     public Func<Props, Props> ConfigureProps { get; init; } = props => props;
+    
+    /// <summary>
+    ///     Allows ActorSystem-wide augmentation of system Props
+    ///     All system props are translated via this function
+    /// </summary>
+    public Func<string, Props, Props> ConfigureSystemProps { get; init; } = (_,props) => props;
 
     /// <summary>
     ///     Enables SharedFutures
@@ -106,6 +112,8 @@ public record ActorSystemConfig
     public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
 
     public ActorSystemConfig WithConfigureProps(Func<Props, Props> configureProps) => this with {ConfigureProps = configureProps};
+    
+    public ActorSystemConfig WithConfigureSystemProps(Func<string, Props, Props> configureSystemProps) => this with {ConfigureSystemProps = configureSystemProps};
 
     public ActorSystemConfig WithThreadPoolStatsTimeout(TimeSpan threadPoolStatsTimeout)
         => this with {ThreadPoolStatsTimeout = threadPoolStatsTimeout};

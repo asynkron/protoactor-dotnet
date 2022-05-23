@@ -21,7 +21,7 @@ public class ClusterCacheInvalidation : IActorSystemExtension<ClusterCacheInvali
     {
         Cluster = cluster;
         Cluster.System.Extensions.Register(this);
-        Cluster.System.Root.SpawnNamed(
+        Cluster.System.Root.SpawnNamedSystem(
             Props.FromFunc(context => {
                     if (context.Message is ActivationTerminated terminated)
                         cluster.PidCache.RemoveByVal(terminated.ClusterIdentity, terminated.Pid);

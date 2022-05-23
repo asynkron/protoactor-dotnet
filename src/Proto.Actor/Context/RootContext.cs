@@ -70,6 +70,25 @@ public sealed record RootContext : IRootContext
             throw;
         }
     }
+    
+    public PID SpawnNamedSystem(Props props, string name)
+    {
+        try
+        {
+            var parent = props.GuardianStrategy is not null
+                ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
+                : null;
+            
+            //augment props with system actor specific settings
+            props = System.ConfigureSystemProps(name, props);
+            return props.Spawn(System, name, parent);
+        }
+        catch (Exception x)
+        {
+            Logger.LogError(x, "RootContext Failed to spawn child actor {Name}", name);
+            throw;
+        }
+    }
 
     public object? Message => null;
 

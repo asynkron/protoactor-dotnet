@@ -197,7 +197,7 @@ public class EndpointManager
     {
         var props = Props.FromProducer(() => new Activator(_remoteConfig, _system))
             .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-        ActivatorPid = _system.Root.SpawnNamed(props, "activator");
+        ActivatorPid = _system.Root.SpawnNamedSystem(props, "activator");
     }
     private void StopActivator() => _system.Root.Stop(ActivatorPid);
 }

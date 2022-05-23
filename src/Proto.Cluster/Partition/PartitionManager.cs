@@ -14,7 +14,7 @@ class PartitionManager
     private const string PartitionIdentityActorName = "partition-identity";
     private const string PartitionPlacementActorName = "partition-activator";
     private readonly Cluster _cluster;
-    private readonly IRootContext _context;
+    private readonly RootContext _context;
     private readonly bool _isClient;
     private readonly ActorSystem _system;
     private PID _partitionPlacementActor = null!;
@@ -51,10 +51,10 @@ class PartitionManager
             var partitionActorProps = Props
                 .FromProducer(() => new PartitionIdentityActor(_cluster, _config))
                 .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            _partitionIdentityActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
+            _partitionIdentityActor = _context.SpawnNamedSystem(partitionActorProps, PartitionIdentityActorName);
 
             var partitionActivatorProps = Props.FromProducer(() => new PartitionPlacementActor(_cluster, _config));
-            _partitionPlacementActor = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
+            _partitionPlacementActor = _context.SpawnNamedSystem(partitionActivatorProps, PartitionPlacementActorName);
 
             //synchronous subscribe to keep accurate
             var topologyHash = 0ul;

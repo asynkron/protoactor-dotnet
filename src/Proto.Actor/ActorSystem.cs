@@ -132,6 +132,8 @@ public sealed class ActorSystem : IAsyncDisposable
     public (string Host, int Port) GetAddress() => (_host, _port);
 
     public Props ConfigureProps(Props props) => Config.ConfigureProps(props);
+    
+    public Props ConfigureSystemProps(string name, Props props) => Config.ConfigureSystemProps(name, props);
 
     public async ValueTask DisposeAsync()
     {
