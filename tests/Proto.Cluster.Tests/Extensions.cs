@@ -1,4 +1,5 @@
 ﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -30,7 +31,7 @@ public static class Extensions
 
             if (c.System.Shutdown.IsCancellationRequested)
             {
-                sb.AppendLine("\tStopped");
+                sb.AppendLine("\tStopped, reason: " + c.System.Stopper.StoppedReason);
                 continue;
             }
 

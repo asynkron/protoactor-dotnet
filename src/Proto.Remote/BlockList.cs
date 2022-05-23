@@ -10,8 +10,15 @@ using System.Linq;
 
 namespace Proto.Remote;
 
+public record MemberBlocked(string MemberId);
 public class BlockList
 {
+    private readonly ActorSystem _system;
+
+    public BlockList(ActorSystem system)
+    {
+        _system = system;
+    }
     private readonly object _lock = new();
 
     public ImmutableHashSet<string> BlockedMembers  => _blockedMembers
@@ -27,10 +34,12 @@ public class BlockList
         {
             foreach (var member in memberIds)
             {
-                if (!_blockedMembers.ContainsKey(member))
+                _blockedMembers = _blockedMembers.ContainsKey(member) switch
                 {
-                    _blockedMembers = _blockedMembers.Add(member, DateTime.UtcNow);
-                }
+                    false => _blockedMembers.Add(member, DateTime.UtcNow),
+                    _     => _blockedMembers.SetItem(member, DateTime.UtcNow)
+                };
+                _system.EventStream.Publish(new MemberBlocked(member));
             }
         }
     }

@@ -170,7 +170,7 @@ public class Cluster : IActorSystemExtension<Cluster>
     private void InitIdentityProxy()
         => System.Root.SpawnNamed(Props.FromProducer(() => new IdentityActivatorProxy(this)), IdentityActivatorProxy.ActorName);
 
-    public async Task ShutdownAsync(bool graceful = true)
+    public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
         
         await Gossip.SetStateAsync("cluster:left", new Empty());
@@ -190,7 +190,7 @@ public class Cluster : IActorSystemExtension<Cluster>
             _clusterMembersObserver = null;
         }
 
-        await System.ShutdownAsync();
+        await System.ShutdownAsync(reason);
         Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 
         await Gossip.ShutdownAsync();

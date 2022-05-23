@@ -97,8 +97,10 @@ public class GossipTests
 
         _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
         await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
-
+        _testOutputHelper.WriteLine("Start: We are in consensus...");
         var firstMember = clusterFixture.Members[0];
+        _testOutputHelper.WriteLine("First member " + firstMember.System.Id);
+        
         var firstMemberConsensus = consensusChecks[0];
 
         // var logStore = new LogStore();
@@ -112,7 +114,11 @@ public class GossipTests
         afterSettingDifferingState.Should()
             .BeEquivalentTo((false, (string) null), "We should be able to read our writes, and locally we do not have consensus");
 
+
+        _testOutputHelper.WriteLine("Read our own writes...");
         await Task.Delay(5000);
+        
+        _testOutputHelper.WriteLine("Checking consensus...");
         
         _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
         await ShouldBeNotHaveConsensus(consensusChecks);
