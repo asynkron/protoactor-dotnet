@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Concurrent;
+using System.Text;
 using Google.Protobuf;
 
 namespace Proto.Remote;
@@ -16,14 +17,15 @@ public class JsonSerializer : ISerializer
 
     public JsonSerializer(Serialization serialization) => _serialization = serialization;
 
-    public ByteString Serialize(object obj)
+    public ReadOnlySpan<byte>  Serialize(object obj)
     {
-        return ByteString.CopyFromUtf8(System.Text.Json.JsonSerializer.Serialize(obj, _serialization.JsonSerializerOptions));
+        var json = System.Text.Json.JsonSerializer.Serialize(obj, _serialization.JsonSerializerOptions);
+        return Encoding.UTF8.GetBytes(json);
     }
 
-    public object Deserialize(ByteString bytes, string typeName)
+    public object Deserialize(ReadOnlySpan<byte> bytes, string typeName)
     {
-        var json = bytes.ToStringUtf8();
+        var json = Encoding.UTF8.GetString(bytes);
         var returnType = _jsonTypes.GetOrAdd(typeName, Type.GetType(typeName) ?? throw new Exception($"Type with the specified name {typeName} not found"));
         var message = System.Text.Json.JsonSerializer.Deserialize(json, returnType, _serialization.JsonSerializerOptions) ?? throw new Exception($"Unable to deserialize message with type {typeName}");
         return message;

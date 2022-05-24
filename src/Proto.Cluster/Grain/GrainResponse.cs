@@ -15,7 +15,7 @@ public partial class GrainResponse : IRootSerialized
         if (MessageData.IsEmpty) return new GrainResponseMessage(null);
 
         var ser = system.Serialization();
-        var message = ser.Deserialize(MessageTypeName, MessageData, Serialization.SERIALIZER_ID_PROTOBUF);
+        var message = ser.Deserialize(MessageTypeName, MessageData.Span, Serialization.SERIALIZER_ID_PROTOBUF);
         return new GrainResponseMessage((IMessage) message);
     }
 }

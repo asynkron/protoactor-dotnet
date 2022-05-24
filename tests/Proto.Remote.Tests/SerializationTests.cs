@@ -1,3 +1,4 @@
+using System;
 using FluentAssertions;
 using Google.Protobuf;
 using Proto.Remote.Tests.Messages;
@@ -14,17 +15,17 @@ public class SerializationTests
     public class MockSerializer1 : ISerializer
     {
         public bool CanSerialize(object obj) => obj is TestType1;
-        public object Deserialize(ByteString bytes, string typeName) => new TestType1();
+        public object Deserialize(ReadOnlySpan<byte> bytes, string typeName) => new TestType1();
         public string GetTypeName(object message) => $"MockSerializer1";
-        public ByteString Serialize(object obj) => ByteString.CopyFrom(new byte[0]);
+        public ReadOnlySpan<byte> Serialize(object obj) => new byte[0];
     }
 
     public class MockSerializer2 : ISerializer
     {
         public bool CanSerialize(object obj) => obj is TestType1 || obj is TestType2;
-        public object Deserialize(ByteString bytes, string typeName) => new TestType1();
+        public object Deserialize(ReadOnlySpan<byte> bytes, string typeName) => new TestType1();
         public string GetTypeName(object message) => $"MockSerializer2";
-        public ByteString Serialize(object obj) => ByteString.CopyFrom(new byte[0]);
+        public ReadOnlySpan<byte> Serialize(object obj) => new byte[0];
     }
 
     [Fact]

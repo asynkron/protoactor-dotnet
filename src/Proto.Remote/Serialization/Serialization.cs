@@ -33,7 +33,7 @@ public class Serialization : IActorSystemExtension<Serialization>
     private List<SerializerItem> _serializers = new();
     private readonly ConcurrentDictionary<Type, TypeSerializerItem> _serializerLookup = new();
     internal readonly Dictionary<string, MessageParser> TypeLookup = new();
-    internal readonly ConcurrentDictionary<string, (ByteString bytes, string typename, object instance, int serializerId)> Cache = new();
+    internal readonly ConcurrentDictionary<string, (byte[] bytes, string typename, object instance, int serializerId)> Cache = new();
 
     public const int SERIALIZER_ID_PROTOBUF = 0;
     public const int SERIALIZER_ID_JSON = 1;
@@ -92,8 +92,9 @@ public class Serialization : IActorSystemExtension<Serialization>
         }
     }
 
-    public (ByteString bytes, string typename, int serializerId) Serialize(object message)
+    public (byte[] bytes, string typename, int serializerId) Serialize(object message)
     {
+        
         var serializer = FindSerializerToUse(message);
         var typename = serializer.Serializer.GetTypeName(message);
         if (message is ICachedSerialization && Cache.TryGetValue(typename, out var cached))
@@ -104,9 +105,9 @@ public class Serialization : IActorSystemExtension<Serialization>
         var bytes = serializer.Serializer.Serialize(message);
         if (message is ICachedSerialization)
         {
-            Cache.TryAdd(typename, (bytes, typename, message, serializerId));
+            Cache.TryAdd(typename, (bytes.ToArray(), typename, message, serializerId));
         }
-        return (bytes, typename, serializerId);
+        return (bytes.ToArray(), typename, serializerId);
     }
 
     TypeSerializerItem FindSerializerToUse(object message)
@@ -131,7 +132,7 @@ public class Serialization : IActorSystemExtension<Serialization>
         throw new Exception($"Couldn't find a serializer for {message.GetType()}");
     }
 
-    public object Deserialize(string typeName, ByteString bytes, int serializerId)
+    public object Deserialize(string typeName, ReadOnlySpan<byte> bytes, int serializerId)
     {
         if (Cache.TryGetValue(typeName, out var cachedMessage))
             return cachedMessage.instance;
@@ -143,7 +144,7 @@ public class Serialization : IActorSystemExtension<Serialization>
                     bytes,
                     typeName);
                 if (message is ICachedSerialization)
-                    Cache.TryAdd(typeName, (bytes, typeName, message, serializerId));
+                    Cache.TryAdd(typeName, (bytes.ToArray(), typeName, message, serializerId));
                 return message;
             }
         }

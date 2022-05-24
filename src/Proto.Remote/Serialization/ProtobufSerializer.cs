@@ -15,13 +15,13 @@ public class ProtobufSerializer : ISerializer
 
     public ProtobufSerializer(Serialization serialization) => _serialization = serialization;
 
-    public ByteString Serialize(object obj)
+    public ReadOnlySpan<byte> Serialize(object obj)
     {
         var message = obj as IMessage;
-        return message.ToByteString();
+        return message.ToByteArray();
     }
 
-    public object Deserialize(ByteString bytes, string typeName)
+    public object Deserialize(ReadOnlySpan<byte> bytes, string typeName)
     {
         var parser = _serialization.TypeLookup[typeName];
         var o = parser.ParseFrom(bytes);

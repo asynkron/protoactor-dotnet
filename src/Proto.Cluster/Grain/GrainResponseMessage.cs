@@ -23,7 +23,7 @@ public record GrainResponseMessage(IMessage? ResponseMessage) : IRootSerializabl
 #endif
         return new GrainResponse
         {
-            MessageData = data,
+            MessageData = ByteString.CopyFrom(data),
             MessageTypeName = typeName,
         };
     }

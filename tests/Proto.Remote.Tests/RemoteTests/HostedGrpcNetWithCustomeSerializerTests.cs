@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Text;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Microsoft.Extensions.Hosting;
@@ -20,16 +21,16 @@ public class HostedGrpcNetWithCustomSerializerTests
     {
         private readonly ConcurrentDictionary<string, Type> _types = new();
 
-        public object Deserialize(ByteString bytes, string typeName)
+        public object Deserialize(ReadOnlySpan<byte> bytes, string typeName)
         {
             var type = _types.GetOrAdd(typeName, name => Type.GetType(name));
-            return System.Text.Json.JsonSerializer.Deserialize(bytes.ToStringUtf8(), type);
+            return System.Text.Json.JsonSerializer.Deserialize(Encoding.UTF8.GetString(bytes), type);
         }
 
         public string GetTypeName(object message) => message.GetType().AssemblyQualifiedName;
 
-        public ByteString Serialize(object obj) =>
-            ByteString.CopyFromUtf8(System.Text.Json.JsonSerializer.Serialize(obj));
+        public ReadOnlySpan<byte> Serialize(object obj) =>
+            Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(obj));
 
         public bool CanSerialize(object obj) => true;
     }

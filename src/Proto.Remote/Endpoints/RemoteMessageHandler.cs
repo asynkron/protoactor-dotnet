@@ -77,7 +77,7 @@ public class RemoteMessageHandler
 
                     try
                     {
-                        message = Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+                        message = Serialization.Deserialize(typeName, envelope.MessageData.Span, envelope.SerializerId);
 
                         //translate from on-the-wire representation to in-process representation
                         //this only applies to root level messages, and never on nested child messages
