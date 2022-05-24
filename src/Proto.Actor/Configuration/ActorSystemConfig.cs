@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Context;
 
 // ReSharper disable once CheckNamespace
 namespace Proto;
@@ -52,7 +53,10 @@ public record ActorSystemConfig
     ///     Allows ActorSystem-wide augmentation of system Props
     ///     All system props are translated via this function
     /// </summary>
-    public Func<string, Props, Props> ConfigureSystemProps { get; init; } = (_,props) => props;
+    public Func<string, Props, Props> ConfigureSystemProps { get; init; } = (_,props) => props
+        .WithDeadlineDecorator(TimeSpan.FromSeconds(1))
+        .WithLoggingContextDecorator()
+        .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
 
     /// <summary>
     ///     Enables SharedFutures
