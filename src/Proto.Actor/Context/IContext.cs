@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 // ReSharper disable once CheckNamespace
 namespace Proto;
 
-public interface IContext : ISenderContext, IReceiverContext, ISpawnerContext, IStopperContext
+public interface IContext : IReceiverContext, ISharedContext
 {
     /// <summary>
     ///     Gets the CancellationToken. Pass this token in long running tasks to stop them when the actor is about to stop
