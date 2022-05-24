@@ -111,12 +111,20 @@ public class GossipActor : IActor
             return Task.CompletedTask;
         }
 
-        context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
-            {
-                State = memberState.State.Clone(), //ensure we have a copy and not state that might mutate
-            }, task => ReenterAfterResponseAck(context, task, memberState), CancellationTokens.WithTimeout(_gossipRequestTimeout));
+        context.Respond(new GossipResponse(){
+            State = memberState.State.Clone(), //ensure we have a copy and not state that might mutate
+        });
 
         return Task.CompletedTask;
+        
+        //this code is broken
+        //
+        // context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
+        //     {
+        //         State = memberState.State.Clone(), //ensure we have a copy and not state that might mutate
+        //     }, task => ReenterAfterResponseAck(context, task, memberState), CancellationTokens.WithTimeout(_gossipRequestTimeout));
+        //
+        // return Task.CompletedTask;
     }
 
     private void ReceiveState(IContext context, GossipState remoteState)
