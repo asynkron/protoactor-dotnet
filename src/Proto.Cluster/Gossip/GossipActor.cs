@@ -114,6 +114,7 @@ public class GossipActor : IActor
         context.Respond(new GossipResponse(){
             State = memberState.State.Clone(), //ensure we have a copy and not state that might mutate
         });
+
         return Task.CompletedTask;
         
         //this code is broken
