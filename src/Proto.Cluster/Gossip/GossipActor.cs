@@ -114,8 +114,7 @@ public class GossipActor : IActor
         context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
             {
                 State = memberState.State, //.Clone(), //ensure we have a copy and not state that might mutate
-            }, task => ReenterAfterResponseAck(context, task, memberState), context.CancellationToken
-        );
+            }, task => ReenterAfterResponseAck(context, task, memberState), CancellationTokens.WithTimeout(_gossipRequestTimeout));
 
         return Task.CompletedTask;
     }
