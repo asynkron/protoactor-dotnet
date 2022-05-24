@@ -176,7 +176,7 @@ public class DefaultClusterContext : IClusterContext
         }
     }
 
-    private async ValueTask<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
+    private async ValueTask<(ResponseStatus Status, T?)> TryRequestAsync<T>(
         ClusterIdentity clusterIdentity,
         object message,
         PID pid,
@@ -202,7 +202,6 @@ public class DefaultClusterContext : IClusterContext
 
             if (!context.System.Shutdown.IsCancellationRequested)
                 if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
-            _pidCache.RemoveByVal(clusterIdentity, pid);
 
             return (ResponseStatus.TimedOut, default);
         }
@@ -244,7 +243,7 @@ public class DefaultClusterContext : IClusterContext
         return pid;
     }
 
-    private static (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
+    private static (ResponseStatus Status, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
     {
         var message = MessageEnvelope.UnwrapMessage(result);
 

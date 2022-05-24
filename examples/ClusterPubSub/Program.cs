@@ -5,14 +5,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Consul;
-using Proto.Cluster.Identity;
-using Proto.Cluster.Identity.Redis;
+using Proto.Cluster.Partition;
 using Proto.Cluster.PubSub;
+using Proto.Cluster.Testing;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using Proto.Utils;
-using StackExchange.Redis;
 
 namespace ClusterPubSub;
 
@@ -71,7 +69,7 @@ class Program
         }
 
         //get hold of a producer that can send messages to the my-topic
-        var p = system.Cluster().Producer("my-topic");
+        await using var p = system.Cluster().Producer("my-topic");
 
         Console.WriteLine("starting");
 
@@ -126,27 +124,17 @@ class Program
 
     private static ClusterConfig GetClusterConfig()
     {
-        var consulProvider =
-            new ConsulProvider(new ConsulProviderConfig());
-
         //use an empty store, no persistence
         var store = new EmptyKeyValueStore<Subscribers>();
             
         var clusterConfig =
             ClusterConfig
-                .Setup("MyCluster", consulProvider, GetRedisIdentityLookup())
+                .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()), new PartitionIdentityLookup())
                 .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)))
                 .WithPubSubBatchSize(batchSize);
         return clusterConfig;
     }
         
-    private static IIdentityLookup GetRedisIdentityLookup()
-    {
-        var multiplexer = ConnectionMultiplexer.Connect("localhost:6379");
-        var redisIdentityStorage = new RedisIdentityStorage("mycluster", multiplexer,maxConcurrency:50);
-
-        return new IdentityStorageLookup(redisIdentityStorage);
-    }
 
     public static async Task RunMember()
     {

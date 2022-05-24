@@ -15,6 +15,8 @@ namespace Proto.Cluster.PubSub;
 
 public sealed class TopicActor : IActor
 {
+    public const string Kind = "topic";
+    
     private static readonly ILogger Logger = Log.CreateLogger<TopicActor>();
     private ImmutableHashSet<SubscriberIdentity> _subscribers = ImmutableHashSet<SubscriberIdentity>.Empty;
     private string _topic = string.Empty;
