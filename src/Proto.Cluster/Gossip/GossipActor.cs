@@ -113,7 +113,7 @@ public class GossipActor : IActor
 
         context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
             {
-                State = memberState.State.Clone(), //ensure we have a copy and not state that might mutate
+                State = memberState.State, //.Clone(), //ensure we have a copy and not state that might mutate
             }, task => ReenterAfterResponseAck(context, task, memberState), context.CancellationToken
         );
 
@@ -160,7 +160,7 @@ public class GossipActor : IActor
         context.RequestReenter<object>(pid, new GossipRequest
             {
                 MemberId = context.System.Id,
-                State = memberStateDelta.State.Clone(), //ensure we have a copy and not send state that might mutate
+                State = memberStateDelta.State, //.Clone(), //ensure we have a copy and not send state that might mutate
             },
             task => GossipReenterAfterSend(context, task, memberStateDelta),
             CancellationTokens.WithTimeout(_gossipRequestTimeout)
