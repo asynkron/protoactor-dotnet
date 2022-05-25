@@ -14,6 +14,7 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
 using Proto.Logging;
+using Proto.Mailbox;
 using Proto.Remote;
 
 namespace Proto.Cluster;
@@ -71,6 +72,8 @@ public record MemberList
         };
 
         _eventStream = _system.EventStream;
+        
+        //subscribe non synchronous to avoid recursive updates
         _eventStream.Subscribe<GossipUpdate>(u => {
                 if (u.Key != GossipKeys.Topology) return;
 
@@ -78,12 +81,12 @@ public record MemberList
                 var topology = u.Value.Unpack<ClusterTopology>();
                 var blocked = topology.Blocked.ToArray();
                 UpdateBlockedMembers(blocked);
-            }
+            }, Dispatchers.DefaultDispatcher
         );
 
         _eventStream.Subscribe<MemberBlocked>(b => {
                 UpdateClusterTopology(_activeMembers.Members);
-            }
+            }, Dispatchers.DefaultDispatcher
         );
     }
 
