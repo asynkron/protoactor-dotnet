@@ -130,7 +130,7 @@ class Program
         var clusterConfig =
             ClusterConfig
                 .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()), new PartitionIdentityLookup())
-                .WithClusterKind("topic", Props.FromProducer(() => new TopicActor(store)))
+                .WithClusterKind(TopicActor.Kind, Props.FromProducer(() => new TopicActor(store)))
                 .WithPubSubBatchSize(batchSize);
         return clusterConfig;
     }

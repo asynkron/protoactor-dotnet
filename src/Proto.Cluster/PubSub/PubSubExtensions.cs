@@ -23,7 +23,7 @@ public static class PubSubExtensions
         CancellationToken ct = default
     )
     {
-        await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+        await cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -35,7 +35,7 @@ public static class PubSubExtensions
 
     public static async Task Subscribe(this Cluster cluster, string topic, ClusterIdentity ci, CancellationToken ct = default)
     {
-        await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+        await cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -47,7 +47,7 @@ public static class PubSubExtensions
 
     //Subscribe PID
     public static Task Subscribe(this Cluster cluster, string topic, PID subscriber, CancellationToken ct = default) =>
-        cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+        cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -67,7 +67,7 @@ public static class PubSubExtensions
 
     public static async Task Unsubscribe(this Cluster cluster, string topic, PID subscriber, CancellationToken ct = default)
     {
-        await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+        await cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -79,7 +79,7 @@ public static class PubSubExtensions
 
     public static async Task Unsubscribe(this Cluster cluster, string topic, ClusterIdentity subscriber, CancellationToken ct = default)
     {
-        await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+        await cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -97,7 +97,7 @@ public static class PubSubExtensions
         CancellationToken ct = default
     )
     {
-        await cluster.RequestAsync<SubscribeResponse>(topic, "topic", new SubscribeRequest
+        await cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
