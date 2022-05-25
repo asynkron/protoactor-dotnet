@@ -31,7 +31,7 @@ public sealed class ImmutableMemberSet
     public IReadOnlyCollection<Member> Members { get; }
     public ImmutableDictionary<string,Member> Lookup { get; }
         
-    public ImmutableMemberSet(IEnumerable<Member> members)
+    public ImmutableMemberSet(Member[] members)
     {
         Members = members.OrderBy(m => m.Id).ToArray();
         TopologyHash = Member.TopologyHash(members);
@@ -42,20 +42,20 @@ public sealed class ImmutableMemberSet
 
     public ImmutableMemberSet Except(ImmutableMemberSet other)
     {
-        var both = Members.Except(other.Members);
+        var both = Members.Except(other.Members).ToArray();
         return new ImmutableMemberSet(both);
     }
         
     public ImmutableMemberSet Except(IEnumerable<string> other)
     {
         var otherSet = other.ToImmutableHashSet();
-        var both = Members.Where(m => !otherSet.Contains(m.Id));
+        var both = Members.Where(m => !otherSet.Contains(m.Id)).ToArray();
         return new ImmutableMemberSet(both);
     }
         
     public ImmutableMemberSet Union(ImmutableMemberSet other)
     {
-        var both = Members.Union(other.Members);
+        var both = Members.Union(other.Members).ToArray();
         return new ImmutableMemberSet(both);
     }
 

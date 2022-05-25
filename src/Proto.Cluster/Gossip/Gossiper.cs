@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
 using Proto.Remote;
@@ -41,6 +42,7 @@ public record AddConsensusCheck(ConsensusCheck Check, CancellationToken Token);
 
 public record GetGossipStateSnapshot;
 
+[PublicAPI]
 public class Gossiper
 {
     public const string GossipActorName = "gossip";
@@ -136,7 +138,7 @@ public class Gossiper
     {
         var props = Props.FromProducer(() => new GossipActor(_cluster.System, _cluster.Config.GossipRequestTimeout, _context.System.Id, _cluster.System.Logger(), _cluster.Config.GossipFanout,
                 _cluster.Config.GossipMaxSend));
-        _pid = _context.SpawnNamed(props, GossipActorName);
+        _pid = _context.SpawnNamedSystem(props, GossipActorName);
         _cluster.System.EventStream.Subscribe<ClusterTopology>(topology => _context.Send(_pid, topology));
         Logger.LogInformation("Started Cluster Gossip");
         _ = SafeTask.Run(GossipLoop);
