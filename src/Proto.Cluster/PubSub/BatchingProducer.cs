@@ -16,9 +16,9 @@ namespace Proto.Cluster.PubSub;
 public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource);
 
 [PublicAPI]
-public class Producer : IAsyncDisposable
+public class BatchingProducer : IAsyncDisposable
 {
-    private static readonly ILogger Logger = Log.CreateLogger<Producer>();
+    private static readonly ILogger Logger = Log.CreateLogger<BatchingProducer>();
     private static readonly ShouldThrottle _logThrottle = Throttle.Create(3, TimeSpan.FromSeconds(10));
 
     private readonly Func<ProducerBatchMessage, Task> _requestToTopic;
@@ -29,14 +29,22 @@ public class Producer : IAsyncDisposable
     private CancellationTokenSource _cts = new();
     private Task _publisherLoop;
 
-    public Producer(Cluster cluster, string topic, int? maxQueueSize = null)
+    /// <summary>
+    /// Create a new batching producer for specified topic
+    /// </summary>
+    /// <param name="cluster"></param>
+    /// <param name="topic">Topic to produce to</param>
+    /// <param name="batchSize">Max size of the batch</param>
+    /// <param name="maxQueueSize">Max size of the requests waiting in queue. If value is provided, the producer will throw <see cref="ProducerQueueFullException"/> when queue size is exceeded. If null, the queue is unbounded.</param>
+    /// <returns></returns>
+    public BatchingProducer(Cluster cluster, string topic, int batchSize = 2000, int? maxQueueSize = null)
         : this(
             batch => cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, CancellationTokens.FromSeconds(5)),
-            cluster.Config.PubSubBatchSize,
+            batchSize,
             maxQueueSize
         ) => _topic = topic;
 
-    internal Producer(Func<ProducerBatchMessage, Task> requestToTopic, int batchSize, int? maxQueueSize = null)
+    internal BatchingProducer(Func<ProducerBatchMessage, Task> requestToTopic, int batchSize, int? maxQueueSize = null)
     {
         _requestToTopic = requestToTopic;
         _batchSize = batchSize;
@@ -145,6 +153,13 @@ public class Producer : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Adds a message to producer queue. The returned Task will complete when the message is actually published.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">Thrown when the producer is already stopped or failed.</exception>
+    /// <exception cref="ProducerQueueFullException">Thrown when producer max queue size is reached.</exception>
     public Task ProduceAsync(object message)
     {
         var tcs = new TaskCompletionSource<bool>();

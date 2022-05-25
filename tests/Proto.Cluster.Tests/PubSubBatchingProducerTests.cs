@@ -16,12 +16,12 @@ using Xunit.Abstractions;
 namespace Proto.Cluster.Tests;
 
 [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
-public class PubSubProducerTests
+public class PubSubBatchingProducerTests
 {
     private readonly ITestOutputHelper _output;
     private readonly List<ProducerBatchMessage> _batchesSent = new();
 
-    public PubSubProducerTests(ITestOutputHelper output) => _output = output;
+    public PubSubBatchingProducerTests(ITestOutputHelper output) => _output = output;
 
     private Task Record(ProducerBatchMessage batch)
     {
@@ -49,7 +49,7 @@ public class PubSubProducerTests
     [Fact]
     public async Task Producer_sends_messages_in_batches()
     {
-        await using var producer = new PubSub.Producer(Record, 10);
+        await using var producer = new PubSub.BatchingProducer(Record, 10);
 
         var tasks = Enumerable.Range(1, 10000)
             .Select(i => producer.ProduceAsync(new TestMessage(i)))
@@ -72,7 +72,7 @@ public class PubSubProducerTests
     [Fact]
     public async Task Publishing_through_stopped_producer_throws()
     {
-        var producer = new PubSub.Producer(Record, 10);
+        var producer = new PubSub.BatchingProducer(Record, 10);
         await producer.DisposeAsync();
 
         var sutAction = () => producer.ProduceAsync(new TestMessage(1));
@@ -82,7 +82,7 @@ public class PubSubProducerTests
     [Fact]
     public async Task All_pending_tasks_complete_when_producer_is_stopped()
     {
-        var producer = new PubSub.Producer(Wait, 5);
+        var producer = new PubSub.BatchingProducer(Wait, 5);
         var tasks = Enumerable.Range(1, 100).Select(i => producer.ProduceAsync(new TestMessage(i))).ToArray();
 
         await producer.DisposeAsync();
@@ -95,7 +95,7 @@ public class PubSubProducerTests
     [Fact]
     public async Task All_pending_tasks_complete_when_producer_fails()
     {
-        var producer = new PubSub.Producer(WaitThenFail, 5);
+        var producer = new PubSub.BatchingProducer(WaitThenFail, 5);
         var tasks = Enumerable.Range(1, 100).Select(i => producer.ProduceAsync(new TestMessage(i))).ToArray();
 
         try
@@ -114,7 +114,7 @@ public class PubSubProducerTests
     [Fact]
     public async Task Publishing_through_failed_producer_throws()
     {
-        await using var producer = new PubSub.Producer(Fail, 10);
+        await using var producer = new PubSub.BatchingProducer(Fail, 10);
         var sutAction = () => producer.ProduceAsync(new TestMessage(1));
         await sutAction.Should().ThrowAsync<TestException>(); // here we get the exception thrown during publish
 
@@ -126,7 +126,7 @@ public class PubSubProducerTests
     [Fact]
     public async Task Throws_when_queue_full()
     {
-        await using var producer = new PubSub.Producer(Wait, 1, 10);
+        await using var producer = new PubSub.BatchingProducer(Wait, 1, 10);
 
         var sutAction = () => {
             for (var i = 0; i < 20; i++)

@@ -69,7 +69,7 @@ class Program
         }
 
         //get hold of a producer that can send messages to the my-topic
-        await using var p = system.Cluster().Producer("my-topic");
+        await using var p = system.Cluster().BatchingProducer("my-topic");
 
         Console.WriteLine("starting");
 
@@ -126,8 +126,7 @@ class Program
     {
         var clusterConfig =
             ClusterConfig
-                .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()), new PartitionIdentityLookup())
-                .WithPubSubBatchSize(batchSize);
+                .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()), new PartitionIdentityLookup());
         return clusterConfig;
     }
         
