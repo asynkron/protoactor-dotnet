@@ -81,7 +81,7 @@ public record MemberList
                 var topology = u.Value.Unpack<ClusterTopology>();
                 var blocked = topology.Blocked.ToArray();
                 UpdateBlockedMembers(blocked);
-            }, Dispatchers.DefaultDispatcher
+            }
         );
 
         _eventStream.Subscribe<MemberBlocked>(b => {
