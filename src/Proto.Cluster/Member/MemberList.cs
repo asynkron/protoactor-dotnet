@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
+
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -67,9 +67,9 @@ public record MemberList
             Id = _cluster.System.Id,
             Host = host,
             Port = port,
-            Kinds = { _cluster.GetClusterKinds() }
+            Kinds = {_cluster.GetClusterKinds()}
         };
-            
+
         _eventStream = _system.EventStream;
         _eventStream.Subscribe<GossipUpdate>(u => {
                 if (u.Key != GossipKeys.Topology) return;
@@ -78,6 +78,11 @@ public record MemberList
                 var topology = u.Value.Unpack<ClusterTopology>();
                 var blocked = topology.Blocked.ToArray();
                 UpdateBlockedMembers(blocked);
+            }
+        );
+
+        _eventStream.Subscribe<MemberBlocked>(b => {
+                UpdateClusterTopology(_activeMembers.Members);
             }
         );
     }
@@ -134,8 +139,8 @@ public record MemberList
                 }
 
                 _stopping = true;
-                if (Logger.IsEnabled(LogLevel.Critical)) Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
-                _ = _cluster.ShutdownAsync();
+                Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
+                _ = _cluster.ShutdownAsync(reason:"Blocked by MemberList");
                 return;
             }
 

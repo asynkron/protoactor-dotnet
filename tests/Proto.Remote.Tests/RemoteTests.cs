@@ -86,14 +86,12 @@ public abstract class RemoteTests
         {
             var response = await future.Task;
 
-            switch (response)
+            return response switch
             {
-                case Proto.MessageEnvelope envelope: return (Pong) envelope.Message;
-                case Pong pong:
-                    return pong;
-                default:
-                    throw new ArgumentException(response?.ToString(), nameof(response));
-            }
+                Proto.MessageEnvelope envelope => (Pong) envelope.Message,
+                Pong pong                      => pong,
+                _                              => throw new ArgumentException(response?.ToString(), nameof(response))
+            };
         }
     }
 
@@ -354,6 +352,19 @@ public abstract class RemoteTests
             };
         }
     }
+    //
+    // [Fact]
+    // public async Task CanBlockRemote()
+    // {
+    //     _fixture.LogStore.Clear();
+    //     var remoteId = _fixture.ServerRemote1.System.Id;
+    //     System.Remote().BlockList.Block(new []{remoteId});
+    //     
+    //     
+    //     var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
+    //
+    //     System.Root.Send(remoteActor, new Die());
+    // }
 
     [Fact]
     public async Task CanMakeBinaryRequestToRemoteActor()
