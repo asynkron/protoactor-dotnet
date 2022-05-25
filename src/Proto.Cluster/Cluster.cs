@@ -19,6 +19,7 @@ using Proto.Cluster.PubSub;
 using Proto.Cluster.Seed;
 using Proto.Extensions;
 using Proto.Remote;
+using Proto.Utils;
 
 namespace Proto.Cluster;
 
@@ -53,7 +54,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         {
             _clusterMembersObserver = () => new[]
                 {new Measurement<long>(MemberList.GetAllMembers().Length, new("id", System.Id), new("address", System.Address))};
-            ClusterMetrics.ClusterMembersCount.AddObserver( _clusterMembersObserver);
+            ClusterMetrics.ClusterMembersCount.AddObserver(_clusterMembersObserver);
         }
 
         SubscribeToTopologyEvents();
@@ -155,6 +156,8 @@ public class Cluster : IActorSystemExtension<Cluster>
             _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
         }
 
+        EnsureTopicKindRegistered();
+        
         if (System.Metrics.Enabled)
         {
             _clusterKindObserver = () =>
@@ -167,24 +170,38 @@ public class Cluster : IActorSystemExtension<Cluster>
         }
     }
 
+    private void EnsureTopicKindRegistered()
+    {
+        // make sure PubSub topic kind is registered if user did not provide a custom registration
+        if (!_clusterKinds.ContainsKey(TopicActor.Kind))
+        {
+            var store = new EmptyKeyValueStore<Subscribers>();
+
+            _clusterKinds.Add(
+                TopicActor.Kind,
+                new ClusterKind(TopicActor.Kind, Props.FromProducer(() => new TopicActor(store))).Build(this)
+            );
+        }
+    }
+
     private void InitIdentityProxy()
         => System.Root.SpawnNamed(Props.FromProducer(() => new IdentityActivatorProxy(this)), IdentityActivatorProxy.ActorName);
 
     public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
-        
         await Gossip.SetStateAsync("cluster:left", new Empty());
-            
+
         //TODO: improve later, await at least two gossip cycles
-        
-        await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2);
-            
+
+        await Task.Delay((int) Config.GossipInterval.TotalMilliseconds * 2);
+
         if (_clusterKindObserver != null)
         {
             ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
             _clusterKindObserver = null;
         }
-        if(_clusterMembersObserver != null)
+
+        if (_clusterMembersObserver != null)
         {
             ClusterMetrics.ClusterMembersCount.RemoveObserver(_clusterMembersObserver);
             _clusterMembersObserver = null;

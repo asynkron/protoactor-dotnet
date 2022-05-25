@@ -124,13 +124,9 @@ class Program
 
     private static ClusterConfig GetClusterConfig()
     {
-        //use an empty store, no persistence
-        var store = new EmptyKeyValueStore<Subscribers>();
-            
         var clusterConfig =
             ClusterConfig
                 .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()), new PartitionIdentityLookup())
-                .WithClusterKind(TopicActor.Kind, Props.FromProducer(() => new TopicActor(store)))
                 .WithPubSubBatchSize(batchSize);
         return clusterConfig;
     }
