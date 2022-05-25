@@ -149,7 +149,7 @@ public record MemberList
             //then makes a delta between new and old members
             //notifying the cluster accordingly which members left or joined
 
-            var activeMembers = new ImmutableMemberSet(members).Except(blockList.BlockedMembers);
+            var activeMembers = new ImmutableMemberSet(members.ToArray()).Except(blockList.BlockedMembers);
 
             if (activeMembers.Equals(_activeMembers))
             {
