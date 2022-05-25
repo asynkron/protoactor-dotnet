@@ -26,7 +26,7 @@ public static class SystemContext
         }
         catch (Exception x)
         {
-            Logger.LogError(x, "SystemContext Failed to spawn child actor {Name}", name);
+            Logger.LogError(x, "SystemContext Failed to spawn system actor {Name}", name);
             throw;
         }
     }
