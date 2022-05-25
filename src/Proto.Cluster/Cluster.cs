@@ -155,7 +155,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         }
 
         EnsureTopicKindRegistered();
-        
+
         if (System.Metrics.Enabled)
         {
             _clusterKindObserver = () =>

@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
@@ -10,108 +9,32 @@ using Proto.Cluster.PubSub;
 using Proto.Cluster.Testing;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
-using Proto.Utils;
+using Proto.Timers;
 
 namespace ClusterPubSub;
 
 class Program
 {
-    public static int batchSize = 2000; 
     static async Task Main()
     {
         Log.SetLoggerFactory(LoggerFactory.Create(l =>
                 l.AddConsole().SetMinimumLevel(LogLevel.Information)
             )
         );
-        Console.WriteLine("1) Run local");
-        Console.WriteLine("2) Run remote");
-        var runRemote = Console.ReadLine() == "2";
-            
-        Console.WriteLine("Subscriber Count, default 10");
 
-        if (!int.TryParse(Console.ReadLine(), out var subscriberCount))
-        {
-            subscriberCount = 10;
-        }
-            
         var system = GetSystem();
+        var cluster = system.Cluster();
+        
+        await cluster.StartMemberAsync();
 
-        if (runRemote)
+        for (var i = 0; i < 3; i++)
         {
-            await RunMember(); //start the subscriber node
-                
-            await system
-                .Cluster()
-                .StartClientAsync();
-        }
-        else
-        {
-            await system
-                .Cluster()
-                .StartMemberAsync();
+            await cluster.GetUserActor("user-" + i).Connect(CancellationToken.None);
         }
 
-        var props = Props.FromFunc(ctx => {
-                if (ctx.Message is SomeMessage s)
-                {
-                    //       Console.Write(".");
-                }
+        Console.ReadKey();
 
-                return Task.CompletedTask;
-            }
-        );
-
-        for (var j = 0; j < subscriberCount; j++)
-        {
-            var pid1 = system.Root.Spawn(props);
-            //subscribe the pid to the my-topic
-            await system.Cluster().Subscribe("my-topic", pid1);
-        }
-
-        //get hold of a producer that can send messages to the my-topic
-        await using var p = system.Cluster().BatchingProducer("my-topic");
-
-        Console.WriteLine("starting");
-
-        var sw = Stopwatch.StartNew();
-        var tasks = new List<Task>();
-
-        for (var i = 0; i < 100; i++)
-        {
-            var t = p.ProduceAsync(new SomeMessage
-                {
-                    Value = i,
-                }
-            );
-            tasks.Add(t);
-        }
-
-       
-        await Task.WhenAll(tasks);
-        tasks.Clear();
-        ;
-            
-        sw.Restart();
-
-        Console.WriteLine("Running...");
-        var messageCount = 1_000_000;
-
-        for (var i = 0; i < messageCount; i++)
-        {
-            tasks.Add(p.ProduceAsync(new SomeMessage
-                    {
-                        Value = i,
-                    }
-                )
-            );
-        }
-
-        await Task.WhenAll(tasks);
-        sw.Stop();
-
-        var tps = (messageCount * subscriberCount) / sw.ElapsedMilliseconds * 1000;
-        Console.WriteLine($"Time {sw.Elapsed.TotalMilliseconds}");
-        Console.WriteLine($"Messages per second {tps:N0}");
+        await cluster.ShutdownAsync();
     }
 
     private static ActorSystem GetSystem() => new ActorSystem()
@@ -120,24 +43,72 @@ class Program
 
     private static GrpcNetRemoteConfig GetRemoteConfig() => GrpcNetRemoteConfig
         .BindToLocalhost()
-        .WithProtoMessages(ClusterPubSub.ProtosReflection.Descriptor);
+        .WithProtoMessages(ProtosReflection.Descriptor);
 
     private static ClusterConfig GetClusterConfig()
     {
         var clusterConfig =
             ClusterConfig
-                .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()), new PartitionIdentityLookup());
+                .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()), new PartitionIdentityLookup())
+                .WithClusterKind(UserActorActor.Kind, Props.FromProducer(() => new UserActorActor((c, _) => new User(c))));
         return clusterConfig;
     }
-        
-
-    public static async Task RunMember()
-    {
-        var system = GetSystem();
-        await system
-            .Cluster()
-            .StartMemberAsync();
-            
-        Console.WriteLine("Started worker node...");
-    }
 }
+
+public class User : UserActorBase
+{
+    private CancellationTokenSource _schedule;
+    private const string ChatTopic = "chat";
+    
+    public User(IContext context) : base(context) { }
+
+    public override Task Connect()
+    {
+        _schedule = Context.Scheduler().SendRepeatedly(
+            TimeSpan.FromSeconds(new Random().Next(2, 5)), 
+            Context.Self, 
+            new Tick());
+        
+        return Context.Cluster().Subscribe(ChatTopic, Context.ClusterIdentity()!);
+    }
+
+    public override Task OnStopping()
+    {
+        _schedule.Cancel();
+        return Context.Cluster().Unsubscribe(ChatTopic, Context.ClusterIdentity()!);
+    }
+
+    public override Task OnReceive()
+    {
+        switch (Context.Message)
+        {
+            case Tick:
+                var message = _messages[new Random().Next(0, _messages.Length)];
+                Console.WriteLine($"{Context.ClusterIdentity()!.Identity} publishes '{message}'");
+                
+                _ = Context.Cluster().Publish(ChatTopic, new ChatMessage
+                {
+                    Sender = Context.ClusterIdentity()!.Identity, 
+                    Message = message
+                });
+                
+                break;
+            
+            case ChatMessage msg:
+                Console.WriteLine($"{Context.ClusterIdentity()!.Identity} received '{msg.Message}' from {msg.Sender}");
+                break;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static string[] _messages = new[]
+    {
+        "Good day sir!",
+        "Lovely weather, innit?",
+        "How do you do?",
+        "Pardon me!"
+    };
+}
+
+record Tick;
