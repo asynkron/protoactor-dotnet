@@ -144,6 +144,7 @@ public record MemberList
                 _stopping = true;
                 Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
                 _ = _cluster.ShutdownAsync(reason:"Blocked by MemberList");
+
                 return;
             }
 
