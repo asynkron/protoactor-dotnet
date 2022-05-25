@@ -48,7 +48,7 @@ public class Cluster : IActorSystemExtension<Cluster>
 
         Gossip = new Gossiper(this);
         PidCache = new PidCache();
-        PubSub = new PubSubManager(this);
+        _ = new PubSubExtension(this);
 
         if (System.Metrics.Enabled)
         {
@@ -59,8 +59,6 @@ public class Cluster : IActorSystemExtension<Cluster>
 
         SubscribeToTopologyEvents();
     }
-
-    public PubSubManager PubSub { get; }
 
     public static ILogger Logger { get; } = Log.CreateLogger<Cluster>();
 
@@ -130,7 +128,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         var kinds = GetClusterKinds();
         await IdentityLookup.SetupAsync(this, kinds, client);
         InitIdentityProxy();
-        await PubSub.StartAsync();
+        await this.PubSub().StartAsync();
         InitPidCacheTimeouts();
     }
 

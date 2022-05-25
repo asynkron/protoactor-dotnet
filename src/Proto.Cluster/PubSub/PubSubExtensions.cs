@@ -12,6 +12,10 @@ namespace Proto.Cluster.PubSub;
 [PublicAPI]
 public static class PubSubExtensions
 {
+    public static PubSubExtension PubSub(this Cluster cluster) => cluster.System.Extensions.Get<PubSubExtension>()!;
+
+    public static PubSubExtension? PubSub(this ActorSystem system) => system.Extensions.Get<PubSubExtension>();
+
     public static Producer Producer(this Cluster cluster, string topic) => new(cluster, topic);
 
     // Subscribe Cluster Identity

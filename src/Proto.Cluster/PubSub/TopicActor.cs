@@ -53,7 +53,7 @@ public sealed class TopicActor : IActor
              let address = member.Key
              let subscribersOnMember = GetSubscribersForAddress(member)
              let deliveryMessage = new DeliveryBatchMessage(subscribersOnMember, batch)
-             let deliveryPid = PID.FromAddress(address, PubSubManager.PubSubDeliveryName)
+             let deliveryPid = PID.FromAddress(address, PubSubExtension.PubSubDeliveryName)
              select context.RequestAsync<PublishResponse>(deliveryPid, deliveryMessage)).Cast<Task>()
             .ToList();
             
