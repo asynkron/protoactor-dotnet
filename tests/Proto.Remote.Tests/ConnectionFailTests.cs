@@ -3,6 +3,7 @@
 // using System.Threading.Tasks;
 // using Divergic.Logging.Xunit;
 // using Microsoft.Extensions.Logging;
+// using Proto.Remote.GrpcNet;
 // using Proto.Remote.Tests.Messages;
 // using Xunit;
 // using Xunit.Abstractions;
@@ -21,6 +22,9 @@
 //         [Fact, DisplayTestMethodName]
 //         public async Task CanRecoverFromConnectionFailureAsync()
 //         {
+//             var system = new ActorSystem().WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(Tests.Messages.ProtosReflection.Descriptor));
+//             await system.Remote().StartAsync();
+//             
 //             var logger = Log.CreateLogger("ConnectionFail");
 //
 //             var remoteActor = new PID("127.0.0.1:12000", "EchoActorInstance");
@@ -36,9 +40,9 @@
 //                 }
 //             );
 //
-//             EventStream.Instance.Subscribe<EndpointTerminatedEvent>(termEvent => receivedTerminationTcs.TrySetResult(true));
+//             system.EventStream.Subscribe<EndpointTerminatedEvent>(termEvent => receivedTerminationTcs.TrySetResult(true));
 //
-//             var localActor = RootContext.Empty.Spawn(
+//             var localActor = system.Root.Spawn(
 //                 Props.FromFunc(
 //                     ctx =>
 //                     {
@@ -48,14 +52,14 @@
 //                             ctx.Stop(ctx.Self);
 //                         }
 //
-//                         return Actor.Done;
+//                         return Task.CompletedTask;
 //                     }
 //                 )
 //             );
 //
-//             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
-//             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
-//             Remote.SendMessage(remoteActor, envelope, 1);
+//             var ping = new Ping() {Message = "hello"};
+//             var envelope = new Proto.MessageEnvelope(ping, localActor, Proto.MessageHeader.Empty);
+//             system.Root.Send(remoteActor, envelope);
 //
 //             logger.LogDebug("sent message");
 //             logger.LogDebug("awaiting completion");
@@ -67,6 +71,8 @@
 //         [Fact, DisplayTestMethodName]
 //         public async Task MessagesGoToDeadLetterAfterConnectionFail()
 //         {
+//             var system = new ActorSystem().WithRemote(GrpcNetRemoteConfig.BindToLocalhost());
+//             await system.Remote().StartAsync();
 //             var logger = Log.CreateLogger("ConnectionFail");
 //
 //             var remoteActor = new PID("127.0.0.1:12000", "EchoActorInstance");
@@ -82,17 +88,17 @@
 //                 }
 //             );
 //
-//             EventStream.Instance.Subscribe<DeadLetterEvent>(
+//             system.EventStream.Subscribe<DeadLetterEvent>(
 //                 deadLetterEvt =>
 //                 {
-//                     if (deadLetterEvt.Message is JsonMessage)
+//                     if (deadLetterEvt.Message is Ping)
 //                     {
 //                         receivedDeadLetterEventTcs.TrySetResult(true);
 //                     }
 //                 }
 //             );
 //
-//             var localActor = RootContext.Empty.Spawn(
+//             var localActor = system.Root.Spawn(
 //                 Props.FromFunc(
 //                     ctx =>
 //                     {
@@ -102,15 +108,15 @@
 //                             ctx.Stop(ctx.Self);
 //                         }
 //
-//                         return Actor.Done;
+//                         return Task.CompletedTask;
 //                     }
 //                 )
 //             );
 //
-//             var json = new JsonMessage("remote_test_messages.Ping", "{ \"message\":\"Hello\"}");
-//             var envelope = new Proto.MessageEnvelope(json, localActor, Proto.MessageHeader.Empty);
+//             var ping = new Ping() {Message = "hello"};
+//             var envelope = new Proto.MessageEnvelope(ping, localActor, Proto.MessageHeader.Empty);
 //             logger.LogDebug("sending message while offline");
-//             Remote.SendMessage(remoteActor, envelope, 1);
+//             system.Root.Send(remoteActor, envelope);
 //
 //             logger.LogDebug("waiting for connection to fail after retries and fire a terminated event");
 //             await receivedDeadLetterEventTcs.Task;
@@ -119,7 +125,7 @@
 //             await Task.Delay(2000, ct.Token);
 //             
 //             logger.LogDebug("Sending new message now that remote is up");
-//             Remote.SendMessage(remoteActor, envelope, 1);
+//             system.Root.Send(remoteActor, envelope);
 //             
 //             logger.LogDebug("Waiting for response to message");
 //             await receivedPong.Task;

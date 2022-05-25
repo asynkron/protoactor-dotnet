@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
+
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +14,7 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
 using Proto.Logging;
+using Proto.Mailbox;
 using Proto.Remote;
 
 namespace Proto.Cluster;
@@ -67,10 +68,12 @@ public record MemberList
             Id = _cluster.System.Id,
             Host = host,
             Port = port,
-            Kinds = { _cluster.GetClusterKinds() }
+            Kinds = {_cluster.GetClusterKinds()}
         };
-            
+
         _eventStream = _system.EventStream;
+        
+        //subscribe non synchronous to avoid recursive updates
         _eventStream.Subscribe<GossipUpdate>(u => {
                 if (u.Key != GossipKeys.Topology) return;
 
@@ -79,6 +82,11 @@ public record MemberList
                 var blocked = topology.Blocked.ToArray();
                 UpdateBlockedMembers(blocked);
             }
+        );
+
+        _eventStream.Subscribe<MemberBlocked>(b => {
+                UpdateClusterTopology(_activeMembers.Members);
+            }, Dispatchers.DefaultDispatcher
         );
     }
 
@@ -134,8 +142,8 @@ public record MemberList
                 }
 
                 _stopping = true;
-                if (Logger.IsEnabled(LogLevel.Critical)) Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
-                _ = _cluster.ShutdownAsync();
+                Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
+                _ = _cluster.ShutdownAsync(reason:"Blocked by MemberList");
                 return;
             }
 
@@ -144,7 +152,7 @@ public record MemberList
             //then makes a delta between new and old members
             //notifying the cluster accordingly which members left or joined
 
-            var activeMembers = new ImmutableMemberSet(members).Except(blockList.BlockedMembers);
+            var activeMembers = new ImmutableMemberSet(members.ToArray()).Except(blockList.BlockedMembers);
 
             if (activeMembers.Equals(_activeMembers))
             {
