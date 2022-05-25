@@ -49,8 +49,7 @@ class PartitionManager
         else
         {
             var partitionActorProps = Props
-                .FromProducer(() => new PartitionIdentityActor(_cluster, _config))
-                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+                .FromProducer(() => new PartitionIdentityActor(_cluster, _config));
             _partitionIdentityActor = _context.SpawnNamedSystem(partitionActorProps, PartitionIdentityActorName);
 
             var partitionActivatorProps = Props.FromProducer(() => new PartitionPlacementActor(_cluster, _config));

@@ -53,10 +53,13 @@ public record ActorSystemConfig
     ///     Allows ActorSystem-wide augmentation of system Props
     ///     All system props are translated via this function
     /// </summary>
-    public Func<string, Props, Props> ConfigureSystemProps { get; init; } = (_,props) => props
-        .WithDeadlineDecorator(TimeSpan.FromSeconds(1))
-        .WithLoggingContextDecorator()
-        .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+    public Func<string, Props, Props> ConfigureSystemProps { get; init; } = (_,props) => {
+        var logger = Log.CreateLogger("SystemActors");
+        return props
+            .WithDeadlineDecorator(TimeSpan.FromSeconds(1), logger)
+            .WithLoggingContextDecorator(logger, LogLevel.None, LogLevel.Information, LogLevel.Error )
+            .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+    };
 
     /// <summary>
     ///     Enables SharedFutures
