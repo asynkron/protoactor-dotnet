@@ -26,7 +26,7 @@ public class SeedNodeClusterProvider : IClusterProvider
     public async Task StartMemberAsync(Cluster cluster)
     {
         _cluster = cluster;
-        _pid = cluster.System.Root.SpawnNamed(SeedNodeActor.Props(_options), SeedNodeActor.Name);
+        _pid = cluster.System.Root.SpawnNamedSystem(SeedNodeActor.Props(_options), SeedNodeActor.Name);
         cluster.System.EventStream.Subscribe<GossipUpdate>(x => x.Key == GossipKeys.Topology, x => cluster.System.Root.Send(_pid, x));
         cluster.System.EventStream.Subscribe<ClusterTopology>(cluster.System.Root, _pid);
         var result = await cluster.System.Root.RequestAsync<object>(_pid, new Connect(), _cts.Token);
@@ -43,7 +43,7 @@ public class SeedNodeClusterProvider : IClusterProvider
     public async Task StartClientAsync(Cluster cluster)
     {
         _cluster = cluster;
-        _pid = cluster.System.Root.SpawnNamed(SeedClientNodeActor.Props(_options), SeedClientNodeActor.Name);
+        _pid = cluster.System.Root.SpawnNamedSystem(SeedClientNodeActor.Props(_options), SeedClientNodeActor.Name);
         var result = await cluster.System.Root.RequestAsync<object>(_pid, new Connect(), _cts.Token);
         switch (result)
         {

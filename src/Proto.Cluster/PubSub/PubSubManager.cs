@@ -17,7 +17,7 @@ public class PubSubManager
     public Task StartAsync()
     {
         var props = Props.FromProducer(() => new PubSubMemberDeliveryActor());
-        _cluster.System.Root.SpawnNamed(props, PubSubDeliveryName);
+        _cluster.System.Root.SpawnNamedSystem(props, PubSubDeliveryName);
 
         return Task.CompletedTask;
     }

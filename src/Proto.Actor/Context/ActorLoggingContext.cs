@@ -88,17 +88,24 @@ public class ActorLoggingContext : ActorContextDecorator
 
     public override void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
     {
+        if (_logger.IsEnabled(_logLevel))
+        {
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} ReenterAfter {Action}", Self, ActorType, action.Method.Name);
+        }
         base.ReenterAfter(target, action);
     }
 
     public override void ReenterAfter(Task target, Action action)
     {
+        if (_logger.IsEnabled(_logLevel))
+        {
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} ReenterAfter {Action}", Self, ActorType, action.Method.Name);
+        }
         base.ReenterAfter(target, action);
     }
 
     public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
     {
-        T response;
         if (_logger.IsEnabled(_logLevel))
         {
             _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending ReqeustAsync {MessageType}:{Message} to {Target}", Self, ActorType,
@@ -108,7 +115,7 @@ public class ActorLoggingContext : ActorContextDecorator
 
         try
         {
-            response = await base.RequestAsync<T>(target, message, cancellationToken);
+            var response = await base.RequestAsync<T>(target, message, cancellationToken);
 
             if (_logger.IsEnabled(_logLevel))
             {
@@ -182,8 +189,6 @@ public class ActorLoggingContext : ActorContextDecorator
 
         base.Respond(message);
     }
-        
-        
 
     private string ActorType => Actor?.GetType().Name ?? "None";
 }

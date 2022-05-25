@@ -19,7 +19,7 @@ namespace Proto;
 [PublicAPI]
 public sealed class ActorSystem : IAsyncDisposable
 {
-    private static readonly ILogger Logger = Log.CreateLogger<ActorSystem>();
+    private readonly ILogger _logger = Log.CreateLogger<ActorSystem>();
     public const string NoHost = "nonhost";
     public const string Client = "$client";
     private string _host = NoHost;
@@ -101,7 +101,7 @@ public sealed class ActorSystem : IAsyncDisposable
     {
         try
         {
-            Logger.LogInformation("Shutting down actor system {Id}", Id);
+            _logger.LogInformation("Shutting down actor system {Id}", Id);
             Stopper.Stop(reason);
         }
         catch
@@ -132,6 +132,8 @@ public sealed class ActorSystem : IAsyncDisposable
     public (string Host, int Port) GetAddress() => (_host, _port);
 
     public Props ConfigureProps(Props props) => Config.ConfigureProps(props);
+    
+    public Props ConfigureSystemProps(string name, Props props) => Config.ConfigureSystemProps(name, props);
 
     public async ValueTask DisposeAsync()
     {

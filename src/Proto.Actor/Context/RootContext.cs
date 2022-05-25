@@ -66,10 +66,12 @@ public sealed record RootContext : IRootContext
         }
         catch (Exception x)
         {
-            Logger.LogError(x, "RootContext Failed to spawn child actor {Name}", name);
+            Logger.LogError(x, "RootContext Failed to spawn root level actor {Name}", name);
             throw;
         }
     }
+    
+    
 
     public object? Message => null;
 

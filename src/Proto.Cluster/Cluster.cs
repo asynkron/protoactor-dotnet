@@ -168,7 +168,7 @@ public class Cluster : IActorSystemExtension<Cluster>
     }
 
     private void InitIdentityProxy()
-        => System.Root.SpawnNamed(Props.FromProducer(() => new IdentityActivatorProxy(this)), IdentityActivatorProxy.ActorName);
+        => System.Root.SpawnNamedSystem(Props.FromProducer(() => new IdentityActivatorProxy(this)), IdentityActivatorProxy.ActorName);
 
     public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
