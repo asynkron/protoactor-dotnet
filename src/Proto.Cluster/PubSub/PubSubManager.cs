@@ -9,7 +9,7 @@ namespace Proto.Cluster.PubSub;
 
 public class PubSubManager
 {
-    public const string PubSubDeliveryName = "pubsub-delivery";
+    public const string PubSubDeliveryName = "$pubsub-delivery";
     private readonly Cluster _cluster;
 
     public PubSubManager(Cluster cluster) => _cluster = cluster;
