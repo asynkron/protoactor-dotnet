@@ -134,8 +134,8 @@ public record MemberList
                 }
 
                 _stopping = true;
-                if (Logger.IsEnabled(LogLevel.Critical)) Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
-                _ = _cluster.ShutdownAsync();
+                Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
+                _ = _cluster.ShutdownAsync(true, "I have been blocked");
                 return;
             }
 

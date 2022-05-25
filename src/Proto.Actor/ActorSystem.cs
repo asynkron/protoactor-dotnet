@@ -101,7 +101,7 @@ public sealed class ActorSystem : IAsyncDisposable
     {
         try
         {
-            _logger.LogInformation("Shutting down actor system {Id}", Id);
+            _logger.LogInformation("Shutting down actor system {Id} - Reason {Reason}", Id, reason);
             Stopper.Stop(reason);
         }
         catch
@@ -137,7 +137,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await ShutdownAsync();
+        await ShutdownAsync("Disposed");
 
         // NOTE: We don't dispose _cts here on purpose, as doing so causes
         // ObjectDisposedException to be thrown from certain background task
