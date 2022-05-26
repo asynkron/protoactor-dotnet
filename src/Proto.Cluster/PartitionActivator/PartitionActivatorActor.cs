@@ -155,8 +155,7 @@ public class PartitionActivatorActor : IActor
         else
         {
             var clusterKind = _cluster.GetClusterKind(msg.Kind);
-            var clusterProps = clusterKind.Props.WithClusterIdentity(msg.ClusterIdentity);
-            var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.Identity);
+            var pid = context.SpawnPrefix(clusterKind.Props, msg.ClusterIdentity.Identity, ctx => ctx.Set(msg.ClusterIdentity));
             _actors.Add(msg.ClusterIdentity, pid);
             context.Respond(new ActivationResponse
                 {

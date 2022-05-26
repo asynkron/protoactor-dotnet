@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Threading;
 using Proto.Context;
 
@@ -16,7 +17,7 @@ public abstract record RouterConfig
 
     public Props Props() => new Props().WithSpawner(SpawnRouterProcess);
 
-    private PID SpawnRouterProcess(ActorSystem system, string name, Props props, PID? parent)
+    private PID SpawnRouterProcess(ActorSystem system, string name, Props props, PID? parent, Action<IContext>? callback)
     {
         var routerState = CreateRouterState();
         var wg = new AutoResetEvent(false);
@@ -30,6 +31,7 @@ public abstract record RouterConfig
         if (!absent) throw new ProcessNameExistException(name, self);
 
         var ctx = ActorContext.Setup(system, p, parent, self, mailbox);
+        callback?.Invoke(ctx);
         mailbox.RegisterHandlers(ctx, dispatcher);
         mailbox.PostSystemMessage(Started.Instance);
         mailbox.Start();

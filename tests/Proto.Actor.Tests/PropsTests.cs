@@ -109,7 +109,7 @@ public class PropsTests
     [Fact]
     public void Given_Props_When_WithSpawner_Then_mutate_Spawner()
     {
-        PID Spawner(ActorSystem s, string id, Props p, PID? parent) => new();
+        PID Spawner(ActorSystem s, string id, Props p, PID? parent, Action<IContext> callback) => new();
 
         var props = new Props();
         var props2 = props.WithSpawner(Spawner);
