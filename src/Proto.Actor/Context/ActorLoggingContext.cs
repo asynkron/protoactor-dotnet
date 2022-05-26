@@ -155,11 +155,11 @@ public class ActorLoggingContext : ActorContextDecorator
         return logLevel;
     }
 
-    public override PID SpawnNamed(Props props, string name)
+    public override PID SpawnNamed(Props props, string name, Action<IContext>? callback = null)
     {
         try
         {
-            var pid = base.SpawnNamed(props, name);
+            var pid = base.SpawnNamed(props, name, callback);
 
             if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
             {

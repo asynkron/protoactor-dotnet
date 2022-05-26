@@ -146,7 +146,7 @@ public sealed record Props
     public Props WithSpawner(Spawner spawner) =>
         this with {Spawner = spawner};
 
-    internal PID Spawn(ActorSystem system, string name, PID? parent) => Spawner(system, name, this, parent);
+    internal PID Spawn(ActorSystem system, string name, PID? parent, Action<IContext> callback) => Spawner(system, name, this, parent, callback);
 
     public static Props FromProducer(Producer producer) => Empty.WithProducer(_ => producer());
 

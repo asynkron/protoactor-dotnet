@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -18,7 +19,7 @@ public abstract class RootContextDecorator : IRootContext
 
     protected RootContextDecorator(IRootContext context) => _context = context;
 
-    public virtual PID SpawnNamed(Props props, string name) => _context.SpawnNamed(props, name);
+    public virtual PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) => _context.SpawnNamed(props, name, callback);
 
     public virtual void Send(PID target, object message) => _context.Send(target, message);
 

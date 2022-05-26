@@ -40,6 +40,7 @@ public sealed record RootContext : IRootContext
 
     private Sender? SenderMiddleware { get; init; }
     public ActorSystem System { get; }
+
     private TypeDictionary<object, RootContext> Store { get; } = new(0, 1);
 
     public T? Get<T>() => (T?) Store.Get<T>();
@@ -55,7 +56,7 @@ public sealed record RootContext : IRootContext
     PID? IInfoContext.Sender => null;
     public IActor? Actor => null;
 
-    public PID SpawnNamed(Props props, string name)
+    public PID SpawnNamed(Props props, string name, Action<IContext>? callback=null)
     {
         try
         {

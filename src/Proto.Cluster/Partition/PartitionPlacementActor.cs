@@ -37,10 +37,10 @@ class PartitionPlacementActor : IActor, IDisposable
         context.Message switch
         {
             Started                     => OnStarted(context),
-            ActivationTerminating msg   => ActivationTerminating(msg),
-            IdentityHandoverRequest msg => IdentityHandoverRequest(context, msg),
+            ActivationTerminating msg   => OnActivationTerminating(msg),
+            IdentityHandoverRequest msg => OnIdentityHandoverRequest(context, msg),
             ClusterTopology msg         => OnClusterTopology(context, msg),
-            ActivationRequest msg       => ActivationRequest(context, msg),
+            ActivationRequest msg       => OnActivationRequest(context, msg),
             _                           => Task.CompletedTask
         };
 
@@ -205,7 +205,7 @@ class PartitionPlacementActor : IActor, IDisposable
         return Task.CompletedTask;
     }
 
-    private Task ActivationTerminating(ActivationTerminating msg)
+    private Task OnActivationTerminating(ActivationTerminating msg)
     {
         if (!_myActors.TryGetValue(msg.ClusterIdentity, out var pid))
         {
@@ -239,7 +239,7 @@ class PartitionPlacementActor : IActor, IDisposable
     //this is pure, we do not change any state or actually move anything
     //the requester also provide its own view of the world in terms of members
     //TLDR; we are not using any topology state from this actor itself
-    private Task IdentityHandoverRequest(IContext context, IdentityHandoverRequest msg)
+    private Task OnIdentityHandoverRequest(IContext context, IdentityHandoverRequest msg)
     {
         if (context.Sender is null)
         {
@@ -302,7 +302,7 @@ class PartitionPlacementActor : IActor, IDisposable
         }
     );
 
-    private Task ActivationRequest(IContext context, ActivationRequest msg)
+    private Task OnActivationRequest(IContext context, ActivationRequest msg)
     {
         try
         {
