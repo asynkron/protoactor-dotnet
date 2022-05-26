@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 
 namespace Proto.Mailbox;
 
+
 public class UnboundedMailboxQueue : IMailboxQueue
 {
     private readonly ConcurrentQueue<object> _messages = new();
