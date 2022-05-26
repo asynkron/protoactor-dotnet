@@ -2,6 +2,13 @@ syntax = "proto3";
 package clusterpubsub;
 option csharp_namespace = "ClusterPubSub";
 
-message SomeMessage {
-  int32 value =1;
+import "google/protobuf/empty.proto";
+
+message ChatMessage {
+  string sender = 1;
+  string message = 2;
+}
+
+service UserActor {
+  rpc Connect(google.protobuf.Empty) returns (google.protobuf.Empty);
 }

@@ -7,17 +7,17 @@ using Proto.Remote;
 
 namespace Proto.Cluster.PubSub;
 
-public record DeliveryBatchMessage(Subscribers subscribers, ProducerBatchMessage ProducerBatch) : IRootSerializable
+public record DeliveryBatchMessage(Subscribers Subscribers, PublisherBatchMessage PublisherBatch) : IRootSerializable
 {
     public IRootSerialized Serialize(ActorSystem system) => new DeliveryBatch
     {
-        Subscribers = subscribers,
-        Batch = (ProducerBatch)ProducerBatch.Serialize(system),
+        Subscribers = Subscribers,
+        Batch = (ProducerBatch)PublisherBatch.Serialize(system),
     };
 }
 
 public partial class DeliveryBatch: IRootSerialized
 {
     public IRootSerializable Deserialize(ActorSystem system) => 
-        new DeliveryBatchMessage(Subscribers, (ProducerBatchMessage) Batch.Deserialize(system));
+        new DeliveryBatchMessage(Subscribers, (PublisherBatchMessage) Batch.Deserialize(system));
 }
