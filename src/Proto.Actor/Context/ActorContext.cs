@@ -95,7 +95,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
         try
         {
-            var pid = props.Spawn(System, $"{Self.Id}/{name}", Self);
+            var pid = props.Spawn(System, $"{Self.Id}/{name}", Self, callback);
             EnsureExtras().AddChild(pid);
 
             return pid;
