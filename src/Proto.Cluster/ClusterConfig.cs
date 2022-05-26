@@ -33,7 +33,6 @@ public record ClusterConfig
         ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
         IdentityLookup = identityLookup;
         MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
-        PubSubBatchSize = 2000;
         RemotePidCacheTimeToLive = TimeSpan.FromMinutes(15);
         RemotePidCacheClearInterval = TimeSpan.FromSeconds(15);
     }
@@ -45,8 +44,6 @@ public record ClusterConfig
     public ImmutableList<ClusterKind> ClusterKinds { get; init; } = ImmutableList<ClusterKind>.Empty;
 
     public IClusterProvider ClusterProvider { get; }
-
-    public int PubSubBatchSize { get; init; }
 
     public TimeSpan HeartbeatExpiration { get; set; }
     public TimeSpan TimeoutTimespan { get; init; }
@@ -87,9 +84,6 @@ public record ClusterConfig
 
     public ClusterConfig WithRequestLogThrottlePeriod(TimeSpan timeSpan) =>
         this with {RequestLogThrottlePeriod = timeSpan};
-
-    public ClusterConfig WithPubSubBatchSize(int batchSize) =>
-        this with {PubSubBatchSize = batchSize};
 
     public ClusterConfig WithMaxNumberOfEventsInRequestLogThrottlePeriod(int max) =>
         this with {MaxNumberOfEventsInRequestLogThrottlePeriod = max};

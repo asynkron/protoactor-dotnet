@@ -15,20 +15,19 @@ public class PubSubMemberDeliveryActor : IActor
     {
         if (context.Message is DeliveryBatchMessage deliveryBatch)
         {
-            // Console.WriteLine("got messages " + deliveryBatch.subscribers.Subscribers_.Count);
-            var topicBatch = new TopicBatchMessage(deliveryBatch.ProducerBatch.Envelopes);
+            var topicBatch = new TopicBatchMessage(deliveryBatch.PublisherBatch.Envelopes);
             var tasks =
                 deliveryBatch
-                    .subscribers.Subscribers_
+                    .Subscribers.Subscribers_
                     .Select(sub => DeliverBatch(context, topicBatch, sub));
-                
+
             //wait for completion
             await Task.WhenAll(tasks);
-                
+
             context.Respond(new PublishResponse());
         }
     }
-        
+
     private static Task DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s) =>
         s.IdentityCase switch
         {
@@ -39,7 +38,7 @@ public class PubSubMemberDeliveryActor : IActor
 
     private static Task DeliverToClusterIdentity(IContext context, TopicBatchMessage pub, ClusterIdentity ci) =>
         //deliver to virtual actor
-        context.ClusterRequestAsync<PublishResponse>(ci.Identity,ci.Kind, pub, CancellationToken.None
+        context.ClusterRequestAsync<PublishResponse>(ci.Identity, ci.Kind, pub, CancellationToken.None
         );
 
     private static Task DeliverToPid(IContext context, TopicBatchMessage pub, PID pid) =>

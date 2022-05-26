@@ -10,7 +10,7 @@ using Proto.Remote;
 
 namespace Proto.Cluster.PubSub;
 
-public class ProducerBatchMessage :  IRootSerializable
+public class PublisherBatchMessage :  IRootSerializable
 {
     public List<object> Envelopes { get; } = new ();
 
@@ -57,7 +57,7 @@ public partial class ProducerBatch : IRootSerialized
                 .Deserialize(TypeNames[e.TypeId], e.MessageData, e.SerializerId))
             .ToList();
 
-        var res = new ProducerBatchMessage();
+        var res = new PublisherBatchMessage();
         res.Envelopes.AddRange(messages);
         return res;
     }
