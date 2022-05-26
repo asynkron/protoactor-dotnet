@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="ActorLoggingDecorator.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -147,6 +147,10 @@ public class ActorLoggingContext : ActorContextDecorator
 
     private LogLevel GetLogLevel(object message)
     {
+        // Don't log certain messages, as the Partition*Actor ends up spamming logs without this.
+        if (message is Terminated or Touch)
+            return LogLevel.None;
+
         var logLevel = message is InfrastructureMessage ? _infrastructureLogLevel : _logLevel;
         return logLevel;
     }
