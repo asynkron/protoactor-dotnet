@@ -44,7 +44,7 @@ public sealed record Props
 
     private static IContext DefaultContextDecorator(IContext context) => context;
 
-    public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent)
+    public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent, Action<IContext>? callback)
     {
         //Ordering is important here
         //first we create a mailbox and attach it to a process
@@ -61,6 +61,7 @@ public sealed record Props
         //if successful, we create the actor and attach it to the mailbox
         var ctx = ActorContext.Setup(system, props, parent, self, mailbox);
         Initialize(props, ctx);
+        callback?.Invoke(ctx);
         mailbox.RegisterHandlers(ctx, dispatcher);
         mailbox.PostSystemMessage(Started.Instance);
             
