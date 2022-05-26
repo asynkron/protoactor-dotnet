@@ -63,7 +63,7 @@ public sealed record RootContext : IRootContext
             var parent = props.GuardianStrategy is not null
                 ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
                 : null;
-            return props.Spawn(System, name, parent);
+            return props.Spawn(System, name, parent, callback);
         }
         catch (Exception x)
         {
