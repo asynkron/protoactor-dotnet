@@ -13,7 +13,7 @@ using Proto.Timers;
 
 namespace ClusterPubSub;
 
-class Program
+static class Program
 {
     static async Task Main()
     {
