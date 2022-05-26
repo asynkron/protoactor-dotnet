@@ -203,6 +203,8 @@ public class DefaultClusterContext : IClusterContext
             if (!context.System.Shutdown.IsCancellationRequested)
                 if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
 
+            _pidCache.RemoveByVal(clusterIdentity, pid);
+            
             return (ResponseStatus.TimedOut, default);
         }
         catch (TimeoutException)
