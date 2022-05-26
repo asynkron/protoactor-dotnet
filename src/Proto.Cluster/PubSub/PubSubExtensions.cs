@@ -54,7 +54,7 @@ public static class PubSubExtensions
     public static Task<PublishResponse> PublishBatch<TMessage>(
         this Cluster cluster,
         string topic,
-        IReadOnlyCollection<TMessage> messages,
+        IEnumerable<TMessage> messages,
         CancellationToken ct = default
     )
     {
