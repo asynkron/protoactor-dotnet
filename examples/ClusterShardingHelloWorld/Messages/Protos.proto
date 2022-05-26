@@ -1,0 +1,10 @@
+﻿syntax = "proto3";
+package HelloHelloWorld;
+option csharp_namespace = "ClusterHelloWorld.Messages";
+
+message HelloRequest {
+    string EntityId = 1;
+}
+message HelloResponse {
+    string Message=1;
+}
