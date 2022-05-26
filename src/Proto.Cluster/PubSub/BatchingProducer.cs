@@ -15,38 +15,36 @@ namespace Proto.Cluster.PubSub;
 
 public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource);
 
+/// <summary>
+/// The batching producer has an internal queue collecting messages to be published to a topic. Internal loop creates and sends the batches
+/// with the configured <see cref="IPublisher"/>.
+/// </summary>
 [PublicAPI]
 public class BatchingProducer : IAsyncDisposable
 {
     private static readonly ILogger Logger = Log.CreateLogger<BatchingProducer>();
     private static readonly ShouldThrottle _logThrottle = Throttle.Create(3, TimeSpan.FromSeconds(10));
 
-    private readonly Func<ProducerBatchMessage, Task> _requestToTopic;
-    private readonly string _topic = string.Empty;
+    private readonly string _topic;
 
     private readonly Channel<ProduceMessage> _publisherChannel;
     private readonly int _batchSize;
     private CancellationTokenSource _cts = new();
     private Task _publisherLoop;
+    private readonly IPublisher _publisher;
 
     /// <summary>
     /// Create a new batching producer for specified topic
     /// </summary>
-    /// <param name="cluster"></param>
+    /// <param name="publisher">Publish batches through this publisher</param>
     /// <param name="topic">Topic to produce to</param>
     /// <param name="batchSize">Max size of the batch</param>
     /// <param name="maxQueueSize">Max size of the requests waiting in queue. If value is provided, the producer will throw <see cref="ProducerQueueFullException"/> when queue size is exceeded. If null, the queue is unbounded.</param>
     /// <returns></returns>
-    public BatchingProducer(Cluster cluster, string topic, int batchSize = 2000, int? maxQueueSize = null)
-        : this(
-            batch => cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, CancellationTokens.FromSeconds(5)),
-            batchSize,
-            maxQueueSize
-        ) => _topic = topic;
-
-    internal BatchingProducer(Func<ProducerBatchMessage, Task> requestToTopic, int batchSize, int? maxQueueSize = null)
+    public BatchingProducer(IPublisher publisher, string topic, int batchSize = 2000, int? maxQueueSize = null)
     {
-        _requestToTopic = requestToTopic;
+        _publisher = publisher;
+        _topic = topic;
         _batchSize = batchSize;
 
         _publisherChannel = maxQueueSize != null
@@ -60,7 +58,7 @@ public class BatchingProducer : IAsyncDisposable
     {
         Logger.LogDebug("Producer is starting the publisher loop for topic {Topic}", _topic);
 
-        var batch = new ProducerBatchMessage();
+        var batch = new PublisherBatchMessage();
 
         try
         {
@@ -78,14 +76,14 @@ public class BatchingProducer : IAsyncDisposable
                         if (batch.Envelopes.Count < _batchSize) continue;
 
                         await PublishBatch(batch);
-                        batch = new ProducerBatchMessage();
+                        batch = new PublisherBatchMessage();
                     }
                     else
                     {
                         if (batch.Envelopes.Count > 0)
                         {
                             await PublishBatch(batch);
-                            batch = new ProducerBatchMessage();
+                            batch = new PublisherBatchMessage();
                         }
 
                         await _publisherChannel.Reader.WaitToReadAsync(cancel);
@@ -128,7 +126,7 @@ public class BatchingProducer : IAsyncDisposable
         }
     }
 
-    private void PurgeCurrentBatch(ProducerBatchMessage batch, Exception? ex = null)
+    private void PurgeCurrentBatch(PublisherBatchMessage batch, Exception? ex = null)
     {
         foreach (var deliveryReport in batch.DeliveryReports)
         {
@@ -142,10 +140,10 @@ public class BatchingProducer : IAsyncDisposable
         batch.DeliveryReports.Clear();
     }
 
-    private async Task PublishBatch(ProducerBatchMessage batch)
+    private async Task PublishBatch(PublisherBatchMessage batch)
     {
         //TODO: retries etc...
-        await _requestToTopic(batch);
+        await _publisher.PublishBatch(_topic, batch);
 
         foreach (var tcs in batch.DeliveryReports)
         {

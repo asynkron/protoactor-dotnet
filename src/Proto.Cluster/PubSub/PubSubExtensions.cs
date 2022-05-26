@@ -3,8 +3,6 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -19,7 +17,14 @@ public static class PubSubExtensions
     public static PubSubExtension? PubSub(this ActorSystem system) => system.Extensions.Get<PubSubExtension>();
 
     /// <summary>
-    /// Create a new batching producer for specified topic
+    /// Creates a new PubSub publisher that publishes messages directly to the TopicActor
+    /// </summary>
+    /// <param name="cluster"></param>
+    /// <returns></returns>
+    public static IPublisher Publisher(this Cluster cluster) => new Publisher(cluster);
+
+    /// <summary>
+    /// Create a new PubSub batching producer for specified topic, that publishes directly to the topic actor
     /// </summary>
     /// <param name="cluster"></param>
     /// <param name="topic">Topic to produce to</param>
@@ -27,44 +32,10 @@ public static class PubSubExtensions
     /// <param name="maxQueueSize">Max size of the requests waiting in queue. If value is provided, the producer will throw <see cref="ProducerQueueFullException"/> when queue size is exceeded. If null, the queue is unbounded.</param>
     /// <returns></returns>
     public static BatchingProducer BatchingProducer(this Cluster cluster, string topic, int batchSize = 2000, int? maxQueueSize = null)
-        => new(cluster, topic, batchSize, maxQueueSize);
+        => new(cluster.Publisher(), topic, batchSize, maxQueueSize);
 
     /// <summary>
-    /// Publishes a message to PubSub topic. For high throughput scenarios consider using <see cref="Proto.Cluster.PubSub.BatchingProducer"></see>.
-    /// </summary>
-    /// <param name="cluster"></param>
-    /// <param name="topic">Topic to publish to</param>
-    /// <param name="message">Message</param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
-    public static Task<PublishResponse> Publish(this Cluster cluster, string topic, object message, CancellationToken ct = default)
-    {
-        var batch = new ProducerBatchMessage {Envelopes = {message}};
-        return cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, ct);
-    }
-
-    /// <summary>
-    /// Publishes a batch of messages to PubSub topic. For high throughput scenarios consider using <see cref="Proto.Cluster.PubSub.BatchingProducer"></see>.
-    /// </summary>
-    /// <param name="cluster"></param>
-    /// <param name="topic">Topic to publish to</param>
-    /// <param name="messages">Message</param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
-    public static Task<PublishResponse> PublishBatch<TMessage>(
-        this Cluster cluster,
-        string topic,
-        IEnumerable<TMessage> messages,
-        CancellationToken ct = default
-    )
-    {
-        var batch = new ProducerBatchMessage();
-        batch.Envelopes.AddRange(messages.Cast<object>());
-        return cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, ct);
-    }
-
-    /// <summary>
-    /// Subscribes to a topic by cluster identity
+    /// Subscribes to a PubSub topic by cluster identity
     /// </summary>
     /// <param name="cluster"></param>
     /// <param name="topic">Topic to subscribe to</param>
@@ -89,7 +60,7 @@ public static class PubSubExtensions
         );
 
     /// <summary>
-    /// Subscribes to a topic by cluster identity
+    /// Subscribes to a PubSub topic by cluster identity
     /// </summary>
     /// <param name="cluster"></param>
     /// <param name="topic">Topic to subscribe to</param>
@@ -107,7 +78,7 @@ public static class PubSubExtensions
         );
 
     /// <summary>
-    /// Subscribes to a topic by subscriber PID
+    /// Subscribes to a PubSub topic by subscriber PID
     /// </summary>
     /// <param name="cluster"></param>
     /// <param name="topic">Topic to subscribe to</param>
@@ -125,7 +96,7 @@ public static class PubSubExtensions
         );
 
     /// <summary>
-    /// Subscribe to a topic by providing a Receive function, that will be used to spawn a subscriber actor
+    /// Subscribe to a PubSub topic by providing a Receive function, that will be used to spawn a subscriber actor
     /// </summary>
     /// <param name="cluster"></param>
     /// <param name="topic">Topic to subscribe to</param>
@@ -140,7 +111,7 @@ public static class PubSubExtensions
     }
 
     /// <summary>
-    /// Unsubscribe topic by subscriber PID
+    /// Unsubscribe a PubSub topic by subscriber PID
     /// </summary>
     /// <param name="cluster"></param>
     /// <param name="topic">Topic to unsubscribe from</param>
@@ -158,7 +129,7 @@ public static class PubSubExtensions
         );
 
     /// <summary>
-    /// Unsubscribe topic by subscriber cluster identity
+    /// Unsubscribe a PubSub topic by subscriber cluster identity
     /// </summary>
     /// <param name="cluster"></param>
     /// <param name="topic">Topic to unsubscribe from</param>
@@ -176,7 +147,7 @@ public static class PubSubExtensions
         );
 
     /// <summary>
-    /// Unsubscribe topic by subscriber cluster identity
+    /// Unsubscribe a PubSub topic by subscriber cluster identity
     /// </summary>
     /// <param name="cluster"></param>
     /// <param name="topic">Topic to unsubscribe from</param>

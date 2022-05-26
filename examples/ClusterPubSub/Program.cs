@@ -86,7 +86,7 @@ public class User : UserActorBase
                 var message = _messages[new Random().Next(0, _messages.Length)];
                 Console.WriteLine($"{Context.ClusterIdentity()!.Identity} publishes '{message}'");
                 
-                _ = Context.Cluster().Publish(ChatTopic, new ChatMessage
+                _ = Context.Cluster().Publisher().Publish(ChatTopic, new ChatMessage
                 {
                     Sender = Context.ClusterIdentity()!.Identity, 
                     Message = message

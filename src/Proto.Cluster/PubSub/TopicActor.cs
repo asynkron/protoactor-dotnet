@@ -29,11 +29,11 @@ public sealed class TopicActor : IActor
         Started _                  => OnClusterInit(context),
         SubscribeRequest sub       => OnSubscribe(context, sub),
         UnsubscribeRequest unsub   => OnUnsubscribe(context, unsub),
-        ProducerBatchMessage batch => OnProducerBatch(context, batch),
+        PublisherBatchMessage batch => OnProducerBatch(context, batch),
         _                          => Task.CompletedTask,
     };
 
-    private async Task OnProducerBatch(IContext context, ProducerBatchMessage batch)
+    private async Task OnProducerBatch(IContext context, PublisherBatchMessage batch)
     {
         //TODO: lookup PID for ClusterIdentity subscribers.
         //group PIDs by address

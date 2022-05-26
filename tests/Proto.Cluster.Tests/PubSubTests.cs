@@ -33,7 +33,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         await SubscribeAllTo(topic, subscriberIds);
 
-        for (int i = 0; i < numMessages; i++)
+        for (var i = 0; i < numMessages; i++)
         {
             await PublishData(topic, i);
         }
@@ -52,7 +52,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         await SubscribeAllTo(topic, subscriberIds);
 
-        for (int i = 0; i < numMessages / 10; i++)
+        for (var i = 0; i < numMessages / 10; i++)
         {
             var data = Enumerable.Range(i * 10, 10).ToArray();
             await PublishDataBatch(topic, data);
@@ -196,11 +196,13 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
     private Task PublishViaRandomMember(string topic, object message) =>
         _fixture
             .Members[_random.Next(_fixture.Members.Count)]
+            .Publisher()
             .Publish(topic, message, CancellationTokens.FromSeconds(1));
 
     private Task PublishViaRandomMember<T>(string topic, T[] messages) =>
         _fixture
             .Members[_random.Next(_fixture.Members.Count)]
+            .Publisher()
             .PublishBatch(topic, messages, CancellationTokens.FromSeconds(1));
 
     private record DataPublished(int Data);
