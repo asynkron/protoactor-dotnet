@@ -51,4 +51,6 @@ public class ShardActor : IActor
 
         return pid;
     }
+
+    public static Props GetProps(ShardEntityProducer entityProducer) => Props.FromProducer(() => new ShardActor(entityProducer));
 }

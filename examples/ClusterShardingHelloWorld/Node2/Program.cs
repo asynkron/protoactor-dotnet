@@ -66,7 +66,8 @@ class Program
             .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(8090).WithProtoMessages(ProtosReflection.Descriptor))
             .WithCluster(ClusterConfig
                 .Setup("MyCluster", new SeedNodeClusterProvider(), new PartitionIdentityLookup())
-                .WithClusterKind("SomeKind", Props.FromProducer(() => new ShardActor((ShardEntityProducer) ((shardId, entityId, _) => Props.FromProducer(() => new HelloEntity(shardId, entityId)))))
+                //TODO: this is not optimal as it creates a new props for each child
+                .WithClusterKind("SomeKind", ShardActor.GetProps(((shardId, entityId, _) => Props.FromProducer(() => new HelloEntity(shardId, entityId))))
             ));
             
         system.EventStream.Subscribe<ClusterTopology>(e => {
