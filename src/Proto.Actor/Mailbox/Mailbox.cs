@@ -252,11 +252,6 @@ public sealed class DefaultMailbox : IMailbox
                     break;
             }
         }
-        catch (OutOfMemoryException e)
-        {
-            Console.WriteLine("OOM on message " + msg);
-            e.CheckFailFast();
-        }
         catch (Exception e)
         {
             e.CheckFailFast();
@@ -274,11 +269,6 @@ public sealed class DefaultMailbox : IMailbox
                 {
                     t1.MessageReceived(msg);
                 }
-            }
-            catch (OutOfMemoryException e)
-            {
-                Console.WriteLine("OOM on message " + msg);
-                e.CheckFailFast();
             }
             catch (Exception e)
             {
