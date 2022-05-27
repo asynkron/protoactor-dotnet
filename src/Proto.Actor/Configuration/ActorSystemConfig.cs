@@ -54,10 +54,10 @@ public record ActorSystemConfig
     ///     All system props are translated via this function
     /// </summary>
     public Func<string, Props, Props> ConfigureSystemProps { get; init; } = (_,props) => {
-        var logger = Log.CreateLogger("SystemActors");
+        var logger = Log.CreateLogger("Proto.SystemActors");
         return props
             .WithDeadlineDecorator(TimeSpan.FromSeconds(1), logger)
-            .WithLoggingContextDecorator(logger, LogLevel.None, LogLevel.Information, LogLevel.Error )
+            .WithLoggingContextDecorator(logger, LogLevel.None, LogLevel.Debug, LogLevel.Error )
             .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
     };
 
