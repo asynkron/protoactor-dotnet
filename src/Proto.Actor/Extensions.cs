@@ -33,8 +33,9 @@ public static class UtilExtensions
         value = self.Value;
     }
     
-    public static void CheckFailFast(this Exception reason)
+    public static void CheckFailFast(this Exception? reason)
     {
+        if (reason is null) return;
         if (reason is not SystemException) return;
 
         Console.WriteLine("[Fatal] Out of memory exception");
