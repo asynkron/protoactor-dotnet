@@ -37,9 +37,13 @@ public abstract class ClusterTests : ClusterTestBase
         var consensus = await Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
             .WaitUpTo(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
 
-        _testOutputHelper.WriteLine(LogStore.ToFormattedString());
+        await Members.DumpClusterState(_testOutputHelper);
+        
         consensus.completed.Should().BeTrue("All members should have gotten consensus on the same topology hash");
+        _testOutputHelper.WriteLine(LogStore.ToFormattedString());
     }
+
+    
 
     [Fact]
     public async Task HandlesSlowResponsesCorrectly()
@@ -168,12 +172,12 @@ public abstract class ClusterTests : ClusterTestBase
                 }
             }
         );
-        await Task.Delay(200);
+        await Task.Delay(2000);
         _testOutputHelper.WriteLine("Terminating node");
         await ClusterFixture.RemoveNode(victim);
         _testOutputHelper.WriteLine("Spawning node");
         await ClusterFixture.SpawnNode();
-        await Task.Delay(1000);
+        await Task.Delay(2000);
         cts.Cancel();
         await worker;
     }
@@ -367,8 +371,8 @@ public abstract class ClusterTests : ClusterTestBase
         while (response == null && !token.IsCancellationRequested)
         {
             await Task.Delay(200, token);
-            _testOutputHelper.WriteLine($"Retrying ping {kind}/{id}, attempt {++tries}");
-            response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
+            //_testOutputHelper.WriteLine($"Retrying ping {kind}/{id}, attempt {++tries}");
+            response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
         }
 
         response.Should().NotBeNull($"We expect a response before timeout on {kind}/{id}");

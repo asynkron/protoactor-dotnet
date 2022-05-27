@@ -19,6 +19,7 @@ using Proto.Cluster.PubSub;
 using Proto.Cluster.Seed;
 using Proto.Extensions;
 using Proto.Remote;
+using Proto.Utils;
 
 namespace Proto.Cluster;
 
@@ -47,19 +48,17 @@ public class Cluster : IActorSystemExtension<Cluster>
 
         Gossip = new Gossiper(this);
         PidCache = new PidCache();
-        PubSub = new PubSubManager(this);
+        _ = new PubSubExtension(this);
 
         if (System.Metrics.Enabled)
         {
             _clusterMembersObserver = () => new[]
                 {new Measurement<long>(MemberList.GetAllMembers().Length, new("id", System.Id), new("address", System.Address))};
-            ClusterMetrics.ClusterMembersCount.AddObserver( _clusterMembersObserver);
+            ClusterMetrics.ClusterMembersCount.AddObserver(_clusterMembersObserver);
         }
 
         SubscribeToTopologyEvents();
     }
-
-    public PubSubManager PubSub { get; }
 
     public static ILogger Logger { get; } = Log.CreateLogger<Cluster>();
 
@@ -129,7 +128,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         var kinds = GetClusterKinds();
         await IdentityLookup.SetupAsync(this, kinds, client);
         InitIdentityProxy();
-        await PubSub.StartAsync();
+        await this.PubSub().StartAsync();
         InitPidCacheTimeouts();
     }
 
@@ -155,6 +154,8 @@ public class Cluster : IActorSystemExtension<Cluster>
             _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
         }
 
+        EnsureTopicKindRegistered();
+
         if (System.Metrics.Enabled)
         {
             _clusterKindObserver = () =>
@@ -167,28 +168,44 @@ public class Cluster : IActorSystemExtension<Cluster>
         }
     }
 
-    private void InitIdentityProxy()
-        => System.Root.SpawnNamed(Props.FromProducer(() => new IdentityActivatorProxy(this)), IdentityActivatorProxy.ActorName);
+    private void EnsureTopicKindRegistered()
+    {
+        // make sure PubSub topic kind is registered if user did not provide a custom registration
+        if (!_clusterKinds.ContainsKey(TopicActor.Kind))
+        {
+            var store = new EmptyKeyValueStore<Subscribers>();
 
-    public async Task ShutdownAsync(bool graceful = true)
+            _clusterKinds.Add(
+                TopicActor.Kind,
+                new ClusterKind(TopicActor.Kind, Props.FromProducer(() => new TopicActor(store))).Build(this)
+            );
+        }
+    }
+
+    private void InitIdentityProxy()
+        => System.Root.SpawnNamedSystem(Props.FromProducer(() => new IdentityActivatorProxy(this)), IdentityActivatorProxy.ActorName);
+
+    public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
         await Gossip.SetStateAsync("cluster:left", new Empty());
-            
+
         //TODO: improve later, await at least two gossip cycles
-        await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2);
-            
+
+        await Task.Delay((int) Config.GossipInterval.TotalMilliseconds * 2);
+
         if (_clusterKindObserver != null)
         {
             ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
             _clusterKindObserver = null;
         }
-        if(_clusterMembersObserver != null)
+
+        if (_clusterMembersObserver != null)
         {
             ClusterMetrics.ClusterMembersCount.RemoveObserver(_clusterMembersObserver);
             _clusterMembersObserver = null;
         }
 
-        await System.ShutdownAsync();
+        await System.ShutdownAsync(reason);
         Logger.LogInformation("Stopping Cluster {Id}", System.Id);
 
         await Gossip.ShutdownAsync();

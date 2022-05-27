@@ -80,7 +80,7 @@ public class EndpointReader : Remoting.RemotingBase
                 case ConnectRequest.ConnectionTypeOneofCase.ClientConnection: {
                     var clientConnection = connectRequest.ClientConnection;
 
-                    if (_system.Remote().BlockList.IsBlocked(clientConnection.SystemId))
+                    if (_system.Remote().BlockList.IsBlocked(clientConnection.MemberId))
                     {
                         Logger.LogWarning("[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
                         await responseStream.WriteAsync(new RemoteMessage
@@ -103,7 +103,7 @@ public class EndpointReader : Remoting.RemotingBase
                             }
                         }
                     ).ConfigureAwait(false);
-                    systemId = clientConnection.SystemId;
+                    systemId = clientConnection.MemberId;
                     endpoint = _endpointManager.GetOrAddClientEndpoint(systemId);
                     _ = Task.Run(async () => {
                             try
@@ -156,10 +156,12 @@ public class EndpointReader : Remoting.RemotingBase
                     break;
                 case ConnectRequest.ConnectionTypeOneofCase.ServerConnection: {
                     var serverConnection = connectRequest.ServerConnection;
+                    var shouldExit = false;
+                    var blocked = serverConnection.BlockList.ToHashSet();
 
-                    if (_system.Remote().BlockList.IsBlocked(serverConnection.SystemId))
+                    if (_system.Remote().BlockList.IsBlocked(serverConnection.MemberId))
                     {
-                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
+                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, they are blocked", _system.Address, connectRequest.ServerConnection.MemberId, connectRequest.ServerConnection.Address);
                         await responseStream.WriteAsync(new RemoteMessage
                             {
                                 ConnectResponse = new ConnectResponse
@@ -169,6 +171,22 @@ public class EndpointReader : Remoting.RemotingBase
                                 }
                             }
                         ).ConfigureAwait(false);
+                        shouldExit = true;
+                    }
+
+                    if (blocked.Contains(_system.Id))
+                    {
+                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, we are blocked", _system.Address, connectRequest.ServerConnection.MemberId, connectRequest.ServerConnection.Address);
+                        shouldExit = true;
+                    }
+
+                    if (blocked.Any())
+                    {
+                        _system.Remote().BlockList.Block(blocked);
+                    }
+
+                    if (shouldExit)
+                    {
                         return;
                     }
 
@@ -181,7 +199,7 @@ public class EndpointReader : Remoting.RemotingBase
                         }
                     ).ConfigureAwait(false);
                     address = serverConnection.Address;
-                    systemId = serverConnection.SystemId;
+                    systemId = serverConnection.MemberId;
                     endpoint = _endpointManager.GetOrAddServerEndpoint(address);
                 }
                     break;

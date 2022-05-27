@@ -148,7 +148,7 @@ class KubernetesClusterMonitor : IActor
         }
         catch
         {
-            Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _kubernetes");
+            //pass
         }
     }
 
@@ -160,7 +160,7 @@ class KubernetesClusterMonitor : IActor
         }
         catch
         {
-            Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _watcherTask");
+            //pass
         }
     }
 
@@ -172,7 +172,7 @@ class KubernetesClusterMonitor : IActor
         }
         catch
         {
-            Logger.LogError("[Cluster][KubernetesProvider] failed to dispose _watcher");
+            //pass
         }
     }
 

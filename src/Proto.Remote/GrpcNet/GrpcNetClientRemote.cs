@@ -12,7 +12,7 @@ public class GrpcNetClientRemote : IRemote
     public RemoteConfigBase Config => _config;
 
     public ActorSystem System { get; }
-    public BlockList BlockList { get; } = new();
+    public BlockList BlockList { get; } 
     public bool Started { get; private set; }
     private readonly ILogger _logger = Log.CreateLogger<GrpcNetClientRemote>();
     private readonly EndpointManager _endpointManager;
@@ -20,6 +20,7 @@ public class GrpcNetClientRemote : IRemote
     public GrpcNetClientRemote(ActorSystem system, GrpcNetRemoteConfig config)
     {
         System = system;
+        BlockList = new(system);
         if (config.AdvertisedHost is not null)
             throw new ArgumentException("AdvertisedHost is not supported in client mode");
         if (config.Port != 0)

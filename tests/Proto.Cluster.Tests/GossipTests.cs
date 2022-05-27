@@ -10,18 +10,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
-using Proto.Logging;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests;
 
 public class GossipTests
 {
-    // private readonly ITestOutputHelper _testOutputHelper;
+    private readonly ITestOutputHelper _testOutputHelper;
     //
-    // protected GossipTests(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
+    public GossipTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
 
     private const string GossipStateKey = "test-state";
     private const string TopologyStateKey = "topology-test-state";
@@ -38,7 +40,8 @@ public class GossipTests
         var consensusChecks = fixtureMembers.Select(CreateConsensusCheck).ToList();
 
         SetGossipState(fixtureMembers, initialValue);
-
+        
+        await clusterFixture.Members.DumpClusterState(_testOutputHelper);
         await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
     }
 
@@ -92,23 +95,32 @@ public class GossipTests
 
         SetGossipState(clusterFixture.Members, initialValue);
 
+        await clusterFixture.Members.DumpClusterState(_testOutputHelper);
         await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
-
+        _testOutputHelper.WriteLine("Start: We are in consensus...");
         var firstMember = clusterFixture.Members[0];
+        _testOutputHelper.WriteLine("First member " + firstMember.System.Id);
+        
         var firstMemberConsensus = consensusChecks[0];
 
-        var logStore = new LogStore();
-        firstMember.System.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
+        // var logStore = new LogStore();
+        // firstMember.System.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
         // Sets a now inconsistent state on the first node
         await firstMember.Gossip.SetStateAsync(GossipStateKey, new SomeGossipState {Key = otherValue});
 
-        var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(2000));
+        var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(5000));
 
         afterSettingDifferingState.Should()
             .BeEquivalentTo((false, (string) null), "We should be able to read our writes, and locally we do not have consensus");
 
-        await Task.Delay(2000);
+
+        _testOutputHelper.WriteLine("Read our own writes...");
+        await Task.Delay(5000);
+        
+        _testOutputHelper.WriteLine("Checking consensus...");
+
+        await clusterFixture.Members.DumpClusterState(_testOutputHelper);
         await ShouldBeNotHaveConsensus(consensusChecks);
     }
 
@@ -117,6 +129,7 @@ public class GossipTests
         var results = await Task.WhenAll(consensusChecks.Select(it => it.TryGetConsensus(CancellationTokens.FromSeconds(5))))
             .ConfigureAwait(false);
 
+        
         foreach (var (consensus, consensusValue) in results)
         {
             consensus.Should().BeTrue("Since all nodes have the same value, they should agree on a consensus");

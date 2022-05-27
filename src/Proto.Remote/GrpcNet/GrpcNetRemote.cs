@@ -27,6 +27,7 @@ public class GrpcNetRemote : IRemote
     public GrpcNetRemote(ActorSystem system, GrpcNetRemoteConfig config)
     {
         System = system;
+        BlockList = new BlockList(system);
         _config = config;
         System.Extensions.Register(this);
         System.Extensions.Register(config.Serialization);
@@ -34,7 +35,7 @@ public class GrpcNetRemote : IRemote
 
     public bool Started { get; private set; }
         
-    public BlockList BlockList { get; } = new();
+    public BlockList BlockList { get; }
         
     public RemoteConfigBase Config => _config;
     public ActorSystem System { get; }

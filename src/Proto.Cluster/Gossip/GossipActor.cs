@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
@@ -14,22 +13,24 @@ namespace Proto.Cluster.Gossip;
 public class GossipActor : IActor
 {
     private static readonly ILogger Logger = Log.CreateLogger<GossipActor>();
+    private readonly ActorSystem _system;
     private readonly TimeSpan _gossipRequestTimeout;
     private readonly IGossip _internal;
 
     // lookup from state key -> consensus checks
 
     public GossipActor(
+        ActorSystem system,
         TimeSpan gossipRequestTimeout,
         string myId,
-        Func<ImmutableHashSet<string>> getBlockedMembers,
         InstanceLogger? instanceLogger,
         int gossipFanout,
         int gossipMaxSend
     )
     {
+        _system = system;
         _gossipRequestTimeout = gossipRequestTimeout;
-        _internal = new Gossip(myId, gossipFanout, gossipMaxSend, getBlockedMembers, instanceLogger);
+        _internal = new Gossip(myId, gossipFanout, gossipMaxSend, instanceLogger, () => _system.Cluster().MemberList.GetMembers());
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch
@@ -110,13 +111,21 @@ public class GossipActor : IActor
             return Task.CompletedTask;
         }
 
-        context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
-            {
-                State = memberState.State.Clone(), //ensure we have a copy and not state that might mutate
-            }, task => ReenterAfterResponseAck(context, task, memberState), context.CancellationToken
-        );
+        context.Respond(new GossipResponse(){
+            State = memberState.State.Clone(), //ensure we have a copy and not state that might mutate
+        });
 
         return Task.CompletedTask;
+        
+        
+        //this code is broken
+        //
+        // context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
+        //     {
+        //         State = memberState.State.Clone(), //ensure we have a copy and not state that might mutate
+        //     }, task => ReenterAfterResponseAck(context, task, memberState), CancellationTokens.WithTimeout(_gossipRequestTimeout));
+        //
+        // return Task.CompletedTask;
     }
 
     private void ReceiveState(IContext context, GossipState remoteState)

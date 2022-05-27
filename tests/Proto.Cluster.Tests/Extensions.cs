@@ -1,6 +1,9 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
+using Proto.Cluster.Gossip;
+using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests;
 
@@ -14,4 +17,26 @@ public static class Extensions
         string kind = EchoActor.Kind
     )
         => cluster.RequestAsync<Pong>(id, kind, new Ping {Message = message}, token);
+    
+    
+    public static async Task DumpClusterState(this IEnumerable<Cluster> members, ITestOutputHelper outputHelper)
+    {
+        foreach (var c in members)
+        {
+            outputHelper.WriteLine("Member " + c.System.Id);
+            
+            if (c.System.Shutdown.IsCancellationRequested)
+            {
+                outputHelper.WriteLine("\tStopped " + c.System.Stopper.StoppedReason);
+                continue;
+            }
+            var topology = await c.Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
+           
+
+            foreach (var kvp in topology)
+            {
+                outputHelper.WriteLine("\tData {0} - {1}", kvp.Key, kvp.Value.TopologyHash);
+            }
+        }
+    }
 }

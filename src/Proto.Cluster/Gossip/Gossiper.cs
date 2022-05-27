@@ -11,8 +11,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
+using Proto.Remote;
 
 namespace Proto.Cluster.Gossip;
 
@@ -40,6 +42,7 @@ public record AddConsensusCheck(ConsensusCheck Check, CancellationToken Token);
 
 public record GetGossipStateSnapshot;
 
+[PublicAPI]
 public class Gossiper
 {
     public const string GossipActorName = "gossip";
@@ -61,26 +64,45 @@ public class Gossiper
     {
         _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
 
-        var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
-
-        var dict = res.State;
-        var typed = ImmutableDictionary<string, T>.Empty;
-
-        foreach (var (k, value) in dict)
+        try
         {
-            typed = typed.SetItem(k, value.Unpack<T>());
+            var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
+
+
+            var dict = res.State;
+            var typed = ImmutableDictionary<string, T>.Empty;
+
+            foreach (var (k, value) in dict)
+            {
+                typed = typed.SetItem(k, value.Unpack<T>());
+            }
+
+            return typed;
+        }
+        catch (DeadLetterException)
+        {
+            //pass, system is shutting down
         }
 
-        return typed;
+        return ImmutableDictionary<string, T>.Empty;
     }
 
     public async Task<ImmutableDictionary<string, GossipKeyValue>> GetStateEntry(string key)
     {
         _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
 
-        var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid, new GetGossipStateEntryRequest(key));
+        try
+        {
+            var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid, new GetGossipStateEntryRequest(key));
 
-        return res.State;
+            return res.State;
+        }
+        catch (DeadLetterException)
+        {
+            //ignore, we are shutting down  
+        }
+
+        return ImmutableDictionary<string, GossipKeyValue>.Empty;
     }
 
     // Send message to update member state
@@ -95,24 +117,28 @@ public class Gossiper
         _context.Send(_pid, new SetGossipStateKey(key, value));
     }
 
-    public Task SetStateAsync(string key, IMessage value)
+    public async Task SetStateAsync(string key, IMessage value)
     {
         if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
         _context.System.Logger()?.LogDebug("Gossiper setting state to {Pid}", _pid);
 
-        if (_pid == null) return Task.CompletedTask;
+        if (_pid == null) return;
 
-        return _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value));
+        try
+        {
+            await _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value));
+        }
+        catch (DeadLetterException)
+        {
+          //ignore, we are shutting down  
+        }
     }
 
     internal Task StartAsync()
     {
-        var props = Props.FromProducer(() => new GossipActor(_cluster.Config.GossipRequestTimeout, _context.System.Id,
-                () => _cluster.Remote.BlockList.BlockedMembers, _cluster.System.Logger(), _cluster.Config.GossipFanout,
-                _cluster.Config.GossipMaxSend
-            )
-        );
-        _pid = _context.SpawnNamed(props, GossipActorName);
+        var props = Props.FromProducer(() => new GossipActor(_cluster.System, _cluster.Config.GossipRequestTimeout, _context.System.Id, _cluster.System.Logger(), _cluster.Config.GossipFanout,
+                _cluster.Config.GossipMaxSend));
+        _pid = _context.SpawnNamedSystem(props, GossipActorName);
         _cluster.System.EventStream.Subscribe<ClusterTopology>(topology => _context.Send(_pid, topology));
         Logger.LogInformation("Started Cluster Gossip");
         _ = SafeTask.Run(GossipLoop);
@@ -143,6 +169,17 @@ public class Gossiper
 
                 await SendStateAsync();
             }
+            catch (DeadLetterException)
+            {
+                if (_cluster.System.Shutdown.IsCancellationRequested)
+                {
+                    //pass. this is expected, system is shutting down
+                }
+                else
+                {
+                    Logger.LogError("Gossip loop failed, Gossip actor has stopped");
+                }
+            }
             catch (Exception x)
             {
                 Logger.LogError(x, "Gossip loop failed");
@@ -154,22 +191,37 @@ public class Gossiper
     {
         var t2 = await GetStateEntry(GossipKeys.GracefullyLeft);
 
+        var blockList = _cluster.System.Remote().BlockList;
+        var alreadyBlocked = blockList.BlockedMembers;
         //don't ban ourselves. our gossip state will never reach other members then...
-        var gracefullyLeft = t2.Keys.Where(k => k != _cluster.System.Id).ToArray();
+        var gracefullyLeft = t2.Keys
+            .Where(k =>  !alreadyBlocked.Contains(k))
+            .Where(k => k != _cluster.System.Id )
+            .ToArray();
 
         if (gracefullyLeft.Any())
         {
             Logger.LogInformation("Blocking members due to gracefully leaving {Members}", gracefullyLeft);
-            _cluster.MemberList.UpdateBlockedMembers(gracefullyLeft);
+            blockList.Block(gracefullyLeft);
         }
     }
 
     private async Task BlockExpiredHeartbeats()
     {
+        if (_cluster.Config.HeartbeatExpiration == TimeSpan.Zero)
+        {
+            return;
+        }
+        
         var t = await GetStateEntry(GossipKeys.Heartbeat);
 
+        var blockList = _cluster.System.Remote().BlockList;
+        var alreadyBlocked = blockList.BlockedMembers;
+        
+        //new blocked members
         var blocked = (from x in t
                        where x.Value.Age > _cluster.Config.HeartbeatExpiration
+                       where !alreadyBlocked.Contains(x.Key)
                        select x.Key)
             .ToArray();
 
@@ -177,6 +229,7 @@ public class Gossiper
         {
             Logger.LogInformation("Blocking members due to expired heartbeat {Members}", blocked);
             _cluster.MemberList.UpdateBlockedMembers(blocked);
+            blockList.Block(blocked);
         }
     }
 

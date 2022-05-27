@@ -4,21 +4,25 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading.Tasks;
+using Proto.Extensions;
 
 namespace Proto.Cluster.PubSub;
 
-public class PubSubManager
+public class PubSubExtension : IActorSystemExtension<PubSubExtension>
 {
-    public const string PubSubDeliveryName = "pubsub-delivery";
+    public const string PubSubDeliveryName = "$pubsub-delivery";
     private readonly Cluster _cluster;
-    private PID? _pid;
 
-    public PubSubManager(Cluster cluster) => _cluster = cluster;
+    public PubSubExtension(Cluster cluster)
+    {
+        _cluster = cluster;
+        _cluster.System.Extensions.Register(this);
+    }
 
     public Task StartAsync()
     {
         var props = Props.FromProducer(() => new PubSubMemberDeliveryActor());
-        _pid = _cluster.System.Root.SpawnNamed(props, PubSubDeliveryName);
+        _cluster.System.Root.SpawnNamedSystem(props, PubSubDeliveryName);
 
         return Task.CompletedTask;
     }

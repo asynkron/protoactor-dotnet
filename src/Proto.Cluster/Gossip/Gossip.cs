@@ -20,10 +20,10 @@ class Gossip
 {
     private static readonly ILogger Logger = Log.CreateLogger<Gossip>();
     private readonly ConsensusChecks _consensusChecks = new();
-    private readonly Func<ImmutableHashSet<string>> _getBlockedMembers;
     private readonly int _gossipFanout;
     private readonly int _gossipMaxSend;
     private readonly InstanceLogger? _logger;
+    private readonly  Func<ImmutableHashSet<string>> _getMembers;
     private readonly string _myId;
     private readonly Random _rnd = new();
     private ImmutableHashSet<string> _activeMemberIds = ImmutableHashSet<string>.Empty;
@@ -32,17 +32,18 @@ class Gossip
     private Member[] _otherMembers = Array.Empty<Member>();
     private GossipState _state = new();
 
-    public Gossip(string myId, int gossipFanout, int gossipMaxSend, Func<ImmutableHashSet<string>> getBlockedMembers, InstanceLogger? logger)
+    public Gossip(string myId, int gossipFanout, int gossipMaxSend,  InstanceLogger? logger, Func<ImmutableHashSet<string>> getMembers)
     {
         _myId = myId;
-        _getBlockedMembers = getBlockedMembers;
         _logger = logger;
+        _getMembers = getMembers;
         _gossipFanout = gossipFanout;
         _gossipMaxSend = gossipMaxSend;
     }
 
     public Task UpdateClusterTopology(ClusterTopology clusterTopology)
     {
+        //TODO: optimize
         _otherMembers = clusterTopology.Members.Where(m => m.Id != _myId).ToArray();
         _activeMemberIds = clusterTopology.Members.Select(m => m.Id).ToImmutableHashSet();
         SetState(GossipKeys.Topology, clusterTopology);
@@ -60,12 +61,14 @@ class Gossip
     public void RemoveConsensusCheck(string id) =>
         _consensusChecks.Remove(id);
 
-    public GossipState GetStateSnapshot() => _state.Clone();
+    public GossipState GetStateSnapshot()
+    {
+        return _state.Clone();
+    }
 
     public ImmutableDictionary<string, Any> GetState(string key)
     {
         var entries = ImmutableDictionary<string, Any>.Empty;
-
         foreach (var (memberId, memberState) in _state.Members)
         {
             if (memberState.Values.TryGetValue(key, out var value)) entries = entries.SetItem(memberId, value.Value);
@@ -81,6 +84,9 @@ class Gossip
         if (updates.Count == 0) return ImmutableList<GossipUpdate>.Empty;
 
         _state = newState;
+        
+        //TODO: Optimize
+        Purge();
         CheckConsensus(updatedKeys);
         return updates.ToImmutableList();
     }
@@ -101,8 +107,6 @@ class Gossip
     public void SendState(SendStateAction sendStateToMember)
     {
         var logger = _logger?.BeginMethodScope();
-
-        PurgeBlockedMembers();
 
         foreach (var member in _otherMembers)
         {
@@ -183,6 +187,7 @@ class Gossip
 
     public ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key)
     {
+
         var entries = ImmutableDictionary<string, GossipKeyValue>.Empty;
 
         foreach (var (memberId, memberState) in _state.Members)
@@ -195,6 +200,8 @@ class Gossip
 
     private void CheckConsensus(string updatedKey)
     {
+        //TODO: Optimize
+        Purge();
         foreach (var consensusCheck in _consensusChecks.GetByUpdatedKey(updatedKey))
         {
             consensusCheck.Check(_state, _activeMemberIds);
@@ -203,19 +210,21 @@ class Gossip
 
     private void CheckConsensus(IEnumerable<string> updatedKeys)
     {
+        //TODO: Optimize
+        Purge();
         foreach (var consensusCheck in _consensusChecks.GetByUpdatedKeys(updatedKeys))
         {
             consensusCheck.Check(_state, _activeMemberIds);
         }
     }
 
-    private void PurgeBlockedMembers()
+    private void Purge()
     {
-        var blockedMembers = _getBlockedMembers();
-
+        //find all members that have sent topology
+        var members = _getMembers();
         foreach (var memberId in _state.Members.Keys.ToArray())
         {
-            if (blockedMembers.Contains(memberId)) _state.Members.Remove(memberId);
+            if (!members.Contains(memberId)) _state.Members.Remove(memberId);
         }
     }
 

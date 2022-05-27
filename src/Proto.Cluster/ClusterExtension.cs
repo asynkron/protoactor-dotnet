@@ -58,9 +58,6 @@ public static class Extensions
         context.ReenterAfter(task, callback);
     }
 
-    public static Props WithClusterIdentity(this Props props, ClusterIdentity clusterIdentity)
-        => props.WithOnInit(context => context.Set(clusterIdentity));
-
     internal static Props WithClusterKind(
         this Props props,
         ActivatedClusterKind clusterKind

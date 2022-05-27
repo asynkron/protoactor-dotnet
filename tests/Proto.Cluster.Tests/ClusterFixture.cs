@@ -90,6 +90,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         {
             _tracerProvider?.Dispose();
             await Task.WhenAll(Members.ToList().Select(cluster => cluster.ShutdownAsync())).ConfigureAwait(false);
+            Members.Clear(); // prevent multiple shutdown attempts if dispose is called multiple times
         }
         catch (Exception e)
         {
@@ -103,7 +104,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         if (Members.Contains(member))
         {
             Members.Remove(member);
-            await member.ShutdownAsync(graceful).ConfigureAwait(false);
+            await member.ShutdownAsync(graceful, "Stopped by ClusterFixture").ConfigureAwait(false);
         }
         else throw new ArgumentException("No such member");
     }
@@ -137,7 +138,8 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 GetClusterProvider(),
                 GetIdentityLookup(ClusterName)
             )
-            .WithClusterKinds(ClusterKinds);
+            .WithClusterKinds(ClusterKinds)
+            .WithHeartbeatExpiration(TimeSpan.Zero);
 
         config = configure?.Invoke(config) ?? config;
 

@@ -22,6 +22,7 @@ public class HostedGrpcNetRemote : IRemote
     )
     {
         System = system;
+        BlockList = new(system);
         _config = config;
         _endpointManager = endpointManager;
         _logger = logger;
@@ -34,7 +35,7 @@ public class HostedGrpcNetRemote : IRemote
     public ActorSystem System { get; }
     public bool Started { get; private set; }
 
-    public BlockList BlockList { get; } = new();
+    public BlockList BlockList { get; } 
 
     public Task StartAsync()
     {

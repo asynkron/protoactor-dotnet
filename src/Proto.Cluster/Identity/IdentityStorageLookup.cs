@@ -52,7 +52,7 @@ public class IdentityStorageLookup : IIdentityLookup
         if (isClient) return;
 
         var props = Props.FromProducer(() => new IdentityStoragePlacementActor(Cluster, this));
-        _placementActor = _system.Root.SpawnNamed(props, PlacementActorName);
+        _placementActor = _system.Root.SpawnNamedSystem(props, PlacementActorName);
     }
 
     public async Task ShutdownAsync()

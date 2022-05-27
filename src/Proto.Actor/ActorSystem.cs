@@ -19,12 +19,9 @@ namespace Proto;
 [PublicAPI]
 public sealed class ActorSystem : IAsyncDisposable
 {
-    private static readonly ILogger Logger = Log.CreateLogger<ActorSystem>();
+    private readonly ILogger _logger = Log.CreateLogger<ActorSystem>();
     public const string NoHost = "nonhost";
     public const string Client = "$client";
-#pragma warning disable CA2213
-    private readonly CancellationTokenSource _cts = new();
-#pragma warning restore CA2213
     private string _host = NoHost;
     private int _port;
 
@@ -34,6 +31,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
     public ActorSystem(ActorSystemConfig config)
     {
+        Stopper = new();
         Config = config ?? throw new ArgumentNullException(nameof(config));
         ProcessRegistry = new ProcessRegistry(this);
         Root = new RootContext(this);
@@ -57,6 +55,8 @@ public sealed class ActorSystem : IAsyncDisposable
 
     public RootContext Root { get; }
 
+    public Stopper Stopper { get; }
+
     public Guardians Guardians { get; }
 
     public DeadLetterProcess DeadLetter { get; }
@@ -71,7 +71,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
     internal FutureFactory Future => DeferredFuture.Value;
 
-    public CancellationToken Shutdown => _cts.Token;
+    public CancellationToken Shutdown => Stopper.Token;
 
     private void RunThreadPoolStats()
     {
@@ -93,16 +93,16 @@ public sealed class ActorSystem : IAsyncDisposable
                 }
 
                 logger.LogWarning("System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}", Id, t);
-            }, _cts.Token
+            }, Stopper.Token
         );
     }
 
-    public Task ShutdownAsync()
+    public Task ShutdownAsync(string reason="")
     {
         try
         {
-            Logger.LogInformation("Shutting down actor system {Id}", Id);
-            _cts.Cancel();
+            _logger.LogInformation("Shutting down actor system {Id} - Reason {Reason}", Id, reason);
+            Stopper.Stop(reason);
         }
         catch
         {
@@ -132,10 +132,12 @@ public sealed class ActorSystem : IAsyncDisposable
     public (string Host, int Port) GetAddress() => (_host, _port);
 
     public Props ConfigureProps(Props props) => Config.ConfigureProps(props);
+    
+    public Props ConfigureSystemProps(string name, Props props) => Config.ConfigureSystemProps(name, props);
 
     public async ValueTask DisposeAsync()
     {
-        await ShutdownAsync();
+        await ShutdownAsync("Disposed");
 
         // NOTE: We don't dispose _cts here on purpose, as doing so causes
         // ObjectDisposedException to be thrown from certain background task
