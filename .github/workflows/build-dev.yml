@@ -17,17 +17,17 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-#
-#    services:
-#      redis:
-#        image: redis
-#        ports:
-#          - 6379/tcp
-#        options: --entrypoint redis-server
-#      mongodb:
-#        image: mongo
-#        ports:
-#          - 27017/tcp
+
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379/tcp
+        options: --entrypoint redis-server
+      mongodb:
+        image: mongo
+        ports:
+          - 27017/tcp
 
     strategy:
       matrix:
@@ -43,7 +43,7 @@ jobs:
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.Identity.Tests/*.csproj"
         #  - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
-        #  - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
+          - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
 
     steps:
