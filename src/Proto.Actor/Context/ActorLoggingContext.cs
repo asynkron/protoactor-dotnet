@@ -108,7 +108,7 @@ public class ActorLoggingContext : ActorContextDecorator
     {
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending ReqeustAsync {MessageType}:{Message} to {Target}", Self, ActorType,
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending RequestAsync {MessageType}:{Message} to {Target}", Self, ActorType,
                 message.GetType().Name, message, target
             );
         }
