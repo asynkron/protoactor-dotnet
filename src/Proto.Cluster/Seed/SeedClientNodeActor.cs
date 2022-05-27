@@ -48,6 +48,7 @@ public class SeedClientNodeActor : IActor
             }
             catch (Exception x)
             {
+                x.CheckFailFast();
                 Logger.LogError(x, "Failed to connect to seed node {Host}:{Port}", host, port);
             }
         }
@@ -78,6 +79,7 @@ public class SeedClientNodeActor : IActor
                 }
                 catch (Exception e)
                 {
+                    e.CheckFailFast();
                     Logger.LogError(e, "Failed to connect to seed node {Member}", member.Address);
                 }
             }

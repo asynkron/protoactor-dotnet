@@ -242,6 +242,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     public void EscalateFailure(Exception reason, object? message)
     {
+        reason.CheckFailFast();
+        
         if (System.Config.DeveloperSupervisionLogging)
         {
             Console.WriteLine($"[Supervision] Actor {Self} : {Actor.GetType().Name} failed with message:{message} exception:{reason}");

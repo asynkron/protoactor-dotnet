@@ -182,6 +182,7 @@ public class Gossiper
             }
             catch (Exception x)
             {
+                x.CheckFailFast();
                 Logger.LogError(x, "Gossip loop failed");
             }
         }
@@ -381,11 +382,9 @@ public class Gossiper
         catch (OperationCanceledException)
         {
         }
-#pragma warning disable RCS1075
-        catch (Exception)
-#pragma warning restore RCS1075
+        catch (Exception x)
         {
-            //TODO: log
+            x.CheckFailFast();
         }
     }
 

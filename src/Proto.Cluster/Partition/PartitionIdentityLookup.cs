@@ -109,6 +109,7 @@ public class PartitionIdentityLookup : IIdentityLookup
         }
         catch (Exception e)
         {
+            e.CheckFailFast();
             Logger.LogError(e, "[PartitionIdentity] Error occured requesting remote PID {@Request}, identity Owner {Owner}", req, identityOwner);
             return null;
         }

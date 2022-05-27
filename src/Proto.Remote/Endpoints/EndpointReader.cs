@@ -51,8 +51,9 @@ public class EndpointReader : Remoting.RemotingBase
                                }
                            ).ConfigureAwait(false);
                        }
-                       catch (Exception)
+                       catch (Exception x)
                        {
+                           x.CheckFailFast();
                            Logger.LogWarning("[EndpointReader][{SystemAddress}] Failed to write disconnect message to the stream", _system.Address);
                        }
                    }
@@ -148,6 +149,7 @@ public class EndpointReader : Remoting.RemotingBase
                             }
                             catch (Exception e)
                             {
+                                e.CheckFailFast();
                                 Logger.LogWarning(e, "[EndpointReader][{SystemAddress}] Writing error to {SystemId}", _system.Address, systemId);
                             }
                         }
