@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Proto.Mailbox;
 
@@ -12,26 +13,18 @@ public class LockingUnboundedMailboxQueue : IMailboxQueue
 {
     private readonly object _lock = new();
     private readonly Queue<object> _queue;
+    private long _count;
 
     public LockingUnboundedMailboxQueue(int initialCapacity)
     {
         _queue = new Queue<object>(initialCapacity);
     }
 
-    public bool HasMessages {
-        get {
-            lock (_lock)
-            {
-                return _queue.Count > 0;
-            }
-        }
-    }
+    public bool HasMessages => Length > 0;
     public int Length {
         get {
-            lock (_lock)
-            {
-                return _queue.Count;
-            }
+            Interlocked.Read(ref _count);
+            return (int)_count;
         }
     }
 
@@ -40,14 +33,23 @@ public class LockingUnboundedMailboxQueue : IMailboxQueue
         lock (_lock)
         {
             _queue.Enqueue(message);
+            Interlocked.Increment(ref _count);
         }
     }
 
     public object? Pop()
     {
+        if (!HasMessages)
+        {
+            return null;
+        }
+        
         lock (_lock)
         {
-            _queue.TryDequeue(out var msg);
+            if (_queue.TryDequeue(out var msg))
+            {
+                Interlocked.Decrement(ref _count);
+            }
             return msg;
         }
     }
