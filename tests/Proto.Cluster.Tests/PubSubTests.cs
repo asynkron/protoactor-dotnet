@@ -139,7 +139,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         await SubscribeAllTo(topic, subscriberIds);
 
-        await using var producer = _fixture.Members.First().BatchingProducer(topic, batchSize: 10);
+        await using var producer = _fixture.Members.First().BatchingProducer(topic, new BatchingProducerConfig { BatchSize = 10 });
 
         var tasks = Enumerable.Range(0, numMessages).Select(i => producer.ProduceAsync(new DataPublished(i)));
         await Task.WhenAll(tasks);
