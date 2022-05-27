@@ -29,6 +29,7 @@ public static class SafeTask
         }
         catch (Exception x)
         {
+            x.CheckFailFast();
             Logger.LogError(x, "Unhandled exception in async job {Job}", name);
         }
     }

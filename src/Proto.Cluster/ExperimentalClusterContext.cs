@@ -118,6 +118,7 @@ public class ExperimentalClusterContext : IClusterContext
                 }
                 catch (Exception x)
                 {
+                    x.CheckFailFast();
                     if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                         if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
                     _pidCache.RemoveByVal(clusterIdentity, pid);
@@ -203,6 +204,7 @@ public class ExperimentalClusterContext : IClusterContext
         }
         catch (Exception e)
         {
+            e.CheckFailFast();
             if (context.System.Shutdown.IsCancellationRequested) return default;
 
             if (_requestLogThrottle().IsOpen())

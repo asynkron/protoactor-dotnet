@@ -129,53 +129,45 @@ static class GossipStateManagement
     {
         var logger = ctx?.Logger()?.BeginMethodScope();
 
-        try
+        if (state.Members.Count == 0)
         {
-            if (state.Members.Count == 0)
-            {
-                logger?.LogDebug("No members found for consensus check");
-                return (false, default);
-            }
-
-            logger?.LogDebug("Checking consensus");
-
-            if (!state.Members.TryGetValue(myId, out var ownMemberState))
-            {
-                logger?.LogDebug("I can't find myself");
-                return (false, default);
-            }
-
-            var ownValue = GetConsensusValue(ownMemberState);
-
-            if (ownValue is null)
-            {
-                logger?.LogDebug("I don't have any value for {Key}", valueKey);
-                return (false, default);
-            }
-
-            foreach (var (memberId, memberState) in state.Members)
-            {
-                //skip blocked members
-                if (!members.Contains(memberId))
-                {
-                    logger?.LogDebug("Member is not part of cluster {MemberId}", memberId);
-                    continue;
-                }
-
-                var consensusValue = GetConsensusValue(memberState);
-
-                if (consensusValue is null || !ownValue.Equals(consensusValue)) return (false, default);
-            }
-
-            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Reached Consensus {Key}:{Value} - {State}", valueKey, ownValue, state);
-            return (true, ownValue);
-        }
-        catch (Exception x)
-        {
-            logger?.LogError(x, "Check Consensus failed");
-            Logger.LogError(x, "Check Consensus failed");
+            logger?.LogDebug("No members found for consensus check");
             return (false, default);
         }
+
+        logger?.LogDebug("Checking consensus");
+
+        if (!state.Members.TryGetValue(myId, out var ownMemberState))
+        {
+            logger?.LogDebug("I can't find myself");
+            return (false, default);
+        }
+
+        var ownValue = GetConsensusValue(ownMemberState);
+
+        if (ownValue is null)
+        {
+            logger?.LogDebug("I don't have any value for {Key}", valueKey);
+            return (false, default);
+        }
+
+        foreach (var (memberId, memberState) in state.Members)
+        {
+            //skip blocked members
+            if (!members.Contains(memberId))
+            {
+                logger?.LogDebug("Member is not part of cluster {MemberId}", memberId);
+                continue;
+            }
+
+            var consensusValue = GetConsensusValue(memberState);
+
+            if (consensusValue is null || !ownValue.Equals(consensusValue)) return (false, default);
+        }
+
+        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Reached Consensus {Key}:{Value} - {State}", valueKey, ownValue, state);
+        return (true, ownValue);
+
 
         TV? GetConsensusValue(GossipState.Types.GossipMemberState memberState)
         {

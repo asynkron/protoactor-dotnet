@@ -254,6 +254,7 @@ public sealed class DefaultMailbox : IMailbox
         }
         catch (Exception e)
         {
+            e.CheckFailFast();
             _invoker.EscalateFailure(e, msg);
         }
         return default;
@@ -270,6 +271,7 @@ public sealed class DefaultMailbox : IMailbox
             }
             catch (Exception e)
             {
+                e.CheckFailFast();
                 self._invoker.EscalateFailure(e, msg);
             }
         }

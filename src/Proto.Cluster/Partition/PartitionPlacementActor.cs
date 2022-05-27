@@ -345,6 +345,7 @@ class PartitionPlacementActor : IActor, IDisposable
         }
         catch (Exception e)
         {
+            e.CheckFailFast();
             Logger.LogError(e, "[PartitionIdentity] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
             var response = new ActivationResponse
             {

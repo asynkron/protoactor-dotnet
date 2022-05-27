@@ -310,9 +310,10 @@ public record MemberList
             {
                 _system.Root.Send(pid, message);
             }
-            catch (Exception)
+            catch (Exception x)
             {
-                Logger.LogError("[MemberList] Failed to broadcast {Message} to {Pid}", message, pid);
+                x.CheckFailFast();
+                Logger.LogError(x, "[MemberList] Failed to broadcast {Message} to {Pid}", message, pid);
             }
         }
     }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using Proto.Mailbox;
@@ -30,5 +31,13 @@ public static class UtilExtensions
     {
         key = self.Key;
         value = self.Value;
+    }
+    
+    public static void CheckFailFast(this Exception reason)
+    {
+        if (reason is not SystemException) return;
+
+        Console.WriteLine("[Fatal] Out of memory exception");
+        Environment.FailFast(reason.Message, reason);
     }
 }
