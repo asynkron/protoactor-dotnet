@@ -246,6 +246,7 @@ public class ServerConnector
             }
             catch (Exception e)
             {
+                e.CheckFailFast();
                 if (actorSystemId is not null && _system.Remote().BlockList.IsBlocked(actorSystemId))
                 {
                     _logger.LogDebug("[ServerConnector][{SystemAddress}] dropped connection to blocked member {ActorSystemId}/{Address}", _system.Address, actorSystemId, _address);

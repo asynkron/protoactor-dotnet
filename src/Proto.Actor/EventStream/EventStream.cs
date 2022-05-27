@@ -232,7 +232,8 @@ public class EventStream<T>
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(0, ex, "Exception has occurred when publishing a message.");
+                        ex.CheckFailFast();
+                        _logger.LogError(0, ex, "Exception has occurred when publishing a message");
                     }
 
                     return Task.CompletedTask;

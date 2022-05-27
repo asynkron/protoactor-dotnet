@@ -48,8 +48,8 @@ public abstract class ActorContextDecorator : IContext
     public virtual void Stash() =>
         _context.Stash();
 
-    public virtual PID SpawnNamed(Props props, string name) =>
-        _context.SpawnNamed(props, name);
+    public virtual PID SpawnNamed(Props props, string name, Action<IContext>? callback=null) =>
+        _context.SpawnNamed(props, name, callback);
 
     public virtual void Watch(PID pid) =>
         _context.Watch(pid);

@@ -102,6 +102,7 @@ public class BatchingProducer : IAsyncDisposable
         }
         catch (Exception e)
         {
+            e.CheckFailFast();
             if (_logThrottle().IsOpen())
                 Logger.LogError(e, "Error in the publisher loop of Producer for topic {Topic}", _topic);
 

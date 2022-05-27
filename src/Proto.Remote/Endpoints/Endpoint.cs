@@ -138,6 +138,7 @@ public abstract class Endpoint : IEndpoint
                     }
                     catch (Exception ex)
                     {
+                        ex.CheckFailFast();
                         if (_logger.IsEnabled(_deserializationErrorLogLevel))
                             _logger.Log(
                                 _deserializationErrorLogLevel,
@@ -312,6 +313,7 @@ public abstract class Endpoint : IEndpoint
             }
             catch (Exception ex)
             {
+                ex.CheckFailFast();
                 _logger.LogError(ex, "[{SystemAddress}] Error in RunAsync", System.Address);
             }
         }

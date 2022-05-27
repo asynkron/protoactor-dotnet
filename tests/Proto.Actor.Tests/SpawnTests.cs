@@ -21,7 +21,7 @@ public class SpawnTests
 
         var spawnedPid = PID.FromAddress("test", "test");
         var props = Props.FromFunc(EmptyReceive)
-            .WithSpawner((s, id, p, parent) => spawnedPid);
+            .WithSpawner((s, id, p, parent, _) => spawnedPid);
 
         var pid = context.Spawn(props);
 

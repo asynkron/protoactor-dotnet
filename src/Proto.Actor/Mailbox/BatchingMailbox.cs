@@ -91,6 +91,7 @@ public class BatchingMailbox : IMailbox
         }
         catch (Exception x)
         {
+            x.CheckFailFast();
             _suspended = true;
             _invoker.EscalateFailure(x, currentMessage);
         }

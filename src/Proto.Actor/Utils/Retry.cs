@@ -43,6 +43,7 @@ public static class Retry
             }
             catch (Exception x)
             {
+                x.CheckFailFast();
                 onError?.Invoke(i, x);
 
                 if (i == retryCount - 1)
@@ -105,6 +106,7 @@ public static class Retry
             }
             catch (Exception x)
             {
+                x.CheckFailFast();
                 onError?.Invoke(i, x);
 
                 if (i == retryCount - 1)

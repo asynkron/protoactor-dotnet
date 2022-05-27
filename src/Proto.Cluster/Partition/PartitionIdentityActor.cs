@@ -616,6 +616,7 @@ class PartitionIdentityActor : IActor
             }
             catch (Exception x)
             {
+                x.CheckFailFast();
                 Logger.LogError(x, "[PartitionIdentity] Spawn failed");
                 _deltaTopology = null; // Do not use delta handover if we are not sure all spawns are OK.
             }

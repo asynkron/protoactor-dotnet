@@ -36,15 +36,13 @@ public sealed record Props
     public ImmutableList<Func<IContext, IContext>> ContextDecorator { get; init; } =
         ImmutableList<Func<IContext, IContext>>.Empty;
 
-    public ImmutableList<Action<IContext>> OnInit { get; init; } = ImmutableList<Action<IContext>>.Empty;
-
     public Func<IContext, IContext>? ContextDecoratorChain { get; init; }
 
     public Spawner Spawner { get; init; } = DefaultSpawner;
 
     private static IContext DefaultContextDecorator(IContext context) => context;
 
-    public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent)
+    public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent, Action<IContext>? callback)
     {
         //Ordering is important here
         //first we create a mailbox and attach it to a process
@@ -60,7 +58,7 @@ public sealed record Props
             
         //if successful, we create the actor and attach it to the mailbox
         var ctx = ActorContext.Setup(system, props, parent, self, mailbox);
-        Initialize(props, ctx);
+        callback?.Invoke(ctx);
         mailbox.RegisterHandlers(ctx, dispatcher);
         mailbox.PostSystemMessage(Started.Instance);
             
@@ -68,14 +66,6 @@ public sealed record Props
         mailbox.Start();
 
         return self;
-    }
-
-    private static void Initialize(Props props, ActorContext ctx)
-    {
-        foreach (var init in props.OnInit)
-        {
-            init(ctx);
-        }
     }
 
     public Props WithProducer(Producer producer) =>
@@ -109,11 +99,6 @@ public sealed record Props
         };
     }
 
-    public Props WithOnInit(params Action<IContext>[] callback) => this with
-    {
-        OnInit = OnInit.AddRange(callback),
-    };
-
     public Props WithGuardianSupervisorStrategy(ISupervisorStrategy guardianStrategy) =>
         this with {GuardianStrategy = guardianStrategy};
 
@@ -145,7 +130,7 @@ public sealed record Props
     public Props WithSpawner(Spawner spawner) =>
         this with {Spawner = spawner};
 
-    internal PID Spawn(ActorSystem system, string name, PID? parent) => Spawner(system, name, this, parent);
+    internal PID Spawn(ActorSystem system, string name, PID? parent, Action<IContext>? callback=null) => Spawner(system, name, this, parent, callback);
 
     public static Props FromProducer(Producer producer) => Empty.WithProducer(_ => producer());
 

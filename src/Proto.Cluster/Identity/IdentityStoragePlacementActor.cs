@@ -110,10 +110,10 @@ class IdentityStoragePlacementActor : IActor
                 //spawn and remember this actor
                 //as this id is unique for this activation (id+counter)
                 //we cannot get ProcessNameAlreadyExists exception here
-                var clusterProps = clusterKind.Props.WithClusterIdentity(msg.ClusterIdentity);
+               
 
                 var sw = Stopwatch.StartNew();
-                var pid = context.SpawnPrefix(clusterProps, msg.ClusterIdentity.ToString());
+                var pid = context.SpawnPrefix(clusterKind.Props, msg.ClusterIdentity.Identity, ctx => ctx.Set(msg.ClusterIdentity));
                 sw.Stop();
 
                 if (_cluster.System.Metrics.Enabled)
