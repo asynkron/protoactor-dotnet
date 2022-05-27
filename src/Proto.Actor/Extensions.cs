@@ -36,7 +36,7 @@ public static class UtilExtensions
     public static void CheckFailFast(this Exception? reason)
     {
         if (reason is null) return;
-        if (reason is not SystemException) return;
+        if (reason is not OutOfMemoryException) return;
 
         Console.WriteLine("[Fatal] Out of memory exception" + reason.ToString());
         Environment.FailFast(reason.Message, reason);
