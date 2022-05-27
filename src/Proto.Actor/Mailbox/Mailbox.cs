@@ -87,7 +87,7 @@ public sealed class DefaultMailbox : IMailbox
     {
         // if the message is a batch message, we unpack the content as individual messages in the mailbox
         // feature Aka: Samkuvertering in Swedish...
-        if (msg is IMessageBatch or MessageEnvelope {Message: IMessageBatch})
+        if (msg is IMessageBatch  || msg is MessageEnvelope e && e.Message is IMessageBatch)
         {
             var batch = (IMessageBatch)MessageEnvelope.UnwrapMessage(msg)!;
             var messages = batch.GetMessages();
