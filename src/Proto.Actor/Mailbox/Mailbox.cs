@@ -259,6 +259,7 @@ public sealed class DefaultMailbox : IMailbox
         }
         catch (Exception e)
         {
+            e.CheckFailFast();
             _invoker.EscalateFailure(e, msg);
         }
         return default;
@@ -268,10 +269,16 @@ public sealed class DefaultMailbox : IMailbox
             try
             {
                 await task;
+
                 foreach (var t1 in self._stats)
                 {
                     t1.MessageReceived(msg);
                 }
+            }
+            catch (OutOfMemoryException e)
+            {
+                Console.WriteLine("OOM on message " + msg);
+                e.CheckFailFast();
             }
             catch (Exception e)
             {
