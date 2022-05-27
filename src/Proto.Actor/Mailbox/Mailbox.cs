@@ -32,13 +32,13 @@ public interface IMailbox
 public static class BoundedMailbox
 {
     public static IMailbox Create(int size, params IMailboxStatistics[] stats) =>
-        new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
+        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new BoundedMailboxQueue(size), stats);
 }
 
 public static class UnboundedMailbox
 {
     public static IMailbox Create(params IMailboxStatistics[] stats) =>
-        new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
+        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new UnboundedMailboxQueue(), stats);
 }
 
 public sealed class DefaultMailbox : IMailbox
