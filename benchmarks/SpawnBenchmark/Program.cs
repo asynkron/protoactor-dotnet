@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Runtime;
 using System.Threading.Tasks;
 using Proto;
+using Proto.Mailbox;
 
 namespace SpawnBenchmark;
 
@@ -43,7 +44,7 @@ class MyActor : IActor
 
                 for (var i = 0; i < r.Div; i++)
                 {
-                    var child = _system.Root.Spawn(Props(_system));
+                    var child = _system.Root.Spawn(Props);
                     context.Request(child, new Request
                         {
                             Num = r.Num + i * (r.Size / r.Div),
@@ -71,9 +72,8 @@ class MyActor : IActor
         }
     }
 
-    private static MyActor ProduceActor(ActorSystem system) => new(system);
-
-    public static Props Props(ActorSystem system) => Proto.Props.FromProducer(() => ProduceActor(system));
+    public static readonly Props Props = Proto.Props.FromProducer(s => new MyActor(s)).WithMailbox(() => new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new LockingUnboundedMailboxQueue(4)));
+    
 }
 
 class Program
@@ -87,7 +87,7 @@ class Program
         {
             Console.WriteLine($"Is Server GC {GCSettings.IsServerGC}");
 
-            var pid = context.Spawn(MyActor.Props(system));
+            var pid = context.Spawn(MyActor.Props);
             var sw = Stopwatch.StartNew();
             var t = context.RequestAsync<long>(pid, new Request
                 {
