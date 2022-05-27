@@ -236,7 +236,7 @@ public sealed class DefaultMailbox : IMailbox
 
                 if (msg is not null)
                 {
-                    var t= _invoker.InvokeUserMessageAsync(msg);
+                    var t = _invoker.InvokeUserMessageAsync(msg);
 
                     if (!t.IsCompletedSuccessfully)
                     {
@@ -252,9 +252,13 @@ public sealed class DefaultMailbox : IMailbox
                     break;
             }
         }
+        catch (OutOfMemoryException e)
+        {
+            Console.WriteLine("OOM on message " + msg);
+            e.CheckFailFast();
+        }
         catch (Exception e)
         {
-            e.CheckFailFast();
             _invoker.EscalateFailure(e, msg);
         }
         return default;
