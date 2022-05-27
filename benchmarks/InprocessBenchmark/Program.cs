@@ -36,7 +36,6 @@ public class Program
                 var completions = new TaskCompletionSource<bool>[clientCount];
 
                 var pongProps = Props.FromProducer(() => new PongActor())
-                    .WithMailbox(() => new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new UnboundedMailboxQueue()))
                     .WithDispatcher(d);
 
                 for (var i = 0; i < clientCount; i++)
@@ -44,7 +43,6 @@ public class Program
                     var tsc = new TaskCompletionSource<bool>();
                     completions[i] = tsc;
                     var pingProps = Props.FromProducer(() => new PingActor(tsc, messageCount, batchSize))
-                        .WithMailbox(() => new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new UnboundedMailboxQueue()))
                         .WithDispatcher(d);
 
                     pingActor[i] = context.Spawn(pingProps);
