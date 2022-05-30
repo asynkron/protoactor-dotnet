@@ -43,7 +43,7 @@ public class DefaultClusterContext : IClusterContext
             config.RequestLogThrottlePeriod,
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
-
+        
         _clock = new TaskClock(config.ActorRequestTimeout, config.ActorRequestRetryInterval, killSwitch);
         _clock.Start();
     }
@@ -192,6 +192,7 @@ public class DefaultClusterContext : IClusterContext
         {
             context.Request(pid, message, future.Pid);
             var task = future.Task;
+
             await Task.WhenAny(task, _clock.CurrentBucket);
 
             if (task.IsCompleted)
