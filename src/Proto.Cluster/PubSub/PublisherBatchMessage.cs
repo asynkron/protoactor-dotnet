@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Proto.Remote;
 
@@ -14,7 +15,9 @@ public class PublisherBatchMessage :  IRootSerializable
 {
     public List<object> Envelopes { get; } = new ();
 
-    public List<TaskCompletionSource<bool>> DeliveryReports { get; } = new();
+    internal List<TaskCompletionSource<bool>> DeliveryReports { get; } = new();
+
+    internal List<CancellationToken> CancelTokens { get; } = new();
 
     public IRootSerialized Serialize(ActorSystem system)
     {
@@ -44,6 +47,8 @@ public class PublisherBatchMessage :  IRootSerializable
 
         return batch;
     }
+
+    public bool IsEmpty() => Envelopes.Count == 0;
 }
 
 public partial class ProducerBatch : IRootSerialized

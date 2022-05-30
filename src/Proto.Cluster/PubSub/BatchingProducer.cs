@@ -13,7 +13,7 @@ using Proto.Utils;
 
 namespace Proto.Cluster.PubSub;
 
-public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource);
+public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource, CancellationToken Cancel);
 
 /// <summary>
 /// The batching producer has an internal queue collecting messages to be published to a topic. Internal loop creates and sends the batches
@@ -23,32 +23,30 @@ public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskComp
 public class BatchingProducer : IAsyncDisposable
 {
     private static readonly ILogger Logger = Log.CreateLogger<BatchingProducer>();
-    private static readonly ShouldThrottle _logThrottle = Throttle.Create(3, TimeSpan.FromSeconds(10));
 
     private readonly string _topic;
 
     private readonly Channel<ProduceMessage> _publisherChannel;
-    private readonly int _batchSize;
-    private CancellationTokenSource _cts = new();
-    private Task _publisherLoop;
+    private readonly CancellationTokenSource _cts = new();
+    private readonly Task _publisherLoop;
     private readonly IPublisher _publisher;
+    private readonly BatchingProducerConfig _config;
 
     /// <summary>
     /// Create a new batching producer for specified topic
     /// </summary>
     /// <param name="publisher">Publish batches through this publisher</param>
     /// <param name="topic">Topic to produce to</param>
-    /// <param name="batchSize">Max size of the batch</param>
-    /// <param name="maxQueueSize">Max size of the requests waiting in queue. If value is provided, the producer will throw <see cref="ProducerQueueFullException"/> when queue size is exceeded. If null, the queue is unbounded.</param>
+    /// <param name="config">Producer configuration</param>
     /// <returns></returns>
-    public BatchingProducer(IPublisher publisher, string topic, int batchSize = 2000, int? maxQueueSize = null)
+    public BatchingProducer(IPublisher publisher, string topic, BatchingProducerConfig? config = null)
     {
         _publisher = publisher;
         _topic = topic;
-        _batchSize = batchSize;
+        _config = config != null ? config with { } : new BatchingProducerConfig();
 
-        _publisherChannel = maxQueueSize != null
-            ? Channel.CreateBounded<ProduceMessage>(maxQueueSize.Value)
+        _publisherChannel = _config.MaxQueueSize != null
+            ? Channel.CreateBounded<ProduceMessage>(_config.MaxQueueSize.Value)
             : Channel.CreateUnbounded<ProduceMessage>();
 
         _publisherLoop = Task.Run(() => PublisherLoop(_cts.Token));
@@ -68,12 +66,18 @@ public class BatchingProducer : IAsyncDisposable
                 {
                     if (_publisherChannel.Reader.TryRead(out var produceMessage))
                     {
-                        var message = produceMessage.Message;
-                        var taskCompletionSource = produceMessage.TaskCompletionSource;
-                        batch.Envelopes.Add(message);
-                        batch.DeliveryReports.Add(taskCompletionSource);
+                        if (!produceMessage.Cancel.IsCancellationRequested)
+                        {
+                            batch.Envelopes.Add(produceMessage.Message);
+                            batch.DeliveryReports.Add(produceMessage.TaskCompletionSource);
+                            batch.CancelTokens.Add(produceMessage.Cancel);
+                        }
+                        else
+                        {
+                            _ = produceMessage.TaskCompletionSource.TrySetCanceled(CancellationToken.None);
+                        }
 
-                        if (batch.Envelopes.Count < _batchSize) continue;
+                        if (batch.Envelopes.Count < _config.BatchSize) continue;
 
                         await PublishBatch(batch);
                         batch = new PublisherBatchMessage();
@@ -103,69 +107,152 @@ public class BatchingProducer : IAsyncDisposable
         catch (Exception e)
         {
             e.CheckFailFast();
-            if (_logThrottle().IsOpen())
+            if (_config.LogThrottle().IsOpen())
                 Logger.LogError(e, "Error in the publisher loop of Producer for topic {Topic}", _topic);
 
-            PurgeCurrentBatch(batch, e);
-            await PurgePendingMessages(e);
+            FailBatch(batch, e);
+            await FailPendingMessages(e);
         }
 
-        PurgeCurrentBatch(batch);
-        await PurgePendingMessages();
+        CancelBatch(batch);
+        await CancelPendingMessages();
 
         Logger.LogDebug("Producer is stopping the publisher loop for topic {Topic}", _topic);
     }
 
-    private async Task PurgePendingMessages(Exception? ex = null)
+    private async Task FailPendingMessages(Exception e)
     {
         await foreach (var producerMessage in _publisherChannel.Reader.ReadAllAsync())
         {
-            if (ex != null)
-                producerMessage.TaskCompletionSource.SetException(ex);
-            else
-                producerMessage.TaskCompletionSource.SetCanceled();
+            producerMessage.TaskCompletionSource.SetException(e);
         }
     }
 
-    private void PurgeCurrentBatch(PublisherBatchMessage batch, Exception? ex = null)
+    private async Task CancelPendingMessages()
+    {
+        await foreach (var producerMessage in _publisherChannel.Reader.ReadAllAsync())
+        {
+            producerMessage.TaskCompletionSource.SetCanceled();
+        }
+    }
+
+    private void ClearBatch(PublisherBatchMessage batch)
+    {
+        batch.Envelopes.Clear();
+        batch.DeliveryReports.Clear();
+        batch.CancelTokens.Clear();
+    }
+
+    private void FailBatch(PublisherBatchMessage batch, Exception ex)
     {
         foreach (var deliveryReport in batch.DeliveryReports)
         {
-            if (ex != null)
-                deliveryReport.SetException(ex);
-            else
-                deliveryReport.SetCanceled();
+            deliveryReport.SetException(ex);
         }
 
-        batch.Envelopes.Clear();
-        batch.DeliveryReports.Clear();
+        ClearBatch(batch);
+    }
+
+    private void CancelBatch(PublisherBatchMessage batch)
+    {
+        foreach (var deliveryReport in batch.DeliveryReports)
+        {
+            deliveryReport.SetCanceled();
+        }
+
+        ClearBatch(batch);
+    }
+
+    private void CompleteBatch(PublisherBatchMessage batch)
+    {
+        foreach (var deliveryReport in batch.DeliveryReports)
+        {
+            deliveryReport.SetResult(true);
+        }
+
+        ClearBatch(batch);
+    }
+
+    private void RemoveCancelledFromBatch(PublisherBatchMessage batch)
+    {
+        var cancelTokensCopy = batch.CancelTokens.ToArray();
+
+        for (var i = cancelTokensCopy.Length - 1; i >= 0; i--)
+        {
+            if (cancelTokensCopy[i].IsCancellationRequested)
+            {
+                batch.DeliveryReports[i].SetCanceled();
+
+                batch.DeliveryReports.RemoveAt(i);
+                batch.Envelopes.RemoveAt(i);
+                batch.CancelTokens.RemoveAt(i);
+            }
+        }
     }
 
     private async Task PublishBatch(PublisherBatchMessage batch)
     {
-        //TODO: retries etc...
-        await _publisher.PublishBatch(_topic, batch);
+        var retries = 0;
+        var retry = true;
 
-        foreach (var tcs in batch.DeliveryReports)
+        while (retry && !_cts.Token.IsCancellationRequested)
         {
-            tcs.SetResult(true);
+            try
+            {
+                retries++;
+                await _publisher.PublishBatch(_topic, batch, CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
+                retry = false;
+                CompleteBatch(batch);
+            }
+            catch (Exception e)
+            {
+                var decision = await _config.OnPublishingError(retries, e, batch);
+
+                if (decision == PublishingErrorDecision.FailBatchAndStop)
+                {
+                    FailBatch(batch, e);
+                    throw; // let the main producer loop fail
+                }
+
+                if (_config.LogThrottle().IsOpen())
+                    Logger.LogWarning(e, "Error while publishing batch");
+
+                if (decision == PublishingErrorDecision.FailBatchAndContinue)
+                {
+                    FailBatch(batch, e);
+                    return;
+                }
+
+                // the decision is to retry
+                // if any of the messages have been canceled in the meantime, remove them and cancel the delivery report
+                RemoveCancelledFromBatch(batch);
+                if (batch.IsEmpty())
+                    retry = false; // no messages left in the batch, so stop retrying
+                else if (decision.Delay != null)
+                    await Task.Delay(decision.Delay.Value);
+            }
         }
+
+        if (_cts.Token.IsCancellationRequested)
+            CancelBatch(batch);
     }
 
     /// <summary>
     /// Adds a message to producer queue. The returned Task will complete when the message is actually published.
     /// </summary>
     /// <param name="message"></param>
+    /// <param name="ct">If cancellation is requested before the message is published (while waiting in the queue), it will not be published,
+    /// and the task returned from ProduceAsync will be cancelled</param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">Thrown when the producer is already stopped or failed.</exception>
     /// <exception cref="ProducerQueueFullException">Thrown when producer max queue size is reached.</exception>
-    public Task ProduceAsync(object message)
+    public Task ProduceAsync(object message, CancellationToken ct = default)
     {
         var tcs = new TaskCompletionSource<bool>();
 
-        if (!_publisherChannel.Writer.TryWrite(new ProduceMessage(message, tcs)))
+        if (!_publisherChannel.Writer.TryWrite(new ProduceMessage(message, tcs, ct)))
         {
-            if(_publisherChannel.Reader.Completion.IsCompleted)
+            if (_publisherChannel.Reader.Completion.IsCompleted)
                 throw new InvalidOperationException($"This producer for topic {_topic} is stopped, cannot produce more messages.");
 
             throw new ProducerQueueFullException(_topic);
@@ -182,6 +269,9 @@ public class BatchingProducer : IAsyncDisposable
     }
 }
 
-public class ProducerQueueFullException : Exception {
-    public ProducerQueueFullException(string topic) : base($"Producer for topic {topic} has full queue") { }
+public class ProducerQueueFullException : Exception
+{
+    public ProducerQueueFullException(string topic) : base($"Producer for topic {topic} has full queue")
+    {
+    }
 }

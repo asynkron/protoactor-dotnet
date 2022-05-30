@@ -28,11 +28,10 @@ public static class PubSubExtensions
     /// </summary>
     /// <param name="cluster"></param>
     /// <param name="topic">Topic to produce to</param>
-    /// <param name="batchSize">Max size of the batch</param>
-    /// <param name="maxQueueSize">Max size of the requests waiting in queue. If value is provided, the producer will throw <see cref="ProducerQueueFullException"/> when queue size is exceeded. If null, the queue is unbounded.</param>
+    /// <param name="config">Configuration</param>
     /// <returns></returns>
-    public static BatchingProducer BatchingProducer(this Cluster cluster, string topic, int batchSize = 2000, int? maxQueueSize = null)
-        => new(cluster.Publisher(), topic, batchSize, maxQueueSize);
+    public static BatchingProducer BatchingProducer(this Cluster cluster, string topic, BatchingProducerConfig? config = null)
+        => new(cluster.Publisher(), topic, config);
 
     /// <summary>
     /// Subscribes to a PubSub topic by cluster identity
