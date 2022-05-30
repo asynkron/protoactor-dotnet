@@ -113,7 +113,7 @@ public class Cluster : IActorSystemExtension<Cluster>
 
     private async Task BeginStartAsync(bool client)
     {
-        InitClusterKinds();
+        InitClusterKinds(client);
         Provider = Config.ClusterProvider;
         //default to partition identity lookup
         IdentityLookup = Config.IdentityLookup;
@@ -147,14 +147,15 @@ public class Cluster : IActorSystemExtension<Cluster>
         }
     }
 
-    private void InitClusterKinds()
+    private void InitClusterKinds(bool client)
     {
         foreach (var clusterKind in Config.ClusterKinds)
         {
             _clusterKinds.Add(clusterKind.Name, clusterKind.Build(this));
         }
 
-        EnsureTopicKindRegistered();
+        if(!client)
+            EnsureTopicKindRegistered();
 
         if (System.Metrics.Enabled)
         {
