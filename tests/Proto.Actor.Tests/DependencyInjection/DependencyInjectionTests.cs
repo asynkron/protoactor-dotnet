@@ -14,6 +14,7 @@ public class DependencyInjectionTests
         s.AddSingleton<FooDep>();
         s.AddSingleton<BarDep>();
         s.AddTransient<DiActor>();
+        
         var provider = s.BuildServiceProvider();
 
         var resolver = new DependencyResolver(provider);
@@ -23,6 +24,29 @@ public class DependencyInjectionTests
         system.Extensions.Register(plugin);
 
         var props = system.DI().PropsFor<DiActor>();
+        var actor = (DiActor) props.Producer(system, null!);
+
+        Assert.NotNull(props);
+        Assert.NotNull(actor);
+        Assert.NotNull(actor.Bar);
+        Assert.NotNull(actor.Foo);
+    }
+    
+    [Fact]
+    public void CanResolveDependenciesWithArgs()
+    {
+        var s = new ServiceCollection();
+        s.AddSingleton<FooDep>();
+       
+        var provider = s.BuildServiceProvider();
+
+        var resolver = new DependencyResolver(provider);
+        var plugin = new DIExtension(resolver);
+
+        var system = new ActorSystem();
+        system.Extensions.Register(plugin);
+
+        var props = system.DI().PropsForArgs<DiActor>(new BarDep());
         var actor = (DiActor) props.Producer(system, null!);
 
         Assert.NotNull(props);

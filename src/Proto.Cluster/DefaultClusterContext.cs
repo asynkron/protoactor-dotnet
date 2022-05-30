@@ -25,6 +25,7 @@ public class DefaultClusterContext : IClusterContext
     private readonly ActorSystem _system;
 
     private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
+    private readonly ClusterContextConfig _config;
 
     public DefaultClusterContext(
         ActorSystem system,
@@ -44,6 +45,7 @@ public class DefaultClusterContext : IClusterContext
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
 
+        _config = config;
         _clock = new TaskClock(config.ActorRequestTimeout, config.ActorRequestRetryInterval, killSwitch);
         _clock.Start();
     }
@@ -192,6 +194,9 @@ public class DefaultClusterContext : IClusterContext
         {
             context.Request(pid, message, future.Pid);
             var task = future.Task;
+            #if NET6_0_OR_GREATER
+            await task.WaitAsync(_config.ActorRequestTimeout);
+            #else
             await Task.WhenAny(task, _clock.CurrentBucket);
 
             if (task.IsCompleted)
@@ -200,6 +205,7 @@ public class DefaultClusterContext : IClusterContext
 
                 return ToResult<T>(source, context, res);
             }
+            #endif
 
             if (!context.System.Shutdown.IsCancellationRequested)
                 if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);

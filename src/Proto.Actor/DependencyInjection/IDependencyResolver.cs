@@ -9,6 +9,8 @@ namespace Proto.DependencyInjection;
 
 public interface IDependencyResolver
 {
+    Props PropsForArgs<TActor>(params object[] args) where TActor : IActor;
+    
     Props PropsFor<TActor>() where TActor : IActor;
 
     Props PropsFor(Type actorType);
