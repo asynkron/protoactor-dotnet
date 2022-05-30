@@ -13,7 +13,7 @@ using Proto.Utils;
 
 namespace Proto.Cluster.PubSub;
 
-public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource);
+public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource, CancellationToken Cancel);
 
 /// <summary>
 /// The batching producer has an internal queue collecting messages to be published to a topic. Internal loop creates and sends the batches
@@ -23,7 +23,6 @@ public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskComp
 public class BatchingProducer : IAsyncDisposable
 {
     private static readonly ILogger Logger = Log.CreateLogger<BatchingProducer>();
-    private static readonly ShouldThrottle _logThrottle = Throttle.Create(3, TimeSpan.FromSeconds(10));
 
     private readonly string _topic;
 
