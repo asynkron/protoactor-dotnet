@@ -15,7 +15,7 @@ namespace Proto.Cluster.PubSub;
 
 public sealed class TopicActor : IActor
 {
-    public const string Kind = "$topic";
+    public const string Kind = "prototopic"; // only alphanum in the name, to maximize chances it works on all clustering providers
 
     private static readonly ILogger Logger = Log.CreateLogger<TopicActor>();
     private ImmutableHashSet<SubscriberIdentity> _subscribers = ImmutableHashSet<SubscriberIdentity>.Empty;
