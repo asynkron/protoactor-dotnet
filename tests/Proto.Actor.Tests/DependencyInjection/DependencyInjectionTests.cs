@@ -46,7 +46,7 @@ public class DependencyInjectionTests
         var system = new ActorSystem();
         system.Extensions.Register(plugin);
 
-        var props = system.DI().PropsForArgs<DiActor>(new BarDep());
+        var props = system.DI().PropsFor<DiActor>(new BarDep());
         var actor = (DiActor) props.Producer(system, null!);
 
         Assert.NotNull(props);

@@ -16,7 +16,7 @@ public class DependencyResolver : IDependencyResolver
 
     public DependencyResolver(IServiceProvider services) => _services = services;
 
-    public Props PropsForArgs<TActor>(params object[] args) where TActor : IActor => Props.FromProducer(() => {
+    public Props PropsFor<TActor>(params object[] args) where TActor : IActor => Props.FromProducer(() => {
             var actorType = typeof(TActor);
 
             try
