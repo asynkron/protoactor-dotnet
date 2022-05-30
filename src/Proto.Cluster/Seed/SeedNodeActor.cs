@@ -61,6 +61,7 @@ public class SeedNodeActor : IActor
                 }
                 catch (Exception x)
                 {
+                    x.CheckFailFast();
                     Logger.LogError(x, "Failed to connect to seed node {Host}:{Port}", host, port);
                 }
             }

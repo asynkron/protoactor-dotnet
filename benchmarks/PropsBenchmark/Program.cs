@@ -3,9 +3,10 @@
 
 using PropsBenchmark;
 using Proto;
+using Proto.Mailbox;
 
 var system = new ActorSystem();
-var props = Props.FromFunc(ctx => Task.CompletedTask);
+var props = Props.FromFunc(ctx => Task.CompletedTask).WithMailbox(() => new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new LockingUnboundedMailboxQueue(4)));
 
 Console.WriteLine("Starting");
 for (var i = 0; i < 1_000_000; i++)

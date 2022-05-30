@@ -32,13 +32,13 @@ public interface IMailbox
 public static class BoundedMailbox
 {
     public static IMailbox Create(int size, params IMailboxStatistics[] stats) =>
-        new DefaultMailbox(new UnboundedMailboxQueue(), new BoundedMailboxQueue(size), stats);
+        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new BoundedMailboxQueue(size), stats);
 }
 
 public static class UnboundedMailbox
 {
     public static IMailbox Create(params IMailboxStatistics[] stats) =>
-        new DefaultMailbox(new UnboundedMailboxQueue(), new UnboundedMailboxQueue(), stats);
+        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new UnboundedMailboxQueue(), stats);
 }
 
 public sealed class DefaultMailbox : IMailbox
@@ -236,7 +236,7 @@ public sealed class DefaultMailbox : IMailbox
 
                 if (msg is not null)
                 {
-                    var t= _invoker.InvokeUserMessageAsync(msg);
+                    var t = _invoker.InvokeUserMessageAsync(msg);
 
                     if (!t.IsCompletedSuccessfully)
                     {
@@ -254,6 +254,7 @@ public sealed class DefaultMailbox : IMailbox
         }
         catch (Exception e)
         {
+            e.CheckFailFast();
             _invoker.EscalateFailure(e, msg);
         }
         return default;
@@ -263,6 +264,7 @@ public sealed class DefaultMailbox : IMailbox
             try
             {
                 await task;
+
                 foreach (var t1 in self._stats)
                 {
                     t1.MessageReceived(msg);
@@ -270,6 +272,7 @@ public sealed class DefaultMailbox : IMailbox
             }
             catch (Exception e)
             {
+                e.CheckFailFast();
                 self._invoker.EscalateFailure(e, msg);
             }
         }
