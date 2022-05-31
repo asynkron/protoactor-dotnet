@@ -5,7 +5,7 @@
         <LangVersion>10</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="OpenTelemetry" Version="1.2.0-rc2" />
+        <PackageReference Include="OpenTelemetry" Version="1.2.0" />
         <PackageReference Include="OpenTelemetry.Api" Version="1.2.0-rc2" />
         <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
           <PrivateAssets>all</PrivateAssets>
