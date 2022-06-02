@@ -10,9 +10,9 @@ env:
   DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
   TERM: xterm
   
-concurrency:
-  group: protoactor
-  cancel-in-progress: true  
+#concurrency:
+#  group: protoactor
+#  cancel-in-progress: true  
   
 jobs:
   test:
