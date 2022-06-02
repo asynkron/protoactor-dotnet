@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Proto.Cluster.PubSub;
 using Xunit;
 
@@ -105,7 +106,7 @@ public class PubSubBatchingProducerTests
         sutAction.Should().Throw<ProducerQueueFullException>();
     }
 
-    [Fact]
+    [Fact(Skip="Flaky")]
     public async Task Can_cancel_publishing_a_message()
     {
         await using var producer =

@@ -13,16 +13,19 @@ public static class TaskExtensions
 {
     public static async Task<TResult> WithTimeout<TResult>(this Task<TResult> task, TimeSpan timeout, CancellationToken? ct = null)
     {
-        if (!task.IsCompleted)
-        {
-            using var timeoutCancellationTokenSource =
-                ct is not null ? CancellationTokenSource.CreateLinkedTokenSource(ct.Value) : new CancellationTokenSource();
+        if (task.IsCompleted) return await task.ConfigureAwait(false); // Very important in order to propagate exceptions
 
-            var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token)).ConfigureAwait(false);
-            if (completedTask != task) throw new TimeoutException("The operation has timed out.");
+        using var timeoutCancellationTokenSource =
+            ct switch
+            {
+                not null => CancellationTokenSource.CreateLinkedTokenSource(ct.Value),
+                _        => new CancellationTokenSource()
+            };
 
-            timeoutCancellationTokenSource.Cancel();
-        }
+        var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token)).ConfigureAwait(false);
+        if (completedTask != task) throw new TimeoutException("The operation has timed out.");
+
+        timeoutCancellationTokenSource.Cancel();
 
         return await task.ConfigureAwait(false); // Very important in order to propagate exceptions
     }

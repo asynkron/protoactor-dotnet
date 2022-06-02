@@ -12,16 +12,16 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.21.0"/>
-        <PackageReference Include="Grpc.Tools" Version="2.42.0">
+        <PackageReference Include="Google.Protobuf" Version="3.21.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.46.3">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="protos.proto" GrpcServices="none"/>
+        <Protobuf Include="protos.proto" GrpcServices="none" />
     </ItemGroup>
     
 </Project>
