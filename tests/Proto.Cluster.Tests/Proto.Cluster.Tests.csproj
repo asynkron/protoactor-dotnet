@@ -12,7 +12,7 @@
     <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Grpc.Tools" Version="2.44.0" PrivateAssets="All" />
+    <PackageReference Include="Grpc.Tools" Version="2.46.3" PrivateAssets="All" />
     <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" />
     <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.1.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
