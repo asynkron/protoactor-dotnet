@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.21.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.21.1" />
     <PackageReference Include="Grpc.Tools" Version="2.46.3" PrivateAssets="All" />
     <PackageReference Include="Proto.Cluster.CodeGen" Version="0.30.0" />
   </ItemGroup>
