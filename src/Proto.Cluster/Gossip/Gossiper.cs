@@ -45,7 +45,7 @@ public record GetGossipStateSnapshot;
 [PublicAPI]
 public class Gossiper
 {
-    public const string GossipActorName = "gossip";
+    public const string GossipActorName = "$gossip";
 
     private static readonly ILogger Logger = Log.CreateLogger<Gossiper>();
     private readonly Cluster _cluster;
