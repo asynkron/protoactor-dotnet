@@ -7,20 +7,24 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Proto.Cluster.PubSub;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests;
 
 public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixture>
 {
     private readonly PubSubInMemoryClusterFixture _fixture;
+    private readonly ITestOutputHelper _output;
 
-    public PubSubTests(PubSubInMemoryClusterFixture fixture)
+    public PubSubTests(PubSubInMemoryClusterFixture fixture, ITestOutputHelper output)
     {
         _fixture = fixture;
+        _output = output;
         _fixture.Deliveries.Clear();
     }
 
@@ -157,6 +161,12 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         var actual = _fixture.Deliveries.OrderBy(d => d.Identity).ThenBy(d => d.Data).ToArray();
 
+        var diagnosticMessage = actual
+            .GroupBy(d => d.Identity)
+            .Select(g => (g.Key, Data: g.Aggregate("", (acc, delivery) => acc + delivery.Data + ",")))
+            .Aggregate("", (acc, d) => $"{acc}ID: {d.Key}, got: {d.Data}\n");
+        _output.WriteLine(diagnosticMessage);
+        
         actual.Should().Equal(expected, "the data published should be received by all subscribers");
     }
 
