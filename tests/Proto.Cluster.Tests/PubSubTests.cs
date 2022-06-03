@@ -40,6 +40,11 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         for (var i = 0; i < numMessages; i++)
         {
             var response = await PublishData(topic, i);
+
+            if (response == null)
+            {
+                await _fixture.Members.DumpClusterState(_output);
+            }
             response.Should().NotBeNull("publishing should not time out");
         }
 
