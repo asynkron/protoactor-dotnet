@@ -2,7 +2,7 @@
 // <copyright file = "PubSubTests.cs" company = "Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
-// -----------------------------------------------------------------------
+// ----------------------------------------------------------------------- 
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -221,7 +221,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         public ConcurrentBag<Delivery> Deliveries = new();
 
-        public PubSubInMemoryClusterFixture() : base(1)
+        public PubSubInMemoryClusterFixture() : base(3)
         {
         }
 
