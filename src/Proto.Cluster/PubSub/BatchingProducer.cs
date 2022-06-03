@@ -191,7 +191,7 @@ public class BatchingProducer : IAsyncDisposable
 
     private void StopAcceptingNewMessages()
     {
-        if(!_publisherChannel.Reader.Completion.IsCompleted)
+        if (!_publisherChannel.Reader.Completion.IsCompleted)
             _publisherChannel.Writer.Complete();
     }
 
@@ -205,7 +205,11 @@ public class BatchingProducer : IAsyncDisposable
             try
             {
                 retries++;
-                await _publisher.PublishBatch(_topic, batch, CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
+                
+                var response = await _publisher.PublishBatch(_topic, batch, CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
+                if (response == null)
+                    throw new TimeoutException("Timeout when publishing message batch");
+
                 retry = false;
                 CompleteBatch(batch);
             }

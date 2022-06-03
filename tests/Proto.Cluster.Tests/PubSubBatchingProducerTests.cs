@@ -228,54 +228,75 @@ public class PubSubBatchingProducerTests
         AllSentNumbers(publisher.SentBatches).Should().Equal(2);
     }
 
+    [Fact]
+    public async Task Can_handle_publish_timeouts()
+    {
+        await using var producer =
+            new BatchingProducer(new MockPublisher(Timeout), "topic", new BatchingProducerConfig {BatchSize = 1});
+
+        var sutAction = () => _ = producer.ProduceAsync(new TestMessage(1));
+
+        await sutAction.Should().ThrowAsync<TimeoutException>();
+    }
+
     private readonly List<PublisherBatchMessage> _batchesSent = new();
 
-    private Task Record(PublisherBatchMessage batch)
+    private Task<PublishResponse> Record(PublisherBatchMessage batch)
     {
         var copy = new PublisherBatchMessage();
         copy.Envelopes.AddRange(batch.Envelopes);
         _batchesSent.Add(copy);
 
-        return Task.CompletedTask;
+        return Task.FromResult(new PublishResponse());
     }
 
-    private Task Fail(PublisherBatchMessage _) => throw new TestException();
+    private Task<PublishResponse> Fail(PublisherBatchMessage _) => throw new TestException();
 
-    private Task Wait(PublisherBatchMessage _) => Task.Delay(1000);
+    private async Task<PublishResponse> Wait(PublisherBatchMessage _)
+    {
+        await Task.Delay(1000);
+        return new PublishResponse();
+    }
 
-    private async Task WaitThenFail(PublisherBatchMessage _)
+    private Func<PublisherBatchMessage, Task<PublishResponse>> Wait(int ms = 1000) => async _ => {
+        await Task.Delay(ms);
+        return new PublishResponse();
+    };
+
+    private async Task<PublishResponse> WaitThenFail(PublisherBatchMessage _)
     {
         await Task.Delay(500);
         throw new TestException();
     }
 
-    private Func<PublisherBatchMessage, Task> WaitThenRecord(int ms = 500)
+    private Func<PublisherBatchMessage, Task<PublishResponse>> WaitThenRecord(int ms = 500)
         => async batch => {
             await Task.Delay(ms);
 
             var copy = new PublisherBatchMessage();
             copy.Envelopes.AddRange(batch.Envelopes);
             _batchesSent.Add(copy);
+
+            return new PublishResponse();
         };
 
-    private Func<PublisherBatchMessage, Task> FailTimesThenSucceed(int numFails)
+    private Func<PublisherBatchMessage, Task<PublishResponse>> FailTimesThenSucceed(int numFails)
     {
         var times = 0;
 
-        return _ => times++ < numFails ? Task.FromException(new TestException()) : Task.CompletedTask;
+        return _ => times++ < numFails ? Task.FromException<PublishResponse>(new TestException()) : Task.FromResult(new PublishResponse());
     }
+
+    private Task<PublishResponse> Timeout(PublisherBatchMessage _) => Task.FromResult<PublishResponse>(null);
 
     private class MockPublisher : IPublisher
     {
-        private readonly Func<PublisherBatchMessage, Task> _publish;
+        private readonly Func<PublisherBatchMessage, Task<PublishResponse>> _publish;
 
-        public MockPublisher(Func<PublisherBatchMessage, Task> publish) => _publish = publish;
+        public MockPublisher(Func<PublisherBatchMessage, Task<PublishResponse>> publish) => _publish = publish;
 
-        public async Task<PublishResponse> PublishBatch(string topic, PublisherBatchMessage batch, CancellationToken ct = default)
-        {
-            await _publish(batch);
-            return new PublishResponse();
-        }
+        public Task<PublishResponse> PublishBatch(string topic, PublisherBatchMessage batch, CancellationToken ct = default) 
+            => _publish(batch);
     }
 
     private class OptionalFailureMockPublisher : IPublisher
@@ -293,7 +314,7 @@ public class PubSubBatchingProducerTests
             var copy = new PublisherBatchMessage();
             copy.Envelopes.AddRange(batch.Envelopes);
             SentBatches.Add(copy);
-            
+
             return Task.FromResult(new PublishResponse());
         }
     }

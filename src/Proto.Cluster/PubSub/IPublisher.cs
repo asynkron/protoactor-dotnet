@@ -19,7 +19,7 @@ public interface IPublisher
     /// <param name="ct"></param>
     /// <returns></returns>
     /// <returns></returns>
-    public Task<PublishResponse> PublishBatch(
+    public Task<PublishResponse?> PublishBatch(
         string topic,
         PublisherBatchMessage batch,
         CancellationToken ct = default

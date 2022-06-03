@@ -23,7 +23,7 @@ public class Publisher : IPublisher
     /// <param name="batch">Message batch</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public Task<PublishResponse> PublishBatch(
+    public Task<PublishResponse?> PublishBatch(
         string topic,
         PublisherBatchMessage batch,
         CancellationToken ct = default
@@ -40,7 +40,7 @@ public static class PublisherExtensions
     /// <param name="messages">Message</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static Task<PublishResponse> PublishBatch<TMessage>(
+    public static Task<PublishResponse?> PublishBatch<TMessage>(
         this IPublisher publisher,
         string topic,
         IEnumerable<TMessage> messages,
@@ -60,7 +60,7 @@ public static class PublisherExtensions
     /// <param name="message">Message</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static Task<PublishResponse> Publish(
+    public static Task<PublishResponse?> Publish(
         this IPublisher publisher,
         string topic,
         object message,
