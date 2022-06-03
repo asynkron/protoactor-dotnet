@@ -221,7 +221,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         public ConcurrentBag<Delivery> Deliveries = new();
 
-        public PubSubInMemoryClusterFixture() : base(3)
+        public PubSubInMemoryClusterFixture() : base(1)
         {
         }
 
