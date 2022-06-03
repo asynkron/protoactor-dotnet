@@ -66,7 +66,7 @@ public static class PubSubExtensions
     /// <param name="ci">Cluster identity to subscribe to</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static Task Subscribe(this Cluster cluster, string topic, ClusterIdentity ci, CancellationToken ct = default) =>
+    public static Task<SubscribeResponse?> Subscribe(this Cluster cluster, string topic, ClusterIdentity ci, CancellationToken ct = default) =>
         cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
@@ -84,7 +84,7 @@ public static class PubSubExtensions
     /// <param name="subscriber">Subscriber PID</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static Task Subscribe(this Cluster cluster, string topic, PID subscriber, CancellationToken ct = default) =>
+    public static Task<SubscribeResponse?> Subscribe(this Cluster cluster, string topic, PID subscriber, CancellationToken ct = default) =>
         cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
@@ -117,7 +117,7 @@ public static class PubSubExtensions
     /// <param name="subscriber">PID to remove from subscriber list</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static Task Unsubscribe(this Cluster cluster, string topic, PID subscriber, CancellationToken ct = default) =>
+    public static Task<UnsubscribeResponse?> Unsubscribe(this Cluster cluster, string topic, PID subscriber, CancellationToken ct = default) =>
         cluster.RequestAsync<UnsubscribeResponse>(topic, TopicActor.Kind, new UnsubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
@@ -135,7 +135,7 @@ public static class PubSubExtensions
     /// <param name="subscriber">Cluster identity to remove from subscriber list</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static Task Unsubscribe(this Cluster cluster, string topic, ClusterIdentity subscriber, CancellationToken ct = default) =>
+    public static Task<UnsubscribeResponse?> Unsubscribe(this Cluster cluster, string topic, ClusterIdentity subscriber, CancellationToken ct = default) =>
         cluster.RequestAsync<UnsubscribeResponse>(topic, TopicActor.Kind, new UnsubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
@@ -154,7 +154,7 @@ public static class PubSubExtensions
     /// <param name="subscriberKind">Subscriber kind to remove from subscriber list</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static Task Unsubscribe(
+    public static Task<UnsubscribeResponse?> Unsubscribe(
         this Cluster cluster,
         string topic,
         string subscriberIdentity,

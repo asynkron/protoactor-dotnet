@@ -7,7 +7,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Proto.Cluster.PubSub;
@@ -24,6 +23,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
     public PubSubTests(PubSubInMemoryClusterFixture fixture, ITestOutputHelper output)
     {
         _fixture = fixture;
+        _fixture.Output = output;
         _output = output;
         _fixture.Deliveries.Clear();
     }
@@ -40,11 +40,8 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         for (var i = 0; i < numMessages; i++)
         {
             var response = await PublishData(topic, i);
-
-            if (response == null)
-            {
+            if(response == null)
                 await _fixture.Members.DumpClusterState(_output);
-            }
             response.Should().NotBeNull("publishing should not time out");
         }
 
@@ -66,6 +63,8 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         {
             var data = Enumerable.Range(i * 10, 10).ToArray();
             var response = await PublishDataBatch(topic, data);
+            if(response == null)
+                await _fixture.Members.DumpClusterState(_output);
             response.Should().NotBeNull("publishing should not time out");
         }
 
@@ -172,7 +171,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         {
             actual.Should().Equal(expected, "the data published should be received by all subscribers");
         }
-        catch (Exception e)
+        catch
         {
             _output.WriteLine(actual
                 .GroupBy(d => d.Identity)
@@ -212,10 +211,19 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
     private readonly Random _random = new();
 
-    private Task RequestViaRandomMember(string identity, object message) =>
-        _fixture
+    private async Task<Response> RequestViaRandomMember(string identity, object message)
+    {
+        var response = await _fixture
             .Members[_random.Next(_fixture.Members.Count)]
             .RequestAsync<Response>(identity, PubSubInMemoryClusterFixture.SubscriberKind, message, CancellationTokens.FromSeconds(1));
+
+        if(response == null)
+            await _fixture.Members.DumpClusterState(_output);
+
+        response.Should().NotBeNull($"request {message.GetType().Name} should time out");
+
+        return response;
+    }
 
     private Task<PublishResponse> PublishViaRandomMember(string topic, object message) =>
         _fixture
@@ -244,10 +252,9 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         public const string SubscriberKind = "Subscriber";
 
         public ConcurrentBag<Delivery> Deliveries = new();
+        public ITestOutputHelper Output;
 
-        public PubSubInMemoryClusterFixture() : base(3)
-        {
-        }
+        public PubSubInMemoryClusterFixture() : base(3) { }
 
         protected override ClusterKind[] ClusterKinds => new[]
         {
@@ -266,12 +273,18 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
                         break;
 
                     case Subscribe msg:
-                        await context.Cluster().Subscribe(msg.Topic, context.ClusterIdentity()!);
+                        var subRes = await context.Cluster().Subscribe(msg.Topic, context.ClusterIdentity()!);
+                        if(subRes == null)
+                            Output.WriteLine($"{context.ClusterIdentity()!.Identity} failed to subscribe due to timeout");
+                        
                         context.Respond(new Response());
                         break;
 
                     case Unsubscribe msg:
-                        await context.Cluster().Unsubscribe(msg.Topic, context.ClusterIdentity()!);
+                        var unsubRes = await context.Cluster().Unsubscribe(msg.Topic, context.ClusterIdentity()!);
+                        if(unsubRes == null)
+                            Output.WriteLine($"{context.ClusterIdentity()!.Identity} failed to subscribe due to timeout");
+
                         context.Respond(new Response());
                         break;
                 }
