@@ -106,11 +106,11 @@ public class PubSubBatchingProducerTests
         sutAction.Should().Throw<ProducerQueueFullException>();
     }
 
-    [Fact(Skip="Flaky")]
+    [Fact]
     public async Task Can_cancel_publishing_a_message()
     {
         await using var producer =
-            new BatchingProducer(new MockPublisher(WaitThenRecord(100)), "topic", new BatchingProducerConfig {BatchSize = 1, MaxQueueSize = 10});
+            new BatchingProducer(new MockPublisher(WaitThenRecord()), "topic", new BatchingProducerConfig {BatchSize = 1, MaxQueueSize = 10});
 
         var messageWithoutCancellation = new TestMessage(1);
         var t1 = producer.ProduceAsync(messageWithoutCancellation);

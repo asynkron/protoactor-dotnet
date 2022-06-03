@@ -96,8 +96,7 @@ public class BatchingProducer : IAsyncDisposable
             }
             finally
             {
-                // at this point stop accepting new messages
-                _publisherChannel.Writer.Complete();
+                StopAcceptingNewMessages();
             }
         }
         catch (OperationCanceledException) when (cancel.IsCancellationRequested)
@@ -190,6 +189,12 @@ public class BatchingProducer : IAsyncDisposable
         }
     }
 
+    private void StopAcceptingNewMessages()
+    {
+        if(!_publisherChannel.Reader.Completion.IsCompleted)
+            _publisherChannel.Writer.Complete();
+    }
+
     private async Task PublishBatch(PublisherBatchMessage batch)
     {
         var retries = 0;
@@ -210,8 +215,9 @@ public class BatchingProducer : IAsyncDisposable
 
                 if (decision == PublishingErrorDecision.FailBatchAndStop)
                 {
+                    StopAcceptingNewMessages();
                     FailBatch(batch, e);
-                    throw; // let the main producer loop fail
+                    throw; // let the main producer loop exit
                 }
 
                 if (_config.LogThrottle().IsOpen())
