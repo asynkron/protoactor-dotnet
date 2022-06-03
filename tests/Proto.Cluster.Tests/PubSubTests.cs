@@ -2,25 +2,29 @@
 // <copyright file = "PubSubTests.cs" company = "Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
-// -----------------------------------------------------------------------
+// ----------------------------------------------------------------------- 
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Proto.Cluster.PubSub;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests;
 
 public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixture>
 {
     private readonly PubSubInMemoryClusterFixture _fixture;
+    private readonly ITestOutputHelper _output;
 
-    public PubSubTests(PubSubInMemoryClusterFixture fixture)
+    public PubSubTests(PubSubInMemoryClusterFixture fixture, ITestOutputHelper output)
     {
         _fixture = fixture;
+        _output = output;
         _fixture.Deliveries.Clear();
     }
 
@@ -35,7 +39,13 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         for (var i = 0; i < numMessages; i++)
         {
-            await PublishData(topic, i);
+            var response = await PublishData(topic, i);
+
+            if (response == null)
+            {
+                await _fixture.Members.DumpClusterState(_output);
+            }
+            response.Should().NotBeNull("publishing should not time out");
         }
 
         await UnsubscribeAllFrom(topic, subscriberIds);
@@ -55,7 +65,8 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         for (var i = 0; i < numMessages / 10; i++)
         {
             var data = Enumerable.Range(i * 10, 10).ToArray();
-            await PublishDataBatch(topic, data);
+            var response = await PublishDataBatch(topic, data);
+            response.Should().NotBeNull("publishing should not time out");
         }
 
         await UnsubscribeAllFrom(topic, subscriberIds);
@@ -139,7 +150,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         await SubscribeAllTo(topic, subscriberIds);
 
-        await using var producer = _fixture.Members.First().BatchingProducer(topic, new BatchingProducerConfig { BatchSize = 10 });
+        await using var producer = _fixture.Members.First().BatchingProducer(topic, new BatchingProducerConfig {BatchSize = 10});
 
         var tasks = Enumerable.Range(0, numMessages).Select(i => producer.ProduceAsync(new DataPublished(i)));
         await Task.WhenAll(tasks);
@@ -157,7 +168,19 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         var actual = _fixture.Deliveries.OrderBy(d => d.Identity).ThenBy(d => d.Data).ToArray();
 
-        actual.Should().Equal(expected, "the data published should be received by all subscribers");
+        try
+        {
+            actual.Should().Equal(expected, "the data published should be received by all subscribers");
+        }
+        catch (Exception e)
+        {
+            _output.WriteLine(actual
+                .GroupBy(d => d.Identity)
+                .Select(g => (g.Key, Data: g.Aggregate("", (acc, delivery) => acc + delivery.Data + ",")))
+                .Aggregate("", (acc, d) => $"{acc}ID: {d.Key}, got: {d.Data}\n"));
+
+            throw;
+        }
     }
 
     private async Task SubscribeAllTo(string topic, string[] subscriberIds)
@@ -182,9 +205,10 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
     private Task UnsubscribeFrom(string topic, string identity) => RequestViaRandomMember(identity, new Unsubscribe(topic));
 
-    private Task PublishData(string topic, int data) => PublishViaRandomMember(topic, new DataPublished(data));
+    private Task<PublishResponse> PublishData(string topic, int data) => PublishViaRandomMember(topic, new DataPublished(data));
 
-    private Task PublishDataBatch(string topic, int[] data) => PublishViaRandomMember(topic, data.Select(d => new DataPublished(d)).ToArray());
+    private Task<PublishResponse> PublishDataBatch(string topic, int[] data)
+        => PublishViaRandomMember(topic, data.Select(d => new DataPublished(d)).ToArray());
 
     private readonly Random _random = new();
 
@@ -193,13 +217,13 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
             .Members[_random.Next(_fixture.Members.Count)]
             .RequestAsync<Response>(identity, PubSubInMemoryClusterFixture.SubscriberKind, message, CancellationTokens.FromSeconds(1));
 
-    private Task PublishViaRandomMember(string topic, object message) =>
+    private Task<PublishResponse> PublishViaRandomMember(string topic, object message) =>
         _fixture
             .Members[_random.Next(_fixture.Members.Count)]
             .Publisher()
             .Publish(topic, message, CancellationTokens.FromSeconds(1));
 
-    private Task PublishViaRandomMember<T>(string topic, T[] messages) =>
+    private Task<PublishResponse> PublishViaRandomMember<T>(string topic, T[] messages) =>
         _fixture
             .Members[_random.Next(_fixture.Members.Count)]
             .Publisher()
