@@ -148,7 +148,7 @@ public class KubernetesProvider : IClusterProvider
             .FromProducer(() => new KubernetesClusterMonitor(_cluster, _config))
             .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
 
-        _clusterMonitor = _cluster.System.Root.SpawnNamed(props, "kubernetes-cluster-monitor");
+        _clusterMonitor = _cluster.System.Root.SpawnNamedSystem(props, "$kubernetes-cluster-monitor");
         _podName = KubernetesExtensions.GetPodName();
 
         _cluster.System.Root.Send(
