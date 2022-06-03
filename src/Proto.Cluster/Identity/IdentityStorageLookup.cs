@@ -5,6 +5,7 @@ namespace Proto.Cluster.Identity;
 
 public class IdentityStorageLookup : IIdentityLookup
 {
+    private const string WorkerActorName = "$identity-storage-worker";
     private const string PlacementActorName = "placement-activator";
     private bool _isClient;
     private string _memberId = string.Empty;
@@ -36,7 +37,7 @@ public class IdentityStorageLookup : IIdentityLookup
         await Storage.Init();
 
         var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
-        _worker = _system.Root.Spawn(workerProps);
+        _worker = _system.Root.SpawnNamedSystem(workerProps, WorkerActorName);
 
         //hook up events
         cluster.System.EventStream.Subscribe<ClusterTopology>(e => {
