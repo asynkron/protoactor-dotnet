@@ -187,7 +187,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
     {
         foreach (var id in subscriberIds)
         {
-            await SubscribeTo(topic, id);
+            await _fixture.Members.First().Subscribe(topic, ClusterIdentity.Create(id, PubSubInMemoryClusterFixture.SubscriberKind));
         }
     }
 
@@ -195,7 +195,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
     {
         foreach (var id in subscriberIds)
         {
-            await UnsubscribeFrom(topic, id);
+            await _fixture.Members.First().Unsubscribe(topic, ClusterIdentity.Create(id, PubSubInMemoryClusterFixture.SubscriberKind));
         }
     }
 
@@ -256,7 +256,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         private Props SubscriberProps()
         {
-            async Task Receive(IContext context)
+            Task Receive(IContext context)
             {
                 switch (context.Message)
                 {
@@ -264,17 +264,9 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
                         Deliveries.Add(new Delivery(context.ClusterIdentity()!.Identity, msg.Data));
                         context.Respond(new Response());
                         break;
-
-                    case Subscribe msg:
-                        await context.Cluster().Subscribe(msg.Topic, context.ClusterIdentity()!);
-                        context.Respond(new Response());
-                        break;
-
-                    case Unsubscribe msg:
-                        await context.Cluster().Unsubscribe(msg.Topic, context.ClusterIdentity()!);
-                        context.Respond(new Response());
-                        break;
                 }
+
+                return Task.CompletedTask;
             }
 
             return Props.FromFunc(Receive);
