@@ -14,6 +14,12 @@ public static class SystemContext
 
     public static PID SpawnNamedSystem(this RootContext self, Props props, string name)
     {
+        if (!name.StartsWith("$"))
+        {
+            Logger.LogError("SystemContext Failed to spawn system actor {Name}", name);
+            throw new ArgumentException("System actor names must start with $", nameof(name));
+        }
+        
         try
         {
             var parent = props.GuardianStrategy is not null
