@@ -11,8 +11,8 @@ namespace Proto.Cluster.Partition;
 //helper to interact with partition actors on this and other members
 class PartitionManager
 {
-    private const string PartitionIdentityActorName = "partition-identity";
-    private const string PartitionPlacementActorName = "partition-activator";
+    private const string PartitionIdentityActorName = "$partition-identity";
+    private const string PartitionPlacementActorName = "$partition-activator";
     private readonly Cluster _cluster;
     private readonly RootContext _context;
     private readonly bool _isClient;

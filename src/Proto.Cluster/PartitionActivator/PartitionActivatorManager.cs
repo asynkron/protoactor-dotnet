@@ -11,7 +11,7 @@ namespace Proto.Cluster.PartitionActivator;
 //helper to interact with partition actors on this and other members
 public class PartitionActivatorManager
 {
-    private const string PartitionActivatorActorName = "partition-activator";
+    private const string PartitionActivatorActorName = "$partition-activator";
     private readonly Cluster _cluster;
 
 

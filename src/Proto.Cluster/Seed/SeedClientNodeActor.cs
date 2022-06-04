@@ -13,7 +13,7 @@ namespace Proto.Cluster.Seed;
 
 public class SeedClientNodeActor : IActor
 {
-    public const string Name = "client_seed";
+    public const string Name = "$client_seed";
     public static Props Props(SeedNodeClusterProviderOptions options) => Proto.Props.FromProducer(() => new SeedClientNodeActor(options));
     private static readonly ILogger Logger = Log.CreateLogger<SeedClientNodeActor>();
     private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
