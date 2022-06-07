@@ -166,7 +166,7 @@ public class DefaultClusterContext : IClusterContext
                 return pid;
             }
         }
-        catch (Exception e) when(e is not IdentityBlockedException)
+        catch (Exception e) when(e is not IdentityIsBlocked)
         {
             e.CheckFailFast();
             if (context.System.Shutdown.IsCancellationRequested) return default;

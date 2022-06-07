@@ -26,7 +26,7 @@ public class IdentityStorageLookup : IIdentityLookup
 
         if (res?.IdentityBlocked == true)
         {
-            throw new IdentityBlockedException(clusterIdentity);
+            throw new IdentityIsBlocked(clusterIdentity);
         }
         return res?.Pid;
     }

@@ -10,9 +10,9 @@ namespace Proto.Cluster.Identity;
 /// <summary>
 /// Lets the caller know that the identity is not available to spawn.
 /// </summary>
-public class IdentityBlockedException : Exception
+public class IdentityIsBlocked : Exception
 {
-    public IdentityBlockedException(ClusterIdentity blockedIdentity) => BlockedIdentity = blockedIdentity;
+    public IdentityIsBlocked(ClusterIdentity blockedIdentity) => BlockedIdentity = blockedIdentity;
 
     public ClusterIdentity BlockedIdentity { get; }
 }

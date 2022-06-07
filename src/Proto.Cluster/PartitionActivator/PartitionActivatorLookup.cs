@@ -49,7 +49,7 @@ public class PartitionActivatorLookup : IIdentityLookup
 
             if (resp.InvalidIdentity)
             {
-                throw new IdentityBlockedException(clusterIdentity);
+                throw new IdentityIsBlocked(clusterIdentity);
             }
 
             return resp?.Pid;
@@ -65,7 +65,7 @@ public class PartitionActivatorLookup : IIdentityLookup
             Logger.LogInformation("[PartitionActivator] Remote PID request timeout {@Request}, identity Owner {Owner}", req, owner);
             return null;
         }
-        catch (Exception e) when(e is not IdentityBlockedException)
+        catch (Exception e) when(e is not IdentityIsBlocked)
         {
             e.CheckFailFast();
             Logger.LogError(e, "[PartitionActivator] Error occured requesting remote PID {@Request}, identity Owner {Owner}", req, owner);

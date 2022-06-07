@@ -73,7 +73,7 @@ public class PartitionIdentityLookup : IIdentityLookup
 
             if (resp?.InvalidIdentity == true)
             {
-                throw new IdentityBlockedException(clusterIdentity);
+                throw new IdentityIsBlocked(clusterIdentity);
             }
 
             if (_config.DeveloperLogging)
@@ -112,7 +112,7 @@ public class PartitionIdentityLookup : IIdentityLookup
             Logger.LogInformation("[PartitionIdentity] Remote PID request timeout {@Request}, identity Owner {Owner}", req, identityOwner);
             return null;
         }
-        catch (Exception e) when(e is not IdentityBlockedException)
+        catch (Exception e) when(e is not IdentityIsBlocked)
         {
             e.CheckFailFast();
             Logger.LogError(e, "[PartitionIdentity] Error occured requesting remote PID {@Request}, identity Owner {Owner}", req, identityOwner);

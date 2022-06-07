@@ -310,7 +310,7 @@ public abstract class ClusterTests : ClusterTestBase
 
         await member.Invoking(async m => await m.RequestAsync<Pong>(invalidIdentity, message, timeout))
             .Should()
-            .ThrowExactlyAsync<IdentityBlockedException>();
+            .ThrowExactlyAsync<IdentityIsBlocked>();
     }
 
     [Theory, InlineData(10, 20000)]
