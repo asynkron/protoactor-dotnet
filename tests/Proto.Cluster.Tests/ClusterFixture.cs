@@ -76,11 +76,11 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         new ClusterKind(EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
         new ClusterKind(EchoActor.Kind2, EchoActor.Props),
         new ClusterKind(EchoActor.LocalAffinityKind, EchoActor.Props).WithLocalAffinityRelocationStrategy(),
-        new ClusterKind(EchoActor.FilteredKind, EchoActor.Props).WithSpawnPredicate(identity
+        new ClusterKind(EchoActor.FilteredKind, EchoActor.Props).WithSpawnPredicate((identity, _)
             => new ValueTask<bool>(!identity.Equals(InvalidIdentity, StringComparison.InvariantCultureIgnoreCase))
         ),
-        new ClusterKind(EchoActor.AsyncFilteredKind, EchoActor.Props).WithSpawnPredicate(async identity => {
-                await Task.Delay(1000);
+        new ClusterKind(EchoActor.AsyncFilteredKind, EchoActor.Props).WithSpawnPredicate(async (identity, ct) => {
+                await Task.Delay(1000, ct);
                 return !identity.Equals(InvalidIdentity, StringComparison.InvariantCultureIgnoreCase);
             }
         ),

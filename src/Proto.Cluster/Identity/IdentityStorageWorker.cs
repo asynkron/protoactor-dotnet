@@ -34,7 +34,7 @@ class IdentityStorageWorker : IActor
         _shouldThrottle = Throttle.Create(
             10,
             TimeSpan.FromSeconds(5),
-            i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs.", i)
+            i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs", i)
         );
 
         _cluster = storageLookup.Cluster;

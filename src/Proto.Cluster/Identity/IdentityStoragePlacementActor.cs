@@ -139,7 +139,7 @@ class IdentityStoragePlacementActor : IActor
             );
         }
 
-        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity);
+        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity, CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnTimeout));
 
         if (canSpawn.IsCompleted)
         {
@@ -149,21 +149,19 @@ class IdentityStoragePlacementActor : IActor
 
         _inFlightIdentityChecks.Add(clusterIdentity);
         context.ReenterAfter(canSpawn.AsTask(), task => {
-                if (_inFlightIdentityChecks.Remove(clusterIdentity))
+                _inFlightIdentityChecks.Remove(clusterIdentity);
+                if (task.IsCompletedSuccessfully)
                 {
-                    if (task.IsCompletedSuccessfully)
-                    {
-                        OnSpawnDecided(msg, context, clusterKind, task.Result);
-                    }
-                    else
-                    {
-                        Logger.LogError("[PartitionIdentity] Error when checking {ClusterIdentity}", clusterIdentity);
-                        context.Respond(new ActivationResponse
-                            {
-                                Failed = true,
-                            }
-                        );
-                    }
+                    OnSpawnDecided(msg, context, clusterKind, task.Result);
+                }
+                else
+                {
+                    Logger.LogError("[PartitionIdentity] Error when checking {ClusterIdentity}", clusterIdentity);
+                    context.Respond(new ActivationResponse
+                        {
+                            Failed = true,
+                        }
+                    );
                 }
 
                 return Task.CompletedTask;

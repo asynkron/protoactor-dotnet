@@ -53,7 +53,7 @@ public class PartitionActivatorActor : IActor
             Started                   => OnStarted(context),
             ActivationRequest msg     => OnActivationRequest(msg, context),
             ActivationTerminated msg  => OnActivationTerminated(msg),
-            ActivationTerminating msg => OnActivationTerminating(msg, context),
+            ActivationTerminating msg => OnActivationTerminating(msg),
             ClusterTopology msg       => OnClusterTopology(msg, context),
             _                         => Task.CompletedTask
         };
@@ -104,7 +104,7 @@ public class PartitionActivatorActor : IActor
         return Task.CompletedTask;
     }
 
-    private Task OnActivationTerminating(ActivationTerminating msg, IContext context)
+    private Task OnActivationTerminating(ActivationTerminating msg)
     {
         // ActivationTerminating is sent to the local EventStream when a
         // local cluster actor stops.
@@ -190,7 +190,7 @@ public class PartitionActivatorActor : IActor
             );
         }
 
-        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity);
+        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity, CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnTimeout));
 
         if (canSpawn.IsCompleted)
         {

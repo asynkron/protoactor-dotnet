@@ -15,6 +15,12 @@ public static class CancellationTokens
         
     private static readonly ConcurrentDictionary<int, TokenEntry> Tokens = new();
 
+    public static CancellationToken FromSeconds(TimeSpan duration)
+    {
+        var seconds = (int)Math.Ceiling(duration.TotalSeconds);
+        return FromSeconds(seconds);
+    }
+
     public static CancellationToken FromSeconds(int seconds)
     {
         if (seconds < 1) throw new ArgumentOutOfRangeException(nameof(seconds));

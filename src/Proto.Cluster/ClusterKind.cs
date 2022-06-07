@@ -4,13 +4,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Threading;
 using System.Threading.Tasks;
-using Google.Protobuf.WellKnownTypes;
 using JetBrains.Annotations;
 
 namespace Proto.Cluster;
 
-public delegate ValueTask<bool> CanSpawnIdentity(string identity);
+public delegate ValueTask<bool> CanSpawnIdentity(string identity, CancellationToken cancellationToken);
 
 [PublicAPI]
 public record ClusterKind(string Name, Props Props)

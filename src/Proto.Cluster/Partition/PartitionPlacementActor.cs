@@ -360,7 +360,7 @@ class PartitionPlacementActor : IActor, IDisposable
             );
         }
 
-        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity);
+        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity, CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnTimeout));
 
         if (canSpawn.IsCompleted)
         {
