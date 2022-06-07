@@ -34,7 +34,7 @@ public sealed class ActorSystem : IAsyncDisposable
         Stopper = new();
         Config = config ?? throw new ArgumentNullException(nameof(config));
         ProcessRegistry = new ProcessRegistry(this);
-        Root = new RootContext(this);
+        Root = config.ConfigureRootContext(new RootContext(this));
         DeadLetter = new DeadLetterProcess(this);
         Guardians = new Guardians(this);
         EventStream = new EventStream(this);
@@ -53,7 +53,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
     public ProcessRegistry ProcessRegistry { get; }
 
-    public RootContext Root { get; }
+    public IRootContext Root { get; }
 
     public Stopper Stopper { get; }
 

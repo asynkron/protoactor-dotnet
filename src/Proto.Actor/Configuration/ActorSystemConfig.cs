@@ -44,6 +44,13 @@ public record ActorSystemConfig
     public bool MetricsEnabled { get; init; }
 
     /// <summary>
+    ///     Allows adding middleware to the root context exposed by the ActorSystem.
+    ///     The result from this will be used as the default sender for all requests,
+    ///     except requests overriding the sender context by parameter
+    /// </summary>
+    public Func<RootContext, IRootContext> ConfigureRootContext { get; init; } = context => context;
+    
+    /// <summary>
     ///     Allows ActorSystem-wide augmentation of any Props
     ///     All props are translated via this function
     /// </summary>
@@ -118,6 +125,7 @@ public record ActorSystemConfig
 
     public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
 
+    public ActorSystemConfig WithConfigureRootContext(Func<RootContext, IRootContext> configureContext) => this with {ConfigureRootContext = configureContext};
     public ActorSystemConfig WithConfigureProps(Func<Props, Props> configureProps) => this with {ConfigureProps = configureProps};
     
     public ActorSystemConfig WithConfigureSystemProps(Func<string, Props, Props> configureSystemProps) => this with {ConfigureSystemProps = configureSystemProps};

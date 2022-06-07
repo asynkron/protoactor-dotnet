@@ -10,7 +10,7 @@ namespace Proto.Tests;
 
 public abstract class ActorTestBase : IAsyncLifetime
 {
-    protected readonly RootContext Context;
+    protected readonly IRootContext Context;
     protected readonly ActorSystem System;
 
     protected ActorTestBase()

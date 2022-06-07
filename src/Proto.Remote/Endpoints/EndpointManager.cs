@@ -200,5 +200,11 @@ public class EndpointManager
         var props = Props.FromProducer(() => new Activator(_remoteConfig, _system));
         ActivatorPid = _system.Root.SpawnNamedSystem(props, ActivatorActorName);
     }
-    private void StopActivator() => _system.Root.Stop(ActivatorPid);
+    private void StopActivator()
+    {
+        if (ActivatorPid is not null)
+        {
+            _system.Root.Stop(ActivatorPid);
+        }
+    }
 }

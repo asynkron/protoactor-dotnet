@@ -16,6 +16,7 @@ namespace Proto;
 
 public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
 {
+    IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware);
 }
 
 [PublicAPI]
@@ -89,10 +90,10 @@ public sealed record RootContext : IRootContext
     public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
         => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
         
-    public RootContext WithHeaders(MessageHeader headers) =>
+    public IRootContext WithHeaders(MessageHeader headers) =>
         this with {Headers = headers};
 
-    public RootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) =>
+    public IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) =>
         this with
         {
             SenderMiddleware = middleware.Reverse()

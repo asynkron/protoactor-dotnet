@@ -300,18 +300,18 @@ public abstract class ClusterTests : ClusterTestBase
     [Theory]
     [InlineData(10000, EchoActor.FilteredKind)]
     [InlineData(10000, EchoActor.AsyncFilteredKind)]
-    public async Task CanFilterActivations(int timeoutMs, string filteredKind)
-    {
-        var timeout = new CancellationTokenSource(timeoutMs).Token;
+    public async Task CanFilterActivations(int timeoutMs, string filteredKind) => await Tracing.Trace(async () => {
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
 
-        var member = Members.First();
-        var invalidIdentity = ClusterIdentity.Create(Proto.Cluster.Tests.ClusterFixture.InvalidIdentity, filteredKind);
-        var message = new Ping {Message = "Hello"};
+            var member = Members.First();
+            var invalidIdentity = ClusterIdentity.Create(Proto.Cluster.Tests.ClusterFixture.InvalidIdentity, filteredKind);
+            var message = new Ping {Message = "Hello"};
 
-        await member.Invoking(async m => await m.RequestAsync<Pong>(invalidIdentity, message, timeout))
-            .Should()
-            .ThrowExactlyAsync<IdentityIsBlocked>();
-    }
+            await member.Invoking(async m => await m.RequestAsync<Pong>(invalidIdentity, message, timeout))
+                .Should()
+                .ThrowExactlyAsync<IdentityIsBlocked>();
+        }, _testOutputHelper
+    );
 
     [Theory, InlineData(10, 20000)]
     public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)

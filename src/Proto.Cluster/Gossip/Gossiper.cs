@@ -49,7 +49,7 @@ public class Gossiper
 
     private static readonly ILogger Logger = Log.CreateLogger<Gossiper>();
     private readonly Cluster _cluster;
-    private readonly RootContext _context;
+    private readonly IRootContext _context;
     private PID _pid = null!;
 
     public Gossiper(Cluster cluster)

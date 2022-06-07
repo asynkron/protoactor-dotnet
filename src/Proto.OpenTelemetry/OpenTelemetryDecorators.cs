@@ -19,6 +19,8 @@ class OpenTelemetryRootContextDecorator : RootContextDecorator
             sendActivitySetup(activity, message);
         };
 
+    protected override IRootContext WithInnerContext(IRootContext context) => new OpenTelemetryRootContextDecorator(context, _sendActivitySetup);
+
     public override void Send(PID target, object message)
         => OpenTelemetryMethodsDecorators.Send(target, message, _sendActivitySetup, () => base.Send(target, message));
 
@@ -186,7 +188,7 @@ static class OpenTelemetryMethodsDecorators
     internal static async Task Receive(MessageEnvelope envelope, ActivitySetup receiveActivitySetup, Func<Task> receive)
     {
         var message = envelope.Message;
-            
+
         if (message is SystemMessage)
         {
             await receive().ConfigureAwait(false);
