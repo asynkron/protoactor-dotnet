@@ -25,7 +25,8 @@ class IdentityStoragePlacementActor : IActor
     //pid -> the actor that we have created here
     //kind -> the actor kind
     //eventId -> the cluster wide eventId when this actor was created
-    private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
+    private readonly Dictionary<ClusterIdentity, PID> _actors = new();
+    private readonly HashSet<ClusterIdentity> _inFlightIdentityChecks = new();
     private EventStreamSubscription<object>? _subscription;
 
     public IdentityStoragePlacementActor(Cluster cluster, IdentityStorageLookup identityLookup)
@@ -39,8 +40,8 @@ class IdentityStoragePlacementActor : IActor
         Started                   => OnStarted(context),
         Stopping _                => Stopping(),
         Stopped _                 => Stopped(),
-        ActivationTerminating msg => Terminated(context, msg),
-        ActivationRequest msg     => ActivationRequest(context, msg),
+        ActivationTerminating msg => OnActivationTerminating(context, msg),
+        ActivationRequest msg     => OnActivationRequest(context, msg),
         _                         => Task.CompletedTask
     };
 
@@ -59,15 +60,15 @@ class IdentityStoragePlacementActor : IActor
 
     private Task Stopped()
     {
-        Logger.LogInformation("Stopped placement actor");
+        Logger.LogDebug("Stopped placement actor");
         return Task.CompletedTask;
     }
 
-    private async Task Terminated(IContext context, ActivationTerminating msg)
+    private async Task OnActivationTerminating(IContext context, ActivationTerminating msg)
     {
         if (context.System.Shutdown.IsCancellationRequested) return;
             
-        if (!_myActors.TryGetValue(msg.ClusterIdentity, out var pid))
+        if (!_actors.TryGetValue(msg.ClusterIdentity, out var pid))
         {
             Logger.LogWarning("Activation not found: {ActivationTerminating}", msg);
             return;
@@ -80,7 +81,7 @@ class IdentityStoragePlacementActor : IActor
         }
 
 
-        _myActors.Remove(msg.ClusterIdentity);
+        _actors.Remove(msg.ClusterIdentity);
         _cluster.PidCache.RemoveByVal(msg.ClusterIdentity, pid);
 
         try
@@ -93,77 +94,144 @@ class IdentityStoragePlacementActor : IActor
         }
     }
 
-    private Task ActivationRequest(IContext context, ActivationRequest msg)
+    private Task OnActivationRequest(IContext context, ActivationRequest msg)
+    {
+        if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
+        {
+            //this identity already exists
+            context.Respond(new ActivationResponse {Pid = existing});
+            return Task.CompletedTask;
+        }
+        
+        var clusterKind = _cluster.TryGetClusterKind(msg.Kind);
+
+        if (clusterKind is null)
+        {
+            Logger.LogError("Failed to spawn {Kind}/{Identity}, kind not found for member", msg.Kind, msg.Identity);
+            context.Respond(new ActivationResponse{Failed = true});
+            return Task.CompletedTask;
+        }
+        
+        if (clusterKind.CanSpawnIdentity is not null)
+        {
+            // Needs to check if the identity is allowed to spawn
+            VerifyAndSpawn(msg, context, clusterKind);
+        }
+        else
+        {
+            Spawn(msg, context, clusterKind);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void VerifyAndSpawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
+    {
+        var clusterIdentity = msg.ClusterIdentity;
+
+        if (_inFlightIdentityChecks.Contains(clusterIdentity))
+        {
+            Logger.LogError("[PartitionIdentity] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
+            context.Respond(new ActivationResponse
+                {
+                    Failed = true,
+                }
+            );
+        }
+
+        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity);
+
+        if (canSpawn.IsCompleted)
+        {
+            OnSpawnDecided(msg, context, clusterKind, canSpawn.Result);
+            return;
+        }
+
+        _inFlightIdentityChecks.Add(clusterIdentity);
+        context.ReenterAfter(canSpawn.AsTask(), task => {
+                if (_inFlightIdentityChecks.Remove(clusterIdentity))
+                {
+                    if (task.IsCompletedSuccessfully)
+                    {
+                        OnSpawnDecided(msg, context, clusterKind, task.Result);
+                    }
+                    else
+                    {
+                        Logger.LogError("[PartitionIdentity] Error when checking {ClusterIdentity}", clusterIdentity);
+                        context.Respond(new ActivationResponse
+                            {
+                                Failed = true,
+                            }
+                        );
+                    }
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+    }
+    
+    private void OnSpawnDecided(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind, bool canSpawnIdentity)
+    {
+        if (canSpawnIdentity)
+        {
+            Spawn(msg, context, clusterKind);
+        }
+        else
+        {
+            context.Respond(new ActivationResponse
+                {
+                    Failed = true,
+                    InvalidIdentity = true
+                }
+            );
+        }
+    }
+    
+    private void Spawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
     {
         try
         {
-            if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
+            var sw = Stopwatch.StartNew();
+            var pid = context.SpawnPrefix(clusterKind.Props, msg.ClusterIdentity.Identity, ctx => ctx.Set(msg.ClusterIdentity));
+            sw.Stop();
+
+            if (_cluster.System.Metrics.Enabled)
             {
-                //this identity already exists
-                Respond(existing);
+                ClusterMetrics.ClusterActorSpawnDuration
+                    .Record(sw.Elapsed.TotalSeconds,
+                        new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", msg.Kind)
+                    );
             }
-            else
-            {
-                var clusterKind = _cluster.GetClusterKind(msg.Kind);
-                //this actor did not exist, lets spawn a new activation
 
-                //spawn and remember this actor
-                //as this id is unique for this activation (id+counter)
-                //we cannot get ProcessNameAlreadyExists exception here
-               
+            //Do not expose the PID externally before we have persisted the activation
+            var completionCallback = new TaskCompletionSource<PID?>();
 
-                var sw = Stopwatch.StartNew();
-                var pid = context.SpawnPrefix(clusterKind.Props, msg.ClusterIdentity.Identity, ctx => ctx.Set(msg.ClusterIdentity));
-                sw.Stop();
+            context.ReenterAfter(Task.Run(() => PersistActivation(context, msg, pid)), persistResult => {
+                    var wasPersistedCorrectly = persistResult.Result;
 
-                if (_cluster.System.Metrics.Enabled)
-                {
-                    ClusterMetrics.ClusterActorSpawnDuration
-                        .Record(sw.Elapsed.TotalSeconds,
-                            new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", msg.Kind)
-                        );
-                }
-
-                //Do not expose the PID externally before we have persisted the activation
-                var completionCallback = new TaskCompletionSource<PID?>();
-
-                context.ReenterAfter(Task.Run(() => PersistActivation(context, msg, pid)), persistResult => {
-                        var wasPersistedCorrectly = persistResult.Result;
-
-                        if (wasPersistedCorrectly)
-                        {
-                            _myActors[msg.ClusterIdentity] = pid;
-                            _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
-                            completionCallback.SetResult(pid);
-                            Respond(pid);
-                        }
-                        else // Not stored, kill it and retry later?
-                        {
-                            Respond(null);
-                            context.Poison(pid);
-                            completionCallback.SetResult(null);
-                        }
-
-                        return Task.CompletedTask;
+                    if (wasPersistedCorrectly)
+                    {
+                        _actors[msg.ClusterIdentity] = pid;
+                        _cluster.PidCache.TryAdd(msg.ClusterIdentity, pid);
+                        completionCallback.SetResult(pid);
+                        context.Respond(new ActivationResponse {Pid = pid});
                     }
-                );
-            }
+                    else // Not stored, kill it and retry later?
+                    {
+                        context.Respond(new ActivationResponse {Failed = true});
+                        context.Poison(pid);
+                        completionCallback.SetResult(null);
+                    }
+
+                    return Task.CompletedTask;
+                }
+            );
         }
         catch (Exception e)
         {
             Logger.LogError(e, "Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
-            Respond(null);
-        }
-
-        return Task.CompletedTask;
-
-        void Respond(PID? result)
-        {
-            var response = new ActivationResponse
-            {
-                Pid = result
-            };
-            context.Respond(response);
+            context.Respond(new ActivationResponse {Failed = true});
         }
     }
 
