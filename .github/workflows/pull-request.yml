@@ -84,4 +84,4 @@ jobs:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} -l "console;verbosity=detailed"
+          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }}  --logger GitHubActions
