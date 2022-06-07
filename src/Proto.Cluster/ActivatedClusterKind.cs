@@ -11,16 +11,18 @@ public record ActivatedClusterKind
 {
     private long _count;
 
-    internal ActivatedClusterKind(string name, Props props, IMemberStrategy? strategy)
+    internal ActivatedClusterKind(string name, Props props, IMemberStrategy? strategy, CanSpawnIdentity? canSpawnIdentity)
     {
         Name = name;
         Props = props.WithClusterKind(this);
         Strategy = strategy;
+        CanSpawnIdentity = canSpawnIdentity;
     }
 
     public string Name { get; }
     public Props Props { get; }
     public IMemberStrategy? Strategy { get; }
+    public CanSpawnIdentity? CanSpawnIdentity { get; }
 
     internal long Inc() => Interlocked.Increment(ref _count);
 

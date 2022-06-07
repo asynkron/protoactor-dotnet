@@ -24,6 +24,11 @@ public class IdentityStorageLookup : IIdentityLookup
         var msg = new GetPid(clusterIdentity, ct);
 
         var res = await _system.Root.RequestAsync<PidResult>(_worker, msg, ct);
+
+        if (res?.IdentityBlocked == true)
+        {
+            throw new IdentityIsBlocked(clusterIdentity);
+        }
         return res?.Pid;
     }
 

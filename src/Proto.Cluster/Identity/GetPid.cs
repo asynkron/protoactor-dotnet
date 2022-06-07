@@ -19,7 +19,12 @@ class GetPid : IHashable
 
 class PidResult
 {
+    public static readonly PidResult Blocked = new(true);
+
     public PidResult(PID? pid) => Pid = pid;
 
+    private PidResult(bool identityBlocked) => IdentityBlocked = identityBlocked;
+
     public PID? Pid { get; }
+    public bool IdentityBlocked { get; }
 }

@@ -583,7 +583,7 @@ class PartitionIdentityActor : IActor
                     return;
                 }
 
-                if (response?.Pid != null)
+                if (response.Pid != null)
                 {
                     if (_config.DeveloperLogging)
                         Console.Write("A"); //activated
@@ -613,12 +613,17 @@ class PartitionIdentityActor : IActor
 
                     return;
                 }
+                
+                // Failed, return err response
+                Respond(response);
+
             }
             catch (Exception x)
             {
                 x.CheckFailFast();
                 Logger.LogError(x, "[PartitionIdentity] Spawn failed");
                 _deltaTopology = null; // Do not use delta handover if we are not sure all spawns are OK.
+                Respond(new ActivationResponse {Failed = true});
             }
             finally
             {
@@ -629,10 +634,6 @@ class PartitionIdentityActor : IActor
                     SetReadyToRebalanceIfNoMoreWaitingSpawns();
                 }
             }
-
-            if (_config.DeveloperLogging)
-                Console.Write("F"); //failed
-            Respond(new ActivationResponse {Failed = true});
 
             // The response both responds to the initial activator, but also any other waiting reentrant requests
             void Respond(ActivationResponse response)
