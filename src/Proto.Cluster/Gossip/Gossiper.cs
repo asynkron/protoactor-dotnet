@@ -228,8 +228,7 @@ public class Gossiper
 
         if (blocked.Any())
         {
-            Logger.LogInformation("Blocking members due to expired heartbeat {Members}", blocked);
-            _cluster.MemberList.UpdateBlockedMembers(blocked);
+            Logger.LogInformation("Blocking members due to expired heartbeat {Members}", blocked.Cast<object>().ToArray());
             blockList.Block(blocked);
         }
     }

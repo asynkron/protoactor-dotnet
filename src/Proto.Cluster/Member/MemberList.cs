@@ -80,7 +80,7 @@ public record MemberList
                 //get blocked members from all other member states, and merge that with our own blocked set
                 var topology = u.Value.Unpack<ClusterTopology>();
                 var blocked = topology.Blocked.ToArray();
-                UpdateBlockedMembers(blocked);
+                _cluster.Remote.BlockList.Block(blocked);
             }
         );
 
@@ -106,22 +106,6 @@ public record MemberList
 
         Logger.LogInformation("MemberList did not find any activator for kind '{Kind}'", kind);
         return null;
-    }
-
-    public void UpdateBlockedMembers(string[] blockedMembers)
-    {
-        Logger.LogInformation("Updating blocked members via gossip {Blocked}", blockedMembers);
-        var blockList = _system.Remote().BlockList;
-
-        lock (_lock)
-        {
-            //update blocked members
-            var before = blockList.BlockedMembers;
-            blockList.Block(blockedMembers);
-
-            //then run the usual topology logic
-            UpdateClusterTopology(_activeMembers.Members);
-        }
     }
 
     public string MemberId => _system.Id;
