@@ -45,7 +45,7 @@ public record GetGossipStateSnapshot;
 [PublicAPI]
 public class Gossiper
 {
-    public const string GossipActorName = "gossip";
+    public const string GossipActorName = "$gossip";
 
     private static readonly ILogger Logger = Log.CreateLogger<Gossiper>();
     private readonly Cluster _cluster;
@@ -228,8 +228,7 @@ public class Gossiper
 
         if (blocked.Any())
         {
-            Logger.LogInformation("Blocking members due to expired heartbeat {Members}", blocked);
-            _cluster.MemberList.UpdateBlockedMembers(blocked);
+            Logger.LogInformation("Blocking members due to expired heartbeat {Members}", blocked.Cast<object>().ToArray());
             blockList.Block(blocked);
         }
     }

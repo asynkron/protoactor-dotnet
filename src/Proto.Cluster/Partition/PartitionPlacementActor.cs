@@ -21,7 +21,8 @@ class PartitionPlacementActor : IActor, IDisposable
 
     //pid -> the actor that we have created here
     //kind -> the actor kind
-    private readonly Dictionary<ClusterIdentity, PID> _myActors = new();
+    private readonly Dictionary<ClusterIdentity, PID> _actors = new();
+    private readonly HashSet<ClusterIdentity> _inFlightIdentityChecks = new();
     private readonly PartitionConfig _config;
     private EventStreamSubscription<object>? _subscription;
 
@@ -48,7 +49,8 @@ class PartitionPlacementActor : IActor, IDisposable
     {
         if (_config.Mode != PartitionIdentityLookup.Mode.Push) return Task.CompletedTask;
 
-        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionIdentity] Got topology {TopologyHash}, waiting for current activations to complete", msg.TopologyHash);
+        if (Logger.IsEnabled(LogLevel.Debug))
+            Logger.LogDebug("[PartitionIdentity] Got topology {TopologyHash}, waiting for current activations to complete", msg.TopologyHash);
 
         var cancellationToken = msg.TopologyValidityToken!.Value;
         // TODO: Configurable timeout
@@ -67,7 +69,8 @@ class PartitionPlacementActor : IActor, IDisposable
 
     private async Task Rebalance(IContext context, ClusterTopology msg)
     {
-        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[PartitionIdentity] Initiating rebalance publish for topology {TopologyHash}", msg.TopologyHash);
+        if (Logger.IsEnabled(LogLevel.Debug))
+            Logger.LogDebug("[PartitionIdentity] Initiating rebalance publish for topology {TopologyHash}", msg.TopologyHash);
 
         try
         {
@@ -119,12 +122,12 @@ class PartitionPlacementActor : IActor, IDisposable
             case PartitionIdentityLookup.Send.Delta:
                 var previousHashRing = _lastRebalancedTopology is null ? null : new MemberHashRing(_lastRebalancedTopology.Members);
 
-                return HandoverSource.CreateHandovers(msg, _config.HandoverChunkSize, _myActors, GetCurrentOwner,
+                return HandoverSource.CreateHandovers(msg, _config.HandoverChunkSize, _actors, GetCurrentOwner,
                     previousHashRing is null ? null : identity => previousHashRing.GetOwnerMemberByIdentity(identity)
                 );
             case PartitionIdentityLookup.Send.Full:
             default:
-                return HandoverSource.CreateHandovers(msg, _config.HandoverChunkSize, _myActors, GetCurrentOwner);
+                return HandoverSource.CreateHandovers(msg, _config.HandoverChunkSize, _actors, GetCurrentOwner);
         }
     }
 
@@ -136,13 +139,13 @@ class PartitionPlacementActor : IActor, IDisposable
 
         if (request.DeltaTopology is null)
         {
-            return HandoverSource.CreateHandovers(request.CurrentTopology.TopologyHash, _config.HandoverChunkSize, _myActors,
+            return HandoverSource.CreateHandovers(request.CurrentTopology.TopologyHash, _config.HandoverChunkSize, _actors,
                 identity => currentHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal)
             );
         }
 
         var previousHashRing = new MemberHashRing(request.DeltaTopology.Members);
-        return HandoverSource.CreateHandovers(request.CurrentTopology.TopologyHash, _config.HandoverChunkSize, _myActors,
+        return HandoverSource.CreateHandovers(request.CurrentTopology.TopologyHash, _config.HandoverChunkSize, _actors,
             identity => currentHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal),
             identity => previousHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal)
         );
@@ -207,7 +210,7 @@ class PartitionPlacementActor : IActor, IDisposable
 
     private Task OnActivationTerminating(ActivationTerminating msg)
     {
-        if (!_myActors.TryGetValue(msg.ClusterIdentity, out var pid))
+        if (!_actors.TryGetValue(msg.ClusterIdentity, out var pid))
         {
             Logger.LogWarning("[PartitionIdentity] Activation not found: {ActivationTerminating}", msg);
             return Task.CompletedTask;
@@ -219,7 +222,7 @@ class PartitionPlacementActor : IActor, IDisposable
             return Task.CompletedTask;
         }
 
-        _myActors.Remove(msg.ClusterIdentity);
+        _actors.Remove(msg.ClusterIdentity);
 
         var activationTerminated = new ActivationTerminated
         {
@@ -275,7 +278,10 @@ class PartitionPlacementActor : IActor, IDisposable
         {
             if (cancelRebalance.IsCancellationRequested)
             {
-                context.Logger()?.LogInformation("[PartitionIdentity] Cancelled rebalance handover for topology: {TopologyHash}", msg.CurrentTopology.TopologyHash);
+                context.Logger()?.LogInformation("[PartitionIdentity] Cancelled rebalance handover for topology: {TopologyHash}",
+                    msg.CurrentTopology.TopologyHash
+                );
+
                 if (_config.DeveloperLogging)
                 {
                     Console.WriteLine($"Cancelled rebalance handover for topology: {msg.CurrentTopology.TopologyHash}");
@@ -304,58 +310,122 @@ class PartitionPlacementActor : IActor, IDisposable
 
     private Task OnActivationRequest(IContext context, ActivationRequest msg)
     {
+        if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
+        {
+            if (_config.DeveloperLogging)
+                Console.WriteLine($"Activator got request for existing activation {msg.RequestId}");
+            //this identity already exists
+            var response = new ActivationResponse
+            {
+                Pid = existing,
+                TopologyHash = msg.TopologyHash
+            };
+            context.Respond(response);
+            return Task.CompletedTask;
+        }
+
+        var clusterKind = _cluster.TryGetClusterKind(msg.Kind);
+
+        if (clusterKind is null)
+        {
+            Logger.LogError("Failed to spawn {Kind}/{Identity}, kind not found for member", msg.Kind, msg.Identity);
+            context.Respond(new ActivationResponse{Failed = true});
+            return Task.CompletedTask;
+        }
+
+        if (clusterKind.CanSpawnIdentity is not null)
+        {
+            // Needs to check if the identity is allowed to spawn
+            VerifyAndSpawn(msg, context, clusterKind);
+        }
+        else
+        {
+            Spawn(msg, context, clusterKind);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void VerifyAndSpawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
+    {
+        var clusterIdentity = msg.ClusterIdentity;
+
+        if (_inFlightIdentityChecks.Contains(clusterIdentity))
+        {
+            Logger.LogError("[PartitionIdentity] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
+            context.Respond(new ActivationResponse
+                {
+                    Failed = true,
+                }
+            );
+        }
+
+        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity, CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnTimeout));
+
+        if (canSpawn.IsCompleted)
+        {
+            OnSpawnDecided(msg, context, clusterKind, canSpawn.Result);
+            return;
+        }
+
+        _inFlightIdentityChecks.Add(clusterIdentity);
+        context.ReenterAfter(canSpawn.AsTask(), task => {
+                _inFlightIdentityChecks.Remove(clusterIdentity);
+                if (task.IsCompletedSuccessfully)
+                {
+                    OnSpawnDecided(msg, context, clusterKind, task.Result);
+                }
+                else
+                {
+                    Logger.LogError("[PartitionIdentity] Error when checking {ClusterIdentity}", clusterIdentity);
+                    context.Respond(new ActivationResponse
+                        {
+                            Failed = true,
+                        }
+                    );
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+    }
+
+    private void Spawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
+    {
         try
         {
-            if (_myActors.TryGetValue(msg.ClusterIdentity, out var existing))
-            {
-                if (_config.DeveloperLogging)
-                    Console.WriteLine($"Activator got request for existing activation {msg.RequestId}");
-                //this identity already exists
-                var response = new ActivationResponse
-                {
-                    Pid = existing,
-                    TopologyHash = msg.TopologyHash
-                };
-                context.Respond(response);
-            }
-            else
-            {
-                if (_config.DeveloperLogging)
-                    Console.WriteLine($"Activator got request for new activation {msg.RequestId}");
-                var clusterKind = _cluster.GetClusterKind(msg.ClusterIdentity.Kind);
-                //this actor did not exist, lets spawn a new activation
-
-                //spawn and remember this actor
-                //as this id is unique for this activation (id+counter)
-                //we cannot get ProcessNameAlreadyExists exception here
-                
-                var pid = context.SpawnPrefix(clusterKind.Props, msg.ClusterIdentity.Identity, ctx => ctx.Set(msg.ClusterIdentity));
-
-                _myActors[msg.ClusterIdentity] = pid;
-
-                var response = new ActivationResponse
+            var pid = context.SpawnPrefix(clusterKind.Props, msg.ClusterIdentity.Identity, ctx => ctx.Set(msg.ClusterIdentity));
+            _actors.Add(msg.ClusterIdentity, pid);
+            context.Respond(new ActivationResponse
                 {
                     Pid = pid,
-                    TopologyHash = msg.TopologyHash
-                };
-                context.Respond(response);
-                if (_config.DeveloperLogging)
-                    Console.WriteLine($"Activated {msg.RequestId}");
-            }
+                }
+            );
         }
         catch (Exception e)
         {
             e.CheckFailFast();
             Logger.LogError(e, "[PartitionIdentity] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
-            var response = new ActivationResponse
-            {
-                Pid = null,
-                Failed = true
-            };
-            context.Respond(response);
+            context.Respond(new ActivationResponse {Failed = true});
         }
+    }
 
-        return Task.CompletedTask;
+
+    private void OnSpawnDecided(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind, bool canSpawnIdentity)
+    {
+        if (canSpawnIdentity)
+        {
+            Spawn(msg, context, clusterKind);
+        }
+        else
+        {
+            context.Respond(new ActivationResponse
+                {
+                    Failed = true,
+                    InvalidIdentity = true
+                }
+            );
+        }
     }
 
     public void Dispose() => _subscription?.Unsubscribe();

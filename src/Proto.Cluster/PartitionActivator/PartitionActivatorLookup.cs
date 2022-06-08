@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
-using Proto.Cluster.Partition;
 
 namespace Proto.Cluster.PartitionActivator;
 
@@ -23,10 +22,7 @@ public class PartitionActivatorLookup : IIdentityLookup
     {
     }
 
-    public PartitionActivatorLookup(TimeSpan getPidTimeout)
-    {
-        _getPidTimeout = getPidTimeout;
-    }
+    public PartitionActivatorLookup(TimeSpan getPidTimeout) => _getPidTimeout = getPidTimeout;
 
     public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken notUsed)
     {
@@ -51,6 +47,11 @@ public class PartitionActivatorLookup : IIdentityLookup
 
             var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, cts.Token);
 
+            if (resp.InvalidIdentity)
+            {
+                throw new IdentityIsBlocked(clusterIdentity);
+            }
+
             return resp?.Pid;
         }
         //TODO: decide if we throw or return null
@@ -64,7 +65,7 @@ public class PartitionActivatorLookup : IIdentityLookup
             Logger.LogInformation("[PartitionActivator] Remote PID request timeout {@Request}, identity Owner {Owner}", req, owner);
             return null;
         }
-        catch (Exception e)
+        catch (Exception e) when(e is not IdentityIsBlocked)
         {
             e.CheckFailFast();
             Logger.LogError(e, "[PartitionActivator] Error occured requesting remote PID {@Request}, identity Owner {Owner}", req, owner);

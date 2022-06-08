@@ -80,11 +80,17 @@ public record MemberList
                 //get blocked members from all other member states, and merge that with our own blocked set
                 var topology = u.Value.Unpack<ClusterTopology>();
                 var blocked = topology.Blocked.ToArray();
-                UpdateBlockedMembers(blocked);
+                _cluster.Remote.BlockList.Block(blocked);
             }
         );
 
         _eventStream.Subscribe<MemberBlocked>(b => {
+
+                if (b.MemberId == _system.Id)
+                {
+                    SelfBlocked();
+                }
+                
                 UpdateClusterTopology(_activeMembers.Members);
             }, Dispatchers.DefaultDispatcher
         );
@@ -108,22 +114,6 @@ public record MemberList
         return null;
     }
 
-    public void UpdateBlockedMembers(string[] blockedMembers)
-    {
-        Logger.LogInformation("Updating blocked members via gossip {Blocked}", blockedMembers);
-        var blockList = _system.Remote().BlockList;
-
-        lock (_lock)
-        {
-            //update blocked members
-            var before = blockList.BlockedMembers;
-            blockList.Block(blockedMembers);
-
-            //then run the usual topology logic
-            UpdateClusterTopology(_activeMembers.Members);
-        }
-    }
-
     public string MemberId => _system.Id;
 
     public void UpdateClusterTopology(IReadOnlyCollection<Member> members)
@@ -136,14 +126,7 @@ public record MemberList
 
             if (blockList.IsBlocked(_system.Id))
             {
-                if (_stopping)
-                {
-                    return;
-                }
-
-                _stopping = true;
-                Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
-                _ = _cluster.ShutdownAsync(reason:"Blocked by MemberList");
+                SelfBlocked();
 
                 return;
             }
@@ -253,6 +236,18 @@ public record MemberList
                 _memberStrategyByKind[kind].AddMember(newMember);
             }
         }
+    }
+
+    private void SelfBlocked()
+    {
+        if (_stopping)
+        {
+            return;
+        }
+
+        _stopping = true;
+        Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
+        _ = _cluster.ShutdownAsync(reason: "Blocked by MemberList");
     }
 
     public MetaMember? GetMetaMember(string memberId)

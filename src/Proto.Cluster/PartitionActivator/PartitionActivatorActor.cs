@@ -23,10 +23,12 @@ public class PartitionActivatorActor : IActor
             }
         }
     );
+
     private ulong _topologyHash;
     private readonly Cluster _cluster;
     private readonly PartitionActivatorManager _manager;
     private readonly Dictionary<ClusterIdentity, PID> _actors = new();
+    private readonly HashSet<ClusterIdentity> _inFlightIdentityChecks = new();
     private readonly string _myAddress;
 
     public PartitionActivatorActor(Cluster cluster, PartitionActivatorManager manager)
@@ -35,11 +37,11 @@ public class PartitionActivatorActor : IActor
         _manager = manager;
         _myAddress = cluster.System.Address;
     }
-        
+
     private Task OnStarted(IContext context)
     {
         var self = context.Self;
-        _cluster.System.EventStream.Subscribe<ActivationTerminated>(e => _cluster.System.Root.Send(self,e));
+        _cluster.System.EventStream.Subscribe<ActivationTerminated>(e => _cluster.System.Root.Send(self, e));
         _cluster.System.EventStream.Subscribe<ActivationTerminating>(e => _cluster.System.Root.Send(self, e));
 
         return Task.CompletedTask;
@@ -48,19 +50,19 @@ public class PartitionActivatorActor : IActor
     public Task ReceiveAsync(IContext context) =>
         context.Message switch
         {
-            Started                  => OnStarted(context),
-            ActivationRequest msg    => OnActivationRequest(msg, context),
-            ActivationTerminated msg => OnActivationTerminated(msg, context),
-            ActivationTerminating msg => OnActivationTerminating(msg, context),
-            ClusterTopology msg      => OnClusterTopology(msg, context),
-            _                        => Task.CompletedTask
+            Started                   => OnStarted(context),
+            ActivationRequest msg     => OnActivationRequest(msg, context),
+            ActivationTerminated msg  => OnActivationTerminated(msg),
+            ActivationTerminating msg => OnActivationTerminating(msg),
+            ClusterTopology msg       => OnClusterTopology(msg, context),
+            _                         => Task.CompletedTask
         };
 
     private async Task OnClusterTopology(ClusterTopology msg, IContext context)
     {
         if (msg.TopologyHash == _topologyHash)
             return;
-            
+
         _topologyHash = msg.TopologyHash;
 
         var toRemove = _actors
@@ -69,8 +71,9 @@ public class PartitionActivatorActor : IActor
             .ToList();
 
         //stop and remove all actors we don't own anymore
-        Logger.LogWarning("[PartitionActivator] ClusterTopology - Stopping {actorCount} actors", toRemove.Count);
+        Logger.LogWarning("[PartitionActivator] ClusterTopology - Stopping {ActorCount} actors", toRemove.Count);
         var stopping = new List<Task>();
+
         foreach (var ci in toRemove)
         {
             var pid = _actors[ci];
@@ -81,15 +84,16 @@ public class PartitionActivatorActor : IActor
 
         //await graceful shutdown of all actors we no longer own
         await Task.WhenAll(stopping);
-        Logger.LogWarning("[PartitionActivator] ClusterTopology - Stopped {actorCount} actors", toRemove.Count);
+        Logger.LogWarning("[PartitionActivator] ClusterTopology - Stopped {ActorCount} actors", toRemove.Count);
 
         // Remove all cached PIDs from PidCache that now points to
         // an address where the ClusterIdentity doesn't belong.
         _cluster.PidCache.RemoveByPredicate(cache =>
-            _manager.Selector.GetOwnerAddress(cache.Key) != cache.Value.Address);
+            _manager.Selector.GetOwnerAddress(cache.Key) != cache.Value.Address
+        );
     }
-        
-    private Task OnActivationTerminated(ActivationTerminated msg, IContext context)
+
+    private Task OnActivationTerminated(ActivationTerminated msg)
     {
         _cluster.PidCache.RemoveByVal(msg.ClusterIdentity, msg.Pid);
 
@@ -100,7 +104,7 @@ public class PartitionActivatorActor : IActor
         return Task.CompletedTask;
     }
 
-    private Task OnActivationTerminating(ActivationTerminating msg, IContext context)
+    private Task OnActivationTerminating(ActivationTerminating msg)
     {
         // ActivationTerminating is sent to the local EventStream when a
         // local cluster actor stops.
@@ -140,6 +144,7 @@ public class PartitionActivatorActor : IActor
             {
                 Logger.LogWarning("[PartitionActivator] Tried to spawn on wrong node, forwarding");
             }
+
             context.Forward(ownerPid);
 
             return Task.CompletedTask;
@@ -148,13 +153,78 @@ public class PartitionActivatorActor : IActor
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
         {
             context.Respond(new ActivationResponse
-            {
-                Pid = existing,
-            });
+                {
+                    Pid = existing,
+                }
+            );
         }
         else
         {
             var clusterKind = _cluster.GetClusterKind(msg.Kind);
+
+            if (clusterKind.CanSpawnIdentity is not null)
+            {
+                // Needs to check if the identity is allowed to spawn
+                VerifyAndSpawn(msg, context, clusterKind);
+            }
+            else
+            {
+                Spawn(msg, context, clusterKind);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void VerifyAndSpawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
+    {
+        var clusterIdentity = msg.ClusterIdentity;
+
+        if (_inFlightIdentityChecks.Contains(clusterIdentity))
+        {
+            Logger.LogError("[PartitionActivator] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
+            context.Respond(new ActivationResponse
+                {
+                    Failed = true,
+                }
+            );
+        }
+
+        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity, CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnTimeout));
+
+        if (canSpawn.IsCompleted)
+        {
+            OnSpawnDecided(msg, context, clusterKind, canSpawn.Result);
+            return;
+        }
+
+        _inFlightIdentityChecks.Add(clusterIdentity);
+        context.ReenterAfter(canSpawn.AsTask(), task => {
+                _inFlightIdentityChecks.Remove(clusterIdentity);
+
+                if (task.IsCompletedSuccessfully)
+                {
+                    OnSpawnDecided(msg, context, clusterKind, task.Result);
+                }
+                else
+                {
+                    Logger.LogError("[PartitionActivator] Error when checking {ClusterIdentity}", clusterIdentity);
+                    context.Respond(new ActivationResponse
+                        {
+                            Failed = true,
+                        }
+                    );
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+    }
+
+    private void Spawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
+    {
+        try
+        {
             var pid = context.SpawnPrefix(clusterKind.Props, msg.ClusterIdentity.Identity, ctx => ctx.Set(msg.ClusterIdentity));
             _actors.Add(msg.ClusterIdentity, pid);
             context.Respond(new ActivationResponse
@@ -163,7 +233,28 @@ public class PartitionActivatorActor : IActor
                 }
             );
         }
+        catch (Exception e)
+        {
+            e.CheckFailFast();
+            Logger.LogError(e, "[PartitionActivator] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
+            context.Respond(new ActivationResponse {Failed = true});
+        }
+    }
 
-        return Task.CompletedTask;
+    private void OnSpawnDecided(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind, bool canSpawnIdentity)
+    {
+        if (canSpawnIdentity)
+        {
+            Spawn(msg, context, clusterKind);
+        }
+        else
+        {
+            context.Respond(new ActivationResponse
+                {
+                    Failed = true,
+                    InvalidIdentity = true
+                }
+            );
+        }
     }
 }

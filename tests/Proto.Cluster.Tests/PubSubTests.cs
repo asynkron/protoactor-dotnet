@@ -271,7 +271,6 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
                         Deliveries.Add(new Delivery(context.ClusterIdentity()!.Identity, msg.Data));
                         context.Respond(new Response());
                         break;
-
                     case Subscribe msg:
                         var subRes = await context.Cluster().Subscribe(msg.Topic, context.ClusterIdentity()!);
                         if(subRes == null)

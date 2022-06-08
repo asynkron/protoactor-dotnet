@@ -34,7 +34,7 @@ class IdentityStorageWorker : IActor
         _shouldThrottle = Throttle.Create(
             10,
             TimeSpan.FromSeconds(5),
-            i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs.", i)
+            i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs", i)
         );
 
         _cluster = storageLookup.Cluster;
@@ -67,7 +67,7 @@ class IdentityStorageWorker : IActor
             context.ReenterAfter(GetWithGlobalLock(context.Sender!, clusterIdentity), task => {
                     try
                     {
-                        var response = new PidResult(task.Result);
+                        var response = task.Result;
                         context.Respond(response);
                         RespondToWaitingRequests(context, clusterIdentity, response);
 
@@ -99,15 +99,15 @@ class IdentityStorageWorker : IActor
         }
     }
 
-    private Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
+    private Task<PidResult> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
     {
-        async Task<PID?> Inner()
+        async Task<PidResult> Inner()
         {
             var tries = 0;
-            PID? result = null;
+            PID? pid = null;
             SpawnLock? spawnLock = null;
 
-            while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
+            while (pid == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
             {
                 try
                 {
@@ -118,7 +118,7 @@ class IdentityStorageWorker : IActor
                     if (activation != null)
                     {
                         var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
-                        if (existingPid != null) return existingPid;
+                        if (existingPid != null) return new PidResult(existingPid);
                     }
 
                     //are there any members that can spawn this kind?
@@ -135,13 +135,18 @@ class IdentityStorageWorker : IActor
                     if (spawnLock == null)
                     {
                         using var cts = new CancellationTokenSource(_cluster.Config.ActorActivationTimeout);
-                        result = await WaitForActivation(clusterIdentity, cts.Token);
+                        pid = await WaitForActivation(clusterIdentity, cts.Token);
                     }
                     else
                     {
                         using var cts = new CancellationTokenSource(_cluster.Config.ActorActivationTimeout);
                         //we have the lock, spawn and return
-                        (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, cts.Token);
+                        (var spawnResult, spawnLock) = await SpawnActivationAsync(activator, spawnLock, cts.Token);
+
+                        if (spawnResult is not null)
+                        {
+                            return spawnResult;
+                        }
                     }
                 }
                 catch (OperationCanceledException e)
@@ -164,7 +169,7 @@ class IdentityStorageWorker : IActor
                 }
             }
 
-            return result;
+            return new PidResult(pid);
         }
 
         if (!_cluster.System.Metrics.Enabled)
@@ -211,7 +216,7 @@ class IdentityStorageWorker : IActor
             );
     }
 
-    private async Task<(PID?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
+    private async Task<(PidResult?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
     {
         //we own the lock
         if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", spawnLock.ClusterIdentity.Identity,
@@ -232,7 +237,12 @@ class IdentityStorageWorker : IActor
             if (resp.Pid != null)
             {
                 _cluster.PidCache.TryAdd(spawnLock.ClusterIdentity, resp.Pid!);
-                return (resp.Pid, null);
+                return (new PidResult(resp.Pid), null);
+            }
+
+            if (resp.InvalidIdentity)
+            {
+                return (PidResult.Blocked, null);
             }
         }
         //TODO: decide if we throw or return null
