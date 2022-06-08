@@ -15,7 +15,7 @@ public class PartitionActivatorManager
     private readonly Cluster _cluster;
 
 
-    private readonly RootContext _context;
+    private readonly IRootContext _context;
     private readonly bool _isClient;
     private readonly ActorSystem _system;
     private PID _partitionActivatorActor = null!;

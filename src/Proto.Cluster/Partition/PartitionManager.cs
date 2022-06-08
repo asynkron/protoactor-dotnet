@@ -14,7 +14,7 @@ class PartitionManager
     private const string PartitionIdentityActorName = "$partition-identity";
     private const string PartitionPlacementActorName = "$partition-activator";
     private readonly Cluster _cluster;
-    private readonly RootContext _context;
+    private readonly IRootContext _context;
     private readonly bool _isClient;
     private readonly ActorSystem _system;
     private PID _partitionPlacementActor = null!;

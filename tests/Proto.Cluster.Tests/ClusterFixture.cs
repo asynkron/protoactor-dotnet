@@ -68,7 +68,8 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             .AddService("Proto.Cluster.Tests")
         )
         .AddProtoActorInstrumentation()
-        .AddJaegerExporter(options => options.AgentHost = "localhost")
+        .AddSource(Tracing.ActivitySourceName)
+        .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317"))
         .Build();
 
     protected virtual ClusterKind[] ClusterKinds => new[]
@@ -80,7 +81,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             => new ValueTask<bool>(!identity.Equals(InvalidIdentity, StringComparison.InvariantCultureIgnoreCase))
         ),
         new ClusterKind(EchoActor.AsyncFilteredKind, EchoActor.Props).WithSpawnPredicate(async (identity, ct) => {
-                await Task.Delay(1000, ct);
+                await Task.Delay(100, ct);
                 return !identity.Equals(InvalidIdentity, StringComparison.InvariantCultureIgnoreCase);
             }
         ),
@@ -174,7 +175,9 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         var actorSystemConfig = ActorSystemConfig.Setup();
 
         // ReSharper disable once HeuristicUnreachableCode
-        return EnableTracing ? actorSystemConfig.WithConfigureProps(props => props.WithTracing()) : actorSystemConfig;
+        return EnableTracing ? actorSystemConfig
+            .WithConfigureProps(props => props.WithTracing())
+            .WithConfigureRootContext(context => context.WithTracing()): actorSystemConfig;
     }
 
     protected abstract IClusterProvider GetClusterProvider();

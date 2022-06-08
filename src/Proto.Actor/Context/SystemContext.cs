@@ -12,7 +12,7 @@ public static class SystemContext
 {
     private static readonly ILogger Logger = Log.CreateLogger(nameof(SystemContext));
 
-    public static PID SpawnNamedSystem(this RootContext self, Props props, string name)
+    public static PID SpawnNamedSystem(this IRootContext self, Props props, string name)
     {
         if (!name.StartsWith("$"))
         {

@@ -272,7 +272,7 @@ public class ExamplePersistentActorTests
         Assert.Empty(snapshotStoreMessages);
     }
 
-    private (PID pid, Props props, string actorId, IProvider provider) CreateTestActor(RootContext context)
+    private (PID pid, Props props, string actorId, IProvider provider) CreateTestActor(IRootContext context)
     {
         var actorId = Guid.NewGuid().ToString();
         var inMemoryProvider = new InMemoryProvider();
@@ -283,7 +283,7 @@ public class ExamplePersistentActorTests
         return (pid, props, actorId, inMemoryProvider);
     }
 
-    private async Task<int> RestartActorAndGetState(PID pid, Props props, RootContext context)
+    private async Task<int> RestartActorAndGetState(PID pid, Props props, IRootContext context)
     {
         await context.StopAsync(pid);
         pid = context.Spawn(props);
