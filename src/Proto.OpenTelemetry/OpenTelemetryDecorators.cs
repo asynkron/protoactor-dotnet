@@ -19,19 +19,24 @@ class OpenTelemetryRootContextDecorator : RootContextDecorator
             sendActivitySetup(activity, message);
         };
 
+    private string GetContext()
+    {
+        return "Root";
+    }
+    
     protected override IRootContext WithInnerContext(IRootContext context) => new OpenTelemetryRootContextDecorator(context, _sendActivitySetup);
 
     public override void Send(PID target, object message)
-        => OpenTelemetryMethodsDecorators.Send(target, message, _sendActivitySetup, () => base.Send(target, message));
+        => OpenTelemetryMethodsDecorators.Send(GetContext(),target, message, _sendActivitySetup, () => base.Send(target, message));
 
     public override void Request(PID target, object message)
-        => OpenTelemetryMethodsDecorators.Request(target, message, _sendActivitySetup, () => base.Request(target, message));
+        => OpenTelemetryMethodsDecorators.Request(GetContext(),target, message, _sendActivitySetup, () => base.Request(target, message));
 
     public override void Request(PID target, object message, PID? sender)
-        => OpenTelemetryMethodsDecorators.Request(target, message, sender, _sendActivitySetup, () => base.Request(target, message, sender));
+        => OpenTelemetryMethodsDecorators.Request(GetContext(),target, message, sender, _sendActivitySetup, () => base.Request(target, message, sender));
 
     public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-        => OpenTelemetryMethodsDecorators.RequestAsync(target, message, _sendActivitySetup,
+        => OpenTelemetryMethodsDecorators.RequestAsync(GetContext(),target, message, _sendActivitySetup,
             () => base.RequestAsync<T>(target, message, cancellationToken)
         );
 }
@@ -63,31 +68,33 @@ class OpenTelemetryActorContextDecorator : ActorContextDecorator
         };
     }
 
+    private string GetContext() => base.Actor?.GetType().Name ?? "NullActor";
+
     public override void Send(PID target, object message)
-        => OpenTelemetryMethodsDecorators.Send(target, message, _sendActivitySetup, () => base.Send(target, message));
+        => OpenTelemetryMethodsDecorators.Send(GetContext(), target, message, _sendActivitySetup, () => base.Send(target, message));
 
     public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-        => OpenTelemetryMethodsDecorators.RequestAsync(target, message, _sendActivitySetup,
+        => OpenTelemetryMethodsDecorators.RequestAsync(GetContext(),target, message, _sendActivitySetup,
             () => base.RequestAsync<T>(target, message, cancellationToken)
         );
 
     public override void Request(PID target, object message, PID? sender)
-        => OpenTelemetryMethodsDecorators.Request(target, message, sender, _sendActivitySetup, () => base.Request(target, message, sender));
+        => OpenTelemetryMethodsDecorators.Request(GetContext(),target, message, sender, _sendActivitySetup, () => base.Request(target, message, sender));
 
     public override void Forward(PID target)
-        => OpenTelemetryMethodsDecorators.Forward(target, base.Message!, _sendActivitySetup, () => base.Forward(target));
+        => OpenTelemetryMethodsDecorators.Forward(GetContext(),target, base.Message!, _sendActivitySetup, () => base.Forward(target));
 
     public override Task Receive(MessageEnvelope envelope)
-        => OpenTelemetryMethodsDecorators.Receive(envelope, _receiveActivitySetup, () => base.Receive(envelope));
+        => OpenTelemetryMethodsDecorators.Receive(GetContext(),envelope, _receiveActivitySetup, () => base.Receive(envelope));
 }
 
 static class OpenTelemetryMethodsDecorators
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Send(PID target, object message, ActivitySetup sendActivitySetup, Action send)
+    public static void Send(string context, PID target, object message, ActivitySetup sendActivitySetup, Action send)
     {
         using var activity =
-            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, nameof(Send), message, sendActivitySetup);
+            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, context, nameof(Send), message, sendActivitySetup);
 
         try
         {
@@ -103,10 +110,10 @@ static class OpenTelemetryMethodsDecorators
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void Request(PID target, object message, ActivitySetup sendActivitySetup, Action request)
+    internal static void Request(string context,PID target, object message, ActivitySetup sendActivitySetup, Action request)
     {
         using var activity =
-            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, nameof(Request), message, sendActivitySetup);
+            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, context, nameof(Request), message, sendActivitySetup);
 
         try
         {
@@ -122,10 +129,10 @@ static class OpenTelemetryMethodsDecorators
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void Request(PID target, object message, PID? sender, ActivitySetup sendActivitySetup, Action request)
+    internal static void Request(string context,PID target, object message, PID? sender, ActivitySetup sendActivitySetup, Action request)
     {
         using var activity =
-            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, nameof(Request), message, sendActivitySetup);
+            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, context, nameof(Request), message, sendActivitySetup);
 
         try
         {
@@ -147,10 +154,10 @@ static class OpenTelemetryMethodsDecorators
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static async Task<T> RequestAsync<T>(PID target, object message, ActivitySetup sendActivitySetup, Func<Task<T>> requestAsync)
+    internal static async Task<T> RequestAsync<T>(string context,PID target, object message, ActivitySetup sendActivitySetup, Func<Task<T>> requestAsync)
     {
         using var activity =
-            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, nameof(Request), message, sendActivitySetup);
+            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default,context, nameof(Request), message, sendActivitySetup);
 
         try
         {
@@ -166,10 +173,10 @@ static class OpenTelemetryMethodsDecorators
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void Forward(PID target, object message, ActivitySetup sendActivitySetup, Action forward)
+    internal static void Forward(string context,PID target, object message, ActivitySetup sendActivitySetup, Action forward)
     {
         using var activity =
-            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, nameof(Forward), message, sendActivitySetup);
+            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, context, nameof(Forward), message, sendActivitySetup);
 
         try
         {
@@ -185,7 +192,7 @@ static class OpenTelemetryMethodsDecorators
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static async Task Receive(MessageEnvelope envelope, ActivitySetup receiveActivitySetup, Func<Task> receive)
+    internal static async Task Receive(string context, MessageEnvelope envelope, ActivitySetup receiveActivitySetup, Func<Task> receive)
     {
         var message = envelope.Message;
 
@@ -198,7 +205,7 @@ static class OpenTelemetryMethodsDecorators
         var propagationContext = envelope.Header.ExtractPropagationContext();
 
         using var activity =
-            OpenTelemetryHelpers.BuildStartedActivity(propagationContext.ActivityContext, nameof(Receive), message, receiveActivitySetup);
+            OpenTelemetryHelpers.BuildStartedActivity(propagationContext.ActivityContext, context, nameof(Receive), message, receiveActivitySetup);
 
         try
         {
