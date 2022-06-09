@@ -9,14 +9,14 @@ namespace Proto.Cluster.PubSub;
 
 public record DeliveryBatchMessage(Subscribers Subscribers, PublisherBatchMessage PublisherBatch) : IRootSerializable
 {
-    public IRootSerialized Serialize(ActorSystem system) => new DeliveryBatch
+    public IRootSerialized Serialize(ActorSystem system) => new DeliverBatchRequest
     {
         Subscribers = Subscribers,
         Batch = (ProducerBatch)PublisherBatch.Serialize(system),
     };
 }
 
-public partial class DeliveryBatch: IRootSerialized
+public partial class DeliverBatchRequest : IRootSerialized
 {
     public IRootSerializable Deserialize(ActorSystem system) => 
         new DeliveryBatchMessage(Subscribers, (PublisherBatchMessage) Batch.Deserialize(system));

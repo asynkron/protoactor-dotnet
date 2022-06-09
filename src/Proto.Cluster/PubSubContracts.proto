@@ -38,9 +38,24 @@ message PublishRequest {
 message PublishResponse {}
 
 //this goes out to the delivery actors
-message DeliveryBatch {
+message DeliverBatchRequest {
   Subscribers subscribers = 1;
   ProducerBatch batch = 2;
+}
+
+message DeliverBatchResponse {
+  repeated SubscriberDeliveryReport invalid_deliveries = 1;
+}
+
+enum DeliveryStatus {
+  Delivered = 0;
+  SubscriberNoLongerReachable = 1;
+  OtherError = 127;
+}
+
+message SubscriberDeliveryReport {
+  SubscriberIdentity subscriber = 1;
+  DeliveryStatus status = 2;
 }
 
 //messages going into the topic actors
