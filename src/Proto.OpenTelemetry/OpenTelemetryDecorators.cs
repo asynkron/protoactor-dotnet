@@ -49,7 +49,7 @@ class OpenTelemetryActorContextDecorator : ActorContextDecorator
         ActivitySetup receiveActivitySetup
     ) : base(context)
     {
-        var actorType = context.Actor.GetType().Name;
+        var actorType = Context;
         var self = context.Self.ToString();
         _sendActivitySetup = (activity, message) => {
             activity?.SetTag(ProtoTags.ActorType, actorType);
@@ -65,7 +65,7 @@ class OpenTelemetryActorContextDecorator : ActorContextDecorator
         };
     }
 
-    private string Context => base.Actor?.GetType().Name ?? "NullActor";
+    private string Context => base.Actor?.GetType().Name ?? "<None>";
 
     public override void Send(PID target, object message)
         => OpenTelemetryMethodsDecorators.Send(Context, target, message, _sendActivitySetup, () => base.Send(target, message));
