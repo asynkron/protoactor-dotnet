@@ -18,7 +18,7 @@ static class OpenTelemetryHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Activity? BuildStartedActivity(
         ActivityContext parent,
-        string context,
+        string source,
         string verb,
         object message,
         ActivitySetup activitySetup,
@@ -27,7 +27,7 @@ static class OpenTelemetryHelpers
     {
         var messageType = message?.GetType().Name ?? "Unknown";
 
-        var name = $"Proto {context}.{verb} {messageType}";
+        var name = $"Proto {source}.{verb} {messageType}";
         var tags = new[] {new KeyValuePair<string, object?>(ProtoTags.MessageType, messageType)};
         var activity = ActivitySource.StartActivity(name, activityKind, parent, tags);
 
