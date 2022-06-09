@@ -25,7 +25,7 @@ public class Publisher : IPublisher
     /// <returns></returns>
     public Task<PublishResponse?> PublishBatch(
         string topic,
-        PublisherBatchMessage batch,
+        PubSubBatch batch,
         CancellationToken ct = default
     ) => _cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, ct);
 }
@@ -47,7 +47,7 @@ public static class PublisherExtensions
         CancellationToken ct = default
     )
     {
-        var batch = new PublisherBatchMessage();
+        var batch = new PubSubBatch();
         batch.Envelopes.AddRange(messages.Cast<object>());
         return publisher.PublishBatch(topic, batch, ct);
     }
@@ -67,7 +67,7 @@ public static class PublisherExtensions
         CancellationToken ct = default
     )
     {
-        var batch = new PublisherBatchMessage {Envelopes = {message}};
+        var batch = new PubSubBatch {Envelopes = {message}};
         return publisher.PublishBatch(topic, batch, ct);
     }
 }

@@ -21,7 +21,7 @@ public interface IPublisher
     /// <returns></returns>
     public Task<PublishResponse?> PublishBatch(
         string topic,
-        PublisherBatchMessage batch,
+        PubSubBatch batch,
         CancellationToken ct = default
     );
 }

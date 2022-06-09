@@ -18,11 +18,11 @@ public class PubSubMemberDeliveryActor : IActor
     private static readonly ShouldThrottle LogThrottle = Throttle.Create(10, TimeSpan.FromSeconds(1));
     private static readonly ILogger Logger = Log.CreateLogger<PubSubMemberDeliveryActor>();
 
-    public async Task ReceiveAsync(IContext context)
+    public Task ReceiveAsync(IContext context)
     {
-        if (context.Message is DeliveryBatchMessage deliveryBatch)
+        if (context.Message is DeliverBatchRequest deliveryBatch)
         {
-            var topicBatch = new TopicBatchMessage(deliveryBatch.PublisherBatch.Envelopes);
+            var topicBatch = new PubSubAutoRespondBatch(deliveryBatch.PubSubBatch.Envelopes);
             var tasks =
                 deliveryBatch
                     .Subscribers.Subscribers_
@@ -31,6 +31,8 @@ public class PubSubMemberDeliveryActor : IActor
 
             context.ReenterAfter(Task.WhenAll(tasks), () => ReportDelivery(tasks, context));
         }
+
+        return Task.CompletedTask;
     }
 
     private void ReportDelivery(IEnumerable<Task<SubscriberDeliveryReport>> tasks, IContext context)
@@ -42,7 +44,7 @@ public class PubSubMemberDeliveryActor : IActor
         context.Respond(new DeliverBatchResponse {InvalidDeliveries = {invalidDeliveries}});
     }
 
-    private static async Task<SubscriberDeliveryReport> DeliverBatch(IContext context, TopicBatchMessage pub, SubscriberIdentity s)
+    private static async Task<SubscriberDeliveryReport> DeliverBatch(IContext context, PubSubAutoRespondBatch pub, SubscriberIdentity s)
     {
         var status = await (s.IdentityCase switch
         {
@@ -54,7 +56,7 @@ public class PubSubMemberDeliveryActor : IActor
         return new SubscriberDeliveryReport {Subscriber = s, Status = status};
     }
 
-    private static async Task<DeliveryStatus> DeliverToClusterIdentity(IContext context, TopicBatchMessage pub, ClusterIdentity ci)
+    private static async Task<DeliveryStatus> DeliverToClusterIdentity(IContext context, PubSubAutoRespondBatch pub, ClusterIdentity ci)
     {
         try
         {
@@ -73,7 +75,7 @@ public class PubSubMemberDeliveryActor : IActor
         }
     }
 
-    private static async Task<DeliveryStatus> DeliverToPid(IContext context, TopicBatchMessage pub, PID pid)
+    private static async Task<DeliveryStatus> DeliverToPid(IContext context, PubSubAutoRespondBatch pub, PID pid)
     {
         try
         {

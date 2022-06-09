@@ -28,14 +28,14 @@ public sealed class TopicActor : IActor
 
     public Task ReceiveAsync(IContext context) => context.Message switch
     {
-        Started _                   => OnClusterInit(context),
-        SubscribeRequest sub        => OnSubscribe(context, sub),
-        UnsubscribeRequest unsub    => OnUnsubscribe(context, unsub),
-        PublisherBatchMessage batch => OnProducerBatch(context, batch),
-        _                           => Task.CompletedTask,
+        Started _                => OnClusterInit(context),
+        SubscribeRequest sub     => OnSubscribe(context, sub),
+        UnsubscribeRequest unsub => OnUnsubscribe(context, unsub),
+        PubSubBatch batch        => OnPubSubBatch(context, batch),
+        _                        => Task.CompletedTask,
     };
 
-    private async Task OnProducerBatch(IContext context, PublisherBatchMessage batch)
+    private async Task OnPubSubBatch(IContext context, PubSubBatch batch)
     {
         //TODO: lookup PID for ClusterIdentity subscribers.
         //group PIDs by address
@@ -51,7 +51,7 @@ public sealed class TopicActor : IActor
             (from member in members
              let address = member.Key
              let subscribersOnMember = GetSubscribersForAddress(member)
-             let deliveryMessage = new DeliveryBatchMessage(subscribersOnMember, batch)
+             let deliveryMessage = new DeliverBatchRequest(subscribersOnMember, batch)
              let deliveryPid = PID.FromAddress(address, PubSubExtension.PubSubDeliveryName)
              select context.RequestAsync<DeliverBatchResponse>(deliveryPid, deliveryMessage))
             .ToList();
@@ -104,7 +104,9 @@ public sealed class TopicActor : IActor
             if (LogThrottle().IsOpen())
             {
                 var diagnosticMessage = allUnreachable
-                    .Aggregate($"Topic = {_topic} removed subscribers, because they are no longer reachable: ", (acc, report) => acc + report.Subscriber + ", ");
+                    .Aggregate($"Topic = {_topic} removed subscribers, because they are no longer reachable: ",
+                        (acc, report) => acc + report.Subscriber + ", "
+                    );
                 Logger.LogWarning(diagnosticMessage);
             }
 

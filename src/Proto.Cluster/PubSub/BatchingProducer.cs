@@ -56,7 +56,7 @@ public class BatchingProducer : IAsyncDisposable
     {
         Logger.LogDebug("Producer is starting the publisher loop for topic {Topic}", _topic);
 
-        var batch = new PublisherBatchMessage();
+        var batch = new PubSubBatch();
 
         try
         {
@@ -80,14 +80,14 @@ public class BatchingProducer : IAsyncDisposable
                         if (batch.Envelopes.Count < _config.BatchSize) continue;
 
                         await PublishBatch(batch);
-                        batch = new PublisherBatchMessage();
+                        batch = new PubSubBatch();
                     }
                     else
                     {
                         if (batch.Envelopes.Count > 0)
                         {
                             await PublishBatch(batch);
-                            batch = new PublisherBatchMessage();
+                            batch = new PubSubBatch();
                         }
 
                         await _publisherChannel.Reader.WaitToReadAsync(cancel);
@@ -135,14 +135,14 @@ public class BatchingProducer : IAsyncDisposable
         }
     }
 
-    private void ClearBatch(PublisherBatchMessage batch)
+    private void ClearBatch(PubSubBatch batch)
     {
         batch.Envelopes.Clear();
         batch.DeliveryReports.Clear();
         batch.CancelTokens.Clear();
     }
 
-    private void FailBatch(PublisherBatchMessage batch, Exception ex)
+    private void FailBatch(PubSubBatch batch, Exception ex)
     {
         foreach (var deliveryReport in batch.DeliveryReports)
         {
@@ -152,7 +152,7 @@ public class BatchingProducer : IAsyncDisposable
         ClearBatch(batch);
     }
 
-    private void CancelBatch(PublisherBatchMessage batch)
+    private void CancelBatch(PubSubBatch batch)
     {
         foreach (var deliveryReport in batch.DeliveryReports)
         {
@@ -162,7 +162,7 @@ public class BatchingProducer : IAsyncDisposable
         ClearBatch(batch);
     }
 
-    private void CompleteBatch(PublisherBatchMessage batch)
+    private void CompleteBatch(PubSubBatch batch)
     {
         foreach (var deliveryReport in batch.DeliveryReports)
         {
@@ -172,7 +172,7 @@ public class BatchingProducer : IAsyncDisposable
         ClearBatch(batch);
     }
 
-    private void RemoveCancelledFromBatch(PublisherBatchMessage batch)
+    private void RemoveCancelledFromBatch(PubSubBatch batch)
     {
         var cancelTokensCopy = batch.CancelTokens.ToArray();
 
@@ -195,7 +195,7 @@ public class BatchingProducer : IAsyncDisposable
             _publisherChannel.Writer.Complete();
     }
 
-    private async Task PublishBatch(PublisherBatchMessage batch)
+    private async Task PublishBatch(PubSubBatch batch)
     {
         var retries = 0;
         var retry = true;

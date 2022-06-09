@@ -15,7 +15,7 @@ namespace Proto.Cluster.PubSub;
 /// <param name="retries">Number of retries (1 after initial try)</param>
 /// <param name="e">Exception that was thrown</param>
 /// <param name="batch">Current batch</param>
-public delegate Task<PublishingErrorDecision> PublishingErrorHandler(int retries, Exception e, PublisherBatchMessage batch);
+public delegate Task<PublishingErrorDecision> PublishingErrorHandler(int retries, Exception e, PubSubBatch batch);
 
 public record BatchingProducerConfig
 {
