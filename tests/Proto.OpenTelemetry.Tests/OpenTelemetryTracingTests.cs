@@ -128,7 +128,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 
         var receiveActivity = _fixture
             .GetActivitiesByTraceId(activityTraceId)
-            .Single(it => it.OperationName.Equals("Proto.Receive TraceMe", StringComparison.Ordinal));
+            .Single(it => it.OperationName.Contains("Receive TraceMe", StringComparison.Ordinal));
 
         receiveActivity.GetStatus().Should().Be(Status.Error);
         receiveActivity.Events.Should().HaveCount(1);
