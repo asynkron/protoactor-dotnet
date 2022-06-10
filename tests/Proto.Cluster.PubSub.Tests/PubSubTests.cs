@@ -6,13 +6,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
-using Proto.Cluster;
-using Proto.Cluster.PubSub;
 using Proto.Cluster.Tests;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Proto.Actor.Cluster.PubSub.Tests;
+namespace Proto.Cluster.PubSub.Tests;
 
 public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixture>
 {

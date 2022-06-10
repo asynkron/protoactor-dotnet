@@ -5,10 +5,9 @@
 // -----------------------------------------------------------------------
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
-using Proto.Cluster.PubSub;
 using Xunit;
 
-namespace Proto.Actor.Cluster.PubSub.Tests;
+namespace Proto.Cluster.PubSub.Tests;
 
 [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
 public class PubSubBatchingProducerTests
