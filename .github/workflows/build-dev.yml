@@ -3,7 +3,7 @@ name: Build and deploy to Nuget
 on:
   push:
     branches:
-      - "*"
+      - dev
     tags:
       - "*"
 env:
