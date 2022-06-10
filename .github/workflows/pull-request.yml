@@ -62,6 +62,7 @@ jobs:
           - "tests/Proto.Actor.Tests/*.csproj"
           - "tests/Proto.Remote.Tests/*.csproj"
           - "tests/Proto.Persistence.Tests/*.csproj"
+          - "tests/Proto.OpenTelemetry.Tests/*.csproj"
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.Identity.Tests/*.csproj"
        #   - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"

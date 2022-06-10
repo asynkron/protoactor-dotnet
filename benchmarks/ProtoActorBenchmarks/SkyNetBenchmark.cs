@@ -15,7 +15,7 @@ namespace ProtoActorBenchmarks;
 [InProcess]
 public class SkyNetBenchmark
 {
-    private RootContext _context;
+    private IRootContext _context;
     private ActorSystem _actorSystem;
 
     [Params(0)]

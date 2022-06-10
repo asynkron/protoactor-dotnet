@@ -25,7 +25,13 @@ public class MessageHeaderTests
             (context, target, envelope) =>
                 next(context, target, envelope.WithHeader(context.Headers));
 
-        var system = new ActorSystem();
+        var headers = MessageHeader.Empty.With("foo", "bar");
+
+        
+        var system = new ActorSystem(ActorSystemConfig.Setup() with
+        {
+            ConfigureRootContext = context => context.WithHeaders(headers)
+        });
         var props1 = Props.FromFunc(ctx => {
                 switch (ctx.Message)
                 {
@@ -61,13 +67,11 @@ public class MessageHeaderTests
         var pid2 = system.Root.Spawn(props2);
 
         //ensure we set the headers up correctly
-        var headers = MessageHeader.Empty.With("foo", "bar");
         Assert.Equal("bar", headers.GetOrDefault("foo"));
 
         //use the headers and send the request
         var root = system
             .Root
-            .WithHeaders(headers)
             .WithSenderMiddleware(PropagateHeaders);
 
         root.Send(pid2, new StartMessage());
