@@ -79,7 +79,7 @@ public sealed class DefaultMailbox : IMailbox
         _invoker = NoopInvoker.Instance;
     }
 
-    public int Status => (int)Interlocked.Read(ref _status);
+    public int Status => (int) Interlocked.Read(ref _status);
 
     public int UserMessageCount => _userMailbox.Length;
 
@@ -87,21 +87,28 @@ public sealed class DefaultMailbox : IMailbox
     {
         // if the message is a batch message, we unpack the content as individual messages in the mailbox
         // feature Aka: Samkuvertering in Swedish...
-        if (msg is IMessageBatch  || msg is MessageEnvelope e && e.Message is IMessageBatch)
+        if (msg is IMessageBatch || msg is MessageEnvelope e && e.Message is IMessageBatch)
         {
-            var batch = (IMessageBatch)MessageEnvelope.UnwrapMessage(msg)!;
+            var batch = (IMessageBatch) MessageEnvelope.UnwrapMessage(msg)!;
             var messages = batch.GetMessages();
 
             foreach (var message in messages)
             {
                 _userMailbox.Push(message);
+
                 foreach (var t in _stats)
                 {
                     t.MessagePosted(message);
                 }
             }
-                
-            _userMailbox.Push(msg);
+
+            if (batch is IAutoRespond)
+            {
+                // push the batch itself as well, so that it can autorespond to sender after processing all contained messages
+                // used by pub sub
+                _userMailbox.Push(msg);
+            }
+
             foreach (var t in _stats)
             {
                 t.MessagePosted(msg);
@@ -179,7 +186,7 @@ public sealed class DefaultMailbox : IMailbox
         static async Task Await(DefaultMailbox self, ValueTask task)
         {
             await task;
-                
+
             Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
 
             if (self._systemMessages.HasMessages || !self._suspended && self._userMailbox.HasMessages)
@@ -257,6 +264,7 @@ public sealed class DefaultMailbox : IMailbox
             e.CheckFailFast();
             _invoker.EscalateFailure(e, msg);
         }
+
         return default;
 
         static async ValueTask Await(object msg, ValueTask task, DefaultMailbox self)
@@ -285,11 +293,11 @@ public sealed class DefaultMailbox : IMailbox
 #if NET5_0_OR_GREATER
             ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this ,false);
 #else
-                ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this);
+            ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this);
 #endif
         }
     }
-        
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void RunWrapper(object state)
     {

@@ -3,27 +3,26 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // ----------------------------------------------------------------------- 
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
 using FluentAssertions;
-using Proto.Cluster.PubSub;
+using Proto.Cluster.Tests;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Proto.Cluster.Tests;
+namespace Proto.Cluster.PubSub.Tests;
 
 public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixture>
 {
+    private const string SubscriberKind = "Subscriber";
+
     private readonly PubSubInMemoryClusterFixture _fixture;
     private readonly ITestOutputHelper _output;
 
     public PubSubTests(PubSubInMemoryClusterFixture fixture, ITestOutputHelper output)
     {
         _fixture = fixture;
+        _fixture.Output = output;
         _output = output;
         _fixture.Deliveries.Clear();
     }
@@ -40,11 +39,8 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         for (var i = 0; i < numMessages; i++)
         {
             var response = await PublishData(topic, i);
-
             if (response == null)
-            {
                 await _fixture.Members.DumpClusterState(_output);
-            }
             response.Should().NotBeNull("publishing should not time out");
         }
 
@@ -66,6 +62,8 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         {
             var data = Enumerable.Range(i * 10, 10).ToArray();
             var response = await PublishDataBatch(topic, data);
+            if (response == null)
+                await _fixture.Members.DumpClusterState(_output);
             response.Should().NotBeNull("publishing should not time out");
         }
 
@@ -97,7 +95,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
     {
         const string topic = "pid-subscribe";
 
-        DataPublished deliveredMessage = null;
+        DataPublished? deliveredMessage = null;
 
         var props = Props.FromFunc(ctx => {
                 if (ctx.Message is DataPublished d) deliveredMessage = d;
@@ -121,10 +119,10 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
     {
         const string topic = "pid-unsubscribe";
 
-        var delivered = false;
+        var deliveryCount = 0;
 
         var props = Props.FromFunc(ctx => {
-                if (ctx.Message is DataPublished) delivered = true;
+                if (ctx.Message is DataPublished) Interlocked.Increment(ref deliveryCount);
                 return Task.CompletedTask;
             }
         );
@@ -137,7 +135,46 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
         await PublishData(topic, 1);
 
-        delivered.Should().BeFalse();
+        deliveryCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Stopped_actor_that_did_not_unsubscribe_does_not_block_publishing_to_topic()
+    {
+        const string topic = "missing-unsubscribe";
+
+        var deliveryCount = 0;
+
+        // this scenario is only relevant for regular actors,
+        // virtual actors always exist, so the msgs should never be deadlettered 
+        var props = Props.FromFunc(ctx => {
+                if (ctx.Message is DataPublished) Interlocked.Increment(ref deliveryCount);
+                return Task.CompletedTask;
+            }
+        );
+
+        // spawn two actors and subscribe them to the topic
+        var member = _fixture.Members.First();
+        var pid1 = member.System.Root.Spawn(props);
+        var pid2 = member.System.Root.Spawn(props);
+
+        await member.Subscribe(topic, pid1);
+        await member.Subscribe(topic, pid2);
+
+        // publish one message
+        await PublishData(topic, 1);
+
+        // kill one of the actors
+        await member.System.Root.StopAsync(pid2);
+
+        // publish again
+        var response = await PublishData(topic, 2);
+
+        // clean up and assert
+        await member.Unsubscribe(topic, pid1, CancellationToken.None);
+
+        response.Should().NotBeNull("the publish operation shouldn't have timed out");
+        deliveryCount.Should().Be(3, "second publish should be delivered only to one of the actors");
     }
 
     [Fact]
@@ -172,12 +209,13 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         {
             actual.Should().Equal(expected, "the data published should be received by all subscribers");
         }
-        catch (Exception e)
+        catch
         {
             _output.WriteLine(actual
                 .GroupBy(d => d.Identity)
                 .Select(g => (g.Key, Data: g.Aggregate("", (acc, delivery) => acc + delivery.Data + ",")))
-                .Aggregate("", (acc, d) => $"{acc}ID: {d.Key}, got: {d.Data}\n"));
+                .Aggregate("", (acc, d) => $"{acc}ID: {d.Key}, got: {d.Data}\n")
+            );
 
             throw;
         }
@@ -201,23 +239,34 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
     private string[] SubscriberIds(string prefix, int count) => Enumerable.Range(1, count).Select(i => $"{prefix}-{i:D4}").ToArray();
 
-    private Task SubscribeTo(string topic, string identity) => RequestViaRandomMember(identity, new Subscribe(topic));
+    private Task SubscribeTo(string topic, string identity, string kind = SubscriberKind)
+        => RequestViaRandomMember(identity, new Subscribe(topic), kind);
 
-    private Task UnsubscribeFrom(string topic, string identity) => RequestViaRandomMember(identity, new Unsubscribe(topic));
+    private Task UnsubscribeFrom(string topic, string identity, string kind = SubscriberKind)
+        => RequestViaRandomMember(identity, new Unsubscribe(topic), kind);
 
-    private Task<PublishResponse> PublishData(string topic, int data) => PublishViaRandomMember(topic, new DataPublished(data));
+    private Task<PublishResponse?> PublishData(string topic, int data) => PublishViaRandomMember(topic, new DataPublished(data));
 
-    private Task<PublishResponse> PublishDataBatch(string topic, int[] data)
+    private Task<PublishResponse?> PublishDataBatch(string topic, int[] data)
         => PublishViaRandomMember(topic, data.Select(d => new DataPublished(d)).ToArray());
 
     private readonly Random _random = new();
 
-    private Task RequestViaRandomMember(string identity, object message) =>
-        _fixture
+    private async Task<Response?> RequestViaRandomMember(string identity, object message, string kind = SubscriberKind)
+    {
+        var response = await _fixture
             .Members[_random.Next(_fixture.Members.Count)]
-            .RequestAsync<Response>(identity, PubSubInMemoryClusterFixture.SubscriberKind, message, CancellationTokens.FromSeconds(1));
+            .RequestAsync<Response?>(identity, kind, message, CancellationTokens.FromSeconds(1));
 
-    private Task<PublishResponse> PublishViaRandomMember(string topic, object message) =>
+        if (response == null)
+            await _fixture.Members.DumpClusterState(_output);
+
+        response.Should().NotBeNull($"request {message.GetType().Name} should time out");
+
+        return response;
+    }
+
+    private Task<PublishResponse?> PublishViaRandomMember(string topic, object message) =>
         _fixture
             .Members[_random.Next(_fixture.Members.Count)]
             .Publisher()
@@ -241,9 +290,8 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
 
     public class PubSubInMemoryClusterFixture : BaseInMemoryClusterFixture
     {
-        public const string SubscriberKind = "Subscriber";
-
         public ConcurrentBag<Delivery> Deliveries = new();
+        public ITestOutputHelper? Output;
 
         public PubSubInMemoryClusterFixture() : base(3)
         {
@@ -264,13 +312,20 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
                         Deliveries.Add(new Delivery(context.ClusterIdentity()!.Identity, msg.Data));
                         context.Respond(new Response());
                         break;
+
                     case Subscribe msg:
-                        await context.Cluster().Subscribe(msg.Topic, context.ClusterIdentity()!);
+                        var subRes = await context.Cluster().Subscribe(msg.Topic, context.ClusterIdentity()!);
+                        if (subRes == null)
+                            Output?.WriteLine($"{context.ClusterIdentity()!.Identity} failed to subscribe due to timeout");
+
                         context.Respond(new Response());
                         break;
 
                     case Unsubscribe msg:
-                        await context.Cluster().Unsubscribe(msg.Topic, context.ClusterIdentity()!);
+                        var unsubRes = await context.Cluster().Unsubscribe(msg.Topic, context.ClusterIdentity()!);
+                        if (unsubRes == null)
+                            Output?.WriteLine($"{context.ClusterIdentity()!.Identity} failed to subscribe due to timeout");
+
                         context.Respond(new Response());
                         break;
                 }

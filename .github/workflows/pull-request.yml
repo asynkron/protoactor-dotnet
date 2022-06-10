@@ -68,6 +68,7 @@ jobs:
        #   - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
+          - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
 
     steps:
       - uses: actions/checkout@v1

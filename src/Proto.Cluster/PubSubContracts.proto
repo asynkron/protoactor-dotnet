@@ -19,54 +19,53 @@ message SubscribeRequest {
   SubscriberIdentity subscriber = 1;
 }
 
-message SubscribeResponse {
-
-}
+message SubscribeResponse {}
 
 message UnsubscribeRequest {
   SubscriberIdentity subscriber = 1;
 }
 
-message UnsubscribeResponse {
+message UnsubscribeResponse {}
 
+// message sent from publisher to topic actor
+message PubSubBatchTransport {
+  repeated string type_names = 1;
+  repeated PubSubEnvelope envelopes = 2;
 }
 
-message PublishRequest {
-  bytes data = 1;
+message PubSubEnvelope {
+  int32 type_id = 1;
+  bytes message_data = 2;
+  int32 serializer_id = 3;
 }
 
-message PublishResponse {}
-
-//this goes out to the delivery actors
-message DeliveryBatch {
+// message sent from topic to delivery actor
+message DeliverBatchRequestTransport {
   Subscribers subscribers = 1;
-  ProducerBatch batch = 2;
+  PubSubBatchTransport batch = 2;
 }
 
-//messages going into the topic actors
-message ProducerBatch {
+// response from delivery actor to topic
+message DeliverBatchResponse {
+  repeated SubscriberDeliveryReport invalid_deliveries = 1;
+}
+
+message SubscriberDeliveryReport {
+  SubscriberIdentity subscriber = 1;
+  DeliveryStatus status = 2;
+}
+
+enum DeliveryStatus {
+  Delivered = 0;
+  SubscriberNoLongerReachable = 1;
+  OtherError = 127;
+}
+
+// message posted to subscriber's mailbox, that is then unrolled to single messages, and has ability to auto respond
+message PubSubAutoRespondBatchTransport {
   repeated string type_names = 1;
-  repeated ProducerEnvelope envelopes = 2;
+  repeated PubSubEnvelope envelopes = 2;
 }
 
-message ProducerEnvelope {
-  int32 type_id = 1;
-  bytes message_data = 2;
-  int32 serializer_id = 3;
-}
-
-//messages going out of the topic actors
-message TopicBatchRequest {
-  repeated string type_names = 1;
-  repeated TopicEnvelope envelopes = 2;
-}
-
-message TopicBatchResponse {
-
-}
-
-message TopicEnvelope {
-  int32 type_id = 1;
-  bytes message_data = 2;
-  int32 serializer_id = 3;
-}
+// publish ack response
+message PublishResponse {}

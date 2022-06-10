@@ -15,6 +15,8 @@ namespace Proto.Cluster.PubSub;
 
 public sealed class TopicActor : IActor
 {
+    private static readonly ShouldThrottle LogThrottle = Throttle.Create(10, TimeSpan.FromSeconds(1));
+
     public const string Kind = "prototopic"; // only alphanum in the name, to maximize chances it works on all clustering providers
 
     private static readonly ILogger Logger = Log.CreateLogger<TopicActor>();
@@ -26,14 +28,14 @@ public sealed class TopicActor : IActor
 
     public Task ReceiveAsync(IContext context) => context.Message switch
     {
-        Started _                  => OnClusterInit(context),
-        SubscribeRequest sub       => OnSubscribe(context, sub),
-        UnsubscribeRequest unsub   => OnUnsubscribe(context, unsub),
-        PublisherBatchMessage batch => OnProducerBatch(context, batch),
-        _                          => Task.CompletedTask,
+        Started _                => OnClusterInit(context),
+        SubscribeRequest sub     => OnSubscribe(context, sub),
+        UnsubscribeRequest unsub => OnUnsubscribe(context, unsub),
+        PubSubBatch batch        => OnPubSubBatch(context, batch),
+        _                        => Task.CompletedTask,
     };
 
-    private async Task OnProducerBatch(IContext context, PublisherBatchMessage batch)
+    private async Task OnPubSubBatch(IContext context, PubSubBatch batch)
     {
         //TODO: lookup PID for ClusterIdentity subscribers.
         //group PIDs by address
@@ -49,18 +51,70 @@ public sealed class TopicActor : IActor
             (from member in members
              let address = member.Key
              let subscribersOnMember = GetSubscribersForAddress(member)
-             let deliveryMessage = new DeliveryBatchMessage(subscribersOnMember, batch)
+             let deliveryMessage = new DeliverBatchRequest(subscribersOnMember, batch)
              let deliveryPid = PID.FromAddress(address, PubSubExtension.PubSubDeliveryName)
-             select context.RequestAsync<PublishResponse>(deliveryPid, deliveryMessage)).Cast<Task>()
+             select context.RequestAsync<DeliverBatchResponse>(deliveryPid, deliveryMessage))
             .ToList();
 
         await Task.WhenAll(acks);
 
-        //ack back to producer
+        var allInvalidDeliveryReports = acks.SelectMany(a => a.Result.InvalidDeliveries).ToArray();
+
+        if (allInvalidDeliveryReports.Length > 0)
+            await HandleInvalidDeliveries(context, allInvalidDeliveryReports);
+
+        // ack back to publisher
         context.Respond(new PublishResponse());
     }
 
-    private static Subscribers GetSubscribersForAddress(IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member) => new Subscribers()
+    private async Task HandleInvalidDeliveries(IContext context, SubscriberDeliveryReport[] allInvalidDeliveryReports)
+    {
+        await UnsubscribeUnreachableSubscribers(allInvalidDeliveryReports);
+        ThrowIfAnyErrorsDuringDelivery(allInvalidDeliveryReports);
+    }
+
+    private void ThrowIfAnyErrorsDuringDelivery(SubscriberDeliveryReport[] allInvalidDeliveryReports)
+    {
+        var allWithError = allInvalidDeliveryReports
+            .Where(r => r.Status == DeliveryStatus.OtherError)
+            .ToArray();
+
+        if (allWithError.Length > 0)
+        {
+            var diagnosticMessage = allWithError
+                .Aggregate($"Topic = {_topic} following subscribers could not process the batch: ", (acc, report) => acc + report.Subscriber + ", ");
+
+            throw new PubSubDeliveryException(diagnosticMessage);
+        }
+    }
+
+    private async Task UnsubscribeUnreachableSubscribers(SubscriberDeliveryReport[] allInvalidDeliveryReports)
+    {
+        var allUnreachable = allInvalidDeliveryReports
+            .Where(r => r.Status == DeliveryStatus.SubscriberNoLongerReachable)
+            .ToArray();
+
+        if (allUnreachable.Length > 0)
+        {
+            foreach (var report in allUnreachable)
+            {
+                _subscribers = _subscribers.Remove(report.Subscriber);
+            }
+
+            if (LogThrottle().IsOpen())
+            {
+                var diagnosticMessage = allUnreachable
+                    .Aggregate($"Topic = {_topic} removed subscribers, because they are no longer reachable: ",
+                        (acc, report) => acc + report.Subscriber + ", "
+                    );
+                Logger.LogWarning(diagnosticMessage);
+            }
+
+            await SaveSubscriptions(_topic, new Subscribers {Subscribers_ = {_subscribers}});
+        }
+    }
+
+    private static Subscribers GetSubscribersForAddress(IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member) => new()
     {
         Subscribers_ =
         {

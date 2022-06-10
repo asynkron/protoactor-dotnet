@@ -3,18 +3,11 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
-using FluentAssertions.Execution;
-using Proto.Cluster.PubSub;
 using Xunit;
 
-namespace Proto.Cluster.Tests;
+namespace Proto.Cluster.PubSub.Tests;
 
 [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
 public class PubSubBatchingProducerTests
@@ -239,79 +232,79 @@ public class PubSubBatchingProducerTests
         await sutAction.Should().ThrowAsync<TimeoutException>();
     }
 
-    private readonly List<PublisherBatchMessage> _batchesSent = new();
+    private readonly List<PubSubBatch> _batchesSent = new();
 
-    private Task<PublishResponse> Record(PublisherBatchMessage batch)
+    private Task<PublishResponse?> Record(PubSubBatch batch)
     {
-        var copy = new PublisherBatchMessage();
+        var copy = new PubSubBatch();
         copy.Envelopes.AddRange(batch.Envelopes);
         _batchesSent.Add(copy);
 
         return Task.FromResult(new PublishResponse());
     }
 
-    private Task<PublishResponse> Fail(PublisherBatchMessage _) => throw new TestException();
+    private Task<PublishResponse?> Fail(PubSubBatch _) => throw new TestException();
 
-    private async Task<PublishResponse> Wait(PublisherBatchMessage _)
+    private async Task<PublishResponse?> Wait(PubSubBatch _)
     {
         await Task.Delay(1000);
         return new PublishResponse();
     }
 
-    private Func<PublisherBatchMessage, Task<PublishResponse>> Wait(int ms = 1000) => async _ => {
+    private Func<PubSubBatch, Task<PublishResponse?>> Wait(int ms = 1000) => async _ => {
         await Task.Delay(ms);
         return new PublishResponse();
     };
 
-    private async Task<PublishResponse> WaitThenFail(PublisherBatchMessage _)
+    private async Task<PublishResponse?> WaitThenFail(PubSubBatch _)
     {
         await Task.Delay(500);
         throw new TestException();
     }
 
-    private Func<PublisherBatchMessage, Task<PublishResponse>> WaitThenRecord(int ms = 500)
+    private Func<PubSubBatch, Task<PublishResponse?>> WaitThenRecord(int ms = 500)
         => async batch => {
             await Task.Delay(ms);
 
-            var copy = new PublisherBatchMessage();
+            var copy = new PubSubBatch();
             copy.Envelopes.AddRange(batch.Envelopes);
             _batchesSent.Add(copy);
 
             return new PublishResponse();
         };
 
-    private Func<PublisherBatchMessage, Task<PublishResponse>> FailTimesThenSucceed(int numFails)
+    private Func<PubSubBatch, Task<PublishResponse?>> FailTimesThenSucceed(int numFails)
     {
         var times = 0;
 
         return _ => times++ < numFails ? Task.FromException<PublishResponse>(new TestException()) : Task.FromResult(new PublishResponse());
     }
 
-    private Task<PublishResponse> Timeout(PublisherBatchMessage _) => Task.FromResult<PublishResponse>(null);
+    private Task<PublishResponse?> Timeout(PubSubBatch _) => Task.FromResult<PublishResponse?>(null);
 
     private class MockPublisher : IPublisher
     {
-        private readonly Func<PublisherBatchMessage, Task<PublishResponse>> _publish;
+        private readonly Func<PubSubBatch, Task<PublishResponse>> _publish;
 
-        public MockPublisher(Func<PublisherBatchMessage, Task<PublishResponse>> publish) => _publish = publish;
+        public MockPublisher(Func<PubSubBatch, Task<PublishResponse?>> publish) => _publish = publish;
 
-        public Task<PublishResponse> PublishBatch(string topic, PublisherBatchMessage batch, CancellationToken ct = default) 
+        public Task<PublishResponse?> PublishBatch(string topic, PubSubBatch batch, CancellationToken ct = default) 
             => _publish(batch);
     }
 
     private class OptionalFailureMockPublisher : IPublisher
     {
-        public List<PublisherBatchMessage> SentBatches { get; } = new();
+        public List<PubSubBatch> SentBatches { get; } = new();
         public bool ShouldFail { get; set; }
 
-        public Task<PublishResponse> PublishBatch(string topic, PublisherBatchMessage batch, CancellationToken ct = default)
+        public Task<PublishResponse?> PublishBatch(string topic, PubSubBatch batch, CancellationToken ct = default)
         {
             if (ShouldFail)
             {
                 return Task.FromException<PublishResponse>(new TestException());
             }
 
-            var copy = new PublisherBatchMessage();
+            var copy = new PubSubBatch();
             copy.Envelopes.AddRange(batch.Envelopes);
             SentBatches.Add(copy);
 
@@ -319,7 +312,7 @@ public class PubSubBatchingProducerTests
         }
     }
 
-    private int[] AllSentNumbers(IEnumerable<PublisherBatchMessage> batches) => batches
+    private int[] AllSentNumbers(IEnumerable<PubSubBatch> batches) => batches
         .SelectMany(b => b.Envelopes)
         .Cast<TestMessage>()
         .Select(m => m.Number)
