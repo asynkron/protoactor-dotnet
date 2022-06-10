@@ -11,6 +11,10 @@
     </ItemGroup>
     
     <ItemGroup>
+        <PackageReference Include="GitHubActionsTestLogger" Version="2.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     </ItemGroup>
 
