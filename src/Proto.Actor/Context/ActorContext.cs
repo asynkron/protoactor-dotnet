@@ -316,7 +316,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
     }
 
-    private async ValueTask HandleReceiveTimeout() => await DefaultReceive();
+    private async ValueTask HandleReceiveTimeout()
+    {
+        _messageOrEnvelope = Proto.ReceiveTimeout.Instance;
+        await DefaultReceive();
+    }
 
     public ValueTask InvokeUserMessageAsync(object msg)
     {
