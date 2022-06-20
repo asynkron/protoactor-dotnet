@@ -236,10 +236,6 @@ public sealed class DefaultMailbox : IMailbox
 
                     continue;
                 }
-                else if (msg is not null)
-                {
-                    Console.WriteLine("hello");
-                }
 
                 if (_suspended) break;
 
