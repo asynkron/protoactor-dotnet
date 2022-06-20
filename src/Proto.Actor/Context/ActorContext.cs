@@ -289,7 +289,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             Parent.SendSystemMessage(System, failure);
     }
 
-    public ValueTask InvokeSystemMessageAsync(object msg)
+    public ValueTask InvokeSystemMessageAsync(SystemMessage msg)
     {
         try
         {
@@ -305,6 +305,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
                 SuspendMailbox or ResumeMailbox => default,
                 Continuation cont               => HandleContinuation(cont),
                 ProcessDiagnosticsRequest pdr   => HandleProcessDiagnosticsRequest(pdr),
+                ReceiveTimeout _                => HandleReceiveTimeout(),
                 _                               => HandleUnknownSystemMessage(msg)
             };
         }
@@ -314,6 +315,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             throw;
         }
     }
+
+    private async ValueTask HandleReceiveTimeout() => await DefaultReceive();
 
     public ValueTask InvokeUserMessageAsync(object msg)
     {
@@ -476,20 +479,22 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         // Don't execute the continuation if the actor instance changed.
         // Without this, Continuation's Action closure would execute with
         // an older Actor instance.
-        if (cont.Actor == Actor ||
-            cont.Actor == null)
-        {
-            _messageOrEnvelope = cont.Message;
-            await cont.Action();
-        }
-        else
+        if (cont.Actor != Actor && cont is not {Actor: null})
         {
             if (Logger.IsEnabled(LogLevel.Warning))
+            {
                 Logger.LogWarning(
                     "{Self} Dropping Continuation (ReenterAfter) of {Message}",
                     Self,
-                    MessageEnvelope.UnwrapMessage(cont.Message));
+                    MessageEnvelope.UnwrapMessage(cont.Message)
+                );
+            }
+
+            return;
         }
+
+        _messageOrEnvelope = cont.Message;
+        await cont.Action();
     }
 
     private ActorContextExtras EnsureExtras()
@@ -508,7 +513,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         {
             PoisonPill               => HandlePoisonPill(),
             IAutoRespond autoRespond => HandleAutoRespond(autoRespond),
-            _                        => Actor.ReceiveAsync(_props.ContextDecoratorChain is not null ? EnsureExtras().Context : this)
+            _                        => Actor.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this)
         };
 
     private Task HandleAutoRespond(IAutoRespond autoRespond)
@@ -723,7 +728,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         if (_extras?.ReceiveTimeoutTimer is null) return;
 
-        SendUserMessage(Self, Proto.ReceiveTimeout.Instance);
+        
+        Self.SendSystemMessage(System, Proto.ReceiveTimeout.Instance);
     }
 
     public CapturedContext Capture() => new(MessageEnvelope.Wrap(_messageOrEnvelope!), this);

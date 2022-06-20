@@ -57,9 +57,9 @@ public class BatchingMailbox : IMailbox
         try
         {
             var batch = new List<object>(_batchSize);
-            var sys = _systemMessages.Pop();
+            var msg = _systemMessages.Pop();
 
-            if (sys is not null)
+            if (msg is SystemMessage sys)
             {
                 _suspended = sys switch
                 {
@@ -74,7 +74,6 @@ public class BatchingMailbox : IMailbox
             if (!_suspended)
             {
                 batch.Clear();
-                object? msg;
 
                 while ((msg = _userMessages.Pop()) is not null ||
                        batch.Count >= _batchSize)
