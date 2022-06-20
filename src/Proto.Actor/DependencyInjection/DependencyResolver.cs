@@ -16,6 +16,21 @@ public class DependencyResolver : IDependencyResolver
 
     public DependencyResolver(IServiceProvider services) => _services = services;
 
+    public Props PropsFor<TActor>(params object[] args) where TActor : IActor => Props.FromProducer(() => {
+            var actorType = typeof(TActor);
+
+            try
+            {
+                return (IActor) ActivatorUtilities.CreateInstance(_services, actorType, args);
+            }
+            catch (Exception x)
+            {
+                Logger.LogError(x, "DependencyResolved Failed resolving Props for actor type {ActorType}", actorType.Name);
+                throw;
+            }
+        }
+    );
+
     public Props PropsFor<TActor>() where TActor : IActor => PropsFor(typeof(TActor));
 
     public Props PropsFor(Type actorType) => Props.FromProducer(() => {

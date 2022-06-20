@@ -19,7 +19,7 @@ namespace Proto;
 [PublicAPI]
 public sealed class ActorSystem : IAsyncDisposable
 {
-    private static readonly ILogger Logger = Log.CreateLogger<ActorSystem>();
+    private readonly ILogger _logger = Log.CreateLogger<ActorSystem>();
     public const string NoHost = "nonhost";
     public const string Client = "$client";
     private string _host = NoHost;
@@ -34,7 +34,7 @@ public sealed class ActorSystem : IAsyncDisposable
         Stopper = new();
         Config = config ?? throw new ArgumentNullException(nameof(config));
         ProcessRegistry = new ProcessRegistry(this);
-        Root = new RootContext(this);
+        Root = config.ConfigureRootContext(new RootContext(this));
         DeadLetter = new DeadLetterProcess(this);
         Guardians = new Guardians(this);
         EventStream = new EventStream(this);
@@ -53,7 +53,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
     public ProcessRegistry ProcessRegistry { get; }
 
-    public RootContext Root { get; }
+    public IRootContext Root { get; }
 
     public Stopper Stopper { get; }
 
@@ -101,7 +101,7 @@ public sealed class ActorSystem : IAsyncDisposable
     {
         try
         {
-            Logger.LogInformation("Shutting down actor system {Id}", Id);
+            _logger.LogInformation("Shutting down actor system {Id} - Reason {Reason}", Id, reason);
             Stopper.Stop(reason);
         }
         catch
@@ -132,10 +132,12 @@ public sealed class ActorSystem : IAsyncDisposable
     public (string Host, int Port) GetAddress() => (_host, _port);
 
     public Props ConfigureProps(Props props) => Config.ConfigureProps(props);
+    
+    public Props ConfigureSystemProps(string name, Props props) => Config.ConfigureSystemProps(name, props);
 
     public async ValueTask DisposeAsync()
     {
-        await ShutdownAsync();
+        await ShutdownAsync("Disposed");
 
         // NOTE: We don't dispose _cts here on purpose, as doing so causes
         // ObjectDisposedException to be thrown from certain background task

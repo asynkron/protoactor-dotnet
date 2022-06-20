@@ -88,14 +88,14 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}", Self, message);
     }
 
-    public PID SpawnNamed(Props props, string name)
+    public PID SpawnNamed(Props props, string name, Action<IContext>? callback = null)
     {
         if (props.GuardianStrategy is not null)
             throw new ArgumentException("Props used to spawn child cannot have GuardianStrategy.");
 
         try
         {
-            var pid = props.Spawn(System, $"{Self.Id}/{name}", Self);
+            var pid = props.Spawn(System, $"{Self.Id}/{name}", Self, callback);
             EnsureExtras().AddChild(pid);
 
             return pid;
@@ -231,6 +231,33 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
         ScheduleContinuation(target, cont);
     }
+    
+    public void ReenterAfter(Task target, Action<Task> action)
+    {
+        var msg = _messageOrEnvelope;
+
+        var cont = new Continuation(
+            () => {
+                action(target);
+                return Task.CompletedTask;
+            },
+            msg,
+            Actor);
+
+        ScheduleContinuation(target, cont);
+    }
+    
+    public void ReenterAfter(Task target, Func<Task,Task> action)
+    {
+        var msg = _messageOrEnvelope;
+
+        var cont = new Continuation(
+            () => action(target),
+            msg,
+            Actor);
+
+        ScheduleContinuation(target, cont);
+    }
 
     public Task Receive(MessageEnvelope envelope)
     {
@@ -242,6 +269,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     public void EscalateFailure(Exception reason, object? message)
     {
+        reason.CheckFailFast();
+        
         if (System.Config.DeveloperSupervisionLogging)
         {
             Console.WriteLine($"[Supervision] Actor {Self} : {Actor.GetType().Name} failed with message:{message} exception:{reason}");

@@ -10,7 +10,7 @@ namespace Saga;
 
 class Program
 {
-    private static readonly RootContext Context = new ActorSystem().Root;
+    private static readonly IRootContext Context = new ActorSystem().Root;
 
     public static void Main(string[] args)
     {

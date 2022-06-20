@@ -48,8 +48,8 @@ public abstract class ActorContextDecorator : IContext
     public virtual void Stash() =>
         _context.Stash();
 
-    public virtual PID SpawnNamed(Props props, string name) =>
-        _context.SpawnNamed(props, name);
+    public virtual PID SpawnNamed(Props props, string name, Action<IContext>? callback=null) =>
+        _context.SpawnNamed(props, name, callback);
 
     public virtual void Watch(PID pid) =>
         _context.Watch(pid);
@@ -70,6 +70,12 @@ public abstract class ActorContextDecorator : IContext
         _context.ReenterAfter(target, action);
 
     public virtual void ReenterAfter(Task target, Action action) =>
+        _context.ReenterAfter(target, action);
+
+    public void ReenterAfter(Task target, Action<Task> action) => 
+        _context.ReenterAfter(target, action);
+
+    public void ReenterAfter(Task target, Func<Task, Task> action) =>
         _context.ReenterAfter(target, action);
 
     public CapturedContext Capture() => _context.Capture();

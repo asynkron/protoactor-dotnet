@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Context;
 
 // ReSharper disable once CheckNamespace
 namespace Proto;
@@ -43,10 +44,29 @@ public record ActorSystemConfig
     public bool MetricsEnabled { get; init; }
 
     /// <summary>
+    ///     Allows adding middleware to the root context exposed by the ActorSystem.
+    ///     The result from this will be used as the default sender for all requests,
+    ///     except requests overriding the sender context by parameter
+    /// </summary>
+    public Func<RootContext, IRootContext> ConfigureRootContext { get; init; } = context => context;
+    
+    /// <summary>
     ///     Allows ActorSystem-wide augmentation of any Props
     ///     All props are translated via this function
     /// </summary>
     public Func<Props, Props> ConfigureProps { get; init; } = props => props;
+    
+    /// <summary>
+    ///     Allows ActorSystem-wide augmentation of system Props
+    ///     All system props are translated via this function
+    /// </summary>
+    public Func<string, Props, Props> ConfigureSystemProps { get; init; } = (_,props) => {
+        var logger = Log.CreateLogger("Proto.SystemActors");
+        return props
+            .WithDeadlineDecorator(TimeSpan.FromSeconds(1), logger)
+            .WithLoggingContextDecorator(logger, LogLevel.None, LogLevel.Debug, LogLevel.Error )
+            .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+    };
 
     /// <summary>
     ///     Enables SharedFutures
@@ -105,7 +125,10 @@ public record ActorSystemConfig
 
     public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) => this with {DiagnosticsSerializer = serializer};
 
+    public ActorSystemConfig WithConfigureRootContext(Func<RootContext, IRootContext> configureContext) => this with {ConfigureRootContext = configureContext};
     public ActorSystemConfig WithConfigureProps(Func<Props, Props> configureProps) => this with {ConfigureProps = configureProps};
+    
+    public ActorSystemConfig WithConfigureSystemProps(Func<string, Props, Props> configureSystemProps) => this with {ConfigureSystemProps = configureSystemProps};
 
     public ActorSystemConfig WithThreadPoolStatsTimeout(TimeSpan threadPoolStatsTimeout)
         => this with {ThreadPoolStatsTimeout = threadPoolStatsTimeout};

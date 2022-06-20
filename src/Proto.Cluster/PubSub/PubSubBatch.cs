@@ -5,22 +5,26 @@
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Proto.Remote;
 
 namespace Proto.Cluster.PubSub;
 
-public class ProducerBatchMessage :  IRootSerializable
+public class PubSubBatch : IRootSerializable
 {
-    public List<object> Envelopes { get; } = new ();
+    public List<object> Envelopes { get; } = new();
 
-    public List<TaskCompletionSource<bool>> DeliveryReports { get; } = new();
+    internal List<TaskCompletionSource<bool>> DeliveryReports { get; } = new();
+
+    internal List<CancellationToken> CancelTokens { get; } = new();
 
     public IRootSerialized Serialize(ActorSystem system)
     {
         var s = system.Serialization();
 
-        var batch = new ProducerBatch();
+        var batch = new PubSubBatchTransport();
+
         foreach (var message in Envelopes)
         {
             var (messageData, typeName, serializerId) = s.Serialize(message);
@@ -32,21 +36,23 @@ public class ProducerBatchMessage :  IRootSerializable
                 typeIndex = batch.TypeNames.Count - 1;
             }
 
-            var producerMessage = new ProducerEnvelope
+            var envelope = new PubSubEnvelope
             {
                 MessageData = messageData,
                 TypeId = typeIndex,
                 SerializerId = serializerId
             };
-                
-            batch.Envelopes.Add(producerMessage);
+
+            batch.Envelopes.Add(envelope);
         }
 
         return batch;
     }
+
+    public bool IsEmpty() => Envelopes.Count == 0;
 }
 
-public partial class ProducerBatch : IRootSerialized
+public partial class PubSubBatchTransport : IRootSerialized
 {
     public IRootSerializable Deserialize(ActorSystem system)
     {
@@ -54,10 +60,11 @@ public partial class ProducerBatch : IRootSerialized
         //deserialize messages in the envelope
         var messages = Envelopes
             .Select(e => ser
-                .Deserialize(TypeNames[e.TypeId], e.MessageData, e.SerializerId))
+                .Deserialize(TypeNames[e.TypeId], e.MessageData, e.SerializerId)
+            )
             .ToList();
 
-        var res = new ProducerBatchMessage();
+        var res = new PubSubBatch();
         res.Envelopes.AddRange(messages);
         return res;
     }

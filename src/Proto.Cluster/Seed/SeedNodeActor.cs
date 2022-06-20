@@ -15,7 +15,7 @@ namespace Proto.Cluster.Seed;
 
 public class SeedNodeActor : IActor
 {
-    public const string Name = "server_seed";
+    public const string Name = "$server_seed";
     private static readonly ILogger Logger = Log.CreateLogger<SeedNodeActor>();
     private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
     private ImmutableList<PID> _clients = ImmutableList<PID>.Empty;
@@ -61,6 +61,7 @@ public class SeedNodeActor : IActor
                 }
                 catch (Exception x)
                 {
+                    x.CheckFailFast();
                     Logger.LogError(x, "Failed to connect to seed node {Host}:{Port}", host, port);
                 }
             }

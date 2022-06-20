@@ -106,6 +106,8 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
+                Acme.Mysystem.Bar.GetCurrentStateResponse message => message,
+                // enveloped response
                 GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
@@ -125,6 +127,8 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
+                Acme.Mysystem.Bar.GetCurrentStateResponse message => message,
+                // enveloped response
                 GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
@@ -143,6 +147,8 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
+                Google.Protobuf.WellKnownTypes.Empty message => Nothing.Instance,
+                // enveloped response
                 GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
@@ -162,6 +168,8 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
+                Google.Protobuf.WellKnownTypes.Empty message => Nothing.Instance,
+                // enveloped response
                 GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
@@ -180,6 +188,8 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
+                Acme.Mysystem.Bar.Response message => message,
+                // enveloped response
                 GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
@@ -199,6 +209,8 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
+                Acme.Mysystem.Bar.Response message => message,
+                // enveloped response
                 GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
@@ -217,6 +229,8 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
+                Google.Protobuf.WellKnownTypes.Empty message => Nothing.Instance,
+                // enveloped response
                 GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
@@ -236,6 +250,8 @@ namespace Acme.OtherSystem.Foo
             return res switch
             {
                 // normal response
+                Google.Protobuf.WellKnownTypes.Empty message => Nothing.Instance,
+                // enveloped response
                 GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
@@ -338,7 +354,7 @@ namespace Acme.OtherSystem.Foo
             }
         }
 
-        private void Respond<T>(T response) where T: IMessage => _context!.Respond( new GrainResponseMessage(response));
+        private void Respond<T>(T response) where T: IMessage => _context!.Respond(response is not null ? response : new GrainResponseMessage(response));
         private void Respond() => _context!.Respond( new GrainResponseMessage(null));
         private void OnError(string error) => _context!.Respond( new GrainErrorResponse {Err = error } );
 

@@ -118,6 +118,7 @@ public class ExperimentalClusterContext : IClusterContext
                 }
                 catch (Exception x)
                 {
+                    x.CheckFailFast();
                     if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                         if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
                     _pidCache.RemoveByVal(clusterIdentity, pid);
@@ -201,8 +202,9 @@ public class ExperimentalClusterContext : IClusterContext
                 return pid;
             }
         }
-        catch (Exception e)
+        catch (Exception e) when(e is not IdentityIsBlocked)
         {
+            e.CheckFailFast();
             if (context.System.Shutdown.IsCancellationRequested) return default;
 
             if (_requestLogThrottle().IsOpen())

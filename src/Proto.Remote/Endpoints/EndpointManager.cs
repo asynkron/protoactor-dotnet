@@ -15,6 +15,8 @@ namespace Proto.Remote;
 
 public class EndpointManager
 {
+    public const string ActivatorActorName = "$activator";
+
     private static readonly ILogger Logger = Log.CreateLogger<EndpointManager>();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly IChannelProvider _channelProvider;
@@ -195,9 +197,14 @@ public class EndpointManager
     }
     private void SpawnActivator()
     {
-        var props = Props.FromProducer(() => new Activator(_remoteConfig, _system))
-            .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-        ActivatorPid = _system.Root.SpawnNamed(props, "activator");
+        var props = Props.FromProducer(() => new Activator(_remoteConfig, _system));
+        ActivatorPid = _system.Root.SpawnNamedSystem(props, ActivatorActorName);
     }
-    private void StopActivator() => _system.Root.Stop(ActivatorPid);
+    private void StopActivator()
+    {
+        if (ActivatorPid is not null)
+        {
+            _system.Root.Stop(ActivatorPid);
+        }
+    }
 }

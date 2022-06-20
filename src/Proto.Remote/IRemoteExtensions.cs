@@ -41,6 +41,6 @@ public static class IRemoteExtensions
 
         return res;
 
-        static PID ActivatorForAddress(string address) => PID.FromAddress(address, "activator");
+        static PID ActivatorForAddress(string address) => PID.FromAddress(address, EndpointManager.ActivatorActorName);
     }
 }

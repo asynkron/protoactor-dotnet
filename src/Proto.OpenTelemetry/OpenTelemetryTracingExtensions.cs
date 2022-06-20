@@ -51,7 +51,7 @@ public static class OpenTelemetryTracingExtensions
     /// <param name="context">Root context</param>
     /// <param name="sendActivitySetup">provide a way inject send activity customization according to the message.</param>
     /// <returns>IRootContext</returns>
-    public static IRootContext WithTracing(this RootContext context, ActivitySetup? sendActivitySetup = null)
+    public static IRootContext WithTracing(this IRootContext context, ActivitySetup? sendActivitySetup = null)
     {
         sendActivitySetup ??= OpenTelemetryHelpers.DefaultSetupActivity!;
 

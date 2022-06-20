@@ -11,8 +11,8 @@ namespace Proto.Cluster.Partition;
 //helper to interact with partition actors on this and other members
 class PartitionManager
 {
-    private const string PartitionIdentityActorName = "partition-identity";
-    private const string PartitionPlacementActorName = "partition-activator";
+    private const string PartitionIdentityActorName = "$partition-identity";
+    private const string PartitionPlacementActorName = "$partition-activator";
     private readonly Cluster _cluster;
     private readonly IRootContext _context;
     private readonly bool _isClient;
@@ -49,12 +49,11 @@ class PartitionManager
         else
         {
             var partitionActorProps = Props
-                .FromProducer(() => new PartitionIdentityActor(_cluster, _config))
-                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            _partitionIdentityActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
+                .FromProducer(() => new PartitionIdentityActor(_cluster, _config));
+            _partitionIdentityActor = _context.SpawnNamedSystem(partitionActorProps, PartitionIdentityActorName);
 
             var partitionActivatorProps = Props.FromProducer(() => new PartitionPlacementActor(_cluster, _config));
-            _partitionPlacementActor = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
+            _partitionPlacementActor = _context.SpawnNamedSystem(partitionActivatorProps, PartitionPlacementActorName);
 
             //synchronous subscribe to keep accurate
             var topologyHash = 0ul;

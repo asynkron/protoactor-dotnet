@@ -90,6 +90,8 @@ namespace {{CsNamespace}}
             return res switch
             {
                 // normal response
+                {{OutputName}} message => {{#if UseReturn}}message{{else}}Nothing.Instance{{/if}},
+                // enveloped response
                 GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}Nothing.Instance{{/if}},
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
@@ -109,6 +111,8 @@ namespace {{CsNamespace}}
             return res switch
             {
                 // normal response
+                {{OutputName}} message => {{#if UseReturn}}message{{else}}Nothing.Instance{{/if}},
+                // enveloped response
                 GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}Nothing.Instance{{/if}},
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
@@ -196,7 +200,7 @@ namespace {{CsNamespace}}
             }
         }
 
-        private void Respond<T>(T response) where T: IMessage => _context!.Respond( new GrainResponseMessage(response));
+        private void Respond<T>(T response) where T: IMessage => _context!.Respond(response is not null ? response : new GrainResponseMessage(response));
         private void Respond() => _context!.Respond( new GrainResponseMessage(null));
         private void OnError(string error) => _context!.Respond( new GrainErrorResponse {Err = error } );
 

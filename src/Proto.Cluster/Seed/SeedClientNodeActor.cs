@@ -13,7 +13,7 @@ namespace Proto.Cluster.Seed;
 
 public class SeedClientNodeActor : IActor
 {
-    public const string Name = "client_seed";
+    public const string Name = "$client_seed";
     public static Props Props(SeedNodeClusterProviderOptions options) => Proto.Props.FromProducer(() => new SeedClientNodeActor(options));
     private static readonly ILogger Logger = Log.CreateLogger<SeedClientNodeActor>();
     private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
@@ -48,6 +48,7 @@ public class SeedClientNodeActor : IActor
             }
             catch (Exception x)
             {
+                x.CheckFailFast();
                 Logger.LogError(x, "Failed to connect to seed node {Host}:{Port}", host, port);
             }
         }
@@ -78,6 +79,7 @@ public class SeedClientNodeActor : IActor
                 }
                 catch (Exception e)
                 {
+                    e.CheckFailFast();
                     Logger.LogError(e, "Failed to connect to seed node {Member}", member.Address);
                 }
             }

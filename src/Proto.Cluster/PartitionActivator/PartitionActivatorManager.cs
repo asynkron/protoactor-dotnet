@@ -11,7 +11,7 @@ namespace Proto.Cluster.PartitionActivator;
 //helper to interact with partition actors on this and other members
 public class PartitionActivatorManager
 {
-    private const string PartitionActivatorActorName = "partition-activator";
+    private const string PartitionActivatorActorName = "$partition-activator";
     private readonly Cluster _cluster;
 
 
@@ -49,7 +49,7 @@ public class PartitionActivatorManager
         {
             var partitionActivatorProps =
                 Props.FromProducer(() => new PartitionActivatorActor(_cluster, this));
-            _partitionActivatorActor = _context.SpawnNamed(partitionActivatorProps, PartitionActivatorActorName);
+            _partitionActivatorActor = _context.SpawnNamedSystem(partitionActivatorProps, PartitionActivatorActorName);
 
             //synchronous subscribe to keep accurate
 

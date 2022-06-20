@@ -8,7 +8,9 @@ public class EchoActor : IActor
 {
     public const string Kind = "echo";
     public const string Kind2 = "echo2";
-    public const string LocalAffinityKind = "echo3";
+    public const string LocalAffinityKind = "localAffinityEcho";
+    public const string FilteredKind = "filteredEcho";
+    public const string AsyncFilteredKind = "asyncFilteredEcho";
 
     public static readonly Props Props = Props.FromProducer(() => new EchoActor());
     private static readonly ILogger Logger = Log.CreateLogger<EchoActor>();

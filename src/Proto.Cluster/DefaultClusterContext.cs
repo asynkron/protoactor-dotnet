@@ -43,7 +43,7 @@ public class DefaultClusterContext : IClusterContext
             config.RequestLogThrottlePeriod,
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
-
+        
         _clock = new TaskClock(config.ActorRequestTimeout, config.ActorRequestRetryInterval, killSwitch);
         _clock.Start();
     }
@@ -166,8 +166,9 @@ public class DefaultClusterContext : IClusterContext
                 return pid;
             }
         }
-        catch (Exception e)
+        catch (Exception e) when(e is not IdentityIsBlocked)
         {
+            e.CheckFailFast();
             if (context.System.Shutdown.IsCancellationRequested) return default;
 
             if (_requestLogThrottle().IsOpen())
@@ -176,7 +177,7 @@ public class DefaultClusterContext : IClusterContext
         }
     }
 
-    private async ValueTask<(ResponseStatus Ok, T?)> TryRequestAsync<T>(
+    private async ValueTask<(ResponseStatus Status, T?)> TryRequestAsync<T>(
         ClusterIdentity clusterIdentity,
         object message,
         PID pid,
@@ -191,6 +192,7 @@ public class DefaultClusterContext : IClusterContext
         {
             context.Request(pid, message, future.Pid);
             var task = future.Task;
+
             await Task.WhenAny(task, _clock.CurrentBucket);
 
             if (task.IsCompleted)
@@ -202,8 +204,9 @@ public class DefaultClusterContext : IClusterContext
 
             if (!context.System.Shutdown.IsCancellationRequested)
                 if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
-            _pidCache.RemoveByVal(clusterIdentity, pid);
 
+            _pidCache.RemoveByVal(clusterIdentity, pid);
+            
             return (ResponseStatus.TimedOut, default);
         }
         catch (TimeoutException)
@@ -212,6 +215,7 @@ public class DefaultClusterContext : IClusterContext
         }
         catch (Exception x)
         {
+            x.CheckFailFast();
             if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
                 if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
             _pidCache.RemoveByVal(clusterIdentity, pid);
@@ -244,7 +248,7 @@ public class DefaultClusterContext : IClusterContext
         return pid;
     }
 
-    private static (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
+    private static (ResponseStatus Status, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
     {
         var message = MessageEnvelope.UnwrapMessage(result);
 

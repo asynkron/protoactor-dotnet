@@ -16,6 +16,7 @@ namespace Proto;
 
 public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
 {
+    IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware);
 }
 
 [PublicAPI]
@@ -40,6 +41,7 @@ public sealed record RootContext : IRootContext
 
     private Sender? SenderMiddleware { get; init; }
     public ActorSystem System { get; }
+
     private TypeDictionary<object, RootContext> Store { get; } = new(0, 1);
 
     public T? Get<T>() => (T?) Store.Get<T>();
@@ -55,21 +57,23 @@ public sealed record RootContext : IRootContext
     PID? IInfoContext.Sender => null;
     public IActor? Actor => null;
 
-    public PID SpawnNamed(Props props, string name)
+    public PID SpawnNamed(Props props, string name, Action<IContext>? callback=null)
     {
         try
         {
             var parent = props.GuardianStrategy is not null
                 ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
                 : null;
-            return props.Spawn(System, name, parent);
+            return props.Spawn(System, name, parent, callback);
         }
         catch (Exception x)
         {
-            Logger.LogError(x, "RootContext Failed to spawn child actor {Name}", name);
+            Logger.LogError(x, "RootContext Failed to spawn root level actor {Name}", name);
             throw;
         }
     }
+    
+    
 
     public object? Message => null;
 
@@ -86,10 +90,10 @@ public sealed record RootContext : IRootContext
     public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
         => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
         
-    public RootContext WithHeaders(MessageHeader headers) =>
+    public IRootContext WithHeaders(MessageHeader headers) =>
         this with {Headers = headers};
 
-    public RootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) =>
+    public IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) =>
         this with
         {
             SenderMiddleware = middleware.Reverse()

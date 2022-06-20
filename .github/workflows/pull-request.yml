@@ -6,9 +6,9 @@ env:
   DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
   TERM: xterm  
 
-concurrency:
-  group: protoactor
-  cancel-in-progress: true
+#concurrency:
+#  group: protoactor
+#  cancel-in-progress: true
   
 jobs:
   build:
@@ -62,11 +62,13 @@ jobs:
           - "tests/Proto.Actor.Tests/*.csproj"
           - "tests/Proto.Remote.Tests/*.csproj"
           - "tests/Proto.Persistence.Tests/*.csproj"
+          - "tests/Proto.OpenTelemetry.Tests/*.csproj"
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.Identity.Tests/*.csproj"
        #   - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
+          - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
 
     steps:
       - uses: actions/checkout@v1
@@ -84,4 +86,4 @@ jobs:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} -l "console;verbosity=detailed"
+          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }}  --logger GitHubActions

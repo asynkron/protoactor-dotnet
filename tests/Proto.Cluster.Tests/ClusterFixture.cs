@@ -10,6 +10,7 @@ using OpenTelemetry.Trace;
 using Proto.Cluster.Cache;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
+using Proto.Cluster.PartitionActivator;
 using Proto.Cluster.Testing;
 using Proto.Logging;
 using Proto.OpenTelemetry;
@@ -35,6 +36,7 @@ public interface IClusterFixture
 public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDisposable
 {
     private const bool EnableTracing = false;
+    public const string InvalidIdentity = "invalid";
 
     protected readonly string ClusterName;
     private readonly int _clusterSize;
@@ -66,7 +68,8 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             .AddService("Proto.Cluster.Tests")
         )
         .AddProtoActorInstrumentation()
-        .AddJaegerExporter(options => options.AgentHost = "localhost")
+        .AddSource(Tracing.ActivitySourceName)
+        .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317"))
         .Build();
 
     protected virtual ClusterKind[] ClusterKinds => new[]
@@ -74,6 +77,14 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         new ClusterKind(EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
         new ClusterKind(EchoActor.Kind2, EchoActor.Props),
         new ClusterKind(EchoActor.LocalAffinityKind, EchoActor.Props).WithLocalAffinityRelocationStrategy(),
+        new ClusterKind(EchoActor.FilteredKind, EchoActor.Props).WithSpawnPredicate((identity, _)
+            => new ValueTask<bool>(!identity.Equals(InvalidIdentity, StringComparison.InvariantCultureIgnoreCase))
+        ),
+        new ClusterKind(EchoActor.AsyncFilteredKind, EchoActor.Props).WithSpawnPredicate(async (identity, ct) => {
+                await Task.Delay(100, ct);
+                return !identity.Equals(InvalidIdentity, StringComparison.InvariantCultureIgnoreCase);
+            }
+        ),
     };
 
     public async Task InitializeAsync()
@@ -164,7 +175,9 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         var actorSystemConfig = ActorSystemConfig.Setup();
 
         // ReSharper disable once HeuristicUnreachableCode
-        return EnableTracing ? actorSystemConfig.WithConfigureProps(props => props.WithTracing()) : actorSystemConfig;
+        return EnableTracing ? actorSystemConfig
+            .WithConfigureProps(props => props.WithTracing())
+            .WithConfigureRootContext(context => context.WithTracing()): actorSystemConfig;
     }
 
     protected abstract IClusterProvider GetClusterProvider();
@@ -177,7 +190,8 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             HandoverChunkSize = 1000,
             RebalanceRequestTimeout = TimeSpan.FromSeconds(1),
             Mode = PartitionIdentityLookup.Mode.Pull
-        });
+        }
+    );
 
     async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
 }
@@ -205,6 +219,16 @@ public class InMemoryClusterFixture : BaseInMemoryClusterFixture
     public InMemoryClusterFixture() : base(3, config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
     {
     }
+}
+
+// ReSharper disable once ClassNeverInstantiated.Global
+public class InMemoryClusterFixtureWithPartitionActivator : BaseInMemoryClusterFixture
+{
+    public InMemoryClusterFixtureWithPartitionActivator() : base(3, config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
+    {
+    }
+
+    protected override IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionActivatorLookup();
 }
 
 public class InMemoryClusterFixtureAlternativeClusterContext : BaseInMemoryClusterFixture

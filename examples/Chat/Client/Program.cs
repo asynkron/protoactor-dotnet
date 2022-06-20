@@ -16,7 +16,7 @@ namespace Client;
 
 static class Program
 {
-    private static RootContext context;
+    private static IRootContext context;
 
     private static PID client;
 
