@@ -130,7 +130,7 @@ public class ActorState
     }
 
     private readonly object _padlock = new();
-    private readonly HashSet<(string Id, DateTimeOffset AddedAt)> _currentlyOnMembers = new();
+    private readonly HashSet<string> _currentlyOnMembers = new();
     public ConcurrentBag<VerificationEvent> Events { get; } = new();
 
     public void RecordStarted(IContext context)
@@ -138,7 +138,7 @@ public class ActorState
         lock (_padlock)
         {
             Events.Add(new ActorStarted(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
-            _currentlyOnMembers.Add((context.System.Id, DateTimeOffset.Now));
+            _currentlyOnMembers.Add(context.System.Id);
 
             if (!AnyOfCurrentMembersIsStopping() && _currentlyOnMembers.Count != 1)
             {
@@ -160,7 +160,7 @@ public class ActorState
                 Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
             }
 
-            _currentlyOnMembers.RemoveWhere(x => x.Id == context.System.Id);
+            _currentlyOnMembers.Remove(context.System.Id);
         }
     }
 
@@ -168,11 +168,7 @@ public class ActorState
     // in this case we may see duplicated activation, but this is by design and we don't want to report it
     // activation count should go back to expected value once the duplicated activation shuts down together with the member
     private bool AnyOfCurrentMembersIsStopping()
-        => _currentlyOnMembers
-            // if the entry is old, ignore it because something is fishy (actor did not get Stopping message?)
-            // this way we will still signal inconsistency in the test
-            .Where(cm => DateTimeOffset.UtcNow - cm.AddedAt < TimeSpan.FromSeconds(4))
-            .Any(cm => _clusterFixture.Members.Any(m => m.Remote.BlockList.IsBlocked(cm.Id)));
+        => _currentlyOnMembers.Any(cm => _clusterFixture.Members.Any(m => m.Remote.BlockList.IsBlocked(cm)));
 
     public void RecordInconsistency(int expected, int actual, PID activation)
     {
