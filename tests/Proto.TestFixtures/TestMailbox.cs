@@ -28,7 +28,7 @@ public class TestMailbox : IMailbox
         if (msg is Stop)
             _invoker?.CancellationTokenSource?.Cancel();
         SystemMessages.Add(msg);
-        _invoker?.InvokeSystemMessageAsync(msg).GetAwaiter().GetResult();
+        _invoker?.InvokeSystemMessageAsync((SystemMessage)msg).GetAwaiter().GetResult();
     }
 
     public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher) => _invoker = invoker;

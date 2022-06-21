@@ -213,7 +213,7 @@ public sealed class DefaultMailbox : IMailbox
             {
                 msg = _systemMessages.Pop();
 
-                if (msg is not null)
+                if (msg is SystemMessage sys)
                 {
                     _suspended = msg switch
                     {
@@ -222,7 +222,7 @@ public sealed class DefaultMailbox : IMailbox
                         _              => _suspended
                     };
 
-                    var t = _invoker.InvokeSystemMessageAsync(msg);
+                    var t = _invoker.InvokeSystemMessageAsync(sys);
 
                     if (!t.IsCompletedSuccessfully)
                     {

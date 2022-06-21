@@ -6,6 +6,7 @@
 
 using System;
 using JetBrains.Annotations;
+using Proto.Mailbox;
 using Proto.Metrics;
 
 // ReSharper disable once CheckNamespace
@@ -59,7 +60,7 @@ public class DeadLetterProcess : Process
         System.Root.Send(sender,new DeadLetterResponse {Target = pid});
     }
 
-    protected internal override void SendSystemMessage(PID pid, object message)
+    protected internal override void SendSystemMessage(PID pid, SystemMessage message)
     {
         if (System.Metrics.Enabled)
             ActorMetrics.DeadletterCount.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", message.GetType().Name));

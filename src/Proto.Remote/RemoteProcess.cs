@@ -6,7 +6,7 @@
 
 using System;
 using System.Diagnostics;
-
+using Proto.Mailbox;
 
 namespace Proto.Remote;
 
@@ -27,7 +27,7 @@ public class RemoteProcess : Process
 
     protected internal override void SendUserMessage(PID _, object message) => Send(message);
 
-    protected internal override void SendSystemMessage(PID _, object message) => Send(message);
+    protected internal override void SendSystemMessage(PID _, SystemMessage message) => Send(message);
 
     private void Send(object msg)
     {
