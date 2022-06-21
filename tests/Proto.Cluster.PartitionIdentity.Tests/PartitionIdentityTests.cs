@@ -205,7 +205,6 @@ public class PartitionIdentityTests
 
                             if (clusterFixture.Members.Count > minMembers)
                             {
-                                _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopping cluster member " + (graceful ? "gracefully" : "with wanton disregard"));
                                 _ = StopRandomMember(clusterFixture, clusterFixture.Members.Skip(2).ToList(), rnd, graceful);
                             }
                         }
@@ -225,6 +224,7 @@ public class PartitionIdentityTests
     private async Task StopRandomMember(IClusterFixture fixture, IList<Cluster> candidates, Random rnd, bool graceful)
     {
         var member = RandomMember(candidates, rnd);
+        _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopping cluster member {member.System.Id} " + (graceful ? "gracefully" : "with wanton disregard"));
         await fixture.RemoveNode(member, graceful);
         _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopped cluster member {member.System.Id}");
     }

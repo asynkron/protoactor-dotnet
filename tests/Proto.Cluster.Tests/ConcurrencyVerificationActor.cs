@@ -11,7 +11,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
-using Proto.Remote;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
 
@@ -124,7 +123,6 @@ public class ActorState
     private readonly string _id;
     private readonly IClusterFixture _clusterFixture;
 
-    
     public ActorState(string id, IClusterFixture clusterFixture)
     {
         _id = id;
@@ -132,7 +130,7 @@ public class ActorState
     }
 
     private readonly object _padlock = new();
-    private readonly HashSet<string> _currentlyOnMembers = new();
+    private readonly HashSet<(string Id, DateTimeOffset AddedAt)> _currentlyOnMembers = new();
     public ConcurrentBag<VerificationEvent> Events { get; } = new();
 
     public void RecordStarted(IContext context)
@@ -140,9 +138,9 @@ public class ActorState
         lock (_padlock)
         {
             Events.Add(new ActorStarted(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
-            _currentlyOnMembers.Add(context.System.Id);
-            
-            if (CurrentActivationsOnNonblockedMembers() != 1)
+            _currentlyOnMembers.Add((context.System.Id, DateTimeOffset.Now));
+
+            if (!AnyOfCurrentMembersIsStopping() && _currentlyOnMembers.Count != 1)
             {
                 Inconsistent = true;
                 Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
@@ -155,21 +153,26 @@ public class ActorState
         lock (_padlock)
         {
             Events.Add(new ActorStopped(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
-            _currentlyOnMembers.Remove(context.System.Id);
 
-            if (CurrentActivationsOnNonblockedMembers() != 0)
+            if (!AnyOfCurrentMembersIsStopping() && _currentlyOnMembers.Count - 1 != 0)
             {
                 Inconsistent = true;
                 Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
             }
+
+            _currentlyOnMembers.RemoveWhere(x => x.Id == context.System.Id);
         }
     }
 
-    // ignore activations on members that are blocked (which means they are shutting down)
+    // do not verify consistency if any of the current members is blocked (which means they are shutting down)
     // in this case we may see duplicated activation, but this is by design and we don't want to report it
     // activation count should go back to expected value once the duplicated activation shuts down together with the member
-    private int CurrentActivationsOnNonblockedMembers()
-        => _currentlyOnMembers.Count(cm => _clusterFixture.Members.All(m => !m.Remote.BlockList.IsBlocked(cm)));
+    private bool AnyOfCurrentMembersIsStopping()
+        => _currentlyOnMembers
+            // if the entry is old, ignore it because something is fishy (actor did not get Stopping message?)
+            // this way we will still signal inconsistency in the test
+            .Where(cm => DateTimeOffset.UtcNow - cm.AddedAt < TimeSpan.FromSeconds(4))
+            .Any(cm => _clusterFixture.Members.Any(m => m.Remote.BlockList.IsBlocked(cm.Id)));
 
     public void RecordInconsistency(int expected, int actual, PID activation)
     {
