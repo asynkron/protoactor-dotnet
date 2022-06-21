@@ -25,7 +25,7 @@ public class ActorProcess : Process
     protected internal override void SendUserMessage(PID pid, object message) =>
         Mailbox.PostUserMessage(message);
 
-    protected internal override void SendSystemMessage(PID pid, object message) =>
+    protected internal override void SendSystemMessage(PID pid, SystemMessage message) =>
         Mailbox.PostSystemMessage(message);
 
     public override void Stop(PID pid)
