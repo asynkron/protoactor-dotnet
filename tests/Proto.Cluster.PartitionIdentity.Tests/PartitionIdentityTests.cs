@@ -119,8 +119,6 @@ public class PartitionIdentityTests
         }
     );
 
-    private static Cluster RandomMember(IClusterFixture fixture, Random rnd) => RandomMember(fixture.Members, rnd);
-
     private static Cluster RandomMember(IList<Cluster> members, Random rnd)
         => members[rnd.Next(members.Count)];
 

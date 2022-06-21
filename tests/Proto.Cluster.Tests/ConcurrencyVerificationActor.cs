@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
+using Proto.Remote;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
 
@@ -115,43 +116,66 @@ public record ClusterSnapshot(PID Activation, DateTimeOffset When, string Snapsh
 
 public class ActorState
 {
-    private int _activeCount;
     private long _totalCount;
     public int StoredCount { get; set; }
     public bool Inconsistent { get; private set; }
     public long TotalCount => Interlocked.Read(ref _totalCount);
+
     private readonly string _id;
     private readonly IClusterFixture _clusterFixture;
 
+    
     public ActorState(string id, IClusterFixture clusterFixture)
     {
         _id = id;
         _clusterFixture = clusterFixture;
     }
 
+    private readonly object _padlock = new();
+    private int _activeCount;
     public ConcurrentBag<VerificationEvent> Events { get; } = new();
 
     public void RecordStarted(IContext context)
     {
-        Events.Add(new ActorStarted(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
-        var active = Interlocked.Increment(ref _activeCount);
-
-        if (active != 1)
+        lock (_padlock)
         {
-            Inconsistent = true;
-            Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
+            // was last activation on a member that is currently stopping (and hence is blocked)?
+            var lastStarted = Events.OrderBy(x => x.When).LastOrDefault(e => e is ActorStarted) as ActorStarted;
+            var lastNodeIsBlocked =
+                lastStarted != null && _clusterFixture.Members.Any(m => m.System.Remote().BlockList.IsBlocked(lastStarted.Member));
+
+            Events.Add(new ActorStarted(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
+            _activeCount++;
+
+            
+            // last activation was on a member that is now blocked, which means it is shutting down
+            // in this case we may see duplicated activation, but this is by design and we don't want to report it
+            // activation count should go back to expected value once the duplicated activation shuts down together with the member
+            if (!lastNodeIsBlocked && _activeCount != 1)
+            {
+                Inconsistent = true;
+                Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
+            }
         }
     }
 
     public void RecordStopping(IContext context)
     {
-        Events.Add(new ActorStopped(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
-        var active = Interlocked.Decrement(ref _activeCount);
-
-        if (active != 0)
+        lock (_padlock)
         {
-            Inconsistent = true;
-            Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
+            Events.Add(new ActorStopped(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
+            _activeCount--;
+
+            // check if member hosting this actor is currently stopping (and hence is blocked)
+            var thisMemberIsBlocked = context.Remote().BlockList.IsBlocked(context.System.Id);
+
+            // current member is now blocked, this means that it is shutting down
+            // in this case we may see duplicated activation, but this is by design and we don't want to report it
+            if (!thisMemberIsBlocked && _activeCount != 0)
+            {
+                Inconsistent = true;
+                Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
+            }
         }
     }
 
@@ -162,22 +186,6 @@ public class ActorState
     }
 
     public (int local, long total) Inc(int actorLocalCount) => (actorLocalCount + 1, Interlocked.Increment(ref _totalCount));
-
-    // public void VerifyStateIsConsistent()
-    // {
-    //     Events.Should().NotBeEmpty();
-    //     using var events = Events.OrderBy(it => it.When).GetEnumerator();
-    //
-    //     // Check ordering of starts / stops for identity
-    //     while (events.MoveNext())
-    //     {
-    //         var sessionId = events.Current!.SessionId;
-    //         events.Current.Should().BeOfType<ActorStarted>();
-    //         events.MoveNext().Should().BeTrue("We should get the stopping event");
-    //         events.Current!.Should().BeOfType<ActorStopped>();
-    //         events.Current.SessionId.Should().Be(sessionId, "Start and stop should be from the same session");
-    //     }
-    // }
 
     public override string ToString()
         => $"Id: {_id}, {nameof(StoredCount)}: {StoredCount}, {nameof(TotalCount)}: {TotalCount}, {nameof(Events)}:\n{EventsToString()}";
