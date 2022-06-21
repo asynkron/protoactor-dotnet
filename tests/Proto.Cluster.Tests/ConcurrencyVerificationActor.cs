@@ -132,26 +132,17 @@ public class ActorState
     }
 
     private readonly object _padlock = new();
-    private int _activeCount;
+    private readonly HashSet<string> _currentlyOnMembers = new();
     public ConcurrentBag<VerificationEvent> Events { get; } = new();
 
     public void RecordStarted(IContext context)
     {
         lock (_padlock)
         {
-            // was last activation on a member that is currently stopping (and hence is blocked)?
-            var lastStarted = Events.OrderBy(x => x.When).LastOrDefault(e => e is ActorStarted) as ActorStarted;
-            var lastNodeIsBlocked =
-                lastStarted != null && _clusterFixture.Members.Any(m => m.System.Remote().BlockList.IsBlocked(lastStarted.Member));
-
             Events.Add(new ActorStarted(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
-            _activeCount++;
-
+            _currentlyOnMembers.Add(context.System.Id);
             
-            // last activation was on a member that is now blocked, which means it is shutting down
-            // in this case we may see duplicated activation, but this is by design and we don't want to report it
-            // activation count should go back to expected value once the duplicated activation shuts down together with the member
-            if (!lastNodeIsBlocked && _activeCount != 1)
+            if (CurrentActivationsOnNonblockedMembers() != 1)
             {
                 Inconsistent = true;
                 Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
@@ -164,20 +155,21 @@ public class ActorState
         lock (_padlock)
         {
             Events.Add(new ActorStopped(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
-            _activeCount--;
+            _currentlyOnMembers.Remove(context.System.Id);
 
-            // check if member hosting this actor is currently stopping (and hence is blocked)
-            var thisMemberIsBlocked = context.Remote().BlockList.IsBlocked(context.System.Id);
-
-            // current member is now blocked, this means that it is shutting down
-            // in this case we may see duplicated activation, but this is by design and we don't want to report it
-            if (!thisMemberIsBlocked && _activeCount != 0)
+            if (CurrentActivationsOnNonblockedMembers() != 0)
             {
                 Inconsistent = true;
                 Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
             }
         }
     }
+
+    // ignore activations on members that are blocked (which means they are shutting down)
+    // in this case we may see duplicated activation, but this is by design and we don't want to report it
+    // activation count should go back to expected value once the duplicated activation shuts down together with the member
+    private int CurrentActivationsOnNonblockedMembers()
+        => _currentlyOnMembers.Count(cm => _clusterFixture.Members.All(m => !m.Remote.BlockList.IsBlocked(cm)));
 
     public void RecordInconsistency(int expected, int actual, PID activation)
     {
