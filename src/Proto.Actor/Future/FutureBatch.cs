@@ -8,6 +8,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Mailbox;
 using Proto.Metrics;
 
 namespace Proto.Future;
@@ -97,7 +98,7 @@ public sealed class FutureBatchProcess : Process, IDisposable
         }
     }
 
-    protected internal override void SendSystemMessage(PID pid, object message)
+    protected internal override void SendSystemMessage(PID pid, SystemMessage message)
     {
         if (message is Stop)
         {

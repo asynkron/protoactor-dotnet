@@ -26,7 +26,8 @@ public class TestMailboxHandler : IMessageInvoker, IDispatcher
         if (waitingTaskExists) onScheduleCompleted.SetResult(0);
     }
 
-    public async ValueTask InvokeSystemMessageAsync(object msg) => await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
+    // ReSharper disable once SuspiciousTypeConversion.Global
+    public async ValueTask InvokeSystemMessageAsync(SystemMessage msg) => await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
 
     public async ValueTask InvokeUserMessageAsync(object msg) => await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
 

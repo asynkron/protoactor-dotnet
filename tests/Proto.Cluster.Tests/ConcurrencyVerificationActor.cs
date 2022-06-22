@@ -21,10 +21,15 @@ public class ConcurrencyVerificationActor : IActor
     public const string Kind = "concurrency-verification";
 
     private readonly ActorStateRepo _repo;
+    private readonly IClusterFixture _clusterFixture;
     private ActorState? _state;
     private int _count;
 
-    public ConcurrencyVerificationActor(ActorStateRepo repo) => _repo = repo;
+    public ConcurrencyVerificationActor(ActorStateRepo repo, IClusterFixture clusterFixture)
+    {
+        _repo = repo;
+        _clusterFixture = clusterFixture;
+    }
 
     private Guid SessionId { get; set; }
 
@@ -43,7 +48,7 @@ public class ConcurrencyVerificationActor : IActor
         context.Respond(new IncResponse
             {
                 Count = count,
-                ExpectedCount = (int)totalCount,
+                ExpectedCount = (int) totalCount,
                 SessionId = SessionId.ToString("N"),
             }
         );
@@ -54,8 +59,8 @@ public class ConcurrencyVerificationActor : IActor
         }
         else
         {
-            _count = (int)totalCount; // Reset to the global total count.
-            _state.RecordInconsistency(count, (int)totalCount, context.Self);
+            _count = (int) totalCount; // Reset to the global total count.
+            _state.RecordInconsistency(count, (int) totalCount, context.Self);
         }
 
         _state.StoredCount = _count;
@@ -72,15 +77,15 @@ public class ConcurrencyVerificationActor : IActor
 
     private async Task OnStopping(IContext context)
     {
-        _state!.RecordStopping(context.Self);
+        _state!.RecordStopping(context);
         await Task.Delay(new Random().Next(50));
     }
 
     private async Task OnStarted(IContext context)
     {
         SessionId = Guid.NewGuid();
-        _state = _repo.Get(context.ClusterIdentity()!.Identity);
-        _state.RecordStarted(context.Self);
+        _state = _repo.Get(context.ClusterIdentity()!.Identity, _clusterFixture);
+        _state.RecordStarted(context);
         _count = _state.StoredCount;
 
         // Simulate network hop
@@ -90,9 +95,11 @@ public class ConcurrencyVerificationActor : IActor
 
 public record VerificationEvent(PID Activation, DateTimeOffset When);
 
-public record ActorStarted(PID Activation, DateTimeOffset When, int StoredCount, long GlobalCount) : VerificationEvent(Activation, When);
+public record ActorStarted(string Member, PID Activation, DateTimeOffset When, int StoredCount, long GlobalCount)
+    : VerificationEvent(Activation, When);
 
-public record ActorStopped(PID Activation, DateTimeOffset When, int StoredCount, long GlobalCount) : VerificationEvent(Activation, When);
+public record ActorStopped(string Member, PID Activation, DateTimeOffset When, int StoredCount, long GlobalCount)
+    : VerificationEvent(Activation, When);
 
 public record ConsistencyError(
         PID Activation,
@@ -104,39 +111,64 @@ public record ConsistencyError(
     )
     : VerificationEvent(Activation, When);
 
+public record ClusterSnapshot(PID Activation, DateTimeOffset When, string Snapshot) : VerificationEvent(Activation, When);
+
 public class ActorState
 {
-    private int _activeCount;
     private long _totalCount;
     public int StoredCount { get; set; }
     public bool Inconsistent { get; private set; }
     public long TotalCount => Interlocked.Read(ref _totalCount);
+
     private readonly string _id;
+    private readonly IClusterFixture _clusterFixture;
 
-    public ActorState(string id) => _id = id;
+    public ActorState(string id, IClusterFixture clusterFixture)
+    {
+        _id = id;
+        _clusterFixture = clusterFixture;
+    }
 
+    private readonly object _padlock = new();
+    private readonly HashSet<string> _currentlyOnMembers = new();
     public ConcurrentBag<VerificationEvent> Events { get; } = new();
 
-    public void RecordStarted(PID activation)
+    public void RecordStarted(IContext context)
     {
-        Events.Add(new ActorStarted(activation, DateTimeOffset.Now, StoredCount, TotalCount));
-        var active = Interlocked.Increment(ref _activeCount);
-
-        if (active != 1)
+        lock (_padlock)
         {
-            Inconsistent = true;
+            Events.Add(new ActorStarted(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
+            _currentlyOnMembers.Add(context.System.Id);
+
+            if (!AnyOfCurrentMembersIsStopping() && _currentlyOnMembers.Count != 1)
+            {
+                Inconsistent = true;
+                Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
+            }
         }
     }
 
-    public void RecordStopping(PID activation)
+    public void RecordStopping(IContext context)
     {
-        Events.Add(new ActorStopped(activation, DateTimeOffset.Now, StoredCount, TotalCount));
-        var active = Interlocked.Decrement(ref _activeCount);
-        if (active != 0)
+        lock (_padlock)
         {
-            Inconsistent = true;
+            Events.Add(new ActorStopped(context.System.Id, context.Self, DateTimeOffset.Now, StoredCount, TotalCount));
+
+            if (!AnyOfCurrentMembersIsStopping() && _currentlyOnMembers.Count - 1 != 0)
+            {
+                Inconsistent = true;
+                Events.Add(new ClusterSnapshot(context.Self, DateTimeOffset.Now, _clusterFixture.Members.DumpClusterState().Result));
+            }
+
+            _currentlyOnMembers.Remove(context.System.Id);
         }
     }
+
+    // do not verify consistency if any of the current members is blocked (which means they are shutting down)
+    // in this case we may see duplicated activation, but this is by design and we don't want to report it
+    // activation count should go back to expected value once the duplicated activation shuts down together with the member
+    private bool AnyOfCurrentMembersIsStopping()
+        => _currentlyOnMembers.Any(cm => _clusterFixture.Members.Any(m => m.Remote.BlockList.IsBlocked(cm)));
 
     public void RecordInconsistency(int expected, int actual, PID activation)
     {
@@ -146,31 +178,31 @@ public class ActorState
 
     public (int local, long total) Inc(int actorLocalCount) => (actorLocalCount + 1, Interlocked.Increment(ref _totalCount));
 
-    // public void VerifyStateIsConsistent()
-    // {
-    //     Events.Should().NotBeEmpty();
-    //     using var events = Events.OrderBy(it => it.When).GetEnumerator();
-    //
-    //     // Check ordering of starts / stops for identity
-    //     while (events.MoveNext())
-    //     {
-    //         var sessionId = events.Current!.SessionId;
-    //         events.Current.Should().BeOfType<ActorStarted>();
-    //         events.MoveNext().Should().BeTrue("We should get the stopping event");
-    //         events.Current!.Should().BeOfType<ActorStopped>();
-    //         events.Current.SessionId.Should().Be(sessionId, "Start and stop should be from the same session");
-    //     }
-    // }
-
     public override string ToString()
-        => $"Id: {_id}, {nameof(StoredCount)}: {StoredCount}, {nameof(TotalCount)}: {TotalCount}, {nameof(Events)}:\n {string.Join(",\n", Events.OrderBy(it => it.When))}";
+        => $"Id: {_id}, {nameof(StoredCount)}: {StoredCount}, {nameof(TotalCount)}: {TotalCount}, {nameof(Events)}:\n{EventsToString()}";
+
+    private string EventsToString()
+        => Events
+            .OrderBy(e => e.When)
+            .Aggregate("", (agg, e)
+                => agg + e switch
+                {
+                    ActorStarted started     => $"[{started.When:O}] Actor started on member {started.Member}\n",
+                    ActorStopped stopped     => $"[{stopped.When:O}] Actor stopped on member {stopped.Member}\n",
+                    ClusterSnapshot snapshot => $"[{snapshot.When:O}] Cluster snapshot:\n{snapshot.Snapshot}\n",
+                    ConsistencyError err =>
+                        $"[{err.When:O}] Consistency error, actual: {err.ActualCount}, expected: {err.ExpectedCount}, stored: {err.StoredCount}, global: {err.GlobalCount}",
+                    _ => ""
+                }
+            );
 }
 
 public class ActorStateRepo
 {
     private readonly ConcurrentDictionary<string, ActorState> _db = new();
 
-    public ActorState Get(string id) => _db.GetOrAdd(id, identity => new ActorState(identity));
+    public ActorState Get(string id, IClusterFixture fixture)
+        => _db.GetOrAdd(id, identity => new ActorState(identity, fixture));
 
     public ICollection<ActorState> Contents => _db.Values;
 

@@ -46,6 +46,7 @@ jobs:
           - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
           - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
+          - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
 
     steps:
       - uses: actions/checkout@v1

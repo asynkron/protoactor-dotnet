@@ -119,8 +119,6 @@ public class PartitionIdentityTests
         }
     );
 
-    private static Cluster RandomMember(IClusterFixture fixture, Random rnd) => RandomMember(fixture.Members, rnd);
-
     private static Cluster RandomMember(IList<Cluster> members, Random rnd)
         => members[rnd.Next(members.Count)];
 
@@ -187,37 +185,17 @@ public class PartitionIdentityTests
                     await Task.Delay(rnd.Next(10000), cancellationToken).ConfigureAwait(false);
                     var spawn = rnd.Next() % 2 == 0;
 
-                    if (spawn)
+                    for (var i = 0; i <= rnd.Next() % 2; i++)
                     {
-                        if (clusterFixture.Members.Count < maxMembers)
-                        {
-                            _output.WriteLine("Spawning member");
-                            _ = clusterFixture.SpawnNode();
-                        }
-                    }
-                    else
-                    {
-                        // var graceful = rnd.Next() % 2 != 0;
-                        const bool graceful = true;
-
-                        if (clusterFixture.Members.Count > minMembers)
-                        {
-                            _output.WriteLine("Stopping member " + (graceful ? "gracefully" : "with wanton disregard"));
-                            _ = StopRandomMember(clusterFixture, clusterFixture.Members.Skip(2).ToList(), rnd, graceful);
-                        }
-                    }
-
-                    if (rnd.Next() % 2 == 0)
-                    {
-                        await Task.Delay(rnd.Next(100), cancellationToken).ConfigureAwait(false);
-
                         if (spawn)
                         {
                             if (clusterFixture.Members.Count < maxMembers)
                             {
-                                _output.WriteLine("Spawning another member");
+                                _output.WriteLine($"[{DateTimeOffset.Now:O}] Starting cluster member");
+                                _ = clusterFixture.SpawnNode().ContinueWith(t => { _output.WriteLine($"[{DateTimeOffset.Now:O}] Spawned cluster member {t.Result.System.Id}"); },
+                                    TaskContinuationOptions.NotOnFaulted
+                                );
 
-                                _ = clusterFixture.SpawnNode();
                             }
                         }
                         else
@@ -227,7 +205,6 @@ public class PartitionIdentityTests
 
                             if (clusterFixture.Members.Count > minMembers)
                             {
-                                _output.WriteLine("Stopping another member " + (graceful ? "gracefully" : "badly"));
                                 _ = StopRandomMember(clusterFixture, clusterFixture.Members.Skip(2).ToList(), rnd, graceful);
                             }
                         }
@@ -244,10 +221,15 @@ public class PartitionIdentityTests
         }, cancellationToken
     );
 
-    private static Task StopRandomMember(IClusterFixture fixture, IList<Cluster> candidates, Random rnd, bool graceful)
-        => _ = fixture.RemoveNode(RandomMember(candidates, rnd), graceful);
+    private async Task StopRandomMember(IClusterFixture fixture, IList<Cluster> candidates, Random rnd, bool graceful)
+    {
+        var member = RandomMember(candidates, rnd);
+        _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopping cluster member {member.System.Id} " + (graceful ? "gracefully" : "with wanton disregard"));
+        await fixture.RemoveNode(member, graceful);
+        _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopped cluster member {member.System.Id}");
+    }
 
-    private static async Task<PartitionIdentityClusterFixture> InitClusterFixture(
+    private async Task<PartitionIdentityClusterFixture> InitClusterFixture(
         int memberCount,
         PartitionIdentityLookup.Mode mode,
         PartitionIdentityLookup.Send send
@@ -288,5 +270,5 @@ public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
     });
 
     protected override ClusterKind[] ClusterKinds
-        => new[] {new ClusterKind(ConcurrencyVerificationActor.Kind, Props.FromProducer(() => new ConcurrencyVerificationActor(Repository)))};
+        => new[] {new ClusterKind(ConcurrencyVerificationActor.Kind, Props.FromProducer(() => new ConcurrencyVerificationActor(Repository, this)))};
 }

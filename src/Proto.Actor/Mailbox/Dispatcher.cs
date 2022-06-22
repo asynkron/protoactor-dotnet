@@ -13,7 +13,7 @@ public interface IMessageInvoker
 {
     CancellationTokenSource? CancellationTokenSource { get; }
 
-    ValueTask InvokeSystemMessageAsync(object msg);
+    ValueTask InvokeSystemMessageAsync(SystemMessage msg);
 
     ValueTask InvokeUserMessageAsync(object msg);
 
@@ -90,7 +90,7 @@ class NoopInvoker : IMessageInvoker
 
     public CancellationTokenSource CancellationTokenSource => throw new NotImplementedException();
 
-    public ValueTask InvokeSystemMessageAsync(object msg) => throw new NotImplementedException();
+    public ValueTask InvokeSystemMessageAsync(SystemMessage msg) => throw new NotImplementedException();
 
     public ValueTask InvokeUserMessageAsync(object msg) => throw new NotImplementedException();
 

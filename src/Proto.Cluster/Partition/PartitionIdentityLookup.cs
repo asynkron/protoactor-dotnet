@@ -141,11 +141,7 @@ public class PartitionIdentityLookup : IIdentityLookup
         return Task.CompletedTask;
     }
 
-    public Task ShutdownAsync()
-    {
-        _partitionManager.Shutdown();
-        return Task.CompletedTask;
-    }
+    public Task ShutdownAsync() => _partitionManager.ShutdownAsync();
 
     public enum Mode
     {

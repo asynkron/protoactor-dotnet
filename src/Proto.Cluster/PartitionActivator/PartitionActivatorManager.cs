@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Linq;
+using System.Threading.Tasks;
 using Proto.Cluster.Partition;
 
 namespace Proto.Cluster.PartitionActivator;
@@ -67,12 +68,15 @@ public class PartitionActivatorManager
         }
     }
 
-    public void Shutdown()
+    public async Task ShutdownAsync()
     {
         if (_isClient)
         {
         }
-        else _context.Stop(_partitionActivatorActor);
+        else
+        {
+            await _context.StopAsync(_partitionActivatorActor);
+        }
     }
 
     public static PID RemotePartitionActivatorActor(string address) =>
