@@ -17,14 +17,14 @@ public interface IContextStore
     T? Get<T>();
 
     /// <summary>
-    /// Sets a value from the actor context
+    /// Sets a value on the actor context
     /// </summary>
     /// <param name="obj">The value to set</param>
     /// <typeparam name="T">The Type key of the value</typeparam>
     void Set<T>(T obj) => Set<T, T>(obj);
 
     /// <summary>
-    /// Sets a value from the actor context
+    /// Sets a value on the actor context
     /// </summary>
     /// <param name="obj">The value to set</param>
     /// <typeparam name="T">The Type key of the value</typeparam>

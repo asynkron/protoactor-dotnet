@@ -35,7 +35,7 @@ public interface ISenderContext : IInfoContext
     /// </summary>
     /// <param name="target">The target PID</param>
     /// <param name="message">The message to send</param>
-    /// <param name="sender">Message sender</param>
+    /// <param name="sender">Message sender that will receive the response</param>
     void Request(PID target, object message, PID? sender);
 
     /// <summary>
@@ -74,9 +74,9 @@ public static class SenderContextExtensions
     public static BatchContext CreateBatchContext(this ISenderContext context, int size, CancellationToken ct) => new(context, size, ct);
 
     /// <summary>
-    ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender
+    ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
     /// </summary>
-    /// <param name="self">the context used to issue the request</param>
+    /// <param name="self">The context used to issue the request. Response will be sent back to self.Self.</param>
     /// <param name="target">The target PID</param>
     /// <param name="message">The message to send</param>
     public static void Request(this ISenderContext self, PID target, object message) =>
@@ -118,7 +118,7 @@ public static class SenderContextExtensions
     /// <param name="self">the context used to issue the request</param>
     /// <param name="target">The target PID</param>
     /// <param name="message">The message to send</param>
-    /// <param name="callback"></param>
+    /// <param name="callback">Callback gets the request task passed in as a parameter</param>
     /// <param name="ct"></param>
     /// <typeparam name="T">Expected return message type</typeparam>
     public static void RequestReenter<T>(this IContext self, PID target, object message, Func<Task<T>, Task> callback, CancellationToken ct)

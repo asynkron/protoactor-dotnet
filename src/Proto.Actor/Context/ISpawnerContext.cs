@@ -12,7 +12,7 @@ namespace Proto;
 public interface ISpawnerContext : ISystemContext
 {
     /// <summary>
-    ///     Spawns a new child actor based on props and named using the specified name.
+    ///     Spawns a new child actor based on props and specified name.
     /// </summary>
     /// <param name="props">The Props used to spawn the actor</param>
     /// <param name="name">The actor name</param>

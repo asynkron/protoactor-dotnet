@@ -16,6 +16,12 @@ namespace Proto;
 
 public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
 {
+    /// <summary>
+    /// Add sender middleware to the root context. Every message sent through the root context will be passed through the middleware.
+    /// The middleware will overwrite any other middleware previously added to the root context.
+    /// </summary>
+    /// <param name="middleware">Middleware to use. First entry is the outermost middleware, while last entry is innermost.</param>
+    /// <returns></returns>
     IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware);
 }
 
