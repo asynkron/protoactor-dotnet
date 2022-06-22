@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 
 namespace Proto;
 
-//this is used when creating actors from a Func
+/// <summary>
+/// Used when creating actors from a Func
+/// </summary>
 class FunctionActor : IActor
 {
     private readonly Receive _receive;

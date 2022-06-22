@@ -14,8 +14,10 @@ namespace Proto.Channels;
 public static class ChannelPublisher
 {
     /// <summary>
-    ///     Starts a new publisher actor
+    ///     Starts a new channel publisher actor. This actor will read from the given channel
+    ///     and send the received messages to the subscribers. The actor will poison itself when the channel is closed.
     /// </summary>
+    /// <remarks>Use <see cref="ChannelSubscriber.StartNew{T}"/> to subscribe</remarks>
     /// <param name="context">The parent context used to spawn the actor</param>
     /// <param name="channel">The source channel</param>
     /// <param name="name">The name of the publisher actor</param>

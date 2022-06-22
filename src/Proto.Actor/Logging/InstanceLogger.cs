@@ -11,6 +11,10 @@ using Proto.Extensions;
 
 namespace Proto.Logging;
 
+/// <summary>
+/// A logging abstraction that stores the log entries in the <see cref="LogStore"/> (in memory) and/or writes them a <see cref="Microsoft.Extensions.Logging.ILogger"/>.
+/// Mostly used for testing and debugging.
+/// </summary>
 [PublicAPI]
 public class InstanceLogger : IActorSystemExtension<InstanceLogger>
 {
@@ -19,10 +23,25 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     private readonly LogStore? _logStore;
     private readonly string _category;
 
+    /// <summary>
+    /// Get new InstanceLogger with the calling member name appended to the category hierarchy.
+    /// </summary>
+    /// <param name="caller">Auto filled</param>
+    /// <returns></returns>
     public InstanceLogger BeginMethodScope([CallerMemberName] string caller = "") => new(_logLevel, _logStore, _logger, $"{_category}/{caller}");
 
+    /// <summary>
+    /// Get new InstanceLogger with the name of <see cref="T"/> appended to the category hierarchy.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
     public InstanceLogger BeginScope<T>() => new(_logLevel, _logStore, _logger, typeof(T).Name);
 
+    /// <summary>
+    /// Get new InstanceLogger with the postfix appended to the category hierarchy.
+    /// </summary>
+    /// <param name="category">Postfix</param>
+    /// <returns></returns>
     public InstanceLogger BeginScope(string category) => new(_logLevel, _logStore, _logger, $"{_category}/{category}");
 
     public InstanceLogger(LogLevel logLevel, LogStore? logStore = null, ILogger? logger = null, string category = "default")

@@ -12,10 +12,14 @@ using Proto.Mailbox;
 
 namespace Proto;
 
+/// <summary>
+/// Use Props to specify how a new actor should be created.
+/// </summary>
 [PublicAPI]
 public sealed record Props
 {
     private static IActor NullProducer(ActorSystem _, IContext __) => null!;
+    
     public static readonly Props Empty = new();
 
     public ProducerWithSystemAndContext Producer { get; init; } = NullProducer;
