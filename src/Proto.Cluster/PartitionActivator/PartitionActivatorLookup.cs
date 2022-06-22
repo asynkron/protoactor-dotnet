@@ -94,5 +94,5 @@ public class PartitionActivatorLookup : IIdentityLookup
         return Task.CompletedTask;
     }
 
-    public Task ShutdownAsync() => _partitionManager.Shutdown();
+    public Task ShutdownAsync() => _partitionManager.ShutdownAsync();
 }

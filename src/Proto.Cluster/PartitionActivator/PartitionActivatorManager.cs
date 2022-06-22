@@ -68,7 +68,7 @@ public class PartitionActivatorManager
         }
     }
 
-    public async Task Shutdown()
+    public async Task ShutdownAsync()
     {
         if (_isClient)
         {
