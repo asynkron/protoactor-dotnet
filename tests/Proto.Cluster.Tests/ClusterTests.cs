@@ -38,8 +38,8 @@ public abstract class ClusterTests : ClusterTestBase
         var consensus = await Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
             .WaitUpTo(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
 
-        await Members.DumpClusterState(_testOutputHelper);
-
+        _testOutputHelper.WriteLine(await Members.DumpClusterState());
+        
         consensus.completed.Should().BeTrue("All members should have gotten consensus on the same topology hash");
         _testOutputHelper.WriteLine(LogStore.ToFormattedString());
     }
@@ -64,7 +64,7 @@ public abstract class ClusterTests : ClusterTestBase
 
         const string msg = "Hello-message-envelope";
         var response = await Members.First().RequestAsync<MessageEnvelope>(CreateIdentity("message-envelope"), EchoActor.Kind,
-            new Ping() {Message = msg,}, timeout
+            new Ping {Message = msg}, timeout
         );
         response.Should().NotBeNull();
         response.Should().BeOfType<MessageEnvelope>();

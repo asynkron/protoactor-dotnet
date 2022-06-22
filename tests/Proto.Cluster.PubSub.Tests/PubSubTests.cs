@@ -40,7 +40,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         {
             var response = await PublishData(topic, i);
             if (response == null)
-                await _fixture.Members.DumpClusterState(_output);
+                _output.WriteLine(await _fixture.Members.DumpClusterState());
             response.Should().NotBeNull("publishing should not time out");
         }
 
@@ -63,7 +63,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
             var data = Enumerable.Range(i * 10, 10).ToArray();
             var response = await PublishDataBatch(topic, data);
             if (response == null)
-                await _fixture.Members.DumpClusterState(_output);
+                _output.WriteLine(await _fixture.Members.DumpClusterState());
             response.Should().NotBeNull("publishing should not time out");
         }
 
@@ -259,7 +259,7 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
             .RequestAsync<Response?>(identity, kind, message, CancellationTokens.FromSeconds(1));
 
         if (response == null)
-            await _fixture.Members.DumpClusterState(_output);
+            _output.WriteLine(await _fixture.Members.DumpClusterState());
 
         response.Should().NotBeNull($"request {message.GetType().Name} should time out");
 

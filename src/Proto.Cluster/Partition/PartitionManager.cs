@@ -3,8 +3,8 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
-using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Proto.Cluster.Partition;
 
@@ -72,15 +72,17 @@ class PartitionManager
         }
     }
 
-    public void Shutdown()
+    public async Task ShutdownAsync()
     {
         if (_isClient)
         {
         }
         else
         {
-            _context.Stop(_partitionIdentityActor);
-            _context.Stop(_partitionPlacementActor);
+            await Task.WhenAll(
+                _context.StopAsync(_partitionPlacementActor),
+                _context.StopAsync(_partitionIdentityActor)
+            );
         }
     }
 
