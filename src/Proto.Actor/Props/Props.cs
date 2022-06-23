@@ -22,26 +22,58 @@ public sealed record Props
     
     public static readonly Props Empty = new();
 
+    /// <summary>
+    /// Delegate used to create the actor.
+    /// </summary>
     public ProducerWithSystemAndContext Producer { get; init; } = NullProducer;
+    
+    /// <summary>
+    /// Deletegate used to create the mailbox.
+    /// </summary>
     public MailboxProducer MailboxProducer { get; init; } = () => UnboundedMailbox.Create();
+    
+    /// <summary>
+    /// Used when actor is spawned at the root of the system. A guardian process will be created to handle failures of this actor,
+    /// according to the supervision strategy specified here.
+    /// </summary>
     public ISupervisorStrategy? GuardianStrategy { get; init; }
+    
+    /// <summary>
+    /// Supervision strategy for handling failures in actor's children.
+    /// </summary>
     public ISupervisorStrategy SupervisorStrategy { get; init; } = Supervision.DefaultStrategy;
+    
+    /// <summary>
+    /// Dispatcher to be used by the actor's mailbox.
+    /// </summary>
     public IDispatcher Dispatcher { get; init; } = Dispatchers.DefaultDispatcher;
 
+    /// <summary>
+    /// Middleware used when receiving a message
+    /// </summary>
     public ImmutableList<Func<Receiver, Receiver>> ReceiverMiddleware { get; init; } =
         ImmutableList<Func<Receiver, Receiver>>.Empty;
 
+    /// <summary>
+    /// Middleware used when sending a message
+    /// </summary>
     public ImmutableList<Func<Sender, Sender>> SenderMiddleware { get; init; } =
         ImmutableList<Func<Sender, Sender>>.Empty;
 
     public Receiver? ReceiverMiddlewareChain { get; init; }
     public Sender? SenderMiddlewareChain { get; init; }
 
+    /// <summary>
+    /// List of decorators for the actor context
+    /// </summary>
     public ImmutableList<Func<IContext, IContext>> ContextDecorator { get; init; } =
         ImmutableList<Func<IContext, IContext>>.Empty;
 
     public Func<IContext, IContext>? ContextDecoratorChain { get; init; }
 
+    /// <summary>
+    /// Delegate that creates the actor and wires it with context and mailbox.
+    /// </summary>
     public Spawner Spawner { get; init; } = DefaultSpawner;
 
     private static IContext DefaultContextDecorator(IContext context) => context;
@@ -136,9 +168,39 @@ public sealed record Props
 
     internal PID Spawn(ActorSystem system, string name, PID? parent, Action<IContext>? callback=null) => Spawner(system, name, this, parent, callback);
 
+    /// <summary>
+    /// Props that spawn actors by calling the provided producer delegate.
+    /// </summary>
+    /// <param name="producer">Returns a new instance of the actor</param>
+    /// <returns></returns>
+    /// <example>
+    /// <code>
+    /// var props = Props.FromProducer(() => new MyActor());
+    /// </code>
+    /// </example>
     public static Props FromProducer(Producer producer) => Empty.WithProducer(_ => producer());
 
+    /// <summary>
+    /// Props that spawn actors by calling the provided producer delegate.
+    /// </summary>
+    /// <param name="producer">Returns a new instance of the actor. Gets <see cref="ActorSystem"/> as a parameter</param>
+    /// <returns></returns>
     public static Props FromProducer(ProducerWithSystem producer) => Empty.WithProducer(producer);
 
+    /// <summary>
+    /// Props that spawn actors based on provided <see cref="Receive"> delegate implementation. Useful when you don't want to create an actor class.
+    /// The Receive delegate will be wrapped in a <see cref="FunctionActor"/> instance.
+    /// </summary>
+    /// <param name="receive"></param>
+    /// <returns></returns>
+    /// <example>
+    /// <code>
+    /// var props = Props.FromFunc(ctx => {
+    ///     if (ctx.Message is Hello msg)
+    ///         Console.WriteLine($"Hello {msg.Name}");
+    ///     return Task.CompletedTask;
+    /// });
+    /// </code>
+    /// </example>
     public static Props FromFunc(Receive receive) => FromProducer(() => new FunctionActor(receive));
 }

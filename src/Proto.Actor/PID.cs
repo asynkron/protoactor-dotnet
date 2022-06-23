@@ -77,6 +77,11 @@ public partial class PID : ICustomDiagnosticMessage
         reff.Stop(this);
     }
 
+    /// <summary>
+    /// Used internally to track requests in context of shared futures and future batches.
+    /// </summary>
+    /// <param name="requestId"></param>
+    /// <returns></returns>
     public PID WithRequestId(uint requestId) => new()
     {
         Id = Id,

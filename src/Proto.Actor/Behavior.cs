@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Proto;
 
 /// <summary>
-/// Utility class for creating state machines. <see href="https://proto.actor/docs/behaviors/">Behaviors</see> for more information.
+/// Utility class for creating state machines. See <a href="https://proto.actor/docs/behaviors/">Behaviors</a> for more information.
 /// </summary>
 public class Behavior
 {
