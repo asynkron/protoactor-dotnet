@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace Proto.Utils;
 
+/// <summary>
+/// Noop key value store.
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class EmptyKeyValueStore<T> : IKeyValueStore<T>
 {
     public Task<T> GetAsync(string id, CancellationToken ct) => Task.FromResult(default(T));

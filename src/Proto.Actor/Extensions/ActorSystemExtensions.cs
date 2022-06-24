@@ -8,6 +8,9 @@ using System.Collections.Generic;
 
 namespace Proto.Extensions;
 
+/// <summary>
+/// Contains extensions for the actor system. Examples: Cluster, PubSub, etc.
+/// </summary>
 public class ActorSystemExtensions
 {
     private readonly ActorSystem _actorSystem;
@@ -16,12 +19,24 @@ public class ActorSystemExtensions
 
     public ActorSystemExtensions(ActorSystem actorSystem) => _actorSystem = actorSystem;
 
+    /// <summary>
+    /// Gets the extension by the given type.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
     public T? Get<T>() where T : IActorSystemExtension
     {
         var id = IActorSystemExtension<T>.Id;
         return (T) _extensions[id];
     }
         
+    /// <summary>
+    /// Gets the extension by the given type or throws if not found.
+    /// </summary>
+    /// <param name="notFoundMessage">Message to put on the exception</param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
     public T GetRequired<T>(string? notFoundMessage=null) where T : IActorSystemExtension
     {
         var id = IActorSystemExtension<T>.Id;
@@ -35,6 +50,11 @@ public class ActorSystemExtensions
         return res;
     }
 
+    /// <summary>
+    /// Registers a new extension by its type.
+    /// </summary>
+    /// <param name="extension">Extension to register</param>
+    /// <typeparam name="T"></typeparam>
     public void Register<T>(IActorSystemExtension<T> extension) where T : IActorSystemExtension
     {
         lock (_lockObject)

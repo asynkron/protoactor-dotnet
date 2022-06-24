@@ -16,6 +16,9 @@ using Proto.Utils;
 
 namespace Proto;
 
+/// <summary>
+/// Event stream global to an actor system.
+/// </summary>
 [PublicAPI]
 public class EventStream : EventStream<object>
 {
@@ -53,7 +56,7 @@ public class EventStream : EventStream<object>
 }
 
 /// <summary>
-///     Global event stream of a specific message type
+/// Event stream of a specific message type global to an actor system.
 /// </summary>
 /// <typeparam name="T">Message type</typeparam>
 [PublicAPI]
@@ -68,7 +71,7 @@ public class EventStream<T>
     }
 
     /// <summary>
-    ///     Subscribe to the specified message type
+    /// Subscribe to messages
     /// </summary>
     /// <param name="action">Synchronous message handler</param>
     /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
@@ -88,7 +91,7 @@ public class EventStream<T>
     }
         
     /// <summary>
-    ///    Subscribe to the specified message type and yields the result onto a Channel
+    /// Subscribe to messages and yields the result onto a Channel
     /// </summary>
     /// <param name="channel">a Channel which receives the event</param>
     /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
@@ -107,7 +110,7 @@ public class EventStream<T>
     }
 
     /// <summary>
-    ///     Subscribe to the specified message type with an asynchronous handler
+    /// Subscribe to messages with an asynchronous handler
     /// </summary>
     /// <param name="action">Asynchronous message handler</param>
     /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
@@ -120,7 +123,7 @@ public class EventStream<T>
     }
 
     /// <summary>
-    ///     Subscribe to the specified message type, which is a derived type from <see cref="T" />
+    /// Subscribe to a message type, which is a derived type from <see cref="T" />
     /// </summary>
     /// <param name="action">Synchronous message handler</param>
     /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
@@ -143,7 +146,7 @@ public class EventStream<T>
     }
 
     /// <summary>
-    ///     Subscribe to the specified message type, which is a derived type from <see cref="T" />
+    ///  Subscribe to a message type, which is a derived type from <see cref="T" />
     /// </summary>
     /// <param name="predicate">Additional filter upon the typed message</param>
     /// <param name="action">Synchronous message handler</param>
@@ -217,7 +220,7 @@ public class EventStream<T>
     }
 
     /// <summary>
-    ///     Publish a message to the event stream
+    /// Publish a message to the event stream
     /// </summary>
     /// <param name="msg">A message to publish</param>
     public void Publish(T msg)
@@ -243,13 +246,13 @@ public class EventStream<T>
     }
 
     /// <summary>
-    ///     Remove a subscription by id
+    /// Remove a subscription by id
     /// </summary>
     /// <param name="id">Subscription id</param>
     public void Unsubscribe(Guid id) => _subscriptions.TryRemove(id, out _);
 
     /// <summary>
-    ///     Remove a subscription
+    /// Remove a subscription
     /// </summary>
     /// <param name="subscription"> A subscription to remove</param>
     public void Unsubscribe(EventStreamSubscription<T>? subscription)

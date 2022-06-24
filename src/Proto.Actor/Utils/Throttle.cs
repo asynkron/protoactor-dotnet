@@ -9,25 +9,44 @@ using System.Threading.Tasks;
 
 namespace Proto.Utils;
 
+/// <summary>
+/// Records an event when called, and returns current state of the throttle valve 
+/// </summary>
 public delegate Throttle.Valve ShouldThrottle();
 
+/// <summary>
+/// Used for throttling events in a given time window.
+/// </summary>
 public static class Throttle
 {
     public enum Valve
     {
+        /// <summary>
+        /// Business as usual, continue processing events
+        /// </summary>
         Open,
+
+        /// <summary>
+        /// Next event will close the valve
+        /// </summary>
         Closing,
+
+        /// <summary>
+        /// Limit exceeded, stop processing events for now
+        /// </summary>
         Closed
     }
 
     /// <summary>
-    ///     This has no guarantees that the throttle opens exactly after the period, since it is reset asynchronously
-    ///     Throughput has been prioritized over exact re-opening
+    /// Creates a new throttle with the given window and rate. After first event is recorded, a timer starts to reset the number of events back to 0.
+    /// If the number of events in the meantime exceeds the limit, the valve will be closed.
+    /// This has no guarantees that the throttle opens exactly after the period, since it is reset asynchronously
+    /// Throughput has been prioritized over exact re-opening
     /// </summary>
-    /// <param name="maxEventsInPeriod"></param>
-    /// <param name="period"></param>
-    /// <param name="throttledCallBack">This will be called with the number of events what was throttled after the period</param>
-    /// <returns></returns>
+    /// <param name="maxEventsInPeriod">Event limit</param>
+    /// <param name="period">Time window to verify event limit</param>
+    /// <param name="throttledCallBack">This will be called with the number of events that was throttled after the period</param>
+    /// <returns><see cref="ShouldThrottle"/> delegate that records an event when called, and returns current state of the throttle valve</returns>
     public static ShouldThrottle Create(
         int maxEventsInPeriod,
         TimeSpan period,
@@ -65,6 +84,4 @@ public static class Throttle
     public static bool IsOpen(this Valve valve) => valve != Valve.Closed;
 }
 
-public record ThrottleOptions(int MaxEventsInPeriod, TimeSpan Period)
-{
-}
+public record ThrottleOptions(int MaxEventsInPeriod, TimeSpan Period);

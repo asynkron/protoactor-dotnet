@@ -8,6 +8,9 @@ using System;
 // ReSharper disable once CheckNamespace
 namespace Proto;
 
+/// <summary>
+/// A supervision strategy that always restarts all of the children of the actor.
+/// </summary>
 public class AlwaysRestartStrategy : ISupervisorStrategy
 {
     //always restart

@@ -15,6 +15,13 @@ namespace Proto.Context;
 [PublicAPI]
 public static class DeadlineContextExtensions
 {
+    /// <summary>
+    /// Adds a decorator for a <see cref="ActorContext"/> that logs warning message if Receive takes more time than specified timeout.
+    /// </summary>
+    /// <param name="props"></param>
+    /// <param name="deadline">The timeout for Receive to complete</param>
+    /// <param name="logger"></param>
+    /// <returns></returns>
     public static Props WithDeadlineDecorator(
         this Props props,
         TimeSpan deadline,
@@ -22,6 +29,10 @@ public static class DeadlineContextExtensions
     ) =>
         props.WithContextDecorator(ctx => new DeadlineContextDecorator(ctx, deadline, logger));
 }
+
+/// <summary>
+/// A decorator for a <see cref="ActorContext"/> that logs warning message if Receive takes more time than specified timeout.
+/// </summary>
 public class DeadlineContextDecorator : ActorContextDecorator
 {
     private readonly TimeSpan _deadline;

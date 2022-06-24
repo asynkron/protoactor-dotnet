@@ -24,6 +24,9 @@ public static class ActorLoggingContextExtensions
         props.WithContextDecorator(ctx => new ActorLoggingContext(ctx, logger, logLevel, infrastructureLogLevel, exceptionLogLevel));
 }
 
+/// <summary>
+/// A decorator for <see cref="Proto.Context.ActorContext"/> that logs events related to message delivery to the actor.
+/// </summary>
 public class ActorLoggingContext : ActorContextDecorator
 {
     private readonly ILogger _logger;

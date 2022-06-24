@@ -12,11 +12,30 @@ using Proto.Metrics;
 
 namespace Proto.Future;
 
+/// <summary>
+/// A future allows to asynchronously wait for a value to be available.
+/// The value is sent to the future by some other process using the future's <see cref="PID"/>.
+/// It is used e.g. to provide a request-response abstraction on top of asynchronous messaging.
+/// </summary>
 public interface IFuture : IDisposable
 {
+    /// <summary>
+    /// Future's PID.
+    /// </summary>
     public PID Pid { get; }
+    
+    /// <summary>
+    /// A task that will be completed when the future is receives the expected value. The expected value is then
+    /// available in <see cref="Task{T}.Result"/>.
+    /// </summary>
     public Task<object> Task { get; }
 
+    /// <summary>
+    /// A task that will be completed when the future is receives the expected value or provided cancellation token is cancelled.
+    /// The value is available in <see cref="Task{T}.Result"/> if the task was completed successfully.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public Task<object> GetTask(CancellationToken cancellationToken);
 }
     

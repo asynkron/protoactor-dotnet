@@ -13,7 +13,8 @@ namespace Proto.Channels;
 public static class ChannelSubscriber
 {
     /// <summary>
-    ///     Starts a new subscriber actor
+    ///  Starts a new subscriber actor, that subscribes to messages from <see cref="ChannelPublisherActor{T}"/>.
+    /// Received messages will be sent to the specified channel.
     /// </summary>
     /// <param name="context">The parent context used to spawn</param>
     /// <param name="publisher">The PID of the publisher actor to subscribe to</param>

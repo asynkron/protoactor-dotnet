@@ -12,8 +12,18 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Deduplication;
 
+/// <summary>
+/// Extracts the deduplication key from the message.
+/// </summary>
+/// <typeparam name="T">Type of the key</typeparam>
+/// <param name="key">The key should be returned in this variable</param>
+/// <returns>Returns true if the key was successfully extracted, false otherwise</returns>
 public delegate bool TryGetDeduplicationKey<T>(MessageEnvelope envelope, out T? key);
 
+/// <summary>
+/// A decorator for actor context that de-duplicates incoming messages based on the message's deduplication key.
+/// </summary>
+/// <typeparam name="T">Type of the deduplication key</typeparam>
 public class DeduplicationContext<T> : ActorContextDecorator where T : IEquatable<T>
 {
     private readonly DeDuplicator<T> _deDuplicator;

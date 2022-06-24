@@ -7,6 +7,11 @@ using System.Threading.Tasks;
 
 namespace Proto;
 
+/// <summary>
+/// Holds a reference to actor context and a message
+/// </summary>
+/// <param name="MessageEnvelope">Message to store</param>
+/// <param name="Context">Context to store</param>
 public record CapturedContext(MessageEnvelope MessageEnvelope, IContext Context){
     public async Task Receive()
     {
@@ -15,5 +20,8 @@ public record CapturedContext(MessageEnvelope MessageEnvelope, IContext Context)
         current.Apply();
     }
 
+    /// <summary>
+    /// Restores the stored message to the actor context so that it can be re-processed by the actor
+    /// </summary>
     public void Apply() => Context.Apply(this);
 }

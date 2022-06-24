@@ -9,12 +9,20 @@ using System.Threading.Tasks;
 // ReSharper disable once CheckNamespace
 namespace Proto;
 
+/// <summary>
+/// A supervision strategy that will try to restart the failing child while backing off exponentially.
+/// </summary>
 public class ExponentialBackoffStrategy : ISupervisorStrategy
 {
     private readonly TimeSpan _backoffWindow;
     private readonly TimeSpan _initialBackoff;
     private readonly Random _random = new();
 
+    /// <summary>
+    /// Creates a new instance of <see cref="ExponentialBackoffStrategy"/>.
+    /// </summary>
+    /// <param name="backoffWindow">Maximum time for the retries</param>
+    /// <param name="initialBackoff">Initial delay that will be multiplied by retry count on subsequent retries</param>
     public ExponentialBackoffStrategy(TimeSpan backoffWindow, TimeSpan initialBackoff)
     {
         _backoffWindow = backoffWindow;

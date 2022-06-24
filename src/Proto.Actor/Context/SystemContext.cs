@@ -12,6 +12,14 @@ public static class SystemContext
 {
     private static readonly ILogger Logger = Log.CreateLogger(nameof(SystemContext));
 
+    /// <summary>
+    /// Spawns a system actor with the given name.
+    /// </summary>
+    /// <param name="self"></param>
+    /// <param name="props">Props of the actor</param>
+    /// <param name="name">Name of the actor (must start with $)</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
     public static PID SpawnNamedSystem(this IRootContext self, Props props, string name)
     {
         if (!name.StartsWith("$"))

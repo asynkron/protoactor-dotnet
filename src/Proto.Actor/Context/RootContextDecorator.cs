@@ -12,6 +12,9 @@ using Proto.Future;
 // ReSharper disable once CheckNamespace
 namespace Proto;
 
+/// <summary>
+/// A base class for decorators that decorate (extend) a <see cref="RootContext"/>.
+/// </summary>
 [PublicAPI]
 public abstract class RootContextDecorator : IRootContext
 {

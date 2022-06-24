@@ -11,6 +11,9 @@ using JetBrains.Annotations;
 // ReSharper disable once CheckNamespace
 namespace Proto;
 
+/// <summary>
+/// A collection of message headers
+/// </summary>
 [PublicAPI]
 public record MessageHeader : IReadOnlyDictionary<string, string>
 {

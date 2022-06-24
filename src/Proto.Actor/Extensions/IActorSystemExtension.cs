@@ -7,6 +7,9 @@ using System.Threading;
 
 namespace Proto.Extensions;
 
+/// <summary>
+/// Marks a class as an actor system extension
+/// </summary>
 public interface IActorSystemExtension
 {
     private static int _nextId;
@@ -14,6 +17,9 @@ public interface IActorSystemExtension
     internal static int GetNextId() => Interlocked.Increment(ref _nextId);
 }
 
+/// <summary>
+/// Marks a class as an actor system extension
+/// </summary>
 public interface IActorSystemExtension<T> : IActorSystemExtension where T : IActorSystemExtension
 {
     public static int Id = GetNextId();

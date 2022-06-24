@@ -12,6 +12,9 @@ using Proto.Future;
 // ReSharper disable once CheckNamespace
 namespace Proto;
 
+/// <summary>
+/// Base class for decorators that decorate (extend) an <see cref="Proto.Context.ActorContext"/>.
+/// </summary>
 public abstract class ActorContextDecorator : IContext
 {
     private readonly IContext _context;

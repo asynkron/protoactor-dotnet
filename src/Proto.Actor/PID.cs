@@ -8,11 +8,19 @@ using Proto.Mailbox;
 
 namespace Proto;
 
+/// <summary>
+/// PID is a reference to an actor (or any other process). It consists of actor system address and an identifier.
+/// </summary>
 // ReSharper disable once InconsistentNaming
 public partial class PID : ICustomDiagnosticMessage
 {
     private Process? _process;
 
+    /// <summary>
+    /// Creates a new PID instance from address and identifier.
+    /// </summary>
+    /// <param name="address">Actor system address</param>
+    /// <param name="id">Actor identifier</param>
     public PID(string address, string id)
     {
         Address = address;
@@ -23,6 +31,11 @@ public partial class PID : ICustomDiagnosticMessage
 
     public string ToDiagnosticString() => $"{Address}/{Id}";
 
+    /// <summary>
+    /// Creates a new PID instance from address and identifier.
+    /// </summary>
+    /// <param name="address">Actor system address</param>
+    /// <param name="id">Actor identifier</param>
     public static PID FromAddress(string address, string id) => new(address, id);
 
     internal Process? Ref(ActorSystem system)
@@ -54,12 +67,21 @@ public partial class PID : ICustomDiagnosticMessage
         reff.SendSystemMessage(this, sys);
     }
 
+    /// <summary>
+    /// Stops the referenced actor.
+    /// </summary>
+    /// <param name="system">Actor system this PID belongs to</param>
     public void Stop(ActorSystem system)
     {
         var reff = _process ?? system.ProcessRegistry.Get(this);
         reff.Stop(this);
     }
 
+    /// <summary>
+    /// Used internally to track requests in context of shared futures and future batches.
+    /// </summary>
+    /// <param name="requestId"></param>
+    /// <returns></returns>
     public PID WithRequestId(uint requestId) => new()
     {
         Id = Id,

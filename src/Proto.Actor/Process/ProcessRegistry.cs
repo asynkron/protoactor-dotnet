@@ -11,6 +11,9 @@ using System.Threading;
 // ReSharper disable once CheckNamespace
 namespace Proto;
 
+/// <summary>
+/// Manages all processes in the actor system (actors, futures, event stream, etc.).
+/// </summary>
 public class ProcessRegistry
 {
     private readonly List<Func<PID, Process?>> _hostResolvers = new();

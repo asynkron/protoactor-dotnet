@@ -12,6 +12,11 @@ using Proto.Metrics;
 // ReSharper disable once CheckNamespace
 namespace Proto;
 
+/// <summary>
+/// A wrapper for a message that could not be delivered to the original recipient. Such message is wrapped in
+/// a <see cref="DeadLetterEvent{T}"/> by the <see cref="DeadLetterProcess"/> and forwarded
+/// to the <see cref="EventStream{T}"/> 
+/// </summary>
 [PublicAPI]
 public class DeadLetterEvent
 {
@@ -27,15 +32,34 @@ public class DeadLetterEvent
         Header = header ?? MessageHeader.Empty;
     }
 
+    /// <summary>
+    /// The PID of the actor that was the original recipient of the message.
+    /// </summary>
     public PID Pid { get; }
+    
+    /// <summary>
+    /// The message that could not be delivered to the original recipient.
+    /// </summary>
     public object Message { get; }
+    
+    /// <summary>
+    /// Sender of the message.
+    /// </summary>
     public PID? Sender { get; }
+    
+    /// <summary>
+    /// Headers of the message.
+    /// </summary>
     public MessageHeader Header { get; }
 
     public override string ToString()
         => $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
 }
 
+/// <summary>
+/// A process that receives messages, that cannot be handled by the original recipients e.g. because they have been stopped.
+/// The message is then forwarded to the <see cref="EventStream{T}" /> as a <see cref="DeadLetterEvent"/>
+/// </summary>
 public class DeadLetterProcess : Process
 {
     public DeadLetterProcess(ActorSystem system) : base(system)

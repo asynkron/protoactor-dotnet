@@ -12,6 +12,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Logging;
 
+/// <summary>
+/// Stores and queries log entries created by the <see cref="InstanceLogger"/>
+/// </summary>
 [PublicAPI]
 public class LogStore
 {

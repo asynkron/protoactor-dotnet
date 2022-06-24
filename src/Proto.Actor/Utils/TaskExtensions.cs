@@ -11,6 +11,15 @@ namespace Proto.Utils;
 
 public static class TaskExtensions
 {
+    /// <summary>
+    /// Adds a timeout to a task. If the task times out (or provided token is cancelled), <see cref="TaskCanceledException"/> is thrown.
+    /// </summary>
+    /// <param name="task">Task to be awaited</param>
+    /// <param name="timeout">Timeout</param>
+    /// <param name="ct"></param>
+    /// <typeparam name="TResult"></typeparam>
+    /// <returns></returns>
+    /// <exception cref="TimeoutException"></exception>
     public static async Task<TResult> WithTimeout<TResult>(this Task<TResult> task, TimeSpan timeout, CancellationToken? ct = null)
     {
         if (task.IsCompleted) return await task.ConfigureAwait(false); // Very important in order to propagate exceptions
@@ -31,7 +40,7 @@ public static class TaskExtensions
     }
 
     /// <summary>
-    /// Waits up to given timeout, returns true if task completed, false if it timed out
+    /// Waits up to given timeout (or provided token is cancelled), returns true if task completed, false otherwise
     /// </summary>
     public static async Task<bool> WaitUpTo(this Task task, TimeSpan timeout, CancellationToken? ct = null)
     {
@@ -51,7 +60,7 @@ public static class TaskExtensions
     }
 
     /// <summary>
-    /// Waits up to given timeout, returns (true,value) if task completed, (false, default) if it timed out
+    /// Waits up to given timeout (or provided token is cancelled), returns (true,value) if task completed, (false, default) otherwise
     /// </summary>
     public static async Task<(bool completed, TResult result)> WaitUpTo<TResult>(
         this Task<TResult> task,
