@@ -9,6 +9,10 @@ using JetBrains.Annotations;
 
 namespace Proto.Utils;
 
+/// <summary>
+/// A collection with set semantics built on top of <see cref="ConcurrentDictionary{TKey,TValue}"/>.
+/// </summary>
+/// <typeparam name="T"></typeparam>
 [PublicAPI]
 public class ConcurrentSet<T>
 {
