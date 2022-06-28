@@ -81,7 +81,7 @@ public class DefaultClusterContext : IClusterContext
 
                 if (context.System.Metrics.Enabled)
                 {
-                    Stopwatch.StartNew();
+                    t=Stopwatch.StartNew();
                 }
 
                 try
