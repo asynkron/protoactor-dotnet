@@ -133,12 +133,12 @@ public class EndpointManager
 
             if (_system.Address.StartsWith(ActorSystem.Client, StringComparison.Ordinal))
             {
-                Logger.LogDebug("[{SystemAddress}] Requesting new client side ServerEndpoint for {Address}", _system.Address, address);
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[{SystemAddress}] Requesting new client side ServerEndpoint for {Address}", _system.Address, address);
                 endpoint = _serverEndpoints.GetOrAdd(address, v => new ServerEndpoint(_system, _remoteConfig, v, _channelProvider, ServerConnector.Type.ClientSide, RemoteMessageHandler));
             }
             else
             {
-                Logger.LogDebug("[{SystemAddress}] Requesting new server side ServerEndpoint for {Address}", _system.Address, address);
+                if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[{SystemAddress}] Requesting new server side ServerEndpoint for {Address}", _system.Address, address);
                 endpoint = _serverEndpoints.GetOrAdd(address, v => new ServerEndpoint(_system, _remoteConfig, v, _channelProvider, ServerConnector.Type.ServerSide, RemoteMessageHandler));
             }
             return endpoint;
@@ -167,7 +167,7 @@ public class EndpointManager
                 return endpoint;
             }
 
-            Logger.LogDebug("[{SystemAddress}] Requesting new ServerSideClientEndpoint for {SystemId}", _system.Address, systemId);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[{SystemAddress}] Requesting new ServerSideClientEndpoint for {SystemId}", _system.Address, systemId);
 
             return _clientEndpoints.GetOrAdd(systemId, address => new ServerSideClientEndpoint(_system, _remoteConfig, address));
 
