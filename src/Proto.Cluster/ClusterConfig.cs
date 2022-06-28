@@ -63,8 +63,7 @@ public record ClusterConfig
     public TimeSpan RemotePidCacheTimeToLive { get; set; }
     public TimeSpan RemotePidCacheClearInterval { get; set; }
         
-    public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } =
-        c => new DefaultClusterContext(c.System, c.IdentityLookup, c.PidCache, c.Config.ToClusterContextConfig(), c.System.Shutdown);
+    public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } = c => new DefaultClusterContext(c);
     public TimeSpan ActorRequestRetryInterval { get; init; }
 
     public ClusterConfig WithTimeout(TimeSpan timeSpan) =>

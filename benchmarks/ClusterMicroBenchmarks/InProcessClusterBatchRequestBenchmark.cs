@@ -73,7 +73,7 @@ public class InProcessClusterBatchRequestBenchmark
 
         if (ExperimentalContext)
         {
-            config = config.WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster));
+            config = config.WithClusterContextProducer(cluster => new DefaultClusterContext(cluster));
         }
 
         return config;

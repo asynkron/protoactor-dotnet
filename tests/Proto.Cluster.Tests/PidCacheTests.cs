@@ -44,7 +44,7 @@ public class PidCacheTests
         var logger = Log.CreateLogger("dummylog");
         var clusterIdentity = new ClusterIdentity {Identity = "identity", Kind = "kind"};
         pidCache.TryAdd(clusterIdentity, deadPid);
-        var requestAsyncStrategy = new DefaultClusterContext(system, dummyIdentityLookup, pidCache, new ClusterContextConfig(), system.Shutdown);
+        var requestAsyncStrategy = new LegacyClusterContext(system, dummyIdentityLookup, pidCache, new ClusterContextConfig(), system.Shutdown);
 
         var res = await requestAsyncStrategy.RequestAsync<Pong>(clusterIdentity, new Ping {Message = "msg"}, system.Root,
             new CancellationTokenSource(6000).Token

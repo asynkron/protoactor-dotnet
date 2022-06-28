@@ -235,7 +235,7 @@ public class InMemoryClusterFixtureAlternativeClusterContext : BaseInMemoryClust
 {
     public InMemoryClusterFixtureAlternativeClusterContext() : base(3, config => config
         .WithActorRequestTimeout(TimeSpan.FromSeconds(4))
-        .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
+        .WithClusterContextProducer(cluster => new DefaultClusterContext(cluster))
     )
     {
     }
@@ -245,7 +245,7 @@ public class InMemoryClusterFixtureSharedFutures : BaseInMemoryClusterFixture
 {
     public InMemoryClusterFixtureSharedFutures() : base(3, config => config
         .WithActorRequestTimeout(TimeSpan.FromSeconds(4))
-        .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
+        .WithClusterContextProducer(cluster => new DefaultClusterContext(cluster))
     )
     {
     }
