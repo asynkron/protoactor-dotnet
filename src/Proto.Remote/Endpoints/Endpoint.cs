@@ -145,7 +145,8 @@ public abstract class Endpoint : IEndpoint
                                 ex,
                                 "[{SystemAddress}] Unable to deserialize message with {Type}",
                                 System.Address,
-                                typeName);
+                                typeName
+                            );
                         continue;
                     }
 
@@ -234,6 +235,7 @@ public abstract class Endpoint : IEndpoint
     public void SendMessage(PID target, object msg)
     {
         var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
+
         if (_logger.IsEnabled(LogLevel.Trace))
         {
             _logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {Message} to {Target} from {Sender}", System.Address,
@@ -319,9 +321,9 @@ public abstract class Endpoint : IEndpoint
         }
     }
 
-    private MessageBatch CreateBatch(IEnumerable<RemoteDeliver> m)
+    private MessageBatch CreateBatch(IReadOnlyCollection<RemoteDeliver> m)
     {
-        var envelopes = new List<MessageEnvelope>();
+        var envelopes = new List<MessageEnvelope>(m.Count);
         var typeNames = new Dictionary<string, int>();
         var targets = new Dictionary<(string address, string id), int>();
         var targetList = new List<PID>();
@@ -423,11 +425,14 @@ public abstract class Endpoint : IEndpoint
             envelopes.Add(envelope);
         }
 
-        var batch = new MessageBatch();
-        batch.Targets.AddRange(targetList);
-        batch.TypeNames.AddRange(typeNameList);
-        batch.Envelopes.AddRange(envelopes);
-        batch.Senders.AddRange(senderList);
+        var batch = new MessageBatch
+        {
+            Targets = {targetList},
+            TypeNames = {typeNameList},
+            Envelopes = {envelopes},
+            Senders = {senderList}
+        };
+
         // if (Logger.IsEnabled(LogLevel.Trace))
         //     Logger.LogTrace("[{SystemAddress}] Sending {Count} envelopes for {Address}", System.Address, envelopes.Count, Address);
         return batch;
