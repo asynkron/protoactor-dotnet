@@ -69,7 +69,7 @@ public static class Configuration
         var helloProps = Props.FromProducer(() => new WorkerActor());
         return ClusterConfig
             .Setup("mycluster", clusterProvider, identityLookup)
-            .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
+            .WithClusterContextProducer(cluster => new DefaultClusterContext(cluster))
             .WithClusterKind("hello", helloProps)
             .WithGossipFanOut(3);
     }
@@ -182,7 +182,7 @@ public static class Configuration
     private static ActorSystemConfig GetMemberActorSystemConfig()
     {
         var config = new ActorSystemConfig()
-            // .WithSharedFutures()
+            .WithSharedFutures()
             .WithDeadLetterThrottleCount(3)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
             .WithDeadLetterRequestLogging(false);

@@ -74,7 +74,7 @@ public record ActorSystemConfig
     ///     SharedFutures allows the ActorSystem to avoid registering a new temporary process for each request
     ///     Instead registering a SharedFuture that can handle multiple requests internally
     /// </summary>
-    public bool SharedFutures { get; init; }
+    public bool SharedFutures { get; init; } = true;
 
     /// <summary>
     ///     Sets the number of requests that can be handled by a SharedFuture
