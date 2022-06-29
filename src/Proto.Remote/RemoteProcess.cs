@@ -13,36 +13,36 @@ namespace Proto.Remote;
 public class RemoteProcess : Process
 {
     private readonly EndpointManager _endpointManager;
-    private readonly PID _pid;
     private readonly string? _systemId;
     private long _lastUsedTick;
+    private readonly IEndpoint _endpoint;
 
     public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
     {
         _endpointManager = endpointManager;
-        _pid = pid;
         pid.TryGetSystemId(system, out _systemId);
+        _endpoint = _systemId is not null ? _endpointManager.GetClientEndpoint(_systemId) : _endpointManager.GetOrAddServerEndpoint(pid.Address);
         _lastUsedTick = Stopwatch.GetTimestamp();
     }
 
-    protected internal override void SendUserMessage(PID _, object message) => Send(message);
+    protected internal override void SendUserMessage(PID pid, object message) => Send(pid, message);
 
-    protected internal override void SendSystemMessage(PID _, SystemMessage message) => Send(message);
+    protected internal override void SendSystemMessage(PID pid, SystemMessage message) => Send(pid, message);
 
-    private void Send(object msg)
+    private void Send(PID pid, object msg)
     {
         // If the target endpoint is down or blocked, we get a BlockedEndpoint instance
-        var endpoint = _systemId is not null ? _endpointManager.GetClientEndpoint(_systemId) : _endpointManager.GetOrAddServerEndpoint(_pid.Address);
+        var endpoint = _endpoint;
         switch (msg)
         {
             case Watch w:
-                endpoint.RemoteWatch(_pid, w);
+                endpoint.RemoteWatch(pid, w);
                 break;
             case Unwatch uw:
-                endpoint.RemoteUnwatch(_pid, uw);
+                endpoint.RemoteUnwatch(pid, uw);
                 break;
             default:
-                endpoint.SendMessage(_pid, msg);
+                endpoint.SendMessage(pid, msg);
                 break;
         }
             
