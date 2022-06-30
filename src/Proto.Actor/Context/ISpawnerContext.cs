@@ -30,8 +30,7 @@ public static class SpawnerContextExtensions
     /// <returns>The PID of the child actor</returns>
     public static PID Spawn(this ISpawnerContext self, Props props)
     {
-        var id = self.System.ProcessRegistry.NextId();
-        return self.SpawnNamed(props, id);
+        return self.SpawnNamed(props, "");
     }
 
     /// <summary>

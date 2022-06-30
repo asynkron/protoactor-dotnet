@@ -21,13 +21,14 @@ public partial class PID : ICustomDiagnosticMessage
     /// </summary>
     /// <param name="address">Actor system address</param>
     /// <param name="id">Actor identifier</param>
-    public PID(string address, string id)
+    public PID(string address, string id, long sequenceId = 0)
     {
         Address = address;
         Id = id;
+        SequenceId = sequenceId;
     }
 
-    internal PID(string address, string id, Process process) : this(address, id) => _process = process;
+    internal PID(string address, string id, Process process, long sequenceId = 0) : this(address, id, sequenceId) => _process = process;
 
     public string ToDiagnosticString() => $"{Address}/{Id}";
 
@@ -36,7 +37,7 @@ public partial class PID : ICustomDiagnosticMessage
     /// </summary>
     /// <param name="address">Actor system address</param>
     /// <param name="id">Actor identifier</param>
-    public static PID FromAddress(string address, string id) => new(address, id);
+    public static PID FromAddress(string address, string id) => new(address, id, 0);
 
     internal Process? Ref(ActorSystem system)
     {
@@ -87,6 +88,7 @@ public partial class PID : ICustomDiagnosticMessage
         Id = Id,
         Address = Address,
         _process = _process,
-        RequestId = requestId
+        RequestId = requestId,
+        SequenceId = SequenceId,
     };
 }

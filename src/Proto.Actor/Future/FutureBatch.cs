@@ -26,10 +26,7 @@ public sealed class FutureBatchProcess : Process, IDisposable
 
     public FutureBatchProcess(ActorSystem system, int size, CancellationToken ct) : base(system)
     {
-        var name = System.ProcessRegistry.NextId();
-        var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
-
-        if (!absent) throw new ProcessNameExistException(name, pid);
+        var (pid, _) = System.ProcessRegistry.TryAdd("", this);
 
         Pid = pid;
 

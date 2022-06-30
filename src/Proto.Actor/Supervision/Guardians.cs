@@ -35,11 +35,8 @@ class GuardianProcess : Process, ISupervisor
     internal GuardianProcess(ActorSystem system, ISupervisorStrategy strategy) : base(system)
     {
         _supervisorStrategy = strategy;
-
-        var name = $"$guardian{System.ProcessRegistry.NextId()}";
-        var (pid, ok) = System.ProcessRegistry.TryAdd(name, this);
-
-        if (!ok) throw new ProcessNameExistException(name, pid);
+        
+        var (pid, _) = System.ProcessRegistry.TryAdd("", this);
 
         Pid = pid;
     }

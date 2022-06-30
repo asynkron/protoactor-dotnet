@@ -19,7 +19,8 @@ public class ProcessRegistry
 {
     private readonly List<Func<PID, Process?>> _hostResolvers = new();
     private readonly ConcurrentDictionary<string,Process> _localProcesses = new();
-    private int _sequenceId;
+    private readonly ConcurrentDictionary<long,Process> _localProcesses2 = new();
+    private long _sequenceId;
         
     public IEnumerable<PID> Find(Func<string, bool> predicate)
     {
@@ -27,7 +28,7 @@ public class ProcessRegistry
 
         foreach (var (id, process) in res)
         {
-            yield return new PID(System.Address, id, process);
+            yield return new PID(System.Address, id, process); //TODO: fix sequence id
         }
     }
 
@@ -46,11 +47,23 @@ public class ProcessRegistry
     {
         if (pid.Address == ActorSystem.NoHost || (pid.Address == System.Address && !pid.Id.StartsWith(ActorSystem.Client, StringComparison.Ordinal)))
         {
-            return (_localProcesses.TryGetValue(pid.Id, out var process) switch
+            if (pid.SequenceId > 0)
             {
-                true  => process,
-                false => System.DeadLetter
-            })!;
+                if (_localProcesses2.TryGetValue(pid.SequenceId, out var process))
+                {
+                    return process;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(pid.Id))
+            {
+                if (_localProcesses.TryGetValue(pid.Id, out var process2))
+                {
+                    return process2;
+                }
+            }
+
+            return System.DeadLetter;
         }
 
         Process? reff = null;
@@ -69,13 +82,32 @@ public class ProcessRegistry
 
     public (PID pid, bool ok) TryAdd(string id, Process process)
     {
-        var pid = new PID(System.Address, id, process);
+        var sequenceId = Interlocked.Increment(ref _sequenceId);
+        var pid = new PID(System.Address, id, process, sequenceId);
 
-        var ok = _localProcesses.TryAdd(pid.Id, process);
+        var ok = true;
+
+        //only add to named registry if id exists
+        if (!string.IsNullOrEmpty(id))
+        {
+            ok = _localProcesses.TryAdd(pid.Id, process);
+        }
+
+        //always add to long registry
+        _localProcesses2.TryAdd(sequenceId, process);
+        
         return ok ? (pid, true) : (PID.FromAddress(System.Address, id), false);
     }
 
-    public void Remove(PID pid) => _localProcesses.TryRemove(pid.Id,out _);
+    public void Remove(PID pid)
+    {
+        if (!string.IsNullOrEmpty(pid.Id))
+        {
+            _localProcesses.TryRemove(pid.Id, out _);
+        }
+
+        _localProcesses2.TryRemove(pid.SequenceId, out _);
+    }
 
     public string NextId()
     {
