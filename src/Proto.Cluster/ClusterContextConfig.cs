@@ -31,6 +31,5 @@ public static class ClusterConfigExtensions
             ActorRequestTimeout = clusterConfig.ActorRequestTimeout,
             MaxNumberOfEventsInRequestLogThrottlePeriod = clusterConfig.MaxNumberOfEventsInRequestLogThrottlePeriod,
             RequestLogThrottlePeriod = clusterConfig.RequestLogThrottlePeriod,
-            ActorRequestRetryInterval= clusterConfig.ActorRequestRetryInterval
         };
 }

@@ -47,6 +47,11 @@ public class RemoteMessageHandler
                         batch.Targets[i].Ref(System);
                     }
                 }
+                
+                for (var i = 0; i < batch.Senders.Count; i++)
+                {
+                    batch.Senders[i].Ref(System);
+                }
 
                 var typeNames = batch.TypeNames.ToArray();
 

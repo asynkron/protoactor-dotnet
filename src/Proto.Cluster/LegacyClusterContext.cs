@@ -44,7 +44,7 @@ public class LegacyClusterContext : IClusterContext
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
         
-        _clock = new TaskClock(config.ActorRequestTimeout, config.ActorRequestRetryInterval, killSwitch);
+        _clock = new TaskClock(config.ActorRequestTimeout, TimeSpan.FromSeconds(1), killSwitch);
         _clock.Start();
     }
 
