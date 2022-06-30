@@ -27,9 +27,34 @@ public partial class PID : ICustomDiagnosticMessage
         Id = id;
     }
 
-    internal PID(string address, string id, Process process) : this(address, id) => _process = process;
+    /// <summary>
+    /// Creates a new PID instance from address and identifier.
+    /// </summary>
+    /// <param name="address">Actor system address</param>
+    /// <param name="id">Actor name</param>
+    /// <param name="sequenceId">Actor sequence ID</param>
+    public PID(string address, string id, long sequenceId)
+    {
+        Address = address;
+        Id = id;
+        SequenceId = sequenceId;
+    }
+    
+    /// <summary>
+    /// Creates a new PID instance from address and sequence ID.
+    /// </summary>
+    /// <param name="address">Actor system address</param>
+    /// <param name="sequenceId">Actor sequence ID</param>
+    public PID(string address, long sequenceId)
+    {
+        Address = address;
+        SequenceId = sequenceId;
+    }
 
-    public string ToDiagnosticString() => $"{Address}/{Id}";
+    internal PID(string address, string id, Process process) : this(address, id, process.Id) => _process = process;
+    internal PID(string address, Process process) : this(address, process.Id) => _process = process;
+
+    public string ToDiagnosticString() => $"{Address}/{Id ?? ""}{(SequenceId > 0 ? $"${SequenceId}" : "")}";
 
     /// <summary>
     /// Creates a new PID instance from address and identifier.

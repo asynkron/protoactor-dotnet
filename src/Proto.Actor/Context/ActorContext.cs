@@ -88,6 +88,25 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}", Self, message);
     }
 
+    public PID Spawn(Props props, Action<IContext>? callback = null)
+    {
+        if (props.GuardianStrategy is not null)
+            throw new ArgumentException("Props used to spawn child cannot have GuardianStrategy.");
+
+        try
+        {
+            var pid = props.Spawn(System, null, Self, callback);
+            EnsureExtras().AddChild(pid);
+
+            return pid;
+        }
+        catch (Exception x)
+        {
+            Logger.LogError(x, "{Self} Failed to spawn anonymous child actor", Self);
+            throw;
+        }
+    }
+
     public PID SpawnNamed(Props props, string name, Action<IContext>? callback = null)
     {
         if (props.GuardianStrategy is not null)

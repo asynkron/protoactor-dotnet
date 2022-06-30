@@ -34,12 +34,18 @@ public record ActorSystemConfig
     public bool DeadLetterRequestLogging { get; set; } = true;
 
     /// <summary>
+    ///     Enable prefixing of parent ID's to child PID ID.
+    ///     
+    /// </summary>
+    public bool InheritedPidIds { get; set; } = true;
+
+    /// <summary>
     ///     Developer debugging feature, enables extended logging for actor supervision failures
     /// </summary>
     public bool DeveloperSupervisionLogging { get; init; }
 
     /// <summary>
-    ///     Enables actor metrics. Set to true if you want to export the metrics with OpenTelemetry exporters. 
+    ///     Enables actor metrics. Set to true if you want to export the metrics with OpenTelemetry exporters.
     /// </summary>
     public bool MetricsEnabled { get; init; }
 
@@ -49,23 +55,23 @@ public record ActorSystemConfig
     ///     except requests overriding the sender context by parameter
     /// </summary>
     public Func<RootContext, IRootContext> ConfigureRootContext { get; init; } = context => context;
-    
+
     /// <summary>
     ///     Allows ActorSystem-wide augmentation of any Props
     ///     All props are translated via this function
     /// </summary>
     public Func<Props, Props> ConfigureProps { get; init; } = props => props;
-    
+
     /// <summary>
     ///     Allows ActorSystem-wide augmentation of system Props
     ///     All system props are translated via this function
     ///     By default, DeadlineDecorator, LoggingContextDecorator are used. Additionally, the supervision strategy is set to AlwaysRestart. 
     /// </summary>
-    public Func<string, Props, Props> ConfigureSystemProps { get; init; } = (_,props) => {
+    public Func<string, Props, Props> ConfigureSystemProps { get; init; } = (_, props) => {
         var logger = Log.CreateLogger("Proto.SystemActors");
         return props
             .WithDeadlineDecorator(TimeSpan.FromSeconds(1), logger)
-            .WithLoggingContextDecorator(logger, LogLevel.None, LogLevel.Debug, LogLevel.Error )
+            .WithLoggingContextDecorator(logger, LogLevel.None, LogLevel.Debug, LogLevel.Error)
             .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
     };
 
@@ -102,7 +108,7 @@ public record ActorSystemConfig
     ///     The default timeout for RequestAsync calls
     /// </summary>
     public TimeSpan ActorRequestTimeout { get; init; } = TimeSpan.FromSeconds(5);
-    
+
     /// <summary>
     ///     Enables logging for DeadLetter responses in Request/RequestAsync (responses returned from DeadLetter to original sender)
     /// </summary>
@@ -146,7 +152,7 @@ public record ActorSystemConfig
     ///     Developer debugging feature, enables extended logging for actor supervision failures
     /// </summary>
     public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) => this with {DeveloperSupervisionLogging = enabled};
-    
+
     /// <summary>
     ///     Enables actor metrics. Set to true if you want to export the metrics with OpenTelemetry exporters. 
     /// </summary>
@@ -163,20 +169,22 @@ public record ActorSystemConfig
     ///     The result from this will be used as the default sender for all requests,
     ///     except requests overriding the sender context by parameter
     /// </summary>
-    public ActorSystemConfig WithConfigureRootContext(Func<RootContext, IRootContext> configureContext) => this with {ConfigureRootContext = configureContext};
-    
+    public ActorSystemConfig WithConfigureRootContext(Func<RootContext, IRootContext> configureContext)
+        => this with {ConfigureRootContext = configureContext};
+
     /// <summary>
     ///     Allows ActorSystem-wide augmentation of any Props
     ///     All props are translated via this function
     /// </summary>
     public ActorSystemConfig WithConfigureProps(Func<Props, Props> configureProps) => this with {ConfigureProps = configureProps};
-    
+
     /// <summary>
     ///     Allows ActorSystem-wide augmentation of system Props
     ///     All system props are translated via this function
     ///     By default, DeadlineDecorator, LoggingContextDecorator are used. Additionally, the supervision strategy is set to AlwaysRestart. 
     /// </summary>
-    public ActorSystemConfig WithConfigureSystemProps(Func<string, Props, Props> configureSystemProps) => this with {ConfigureSystemProps = configureSystemProps};
+    public ActorSystemConfig WithConfigureSystemProps(Func<string, Props, Props> configureSystemProps)
+        => this with {ConfigureSystemProps = configureSystemProps};
 
     /// <summary>
     ///     Measures the time it takes from scheduling a Task, until the task starts to execute

@@ -54,6 +54,8 @@ public abstract class ActorContextDecorator : IContext
     public virtual PID SpawnNamed(Props props, string name, Action<IContext>? callback=null) =>
         _context.SpawnNamed(props, name, callback);
 
+    public PID Spawn(Props props, Action<IContext>? callback = null) => _context.Spawn(props, callback);
+
     public virtual void Watch(PID pid) =>
         _context.Watch(pid);
 

@@ -27,11 +27,10 @@ public class Activator : IActor
             case ActorPidRequest msg:
                 var props = _remoteConfig.GetRemoteKind(msg.Kind);
                 var name = msg.Name;
-                if (string.IsNullOrEmpty(name)) name = _system.ProcessRegistry.NextId();
 
                 try
                 {
-                    var pid = _system.Root.SpawnNamed(props, name);
+                    var pid = name is not null ?  _system.Root.SpawnNamed(props, name) : _system.Root.Spawn(props);
 
                     if (_system.Metrics.Enabled)
                     {

@@ -78,7 +78,7 @@ public sealed record Props
 
     private static IContext DefaultContextDecorator(IContext context) => context;
 
-    public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent, Action<IContext>? callback)
+    public static PID DefaultSpawner(ActorSystem system, string? name, Props props, PID? parent, Action<IContext>? callback)
     {
         //Ordering is important here
         //first we create a mailbox and attach it to a process
@@ -86,11 +86,21 @@ public sealed record Props
         var mailbox = props.MailboxProducer();
         var dispatcher = props.Dispatcher;
         var process = new ActorProcess(system, mailbox);
-            
-        //then we register it to the process registry
-        var (self, absent) = system.ProcessRegistry.TryAdd(name, process);
-        //if this fails we exit and the process and mailbox is Garbage Collected
-        if (!absent) throw new ProcessNameExistException(name, self);
+        PID self;
+        if (name is null)
+        {
+            self = system.ProcessRegistry.Add(process);
+        }
+        else
+        {
+            //then we register it to the process registry
+            (self, var absent) = system.ProcessRegistry.TryAdd(name, process);
+        
+            //if this fails we exit and the process and mailbox is Garbage Collected
+            if (!absent) throw new ProcessNameExistException(name!, self);
+        }
+        
+       
             
         //if successful, we create the actor and attach it to the mailbox
         var ctx = ActorContext.Setup(system, props, parent, self, mailbox);
@@ -166,7 +176,7 @@ public sealed record Props
     public Props WithSpawner(Spawner spawner) =>
         this with {Spawner = spawner};
 
-    internal PID Spawn(ActorSystem system, string name, PID? parent, Action<IContext>? callback=null) => Spawner(system, name, this, parent, callback);
+    internal PID Spawn(ActorSystem system, string? name, PID? parent, Action<IContext>? callback=null) => Spawner(system, name, this, parent, callback);
 
     /// <summary>
     /// Props that spawn actors by calling the provided producer delegate.

@@ -16,7 +16,7 @@ public delegate Task Receiver(IReceiverContext context, MessageEnvelope envelope
 
 public delegate Task Sender(ISenderContext context, PID target, MessageEnvelope envelope);
 
-public delegate PID Spawner(ActorSystem system, string id, Props props, PID? parent, Action<IContext>? callback = null);
+public delegate PID Spawner(ActorSystem system, string? id, Props props, PID? parent, Action<IContext>? callback = null);
 
 public delegate IActor Producer();
 

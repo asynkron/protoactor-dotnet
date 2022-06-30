@@ -4,14 +4,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-// ReSharper disable once CheckNamespace
+// ReSharper disable CheckNamespace
 
+using System.Threading;
 using Proto.Mailbox;
 
 namespace Proto;
 
 public abstract class Process
 {
+    private static long nextId = 1;
+    public long Id { get; } = Interlocked.Increment(ref nextId);
     protected Process(ActorSystem system) => System = system;
 
     protected ActorSystem System { get; }

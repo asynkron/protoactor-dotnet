@@ -78,8 +78,22 @@ public sealed record RootContext : IRootContext
             throw;
         }
     }
-    
-    
+
+    public PID Spawn(Props props, Action<IContext>? callback = null)
+    {
+        try
+        {
+            var parent = props.GuardianStrategy is not null
+                ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
+                : null;
+            return props.Spawn(System, null, parent, callback);
+        }
+        catch (Exception x)
+        {
+            Logger.LogError(x, "RootContext Failed to spawn anonymous root level actor");
+            throw;
+        }
+    }
 
     public object? Message => null;
 

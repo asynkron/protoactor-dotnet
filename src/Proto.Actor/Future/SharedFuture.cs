@@ -33,10 +33,7 @@ public sealed class SharedFutureProcess : Process, IDisposable
 
     internal SharedFutureProcess(ActorSystem system, int size) : base(system)
     {
-        var name = System.ProcessRegistry.NextId();
-        var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
-
-        if (!absent) throw new ProcessNameExistException(name, pid);
+        var pid = System.ProcessRegistry.Add(this);
 
         Pid = pid;
 

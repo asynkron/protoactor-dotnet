@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Threading;
 using Proto.Mailbox;
 
 // ReSharper disable once CheckNamespace

@@ -26,6 +26,8 @@ public abstract class RootContextDecorator : IRootContext
     
     public virtual PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) => _context.SpawnNamed(props, name, callback);
 
+    public PID Spawn(Props props, Action<IContext>? callback = null) => _context.Spawn(props, callback);
+
     public virtual void Send(PID target, object message) => _context.Send(target, message);
 
     public virtual void Request(PID target, object message) => _context.Request(target, message);

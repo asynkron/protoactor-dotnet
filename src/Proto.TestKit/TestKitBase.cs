@@ -38,6 +38,8 @@ public class TestKitBase : ITestProbe, ISpawnerContext
     /// <inheritdoc />
     public PID SpawnNamed(Props props, string name, Action<IContext>? callback=null) => Context.SpawnNamed(props, name, callback);
 
+    public PID Spawn(Props props, Action<IContext>? callback = null) => Context.Spawn(props, callback);
+
     /// <inheritdoc />
     public PID SpawnPrefix(Props props, string prefix) => Context.SpawnPrefix(props, prefix);
 

@@ -17,7 +17,7 @@ public abstract record RouterConfig
 
     public Props Props() => new Props().WithSpawner(SpawnRouterProcess);
 
-    private PID SpawnRouterProcess(ActorSystem system, string name, Props props, PID? parent, Action<IContext>? callback)
+    private PID SpawnRouterProcess(ActorSystem system, string? name, Props props, PID? parent, Action<IContext>? callback)
     {
         var routerState = CreateRouterState();
         var wg = new AutoResetEvent(false);
@@ -26,9 +26,19 @@ public abstract record RouterConfig
         var mailbox = props.MailboxProducer();
         var dispatcher = props.Dispatcher;
         var process = new RouterProcess(system, routerState, mailbox);
-        var (self, absent) = system.ProcessRegistry.TryAdd(name, process);
 
-        if (!absent) throw new ProcessNameExistException(name, self);
+        PID self;
+
+        if (name is null)
+        {
+            self = system.ProcessRegistry.Add(process);
+        }
+        else
+        {
+            (self, var absent) = system.ProcessRegistry.TryAdd(name, process);
+
+            if (!absent) throw new ProcessNameExistException(name, self);
+        }
 
         var ctx = ActorContext.Setup(system, p, parent, self, mailbox);
         callback?.Invoke(ctx);
