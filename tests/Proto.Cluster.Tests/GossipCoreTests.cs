@@ -4,13 +4,11 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Google.Protobuf;
 using Proto.Cluster.Gossip;
 using Proto.Logging;
 using Xunit;

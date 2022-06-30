@@ -4,8 +4,6 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-
 namespace Proto.Remote;
 
 public sealed record EndpointTerminatedEvent(bool OnError, string? Address, string? ActorSystemId)
