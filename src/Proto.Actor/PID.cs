@@ -22,11 +22,15 @@ public partial class PID : ICustomDiagnosticMessage
     /// <param name="address">Actor system address</param>
     /// <param name="id">Actor identifier</param>
     /// <param name="sequenceId">Actor Sequence Id</param>
-    public PID(string address, string id, long sequenceId = 0)
+    public PID(string address, string id, long? sequenceId = null)
     {
         Address = address;
         Id = id;
-        SequenceId = sequenceId;
+
+        if (sequenceId.HasValue)
+        {
+            SequenceId = sequenceId.Value;
+        }
     }
 
     internal PID(string address, string id, Process process, long sequenceId = 0) : this(address, id, sequenceId) => _process = process;
@@ -38,7 +42,8 @@ public partial class PID : ICustomDiagnosticMessage
     /// </summary>
     /// <param name="address">Actor system address</param>
     /// <param name="id">Actor identifier</param>
-    public static PID FromAddress(string address, string id) => new(address, id, 0);
+    public static PID FromAddress(string address, string id) => new(address, id);
+    public static PID FromAddress(string address, string id, long sequenceId) => new(address, id, sequenceId);
 
     internal Process? Ref(ActorSystem system)
     {
@@ -86,10 +91,10 @@ public partial class PID : ICustomDiagnosticMessage
     /// <returns></returns>
     public PID WithRequestId(uint requestId) => new()
     {
-        Id = Id,
         Address = Address,
-        _process = _process,
+        Id = Id,
         RequestId = requestId,
         SequenceId = SequenceId,
+        _process = _process,
     };
 }

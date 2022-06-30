@@ -4,6 +4,7 @@
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 using Proto.Remote.Metrics;
 
@@ -38,19 +39,20 @@ public class Activator : IActor
                             .Add(1, new("id", _system.Id), new("address", _system.Address), new("kind", msg.Kind));
                     }
 
+                    
                     var response = new ActorPidResponse {Pid = pid};
                     context.Respond(response);
                 }
-                catch (ProcessNameExistException ex)
+                catch (ProcessNameExistException x)
                 {
                     var response = new ActorPidResponse
                     {
-                        Pid = ex.Pid,
+                        Pid = x.Pid,
                         StatusCode = (int) ResponseStatusCode.ProcessNameAlreadyExist
                     };
                     context.Respond(response);
                 }
-                catch
+                catch(Exception x)
                 {
                     var response = new ActorPidResponse
                     {
