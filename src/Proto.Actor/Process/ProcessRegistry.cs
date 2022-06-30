@@ -47,7 +47,7 @@ public class ProcessRegistry
     {
         if (pid.Address == ActorSystem.NoHost || (pid.Address == System.Address && !pid.Id.StartsWith(ActorSystem.Client, StringComparison.Ordinal)))
         {
-            if (pid.HasSequenceId)
+            if (pid.SequenceId != 0)
             {
                 if (_localProcesses2.TryGetValue(pid.SequenceId, out var process))
                 {

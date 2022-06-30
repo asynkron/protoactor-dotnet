@@ -25,7 +25,11 @@ public partial class PID : ICustomDiagnosticMessage
     public PID(string address, string id, long? sequenceId = null)
     {
         Address = address;
-        Id = id;
+
+        if (!string.IsNullOrEmpty(id))
+        {
+            Id = id;
+        }
 
         if (sequenceId.HasValue)
         {
