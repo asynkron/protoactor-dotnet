@@ -30,6 +30,8 @@ message MessageEnvelope {
   MessageHeader message_header = 6;
   uint32 target_request_id = 7;
   uint32 sender_request_id = 8;
+  int64 target_sequence_id = 9;
+  int64 sender_sequence_id = 10;
 }
 
 message MessageHeader {

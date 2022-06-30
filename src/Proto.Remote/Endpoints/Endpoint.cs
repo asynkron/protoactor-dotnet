@@ -110,12 +110,22 @@ public abstract class Endpoint : IEndpoint
                     {
                         target = target.WithRequestId(envelope.TargetRequestId);
                     }
+                    
+                    if (envelope.TargetSequenceId != default)
+                    {
+                        target = target.WithSequenceId(envelope.TargetSequenceId);
+                    }
 
                     var sender = envelope.Sender == 0 ? null : batch.Senders[envelope.Sender - 1];
 
                     if (envelope.SenderRequestId != default)
                     {
                         sender = sender?.WithRequestId(envelope.SenderRequestId);
+                    }
+                    
+                    if (envelope.SenderSequenceId != default)
+                    {
+                        target = target.WithSequenceId(envelope.SenderSequenceId);
                     }
 
                     var typeName = typeNames[envelope.TypeId];
@@ -421,7 +431,9 @@ public abstract class Endpoint : IEndpoint
                 SerializerId = serializerId,
                 MessageHeader = header,
                 TargetRequestId = rd.Target.RequestId,
-                SenderRequestId = sender?.RequestId ?? default
+                SenderRequestId = sender?.RequestId ?? default,
+                TargetSequenceId = rd.Target.SequenceId,
+                SenderSequenceId = sender?.SequenceId ?? default,
             };
             // if (Logger.IsEnabled(LogLevel.Trace))
             //     Logger.LogTrace("[{SystemAddress}] Endpoint adding Envelope {Envelope}", System.Address, envelope);

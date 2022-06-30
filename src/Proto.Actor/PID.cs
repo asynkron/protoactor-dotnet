@@ -30,7 +30,7 @@ public partial class PID : ICustomDiagnosticMessage
 
     internal PID(string address, string id, Process process, long sequenceId = 0) : this(address, id, sequenceId) => _process = process;
 
-    public string ToDiagnosticString() => $"{Address}/{Id}";
+    public string ToDiagnosticString() => $"{Address}/{Id}/{SequenceId}";
 
     /// <summary>
     /// Creates a new PID instance from address and identifier.
@@ -90,5 +90,14 @@ public partial class PID : ICustomDiagnosticMessage
         _process = _process,
         RequestId = requestId,
         SequenceId = SequenceId,
+    };
+    
+    public PID WithSequenceId(long sequenceId) => new()
+    {
+        Id = Id,
+        Address = Address,
+        _process = _process,
+        RequestId = RequestId,
+        SequenceId = sequenceId,
     };
 }
