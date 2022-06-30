@@ -55,8 +55,11 @@ public abstract class Endpoint : IEndpoint
         _logger.LogDebug("[{SystemAddress}] Disposed endpoint {Address}", System.Address, Address);
     }
 
+    public bool IsActive { get; private set; } = true;
+
     private void TerminateEndpoint()
     {
+        IsActive = false;
         ClearWatchers();
         var droppedMessageCount = 0;
 

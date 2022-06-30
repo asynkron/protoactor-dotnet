@@ -15,13 +15,13 @@ public class RemoteProcess : Process
     private readonly EndpointManager _endpointManager;
     private readonly string? _systemId;
     private long _lastUsedTick;
-    
+    private IEndpoint _endpoint;
 
     public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
     {
         _endpointManager = endpointManager;
+        _endpoint = GetEndpoint(pid);
         pid.TryGetSystemId(system, out _systemId);
-        
         _lastUsedTick = Stopwatch.GetTimestamp();
     }
 
@@ -31,7 +31,7 @@ public class RemoteProcess : Process
 
     private void Send(PID pid, object msg)
     {
-        var endpoint = _systemId is not null ? _endpointManager.GetClientEndpoint(_systemId) : _endpointManager.GetOrAddServerEndpoint(pid.Address);
+        var endpoint = GetEndpoint(pid);
         // If the target endpoint is down or blocked, we get a BlockedEndpoint instance
         switch (msg)
         {
@@ -47,6 +47,21 @@ public class RemoteProcess : Process
         }
             
         _lastUsedTick = Stopwatch.GetTimestamp();
+    }
+
+    private IEndpoint GetEndpoint(PID pid)
+    {
+        if (_endpoint.IsActive)
+        {
+            return _endpoint;
+        }
+        
+        _endpoint = _systemId switch
+        {
+            not null => _endpointManager.GetClientEndpoint(_systemId),
+            _        => _endpointManager.GetOrAddServerEndpoint(pid.Address)
+        };
+        return _endpoint;
     }
 
     internal long LastUsedTick => _lastUsedTick;

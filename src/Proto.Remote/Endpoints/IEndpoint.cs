@@ -15,6 +15,8 @@ public interface IEndpoint : IAsyncDisposable
 {
     Channel<RemoteMessage> Outgoing { get; }
     ConcurrentStack<RemoteMessage> OutgoingStash { get; }
+    bool IsActive { get; }
+
     void SendMessage(PID pid, object message);
     void RemoteTerminate(PID target, Terminated terminated);
     void RemoteWatch(PID pid, Watch watch);
