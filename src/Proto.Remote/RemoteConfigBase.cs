@@ -56,6 +56,7 @@ public abstract record RemoteConfigBase
     ///     Gets or sets the advertised port for the remote system.
     ///     If the remote system is behind e.g. a NAT or reverse proxy, this needs to be set to
     ///     the external port in order for other systems to be able to connect to it.
+    ///     Advertised port can be different from the bound port, e.g. in container scenarios
     /// </summary>
     public int? AdvertisedPort { get; init; }
 
@@ -65,11 +66,24 @@ public abstract record RemoteConfigBase
     /// </summary>
     public LogLevel DeserializationErrorLogLevel { get; init; } = LogLevel.Error;
 
+    /// <summary>
+    /// Endpoint writer options
+    /// </summary>
     public EndpointWriterOptions EndpointWriterOptions { get; init; } = new();
 
+    /// <summary>
+    /// Serializations system that manages serializers for remote messages.
+    /// </summary>
     public Serialization Serialization { get; init; } = new();
 
+    /// <summary>
+    /// After the remote connection is terminated, this is the time period the enpoint manager will monitor messages arriving to this connection
+    /// and generate deadletter events for them. Default value is 3 seconds.
+    /// </summary>
     public TimeSpan? WaitAfterEndpointTerminationTimeSpan { get; init; } = TimeSpan.FromSeconds(3);
 
+    /// <summary>
+    /// Enables remote retrieval of process information and statistics from this node
+    /// </summary>
     public bool RemoteDiagnostics { get; set; }
 }

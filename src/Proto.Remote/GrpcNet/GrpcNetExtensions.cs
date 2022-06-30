@@ -14,18 +14,40 @@ namespace Proto.Remote.GrpcNet;
 [PublicAPI]
 public static class Extensions
 {
+    /// <summary>
+    /// Channel options for the gRPC channel
+    /// </summary>
     public static GrpcNetRemoteConfig WithChannelOptions(this GrpcNetRemoteConfig config, GrpcChannelOptions options)
         => config with {ChannelOptions = options};
 
+    /// <summary>
+    /// A delegate that allows to choose the address for the <see cref="ActorSystem"/> from the list of addresses Kestrel listens on. 
+    /// By default, the first address is used.
+    /// </summary>
     public static GrpcNetRemoteConfig WithUriChooser(this GrpcNetRemoteConfig config, Func<IEnumerable<Uri>?, Uri?> uriChooser)
         => config with {UriChooser = uriChooser};
 
+
+    /// <summary>
+    /// Registers the Remote extension in the <see cref="ActorSystem"/>. This mode opens connections both ways between the nodes.
+    /// Use this mode as a default.
+    /// </summary>
+    /// <param name="system"></param>
+    /// <param name="remoteConfig">Remote extension config</param>
+    /// <returns></returns>
     public static ActorSystem WithRemote(this ActorSystem system, GrpcNetRemoteConfig remoteConfig)
     {
         var _ = new GrpcNetRemote(system, remoteConfig);
         return system;
     }
 
+    /// <summary>
+    /// Registers the Remote extension in the <see cref="ActorSystem"/> This mode marks the remote as a system that cannot be connected to.
+    /// However this system can connect to remote node. Use in the cases where a node is behind a firewall, so other nodes cannot connect to it.
+    /// </summary>
+    /// <param name="system"></param>
+    /// <param name="remoteConfig">Remote extension config</param>
+    /// <returns></returns>
     public static ActorSystem WithClientRemote(this ActorSystem system, GrpcNetRemoteConfig remoteConfig)
     {
         var _ = new GrpcNetClientRemote(system, remoteConfig);

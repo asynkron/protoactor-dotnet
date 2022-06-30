@@ -58,7 +58,7 @@ public class Serialization : IActorSystemExtension<Serialization>
     /// Registers a new serializer with this Serialization instance.
     /// SerializerId must correspond to the same serializer on all remote nodes (cluster members).
     /// ProtoBufSerializer's id is 0, JsonSerializer's is 1 by default.
-    /// Priority defined in which order Serializers should be considered to be the serializer for a given type.
+    /// Priority defined in which order Serializers should be considered to be the serializer for a given type (highest value takes precedence).
     /// ProtoBufSerializer has priority of 0, and JsonSerializer has priority of -1000.
     /// </summary>
     public void RegisterSerializer(
@@ -80,7 +80,11 @@ public class Serialization : IActorSystemExtension<Serialization>
             .OrderByDescending(v => v.PriorityValue)
             .ToList();
     }
-
+    
+    /// <summary>
+    /// Register file descriptor for protobuf messages
+    /// </summary>
+    /// <param name="fd"></param>
     public void RegisterFileDescriptor(FileDescriptor fd)
     {
         foreach (var msg in fd.MessageTypes)
@@ -91,6 +95,13 @@ public class Serialization : IActorSystemExtension<Serialization>
             }
         }
     }
+
+    /// <summary>
+    /// Serializes the message with a registered serializer.
+    /// </summary>
+    /// <param name="message">Message to serialize</param>
+    /// <returns>A tuple of message bytes and type name and serializer id of the serializer used</returns>
+    /// <exception cref="Exception">Throw if serializer id could not be found for specified type name</exception>
 
     public (ByteString bytes, string typename, int serializerId) Serialize(object message)
     {
@@ -131,6 +142,14 @@ public class Serialization : IActorSystemExtension<Serialization>
         throw new Exception($"Couldn't find a serializer for {message.GetType()}");
     }
 
+    /// <summary>
+    /// Deserializes the message with a registered serializer.
+    /// </summary>
+    /// <param name="typeName">Type name coming from the serializer</param>
+    /// <param name="bytes">message bytes</param>
+    /// <param name="serializerId">Serializer id</param>
+    /// <returns></returns>
+    /// <exception cref="Exception">Throw if serializer id could not be found for specified type name</exception>
     public object Deserialize(string typeName, ByteString bytes, int serializerId)
     {
         if (Cache.TryGetValue(typeName, out var cachedMessage))

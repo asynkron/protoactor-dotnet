@@ -5,6 +5,11 @@ namespace Proto.Remote;
 
 public static class IRemoteExtensions
 {
+    /// <summary>
+    /// Gets the <see cref="IRemote"/> extension registered on the <see cref="ActorSystem"/>
+    /// </summary>
+    /// <param name="system"></param>
+    /// <returns></returns>
     public static IRemote Remote(this ActorSystem system) => system.Extensions.Get<IRemote>()!;
 
     public static IRemote Remote(this IContext context) => context.System.Remote();
