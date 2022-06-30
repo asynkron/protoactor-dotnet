@@ -20,7 +20,6 @@ public class RemoteProcess : Process
     public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
     {
         _endpointManager = endpointManager;
-        _endpoint = GetEndpoint(pid);
         pid.TryGetSystemId(system, out _systemId);
         _lastUsedTick = Stopwatch.GetTimestamp();
     }
@@ -55,12 +54,14 @@ public class RemoteProcess : Process
         {
             return _endpoint;
         }
-        
-        _endpoint = _systemId switch
+
+        if (_systemId != null)
         {
-            not null => _endpointManager.GetClientEndpoint(_systemId),
-            _        => _endpointManager.GetOrAddServerEndpoint(pid.Address)
-        };
+            _endpoint = null;
+            return _endpointManager.GetClientEndpoint(_systemId);
+        }
+
+        _endpoint = _endpointManager.GetOrAddServerEndpoint(pid.Address);
         return _endpoint;
     }
 
