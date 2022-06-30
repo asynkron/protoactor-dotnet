@@ -20,7 +20,7 @@ public class ProcessRegistry
     private readonly List<Func<PID, Process?>> _hostResolvers = new();
     private readonly ConcurrentDictionary<string,Process> _localProcesses = new();
     private readonly ConcurrentDictionary<long,Process> _localProcesses2 = new();
-    private long _sequenceId;
+    private long _sequenceId = 1;
         
     public IEnumerable<PID> Find(Func<string, bool> predicate)
     {
@@ -47,7 +47,7 @@ public class ProcessRegistry
     {
         if (pid.Address == ActorSystem.NoHost || (pid.Address == System.Address && !pid.Id.StartsWith(ActorSystem.Client, StringComparison.Ordinal)))
         {
-            if (pid.SequenceId > 0)
+            if (pid.HasSequenceId)
             {
                 if (_localProcesses2.TryGetValue(pid.SequenceId, out var process))
                 {

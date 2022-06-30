@@ -21,6 +21,7 @@ public partial class PID : ICustomDiagnosticMessage
     /// </summary>
     /// <param name="address">Actor system address</param>
     /// <param name="id">Actor identifier</param>
+    /// <param name="sequenceId">Actor Sequence Id</param>
     public PID(string address, string id, long sequenceId = 0)
     {
         Address = address;
@@ -90,14 +91,5 @@ public partial class PID : ICustomDiagnosticMessage
         _process = _process,
         RequestId = requestId,
         SequenceId = SequenceId,
-    };
-    
-    public PID WithSequenceId(long sequenceId) => new()
-    {
-        Id = Id,
-        Address = Address,
-        _process = _process,
-        RequestId = RequestId,
-        SequenceId = sequenceId,
     };
 }

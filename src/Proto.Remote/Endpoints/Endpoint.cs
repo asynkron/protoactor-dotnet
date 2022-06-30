@@ -110,22 +110,12 @@ public abstract class Endpoint : IEndpoint
                     {
                         target = target.WithRequestId(envelope.TargetRequestId);
                     }
-                    
-                    if (envelope.TargetSequenceId != default)
-                    {
-                        target = target.WithSequenceId(envelope.TargetSequenceId);
-                    }
 
                     var sender = envelope.Sender == 0 ? null : batch.Senders[envelope.Sender - 1];
 
                     if (envelope.SenderRequestId != default)
                     {
                         sender = sender?.WithRequestId(envelope.SenderRequestId);
-                    }
-                    
-                    if (envelope.SenderSequenceId != default)
-                    {
-                        target = target.WithSequenceId(envelope.SenderSequenceId);
                     }
 
                     var typeName = typeNames[envelope.TypeId];
@@ -338,17 +328,17 @@ public abstract class Endpoint : IEndpoint
     {
         var envelopes = new List<MessageEnvelope>(m.Count);
         var typeNames = new Dictionary<string, int>();
-        var targets = new Dictionary<(string address, string id), int>();
+        var targets = new Dictionary<(string address, string id, long sequenceId), int>();
         var targetList = new List<PID>();
         var typeNameList = new List<string>();
-        var senders = new Dictionary<(string address, string id), int>();
+        var senders = new Dictionary<(string address, string id, long sequenceId), int>();
         var senderList = new List<PID>();
 
         foreach (var rd in m)
         {
             var target = rd.Target;
 
-            var targetKey = (target.Address, target.Id);
+            var targetKey = (target.Address, target.Id, target.SequenceId);
 
             if (!targets.TryGetValue(targetKey, out var targetId))
             {
@@ -362,7 +352,7 @@ public abstract class Endpoint : IEndpoint
 
             if (sender != null)
             {
-                var senderKey = (sender.Address, sender.Id);
+                var senderKey = (sender.Address, sender.Id , sender.SequenceId);
 
                 if (!senders.TryGetValue(senderKey, out senderId))
                 {
@@ -432,8 +422,6 @@ public abstract class Endpoint : IEndpoint
                 MessageHeader = header,
                 TargetRequestId = rd.Target.RequestId,
                 SenderRequestId = sender?.RequestId ?? default,
-                TargetSequenceId = rd.Target.SequenceId,
-                SenderSequenceId = sender?.SequenceId ?? default,
             };
             // if (Logger.IsEnabled(LogLevel.Trace))
             //     Logger.LogTrace("[{SystemAddress}] Endpoint adding Envelope {Envelope}", System.Address, envelope);
