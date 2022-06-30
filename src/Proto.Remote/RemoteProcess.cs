@@ -15,7 +15,7 @@ public class RemoteProcess : Process
     private readonly EndpointManager _endpointManager;
     private readonly string? _systemId;
     private long _lastUsedTick;
-    private IEndpoint _endpoint;
+    private IEndpoint? _endpoint;
 
     public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
     {
@@ -51,7 +51,7 @@ public class RemoteProcess : Process
 
     private IEndpoint GetEndpoint(PID pid)
     {
-        if (_endpoint.IsActive)
+        if (_endpoint?.IsActive == true)
         {
             return _endpoint;
         }
