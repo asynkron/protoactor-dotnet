@@ -48,9 +48,16 @@ public class RemoteMessageHandler
                     }
                 }
                 
-                foreach (var t in batch.Senders)
+                for (var i = 0; i < batch.Senders.Count; i++)
                 {
-                    var p = t.Ref(System);
+                    if (batch.Senders[i].TryTranslateToLocalClientPID(out var pid))
+                    {
+                        batch.Senders[i] = pid;
+                    }
+                    else
+                    {
+                        batch.Senders[i].Ref(System);
+                    }
                 }
 
                 var typeNames = batch.TypeNames.ToArray();
