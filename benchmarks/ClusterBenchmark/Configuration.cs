@@ -6,10 +6,8 @@
 using System;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
-using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Compression;
-using k8s;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using OpenTelemetry.Resources;

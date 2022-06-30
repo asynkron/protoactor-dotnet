@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System.Linq;
 using System.Threading.Tasks;
-using Proto.Cluster.Partition;
 
 namespace Proto.Cluster.PartitionActivator;
 

@@ -8,20 +8,15 @@ using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
 using Grpc.Net.Client;
 using Grpc.Net.Compression;
-using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Consul;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
 using Proto.OpenTelemetry;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
-using Serilog;
-using Serilog.Events;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
-using Log = Serilog.Log;
 
 namespace ClusterExperiment1;
 
