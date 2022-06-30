@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -17,12 +18,12 @@ namespace Proto;
 public class ProcessRegistry
 {
     private readonly List<Func<PID, Process?>> _hostResolvers = new();
-    private readonly HashedConcurrentDictionary _localProcesses = new();
+    private readonly ConcurrentDictionary<string,Process> _localProcesses = new();
     private int _sequenceId;
         
     public IEnumerable<PID> Find(Func<string, bool> predicate)
     {
-        var res = _localProcesses.Where(kvp => predicate(kvp.key));
+        var res = _localProcesses.Where(kvp => predicate(kvp.Key));
 
         foreach (var (id, process) in res)
         {
@@ -45,11 +46,11 @@ public class ProcessRegistry
     {
         if (pid.Address == ActorSystem.NoHost || (pid.Address == System.Address && !pid.Id.StartsWith(ActorSystem.Client, StringComparison.Ordinal)))
         {
-            return _localProcesses.TryGetValue(pid.Id, out var process) switch
+            return (_localProcesses.TryGetValue(pid.Id, out var process) switch
             {
                 true  => process,
                 false => System.DeadLetter
-            };
+            })!;
         }
 
         Process? reff = null;
@@ -74,7 +75,7 @@ public class ProcessRegistry
         return ok ? (pid, true) : (PID.FromAddress(System.Address, id), false);
     }
 
-    public void Remove(PID pid) => _localProcesses.Remove(pid.Id);
+    public void Remove(PID pid) => _localProcesses.TryRemove(pid.Id,out _);
 
     public string NextId()
     {
