@@ -19,6 +19,7 @@ try
             .WriteTo.Seq(builder.Configuration["SeqUrl"])
             .Enrich.WithProperty("Service", Assembly.GetExecutingAssembly().GetName().Name));
 
+
     Console.WriteLine("Starting client");
     builder.Services.AddSingleton<TestManager>();
     builder.Services.AddTransient<MessagingTest>();
