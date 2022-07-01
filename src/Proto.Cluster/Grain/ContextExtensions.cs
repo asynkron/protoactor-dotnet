@@ -11,6 +11,7 @@ namespace Proto.Cluster;
 public static class ContextExtensions
 {
     /// <summary>
+    /// Returns virtual actor's <see cref="ClusterIdentity"/> based on the current <see cref="IContext"/>
     /// When called on a plain actor context, ClusterIdentity will return null.
     /// On a virtual actor context ClusterIdentity is guaranteed to be populated when started.
     /// </summary>

@@ -9,7 +9,10 @@ using Proto.Remote;
 
 namespace Proto.Cluster.PubSub;
 
-// message posted to subscriber's mailbox, that is then unrolled to single messages, and has ability to auto respond
+/// <summary>
+/// Message posted to subscriber's mailbox, that is then unrolled to single messages, and has ability to auto respond
+/// </summary>
+/// <param name="Envelopes"></param>
 public record PubSubAutoRespondBatch(IReadOnlyCollection<object> Envelopes) : IRootSerializable, IMessageBatch, IAutoRespond
 {
     public object GetAutoResponse(IContext context) => new PublishResponse();

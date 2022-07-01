@@ -11,9 +11,19 @@ namespace Proto.Cluster.Kubernetes;
 
 public record KubernetesProviderConfig
 {
+    /// <summary>
+    /// A timeout for the watch pods operation
+    /// </summary>
     public int WatchTimeoutSeconds { get; }
+
+    /// <summary>
+    /// Enables more detailed logging
+    /// </summary>
     private bool DeveloperLogging { get; }
-    
+
+    /// <summary>
+    /// Override the default implementation to configure the kubernetes client
+    /// </summary>
     public Func<IKubernetes> ClientFactory { get; }
 
     public KubernetesProviderConfig(int watchTimeoutSeconds = 30, bool developerLogging = false, Func<IKubernetes> clientFactory = null)

@@ -10,11 +10,15 @@ namespace Proto.Cluster;
 
 public sealed record LocalAffinityOptions
 {
+    /// <summary>
+    /// Throttle the number of relocations in a window of time to avoid slowdowns in the system.
+    /// </summary>
     public ThrottleOptions? RelocationThroughput { get; init; }
 
     /// <summary>
-    /// To prevent non-partitioned messages from triggering relocation of the virtual actor.
-    /// If messages are sent from other nodes for which this predicate is true, the actor will be moved there.
+    /// A predicate that should return true for messages that trigger local affinity mechanism. If you also
+    /// have non-partitioned messages sent to an actor, return false for those messages.
     /// </summary>
+    /// <remarks>When using code generated grains, this predicate receives <see cref="GrainRequestMessage"/> in the envelope</remarks>
     public Predicate<MessageEnvelope>? TriggersLocalAffinity { get; init; }
 }

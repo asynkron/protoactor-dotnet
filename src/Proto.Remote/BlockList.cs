@@ -11,6 +11,10 @@ using System.Linq;
 namespace Proto.Remote;
 
 public record MemberBlocked(string MemberId);
+
+/// <summary>
+/// <see cref="BlockList"/> contains all members that have been blocked from communication, e.g. due to unresponsiveness.
+/// </summary>
 public class BlockList
 {
     private readonly ActorSystem _system;
@@ -21,13 +25,16 @@ public class BlockList
     }
     private readonly object _lock = new();
 
+    /// <summary>
+    /// List of all blocked members ids (their <see cref="ActorSystem.Id"/>). Entries on this list expire within an hour.
+    /// </summary>
     public ImmutableHashSet<string> BlockedMembers  => _blockedMembers
         .Where(kvp => kvp.Value > DateTime.UtcNow.AddHours(-1))
         .Select(kvp => kvp.Key)
         .ToImmutableHashSet();
 
     private ImmutableDictionary<string, DateTime> _blockedMembers  = ImmutableDictionary<string,DateTime>.Empty;
-
+    
     public void Block(IEnumerable<string> memberIds)
     {
         lock (_lock)
@@ -44,5 +51,10 @@ public class BlockList
         }
     }
 
+    /// <summary>
+    /// Checks if the specified member is blocked
+    /// </summary>
+    /// <param name="memberId">Member id - same as member's <see cref="ActorSystem.Id"/></param>
+    /// <returns></returns>
     public bool IsBlocked(string memberId) => _blockedMembers.ContainsKey(memberId);
 }

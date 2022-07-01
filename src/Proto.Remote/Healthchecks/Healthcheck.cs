@@ -10,6 +10,9 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Proto.Remote.Healthchecks;
 
+/// <summary>
+/// Reports unhealthy status if the <see cref="ActorSystem"/> is shutting down or completed the shutdown.
+/// </summary>
 [PublicAPI]
 public class ActorSystemHealthCheck : IHealthCheck
 {

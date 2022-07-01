@@ -9,6 +9,10 @@ using Proto.Remote;
 
 namespace Proto.Cluster;
 
+/// <summary>
+/// A response message wrapper used for code-generated virtual actors (grains). 
+/// </summary>
+/// <param name="ResponseMessage">Wrapped message</param>
 public record GrainResponseMessage(IMessage? ResponseMessage) : IRootSerializable
 {
     public IRootSerialized Serialize(ActorSystem system)

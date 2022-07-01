@@ -9,6 +9,11 @@ using Proto.Remote;
 
 namespace Proto.Cluster;
 
+/// <summary>
+/// A request message wrapper used for code-generated virtual actors (grains). 
+/// </summary>
+/// <param name="MethodIndex">Index of the code generated method that should process the request message</param>
+/// <param name="RequestMessage">Wrapped message</param>
 public record GrainRequestMessage(int MethodIndex, IMessage? RequestMessage) : IRootSerializable
 {
     //serialize into the on-the-wire format

@@ -84,4 +84,9 @@ public static class Throttle
     public static bool IsOpen(this Valve valve) => valve != Valve.Closed;
 }
 
+/// <summary>
+/// Throttling options
+/// </summary>
+/// <param name="MaxEventsInPeriod">Max events in a period</param>
+/// <param name="Period">Period to check the threshold in</param>
 public record ThrottleOptions(int MaxEventsInPeriod, TimeSpan Period);
