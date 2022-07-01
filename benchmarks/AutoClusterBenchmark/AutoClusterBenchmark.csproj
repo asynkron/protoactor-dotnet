@@ -7,6 +7,10 @@
         <RootNamespace>ClusterExperiment1</RootNamespace>
         <Nullable>enable</Nullable>
     </PropertyGroup>
+    <PropertyGroup>
+        <ServerGarbageCollection>true</ServerGarbageCollection>
+        <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
