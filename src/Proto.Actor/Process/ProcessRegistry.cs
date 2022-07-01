@@ -114,6 +114,12 @@ public class ProcessRegistry
                 break;
             default:
                 _processesBySequence.TryRemove(pid.SequenceId, out _);
+
+                if (!string.IsNullOrEmpty(pid.Id))
+                {
+                    _namedProcesses.TryRemove(pid.Id, out _);
+                }
+
                 break;
         }
     }
