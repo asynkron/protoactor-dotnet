@@ -89,31 +89,23 @@ public class DefaultClusterContext : IClusterContext
                     context.Request(pid, message, future.Pid);
                     var task = future.Task;
 
-                    await Task.WhenAny(task, _clock.CurrentBucket);
+                    await task;
+                    
+                    var (status, result) = ToResult<T>(source, context, task.Result);
 
-                    if (task.IsCompleted)
+                    switch (status)
                     {
-                        var (status, result) = ToResult<T>(source, context, task.Result);
+                        case ResponseStatus.Ok: return result;
+                        case ResponseStatus.InvalidResponse:
+                            RefreshFuture();
+                            await RemoveFromSource(clusterIdentity, source, pid);
+                            break;
+                        case ResponseStatus.DeadLetter:
+                            RefreshFuture();
+                            await RemoveFromSource(clusterIdentity, PidSource.Lookup, pid);
+                            break;
+                    }
 
-                        switch (status)
-                        {
-                            case ResponseStatus.Ok: return result;
-                            case ResponseStatus.InvalidResponse:
-                                RefreshFuture();
-                                await RemoveFromSource(clusterIdentity, source, pid);
-                                break;
-                            case ResponseStatus.DeadLetter:
-                                RefreshFuture();
-                                await RemoveFromSource(clusterIdentity, PidSource.Lookup, pid);
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        if (!context.System.Shutdown.IsCancellationRequested)
-                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
-                        _pidCache.RemoveByVal(clusterIdentity, pid);
-                    }
                 }
                 catch (TimeoutException)
                 {
@@ -125,7 +117,8 @@ public class DefaultClusterContext : IClusterContext
                 {
                     x.CheckFailFast();
                     if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                            Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
                     _pidCache.RemoveByVal(clusterIdentity, pid);
                     RefreshFuture();
                     await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
