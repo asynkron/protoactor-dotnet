@@ -10,7 +10,6 @@ using Log = Serilog.Log;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 try
 {
     builder.Host.UseSerilog((_, lcfg) =>
@@ -18,8 +17,7 @@ try
             .ReadFrom.Configuration(builder.Configuration)
             .WriteTo.Console()
             .WriteTo.Seq(builder.Configuration["SeqUrl"])
-            .Enrich.WithProperty("Service", Assembly.GetExecutingAssembly().GetName().Name)
-    );
+            .Enrich.WithProperty("Service", Assembly.GetExecutingAssembly().GetName().Name));
 
     Console.WriteLine("Starting client");
     builder.Services.AddSingleton<TestManager>();

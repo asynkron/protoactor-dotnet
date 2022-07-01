@@ -1,14 +1,10 @@
-﻿using System.IO.Compression;
-using Grpc.Net.Client;
-using Grpc.Net.Compression;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
-using Proto.Cluster.PartitionActivator;
 using Proto.DependencyInjection;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;

@@ -31,4 +31,15 @@
       <Protobuf Include="protos.proto" />
     </ItemGroup>
 
+    <ItemGroup>
+
+      <Content Include="appsettings.Development.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+
+      <Content Include="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>
