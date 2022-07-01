@@ -37,14 +37,14 @@ public static class ProtoActorExtensions
 
             var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost()
                 .WithProtoMessages(ProtoActorSut.Contracts.ProtosReflection.Descriptor)
-                // .WithChannelOptions(new GrpcChannelOptions
-                //     {
-                //         CompressionProviders = new[]
-                //         {
-                //             new GzipCompressionProvider(CompressionLevel.Fastest)
-                //         }
-                //     }
-                // )
+                .WithChannelOptions(new GrpcChannelOptions
+                    {
+                        CompressionProviders = new[]
+                        {
+                            new GzipCompressionProvider(CompressionLevel.Fastest)
+                        }
+                    }
+                )
                 .WithLogLevelForDeserializationErrors(LogLevel.Critical);
 
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());

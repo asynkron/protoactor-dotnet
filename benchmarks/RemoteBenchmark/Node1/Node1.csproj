@@ -6,6 +6,7 @@
     <LangVersion>10</LangVersion>
     <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
     <ProjectReference Include="..\..\..\src\Proto.Remote\Proto.Remote.csproj" />

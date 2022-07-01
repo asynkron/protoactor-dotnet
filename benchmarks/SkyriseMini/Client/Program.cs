@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Proto;
 using Serilog;
 using SkyriseMini;
 using SkyriseMini.Tests;
 using Log = Serilog.Log;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 try
 {
@@ -18,8 +18,8 @@ try
             .ReadFrom.Configuration(builder.Configuration)
             .WriteTo.Console()
             .WriteTo.Seq(builder.Configuration["SeqUrl"])
-            .Enrich.WithProperty("Service", Assembly.GetExecutingAssembly().GetName().Name)
-    );
+            .Enrich.WithProperty("Service", Assembly.GetExecutingAssembly().GetName().Name));
+
 
     Console.WriteLine("Starting client");
     builder.Services.AddSingleton<TestManager>();
@@ -38,10 +38,14 @@ try
 
     app.MapPost("/runMessagingTest",
         (HttpContext _, IServiceProvider provider, TestManager manager, [FromQuery] int parallelism, [FromQuery] int durationInSeconds)
-            => {
-            var test = provider.GetRequiredService<MessagingTest>();
-            manager.TrackTest(cancel => test.RunTest(parallelism, durationInSeconds, cancel));
+    => {
 
+            var __ = SafeTask.Run( () => {
+                    var test = provider.GetRequiredService<MessagingTest>();
+                    manager.TrackTest(cancel => test.RunTest(parallelism, durationInSeconds, cancel));
+                    return Task.CompletedTask;
+                }
+            ).ConfigureAwait(false);
             return Task.CompletedTask;
         }
     );

@@ -8,7 +8,10 @@
       "launchUrl": "swagger",
       "applicationUrl": "http://localhost:5051",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_TieredPGO":"1",
+        "DOTNET_TC_QuickJitForLoops":"1",
+        "DOTNET_ReadyToRun":"0"
       }
     }
   }
