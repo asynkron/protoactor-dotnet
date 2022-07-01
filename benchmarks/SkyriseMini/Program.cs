@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using Proto;
-using ProtoActorSut.Server;
 using ProtoActorSut.Shared;
 using Serilog;
 using TestRunner.Tests;
@@ -21,14 +19,11 @@ try
             .WriteTo.Seq(builder.Configuration["SeqUrl"])
             .Enrich.WithProperty("Service", Assembly.GetExecutingAssembly().GetName().Name));
 
-
-    
-
     builder.Services.AddSingleton<TestManager>();
     builder.Services.AddTransient<MessagingTest>();
     builder.Services.AddTransient<ActivationTest>();
     builder.AddProtoActorTestServicesRaw();
-    builder.AddProtoActorSUT();
+    builder.AddProtoActor();
     
 
     // builder.Services.AddOpenTelemetryMetrics(b => b
@@ -64,8 +59,7 @@ try
         (HttpContext _,IServiceProvider provider, TestManager manager, [FromQuery] int activationCount, [FromQuery] int parallelism)
             => {
             var test = provider.GetRequiredService<ActivationTest>();
-            manager.TrackTest(cancel => 
-                test.RunTest(activationCount, parallelism, cancel));
+            manager.TrackTest(cancel => test.RunTest(activationCount, parallelism, cancel));
 
             return Task.CompletedTask;
         }

@@ -30,7 +30,7 @@ public class ProtoActorTestServicesRaw
 
     public async Task<object> Activate(string id)
     {
-        var ci = ClusterIdentity.Create(id, Consts.PingPongRawKind);
+        var ci = ClusterIdentity.Create(id, "PingPongRaw");
         var res = await _cluster.RequestAsync<PongMessage>(ci, new PingMessage(), CancellationToken.None);
         return ci;
     }

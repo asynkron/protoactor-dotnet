@@ -19,6 +19,10 @@ using TestRunner.Tests;
 
 namespace ProtoActorSut.Shared;
 
+public record ProtoActorSUT(ActorSystem System);
+
+public record ProtoActorClient(ActorSystem System);
+
 public static class ProtoActorExtensions
 {
     public static WebApplicationBuilder AddProtoActorTestServicesRaw(this WebApplicationBuilder builder)
@@ -30,7 +34,7 @@ public static class ProtoActorExtensions
         return builder;
     }
     
-    public static WebApplicationBuilder AddProtoActorSUT(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddProtoActor(this WebApplicationBuilder builder)
     {
         builder.Services.AddSingleton(provider =>
         {
@@ -53,7 +57,7 @@ public static class ProtoActorExtensions
             
             var clusterConfig = ClusterConfig
                 .Setup(config["ClusterName"], clusterProvider, new PartitionActivatorLookup())
-                .WithClusterKind(Consts.PingPongRawKind,Props.FromProducer(() => new PingPongActorRaw()) );
+                .WithClusterKind("PingPongRaw",Props.FromProducer(() => new PingPongActorRaw()) );
             
             system
                 .WithServiceProvider(provider)
@@ -61,7 +65,38 @@ public static class ProtoActorExtensions
                 .WithCluster(clusterConfig)
                 .Cluster();
 
-            return system;
+            return new ProtoActorSUT(system);
+        });
+        
+        builder.Services.AddSingleton(provider =>
+        {
+            var config = builder.Configuration.GetSection("ProtoActor");
+
+            Log.SetLoggerFactory(provider.GetRequiredService<ILoggerFactory>());
+
+            var actorSystemConfig = ActorSystemConfig
+                .Setup()
+                .WithDeadLetterThrottleCount(3)
+                .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1));
+
+            var system = new ActorSystem(actorSystemConfig);
+
+            var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost()
+                .WithProtoMessages(Contracts.ProtosReflection.Descriptor)
+                .WithLogLevelForDeserializationErrors(LogLevel.Critical);
+
+            var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
+
+            var clusterConfig = ClusterConfig
+                .Setup(config["ClusterName"], clusterProvider, new PartitionActivatorLookup());
+
+            system
+                .WithServiceProvider(provider)
+                .WithRemote(remoteConfig)
+                .WithCluster(clusterConfig)
+                .Cluster();
+
+            return new ProtoActorClient(system);
         });
         
         builder.Services.AddHostedService<ActorSystemHostedService>();

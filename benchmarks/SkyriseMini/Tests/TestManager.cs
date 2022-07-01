@@ -18,15 +18,5 @@ public class TestManager
         }
     }
 
-    public Task CancelTest()
-    {
-        lock (_syncRoot)
-        {
-            if (!TestIsCurrentlyRunning()) return Task.CompletedTask;
-            _cts.Cancel();
-            return _currentTest;
-        }
-    }
-
     private bool TestIsCurrentlyRunning() => !_currentTest.IsCompleted;
 }
