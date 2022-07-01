@@ -188,14 +188,14 @@ public class ConsistentHashGroupTests
     {
         public static uint Hash(string hashKey)
         {
-            if (hashKey.EndsWith("routee1")) return 10;
-            if (hashKey.EndsWith("routee2")) return 20;
-            if (hashKey.EndsWith("routee3")) return 30;
-            if (hashKey.EndsWith("routee4")) return 40;
-            if (hashKey.EndsWith("message1")) return 9;
-            if (hashKey.EndsWith("message2")) return 19;
-            if (hashKey.EndsWith("message3")) return 29;
-            if (hashKey.EndsWith("message4")) return 39;
+            if (hashKey.Contains("routee1")) return 10;
+            if (hashKey.Contains("routee2")) return 20;
+            if (hashKey.Contains("routee3")) return 30;
+            if (hashKey.Contains("routee4")) return 40;
+            if (hashKey.Contains("message1")) return 9;
+            if (hashKey.Contains("message2")) return 19;
+            if (hashKey.Contains("message3")) return 29;
+            if (hashKey.Contains("message4")) return 39;
 
             return 0;
         }
