@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using SkyriseMini.Monitoring;
+
 
 namespace SkyriseMini.Tests;
 
@@ -69,15 +69,13 @@ public class MessagingTest
                 {
                     messageStopwatch.Restart();
                     await _ping(handle, Guid.NewGuid().ToString("N"));
-                
-                    TestMetrics.MessageLatency.Record(messageStopwatch.ElapsedTicks / (double)Stopwatch.Frequency);
-                    TestMetrics.MessageCount.Add(1);
+
                     Interlocked.Increment(ref totalMessages);
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Error during test");
-                    TestMetrics.ErrorCount.Add(1);
+
                 }
             }
 

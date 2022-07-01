@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
-using SkyriseMini.Monitoring;
+
 
 namespace SkyriseMini.Tests;
 
@@ -65,14 +65,11 @@ public class ActivationTest
                 {
                     activationStopwatch.Restart();
                     await _activate(actorId);
-                
-                    TestMetrics.MessageLatency.Record(activationStopwatch.ElapsedTicks / (double)Stopwatch.Frequency);
-                    TestMetrics.MessageCount.Add(1);
+
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Error during test");
-                    TestMetrics.ErrorCount.Add(1);
                 }
             }
             

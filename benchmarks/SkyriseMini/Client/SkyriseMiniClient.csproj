@@ -31,4 +31,8 @@
       <Protobuf Include="protos.proto" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Monitoring" />
+    </ItemGroup>
+
 </Project>
