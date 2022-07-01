@@ -253,6 +253,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterPubSubBatchingProduc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.PubSub.Tests", "tests\Proto.Cluster.PubSub.Tests\Proto.Cluster.PubSub.Tests.csproj", "{5B3A62B8-4C75-4551-9DDE-4107EE96FD03}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyriseMini", "benchmarks\SkyriseMini\SkyriseMini.csproj", "{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1259,6 +1261,18 @@ Global
 		{5B3A62B8-4C75-4551-9DDE-4107EE96FD03}.Release|x64.Build.0 = Release|Any CPU
 		{5B3A62B8-4C75-4551-9DDE-4107EE96FD03}.Release|x86.ActiveCfg = Release|Any CPU
 		{5B3A62B8-4C75-4551-9DDE-4107EE96FD03}.Release|x86.Build.0 = Release|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Debug|x64.Build.0 = Debug|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Debug|x86.Build.0 = Debug|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Release|x64.ActiveCfg = Release|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Release|x64.Build.0 = Release|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Release|x86.ActiveCfg = Release|Any CPU
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1375,6 +1389,7 @@ Global
 		{4A162D2F-C82A-4919-962B-6B2C53316263} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{8D481FB0-EEDC-4049-B18E-DEACA5BD8FF4} = {4A162D2F-C82A-4919-962B-6B2C53316263}
 		{5B3A62B8-4C75-4551-9DDE-4107EE96FD03} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
+		{424EDAC6-EE10-4B18-9B4B-78CDCE86978B} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}

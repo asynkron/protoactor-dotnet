@@ -1,4 +1,6 @@
-﻿using Proto;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Proto;
 using Proto.Cluster;
 
 namespace ProtoActorSut.Shared;

@@ -1,19 +1,33 @@
 ﻿using System.IO.Compression;
 using Grpc.Net.Client;
 using Grpc.Net.Compression;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
-using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.DependencyInjection;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using TestRunner.ProtoActor;
+using TestRunner.Tests;
 
 namespace ProtoActorSut.Shared;
 
 public static class ProtoActorExtensions
 {
+    public static WebApplicationBuilder AddProtoActorTestServicesRaw(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddSingleton<ProtoActorTestServicesRaw>();
+        builder.Services.AddSingleton<Ping>(provider => provider.GetRequiredService<ProtoActorTestServicesRaw>().Ping);
+        builder.Services.AddSingleton<Activate>(provider => provider.GetRequiredService<ProtoActorTestServicesRaw>().Activate);
+
+        return builder;
+    }
+    
     public static WebApplicationBuilder AddProtoActor(this WebApplicationBuilder builder,
         params (string Kind, Props Props)[] kinds)
     {
@@ -32,7 +46,7 @@ public static class ProtoActorExtensions
             var system = new ActorSystem(actorSystemConfig);
 
             var (remoteConfig, clusterProvider) =
-                ConfigureClustering(config, useKubernetes: !builder.Environment.IsDevelopment());
+                ConfigureForLocalhost();
 
             var clusterConfig = ClusterConfig
                 .Setup(config["ClusterName"], clusterProvider, new PartitionIdentityLookup());
@@ -55,30 +69,6 @@ public static class ProtoActorExtensions
         builder.Services.AddHostedService<ActorSystemHostedService>();
 
         return builder;
-    }
-
-    static (GrpcNetRemoteConfig, IClusterProvider)
-        ConfigureClustering(IConfigurationSection config, bool useKubernetes) =>
-        useKubernetes ? ConfigureForKubernetes(config) : ConfigureForLocalhost();
-
-    static (GrpcNetRemoteConfig, IClusterProvider) ConfigureForKubernetes(IConfigurationSection config)
-    {
-        var clusterProvider = new KubernetesProvider(new KubernetesProviderConfig());
-
-        var remoteConfig = GrpcNetRemoteConfig
-            .BindToAllInterfaces(config["AdvertisedHost"], config.GetValue("AdvertisedPort", 0))
-            .WithChannelOptions(new GrpcChannelOptions
-                {
-                    CompressionProviders = new[]
-                    {
-                        new GzipCompressionProvider(CompressionLevel.Fastest)
-                    }
-                }
-            )
-            .WithProtoMessages(Contracts.ProtosReflection.Descriptor)
-            .WithLogLevelForDeserializationErrors(LogLevel.Critical);
-
-        return (remoteConfig, clusterProvider);
     }
 
     static (GrpcNetRemoteConfig, IClusterProvider) ConfigureForLocalhost()

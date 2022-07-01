@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using TestRunner.Monitoring;
 
 namespace TestRunner.Tests;
