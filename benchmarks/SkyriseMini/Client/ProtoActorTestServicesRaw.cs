@@ -1,16 +1,18 @@
 ﻿using Proto;
 using Proto.Cluster;
 using ProtoActorSut.Contracts;
-using ProtoActorSut.Shared;
 
-namespace TestRunner.ProtoActor;
+namespace SkyriseMini;
 
 public class ProtoActorTestServicesRaw
 {
     private readonly Cluster _cluster;
 
-    public ProtoActorTestServicesRaw(Cluster cluster) => _cluster = cluster;
-    
+    public ProtoActorTestServicesRaw(ActorSystem system)
+    {
+        _cluster = system.Cluster();
+    }
+
     public async Task Ping(object handle, string name)
     {
         var ci = handle as ClusterIdentity ??
@@ -24,8 +26,8 @@ public class ProtoActorTestServicesRaw
         {
             throw new Exception("Request timed out");
         }
-        if (pong?.Response != expectedResponse)
-            throw new Exception($"Received response '{pong?.Response}' but expected '{expectedResponse}'");
+        if (pong.Response != expectedResponse)
+            throw new Exception($"Received response '{pong.Response}' but expected '{expectedResponse}'");
     }
 
     public async Task<object> Activate(string id)

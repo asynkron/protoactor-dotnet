@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
-using TestRunner.Monitoring;
+using SkyriseMini.Monitoring;
 
-namespace TestRunner.Tests;
+namespace SkyriseMini.Tests;
 
 public class ActivationTest
 {

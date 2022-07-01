@@ -7,27 +7,20 @@ namespace ProtoActorSut.Shared;
 
 public class ActorSystemHostedService : IHostedService
 {
-    private readonly ActorSystem _clientSystem;
-    private readonly ActorSystem _sutSystem;
+    private readonly ActorSystem _actorSystem;
     private readonly ILogger<ActorSystemHostedService> _logger;
-    
 
-    public ActorSystemHostedService(ProtoActorSUT sut, ProtoActorClient client, ILogger<ActorSystemHostedService> logger)
+    public ActorSystemHostedService(ActorSystem actorSystem, ILogger<ActorSystemHostedService> logger)
     {
-        _sutSystem = sut.System;
-        _clientSystem = client.System;
+        _actorSystem = actorSystem;
         _logger = logger;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting Proto actor system");
-        
-        await _sutSystem
-            .Cluster()
-            .StartMemberAsync();
-
-        await _clientSystem
+            
+        await _actorSystem
             .Cluster()
             .StartMemberAsync();
     }
@@ -36,11 +29,7 @@ public class ActorSystemHostedService : IHostedService
     {
         _logger.LogInformation("Stopping Proto actor system");
 
-        await _sutSystem
-            .Cluster()
-            .ShutdownAsync();
-
-        await _clientSystem
+        await _actorSystem
             .Cluster()
             .ShutdownAsync();
     }

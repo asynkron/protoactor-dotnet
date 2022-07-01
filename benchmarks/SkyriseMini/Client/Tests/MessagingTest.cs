@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using TestRunner.Monitoring;
+using SkyriseMini.Monitoring;
 
-namespace TestRunner.Tests;
+namespace SkyriseMini.Tests;
 
 public class MessagingTest
 {

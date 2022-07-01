@@ -1,0 +1,18 @@
+﻿{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+
+    "TestRunner ProtoActor Raw": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5800",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_TieredPGO":"1",
+        "DOTNET_TC_QuickJitForLoops":"1",
+        "DOTNET_ReadyToRun":"0"
+      }
+    }
+  }
+}

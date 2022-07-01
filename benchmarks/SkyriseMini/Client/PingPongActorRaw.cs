@@ -1,7 +1,7 @@
 ﻿using Proto;
 using ProtoActorSut.Contracts;
 
-namespace ProtoActorSut.Server;
+namespace SkyriseMini;
 
 public class PingPongActorRaw : IActor
 {

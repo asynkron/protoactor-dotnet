@@ -1,4 +1,4 @@
-﻿namespace TestRunner.Tests;
+﻿namespace SkyriseMini.Tests;
 
 public class TestManager
 {

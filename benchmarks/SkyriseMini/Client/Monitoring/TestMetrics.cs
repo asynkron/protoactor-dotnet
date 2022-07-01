@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.Metrics;
 using OpenTelemetry.Metrics;
 
-namespace TestRunner.Monitoring;
+namespace SkyriseMini.Monitoring;
 
 public static class TestMetrics
 {

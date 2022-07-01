@@ -1,27 +1,17 @@
-﻿using System.IO.Compression;
-using Grpc.Net.Client;
-using Grpc.Net.Compression;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
-using Proto.Cluster.Partition;
 using Proto.Cluster.PartitionActivator;
 using Proto.DependencyInjection;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
-using ProtoActorSut.Server;
-using TestRunner.ProtoActor;
-using TestRunner.Tests;
+using ProtoActorSut.Shared;
+using SkyriseMini.Tests;
 
-namespace ProtoActorSut.Shared;
-
-public record ProtoActorSUT(ActorSystem System);
-
-public record ProtoActorClient(ActorSystem System);
+namespace SkyriseMini;
 
 public static class ProtoActorExtensions
 {
@@ -33,40 +23,9 @@ public static class ProtoActorExtensions
 
         return builder;
     }
-    
-    public static WebApplicationBuilder AddProtoActor(this WebApplicationBuilder builder)
+
+    public static WebApplicationBuilder AddProtoActorClient(this WebApplicationBuilder builder)
     {
-        builder.Services.AddSingleton(provider =>
-        {
-            var config = builder.Configuration.GetSection("ProtoActor");
-
-            Log.SetLoggerFactory(provider.GetRequiredService<ILoggerFactory>());
-
-            var actorSystemConfig = ActorSystemConfig
-                .Setup()
-                .WithDeadLetterThrottleCount(3)
-                .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1));
-
-            var system = new ActorSystem(actorSystemConfig);
-
-            var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost()
-                .WithProtoMessages(Contracts.ProtosReflection.Descriptor)
-                .WithLogLevelForDeserializationErrors(LogLevel.Critical);
-
-            var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
-            
-            var clusterConfig = ClusterConfig
-                .Setup(config["ClusterName"], clusterProvider, new PartitionActivatorLookup())
-                .WithClusterKind("PingPongRaw",Props.FromProducer(() => new PingPongActorRaw()) );
-            
-            system
-                .WithServiceProvider(provider)
-                .WithRemote(remoteConfig)
-                .WithCluster(clusterConfig)
-                .Cluster();
-
-            return new ProtoActorSUT(system);
-        });
         
         builder.Services.AddSingleton(provider =>
         {
@@ -82,7 +41,7 @@ public static class ProtoActorExtensions
             var system = new ActorSystem(actorSystemConfig);
 
             var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost()
-                .WithProtoMessages(Contracts.ProtosReflection.Descriptor)
+                .WithProtoMessages(ProtoActorSut.Contracts.ProtosReflection.Descriptor)
                 .WithLogLevelForDeserializationErrors(LogLevel.Critical);
 
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
@@ -96,7 +55,7 @@ public static class ProtoActorExtensions
                 .WithCluster(clusterConfig)
                 .Cluster();
 
-            return new ProtoActorClient(system);
+            return system;
         });
         
         builder.Services.AddHostedService<ActorSystemHostedService>();

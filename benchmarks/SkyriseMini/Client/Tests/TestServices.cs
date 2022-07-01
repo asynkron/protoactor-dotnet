@@ -1,4 +1,4 @@
-﻿namespace TestRunner.Tests;
+﻿namespace SkyriseMini.Tests;
 
 public delegate Task Ping(object handle, string name);
 
