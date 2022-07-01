@@ -9,9 +9,11 @@ using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
+using Proto.Cluster.PartitionActivator;
 using Proto.DependencyInjection;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using ProtoActorSut.Server;
 using TestRunner.ProtoActor;
 using TestRunner.Tests;
 
@@ -28,8 +30,7 @@ public static class ProtoActorExtensions
         return builder;
     }
     
-    public static WebApplicationBuilder AddProtoActor(this WebApplicationBuilder builder,
-        params (string Kind, Props Props)[] kinds)
+    public static WebApplicationBuilder AddProtoActorSUT(this WebApplicationBuilder builder)
     {
         builder.Services.AddSingleton(provider =>
         {
@@ -39,22 +40,20 @@ public static class ProtoActorExtensions
 
             var actorSystemConfig = ActorSystemConfig
                 .Setup()
-                .WithSharedFutures(2000)
                 .WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1));
 
             var system = new ActorSystem(actorSystemConfig);
 
-            var (remoteConfig, clusterProvider) =
-                ConfigureForLocalhost();
+            var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost()
+                .WithProtoMessages(Contracts.ProtosReflection.Descriptor)
+                .WithLogLevelForDeserializationErrors(LogLevel.Critical);
 
+            var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
+            
             var clusterConfig = ClusterConfig
-                .Setup(config["ClusterName"], clusterProvider, new PartitionIdentityLookup());
-
-            foreach (var kind in kinds)
-            {
-                clusterConfig = clusterConfig.WithClusterKind(kind.Kind, kind.Props);
-            }
+                .Setup(config["ClusterName"], clusterProvider, new PartitionActivatorLookup())
+                .WithClusterKind(Consts.PingPongRawKind,Props.FromProducer(() => new PingPongActorRaw()) );
             
             system
                 .WithServiceProvider(provider)
@@ -64,16 +63,9 @@ public static class ProtoActorExtensions
 
             return system;
         });
-
-        builder.Services.AddSingleton(provider => provider.GetRequiredService<ActorSystem>().Cluster());
+        
         builder.Services.AddHostedService<ActorSystemHostedService>();
 
         return builder;
     }
-
-    static (GrpcNetRemoteConfig, IClusterProvider) ConfigureForLocalhost()
-        => (GrpcNetRemoteConfig.BindToLocalhost()
-                .WithProtoMessages(Contracts.ProtosReflection.Descriptor)
-                .WithLogLevelForDeserializationErrors(LogLevel.Critical),
-            new ConsulProvider(new ConsulProviderConfig()));
 }

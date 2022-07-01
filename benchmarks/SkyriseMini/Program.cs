@@ -21,16 +21,15 @@ try
             .WriteTo.Seq(builder.Configuration["SeqUrl"])
             .Enrich.WithProperty("Service", Assembly.GetExecutingAssembly().GetName().Name));
 
-    builder
-        .AddProtoActor()
-        .AddProtoActorTestServicesRaw();
+
     
 
     builder.Services.AddSingleton<TestManager>();
     builder.Services.AddTransient<MessagingTest>();
     builder.Services.AddTransient<ActivationTest>();
-    builder.AddProtoActor(
-        (Consts.PingPongRawKind, Props.FromProducer(() => new PingPongActorRaw())));
+    builder.AddProtoActorTestServicesRaw();
+    builder.AddProtoActorSUT();
+    
 
     // builder.Services.AddOpenTelemetryMetrics(b => b
     //         .SetResourceBuilder(

@@ -31,9 +31,4 @@
       <Protobuf Include="protos.proto" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Bus" />
-      <Folder Include="ProtoActor" />
-    </ItemGroup>
-
 </Project>
