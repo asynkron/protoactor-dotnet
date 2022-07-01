@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry.Metrics;
-using Proto.Metrics;
 using Proto.OpenTelemetry;
 
 namespace WebApplication1;

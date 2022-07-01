@@ -20,7 +20,6 @@ public record ClusterConfig
         ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
         TimeoutTimespan = TimeSpan.FromSeconds(5);
         ActorRequestTimeout = TimeSpan.FromSeconds(5);
-        ActorRequestRetryInterval = TimeSpan.FromSeconds(1);
         ActorSpawnTimeout = TimeSpan.FromSeconds(5);
         ActorActivationTimeout = TimeSpan.FromSeconds(5);
         MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
@@ -64,16 +63,12 @@ public record ClusterConfig
     public TimeSpan RemotePidCacheClearInterval { get; set; }
         
     public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } = c => new DefaultClusterContext(c);
-    public TimeSpan ActorRequestRetryInterval { get; init; }
 
     public ClusterConfig WithTimeout(TimeSpan timeSpan) =>
         this with {TimeoutTimespan = timeSpan};
 
     public ClusterConfig WithActorRequestTimeout(TimeSpan timeSpan) =>
         this with {ActorRequestTimeout = timeSpan};
-
-    public ClusterConfig WithActorRequestRetryInterval(TimeSpan timeSpan) =>
-        this with {ActorRequestRetryInterval = timeSpan};
 
     public ClusterConfig WithActorSpawnTimeout(TimeSpan timeSpan) =>
         this with {ActorSpawnTimeout = timeSpan};

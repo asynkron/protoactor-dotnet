@@ -17,6 +17,8 @@ public class BlockedEndpoint : IEndpoint
     public BlockedEndpoint(ActorSystem system) => _system = system;
     public Channel<RemoteMessage> Outgoing { get; } = Channel.CreateUnbounded<RemoteMessage>();
     public ConcurrentStack<RemoteMessage> OutgoingStash { get; } = new();
+    public bool IsActive => false; //will cause the endpoint to be reevaluated every time it is used
+
     public ValueTask DisposeAsync()
     {
         GC.SuppressFinalize(this);
