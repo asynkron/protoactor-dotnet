@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Builder;
 using System.IO.Compression;
 using Grpc.Net.Client;
 using Grpc.Net.Compression;
@@ -9,7 +8,6 @@ using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
-using Proto.Cluster.PartitionActivator;
 using Proto.DependencyInjection;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
@@ -48,14 +46,14 @@ public static class ProtoActorExtensions
 
             var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost()
                 .WithProtoMessages(ProtoActorSut.Contracts.ProtosReflection.Descriptor)
-                // .WithChannelOptions(new GrpcChannelOptions
-                //     {
-                //         CompressionProviders = new[]
-                //         {
-                //             new GzipCompressionProvider(CompressionLevel.Fastest)
-                //         }
-                //     }
-                // )
+                .WithChannelOptions(new GrpcChannelOptions
+                    {
+                        CompressionProviders = new[]
+                        {
+                            new GzipCompressionProvider(CompressionLevel.Fastest)
+                        }
+                    }
+                )
                 .WithLogLevelForDeserializationErrors(LogLevel.Critical);
 
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
