@@ -20,7 +20,6 @@ public class DefaultClusterContext : IClusterContext
 
     private readonly PidCache _pidCache;
     private readonly ShouldThrottle _requestLogThrottle;
-    private readonly TaskClock _clock;
     private readonly ActorSystem _system;
     private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
 
@@ -36,8 +35,6 @@ public class DefaultClusterContext : IClusterContext
             config.RequestLogThrottlePeriod,
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
-        _clock = new TaskClock(config.ActorRequestTimeout, TimeSpan.FromSeconds(1), cluster.System.Shutdown);
-        _clock.Start();
     }
 
     public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
