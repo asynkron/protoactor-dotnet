@@ -17,6 +17,12 @@ public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
 {
     public string ToDiagnosticString() => $"{Kind}/{Identity}";
 
+    /// <summary>
+    /// Creates ClusterIdentity from identity and cluster kind
+    /// </summary>
+    /// <param name="identity"></param>
+    /// <param name="kind"></param>
+    /// <returns></returns>
     public static ClusterIdentity Create(string identity, string kind) => new()
     {
         Identity = identity,

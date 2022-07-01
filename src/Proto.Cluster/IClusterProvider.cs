@@ -8,12 +8,31 @@ using JetBrains.Annotations;
 
 namespace Proto.Cluster;
 
+/// <summary>
+/// Cluster provider is responsible for determining the members of the cluster and what cluster kinds they support.
+/// The cluster provider updates the <see cref="MemberList"/>
+/// </summary>
 [PublicAPI]
 public interface IClusterProvider
 {
+    /// <summary>
+    /// Starts the cluster provider
+    /// </summary>
+    /// <param name="cluster"></param>
+    /// <returns></returns>
     Task StartMemberAsync(Cluster cluster);
 
+    /// <summary>
+    /// Starts the cluster provider in client mode. The client member does not support any kinds.
+    /// </summary>
+    /// <param name="cluster"></param>
+    /// <returns></returns>
     Task StartClientAsync(Cluster cluster);
 
+    /// <summary>
+    /// Shuts down the cluster provider
+    /// </summary>
+    /// <param name="graceful"></param>
+    /// <returns></returns>
     Task ShutdownAsync(bool graceful);
 }

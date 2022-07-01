@@ -16,6 +16,9 @@ using Proto.Utils;
 
 namespace Proto;
 
+/// <summary>
+/// Manages all the local actors, their communication and supervision
+/// </summary>
 [PublicAPI]
 public sealed class ActorSystem : IAsyncDisposable
 {

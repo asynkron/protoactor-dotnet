@@ -28,10 +28,10 @@ public class TaskClock
     }
     
     /// <summary>
-    /// Creates a new TaskClock
+    /// Creates a new TaskClock. Each bucket completes after <see cref="timeout"/> + <see cref="updateInterval"/>. A new bucket is created on each <see cref="updateInterval"/>
     /// </summary>
-    /// <param name="timeout">Initial delay</param>
-    /// <param name="updateInterval">Tick interval</param>
+    /// <param name="timeout"></param>
+    /// <param name="updateInterval"></param>
     /// <param name="ct">Used to stop the clock</param>
     public TaskClock(TimeSpan timeout, TimeSpan updateInterval, CancellationToken ct)
     {

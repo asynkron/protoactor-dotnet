@@ -16,6 +16,10 @@ using static Proto.Cluster.Kubernetes.ProtoLabels;
 
 namespace Proto.Cluster.Kubernetes;
 
+/// <summary>
+/// Clustering provider that uses Kubernetes API to publish and discover members. Preferred provider
+/// for Kubernetes deployments.
+/// </summary>
 [PublicAPI]
 public class KubernetesProvider : IClusterProvider
 {

@@ -8,6 +8,9 @@ using Proto.Remote;
 
 namespace Proto.Cluster;
 
+/// <summary>
+/// Transport-level representation of <see cref="GrainRequestMessage"/>
+/// </summary>
 public partial class GrainRequest : IRootSerialized
 {
     //deserialize into the in-process message type that the grain actors understands

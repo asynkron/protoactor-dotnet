@@ -11,6 +11,11 @@ using Proto.Cluster.Identity;
 
 namespace Proto.Cluster.Partition;
 
+/// <summary>
+/// Identity lookup that assigns identity owners with a consistent hashing algorithm. Activations are then
+/// spawned according to the <see cref="IMemberStrategy"/>.
+/// See the <a href="https://proto.actor/docs/cluster/partition-idenity-lookup/">documentation</a> for more information.  
+/// </summary>
 public class PartitionIdentityLookup : IIdentityLookup
 {
     private Cluster _cluster = null!;

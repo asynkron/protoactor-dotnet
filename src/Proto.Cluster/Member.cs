@@ -10,7 +10,14 @@ namespace Proto.Cluster;
 [PublicAPI]
 public partial class Member
 {
+    /// <summary>
+    /// Gets the network address of the member.
+    /// </summary>
     public string Address => Host + ":" + Port;
 
+    /// <summary>
+    /// Gets a representation of this member for logging
+    /// </summary>
+    /// <returns></returns>
     public string ToLogString() => $"Member Address:{Address} ID:{Id}";
 }

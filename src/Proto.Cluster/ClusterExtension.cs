@@ -14,22 +14,59 @@ namespace Proto.Cluster;
 [PublicAPI]
 public static class Extensions
 {
+    /// <summary>
+    /// Adds the <see cref="Proto.Cluster.Cluster"/> extension to the given <see cref="ActorSystem"/>
+    /// </summary>
+    /// <param name="system"></param>
+    /// <param name="config"></param>
+    /// <returns></returns>
     public static ActorSystem WithCluster(this ActorSystem system, ClusterConfig config)
     {
         _ = new Cluster(system, config);
         return system;
     }
 
+    /// <summary>
+    /// Gets the <see cref="Proto.Cluster.Cluster"/> from the <see cref="ActorSystem"/>
+    /// </summary>
+    /// <param name="system"></param>
+    /// <returns></returns>
     public static Cluster Cluster(this ActorSystem system)
         => system.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
+    /// <summary>
+    /// Gets the <see cref="Proto.Cluster.Cluster"/> from the <see cref="IContext"/>
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
     public static Cluster Cluster(this IContext context)
         => context.System.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
+    /// <summary>
+    /// Sends a request to a cluster identity
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="identity">Identity to send to</param>
+    /// <param name="kind">Cluster kind to sent to</param>
+    /// <param name="message">Message to send</param>
+    /// <param name="ct">Token to cancel the request</param>
+    /// <typeparam name="T">Type of the expected response</typeparam>
+    /// <returns>Response or null if timed out</returns>
     public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct) =>
         //call cluster RequestAsync using actor context
         context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
 
+    /// <summary>
+    /// Sends a request to a cluster identity and calls the provided callback when the response is received. The callback is executed within the
+    /// actor's concurrency constraint.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="identity">Identity to send to</param>
+    /// <param name="kind">Cluster kind to sent to</param>
+    /// <param name="message">Message to send</param>
+    /// <param name="callback">Callback that will be called after request is finished. It receives the request task as a parameter.</param>
+    /// <param name="ct">Token to cancel the request</param>
+    /// <typeparam name="T">Type of the expected response</typeparam>
     public static void ClusterRequestReenter<T>(
         this IContext context,
         string identity,
@@ -44,6 +81,16 @@ public static class Extensions
         context.ReenterAfter(task, callback);
     }
 
+    /// <summary>
+    /// Sends a request to a cluster identity and calls the provided callback when the response is received. The callback is executed within the
+    /// actor's concurrency constraint.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="clusterIdentity"><see cref="ClusterIdentity"/> to send to</param>
+    /// <param name="message">Message to send</param>
+    /// <param name="callback">Callback that will be called after request is finished. It receives the request task as a parameter.</param>
+    /// <param name="ct">Token to cancel the request</param>
+    /// <typeparam name="T">Type of the expected response</typeparam>
     public static void ClusterRequestReenter<T>(
         this IContext context,
         ClusterIdentity clusterIdentity,

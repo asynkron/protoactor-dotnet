@@ -8,6 +8,9 @@ using Proto.Remote;
 
 namespace Proto.Cluster;
 
+/// <summary>
+/// Transport-level representation of <see cref="GrainResponseMessage"/>
+/// </summary>
 public partial class GrainResponse : IRootSerialized
 {
     public IRootSerializable Deserialize(ActorSystem system)

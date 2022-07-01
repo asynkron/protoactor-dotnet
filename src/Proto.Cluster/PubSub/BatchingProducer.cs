@@ -16,7 +16,7 @@ namespace Proto.Cluster.PubSub;
 public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource, CancellationToken Cancel);
 
 /// <summary>
-/// The batching producer has an internal queue collecting messages to be published to a topic. Internal loop creates and sends the batches
+/// The Pub-Sub batching producer has an internal queue collecting messages to be published to a topic. Internal loop creates and sends the batches
 /// with the configured <see cref="IPublisher"/>.
 /// </summary>
 [PublicAPI]

@@ -11,6 +11,10 @@ using Proto.Cluster.Identity;
 
 namespace Proto.Cluster.PartitionActivator;
 
+/// <summary>
+/// Partition activator lookup assigns activations to members basing on consistent hashing algorithm.
+/// See the <a href="https://proto.actor/docs/cluster/partition-activator-lookup/">documentation</a> for more information.
+/// </summary>
 public class PartitionActivatorLookup : IIdentityLookup
 {
     private static readonly ILogger Logger = Log.CreateLogger<PartitionActivatorLookup>();
