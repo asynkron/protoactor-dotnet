@@ -1,0 +1,44 @@
+version: "3"
+
+services:
+  
+  seq:
+    image: datalust/seq:2022.1
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:80"
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+          
+  consul:
+    image: bitnami/consul:1
+    ports:
+      - "8300:8300"
+      - "8301:8301"
+      - "8301:8301/udp"
+      - "8500:8500"
+      - "8600:8600"
+      - "8600:8600/udp"    
+        
+  lighthouse:
+    image: petabridge/lighthouse:linux-latest
+    environment:
+      ACTORSYSTEM: actor-benchmark
+      CLUSTER_PORT: 5800
+      CLUSTER_IP: localhost
+    ports:
+      - "5800:5800"
+      - "9110:9110"
+    
