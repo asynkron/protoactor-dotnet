@@ -15,7 +15,7 @@ using Proto.Diagnostics;
 
 namespace Proto.Remote;
 
-public class EndpointReader : Remoting.RemotingBase
+public sealed class EndpointReader : Remoting.RemotingBase
 {
     private static readonly ILogger Logger = Log.CreateLogger<EndpointReader>();
     private readonly EndpointManager _endpointManager;
@@ -215,7 +215,7 @@ public class EndpointReader : Remoting.RemotingBase
                     if (_endpointManager.CancellationToken.IsCancellationRequested)
                         continue;
 
-                    _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage);
+                    _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage, address!);
                 }
             }
             finally

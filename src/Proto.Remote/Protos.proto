@@ -16,7 +16,7 @@ message RemoteMessage {
 
 message MessageBatch {
   repeated string type_names = 1;
-  repeated actor.PID targets = 2;
+  repeated string targets = 2;
   repeated MessageEnvelope envelopes = 3;
   repeated actor.PID senders = 4; 
 }

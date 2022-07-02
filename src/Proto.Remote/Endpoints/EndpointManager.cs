@@ -13,7 +13,7 @@ using Proto.Mailbox;
 
 namespace Proto.Remote;
 
-public class EndpointManager
+public sealed class EndpointManager
 {
     public const string ActivatorActorName = "$activator";
 
