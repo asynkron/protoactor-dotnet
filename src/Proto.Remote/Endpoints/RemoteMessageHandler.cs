@@ -31,20 +31,25 @@ public class RemoteMessageHandler
 
     public void HandleRemoteMessage(RemoteMessage currentMessage)
     {
+       
         switch (currentMessage.MessageTypeCase)
         {
             case RemoteMessage.MessageTypeOneofCase.MessageBatch: {
                 var batch = currentMessage.MessageBatch;
-
+                var targets = new PID[batch.Targets.Count];
                 for (var i = 0; i < batch.Targets.Count; i++)
                 {
-                    if (batch.Targets[i].TryTranslateToLocalClientPID(out var pid))
+                    var target = new PID(System.Address, batch.Targets[i]);
+                    
+                    
+                    if (target.TryTranslateToLocalClientPID(out var pid))
                     {
-                        batch.Targets[i] = pid;
+                        targets[i] = pid;
                     }
                     else
                     {
-                        batch.Targets[i].Ref(System);
+                        targets[i] = target;
+                        target.Ref(System);
                     }
                 }
                 
@@ -64,7 +69,7 @@ public class RemoteMessageHandler
 
                 foreach (var envelope in batch.Envelopes)
                 {
-                    var target = batch.Targets[envelope.Target];
+                    var target = targets[envelope.Target];
 
                     if (envelope.TargetRequestId != default)
                     {
