@@ -343,7 +343,16 @@ public abstract class Endpoint : IEndpoint
             if (!targets.TryGetValue(targetKey, out var targetId))
             {
                 targetId = targets[targetKey] = targets.Count;
-                targetList.Add(target);
+                PID t = target;
+
+                //if target pid is on the target member (which it should be) skip sending the address
+                //we reapply the address on the other end
+                if (t.Address == Address)
+                {
+                    t = new PID("", target.Id);
+                }
+                 
+                targetList.Add(t);
             }
 
             var senderId = 0;

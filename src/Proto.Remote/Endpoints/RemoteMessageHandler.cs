@@ -38,13 +38,22 @@ public class RemoteMessageHandler
 
                 for (var i = 0; i < batch.Targets.Count; i++)
                 {
-                    if (batch.Targets[i].TryTranslateToLocalClientPID(out var pid))
+                    var t = batch.Targets[i];
+
+                    //if no address is present, this means the target is on this member
+                    //(which should be always as thats why this member receives this message to begin with)
+                    if (string.IsNullOrEmpty(t.Address))
+                    {
+                        t.Address = System.Address;
+                    }
+                    
+                    if (t.TryTranslateToLocalClientPID(out var pid))
                     {
                         batch.Targets[i] = pid;
                     }
                     else
                     {
-                        batch.Targets[i].Ref(System);
+                        t.Ref(System);
                     }
                 }
                 
