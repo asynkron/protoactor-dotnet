@@ -361,7 +361,10 @@ public abstract class Endpoint : IEndpoint
                 if (!senders.TryGetValue(senderKey, out senderId))
                 {
                     senderId = senders[senderKey] = senders.Count + 1;
-                    senderList.Add(PID.FromAddress(sender.Address, sender.Id));
+
+                    senderList.Add(sender.Address == System.Address ? 
+                        PID.FromAddress("", sender.Id) : 
+                        PID.FromAddress(sender.Address, sender.Id));
                 }
             }
 

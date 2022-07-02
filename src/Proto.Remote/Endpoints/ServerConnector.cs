@@ -212,7 +212,7 @@ public class ServerConnector
                                     if (_connectorType == Type.ServerSide)
                                         _logger.LogWarning("[ServerConnector][{SystemAddress}] Received {Message} from {_address}", _system.Address, currentMessage, _address);
                                     else
-                                        _remoteMessageHandler.HandleRemoteMessage(currentMessage);
+                                        _remoteMessageHandler.HandleRemoteMessage(currentMessage,_address);
                                     break;
                             }
                         }

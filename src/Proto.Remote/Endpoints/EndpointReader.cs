@@ -215,7 +215,7 @@ public class EndpointReader : Remoting.RemotingBase
                     if (_endpointManager.CancellationToken.IsCancellationRequested)
                         continue;
 
-                    _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage);
+                    _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage, address!);
                 }
             }
             finally
