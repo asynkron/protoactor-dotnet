@@ -18,10 +18,13 @@ using Proto.Mailbox;
 using Proto.Remote;
 
 namespace Proto.Cluster;
-//This class is responsible for figuring out what members are currently active in the cluster
-//it will receive a list of Members from the IClusterProvider
-//from that, we calculate a delta, which members joined, or left.
 
+/// <summary>
+/// Responsible for figuring out what members are currently active in the cluster.
+/// It will receive a list of Members from the IClusterProvider and from that, we calculate a delta, which members joined, or left.
+/// This also subscribes to gossip messages from the cluster, and updates the <see cref="BlockList"/> accordingly.
+/// If the member learns that it is blocked from gossip, it will initiate shutdown.
+/// </summary>
 [PublicAPI]
 public record MemberList
 {
@@ -53,6 +56,10 @@ public record MemberList
     private TaskCompletionSource<bool> _startedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly object _lock = new();
     private IConsensusHandle<ulong>? _topologyConsensus;
+    
+    /// <summary>
+    /// Gets the current member
+    /// </summary>
     public Member Self { get; }
 
     public Task Started => _startedTcs.Task;
@@ -96,6 +103,10 @@ public record MemberList
         );
     }
 
+    /// <summary>
+    /// Gets a list of member ids (same as <see cref="ActorSystem.Id"/>) that are currently active in the cluster.
+    /// </summary>
+    /// <returns></returns>
     public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m => m.Id).ToImmutableHashSet();
 
     internal void InitializeTopologyConsensus() => _topologyConsensus =
@@ -116,6 +127,10 @@ public record MemberList
 
     public string MemberId => _system.Id;
 
+    /// <summary>
+    /// Used by clustering providers to update the member list.
+    /// </summary>
+    /// <param name="members"></param>
     public void UpdateClusterTopology(IReadOnlyCollection<Member> members)
     {
         var blockList = _system.Remote().BlockList;
@@ -289,10 +304,10 @@ public record MemberList
     }
 
     /// <summary>
-    ///     broadcast a message to all members eventstream
+    /// Broadcast a message to all members' <see cref="EventStream"/>
     /// </summary>
-    /// <param name="message"></param>
-    /// <param name="includeSelf"></param>
+    /// <param name="message">Message to broadcast</param>
+    /// <param name="includeSelf">If true, message will also be sent to this member's <see cref="EventStream"/></param>
     public void BroadcastEvent(object message, bool includeSelf = true)
     {
         foreach (var (id, member) in _activeMembers.Lookup)
@@ -313,17 +328,42 @@ public record MemberList
         }
     }
 
+    /// <summary>
+    /// Returns true if the member is in the active member list, false otherwise.
+    /// </summary>
+    /// <param name="memberId">Member id</param>
+    /// <returns></returns>
     public bool ContainsMemberId(string memberId) => _activeMembers.Contains(memberId);
         
+    /// <summary>
+    /// Tries to get the member by id and returns true if it was found, false otherwise.
+    /// </summary>
+    /// <param name="memberId">Member id</param>
+    /// <param name="value">Used to return the member</param>
+    /// <returns></returns>
     public bool TryGetMember(string memberId, out Member? value) => _activeMembers.Lookup.TryGetValue(memberId, out value);
 
+    
     public bool TryGetMemberIndexByAddress(string address, out int value) => _indexByAddress.TryGetValue(address, out value);
 
     public bool TryGetMemberByIndex(int memberIndex, out Member? value) => _membersByIndex.TryGetValue(memberIndex, out value);
 
+    /// <summary>
+    /// Gets a list of active <see cref="Member"/>
+    /// </summary>
+    /// <returns></returns>
     public Member[] GetAllMembers() => _activeMembers.Members.ToArray();
 
+    /// <summary>
+    /// Gets a list of active <see cref="Member"/> apart from the current one
+    /// </summary>
+    /// <returns></returns>
     public Member[] GetOtherMembers() => _activeMembers.Members.Where(m => m.Id != _system.Id).ToArray();
         
+    /// <summary>
+    /// Gets a list of <see cref="Member"/> that support spawning virtual actors of given cluster kind
+    /// </summary>
+    /// <param name="kind"></param>
+    /// <returns></returns>
     public Member[] GetMembersByKind(string kind) => _activeMembers.Members.Where(m => m.Kinds.Contains(kind)).ToArray();
 }

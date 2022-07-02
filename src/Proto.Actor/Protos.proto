@@ -9,7 +9,6 @@ message PID {
     int64 sequence_id = 4;
 }
 
-//user messages
 message PoisonPill {
 }
 
@@ -17,7 +16,6 @@ message DeadLetterResponse {
     PID Target = 1;
 }
 
-//system messages
 message Watch {
     PID Watcher = 1;
 }

@@ -3,6 +3,10 @@ using System.Threading.Tasks;
 
 namespace Proto.Cluster.Identity;
 
+/// <summary>
+/// <see cref="IIdentityLookup"/> implementation that uses external database for storing and retrieving identities.
+/// See the <a href="https://proto.actor/docs/cluster/db-identity-lookup/">documentation</a> for more information.
+/// </summary>
 public class IdentityStorageLookup : IIdentityLookup
 {
     private const string WorkerActorName = "$identity-storage-worker";

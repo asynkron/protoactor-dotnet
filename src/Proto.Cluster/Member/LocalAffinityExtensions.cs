@@ -15,6 +15,13 @@ public static class LocalAffinityExtensions
 {
     private static readonly ILogger Logger = Log.CreateLogger(nameof(LocalAffinityExtensions));
 
+    /// <summary>
+    /// Uses local affinity strategy for placing activations of the cluster kind.
+    /// See the <a href="https://proto.actor/docs/cluster/member-strategies/#localaffinitystrategy">documentation</a> for more information.
+    /// </summary>
+    /// <param name="clusterKind"></param>
+    /// <param name="options"></param>
+    /// <returns></returns>
     public static ClusterKind WithLocalAffinityRelocationStrategy(this ClusterKind clusterKind, LocalAffinityOptions? options = null)
         => clusterKind with
         {
@@ -24,8 +31,8 @@ public static class LocalAffinityExtensions
 
 
     /// <summary>
-    ///     Adds middleware which relocates the virtual actor on remote traffic
-    ///     Useful with local affinity strategy to move partitioned workloads to the right node after a re-balance
+    /// Adds middleware which relocates the virtual actor on remote traffic
+    /// Useful with local affinity strategy to move partitioned workloads to the right node after a re-balance
     /// </summary>
     /// <param name="props"></param>
     /// <param name="throttle">Throttling max relocations per timespan</param>

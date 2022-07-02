@@ -73,6 +73,7 @@ public record ActorSystemConfig
     ///     Enables SharedFutures
     ///     SharedFutures allows the ActorSystem to avoid registering a new temporary process for each request
     ///     Instead registering a SharedFuture that can handle multiple requests internally
+    ///     The default is true.
     /// </summary>
     public bool SharedFutures { get; init; } = true;
 

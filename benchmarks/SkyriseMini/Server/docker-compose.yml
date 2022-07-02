@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+  
+  seq:
+    image: datalust/seq:2022.1
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:80"
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+     
+  consul:
+    image: bitnami/consul:1
+    ports:
+      - "8300:8300"
+      - "8301:8301"
+      - "8301:8301/udp"
+      - "8500:8500"
+      - "8600:8600"
+      - "8600:8600/udp"    
+        
+    

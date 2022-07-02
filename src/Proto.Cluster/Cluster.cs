@@ -23,6 +23,9 @@ using Proto.Utils;
 
 namespace Proto.Cluster;
 
+/// <summary>
+/// The cluster extension for <see cref="ActorSystem"/>
+/// </summary>
 [PublicAPI]
 public class Cluster : IActorSystemExtension<Cluster>
 {
@@ -66,12 +69,21 @@ public class Cluster : IActorSystemExtension<Cluster>
 
     public Gossiper Gossip { get; }
 
+    /// <summary>
+    /// Cluster config used by this cluster
+    /// </summary>
     public ClusterConfig Config { get; }
 
+    /// <summary>
+    /// Actor system this cluster is running on
+    /// </summary>
     public ActorSystem System { get; }
 
     public IRemote Remote { get; private set; } = null!;
 
+    /// <summary>
+    /// A list of known cluster members. See <see cref="Proto.Cluster.MemberList"/> for details
+    /// </summary>
     public MemberList MemberList { get; private set; } = null!;
 
     internal IIdentityLookup IdentityLookup { get; set; } = null!;
@@ -91,6 +103,9 @@ public class Cluster : IActorSystemExtension<Cluster>
 
     public string[] GetClusterKinds() => _clusterKinds.Keys.ToArray();
 
+    /// <summary>
+    /// Starts the cluster member
+    /// </summary>
     public async Task StartMemberAsync()
     {
         await BeginStartAsync(false);
@@ -103,6 +118,9 @@ public class Cluster : IActorSystemExtension<Cluster>
         Logger.LogInformation("I see myself");
     }
 
+    /// <summary>
+    /// Start the cluster member in client mode. A client member will not spawn virtual actors, but can talk to other members.
+    /// </summary>
     public async Task StartClientAsync()
     {
         await BeginStartAsync(true);
@@ -186,6 +204,13 @@ public class Cluster : IActorSystemExtension<Cluster>
     private void InitIdentityProxy()
         => System.Root.SpawnNamedSystem(Props.FromProducer(() => new IdentityActivatorProxy(this)), IdentityActivatorProxy.ActorName);
 
+    /// <summary>
+    /// Shuts down the cluster member, <see cref="Proto.Remote.IRemote"/> extensions and the <see cref="ActorSystem"/>
+    /// </summary>
+    /// <param name="graceful">When true, this operation will await the shutdown of virtual actors managed by this member.
+    /// This flag is also used by some of the clustering providers to explicitly deregister the member. When the shutdown is ungraceful,
+    /// the member would have to reach its TTL to be removed in those cases.</param>
+    /// <param name="reason">Provide the reason for the shutdown, that can be used for diagnosing problems</param>
     public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
         await Gossip.SetStateAsync("cluster:left", new Empty());
@@ -217,8 +242,23 @@ public class Cluster : IActorSystemExtension<Cluster>
         Logger.LogInformation("Stopped Cluster {Id}", System.Id);
     }
 
+    /// <summary>
+    /// Resolves cluster identity to a <see cref="PID"/>. The cluster identity will be activated if it is not already.
+    /// </summary>
+    /// <param name="clusterIdentity">Cluster identity</param>
+    /// <param name="ct">Token to cancel the operation</param>
+    /// <returns></returns>
     public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => IdentityLookup.GetAsync(clusterIdentity, ct);
 
+    /// <summary>
+    /// Sends a request to a virtual actor.
+    /// </summary>
+    /// <param name="clusterIdentity">Cluster identity of the actor</param>
+    /// <param name="message">Message to send</param>
+    /// <param name="context">Sender context to send the message through</param>
+    /// <param name="ct">Token to cancel the operation</param>
+    /// <typeparam name="T">Expected response type</typeparam>
+    /// <returns>Response of null if timed out</returns>
     public Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct) =>
         ClusterContext.RequestAsync<T>(clusterIdentity, message, context, ct)!;
 
@@ -237,6 +277,12 @@ public class Cluster : IActorSystemExtension<Cluster>
         return clusterKind;
     }
 
+    /// <summary>
+    /// Gets cluster identity for specified identity and kind. <see cref="PID"/> is attached to this cluster identity if available in <see cref="PidCache"/>
+    /// </summary>
+    /// <param name="identity">Identity</param>
+    /// <param name="kind">Cluster kidn</param>
+    /// <returns></returns>
     public ClusterIdentity GetIdentity(string identity, string kind)
     {
         var id = new ClusterIdentity

@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Proto.Mailbox;
@@ -54,7 +55,12 @@ public class RemoteMessageHandler
 
                 var typeNames = batch.TypeNames.ToArray();
 
-                var m = RemoteMetrics.RemoteDeserializedMessageCount;
+                
+                Counter<long>? m = null;
+                if (System.Metrics.Enabled)
+                {
+                    m = RemoteMetrics.RemoteDeserializedMessageCount;
+                }
 
                 foreach (var envelope in batch.Envelopes)
                 {
@@ -75,7 +81,9 @@ public class RemoteMessageHandler
                     var typeName = typeNames[envelope.TypeId];
 
                     if (System.Metrics.Enabled)
-                        m.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", typeName));
+                    {
+                        m!.Add(1, new("id", System.Id), new("address", System.Address), new("messagetype", typeName));
+                    }
 
                     object message;
 
@@ -122,12 +130,23 @@ public class RemoteMessageHandler
                         default:
                             Proto.MessageHeader? header = null;
                             if (envelope.MessageHeader is not null) header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
-                            var localEnvelope = new Proto.MessageEnvelope(message, sender, header);
+
+                            object? messageOrEnvelope = null;
+
+                            if (header == null && sender == null)
+                            {
+                                messageOrEnvelope = message;
+                            }
+                            else
+                            {
+                                messageOrEnvelope = new Proto.MessageEnvelope(message, sender, header);
+                            }
+
                             if (_logger.IsEnabled(LogLevel.Trace))
                                 _logger.LogTrace("[{SystemAddress}] Received user message {MessageType} {Message} for {Target} from {Sender}",
                                     System.Address, message.GetType().Name, message, target, sender
                                 );
-                            System.Root.Send(target, localEnvelope);
+                            System.Root.Send(target, messageOrEnvelope);
                             break;
                     }
                 }
