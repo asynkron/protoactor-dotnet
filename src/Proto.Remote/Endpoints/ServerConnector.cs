@@ -16,7 +16,7 @@ using Proto.Remote.Metrics;
 
 namespace Proto.Remote;
 
-public class ServerConnector
+public sealed class ServerConnector
 {
     public enum Type
     {
@@ -35,7 +35,6 @@ public class ServerConnector
     private readonly TimeSpan _backoff;
     private readonly int _maxNrOfRetries;
     private readonly Random _random = new();
-    private readonly TimeSpan? _withinTimeSpan;
     private readonly Task _runner;
     private readonly CancellationTokenSource _cts = new();
     private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
@@ -55,7 +54,6 @@ public class ServerConnector
         _connectorType = connectorType;
         _endpoint = endpoint;
         _maxNrOfRetries = remoteConfig.EndpointWriterOptions.MaxRetries;
-        _withinTimeSpan = remoteConfig.EndpointWriterOptions.RetryTimeSpan;
         _backoff = remoteConfig.EndpointWriterOptions.RetryBackOff;
         _runner = Task.Run(() => RunAsync());
         if (_system.Metrics.Enabled)
