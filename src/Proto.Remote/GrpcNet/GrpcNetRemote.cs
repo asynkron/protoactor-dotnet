@@ -61,7 +61,9 @@ public class GrpcNetRemote : IRemote
                         if (_config.ConfigureKestrel == null)
                         {
                             serverOptions.Listen(ipAddress, Config.Port,
-                                listenOptions => listenOptions.Protocols = HttpProtocols.Http2
+                                listenOptions => {
+                                    listenOptions.Protocols = HttpProtocols.Http2;
+                                }
                             );
                         }
                         else
