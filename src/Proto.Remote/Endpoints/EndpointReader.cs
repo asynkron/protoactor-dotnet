@@ -175,7 +175,9 @@ public sealed class EndpointReader : Remoting.RemotingBase
             {
                 var currentMessage = requestStream.Current;
                 if (_endpointManager.CancellationToken.IsCancellationRequested)
+                {
                     continue;
+                }
 
                 _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage, address!);
             }
