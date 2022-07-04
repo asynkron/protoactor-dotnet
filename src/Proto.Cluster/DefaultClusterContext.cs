@@ -87,12 +87,12 @@ public class DefaultClusterContext : IClusterContext
                     context.Request(pid, message, future.Pid);
                     var task = future.Task;
 
-#if NET6_0_OR_GREATER                    
+#if NET6_0_OR_GREATER
                     // await Task.WhenAny(task, _clock.CurrentBucket);
                     await task.WaitAsync(CancellationTokens.FromSeconds(5));
 #else
                     await Task.WhenAny(task, _clock.CurrentBucket);
-#endif   
+#endif
 
                     if (task.IsCompleted)
                     {
@@ -102,30 +102,30 @@ public class DefaultClusterContext : IClusterContext
                         {
                             return t1;
                         }
-                        
+
                         if (typeof(T) == typeof(MessageEnvelope))
                         {
                             return (T) (object) MessageEnvelope.Wrap(task.Result);
                         }
-                        
+
                         if (untypedResult == null)
                         {
                             //null = timeout
                             return default;
                         }
-                        
+
                         if (untypedResult is DeadLetterResponse)
                         {
                             if (!context.System.Shutdown.IsCancellationRequested && Logger.IsEnabled(LogLevel.Debug))
                             {
                                 Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
                             }
-                            
+
                             RefreshFuture();
                             await RemoveFromSource(clusterIdentity, PidSource.Lookup, pid);
                             break;
                         }
-                        
+
                         Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", untypedResult.GetType(), typeof(T));
                         RefreshFuture();
                         await RemoveFromSource(clusterIdentity, source, pid);
@@ -134,9 +134,16 @@ public class DefaultClusterContext : IClusterContext
                     else
                     {
                         if (!context.System.Shutdown.IsCancellationRequested)
-                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                            if (Logger.IsEnabled(LogLevel.Debug))
+                                Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
                         _pidCache.RemoveByVal(clusterIdentity, pid);
                     }
+                }
+                catch (TaskCanceledException)
+                {
+                    lastPid = pid;
+                    await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+                    continue;
                 }
                 catch (TimeoutException)
                 {
