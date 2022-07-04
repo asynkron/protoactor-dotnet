@@ -7,6 +7,9 @@ using System;
 
 namespace Proto.Persistence.SnapshotStrategies;
 
+/// <summary>
+/// <see cref="ISnapshotStrategy"/> implementation that stores actor's state snapshot when an event of certain type is written
+/// </summary>
 public class EventTypeStrategy : ISnapshotStrategy
 {
     private readonly Type _eventType;

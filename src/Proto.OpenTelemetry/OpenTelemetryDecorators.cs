@@ -16,7 +16,8 @@ class OpenTelemetryRootContextDecorator : RootContextDecorator
         => _sendActivitySetup = (activity, message)
             => {
             activity?.SetTag(ProtoTags.ActorType, "<None>");
-            sendActivitySetup(activity, message);
+            if(activity != null)
+                sendActivitySetup(activity, message);
         };
     
     private static string Source => "Root";
@@ -55,13 +56,15 @@ class OpenTelemetryActorContextDecorator : ActorContextDecorator
             activity?.SetTag(ProtoTags.ActorType, actorType);
             activity?.SetTag(ProtoTags.ActorPID, self);
             activity?.SetTag(ProtoTags.SenderPID, self);
-            sendActivitySetup(activity, message);
+            if(activity != null)
+                sendActivitySetup(activity, message);
         };
         _receiveActivitySetup = (activity, message) => {
             activity?.SetTag(ProtoTags.ActorType, actorType);
             activity?.SetTag(ProtoTags.ActorPID, self);
             activity?.SetTag(ProtoTags.TargetPID, self);
-            receiveActivitySetup(activity, message);
+            if(activity != null)
+                receiveActivitySetup(activity, message);
         };
     }
 
@@ -208,7 +211,8 @@ static class OpenTelemetryMethodsDecorators
         {
             if (envelope.Sender != null) activity?.SetTag(ProtoTags.SenderPID, envelope.Sender.ToString());
 
-            receiveActivitySetup?.Invoke(activity, message);
+            if(activity != null)
+                receiveActivitySetup?.Invoke(activity, message);
 
             await receive().ConfigureAwait(false);
         }
