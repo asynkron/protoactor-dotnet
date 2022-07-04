@@ -28,6 +28,21 @@ public class SerializationTests
     }
 
     [Fact]
+    public void ProtobufDefaultValuesAreSameAsEmpty()
+    {
+        var p1 = new PID();
+        var p2 = new PID()
+        {
+            Address = "",
+            Id = "",
+        };
+        
+        var b1 = p1.ToByteArray();
+        var b2 = p2.ToByteArray();
+        b1.Length.Should().Be(b2.Length);
+    }
+
+    [Fact]
     public void CanUtilizeMultipleSerializers()
     {
         var serialization = new Serialization();
