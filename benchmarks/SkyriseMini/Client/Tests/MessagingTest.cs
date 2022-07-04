@@ -6,9 +6,9 @@ namespace SkyriseMini.Tests;
 
 public class MessagingTest
 {
-    readonly Activate _activate;
-    readonly Ping _ping;
-    readonly ILogger<MessagingTest> _logger;
+    private readonly Activate _activate;
+    private readonly Ping _ping;
+    private readonly ILogger<MessagingTest> _logger;
 
     public MessagingTest(Activate activate, Ping ping, ILogger<MessagingTest> logger)
     {
@@ -60,26 +60,30 @@ public class MessagingTest
         var overallStopwatch = new Stopwatch();
         overallStopwatch.Start();
 
-        var tasks = handles.Select(async handle =>
-        {
-            var messageStopwatch = new Stopwatch(); 
-            while (!cancel.IsCancellationRequested)
+
+        bool error = false;
+        var sw = Stopwatch.StartNew();
+        var tasks = handles.Select(async handle => {
+            while (!cancel.IsCancellationRequested && !error)
             {
                 try
                 {
-                    messageStopwatch.Restart();
                     await _ping(handle, Guid.NewGuid().ToString("N"));
 
-                    Interlocked.Increment(ref totalMessages);
+                    var res = Interlocked.Increment(ref totalMessages);
+
+                    if (res % 100000 == 0)
+                    {
+                        var tps = (int)(totalMessages / (double) sw.ElapsedMilliseconds * 1000.0);
+                        Console.WriteLine(tps);
+                    }
                 }
                 catch (Exception e)
                 {
+                    error = true;
                     _logger.LogError(e, "Error during test");
-
                 }
             }
-
-            messageStopwatch.Stop();
         });
 
         await Task.WhenAll(tasks);
