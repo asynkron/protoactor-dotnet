@@ -24,6 +24,7 @@ public class DefaultClusterContext : IClusterContext
     private readonly TaskClock _clock;
     private readonly ActorSystem _system;
     private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
+    private readonly int _requestTimeoutSeconds;
 
     public DefaultClusterContext(Cluster cluster)
     {
@@ -37,6 +38,7 @@ public class DefaultClusterContext : IClusterContext
             config.RequestLogThrottlePeriod,
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
+        _requestTimeoutSeconds = (int)config.ActorRequestTimeout.TotalSeconds;
         _clock = new TaskClock(config.ActorRequestTimeout, TimeSpan.FromSeconds(1), cluster.System.Shutdown);
         _clock.Start();
     }
@@ -87,7 +89,12 @@ public class DefaultClusterContext : IClusterContext
                     context.Request(pid, message, future.Pid);
                     var task = future.Task;
 
+#if NET6_0_OR_GREATER
+                    // await Task.WhenAny(task, _clock.CurrentBucket);
+                    await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds));
+#else
                     await Task.WhenAny(task, _clock.CurrentBucket);
+#endif
 
                     if (task.IsCompleted)
                     {
@@ -97,30 +104,30 @@ public class DefaultClusterContext : IClusterContext
                         {
                             return t1;
                         }
-                        
+
                         if (typeof(T) == typeof(MessageEnvelope))
                         {
                             return (T) (object) MessageEnvelope.Wrap(task.Result);
                         }
-                        
+
                         if (untypedResult == null)
                         {
                             //null = timeout
                             return default;
                         }
-                        
+
                         if (untypedResult is DeadLetterResponse)
                         {
                             if (!context.System.Shutdown.IsCancellationRequested && Logger.IsEnabled(LogLevel.Debug))
                             {
                                 Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
                             }
-                            
+
                             RefreshFuture();
                             await RemoveFromSource(clusterIdentity, PidSource.Lookup, pid);
                             break;
                         }
-                        
+
                         Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", untypedResult.GetType(), typeof(T));
                         RefreshFuture();
                         await RemoveFromSource(clusterIdentity, source, pid);
@@ -129,9 +136,17 @@ public class DefaultClusterContext : IClusterContext
                     else
                     {
                         if (!context.System.Shutdown.IsCancellationRequested)
-                            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                            if (Logger.IsEnabled(LogLevel.Debug))
+                                Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
                         _pidCache.RemoveByVal(clusterIdentity, pid);
                     }
+                }
+                catch (TaskCanceledException)
+                {
+                    if (!context.System.Shutdown.IsCancellationRequested)
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                            Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                    _pidCache.RemoveByVal(clusterIdentity, pid);
                 }
                 catch (TimeoutException)
                 {
