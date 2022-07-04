@@ -42,6 +42,9 @@ public static class UnboundedMailbox
 }
 
 public sealed class DefaultMailbox : IMailbox
+#if NET5_0_OR_GREATER
+, IThreadPoolWorkItem
+#endif
 {
     private readonly IMailboxStatistics[] _stats;
     private readonly IMailboxQueue _systemMessages;
@@ -291,19 +294,28 @@ public sealed class DefaultMailbox : IMailbox
         if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
         {
 #if NET5_0_OR_GREATER
-            ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this ,false);
+            ThreadPool.UnsafeQueueUserWorkItem(this, false);
 #else
             ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this);
 #endif
         }
     }
 
+
+
+#if NET5_0_OR_GREATER    
+    public void Execute()
+    {
+        _ = RunAsync(this);
+    }
+#else
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void RunWrapper(object state)
     {
         var y = (DefaultMailbox) state;
         RunAsync(y);
     }
+#endif
 }
 
 /// <summary>
