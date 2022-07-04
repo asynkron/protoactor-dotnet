@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Remote;
 
-public class BlockedEndpoint : IEndpoint
+public sealed class BlockedEndpoint : IEndpoint
 {
     private readonly ActorSystem _system;
     public BlockedEndpoint(ActorSystem system) => _system = system;

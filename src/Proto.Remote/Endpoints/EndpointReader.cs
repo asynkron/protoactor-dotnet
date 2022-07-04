@@ -15,7 +15,7 @@ using Proto.Diagnostics;
 
 namespace Proto.Remote;
 
-public class EndpointReader : Remoting.RemotingBase
+public sealed class EndpointReader : Remoting.RemotingBase
 {
     private static readonly ILogger Logger = Log.CreateLogger<EndpointReader>();
     private readonly EndpointManager _endpointManager;
@@ -40,35 +40,38 @@ public class EndpointReader : Remoting.RemotingBase
             throw new RpcException(Status.DefaultCancelled, "Suspended");
         }
 
-        using (_endpointManager.CancellationToken.Register(async () => {
-                       try
-                       {
-                           await responseStream.WriteAsync(new RemoteMessage
-                               {
-                                   DisconnectRequest = new DisconnectRequest()
-                               }
-                           ).ConfigureAwait(false);
-                       }
-                       catch (Exception x)
-                       {
-                           x.CheckFailFast();
-                           Logger.LogWarning("[EndpointReader][{SystemAddress}] Failed to write disconnect message to the stream", _system.Address);
-                       }
-                   }
-               ))
+        async void Disconnect()
+        {
+            try
+            {
+                var disconnectMsg = new RemoteMessage
+                {
+                    DisconnectRequest = new DisconnectRequest()
+                };
+                await responseStream.WriteAsync(disconnectMsg).ConfigureAwait(false);
+            }
+            catch (Exception x)
+            {
+                x.CheckFailFast();
+                Logger.LogWarning("[EndpointReader][{SystemAddress}] Failed to write disconnect message to the stream", _system.Address);
+            }
+        }
+
+        await using (_endpointManager.CancellationToken.Register(Disconnect))
         {
             IEndpoint endpoint;
             string? address = null;
             string systemId;
-
-
+            
             Logger.LogInformation("[EndpointReader][{SystemAddress}] Accepted connection request from {Remote} to {Local}",
                 _system.Address, context.Peer, context.Host
             );
 
-            if (await requestStream.MoveNext().ConfigureAwait(false) &&
+            if (await requestStream.MoveNext(_endpointManager.CancellationToken).ConfigureAwait(false) &&
                 requestStream.Current.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectRequest)
+            {
                 throw new RpcException(Status.DefaultCancelled, "Expected connection message");
+            }
 
             var connectRequest = requestStream.Current.ConnectRequest;
 
@@ -104,54 +107,7 @@ public class EndpointReader : Remoting.RemotingBase
                     ).ConfigureAwait(false);
                     systemId = clientConnection.MemberId;
                     endpoint = _endpointManager.GetOrAddClientEndpoint(systemId);
-                    _ = Task.Run(async () => {
-                            try
-                            {
-                                while (!cancellationTokenSource.Token.IsCancellationRequested)
-                                {
-                                    while (!cancellationTokenSource.Token.IsCancellationRequested &&
-                                           endpoint.OutgoingStash.TryPop(out var message))
-                                    {
-                                        try
-                                        {
-                                            await responseStream.WriteAsync(message).ConfigureAwait(false);
-                                        }
-                                        catch (Exception)
-                                        {
-                                            _ = endpoint.OutgoingStash.Append(message);
-                                            throw;
-                                        }
-                                    }
-
-                                    while (endpoint.OutgoingStash.IsEmpty && !cancellationTokenSource.Token.IsCancellationRequested)
-                                    {
-                                        var message = await endpoint.Outgoing.Reader.ReadAsync(cancellationTokenSource.Token)
-                                            .ConfigureAwait(false);
-
-                                        try
-                                        {
-                                            // Logger.LogInformation($"Sending {message}");
-                                            await responseStream.WriteAsync(message).ConfigureAwait(false);
-                                        }
-                                        catch (Exception)
-                                        {
-                                            _ = endpoint.OutgoingStash.Append(message);
-                                            throw;
-                                        }
-                                    }
-                                }
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                Logger.LogDebug("[EndpointReader][{SystemAddress}] Writer closed for {SystemId}", _system.Address, systemId);
-                            }
-                            catch (Exception e)
-                            {
-                                e.CheckFailFast();
-                                Logger.LogWarning(e, "[EndpointReader][{SystemAddress}] Writing error to {SystemId}", _system.Address, systemId);
-                            }
-                        }
-                    );
+                    _ = Task.Run(async () => { await RunClientWriter(responseStream, cancellationTokenSource, endpoint, systemId); });
                 }
                     break;
                 case ConnectRequest.ConnectionTypeOneofCase.ServerConnection: {
@@ -207,23 +163,82 @@ public class EndpointReader : Remoting.RemotingBase
                     throw new ArgumentOutOfRangeException();
             }
 
-            try
-            {
-                while (await requestStream.MoveNext().ConfigureAwait(false))
-                {
-                    var currentMessage = requestStream.Current;
-                    if (_endpointManager.CancellationToken.IsCancellationRequested)
-                        continue;
+            await RunReader(requestStream, address, cancellationTokenSource, systemId);
+        }
+    }
 
-                    _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage);
+    private async Task RunReader(IAsyncStreamReader<RemoteMessage> requestStream, string? address, CancellationTokenSource cancellationTokenSource, string systemId)
+    {
+        try
+        {
+            while (await requestStream.MoveNext(CancellationToken.None).ConfigureAwait(false))
+            {
+                var currentMessage = requestStream.Current;
+                if (_endpointManager.CancellationToken.IsCancellationRequested)
+                {
+                    continue;
+                }
+
+                _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage, address!);
+            }
+        }
+        finally
+        {
+            cancellationTokenSource.Cancel();
+
+            if (address is null && systemId is not null)
+            {
+                _system.EventStream.Publish(new EndpointTerminatedEvent(false, null, systemId));
+            }
+        }
+    }
+
+    private async Task RunClientWriter(IAsyncStreamWriter<RemoteMessage> responseStream, CancellationTokenSource cancellationTokenSource, IEndpoint endpoint, string systemId)
+    {
+        try
+        {
+            while (!cancellationTokenSource.Token.IsCancellationRequested)
+            {
+                //consume stash
+                while (!cancellationTokenSource.Token.IsCancellationRequested && endpoint.OutgoingStash.TryPop(out var message))
+                {
+                    try
+                    {
+                        await responseStream.WriteAsync(message).ConfigureAwait(false);
+                    }
+                    catch (Exception)
+                    {
+                        _ = endpoint.OutgoingStash.Append(message);
+                        throw;
+                    }
+                }
+
+                //
+                while (endpoint.OutgoingStash.IsEmpty && !cancellationTokenSource.Token.IsCancellationRequested)
+                {
+                    var message = await endpoint.Outgoing.Reader.ReadAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+
+                    try
+                    {
+                        // Logger.LogInformation($"Sending {message}");
+                        await responseStream.WriteAsync(message).ConfigureAwait(false);
+                    }
+                    catch (Exception)
+                    {
+                        _ = endpoint.OutgoingStash.Append(message);
+                        throw;
+                    }
                 }
             }
-            finally
-            {
-                cancellationTokenSource.Cancel();
-                if (address is null && systemId is not null)
-                    _system.EventStream.Publish(new EndpointTerminatedEvent(false, null, systemId));
-            }
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.LogDebug("[EndpointReader][{SystemAddress}] Writer closed for {SystemId}", _system.Address, systemId);
+        }
+        catch (Exception e)
+        {
+            e.CheckFailFast();
+            Logger.LogWarning(e, "[EndpointReader][{SystemAddress}] Writing error to {SystemId}", _system.Address, systemId);
         }
     }
 

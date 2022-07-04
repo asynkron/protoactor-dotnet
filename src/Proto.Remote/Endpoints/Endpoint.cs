@@ -87,6 +87,7 @@ public abstract class Endpoint : IEndpoint
     {
         var droppedMessageCount = 0;
 
+        
         switch (remoteMessage.MessageTypeCase)
         {
             case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
@@ -94,17 +95,20 @@ public abstract class Endpoint : IEndpoint
                 break;
             case RemoteMessage.MessageTypeOneofCase.MessageBatch: {
                 var batch = remoteMessage.MessageBatch;
+                var targets = new PID[batch.Targets.Count];
 
                 for (var i = 0; i < batch.Targets.Count; i++)
                 {
-                    batch.Targets[i].Ref(System);
+                    var target = new PID(System.Address, batch.Targets[i]);
+                    target.Ref(System);
+                    targets[i] = target;
                 }
 
                 var typeNames = batch.TypeNames.ToArray();
 
                 foreach (var envelope in batch.Envelopes)
                 {
-                    var target = batch.Targets[envelope.Target];
+                    var target = targets[envelope.Target];
 
                     if (envelope.TargetRequestId != default)
                     {
@@ -343,7 +347,7 @@ public abstract class Endpoint : IEndpoint
             if (!targets.TryGetValue(targetKey, out var targetId))
             {
                 targetId = targets[targetKey] = targets.Count;
-                targetList.Add(target);
+                targetList.Add(target.Id);
             }
 
             var senderId = 0;
@@ -357,6 +361,10 @@ public abstract class Endpoint : IEndpoint
                 if (!senders.TryGetValue(senderKey, out senderId))
                 {
                     senderId = senders[senderKey] = senders.Count + 1;
+
+                    senderList.Add(sender.Address == System.Address ? 
+                        PID.FromAddress("", sender.Id) : 
+                        PID.FromAddress(sender.Address, sender.Id));
                     senderList.Add(PID.FromAddress(sender.Address, sender.Id, sender.SequenceId));
                 }
             }

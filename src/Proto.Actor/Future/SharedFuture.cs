@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
@@ -16,8 +17,8 @@ namespace Proto.Future;
 public sealed class SharedFutureProcess : Process, IDisposable
 {
     private readonly FutureHandle[] _slots;
-    private readonly ChannelWriter<FutureHandle> _completedFutures;
-    private readonly ChannelReader<FutureHandle> _availableFutures;
+    private readonly ConcurrentBag<FutureHandle> _futures = new();
+
 
     private long _createdRequests;
     private long _completedRequests;
@@ -51,15 +52,13 @@ public sealed class SharedFutureProcess : Process, IDisposable
 
         _slots = new FutureHandle[size];
 
-        Channel<FutureHandle> channel = Channel.CreateUnbounded<FutureHandle>();
-        _availableFutures = channel.Reader;
-        _completedFutures = channel.Writer;
+
 
         for (var i = 0; i < _slots.Length; i++)
         {
             var requestSlot = new FutureHandle(this, ToRequestId(i));
             _slots[i] = requestSlot;
-            _completedFutures.TryWrite(requestSlot);
+            _futures.Add(requestSlot);
         }
 
         _maxRequestId = (int.MaxValue - (int.MaxValue % size));
@@ -80,7 +79,8 @@ public sealed class SharedFutureProcess : Process, IDisposable
 
     public IFuture? TryCreateHandle()
     {
-        if (Stopping || !_availableFutures.TryRead(out var requestSlot)) return default;
+        
+        if (Stopping || !_futures.TryTake(out var requestSlot)) return default;
 
         var pid = requestSlot.Init();
         Interlocked.Increment(ref _createdRequests);
@@ -126,7 +126,7 @@ public sealed class SharedFutureProcess : Process, IDisposable
     {
         if (slot.TryComplete((int) requestId))
         {
-            _completedFutures.TryWrite(slot);
+            _futures.Add(slot);
 
             Interlocked.Increment(ref _completedRequests);
 
@@ -145,21 +145,6 @@ public sealed class SharedFutureProcess : Process, IDisposable
         foreach (var requestSlot in _slots)
         {
             requestSlot.CompletionSource?.TrySetCanceled();
-        }
-    }
-
-    public void Stop()
-    {
-        Stopping = true;
-        _completedFutures.TryComplete();
-
-        while (_availableFutures.TryRead(out _))
-        {
-        }
-
-        if (RequestsInFlight == 0)
-        {
-            Stop(Pid);
         }
     }
 
