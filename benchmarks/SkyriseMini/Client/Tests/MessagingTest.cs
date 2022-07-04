@@ -61,9 +61,10 @@ public class MessagingTest
         overallStopwatch.Start();
 
 
+        bool error = false;
         var sw = Stopwatch.StartNew();
         var tasks = handles.Select(async handle => {
-            while (!cancel.IsCancellationRequested)
+            while (!cancel.IsCancellationRequested && !error)
             {
                 try
                 {
@@ -79,6 +80,7 @@ public class MessagingTest
                 }
                 catch (Exception e)
                 {
+                    error = true;
                     _logger.LogError(e, "Error during test");
                 }
             }

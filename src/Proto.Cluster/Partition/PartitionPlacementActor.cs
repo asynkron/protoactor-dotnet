@@ -394,7 +394,7 @@ class PartitionPlacementActor : IActor, IDisposable
     {
         try
         {
-            var pid = context.SpawnPrefix(clusterKind.Props, msg.ClusterIdentity.Identity, ctx => ctx.Set(msg.ClusterIdentity));
+            var pid = context.Spawn(clusterKind.Props, ctx => ctx.Set(msg.ClusterIdentity));
             _actors.Add(msg.ClusterIdentity, pid);
             context.Respond(new ActivationResponse
                 {

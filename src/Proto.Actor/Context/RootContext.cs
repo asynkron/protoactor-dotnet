@@ -67,6 +67,11 @@ public sealed record RootContext : IRootContext
     {
         try
         {
+            if (string.IsNullOrEmpty(name))
+            {
+                name = System.ProcessRegistry.NextId();
+            }
+            
             var parent = props.GuardianStrategy is not null
                 ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
                 : null;
