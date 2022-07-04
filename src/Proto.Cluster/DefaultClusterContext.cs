@@ -87,7 +87,12 @@ public class DefaultClusterContext : IClusterContext
                     context.Request(pid, message, future.Pid);
                     var task = future.Task;
 
+#if NET6_0_OR_GREATER                    
+                    // await Task.WhenAny(task, _clock.CurrentBucket);
+                    await task.WaitAsync(CancellationTokens.FromSeconds(5));
+#else
                     await Task.WhenAny(task, _clock.CurrentBucket);
+#endif   
 
                     if (task.IsCompleted)
                     {
