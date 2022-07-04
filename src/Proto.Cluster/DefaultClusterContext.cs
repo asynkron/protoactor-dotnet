@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -54,12 +55,7 @@ public class DefaultClusterContext : IClusterContext
                 i++;
 
                 var source = PidSource.Cache;
-                var pid = clusterIdentity.CachedPid;
-
-                if (pid == null)
-                {
-                    pid = GetCachedPid(clusterIdentity);
-                }
+                var pid = clusterIdentity.CachedPid ?? (_pidCache.TryGet(clusterIdentity, out var tmp) ? tmp : null);
 
                 if (pid is null)
                 {
@@ -75,7 +71,9 @@ public class DefaultClusterContext : IClusterContext
                 }
 
                 // Ensures that a future is not re-used against another actor.
-                if (lastPid is not null && !pid.Equals(lastPid)) RefreshFuture();
+                // avoid equality check for perf
+                // ReSharper disable once PossibleUnintendedReferenceComparison
+                if (lastPid is not null && pid != lastPid) RefreshFuture();
 
                 Stopwatch t = null!;
 
@@ -93,20 +91,40 @@ public class DefaultClusterContext : IClusterContext
 
                     if (task.IsCompleted)
                     {
-                        var (status, result) = ToResult<T>(source, context, task.Result);
+                        var untypedResult = MessageEnvelope.UnwrapMessage(task.Result);
 
-                        switch (status)
+                        if (untypedResult is T t1)
                         {
-                            case ResponseStatus.Ok: return result;
-                            case ResponseStatus.InvalidResponse:
-                                RefreshFuture();
-                                await RemoveFromSource(clusterIdentity, source, pid);
-                                break;
-                            case ResponseStatus.DeadLetter:
-                                RefreshFuture();
-                                await RemoveFromSource(clusterIdentity, PidSource.Lookup, pid);
-                                break;
+                            return t1;
                         }
+                        
+                        if (typeof(T) == typeof(MessageEnvelope))
+                        {
+                            return (T) (object) MessageEnvelope.Wrap(task.Result);
+                        }
+                        
+                        if (untypedResult == null)
+                        {
+                            //null = timeout
+                            return default;
+                        }
+                        
+                        if (untypedResult is DeadLetterResponse)
+                        {
+                            if (!context.System.Shutdown.IsCancellationRequested && Logger.IsEnabled(LogLevel.Debug))
+                            {
+                                Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
+                            }
+                            
+                            RefreshFuture();
+                            await RemoveFromSource(clusterIdentity, PidSource.Lookup, pid);
+                            break;
+                        }
+                        
+                        Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", untypedResult.GetType(), typeof(T));
+                        RefreshFuture();
+                        await RemoveFromSource(clusterIdentity, source, pid);
+                        break;
                     }
                     else
                     {
@@ -182,9 +200,6 @@ public class DefaultClusterContext : IClusterContext
         _pidCache.RemoveByVal(clusterIdentity, pid);
     }
 
-
-    private PID? GetCachedPid(ClusterIdentity clusterIdentity) => _pidCache.TryGet(clusterIdentity, out var pid) ? pid : null;
-
     private async ValueTask<PID?> GetPidFromLookup(ClusterIdentity clusterIdentity, ISenderContext context, CancellationToken ct)
     {
         try
@@ -218,26 +233,32 @@ public class DefaultClusterContext : IClusterContext
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
     {
         var message = MessageEnvelope.UnwrapMessage(result);
-        switch (message)
-        {
-            case DeadLetterResponse:
-                if (!context.System.Shutdown.IsCancellationRequested)
-                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
 
-                return (ResponseStatus.DeadLetter, default);
-            case null: return (ResponseStatus.Ok, default);
-            case T t:  return (ResponseStatus.Ok, t);
-            default:
-                if (typeof(T) == typeof(MessageEnvelope))
-                {
-                    return (ResponseStatus.Ok, (T) (object) MessageEnvelope.Wrap(result));
-                }
-                Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", message.GetType(), typeof(T));
-                return (ResponseStatus.InvalidResponse, default);
+        if (message is DeadLetterResponse)
+        {
+            if (!context.System.Shutdown.IsCancellationRequested && Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
+            }
+
+            return (ResponseStatus.DeadLetter, default);
         }
+
+        if (message == null) return (ResponseStatus.Ok, default);
+
+        if (message is T t) return (ResponseStatus.Ok, t);
+
+        if (typeof(T) == typeof(MessageEnvelope))
+        {
+            return (ResponseStatus.Ok, (T) (object) MessageEnvelope.Wrap(result));
+        }
+
+        Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", message.GetType(), typeof(T));
+        return (ResponseStatus.InvalidResponse, default);
     }
 
     private enum ResponseStatus
