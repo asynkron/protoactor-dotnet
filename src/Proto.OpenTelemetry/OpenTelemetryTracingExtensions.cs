@@ -3,7 +3,12 @@ using OpenTelemetry.Trace;
 
 namespace Proto.OpenTelemetry;
 
-public delegate void ActivitySetup(Activity? activity, object message);
+/// <summary>
+/// Customizes the activity based on a message being processed
+/// <param name="activity">Activity to be customized</param>
+/// <param name="message">Message being processed</param>
+/// </summary>
+public delegate void ActivitySetup(Activity activity, object message);
 
 public static class OpenTelemetryTracingExtensions
 {
@@ -11,11 +16,12 @@ public static class OpenTelemetryTracingExtensions
         => builder.AddSource(ProtoTags.ActivitySourceName);
 
     /// <summary>
-    ///     Setup OpenTelemetry send middleware & decorator.
+    /// Adds OpenTelemetry tracing to actors spawned with given <see cref="Props"/>. Incoming and outgoing messages will create new activities.
+    /// Ensures <see cref="Activity"/> context propagation via message headers.
     /// </summary>
-    /// <param name="props">props.</param>
-    /// <param name="sendActivitySetup">provide a way inject send activity customization according to the message.</param>
-    /// <param name="receiveActivitySetup">provide a way inject receive activity customization according to the message.</param>
+    /// <param name="props"><see cref="Props"/> to instrument</param>
+    /// <param name="sendActivitySetup">Optional delegate to customize the <see cref="Activity"/> on message receive</param>
+    /// <param name="receiveActivitySetup">Optional delegate to customize the <see cref="Activity"/> on message send</param>
     /// <returns>props</returns>
     public static Props WithTracing(
         this Props props,
@@ -31,7 +37,7 @@ public static class OpenTelemetryTracingExtensions
     }
 
     /// <summary>
-    ///     Adds trace headers to the message envelope, to propagate trace context.
+    /// Adds trace headers to the message envelope, to propagate trace context.
     /// </summary>
     public static Sender OpenTelemetrySenderMiddleware(Sender next)
         => async (context, target, envelope) => {
@@ -46,11 +52,12 @@ public static class OpenTelemetryTracingExtensions
         };
 
     /// <summary>
-    ///     Setup OpenTelemetry send decorator around RootContext.
+    /// Adds OpenTelemetry tracing to messages sent through <see cref="IRootContext"/>. Sent messages will create new activities.
+    /// Ensures <see cref="Activity"/> context propagation via message headers.
     /// </summary>
-    /// <param name="context">Root context</param>
-    /// <param name="sendActivitySetup">provide a way inject send activity customization according to the message.</param>
-    /// <returns>IRootContext</returns>
+    /// <param name="context"><see cref="IRootContext"/> to instrument</param>
+    /// <param name="sendActivitySetup">Optional delegate to customize the <see cref="Activity"/> on message send</param>
+    /// <returns></returns>
     public static IRootContext WithTracing(this IRootContext context, ActivitySetup? sendActivitySetup = null)
     {
         sendActivitySetup ??= OpenTelemetryHelpers.DefaultSetupActivity!;

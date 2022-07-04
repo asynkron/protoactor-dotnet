@@ -10,14 +10,20 @@ namespace Proto.OpenTelemetry;
 
 public static class OpenTelemetryMetricsExtensions
 {
+    /// <summary>
+    /// Histogram buckets definition for request-like operations
+    /// </summary>
     public static readonly double[] RequestLikeHistogramBoundaries =
         {.002, .005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10, 20, 30};
 
+    /// <summary>
+    /// Histogram buckets definition for queue length
+    /// </summary>
     public static readonly double[] QueueLengthHistogramBoundaries =
         {0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000};
 
     /// <summary>
-    /// Adds Proto.Actor meter to the MeterProviderBuilder
+    /// Adds Proto.Actor metrics to the <see cref="MeterProviderBuilder"/>
     /// </summary>
     /// <param name="builder"></param>
     /// <param name="useRecommendedHistogramBoundaries">If true, views will be added for histogram metrics to specify recommended histogram boundaries.</param>
@@ -59,8 +65,12 @@ public static class OpenTelemetryMetricsExtensions
             builder.AddView("protocluster_identity_get_with_global_lock_duration",
                 new ExplicitBucketHistogramConfiguration {Boundaries = RequestLikeHistogramBoundaries}
             );
-            
+
             builder.AddView("protocluster_identity_try_acquire_lock_duration",
+                new ExplicitBucketHistogramConfiguration {Boundaries = RequestLikeHistogramBoundaries}
+            );
+
+            builder.AddView("protoremote_write_duration",
                 new ExplicitBucketHistogramConfiguration {Boundaries = RequestLikeHistogramBoundaries}
             );
         }
