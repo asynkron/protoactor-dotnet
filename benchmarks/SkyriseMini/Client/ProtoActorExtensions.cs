@@ -40,11 +40,6 @@ public static class ProtoActorExtensions
                 .Setup()
                 .WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1));
-            
-            actorSystemConfig = actorSystemConfig with
-            {
-                SharedFutures = false
-            };
 
             var system = new ActorSystem(actorSystemConfig);
 
@@ -63,8 +58,7 @@ public static class ProtoActorExtensions
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
 
             var clusterConfig = ClusterConfig
-                .Setup(config["ClusterName"], clusterProvider, new PartitionIdentityLookup())
-                .WithClusterContextProducer( c => new LegacyClusterContext(c));
+                .Setup(config["ClusterName"], clusterProvider, new PartitionIdentityLookup());
 
             system
                 .WithServiceProvider(provider)
