@@ -90,7 +90,6 @@ public class DefaultClusterContext : IClusterContext
                     var task = future.Task;
 
 #if NET6_0_OR_GREATER
-                    // await Task.WhenAny(task, _clock.CurrentBucket);
                     await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds));
 #else
                     await Task.WhenAny(task, _clock.CurrentBucket);
