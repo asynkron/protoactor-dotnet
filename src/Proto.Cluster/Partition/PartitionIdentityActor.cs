@@ -187,13 +187,6 @@ class PartitionIdentityActor : IActor
             var localCount = _memberStats.GetActivationCount(partition.Address);
             var activatorCount = partition.TotalActivations;
 
-            if (_config.DeveloperLogging)
-            {
-                Console.WriteLine(
-                    $"Handover validation {_config.Mode},{_config.Send} {_myAddress}->{address}, identities: {localCount}, skipped {partition.SkippedActivations}, sent {partition.SentActivations}, delta: {localCount - activatorCount}"
-                );
-            }
-
             if (localCount != activatorCount)
             {
                 incomplete.Add(partition.Address);
@@ -467,9 +460,6 @@ class PartitionIdentityActor : IActor
         //Check if exist in current partition dictionary
         if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
         {
-            if (_config.DeveloperLogging)
-                Console.WriteLine($"Found existing activation for {msg.RequestId} {msg.ClusterIdentity}");
-
             context.Respond(new ActivationResponse {Pid = pid});
             return Task.CompletedTask;
         }
@@ -477,22 +467,15 @@ class PartitionIdentityActor : IActor
         // Wait for rebalance in progress
         if (_rebalanceTcs is not null)
         {
-            if (_config.DeveloperLogging)
-                Console.WriteLine($"Rebalance in progress,  {msg.RequestId}");
             context.ReenterAfter(_rebalanceTcs.Task, _ => OnActivationRequest(msg, context));
             return Task.CompletedTask;
         }
 
         if (_memberHashRing.Count == 0)
         {
-            if (_config.DeveloperLogging)
-                Console.WriteLine($"No active members, {msg.RequestId}");
             RespondWithFailure(context);
             return Task.CompletedTask;
         }
-
-        if (_config.DeveloperLogging)
-            Console.WriteLine($"Got ActivationRequest {msg.RequestId}");
 
         if (msg.TopologyHash != TopologyHash)
         {
@@ -500,9 +483,6 @@ class PartitionIdentityActor : IActor
 
             if (ownerAddress != _myAddress)
             {
-                if (_config.DeveloperLogging)
-                    Console.WriteLine($"Forwarding ActivationRequest {msg.RequestId} to {ownerAddress}");
-
                 var ownerPid = PartitionManager.RemotePartitionIdentityActor(ownerAddress);
                 Logger.LogWarning("[PartitionIdentity] Tried to spawn on wrong node, forwarding");
                 context.Forward(ownerPid);
@@ -516,8 +496,6 @@ class PartitionIdentityActor : IActor
 
         if (string.IsNullOrEmpty(activatorAddress))
         {
-            if (_config.DeveloperLogging)
-                Console.Write("?");
             //No activator currently available, return unavailable
             Logger.LogWarning("[PartitionIdentity] No members currently available for kind {Kind}", msg.Kind);
             RespondWithFailure(context);
@@ -548,9 +526,7 @@ class PartitionIdentityActor : IActor
         //execution ends here. context.ReenterAfter is invoked once the task completes
         //but still within the actors sequential execution
         //but other messages could have been processed in between
-
-        if (_config.DeveloperLogging)
-            Console.Write("S"); //spawned
+        
         //Await SpawningProcess
         context.ReenterAfter(spawnResponse, OnSpawnResponse(msg, context, setResponse));
         return Task.CompletedTask;
@@ -566,14 +542,8 @@ class PartitionIdentityActor : IActor
             {
                 var response = await rst;
 
-                if (_config.DeveloperLogging)
-                    Console.Write("R"); //reentered
-
                 if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
                 {
-                    if (_config.DeveloperLogging)
-                        Console.Write("C"); //cached
-
                     if (response.Pid is not null && !response.Pid.Equals(pid))
                     {
                         context.Stop(response.Pid); // Stop duplicate activation
@@ -585,9 +555,6 @@ class PartitionIdentityActor : IActor
 
                 if (response.Pid != null)
                 {
-                    if (_config.DeveloperLogging)
-                        Console.Write("A"); //activated
-
                     if (response.TopologyHash != TopologyHash) // Topology changed between request and response
                     {
                         if (!_currentMemberAddresses.Contains(response.Pid.Address))
@@ -603,7 +570,7 @@ class PartitionIdentityActor : IActor
                         if (_myAddress != currentActivatorAddress)
                         {
                             //Stop it or handover. ? Should be rebalanced in the current pass
-                            Logger.LogWarning("[PartitionIdentity] Misplaced spawn: {ClusterIdentity}, {Pid}", msg.ClusterIdentity, response.Pid);
+                            Logger.LogWarning("[PartitionIdentity] Misplaced spawn: {ClusterIdentity}, {Pid}, {MyAddress}, {ActivatorAddress}", msg.ClusterIdentity, response.Pid, _myAddress, currentActivatorAddress);
                         }
                     }
 

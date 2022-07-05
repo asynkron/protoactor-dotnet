@@ -29,9 +29,13 @@ public static class ProtoActorExtensions
 
             var actorSystemConfig = ActorSystemConfig
                 .Setup()
-                .WithSharedFutures()
                 .WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1));
+
+            actorSystemConfig = actorSystemConfig with
+            {
+                SharedFutures = false
+            };
 
             var system = new ActorSystem(actorSystemConfig);
 
@@ -51,6 +55,7 @@ public static class ProtoActorExtensions
             
             var clusterConfig = ClusterConfig
                 .Setup(config["ClusterName"], clusterProvider, new PartitionIdentityLookup())
+                .WithClusterContextProducer( c => new LegacyClusterContext(c))
                 .WithClusterKind("PingPongRaw",Props.FromProducer(() => new PingPongActorRaw()) );
             
             system
