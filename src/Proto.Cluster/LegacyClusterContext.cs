@@ -27,24 +27,20 @@ public class LegacyClusterContext : IClusterContext
     private static readonly ILogger Logger = Log.CreateLogger<LegacyClusterContext>();
 
     public LegacyClusterContext(
-        ActorSystem system,
-        IIdentityLookup identityLookup,
-        PidCache pidCache,
-        ClusterContextConfig config,
-        CancellationToken killSwitch
+        Cluster cluster
     )
     {
-        _identityLookup = identityLookup;
-        _pidCache = pidCache;
-        _system = system;
+        _identityLookup = cluster.IdentityLookup;
+        _pidCache = cluster.PidCache;
+        _system = cluster.System;
 
         _requestLogThrottle = Throttle.Create(
-            config.MaxNumberOfEventsInRequestLogThrottlePeriod,
-            config.RequestLogThrottlePeriod,
+            cluster.Config.MaxNumberOfEventsInRequestLogThrottlePeriod,
+            cluster.Config.RequestLogThrottlePeriod,
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
         
-        _clock = new TaskClock(config.ActorRequestTimeout, TimeSpan.FromSeconds(1), killSwitch);
+        _clock = new TaskClock(cluster.Config.ActorRequestTimeout, TimeSpan.FromSeconds(1), cluster.System.Shutdown);
         _clock.Start();
     }
 
