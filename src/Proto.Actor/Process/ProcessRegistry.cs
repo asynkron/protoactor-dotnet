@@ -50,6 +50,7 @@ public class ProcessRegistry
             {
                 true  => process,
                 false => System.DeadLetter
+                // ReSharper disable once RedundantSuppressNullableWarningExpression
             })!;
         }
 
