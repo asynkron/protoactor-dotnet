@@ -23,6 +23,7 @@ public sealed class TopicActor : IActor
     private ImmutableHashSet<SubscriberIdentity> _subscribers = ImmutableHashSet<SubscriberIdentity>.Empty;
     private string _topic = string.Empty;
     private readonly IKeyValueStore<Subscribers> _subscriptionStore;
+    private TimeSpan _memberDeliveryTimeout;
 
     public TopicActor(IKeyValueStore<Subscribers> subscriptionStore) => _subscriptionStore = subscriptionStore;
 
@@ -37,54 +38,80 @@ public sealed class TopicActor : IActor
 
     private async Task OnPubSubBatch(IContext context, PubSubBatch batch)
     {
-        //TODO: lookup PID for ClusterIdentity subscribers.
-        //group PIDs by address
-        //send the batch to the PubSub delivery actor on each member
-        //await for subscriber responses on in each delivery actor
-        //when done, respond back here
+        try
+        {
+            //TODO: lookup PID for ClusterIdentity subscribers.
+            //group PIDs by address
+            //send the batch to the PubSub delivery actor on each member
+            //await for subscriber responses on in each delivery actor
+            //when done, respond back here
 
-        var pidTasks = _subscribers.Select(s => GetPid(context, s)).ToList();
-        var subscribers = await Task.WhenAll(pidTasks);
-        var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
+            var pidTasks = _subscribers.Select(s => GetPid(context, s)).ToList();
+            var subscribers = await Task.WhenAll(pidTasks);
+            var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
 
-        var acks =
-            (from member in members
-             let address = member.Key
-             let subscribersOnMember = GetSubscribersForAddress(member)
-             let deliveryMessage = new DeliverBatchRequest(subscribersOnMember, batch)
-             let deliveryPid = PID.FromAddress(address, PubSubExtension.PubSubDeliveryName)
-             select context.RequestAsync<DeliverBatchResponse>(deliveryPid, deliveryMessage))
-            .ToList();
+            var acks =
+                (from member in members
+                 let address = member.Key
+                 let subscribersOnMember = GetSubscribersForAddress(member)
+                 let deliveryMessage = new DeliverBatchRequest(subscribersOnMember, batch)
+                 let deliveryPid = PID.FromAddress(address, PubSubExtension.PubSubDeliveryName)
+                 select context.RequestAsync<DeliverBatchResponse>(deliveryPid, deliveryMessage, _memberDeliveryTimeout))
+                .ToList();
 
-        await Task.WhenAll(acks);
+            await Task.WhenAll(acks);
 
-        var allInvalidDeliveryReports = acks.SelectMany(a => a.Result.InvalidDeliveries).ToArray();
+            var allInvalidDeliveryReports = acks.SelectMany(a => a.Result.InvalidDeliveries).ToArray();
 
-        if (allInvalidDeliveryReports.Length > 0)
-            await HandleInvalidDeliveries(context, allInvalidDeliveryReports);
+            if (allInvalidDeliveryReports.Length > 0)
+            {
+                await HandleInvalidDeliveries(context, allInvalidDeliveryReports);
+                // nack back to publisher
+                context.Respond(new PublishResponse {Status = PublishStatus.Failed});
+            }
+            else
+            {
+                // ack back to publisher
+                context.Respond(new PublishResponse());
+            }
+        }
+        catch (TimeoutException)
+        {
+            // failed to deliver to at least one member
+            // remove PID subscribers that are on members no longer present in the member list
+            // the ClusterIdentity subscribers always exist, so no action is needed here
+            await UnsubscribeSubscribersOnMembersThatLeft(context);
 
-        // ack back to publisher
-        context.Respond(new PublishResponse());
+            context.Respond(new PublishResponse {Status = PublishStatus.Failed});
+        }
+        catch (Exception e)
+        {
+            if (LogThrottle().IsOpen())
+            {
+                Logger.LogWarning(e, "Error when delivering message batch");
+            }
+
+            context.Respond(new PublishResponse {Status = PublishStatus.Failed});
+        }
     }
 
     private async Task HandleInvalidDeliveries(IContext context, SubscriberDeliveryReport[] allInvalidDeliveryReports)
     {
         await UnsubscribeUnreachableSubscribers(allInvalidDeliveryReports);
-        ThrowIfAnyErrorsDuringDelivery(allInvalidDeliveryReports);
+        LogOtherDeliveryErrors(allInvalidDeliveryReports);
     }
 
-    private void ThrowIfAnyErrorsDuringDelivery(SubscriberDeliveryReport[] allInvalidDeliveryReports)
+    private void LogOtherDeliveryErrors(SubscriberDeliveryReport[] allInvalidDeliveryReports)
     {
         var allWithError = allInvalidDeliveryReports
             .Where(r => r.Status == DeliveryStatus.OtherError)
             .ToArray();
 
-        if (allWithError.Length > 0)
+        if (allWithError.Length > 0 && LogThrottle().IsOpen())
         {
             var diagnosticMessage = allWithError
                 .Aggregate($"Topic = {_topic} following subscribers could not process the batch: ", (acc, report) => acc + report.Subscriber + ", ");
-
-            throw new PubSubDeliveryException(diagnosticMessage);
+            Logger.LogError(diagnosticMessage);
         }
     }
 
@@ -114,29 +141,58 @@ public sealed class TopicActor : IActor
         }
     }
 
-    private static Subscribers GetSubscribersForAddress(IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member) => new()
+    private async Task UnsubscribeSubscribersOnMembersThatLeft(IContext ctx)
     {
-        Subscribers_ =
-        {
-            member.Select(s => s.subscriber).ToArray()
-        }
-    };
+        var activeMemberAddresses = ctx.Cluster().MemberList.GetAllMembers().Select(m => m.Address).ToList();
 
-    private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s) => s.IdentityCase switch
-    {
-        SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult((s, s.Pid)),
-        SubscriberIdentity.IdentityOneofCase.ClusterIdentity => GetClusterIdentityPid(context, s),
-        _                                                    => throw new ArgumentOutOfRangeException()
-    };
+        var subscribersThatLeft = _subscribers
+            .Where(s => s.IdentityCase == SubscriberIdentity.IdentityOneofCase.Pid && !activeMemberAddresses.Contains(s.Pid.Address))
+            .ToList();
+
+        foreach (var subscriber in subscribersThatLeft)
+        {
+            _subscribers = _subscribers.Remove(subscriber);
+        }
+
+        if (LogThrottle().IsOpen())
+        {
+            var diagnosticMessage = subscribersThatLeft
+                .Aggregate($"Topic = {_topic} removed subscribers, because they are on members that left the cluster: ",
+                    (acc, subscriber) => acc + subscriber + ", "
+                );
+            Logger.LogWarning(diagnosticMessage);
+        }
+
+        await SaveSubscriptions(_topic, new Subscribers {Subscribers_ = {_subscribers}});
+    }
+
+    private static Subscribers GetSubscribersForAddress(IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member)
+        => new()
+        {
+            Subscribers_ =
+            {
+                member.Select(s => s.subscriber).ToArray()
+            }
+        };
+
+    private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s)
+        => s.IdentityCase switch
+        {
+            SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult((s, s.Pid)),
+            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => GetClusterIdentityPid(context, s),
+            _                                                    => throw new ArgumentOutOfRangeException()
+        };
 
     private static async Task<(SubscriberIdentity, PID)> GetClusterIdentityPid(IContext context, SubscriberIdentity s)
     {
+        // TODO: optimize with caching
         var pid = await context.Cluster().GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None);
         return (s, pid);
     }
 
     private async Task OnClusterInit(IContext context)
     {
+        _memberDeliveryTimeout = context.Cluster().Config.PubSubMemberDeliveryTimeout;
         _topic = context.Get<ClusterIdentity>()!.Identity;
         var subs = await LoadSubscriptions(_topic);
 

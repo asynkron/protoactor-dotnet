@@ -21,7 +21,7 @@ public class DefaultClusterContext : IClusterContext
 
     private readonly PidCache _pidCache;
     private readonly ShouldThrottle _requestLogThrottle;
-    private readonly TaskClock _clock;
+    private readonly TaskClock? _clock;
     private readonly ActorSystem _system;
     private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
     private readonly int _requestTimeoutSeconds;
@@ -39,8 +39,11 @@ public class DefaultClusterContext : IClusterContext
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
         _requestTimeoutSeconds = (int)config.ActorRequestTimeout.TotalSeconds;
-        _clock = new TaskClock(config.ActorRequestTimeout, TimeSpan.FromSeconds(1), cluster.System.Shutdown);
+#if !NET6_0_OR_GREATER
+        var updateInterval = TimeSpan.FromMilliseconds(Math.Min(config.ActorRequestTimeout.TotalMilliseconds / 2, 1000));
+        _clock = new TaskClock(config.ActorRequestTimeout, updateInterval, cluster.System.Shutdown);
         _clock.Start();
+#endif
     }
 
     public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
@@ -92,7 +95,7 @@ public class DefaultClusterContext : IClusterContext
 #if NET6_0_OR_GREATER
                     await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds));
 #else
-                    await Task.WhenAny(task, _clock.CurrentBucket);
+                    await Task.WhenAny(task, _clock!.CurrentBucket);
 #endif
 
                     if (task.IsCompleted)

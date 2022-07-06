@@ -44,6 +44,8 @@ public record ClusterConfig
         MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
         RemotePidCacheTimeToLive = TimeSpan.FromMinutes(15);
         RemotePidCacheClearInterval = TimeSpan.FromSeconds(15);
+        PubSubMemberDeliveryTimeout = TimeSpan.FromSeconds(10);
+        PubSubPublishTimeout = TimeSpan.FromSeconds(15);
     }
 
     /// <summary>
@@ -129,17 +131,17 @@ public record ClusterConfig
     /// The <see cref="IIdentityLookup"/> to use for the cluster
     /// </summary>
     public IIdentityLookup IdentityLookup { get; }
-    
+
     /// <summary>
     /// Default window size for cluster deduplication (<see cref="Extensions.WithClusterRequestDeduplication"/>). Default is 30s.
     /// </summary>
     public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
-    
+
     /// <summary>
     /// TTL for remote PID cache. Default is 15min. Set to <see cref="TimeSpan.Zero"/> to disable.
     /// </summary>
     public TimeSpan RemotePidCacheTimeToLive { get; set; }
-    
+
     /// <summary>
     /// How often to check for stale PIDs in the remote PID cache. Default is 15s. Set to <see cref="TimeSpan.Zero"/> to disable.
     /// </summary>
@@ -149,6 +151,18 @@ public record ClusterConfig
     /// Creates the <see cref="IClusterContext"/>. The default implementation creates an instance of <see cref="DefaultClusterContext"/>
     /// </summary>
     public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } = c => new DefaultClusterContext(c);
+
+    /// <summary>
+    /// A timeout used when delivering a message batch from the topic to a member that hosts a subset of subscribers. Default is 10s.
+    /// </summary>
+    /// <remarks>Should be more than <see cref="ActorRequestTimeout"/></remarks>
+    public TimeSpan PubSubMemberDeliveryTimeout { get; set; }
+
+    /// <summary>
+    /// A default timeout used when publishing a message batch or a message to a topic. Default is 15s. 
+    /// </summary>
+    /// <remarks>Should be more than both <see cref="ActorRequestTimeout"/> and <see cref="PubSubMemberDeliveryTimeout"/></remarks>
+    public TimeSpan PubSubPublishTimeout { get; set; }
 
     /// <summary>
     /// Timeout for spawning an actor in the Partition Identity Lookup. Default is 5s.
@@ -313,6 +327,26 @@ public record ClusterConfig
     /// <returns></returns>
     public ClusterConfig WithHeartbeatExpiration(TimeSpan expiration) =>
         this with {HeartbeatExpiration = expiration};
+
+    /// <summary>
+    /// A timeout used when delivering a message batch from the topic to a member that hosts a subset of subscribers. Default is 10s.
+    /// </summary>
+    /// <remarks>Should be more than <see cref="ActorRequestTimeout"/></remarks>
+    /// <param name="timeout"></param>
+    /// <returns></returns>
+    public ClusterConfig WithPubSubMemberDeliveryTimeout(TimeSpan timeout) =>
+        this with {PubSubMemberDeliveryTimeout = timeout};
+
+    /// <summary>
+    /// <summary>
+    /// A default timeout used when publishing a message batch or a message to a topic. Default is 15s. 
+    /// </summary>
+    /// <remarks>Should be more than both <see cref="ActorRequestTimeout"/> and <see cref="PubSubMemberDeliveryTimeout"/></remarks>
+    /// </summary>
+    /// <param name="timeout"></param>
+    /// <returns></returns>
+    public ClusterConfig WithPubSubPublishTimeout(TimeSpan timeout) =>
+        this with {PubSubPublishTimeout = timeout};
 
     /// <summary>
     /// Creates a new <see cref="ClusterConfig"/>

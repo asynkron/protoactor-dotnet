@@ -64,12 +64,16 @@ message SubscriberDeliveryReport {
   DeliveryStatus status = 2;
 }
 
+// Delivery status as seen by the delivery actor
 enum DeliveryStatus {
   // Message was put in the queue of the subscriber
   Delivered = 0;
   
   // Message did not reach subscriber, because it was dead
   SubscriberNoLongerReachable = 1;
+  
+  // Delivery timed out
+  Timeout = 2;
   
   // Some other problem happened
   OtherError = 127;
@@ -82,5 +86,17 @@ message PubSubAutoRespondBatchTransport {
   repeated PubSubEnvelope envelopes = 2;
 }
 
-// Publish ack response
-message PublishResponse {}
+// Status of the whole published batch or single message
+enum PublishStatus {
+  // Batch or message was successfully published according to the delivery guarantees
+  Ok = 0;
+  
+  // At least one subscriber did not receive the message
+  Failed = 1;
+}
+
+// Publish ack/nack response
+message PublishResponse {
+    // Status of the whole published batch or single message
+  PublishStatus status = 1;
+}

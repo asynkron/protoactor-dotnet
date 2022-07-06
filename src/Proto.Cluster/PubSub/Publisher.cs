@@ -21,13 +21,18 @@ public class Publisher : IPublisher
     /// </summary>
     /// <param name="topic">Topic to publish to</param>
     /// <param name="batch">Message batch</param>
-    /// <param name="ct"></param>
+    /// <param name="ct">If not provided, <see cref="ClusterConfig.PubSubPublishTimeout"/> is used to create a timeout token</param>
     /// <returns></returns>
     public Task<PublishResponse?> PublishBatch(
         string topic,
         PubSubBatch batch,
         CancellationToken ct = default
-    ) => _cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, ct);
+    )
+    {
+        if (ct == default)
+            ct = CancellationTokens.WithTimeout(_cluster.Config.PubSubPublishTimeout);
+        return _cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, ct);
+    }
 }
 
 public static class PublisherExtensions
@@ -38,7 +43,7 @@ public static class PublisherExtensions
     /// <param name="publisher"></param>
     /// <param name="topic">Topic to publish to</param>
     /// <param name="messages">Message</param>
-    /// <param name="ct"></param>
+    /// <param name="ct">If not provided, <see cref="ClusterConfig.PubSubPublishTimeout"/> is used to create a timeout token</param>
     /// <returns></returns>
     public static Task<PublishResponse?> PublishBatch<TMessage>(
         this IPublisher publisher,
@@ -58,7 +63,7 @@ public static class PublisherExtensions
     /// <param name="publisher"></param>
     /// <param name="topic">Topic to publish to</param>
     /// <param name="message">Message</param>
-    /// <param name="ct"></param>
+    /// <param name="ct">If not provided, <see cref="ClusterConfig.PubSubPublishTimeout"/> is used to create a timeout token</param>
     /// <returns></returns>
     public static Task<PublishResponse?> Publish(
         this IPublisher publisher,
