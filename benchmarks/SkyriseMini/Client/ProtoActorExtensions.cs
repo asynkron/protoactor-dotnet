@@ -58,7 +58,7 @@ public static class ProtoActorExtensions
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
 
             var clusterConfig = ClusterConfig
-                .Setup(config["ClusterName"], clusterProvider, new PartitionIdentityLookup());
+                .Setup(config["ClusterName"]!, clusterProvider, new PartitionIdentityLookup());
 
             system
                 .WithServiceProvider(provider)
