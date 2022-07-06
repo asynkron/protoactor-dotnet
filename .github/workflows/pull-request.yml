@@ -60,9 +60,10 @@ jobs:
     strategy:
       matrix:
         dotnet:
-#          - netcoreapp3.1
+          - net7.0
           - net6.0
-#          - net5.0
+          - net5.0
+          - netcoreapp3.1
         test:
           - "tests/Proto.Actor.Tests/*.csproj"
           - "tests/Proto.Remote.Tests/*.csproj"
