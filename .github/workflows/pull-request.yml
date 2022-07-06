@@ -37,7 +37,9 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "5.0.x"
-
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "3.1.x"
       - name: Build
         run: dotnet build ProtoActor.sln -c Release
 
@@ -86,7 +88,10 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "5.0.x"
-
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "3.1.x"
+          
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 7
         env:

@@ -61,6 +61,9 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "5.0.100"
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "3.1.x"          
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
@@ -87,6 +90,9 @@ jobs:
         with:
           dotnet-version: "5.0.x"
           source-url: https://nuget.pkg.github.com/asynkron/index.json
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "3.1.x"          
         env:
           NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}             
 
