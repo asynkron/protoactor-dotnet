@@ -95,8 +95,26 @@ enum PublishStatus {
   Failed = 1;
 }
 
+// Reason for publishing failure 
+enum PublishFailureReason {
+  
+  // Unknown reason, unexpected problem 
+  Unknown = 0;
+  
+  // All members hosting subscribers received the message batch, but some of the subscribers were not reachable
+  // The unreachable subscribers were removed. Retrying the publish will likely succeed.
+  AtLeastOneSubscriberUnreachable = 1;
+  
+  // At least one member hosting subscribers left the cluster.
+  // The unreachable subscribers were removed. Retrying the publish will likely succeed
+  AtLeastOneMemberLeftTheCluster = 2;
+}
+
 // Publish ack/nack response
 message PublishResponse {
-    // Status of the whole published batch or single message
+  // Status of the whole published batch or single message
   PublishStatus status = 1;
+  
+  // If status is Failed, this contains the reason for failure
+  optional PublishFailureReason failure_reason = 2;
 }

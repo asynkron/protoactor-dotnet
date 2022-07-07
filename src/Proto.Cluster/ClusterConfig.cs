@@ -44,6 +44,8 @@ public record ClusterConfig
         MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
         RemotePidCacheTimeToLive = TimeSpan.FromMinutes(15);
         RemotePidCacheClearInterval = TimeSpan.FromSeconds(15);
+        
+        // TODO: move to dedicated pub sub config
         PubSubMemberDeliveryTimeout = TimeSpan.FromSeconds(10);
         PubSubPublishTimeout = TimeSpan.FromSeconds(15);
     }

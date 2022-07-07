@@ -30,15 +30,18 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
 
     public PubSubClusterFixture() : base(3, config =>
         config
-            .WithActorRequestTimeout(TimeSpan.FromSeconds(1))
-            .WithPubSubMemberDeliveryTimeout(TimeSpan.FromSeconds(2))
-            .WithPubSubPublishTimeout(TimeSpan.FromSeconds(3))
+            .WithActorRequestTimeout(TimeSpan.FromSeconds(2))
+            .WithPubSubMemberDeliveryTimeout(TimeSpan.FromSeconds(4))
+            .WithPubSubPublishTimeout(TimeSpan.FromSeconds(6))
     )
     {
     }
 
+    private readonly InMemorySubscribersStore _subscribersStore = new();
+
     protected override ClusterKind[] ClusterKinds => new[]
     {
+        new ClusterKind(TopicActor.Kind, Props.FromProducer(() => new TopicActor(_subscribersStore))),
         new ClusterKind(SubscriberKind, SubscriberProps()),
         new ClusterKind(TimeoutSubscriberKind, TimeoutSubscriberProps())
     };

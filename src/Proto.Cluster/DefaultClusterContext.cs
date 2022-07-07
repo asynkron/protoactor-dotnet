@@ -46,7 +46,7 @@ public class DefaultClusterContext : IClusterContext
 #endif
     }
 
-    public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
+    public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct, TimeSpan requestTimeoutOverride = default)
     {
         var i = 0;
 
@@ -92,11 +92,27 @@ public class DefaultClusterContext : IClusterContext
                     context.Request(pid, message, future.Pid);
                     var task = future.Task;
 
+                    if (requestTimeoutOverride == TimeSpan.Zero)
+                    {
 #if NET6_0_OR_GREATER
-                    await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds));
+                        await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds));
 #else
-                    await Task.WhenAny(task, _clock!.CurrentBucket);
+                        await Task.WhenAny(task, _clock!.CurrentBucket);
 #endif
+                    }
+                    else
+                    {
+#if NET6_0_OR_GREATER
+                        await task.WaitAsync(CancellationTokens.FromSeconds((int)requestTimeoutOverride.TotalSeconds));
+#else
+                        // this adds a little bit of overhead, but it's the best we can do without Task.WaitAsync
+                        // we cannot spin up the task clock for each request
+                        // just make sure the timeout is rounded to seconds like for .NET 6 implementation
+                        var requestCts = new CancellationTokenSource();
+                        await Task.WhenAny(task, Task.Delay((int)requestTimeoutOverride.TotalSeconds * 1000, requestCts.Token));
+                        requestCts.Cancel();
+#endif
+                    }
 
                     if (task.IsCompleted)
                     {

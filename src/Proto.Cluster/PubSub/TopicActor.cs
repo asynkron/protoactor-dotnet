@@ -66,8 +66,13 @@ public sealed class TopicActor : IActor
             if (allInvalidDeliveryReports.Length > 0)
             {
                 await HandleInvalidDeliveries(context, allInvalidDeliveryReports);
+                
                 // nack back to publisher
-                context.Respond(new PublishResponse {Status = PublishStatus.Failed});
+                context.Respond(new PublishResponse
+                {
+                    Status = PublishStatus.Failed,
+                    FailureReason = PublishFailureReason.AtLeastOneSubscriberUnreachable
+                });
             }
             else
             {
@@ -82,7 +87,12 @@ public sealed class TopicActor : IActor
             // the ClusterIdentity subscribers always exist, so no action is needed here
             await UnsubscribeSubscribersOnMembersThatLeft(context);
 
-            context.Respond(new PublishResponse {Status = PublishStatus.Failed});
+            // nack back to publisher
+            context.Respond(new PublishResponse
+            {
+                Status = PublishStatus.Failed,
+                FailureReason = PublishFailureReason.AtLeastOneMemberLeftTheCluster
+            });
         }
         catch (Exception e)
         {
@@ -91,7 +101,12 @@ public sealed class TopicActor : IActor
                 Logger.LogWarning(e, "Error when delivering message batch");
             }
 
-            context.Respond(new PublishResponse {Status = PublishStatus.Failed});
+            // nack back to publisher
+            context.Respond(new PublishResponse
+            {
+                Status = PublishStatus.Failed,
+                FailureReason = PublishFailureReason.Unknown
+            });
         }
     }
 

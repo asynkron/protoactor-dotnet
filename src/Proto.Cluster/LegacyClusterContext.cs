@@ -44,7 +44,7 @@ public class LegacyClusterContext : IClusterContext
         _clock.Start();
     }
 
-    public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
+    public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct, TimeSpan _ = default)
     {
         var start = Stopwatch.StartNew();
         if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Requesting {ClusterIdentity} Message {Message}", clusterIdentity, message);

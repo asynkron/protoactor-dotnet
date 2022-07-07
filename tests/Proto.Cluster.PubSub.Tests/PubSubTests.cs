@@ -192,7 +192,11 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         var response = await _fixture.PublishData(topic, 1);
 
         response.Should().BeEquivalentTo(
-            new PublishResponse {Status = PublishStatus.Failed},
+            new PublishResponse
+            {
+                Status = PublishStatus.Failed,
+                FailureReason = PublishFailureReason.AtLeastOneSubscriberUnreachable
+            },
             "topic actor should return a response indicating failure"
         );
     }
@@ -209,7 +213,11 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         var response = await _fixture.PublishData(topic, 1);
 
         response.Should().BeEquivalentTo(
-            new PublishResponse {Status = PublishStatus.Failed},
+            new PublishResponse
+            {
+                Status = PublishStatus.Failed,
+                FailureReason = PublishFailureReason.AtLeastOneSubscriberUnreachable
+            },
             "topic actor should return a response indicating failure"
         );
     }

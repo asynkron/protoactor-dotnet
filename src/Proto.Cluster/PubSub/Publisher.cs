@@ -27,12 +27,7 @@ public class Publisher : IPublisher
         string topic,
         PubSubBatch batch,
         CancellationToken ct = default
-    )
-    {
-        if (ct == default)
-            ct = CancellationTokens.WithTimeout(_cluster.Config.PubSubPublishTimeout);
-        return _cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, ct);
-    }
+    ) => _cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, ct, _cluster.Config.PubSubPublishTimeout);
 }
 
 public static class PublisherExtensions

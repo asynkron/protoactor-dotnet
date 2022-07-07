@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using FluentAssertions;
 using Xunit;
+using static Proto.Cluster.PubSub.Tests.WaitHelper;
 
 namespace Proto.Cluster.PubSub.Tests;
 
@@ -35,6 +36,7 @@ public class PubSubMemberTests : IAsyncLifetime
         var stayingMember = _fixture.Members.Last();
         var stayingPid = stayingMember.System.Root.Spawn(props);
 
+        
         // subscribe by pids
         await leavingMember.Subscribe(topic, leavingPid);
         await stayingMember.Subscribe(topic, stayingPid);
@@ -49,15 +51,20 @@ public class PubSubMemberTests : IAsyncLifetime
         // everyone should have received the data
         _fixture.Deliveries.Count.Should().Be(subscriberIds.Length + 2);
 
-        // a member leaves
+        // a member leaves - wait of it to make it to the block list
         await _fixture.RemoveNode(leavingMember);
+        await WaitUntil(() => _fixture.Members.All(m => m.Remote.BlockList.BlockedMembers.Count == 1));
 
         // publish again
         _fixture.Deliveries.Clear();
         var publishResp = await _fixture.PublishData(topic, 2);
 
         // we should be informed about failed delivery because one of the subscribers is gone
-        publishResp.Should().BeEquivalentTo(new PublishResponse {Status = PublishStatus.Failed},
+        publishResp.Should().BeEquivalentTo(new PublishResponse
+            {
+                Status = PublishStatus.Failed,
+                FailureReason = PublishFailureReason.AtLeastOneMemberLeftTheCluster
+            },
             "delivery should fail because one of the subscribers is gone"
         );
 
@@ -65,7 +72,7 @@ public class PubSubMemberTests : IAsyncLifetime
         // next publish should succeed
         _fixture.Deliveries.Clear();
         await _fixture.PublishData(topic, 3);
-
+        
         _fixture.Deliveries.Count.Should().Be(subscriberIds.Length + 1);
     }
 

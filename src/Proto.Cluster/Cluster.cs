@@ -257,10 +257,12 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// <param name="message">Message to send</param>
     /// <param name="context">Sender context to send the message through</param>
     /// <param name="ct">Token to cancel the operation</param>
+    /// <param name="requestTimeoutOverride">Represents a timeout for the single request retry. If not specified, <see cref="ClusterConfig.ActorRequestTimeout"/> is used.
+    /// Specifying custom timeout prevents optimizations around awaiting the timeout on .NET &lt; 6 and can have performance implications.</param>
     /// <typeparam name="T">Expected response type</typeparam>
     /// <returns>Response of null if timed out</returns>
-    public Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct) =>
-        ClusterContext.RequestAsync<T>(clusterIdentity, message, context, ct)!;
+    public Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct, TimeSpan requestTimeoutOverride = default) =>
+        ClusterContext.RequestAsync<T>(clusterIdentity, message, context, ct, requestTimeoutOverride)!;
 
     public ActivatedClusterKind GetClusterKind(string kind)
     {
