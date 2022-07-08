@@ -19,9 +19,9 @@ namespace Proto.Remote;
 
 public abstract class Endpoint : IEndpoint
 {
-    internal Endpoint(string address, ActorSystem system, RemoteConfigBase remoteConfig)
+    internal Endpoint(string remoteAddress, ActorSystem system, RemoteConfigBase remoteConfig)
     {
-        Address = address;
+        RemoteAddress = remoteAddress;
         System = system;
         RemoteConfig = remoteConfig;
         _sender = Task.Run(RunAsync);
@@ -31,7 +31,7 @@ public abstract class Endpoint : IEndpoint
     public Channel<RemoteMessage> Outgoing { get; } = Channel.CreateBounded<RemoteMessage>(3);
     public ConcurrentStack<RemoteMessage> OutgoingStash { get; } = new();
     protected readonly ActorSystem System;
-    protected readonly string Address;
+    protected readonly string RemoteAddress;
     protected readonly RemoteConfigBase RemoteConfig;
     private readonly ILogger _logger = Log.CreateLogger<Endpoint>();
     private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
@@ -44,7 +44,7 @@ public abstract class Endpoint : IEndpoint
 
     public virtual async ValueTask DisposeAsync()
     {
-        _logger.LogDebug("[{SystemAddress}] Disposing endpoint {Address}", System.Address, Address);
+        _logger.LogDebug("[{SystemAddress}] Disposing endpoint {Address}", System.Address, RemoteAddress);
         _remoteDelivers.Writer.TryComplete();
         _cancellationTokenSource.Cancel();
         Outgoing.Writer.TryComplete();
@@ -52,7 +52,7 @@ public abstract class Endpoint : IEndpoint
         await _sender.ConfigureAwait(false);
         _cancellationTokenSource.Dispose();
         GC.SuppressFinalize(this);
-        _logger.LogDebug("[{SystemAddress}] Disposed endpoint {Address}", System.Address, Address);
+        _logger.LogDebug("[{SystemAddress}] Disposed endpoint {Address}", System.Address, RemoteAddress);
     }
 
     public bool IsActive { get; private set; } = true;
@@ -80,7 +80,7 @@ public abstract class Endpoint : IEndpoint
         }
 
         if (droppedMessageCount > 0)
-            _logger.LogInformation("[{SystemAddress}] Dropped {Count} messages for {Address}", System.Address, droppedMessageCount, Address);
+            _logger.LogInformation("[{SystemAddress}] Dropped {Count} messages for {Address}", System.Address, droppedMessageCount, RemoteAddress);
     }
 
     private int DropMessagesInBatch(RemoteMessage remoteMessage)
@@ -91,17 +91,37 @@ public abstract class Endpoint : IEndpoint
         switch (remoteMessage.MessageTypeCase)
         {
             case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
-                _logger.LogWarning("[{SystemAddress}] Dropping disconnect request for {Address}", System.Address, Address);
+                _logger.LogWarning("[{SystemAddress}] Dropping disconnect request for {Address}", System.Address, RemoteAddress);
                 break;
             case RemoteMessage.MessageTypeOneofCase.MessageBatch: {
                 var batch = remoteMessage.MessageBatch;
-                var targets = new PID[batch.Targets.Count];
 
+                var targets = new PID[batch.Targets.Count];
                 for (var i = 0; i < batch.Targets.Count; i++)
                 {
                     var target = new PID(System.Address, batch.Targets[i]);
-                    target.Ref(System);
-                    targets[i] = target;
+
+                    if (target.TryTranslateToLocalClientPID(out var pid))
+                    {
+                        targets[i] = pid;
+                    }
+                    else
+                    {
+                        targets[i] = target;
+                        target.Ref(System);
+                    }
+                }
+                
+                for (var i = 0; i < batch.Senders.Count; i++)
+                {
+                    var s = batch.Senders[i];
+
+                    if (string.IsNullOrEmpty(s.Address))
+                    {
+                        s.Address = RemoteAddress;
+                    }
+                    
+                    s.Ref(System);
                 }
 
                 var typeNames = batch.TypeNames.ToArray();
@@ -176,8 +196,6 @@ public abstract class Endpoint : IEndpoint
                 }
             }
                 break;
-            default:
-                break;
         }
 
         return droppedMessageCount;
@@ -250,7 +268,7 @@ public abstract class Endpoint : IEndpoint
             );
         }
 
-        if (sender is not null && sender.TryTranslateToProxyPID(System, Address, out var clientPID))
+        if (sender is not null && sender.TryTranslateToProxyPID(System, RemoteAddress, out var clientPID))
             sender = clientPID;
         var env = new RemoteDeliver(header, message, target, sender);
 
