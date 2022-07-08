@@ -12,7 +12,7 @@ try
         lcfg
             .ReadFrom.Configuration(builder.Configuration)
             .WriteTo.Console()
-            .WriteTo.Seq(builder.Configuration["SeqUrl"])
+            .WriteTo.Seq(builder.Configuration["SeqUrl"]!)
             .Enrich.WithProperty("Service", Assembly.GetExecutingAssembly().GetName().Name)
     );
     

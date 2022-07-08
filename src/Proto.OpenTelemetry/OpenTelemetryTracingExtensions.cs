@@ -29,7 +29,9 @@ public static class OpenTelemetryTracingExtensions
         ActivitySetup? receiveActivitySetup = null
     )
     {
+        // ReSharper disable once RedundantSuppressNullableWarningExpression
         sendActivitySetup ??= OpenTelemetryHelpers.DefaultSetupActivity!;
+        // ReSharper disable once RedundantSuppressNullableWarningExpression
         receiveActivitySetup ??= OpenTelemetryHelpers.DefaultSetupActivity!;
         return props
             .WithContextDecorator(ctx => new OpenTelemetryActorContextDecorator(ctx, sendActivitySetup, receiveActivitySetup))
@@ -60,6 +62,7 @@ public static class OpenTelemetryTracingExtensions
     /// <returns></returns>
     public static IRootContext WithTracing(this IRootContext context, ActivitySetup? sendActivitySetup = null)
     {
+        // ReSharper disable once RedundantSuppressNullableWarningExpression
         sendActivitySetup ??= OpenTelemetryHelpers.DefaultSetupActivity!;
 
         return new OpenTelemetryRootContextDecorator(context.WithSenderMiddleware(OpenTelemetrySenderMiddleware), sendActivitySetup);

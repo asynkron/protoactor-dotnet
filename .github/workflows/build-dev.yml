@@ -32,9 +32,10 @@ jobs:
     strategy:
       matrix:
         dotnet:
+          - net7.0
           - net6.0
-#          - net5.0
-#          - netcoreapp3.1
+          - net5.0
+          - netcoreapp3.1
         test:
           - "tests/Proto.Actor.Tests/*.csproj"
           - "tests/Proto.Remote.Tests/*.csproj"
@@ -52,11 +53,18 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions/setup-dotnet@v1
         with:
+          dotnet-version: "7.0.x"
+          include-prerelease: true        
+      - uses: actions/setup-dotnet@v1
+        with:
           dotnet-version: "6.0.x"
           include-prerelease: true
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "5.0.100"
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "3.1.x"          
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
@@ -74,12 +82,18 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "6.0.x"
-          include-prerelease: true         
+          dotnet-version: "7.0.x"
+          include-prerelease: true
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "6.0.x"   
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "3.1.x"  
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "5.0.x"
-          source-url: https://nuget.pkg.github.com/asynkron/index.json
+          source-url: https://nuget.pkg.github.com/asynkron/index.json          
         env:
           NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}             
 
