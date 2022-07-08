@@ -69,7 +69,7 @@ public class PubSubMemberDeliveryActor : IActor
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             var response = await context.ClusterRequestAsync<PublishResponse?>(ci.Identity, ci.Kind, pub,
-                CancellationTokens.WithTimeout(_subscriberTimeout)
+                CancellationTokens.WithTimeout(_subscriberTimeout), _subscriberTimeout
             );
             stopwatch.Stop();
             

@@ -133,7 +133,7 @@ public sealed class TopicActor : IActor
     private async Task UnsubscribeUnreachableSubscribers(SubscriberDeliveryReport[] allInvalidDeliveryReports)
     {
         var allUnreachable = allInvalidDeliveryReports
-            .Where(r => r.Status == DeliveryStatus.SubscriberNoLongerReachable)
+            .Where(r => r.Status is DeliveryStatus.SubscriberNoLongerReachable or DeliveryStatus.Timeout)
             .ToArray();
 
         if (allUnreachable.Length > 0)
@@ -207,7 +207,7 @@ public sealed class TopicActor : IActor
 
     private async Task OnClusterInit(IContext context)
     {
-        _memberDeliveryTimeout = context.Cluster().Config.PubSubMemberDeliveryTimeout;
+        _memberDeliveryTimeout = context.Cluster().Config.PubSubConfig.MemberDeliveryTimeout;
         _topic = context.Get<ClusterIdentity>()!.Identity;
         var subs = await LoadSubscriptions(_topic);
 

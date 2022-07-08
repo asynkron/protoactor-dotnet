@@ -30,9 +30,11 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
 
     public PubSubClusterFixture() : base(3, config =>
         config
-            .WithActorRequestTimeout(TimeSpan.FromSeconds(2))
-            .WithPubSubMemberDeliveryTimeout(TimeSpan.FromSeconds(4))
-            .WithPubSubPublishTimeout(TimeSpan.FromSeconds(6))
+            .WithPubSubConfig(PubSubConfig.Setup()
+                .WithSubscriberTimeout(TimeSpan.FromSeconds(2))
+                .WithMemberDeliveryTimeout(TimeSpan.FromSeconds(4))
+                .WithPublishTimeout(TimeSpan.FromSeconds(6))
+            )
     )
     {
     }

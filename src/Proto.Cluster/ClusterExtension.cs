@@ -50,11 +50,20 @@ public static class Extensions
     /// <param name="kind">Cluster kind to sent to</param>
     /// <param name="message">Message to send</param>
     /// <param name="ct">Token to cancel the request</param>
+    /// <param name="requestTimeoutOverride">Represents a timeout for the single request retry. If not specified, <see cref="ClusterConfig.ActorRequestTimeout"/> is used.
+    /// Specifying custom timeout prevents optimizations around awaiting the timeout on .NET &lt; 6 and can have performance implications.</param>
     /// <typeparam name="T">Type of the expected response</typeparam>
     /// <returns>Response or null if timed out</returns>
-    public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct) =>
+    public static Task<T> ClusterRequestAsync<T>(
+        this IContext context,
+        string identity,
+        string kind,
+        object message,
+        CancellationToken ct,
+        TimeSpan requestTimeoutOverride = default
+    ) =>
         //call cluster RequestAsync using actor context
-        context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
+        context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct, requestTimeoutOverride);
 
     /// <summary>
     /// Sends a request to a cluster identity and calls the provided callback when the response is received. The callback is executed within the
@@ -66,6 +75,8 @@ public static class Extensions
     /// <param name="message">Message to send</param>
     /// <param name="callback">Callback that will be called after request is finished. It receives the request task as a parameter.</param>
     /// <param name="ct">Token to cancel the request</param>
+    /// <param name="requestTimeoutOverride">Represents a timeout for the single request retry. If not specified, <see cref="ClusterConfig.ActorRequestTimeout"/> is used.
+    /// Specifying custom timeout prevents optimizations around awaiting the timeout on .NET &lt; 6 and can have performance implications.</param>
     /// <typeparam name="T">Type of the expected response</typeparam>
     public static void ClusterRequestReenter<T>(
         this IContext context,
@@ -73,11 +84,12 @@ public static class Extensions
         string kind,
         object message,
         Func<Task<T>, Task> callback,
-        CancellationToken ct
+        CancellationToken ct,
+        TimeSpan requestTimeoutOverride = default
     )
     {
         //call cluster RequestReenter using actor context
-        var task = context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
+        var task = context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct, requestTimeoutOverride);
         context.ReenterAfter(task, callback);
     }
 
@@ -90,17 +102,20 @@ public static class Extensions
     /// <param name="message">Message to send</param>
     /// <param name="callback">Callback that will be called after request is finished. It receives the request task as a parameter.</param>
     /// <param name="ct">Token to cancel the request</param>
+    /// <param name="requestTimeoutOverride">Represents a timeout for the single request retry. If not specified, <see cref="ClusterConfig.ActorRequestTimeout"/> is used.
+    /// Specifying custom timeout prevents optimizations around awaiting the timeout on .NET &lt; 6 and can have performance implications.</param>
     /// <typeparam name="T">Type of the expected response</typeparam>
     public static void ClusterRequestReenter<T>(
         this IContext context,
         ClusterIdentity clusterIdentity,
         object message,
         Func<Task<T>, Task> callback,
-        CancellationToken ct
+        CancellationToken ct,
+        TimeSpan requestTimeoutOverride = default
     )
     {
         //call cluster RequestReenter using actor context
-        var task = context.System.Cluster().RequestAsync<T>(clusterIdentity, message, context, ct);
+        var task = context.System.Cluster().RequestAsync<T>(clusterIdentity, message, context, ct, requestTimeoutOverride);
         context.ReenterAfter(task, callback);
     }
 
@@ -152,10 +167,11 @@ public static class Extensions
             if (identity is not null)
             {
                 ctx.System.EventStream.Publish(new ActivationTerminating
-                {
-                    Pid = ctx.Self,
-                    ClusterIdentity = identity,
-                });
+                    {
+                        Pid = ctx.Self,
+                        ClusterIdentity = identity,
+                    }
+                );
                 cluster.PidCache.RemoveByVal(identity, ctx.Self);
             }
 
