@@ -17,7 +17,7 @@ public class GossipMemberStrategy : IMemberStrategy
     private readonly string _kind;
     private readonly ConcurrentDictionary<string, long> _actorCounts = new();
     private readonly RoundRobinMemberSelector _rr;
-    private volatile string _leatActorsMember;
+    private volatile string _leastActorsMember;
     private readonly ConcurrentDictionary<string, Member> _members = new();
 
     GossipMemberStrategy(Cluster cluster, string kind)
@@ -25,7 +25,7 @@ public class GossipMemberStrategy : IMemberStrategy
         _rr = new RoundRobinMemberSelector(this);
         _cluster = cluster;
         _kind = kind;
-        _leatActorsMember = ""; //no member set, use round robin initially
+        _leastActorsMember = ""; //no member set, use round robin initially
         SubscribeToGossipEvents();
     }
 
@@ -33,7 +33,7 @@ public class GossipMemberStrategy : IMemberStrategy
             var heartbeat = x.Value.Unpack<MemberHeartbeat>();
             var actorCount = heartbeat.ActorStatistics.ActorCount.Where(m => m.Key == _kind).Select(m => m.Value).FirstOrDefault();
             _actorCounts[x.MemberId] = actorCount;
-            _leatActorsMember = _actorCounts.OrderBy(kvp => kvp.Value).FirstOrDefault().Key;
+            _leastActorsMember = _actorCounts.OrderBy(kvp => kvp.Value).FirstOrDefault().Key;
         }
     );
 
@@ -43,5 +43,5 @@ public class GossipMemberStrategy : IMemberStrategy
 
     public void RemoveMember(Member member) => _members.TryRemove(member.Id, out _);
 
-    public Member? GetActivator(string senderAddress) => _members.TryGetValue(_leatActorsMember, out var m) ? m : _rr.GetMember();
+    public Member? GetActivator(string senderAddress) => _members.TryGetValue(_leastActorsMember, out var m) ? m : _rr.GetMember();
 }
