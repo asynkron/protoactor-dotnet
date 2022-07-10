@@ -300,7 +300,7 @@ public record MemberList
         }
 
         //otherwise, use whatever member strategy the default builder says
-        return _cluster.Config.MemberStrategyBuilder(_cluster, kind) ?? new SimpleMemberStrategy();
+        return _cluster.Config.MemberStrategyBuilder(_cluster, kind) ?? new RoundRobinMemberStrategy();
     }
 
     /// <summary>

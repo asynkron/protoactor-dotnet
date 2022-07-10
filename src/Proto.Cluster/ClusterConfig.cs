@@ -41,14 +41,14 @@ public record ClusterConfig
         HeartbeatExpiration = TimeSpan.FromSeconds(20);
         ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
         IdentityLookup = identityLookup;
-        MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
+        MemberStrategyBuilder = (_, _) => new RoundRobinMemberStrategy();
         RemotePidCacheTimeToLive = TimeSpan.FromMinutes(15);
         RemotePidCacheClearInterval = TimeSpan.FromSeconds(15);
     }
 
     /// <summary>
     /// A delegate that returns a <see cref="IMemberStrategy"/> for the given cluster kind.
-    /// By default, <see cref="SimpleMemberStrategy"/> is used for all cluster kinds.
+    /// By default, <see cref="RoundRobinMemberStrategy"/> is used for all cluster kinds.
     /// </summary>
     public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
 

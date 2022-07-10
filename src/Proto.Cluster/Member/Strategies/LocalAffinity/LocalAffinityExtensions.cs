@@ -26,7 +26,7 @@ public static class LocalAffinityExtensions
         => clusterKind with
         {
             Props = clusterKind.Props.WithRelocateOnRemoteSender(options?.RelocationThroughput?.Create(), options?.TriggersLocalAffinity),
-            StrategyBuilder = cluster => new LocalAffinityStrategy(cluster)
+            StrategyBuilder = cluster => new LocalAffinityMemberStrategy(cluster)
         };
 
 

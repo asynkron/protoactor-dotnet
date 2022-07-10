@@ -12,14 +12,14 @@ namespace Proto.Cluster;
 /// <summary>
 ///     Prioritizes placement on current node, to optimize performance on partitioned workloads
 /// </summary>
-class LocalAffinityStrategy : IMemberStrategy
+class LocalAffinityMemberStrategy : IMemberStrategy
 {
     private readonly Cluster _cluster;
     private readonly RoundRobinMemberSelector _rr;
     private Member? _me;
     private ImmutableList<Member> _members = ImmutableList<Member>.Empty;
 
-    public LocalAffinityStrategy(Cluster cluster)
+    public LocalAffinityMemberStrategy(Cluster cluster)
     {
         _cluster = cluster;
         _rr = new RoundRobinMemberSelector(this);

@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -245,41 +244,6 @@ public class DefaultClusterContext : IClusterContext
                 Logger.LogWarning(e, "Failed to get PID from IIdentityLookup for {ClusterIdentity}", clusterIdentity);
             return null;
         }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
-    {
-        var message = MessageEnvelope.UnwrapMessage(result);
-
-        if (message is DeadLetterResponse)
-        {
-            if (!context.System.Shutdown.IsCancellationRequested && Logger.IsEnabled(LogLevel.Debug))
-            {
-                Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
-            }
-
-            return (ResponseStatus.DeadLetter, default);
-        }
-
-        if (message == null) return (ResponseStatus.Ok, default);
-
-        if (message is T t) return (ResponseStatus.Ok, t);
-
-        if (typeof(T) == typeof(MessageEnvelope))
-        {
-            return (ResponseStatus.Ok, (T) (object) MessageEnvelope.Wrap(result));
-        }
-
-        Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", message.GetType(), typeof(T));
-        return (ResponseStatus.InvalidResponse, default);
-    }
-
-    private enum ResponseStatus
-    {
-        Ok,
-        InvalidResponse,
-        DeadLetter
     }
 
     private enum PidSource
