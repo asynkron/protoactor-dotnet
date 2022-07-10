@@ -101,7 +101,7 @@ class IdentityStorageWorker : IActor
 
     private Task<PidResult> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
     {
-        async Task<PidResult> Inner()
+        async Task<PidResult?> Inner()
         {
             var tries = 0;
             PID? pid = null;

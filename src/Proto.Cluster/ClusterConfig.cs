@@ -41,7 +41,7 @@ public record ClusterConfig
         HeartbeatExpiration = TimeSpan.FromSeconds(20);
         ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
         IdentityLookup = identityLookup;
-        MemberStrategyBuilder = (c, k) => new GossipMemberStrategy(c,k);
+        MemberStrategyBuilder = (_, _) => new RoundRobinMemberStrategy();
         RemotePidCacheTimeToLive = TimeSpan.FromMinutes(15);
         RemotePidCacheClearInterval = TimeSpan.FromSeconds(15);
     }
