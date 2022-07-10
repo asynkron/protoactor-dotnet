@@ -19,7 +19,7 @@ public class GossipMemberStrategy : IMemberStrategy
     private readonly RoundRobinMemberSelector _rr;
     private readonly ConcurrentDictionary<string, Member> _members = new();
 
-    GossipMemberStrategy(Cluster cluster, string kind)
+    public GossipMemberStrategy(Cluster cluster, string kind)
     {
         _rr = new RoundRobinMemberSelector(this);
         _cluster = cluster;
