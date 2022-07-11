@@ -11,6 +11,7 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.PubSub.Tests;
 
+[Collection("PubSub")] // do not run tests using the cluster in parallel - that fails in CI
 public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
 {
     private readonly PubSubClusterFixture _fixture;
