@@ -11,7 +11,7 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.PubSub.Tests;
 
-public class PubSubTests : IClassFixture<PubSubClusterFixture>
+public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
 {
     private readonly PubSubClusterFixture _fixture;
     private readonly ITestOutputHelper _output;
@@ -22,7 +22,11 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         _fixture.Output = output;
         _output = output;
         _fixture.Deliveries.Clear();
+        TestLog.Log = Log;
     }
+
+    public void Dispose() => TestLog.Log = null;
+
 
     [Fact]
     public async Task Can_deliver_single_messages()
@@ -241,5 +245,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
 
         _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
+
+    private void Log(string message) => _output.WriteLine($"[{DateTime.Now:hh:mm:ss.fff}] {message}");
 
 }

@@ -50,6 +50,7 @@ public sealed class TopicActor : IActor
             var subscribers = await Task.WhenAll(pidTasks);
             var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
 
+            TestLog.Log?.Invoke($"TOPIC: Delivering message to members");
             var acks =
                 (from member in members
                  let address = member.Key
@@ -65,6 +66,7 @@ public sealed class TopicActor : IActor
 
             if (allInvalidDeliveryReports.Length > 0)
             {
+                TestLog.Log?.Invoke($"TOPIC: Got response but some members are not reachable");
                 await HandleInvalidDeliveries(context, allInvalidDeliveryReports);
 
                 // nack back to publisher
@@ -83,6 +85,8 @@ public sealed class TopicActor : IActor
         }
         catch (TimeoutException)
         {
+            TestLog.Log?.Invoke($"TOPIC: Member delivery timeout");
+            
             // failed to deliver to at least one member
             // remove PID subscribers that are on members no longer present in the member list
             // the ClusterIdentity subscribers always exist, so no action is needed here
@@ -98,6 +102,7 @@ public sealed class TopicActor : IActor
         }
         catch (Exception e)
         {
+            TestLog.Log?.Invoke($"TOPIC: An error occurred while delivering message to members: {e}");
             if (LogThrottle().IsOpen())
             {
                 Logger.LogWarning(e, "Error when delivering message batch");

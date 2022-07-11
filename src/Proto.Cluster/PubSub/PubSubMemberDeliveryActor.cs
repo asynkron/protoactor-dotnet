@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -64,6 +63,8 @@ public class PubSubMemberDeliveryActor : IActor
     {
         try
         {
+            TestLog.Log?.Invoke($"DELIVERY: Delivering message to cluster identity: {ci}");
+            
             // deliver to virtual actor
             // delivery should always be possible, since a virtual actor always exists
             var response = await context.ClusterRequestAsync<PublishResponse?>(ci.Identity, ci.Kind, pub,
@@ -72,21 +73,26 @@ public class PubSubMemberDeliveryActor : IActor
 
             if (response == null)
             {
+                TestLog.Log?.Invoke($"DELIVERY: Delivery to cluster identity: {ci} timed out");
+
                 if (LogThrottle().IsOpen())
                     Logger.LogWarning("Pub-sub message delivered to {ClusterIdentity} timed out", ci.ToDiagnosticString());
                 return DeliveryStatus.Timeout;
             }
 
+            TestLog.Log?.Invoke($"DELIVERY: Delivery to cluster identity: {ci} succeeded");
             return DeliveryStatus.Delivered;
         }
         catch (TimeoutException)
         {
             if (LogThrottle().IsOpen())
-                Logger.LogWarning("Pub-sub message delivered to {ClusterIdentity} timed out", ci.ToDiagnosticString());
+                Logger.LogWarning("Pub-sub message delivered to: {ClusterIdentity} timed out", ci.ToDiagnosticString());
             return DeliveryStatus.Timeout;
         }
         catch (Exception e)
         {
+            TestLog.Log?.Invoke($"DELIVERY: Delivery to cluster identity: {ci} failed with error {e}");
+
             e.CheckFailFast();
             if (LogThrottle().IsOpen())
                 Logger.LogError(e, "Error while delivering pub-sub message to {ClusterIdentity}", ci.ToDiagnosticString());

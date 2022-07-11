@@ -70,6 +70,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
         {
             if (context.Message is DataPublished)
             {
+                TestLog.Log?.Invoke($"ACTOR: Got message {context.Message}");
                 await Task.Delay(15000, CancelWhenDisposing);
                 context.Respond(new Response());
             }
