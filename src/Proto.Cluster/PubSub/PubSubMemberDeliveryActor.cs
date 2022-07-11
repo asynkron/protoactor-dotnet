@@ -68,7 +68,7 @@ public class PubSubMemberDeliveryActor : IActor
             // deliver to virtual actor
             // delivery should always be possible, since a virtual actor always exists
             var response = await context.ClusterRequestAsync<PublishResponse?>(ci.Identity, ci.Kind, pub,
-                CancellationTokens.WithTimeout(_subscriberTimeout), _subscriberTimeout
+                CancellationTokens.WithTimeout(TimeSpan.FromMilliseconds(_subscriberTimeout.TotalMilliseconds / 2)), _subscriberTimeout
             );
 
             if (response == null)
