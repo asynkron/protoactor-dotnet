@@ -31,9 +31,9 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
     public PubSubClusterFixture() : base(3, config =>
         config
             .WithPubSubConfig(PubSubConfig.Setup()
-                .WithSubscriberTimeout(TimeSpan.FromSeconds(2))
-                .WithMemberDeliveryTimeout(TimeSpan.FromSeconds(4))
-                .WithPublishTimeout(TimeSpan.FromSeconds(6))
+                .WithSubscriberTimeout(TimeSpan.FromSeconds(3))
+                .WithMemberDeliveryTimeout(TimeSpan.FromSeconds(6))
+                .WithPublishTimeout(TimeSpan.FromSeconds(9))
             )
     )
     {

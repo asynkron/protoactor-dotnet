@@ -218,7 +218,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
                 Status = PublishStatus.Failed,
                 FailureReason = PublishFailureReason.AtLeastOneSubscriberUnreachable
             },
-            "topic actor should return a response indicating failure"
+            "topic actor should return a response indicating failure - unreachable subscriber"
         );
     }
 
