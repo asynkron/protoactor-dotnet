@@ -66,13 +66,10 @@ public class PubSubMemberDeliveryActor : IActor
         {
             // deliver to virtual actor
             // delivery should always be possible, since a virtual actor always exists
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
             var response = await context.ClusterRequestAsync<PublishResponse?>(ci.Identity, ci.Kind, pub,
                 CancellationTokens.WithTimeout(_subscriberTimeout), _subscriberTimeout
             );
-            stopwatch.Stop();
-            
+
             if (response == null)
             {
                 if (LogThrottle().IsOpen())

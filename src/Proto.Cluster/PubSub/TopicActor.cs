@@ -66,13 +66,14 @@ public sealed class TopicActor : IActor
             if (allInvalidDeliveryReports.Length > 0)
             {
                 await HandleInvalidDeliveries(context, allInvalidDeliveryReports);
-                
+
                 // nack back to publisher
                 context.Respond(new PublishResponse
-                {
-                    Status = PublishStatus.Failed,
-                    FailureReason = PublishFailureReason.AtLeastOneSubscriberUnreachable
-                });
+                    {
+                        Status = PublishStatus.Failed,
+                        FailureReason = PublishFailureReason.AtLeastOneSubscriberUnreachable
+                    }
+                );
             }
             else
             {
@@ -89,10 +90,11 @@ public sealed class TopicActor : IActor
 
             // nack back to publisher
             context.Respond(new PublishResponse
-            {
-                Status = PublishStatus.Failed,
-                FailureReason = PublishFailureReason.AtLeastOneMemberLeftTheCluster
-            });
+                {
+                    Status = PublishStatus.Failed,
+                    FailureReason = PublishFailureReason.AtLeastOneMemberLeftTheCluster
+                }
+            );
         }
         catch (Exception e)
         {
@@ -103,16 +105,17 @@ public sealed class TopicActor : IActor
 
             // nack back to publisher
             context.Respond(new PublishResponse
-            {
-                Status = PublishStatus.Failed,
-                FailureReason = PublishFailureReason.Unknown
-            });
+                {
+                    Status = PublishStatus.Failed,
+                    FailureReason = PublishFailureReason.Unknown
+                }
+            );
         }
     }
 
     private async Task HandleInvalidDeliveries(IContext context, SubscriberDeliveryReport[] allInvalidDeliveryReports)
     {
-        await UnsubscribeUnreachableSubscribers(allInvalidDeliveryReports);
+        await UnsubscribeUnreachablePidSubscribers(allInvalidDeliveryReports);
         LogOtherDeliveryErrors(allInvalidDeliveryReports);
     }
 
@@ -129,11 +132,16 @@ public sealed class TopicActor : IActor
             Logger.LogError(diagnosticMessage);
         }
     }
-
-    private async Task UnsubscribeUnreachableSubscribers(SubscriberDeliveryReport[] allInvalidDeliveryReports)
+    
+    private async Task UnsubscribeUnreachablePidSubscribers(SubscriberDeliveryReport[] allInvalidDeliveryReports)
     {
         var allUnreachable = allInvalidDeliveryReports
-            .Where(r => r.Status is DeliveryStatus.SubscriberNoLongerReachable or DeliveryStatus.Timeout)
+            .Where(r => r is
+                {
+                    Subscriber.IdentityCase: SubscriberIdentity.IdentityOneofCase.Pid,
+                    Status: DeliveryStatus.SubscriberNoLongerReachable or DeliveryStatus.Timeout
+                }
+            )
             .ToArray();
 
         if (allUnreachable.Length > 0)

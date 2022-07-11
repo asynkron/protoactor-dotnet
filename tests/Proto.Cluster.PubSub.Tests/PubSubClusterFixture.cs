@@ -68,7 +68,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
     {
         async Task Receive(IContext context)
         {
-            if (context.Message is DataPublished msg)
+            if (context.Message is DataPublished)
             {
                 await Task.Delay(15000, CancelWhenDisposing);
                 context.Respond(new Response());
