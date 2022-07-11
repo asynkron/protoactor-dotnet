@@ -12,14 +12,12 @@ namespace Proto.Remote;
 public class JsonSerializer : ISerializer
 {
     private readonly Serialization _serialization;
-    private readonly ConcurrentDictionary<string, Type> _jsonTypes = new ConcurrentDictionary<string, Type>();
+    private readonly ConcurrentDictionary<string, Type> _jsonTypes = new();
 
     public JsonSerializer(Serialization serialization) => _serialization = serialization;
 
-    public ByteString Serialize(object obj)
-    {
-        return ByteString.CopyFromUtf8(System.Text.Json.JsonSerializer.Serialize(obj, _serialization.JsonSerializerOptions));
-    }
+    public ByteString Serialize(object obj) => 
+        ByteString.CopyFromUtf8(System.Text.Json.JsonSerializer.Serialize(obj, _serialization.JsonSerializerOptions));
 
     public object Deserialize(ByteString bytes, string typeName)
     {
@@ -29,10 +27,11 @@ public class JsonSerializer : ISerializer
         return message;
     }
 
-    public string GetTypeName(object obj)
-    {
-        return obj?.GetType()?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(obj));
-    }
+    public string GetTypeName(object obj) => obj.GetType().AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(obj));
 
-    public bool CanSerialize(object obj) => true;
+    public bool CanSerialize(object obj) => obj switch
+    {
+        IMessage => false,
+        _        => true
+    };
 }
