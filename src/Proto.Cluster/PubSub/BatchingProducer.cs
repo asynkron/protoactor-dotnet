@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -12,8 +13,6 @@ using Microsoft.Extensions.Logging;
 using Proto.Utils;
 
 namespace Proto.Cluster.PubSub;
-
-public record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource, CancellationToken Cancel);
 
 /// <summary>
 /// The Pub-Sub batching producer has an internal queue collecting messages to be published to a topic. Internal loop creates and sends the batches
@@ -56,7 +55,7 @@ public class BatchingProducer : IAsyncDisposable
     {
         Logger.LogDebug("Producer is starting the publisher loop for topic {Topic}", _topic);
 
-        var batch = new PubSubBatch();
+        var batch = new PubSubBatchWithReceipts();
 
         try
         {
@@ -68,7 +67,7 @@ public class BatchingProducer : IAsyncDisposable
                     {
                         if (!produceMessage.Cancel.IsCancellationRequested)
                         {
-                            batch.Envelopes.Add(produceMessage.Message);
+                            batch.Batch.Envelopes.Add(produceMessage.Message);
                             batch.DeliveryReports.Add(produceMessage.TaskCompletionSource);
                             batch.CancelTokens.Add(produceMessage.Cancel);
                         }
@@ -77,17 +76,17 @@ public class BatchingProducer : IAsyncDisposable
                             _ = produceMessage.TaskCompletionSource.TrySetCanceled(CancellationToken.None);
                         }
 
-                        if (batch.Envelopes.Count < _config.BatchSize) continue;
+                        if (batch.Batch.Envelopes.Count < _config.BatchSize) continue;
 
                         await PublishBatch(batch);
-                        batch = new PubSubBatch();
+                        batch = new PubSubBatchWithReceipts();
                     }
                     else
                     {
-                        if (batch.Envelopes.Count > 0)
+                        if (batch.Batch.Envelopes.Count > 0)
                         {
                             await PublishBatch(batch);
-                            batch = new PubSubBatch();
+                            batch = new PubSubBatchWithReceipts();
                         }
 
                         await _publisherChannel.Reader.WaitToReadAsync(cancel);
@@ -135,44 +134,49 @@ public class BatchingProducer : IAsyncDisposable
         }
     }
 
-    private void ClearBatch(PubSubBatch batch)
+    private void ClearBatch(PubSubBatchWithReceipts batch)
     {
-        batch.Envelopes.Clear();
+        // we just remove the reference to the batch
+        // the batch itself might still be in send pipeline, waiting to be serialized or delivered locally
+        batch.Batch = new PubSubBatch();
         batch.DeliveryReports.Clear();
         batch.CancelTokens.Clear();
     }
 
-    private void FailBatch(PubSubBatch batch, Exception ex)
+    private void FailBatch(PubSubBatchWithReceipts batch, Exception ex)
     {
         foreach (var deliveryReport in batch.DeliveryReports)
         {
             deliveryReport.SetException(ex);
         }
 
+        // ensure once failed, we won't touch the batch anymore
         ClearBatch(batch);
     }
 
-    private void CancelBatch(PubSubBatch batch)
+    private void CancelBatch(PubSubBatchWithReceipts batch)
     {
         foreach (var deliveryReport in batch.DeliveryReports)
         {
             deliveryReport.SetCanceled();
         }
 
+        // ensure once cancelled, we won't touch the batch anymore
         ClearBatch(batch);
     }
 
-    private void CompleteBatch(PubSubBatch batch)
+    private void CompleteBatch(PubSubBatchWithReceipts batch)
     {
         foreach (var deliveryReport in batch.DeliveryReports)
         {
             deliveryReport.SetResult(true);
         }
 
+        // ensure once completed, we won't touch the batch anymore
         ClearBatch(batch);
     }
 
-    private void RemoveCancelledFromBatch(PubSubBatch batch)
+    private void RemoveCancelledFromBatch(PubSubBatchWithReceipts batch)
     {
         var cancelTokensCopy = batch.CancelTokens.ToArray();
 
@@ -183,7 +187,7 @@ public class BatchingProducer : IAsyncDisposable
                 batch.DeliveryReports[i].SetCanceled();
 
                 batch.DeliveryReports.RemoveAt(i);
-                batch.Envelopes.RemoveAt(i);
+                batch.Batch.Envelopes.RemoveAt(i);
                 batch.CancelTokens.RemoveAt(i);
             }
         }
@@ -195,7 +199,7 @@ public class BatchingProducer : IAsyncDisposable
             _publisherChannel.Writer.Complete();
     }
 
-    private async Task PublishBatch(PubSubBatch batch)
+    private async Task PublishBatch(PubSubBatchWithReceipts batch)
     {
         var retries = 0;
         var retry = true;
@@ -205,8 +209,8 @@ public class BatchingProducer : IAsyncDisposable
             try
             {
                 retries++;
-                
-                var response = await _publisher.PublishBatch(_topic, batch, CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
+
+                var response = await _publisher.PublishBatch(_topic, batch.Batch, CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
                 if (response == null)
                     throw new TimeoutException("Timeout when publishing message batch");
 
@@ -215,7 +219,7 @@ public class BatchingProducer : IAsyncDisposable
             }
             catch (Exception e)
             {
-                var decision = await _config.OnPublishingError(retries, e, batch);
+                var decision = await _config.OnPublishingError(retries, e, batch.Batch);
 
                 if (decision == PublishingErrorDecision.FailBatchAndStop)
                 {
@@ -276,6 +280,19 @@ public class BatchingProducer : IAsyncDisposable
         _cts.Cancel();
         await _publisherLoop;
         _cts.Dispose();
+    }
+
+    private record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource, CancellationToken Cancel);
+
+    private class PubSubBatchWithReceipts
+    {
+        public PubSubBatch Batch { get; set; } = new();
+
+        public List<TaskCompletionSource<bool>> DeliveryReports { get; } = new();
+
+        public List<CancellationToken> CancelTokens { get; } = new();
+        
+        public bool IsEmpty() => Batch.Envelopes.Count == 0;
     }
 }
 

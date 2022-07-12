@@ -21,9 +21,9 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
     public const string SubscriberKind = "Subscriber";
     public const string TimeoutSubscriberKind = "TimeoutSubscriber";
 
-    public ConcurrentBag<Delivery> Deliveries = new();
+    public readonly ConcurrentBag<Delivery> Deliveries = new();
 
-    private CancellationTokenSource _cts = new();
+    private readonly CancellationTokenSource _cts = new();
     public CancellationToken CancelWhenDisposing => _cts.Token;
 
     public ITestOutputHelper? Output;
@@ -31,15 +31,16 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
     public PubSubClusterFixture() : base(3, config =>
         config
             .WithPubSubConfig(PubSubConfig.Setup()
-                .WithSubscriberTimeout(TimeSpan.FromSeconds(3))
-                .WithMemberDeliveryTimeout(TimeSpan.FromSeconds(6))
-                .WithPublishTimeout(TimeSpan.FromSeconds(9))
+                .WithSubscriberTimeout(TimeSpan.FromSeconds(2))
+                .WithPublishTimeout(TimeSpan.FromSeconds(5))
             )
     )
     {
     }
 
     private readonly InMemorySubscribersStore _subscribersStore = new();
+    
+    public Task<Subscribers> GetSubscribersForTopic(string topic) => _subscribersStore.GetAsync(topic, CancellationToken.None);
 
     protected override ClusterKind[] ClusterKinds => new[]
     {
@@ -55,6 +56,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
             if (context.Message is DataPublished msg)
             {
                 Deliveries.Add(new Delivery(context.ClusterIdentity()!.Identity, msg.Data));
+                TestLog.Log?.Invoke($"$ACTOR: {context.ClusterIdentity()!.Identity} got {msg.Data}");
                 context.Respond(new Response());
             }
 
@@ -68,10 +70,11 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
     {
         async Task Receive(IContext context)
         {
-            if (context.Message is DataPublished)
+            if (context.Message is DataPublished msg)
             {
                 TestLog.Log?.Invoke($"ACTOR: Got message {context.Message}");
-                await Task.Delay(15000, CancelWhenDisposing);
+                await Task.Delay(4000, CancelWhenDisposing); // 4 seconds is longer than the configured subscriber timeout
+                Deliveries.Add(new Delivery(context.ClusterIdentity()!.Identity, msg.Data));
                 context.Respond(new Response());
             }
         }
@@ -89,8 +92,10 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
 
     public Cluster RandomMember() => Members[_random.Next(Members.Count)];
 
-    public void VerifyAllSubscribersGotAllTheData(string[] subscriberIds, int numMessages)
+    public async Task VerifyAllSubscribersGotAllTheData(string[] subscriberIds, int numMessages)
     {
+        await WaitHelper.WaitUntil(() => Deliveries.Count == subscriberIds.Length * numMessages, "All messages should be delivered");
+        
         var expected = subscriberIds
             .SelectMany(id => Enumerable.Range(0, numMessages).Select(i => new Delivery(id, i)))
             .ToArray();

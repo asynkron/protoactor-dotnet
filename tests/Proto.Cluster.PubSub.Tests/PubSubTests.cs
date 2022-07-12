@@ -8,6 +8,7 @@ using FluentAssertions;
 using Proto.Cluster.Tests;
 using Xunit;
 using Xunit.Abstractions;
+using static Proto.Cluster.PubSub.Tests.WaitHelper;
 
 namespace Proto.Cluster.PubSub.Tests;
 
@@ -27,7 +28,6 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
 
     public void Dispose() => TestLog.Log = null;
 
-
     [Fact]
     public async Task Can_deliver_single_messages()
     {
@@ -46,9 +46,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
             response!.Status.Should().Be(PublishStatus.Ok);
         }
 
-        await _fixture.UnsubscribeAllFrom(topic, subscriberIds);
-
-        _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
+        await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
 
     [Fact]
@@ -69,9 +67,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
             response.Should().NotBeNull("publishing should not time out");
         }
 
-        await _fixture.UnsubscribeAllFrom(topic, subscriberIds);
-
-        _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
+        await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
 
     [Fact]
@@ -87,7 +83,9 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
         await _fixture.UnsubscribeFrom(topic, sub2);
 
         await _fixture.PublishData(topic, 1);
+        await Task.Delay(1000); // give time for the message "not to be delivered" to second subscriber
 
+        await WaitUntil(() => _fixture.Deliveries.Count == 1, "only one delivery should happen because the other actor is unsubscribed");
         _fixture.Deliveries.Should().HaveCount(1, "only one delivery should happen because the other actor is unsubscribed");
         _fixture.Deliveries.First().Identity.Should().Be(sub1, "the other actor should be unsubscribed");
     }
@@ -111,8 +109,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
 
         await _fixture.PublishData(topic, 1);
 
-        await member.Unsubscribe(topic, pid);
-
+        await WaitUntil(() => deliveredMessage != null, "Message should be delivered");
         deliveredMessage.Should().BeEquivalentTo(new DataPublished(1));
     }
 
@@ -136,6 +133,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
         await member.Unsubscribe(topic, pid);
 
         await _fixture.PublishData(topic, 1);
+        await Task.Delay(1000); // give time for the message "not to be delivered" to second subscriber
 
         deliveryCount.Should().Be(0);
     }
@@ -165,6 +163,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
 
         // publish one message
         await _fixture.PublishData(topic, 1);
+        await WaitUntil(() => deliveryCount == 2, "both messages should be delivered");
 
         // kill one of the actors
         await member.System.Root.StopAsync(pid2);
@@ -172,20 +171,23 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
         // publish again
         var response = await _fixture.PublishData(topic, 2);
 
-        // clean up and assert
-        await member.Unsubscribe(topic, pid1, CancellationToken.None);
-
         response.Should().NotBeNull("the publish operation shouldn't have timed out");
-        deliveryCount.Should().Be(3, "second publish should be delivered only to one of the actors");
+        await WaitUntil(() => deliveryCount == 3, "second publish should be delivered only to one of the actors");
     }
 
     [Fact]
-    public async Task Slow_PID_subscriber_that_times_out_results_in_failed_publish()
+    public async Task Slow_PID_subscriber_that_times_out_does_not_prevent_subsequent_publishes()
     {
         const string topic = "slow-pid-subscriber";
 
+        var deliveryCount = 0;
+
         // a slow subscriber that times out
-        var props = Props.FromFunc(ctx => Task.Delay(15000, _fixture.CancelWhenDisposing));
+        var props = Props.FromFunc(async ctx => {
+                await Task.Delay(4000, _fixture.CancelWhenDisposing); // 4 seconds is longer than the subscriber timeout configured in the test fixture
+                Interlocked.Increment(ref deliveryCount);
+            }
+        );
 
         // subscribe
         var member = _fixture.RandomMember();
@@ -193,20 +195,18 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
         await member.Subscribe(topic, pid);
 
         // publish one message
-        var response = await _fixture.PublishData(topic, 1);
+        await _fixture.PublishData(topic, 1);
 
-        response.Should().BeEquivalentTo(
-            new PublishResponse
-            {
-                Status = PublishStatus.Failed,
-                FailureReason = PublishFailureReason.AtLeastOneSubscriberUnreachable
-            },
-            "topic actor should return a response indicating failure"
+        // next published message should also be delivered
+        await _fixture.PublishData(topic, 1);
+
+        await WaitUntil(() => deliveryCount == 2, 
+            "A timing out subscriber should not prevent subsequent publishes", TimeSpan.FromSeconds(10)
         );
     }
 
     [Fact]
-    public async Task Slow_ClusterIdentity_subscriber_that_times_out_results_in_failed_publish()
+    public async Task Slow_ClusterIdentity_subscriber_that_times_out_does_not_prevent_subsequent_publishes()
     {
         const string topic = "slow-ci-subscriber";
 
@@ -214,15 +214,13 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
         await _fixture.SubscribeTo(topic, "slow-ci-1", PubSubClusterFixture.TimeoutSubscriberKind);
 
         // publish one message
-        var response = await _fixture.PublishData(topic, 1);
+        await _fixture.PublishData(topic, 1);
 
-        response.Should().BeEquivalentTo(
-            new PublishResponse
-            {
-                Status = PublishStatus.Failed,
-                FailureReason = PublishFailureReason.AtLeastOneSubscriberUnreachable
-            },
-            "topic actor should return a response indicating failure - unreachable subscriber"
+        // next published message should also be delivered
+        await _fixture.PublishData(topic, 1);
+
+        await WaitUntil(() => _fixture.Deliveries.Count == 2,
+            "A timing out subscriber should not prevent subsequent publishes", TimeSpan.FromSeconds(10)
         );
     }
 
@@ -241,11 +239,15 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
         var tasks = Enumerable.Range(0, numMessages).Select(i => producer.ProduceAsync(new DataPublished(i)));
         await Task.WhenAll(tasks);
 
-        await _fixture.UnsubscribeAllFrom(topic, subscriberIds);
-
-        _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
+        try
+        {
+            await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
+        }
+        catch (Exception e)
+        {
+            throw;
+        }
     }
 
     private void Log(string message) => _output.WriteLine($"[{DateTime.Now:hh:mm:ss.fff}] {message}");
-
 }

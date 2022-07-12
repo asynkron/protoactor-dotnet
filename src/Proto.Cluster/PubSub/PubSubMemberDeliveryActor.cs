@@ -31,20 +31,33 @@ public class PubSubMemberDeliveryActor : IActor
                     .Select(sub => DeliverBatch(context, topicBatch, sub))
                     .ToArray();
 
-            context.ReenterAfter(Task.WhenAll(tasks), () => ReportDelivery(tasks, context));
+            context.ReenterAfter(Task.WhenAll(tasks), () => NotifyAboutInvalidDeliveries(tasks, deliveryBatch.Topic, context));
         }
 
         return Task.CompletedTask;
     }
 
-    private void ReportDelivery(IEnumerable<Task<SubscriberDeliveryReport>> tasks, IContext context)
+    private void NotifyAboutInvalidDeliveries(IEnumerable<Task<SubscriberDeliveryReport>> tasks, string topic, IContext context)
     {
         var invalidDeliveries = tasks
             .Select(t => t.Result)
-            .Where(t => t.Status != DeliveryStatus.Delivered);
+            .Where(t => t.Status != DeliveryStatus.Delivered)
+            .ToArray();
 
-        var response = new DeliverBatchResponse {InvalidDeliveries = {invalidDeliveries}};
-        context.Respond(response);
+        if (invalidDeliveries.Length > 0)
+        {
+            // no need to await here
+            // we use cluster.RequestAsync to locate the topic actor in the cluster
+            // but we don't care about the result of the request
+            _ = context.Cluster().RequestAsync<NotifyAboutFailingSubscribersResponse>(
+                TopicActor.Kind,
+                topic,
+                new NotifyAboutFailingSubscribersRequest
+                {
+                    InvalidDeliveries = {invalidDeliveries}
+                }, CancellationTokens.FromSeconds(15)
+            );
+        }
     }
 
     private async Task<SubscriberDeliveryReport> DeliverBatch(IContext context, PubSubAutoRespondBatch pub, SubscriberIdentity s)
@@ -63,8 +76,8 @@ public class PubSubMemberDeliveryActor : IActor
     {
         try
         {
-            TestLog.Log?.Invoke($"DELIVERY: Delivering message to cluster identity: {ci}");
-            
+            TestLog.Log?.Invoke($"DELIVERY: Delivering message to cluster identity: {ci}, messages: {pub.Envelopes.Count}");
+
             // deliver to virtual actor
             // delivery should always be possible, since a virtual actor always exists
             var response = await context.ClusterRequestAsync<PublishResponse?>(ci.Identity, ci.Kind, pub,
@@ -73,14 +86,14 @@ public class PubSubMemberDeliveryActor : IActor
 
             if (response == null)
             {
-                TestLog.Log?.Invoke($"DELIVERY: Delivery to cluster identity: {ci} timed out");
+                TestLog.Log?.Invoke($"DELIVERY: Delivery to cluster identity: {ci} timed out, messages: {pub.Envelopes.Count}");
 
                 if (LogThrottle().IsOpen())
                     Logger.LogWarning("Pub-sub message delivered to {ClusterIdentity} timed out", ci.ToDiagnosticString());
                 return DeliveryStatus.Timeout;
             }
 
-            TestLog.Log?.Invoke($"DELIVERY: Delivery to cluster identity: {ci} succeeded");
+            TestLog.Log?.Invoke($"DELIVERY: Delivery to cluster identity: {ci} succeeded, messages: {pub.Envelopes.Count}");
             return DeliveryStatus.Delivered;
         }
         catch (TimeoutException)

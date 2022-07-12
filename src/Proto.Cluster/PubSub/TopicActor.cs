@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -23,18 +24,45 @@ public sealed class TopicActor : IActor
     private ImmutableHashSet<SubscriberIdentity> _subscribers = ImmutableHashSet<SubscriberIdentity>.Empty;
     private string _topic = string.Empty;
     private readonly IKeyValueStore<Subscribers> _subscriptionStore;
-    private TimeSpan _memberDeliveryTimeout;
+    private EventStreamSubscription<object>? _topologySubscription;
 
     public TopicActor(IKeyValueStore<Subscribers> subscriptionStore) => _subscriptionStore = subscriptionStore;
 
     public Task ReceiveAsync(IContext context) => context.Message switch
     {
-        Started _                => OnClusterInit(context),
-        SubscribeRequest sub     => OnSubscribe(context, sub),
-        UnsubscribeRequest unsub => OnUnsubscribe(context, unsub),
-        PubSubBatch batch        => OnPubSubBatch(context, batch),
-        _                        => Task.CompletedTask,
+        Started                                  => OnStarted(context),
+        Stopping                                 => OnStopping(context),
+        SubscribeRequest sub                     => OnSubscribe(context, sub),
+        UnsubscribeRequest unsub                 => OnUnsubscribe(context, unsub),
+        PubSubBatch batch                        => OnPubSubBatch(context, batch),
+        NotifyAboutFailingSubscribersRequest msg => OnNotifyAboutFailingSubscribers(context, msg),
+        ClusterTopology msg                      => OnClusterTopologyChanged(context, msg),
+        _                                        => Task.CompletedTask,
     };
+
+    private async Task OnStarted(IContext context)
+    {
+        _topic = context.Get<ClusterIdentity>()!.Identity;
+        _topologySubscription = context.System.EventStream.Subscribe<ClusterTopology>(context, context.Self);
+
+        var subs = await LoadSubscriptions(_topic);
+
+        if (subs.Subscribers_ is not null)
+        {
+            _subscribers = ImmutableHashSet.CreateRange(subs.Subscribers_);
+        }
+
+        await UnsubscribeSubscribersOnMembersThatLeft(context);
+
+        Logger.LogDebug("Topic {Topic} started", _topic);
+    }
+
+    private Task OnStopping(IContext _)
+    {
+        _topologySubscription?.Unsubscribe();
+        _topologySubscription = null;
+        return Task.CompletedTask;
+    }
 
     private async Task OnPubSubBatch(IContext context, PubSubBatch batch)
     {
@@ -43,66 +71,32 @@ public sealed class TopicActor : IActor
             //TODO: lookup PID for ClusterIdentity subscribers.
             //group PIDs by address
             //send the batch to the PubSub delivery actor on each member
-            //await for subscriber responses on in each delivery actor
             //when done, respond back here
 
             var pidTasks = _subscribers.Select(s => GetPid(context, s)).ToList();
             var subscribers = await Task.WhenAll(pidTasks);
             var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
 
-            TestLog.Log?.Invoke($"TOPIC: Delivering message to members");
-            var acks =
+            TestLog.Log?.Invoke($"TOPIC: Delivering message to members, members: {members.Count()}, messages: {batch.Envelopes.Count}");
+            var memberDeliveries =
                 (from member in members
                  let address = member.Key
                  let subscribersOnMember = GetSubscribersForAddress(member)
-                 let deliveryMessage = new DeliverBatchRequest(subscribersOnMember, batch)
+                 let deliveryMessage = new DeliverBatchRequest(subscribersOnMember, batch, _topic)
                  let deliveryPid = PID.FromAddress(address, PubSubExtension.PubSubDeliveryName)
-                 select context.RequestAsync<DeliverBatchResponse>(deliveryPid, deliveryMessage, _memberDeliveryTimeout))
-                .ToList();
+                 select (Pid: deliveryPid, Message: deliveryMessage));
 
-            await Task.WhenAll(acks);
-
-            var allInvalidDeliveryReports = acks.SelectMany(a => a.Result.InvalidDeliveries).ToArray();
-
-            if (allInvalidDeliveryReports.Length > 0)
+            foreach (var md in memberDeliveries)
             {
-                TestLog.Log?.Invoke($"TOPIC: Got response but some members are not reachable");
-                await HandleInvalidDeliveries(context, allInvalidDeliveryReports);
-
-                // nack back to publisher
-                context.Respond(new PublishResponse
-                    {
-                        Status = PublishStatus.Failed,
-                        FailureReason = PublishFailureReason.AtLeastOneSubscriberUnreachable
-                    }
-                );
+                context.Send(md.Pid, md.Message);
             }
-            else
-            {
-                // ack back to publisher
-                context.Respond(new PublishResponse());
-            }
-        }
-        catch (TimeoutException)
-        {
-            TestLog.Log?.Invoke($"TOPIC: Member delivery timeout");
-            
-            // failed to deliver to at least one member
-            // remove PID subscribers that are on members no longer present in the member list
-            // the ClusterIdentity subscribers always exist, so no action is needed here
-            await UnsubscribeSubscribersOnMembersThatLeft(context);
 
-            // nack back to publisher
-            context.Respond(new PublishResponse
-                {
-                    Status = PublishStatus.Failed,
-                    FailureReason = PublishFailureReason.AtLeastOneMemberLeftTheCluster
-                }
-            );
+            context.Respond(new PublishResponse());
         }
         catch (Exception e)
         {
             TestLog.Log?.Invoke($"TOPIC: An error occurred while delivering message to members: {e}");
+
             if (LogThrottle().IsOpen())
             {
                 Logger.LogWarning(e, "Error when delivering message batch");
@@ -111,87 +105,10 @@ public sealed class TopicActor : IActor
             // nack back to publisher
             context.Respond(new PublishResponse
                 {
-                    Status = PublishStatus.Failed,
-                    FailureReason = PublishFailureReason.Unknown
+                    Status = PublishStatus.Failed
                 }
             );
         }
-    }
-
-    private async Task HandleInvalidDeliveries(IContext context, SubscriberDeliveryReport[] allInvalidDeliveryReports)
-    {
-        await UnsubscribeUnreachablePidSubscribers(allInvalidDeliveryReports);
-        LogOtherDeliveryErrors(allInvalidDeliveryReports);
-    }
-
-    private void LogOtherDeliveryErrors(SubscriberDeliveryReport[] allInvalidDeliveryReports)
-    {
-        var allWithError = allInvalidDeliveryReports
-            .Where(r => r.Status == DeliveryStatus.OtherError)
-            .ToArray();
-
-        if (allWithError.Length > 0 && LogThrottle().IsOpen())
-        {
-            var diagnosticMessage = allWithError
-                .Aggregate($"Topic = {_topic} following subscribers could not process the batch: ", (acc, report) => acc + report.Subscriber + ", ");
-            Logger.LogError(diagnosticMessage);
-        }
-    }
-    
-    private async Task UnsubscribeUnreachablePidSubscribers(SubscriberDeliveryReport[] allInvalidDeliveryReports)
-    {
-        var allUnreachable = allInvalidDeliveryReports
-            .Where(r => r is
-                {
-                    Subscriber.IdentityCase: SubscriberIdentity.IdentityOneofCase.Pid,
-                    Status: DeliveryStatus.SubscriberNoLongerReachable or DeliveryStatus.Timeout
-                }
-            )
-            .ToArray();
-
-        if (allUnreachable.Length > 0)
-        {
-            foreach (var report in allUnreachable)
-            {
-                _subscribers = _subscribers.Remove(report.Subscriber);
-            }
-
-            if (LogThrottle().IsOpen())
-            {
-                var diagnosticMessage = allUnreachable
-                    .Aggregate($"Topic = {_topic} removed subscribers, because they are no longer reachable: ",
-                        (acc, report) => acc + report.Subscriber + ", "
-                    );
-                Logger.LogWarning(diagnosticMessage);
-            }
-
-            await SaveSubscriptions(_topic, new Subscribers {Subscribers_ = {_subscribers}});
-        }
-    }
-
-    private async Task UnsubscribeSubscribersOnMembersThatLeft(IContext ctx)
-    {
-        var activeMemberAddresses = ctx.Cluster().MemberList.GetAllMembers().Select(m => m.Address).ToList();
-
-        var subscribersThatLeft = _subscribers
-            .Where(s => s.IdentityCase == SubscriberIdentity.IdentityOneofCase.Pid && !activeMemberAddresses.Contains(s.Pid.Address))
-            .ToList();
-
-        foreach (var subscriber in subscribersThatLeft)
-        {
-            _subscribers = _subscribers.Remove(subscriber);
-        }
-
-        if (LogThrottle().IsOpen())
-        {
-            var diagnosticMessage = subscribersThatLeft
-                .Aggregate($"Topic = {_topic} removed subscribers, because they are on members that left the cluster: ",
-                    (acc, subscriber) => acc + subscriber + ", "
-                );
-            Logger.LogWarning(diagnosticMessage);
-        }
-
-        await SaveSubscriptions(_topic, new Subscribers {Subscribers_ = {_subscribers}});
     }
 
     private static Subscribers GetSubscribersForAddress(IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member)
@@ -218,33 +135,117 @@ public sealed class TopicActor : IActor
         return (s, pid);
     }
 
-    private async Task OnClusterInit(IContext context)
+    private async Task OnNotifyAboutFailingSubscribers(IContext context, NotifyAboutFailingSubscribersRequest msg)
     {
-        _memberDeliveryTimeout = context.Cluster().Config.PubSubConfig.MemberDeliveryTimeout;
-        _topic = context.Get<ClusterIdentity>()!.Identity;
-        var subs = await LoadSubscriptions(_topic);
+        TestLog.Log?.Invoke($"TOPIC: Got notified about failing subscribers {msg}");
 
-        if (subs?.Subscribers_ is not null)
+        await UnsubscribeUnreachablePidSubscribers(msg.InvalidDeliveries);
+        LogDeliveryErrors(msg.InvalidDeliveries);
+    }
+
+    private void LogDeliveryErrors(IReadOnlyCollection<SubscriberDeliveryReport> allInvalidDeliveryReports)
+    {
+        if (allInvalidDeliveryReports.Count > 0 && LogThrottle().IsOpen())
         {
-            _subscribers = ImmutableHashSet.CreateRange(subs.Subscribers_);
+            var diagnosticMessage = allInvalidDeliveryReports
+                .Aggregate($"Topic = {_topic} following subscribers could not process the batch: ", (acc, report) => acc + report.Subscriber + ", ");
+            Logger.LogError(diagnosticMessage);
         }
+    }
 
-        Logger.LogDebug("Topic {Topic} started", _topic);
+    private async Task UnsubscribeUnreachablePidSubscribers(IReadOnlyCollection<SubscriberDeliveryReport> allInvalidDeliveryReports)
+    {
+        var allUnreachable = allInvalidDeliveryReports
+            .Where(r => r is
+                {
+                    Subscriber.IdentityCase: SubscriberIdentity.IdentityOneofCase.Pid,
+                    Status: DeliveryStatus.SubscriberNoLongerReachable
+                }
+            )
+            .Select(s => s.Subscriber)
+            .ToList();
+
+        await RemoveSubscribers(allUnreachable);
+    }
+
+    private async Task OnClusterTopologyChanged(IContext context, ClusterTopology topology)
+    {
+        if (topology.Left.Count > 0)
+        {
+            var addressesThatLeft = topology.Left.Select(m => m.Address).ToList();
+
+            var subscribersThatLeft = _subscribers
+                .Where(s => s.IdentityCase == SubscriberIdentity.IdentityOneofCase.Pid && addressesThatLeft.Contains(s.Pid.Address))
+                .ToList();
+
+            await RemoveSubscribers(subscribersThatLeft);
+        }
+    }
+
+    private async Task UnsubscribeSubscribersOnMembersThatLeft(IContext ctx)
+    {
+        var activeMemberAddresses = ctx.Cluster().MemberList.GetAllMembers().Select(m => m.Address).ToList();
+
+        var subscribersThatLeft = _subscribers
+            .Where(s => s.IdentityCase == SubscriberIdentity.IdentityOneofCase.Pid && !activeMemberAddresses.Contains(s.Pid.Address))
+            .ToList();
+
+        await RemoveSubscribers(subscribersThatLeft);
+    }
+
+    private async Task RemoveSubscribers(IReadOnlyCollection<SubscriberIdentity> subscribersThatLeft)
+    {
+        if (subscribersThatLeft.Count > 0)
+        {
+            foreach (var subscriber in subscribersThatLeft)
+            {
+                _subscribers = _subscribers.Remove(subscriber);
+            }
+
+            if (LogThrottle().IsOpen())
+            {
+                var diagnosticMessage = subscribersThatLeft
+                    .Aggregate(
+                        $"Topic = {_topic} removed subscribers, removed subscribers, because they are dead or they are on members that left the cluster: ",
+                        (acc, subscriber) => acc + subscriber + ", "
+                    );
+                Logger.LogWarning(diagnosticMessage);
+            }
+
+            await SaveSubscriptions(_topic, new Subscribers {Subscribers_ = {_subscribers}});
+        }
     }
 
     private async Task<Subscribers> LoadSubscriptions(string topic)
     {
-        //TODO: cancellation token config?
-        var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None);
-        Logger.LogDebug("Topic {Topic} loaded subscriptions {Subscriptions}", _topic, state);
-        return state;
+        try
+        {
+            //TODO: cancellation token config?
+            var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None);
+            Logger.LogDebug("Topic {Topic} loaded subscriptions {Subscriptions}", _topic, state);
+            return state;
+        }
+        catch (Exception e)
+        {
+            if (LogThrottle().IsOpen())
+                Logger.LogError(e, "Error when loading subscriptions");
+            return new Subscribers();
+        }
     }
 
     private async Task SaveSubscriptions(string topic, Subscribers subs)
     {
-        //TODO: cancellation token config?
-        Logger.LogDebug("Topic {Topic} saved subscriptions {Subscriptions}", _topic, subs);
-        await _subscriptionStore.SetAsync(topic, subs, CancellationToken.None);
+        try
+        {
+            //TODO: cancellation token config?
+            Logger.LogDebug("Topic {Topic} saved subscriptions {Subscriptions}", _topic, subs);
+            await _subscriptionStore.SetAsync(topic, subs, CancellationToken.None);
+        }
+        catch (Exception e)
+        {
+            if (LogThrottle().IsOpen())
+                Logger.LogError(e, "Error when saving subscriptions");
+        }
     }
 
     private async Task OnUnsubscribe(IContext context, UnsubscribeRequest unsub)

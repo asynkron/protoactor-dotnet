@@ -5,19 +5,20 @@
 // -----------------------------------------------------------------------
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Proto.Remote;
 
 namespace Proto.Cluster.PubSub;
 
+/// <summary>
+/// Represents a batch of messages that are published to a topic.
+/// </summary>
+/// <remarks>
+/// Due to how publishing works, do not attempt modifying contents of the batch after it has been published. The batch may still be
+/// in the send pipeline, waiting to be serialized (or delivered to local subscribers). The batch is not immutable to avoid the overhead.
+/// </remarks>
 public class PubSubBatch : IRootSerializable
 {
     public List<object> Envelopes { get; } = new();
-
-    internal List<TaskCompletionSource<bool>> DeliveryReports { get; } = new();
-
-    internal List<CancellationToken> CancelTokens { get; } = new();
 
     public IRootSerialized Serialize(ActorSystem system)
     {
@@ -48,8 +49,6 @@ public class PubSubBatch : IRootSerializable
 
         return batch;
     }
-
-    public bool IsEmpty() => Envelopes.Count == 0;
 }
 
 public partial class PubSubBatchTransport : IRootSerialized
