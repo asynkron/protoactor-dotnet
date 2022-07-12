@@ -141,6 +141,8 @@ public sealed class TopicActor : IActor
 
         await UnsubscribeUnreachablePidSubscribers(msg.InvalidDeliveries);
         LogDeliveryErrors(msg.InvalidDeliveries);
+
+        context.Respond(new NotifyAboutFailingSubscribersResponse());
     }
 
     private void LogDeliveryErrors(IReadOnlyCollection<SubscriberDeliveryReport> allInvalidDeliveryReports)

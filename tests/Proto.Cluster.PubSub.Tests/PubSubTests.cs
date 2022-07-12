@@ -173,6 +173,12 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
 
         response.Should().NotBeNull("the publish operation shouldn't have timed out");
         await WaitUntil(() => deliveryCount == 3, "second publish should be delivered only to one of the actors");
+
+        await WaitUntil(async () => {
+                var subscribers = await _fixture.GetSubscribersForTopic(topic);
+                return !subscribers.Subscribers_!.Contains(new SubscriberIdentity {Pid = pid2});
+            }
+        );
     }
 
     [Fact]

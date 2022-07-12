@@ -50,8 +50,8 @@ public class PubSubMemberDeliveryActor : IActor
             // we use cluster.RequestAsync to locate the topic actor in the cluster
             // but we don't care about the result of the request
             _ = context.Cluster().RequestAsync<NotifyAboutFailingSubscribersResponse>(
-                TopicActor.Kind,
                 topic,
+                TopicActor.Kind,
                 new NotifyAboutFailingSubscribersRequest
                 {
                     InvalidDeliveries = {invalidDeliveries}
