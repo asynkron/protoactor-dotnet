@@ -23,7 +23,7 @@ public class PubSubExtension : IActorSystemExtension<PubSubExtension>
     {
         var props = Props.FromProducer(() => new PubSubMemberDeliveryActor(_cluster.Config.PubSubConfig.SubscriberTimeout));
 
-        _cluster.System.Root.SpawnNamedSystem(props, PubSubDeliveryName);
+        _cluster.System.Root.SpawnNamed(props, PubSubDeliveryName);
 
         return Task.CompletedTask;
     }

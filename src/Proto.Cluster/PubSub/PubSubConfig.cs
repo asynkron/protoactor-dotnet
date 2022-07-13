@@ -16,27 +16,26 @@ public record PubSubConfig
     }
 
     /// <summary>
-    /// A timeout used when delivering a message batch to a subscriber.
+    /// A timeout used when delivering a message batch to a subscriber. Default is 5s.
     /// </summary>
     public TimeSpan SubscriberTimeout { get; init; } = TimeSpan.FromSeconds(5);
 
     /// <summary>
-    /// A default timeout used when publishing a message batch or a message to a topic. Default is 15s. 
+    /// A default timeout used when publishing a message batch or a message to a topic via <see cref="IPublisher"/>. Default is 5s.
     /// </summary>
     /// <remarks>Should be more than both <see cref="SubscriberTimeout"/> and <see cref="MemberDeliveryTimeout"/></remarks>
-    public TimeSpan PublishTimeout { get; init; } = TimeSpan.FromSeconds(15);
+    public TimeSpan PublishTimeout { get; init; } = TimeSpan.FromSeconds(5);
 
     /// <summary>
-    /// A timeout used when delivering a message batch to a subscriber.
+    /// A timeout used when delivering a message batch to a subscriber. Default is 5s.
     /// </summary>
     public PubSubConfig WithSubscriberTimeout(TimeSpan timeout) =>
         this with {SubscriberTimeout = timeout};
 
     /// <summary>
     /// <summary>
-    /// A default timeout used when publishing a message batch or a message to a topic. Default is 15s. 
+    /// A default timeout used when publishing a message batch or a message to a topic via <see cref="IPublisher"/>. Default is 5s.
     /// </summary>
-    /// <remarks>Should be more than both <see cref="SubscriberTimeout"/> and <see cref="MemberDeliveryTimeout"/></remarks>
     /// </summary>
     /// <param name="timeout"></param>
     /// <returns></returns>
