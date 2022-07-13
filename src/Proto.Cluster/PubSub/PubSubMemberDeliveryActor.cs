@@ -15,11 +15,13 @@ namespace Proto.Cluster.PubSub;
 public class PubSubMemberDeliveryActor : IActor
 {
     private static readonly ShouldThrottle LogThrottle = Throttle.Create(10, TimeSpan.FromSeconds(1),
-        droppedLogs => Logger.LogInformation("[PubSubMemberDeliveryActor] Throttled {LogCount} logs", droppedLogs));
-    private static readonly ILogger Logger = Log.CreateLogger<PubSubMemberDeliveryActor>();
-    private readonly TimeSpan _subscriberTimeout;
+        droppedLogs => Logger?.LogInformation("[PubSubMemberDeliveryActor] Throttled {LogCount} logs", droppedLogs)
+    );
 
-    public PubSubMemberDeliveryActor(TimeSpan subscriberTimeout) => _subscriberTimeout = subscriberTimeout;
+    private static readonly ILogger Logger = Log.CreateLogger<PubSubMemberDeliveryActor>();
+    private readonly int _subscriberTimeoutSeconds;
+
+    public PubSubMemberDeliveryActor(TimeSpan subscriberTimeout) => _subscriberTimeoutSeconds = (int) subscriberTimeout.TotalSeconds;
 
     public Task ReceiveAsync(IContext context)
     {
@@ -82,7 +84,7 @@ public class PubSubMemberDeliveryActor : IActor
             // deliver to virtual actor
             // delivery should always be possible, since a virtual actor always exists
             var response = await context.ClusterRequestAsync<PublishResponse?>(ci.Identity, ci.Kind, pub,
-                CancellationTokens.WithTimeout(TimeSpan.FromMilliseconds(_subscriberTimeout.TotalMilliseconds / 2)), _subscriberTimeout // TODO
+                CancellationTokens.FromSeconds(_subscriberTimeoutSeconds)
             );
 
             if (response == null)
@@ -120,7 +122,7 @@ public class PubSubMemberDeliveryActor : IActor
         try
         {
             // deliver to PID
-            await context.RequestAsync<PublishResponse>(pid, pub, CancellationTokens.WithTimeout(_subscriberTimeout));
+            await context.RequestAsync<PublishResponse>(pid, pub, CancellationTokens.FromSeconds(_subscriberTimeoutSeconds));
             return DeliveryStatus.Delivered;
         }
         catch (TimeoutException)

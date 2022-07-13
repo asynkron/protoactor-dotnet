@@ -18,9 +18,7 @@ public interface IClusterContext
     /// <param name="message">Message to send</param>
     /// <param name="context"><see cref="ISenderContext"/> to send the message through</param>
     /// <param name="ct">Token to cancel the request</param>
-    /// <param name="requestTimeoutOverride">Represents a timeout for the single request retry. If not specified, <see cref="ClusterConfig.ActorRequestTimeout"/> is used.
-    /// Specifying custom timeout prevents optimizations around awaiting the timeout on .NET &lt; 6 and can have performance implications.</param>
     /// <typeparam name="T">Type of the expected response</typeparam>
     /// <returns>Response or null if timed out</returns>
-    Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct, TimeSpan requestTimeoutOverride = default);
+    Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct);
 }

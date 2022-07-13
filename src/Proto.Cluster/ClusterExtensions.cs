@@ -30,12 +30,10 @@ public static class ClusterExtensions
     /// <param name="kind">Cluster kind of the actor</param>
     /// <param name="message">Message to send</param>
     /// <param name="ct">Token to cancel the operation</param>
-    /// <param name="requestTimeoutOverride">Represents a timeout for the single request retry. If not specified, <see cref="ClusterConfig.ActorRequestTimeout"/> is used.
-    /// Specifying custom timeout prevents optimizations around awaiting the timeout on .NET &lt; 6 and can have performance implications.</param>
     /// <typeparam name="T">Expected response type</typeparam>
     /// <returns>Response of null if timed out</returns>
-    public static Task<T> RequestAsync<T>(this Cluster cluster, string identity, string kind, object message, CancellationToken ct, TimeSpan requestTimeoutOverride = default)
-        => cluster.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, cluster.System.Root, ct, requestTimeoutOverride);
+    public static Task<T> RequestAsync<T>(this Cluster cluster, string identity, string kind, object message, CancellationToken ct)
+        => cluster.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, cluster.System.Root, ct);
 
     /// <summary>
     /// Sends a request to a virtual actor.
@@ -46,12 +44,10 @@ public static class ClusterExtensions
     /// <param name="message">Message to send</param>
     /// <param name="context">Sender context to send the message through</param>
     /// <param name="ct">Token to cancel the operation</param>
-    /// <param name="requestTimeoutOverride">Represents a timeout for the single request retry. If not specified, <see cref="ClusterConfig.ActorRequestTimeout"/> is used.
-    /// Specifying custom timeout prevents optimizations around awaiting the timeout on .NET &lt; 6 and can have performance implications.</param>
     /// <typeparam name="T">Expected response type</typeparam>
     /// <returns>Response of null if timed out</returns>
-    public static Task<T> RequestAsync<T>(this Cluster cluster, string identity, string kind, object message, ISenderContext context, CancellationToken ct, TimeSpan requestTimeoutOverride = default) =>
-        cluster.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct, requestTimeoutOverride);
+    public static Task<T> RequestAsync<T>(this Cluster cluster, string identity, string kind, object message, ISenderContext context, CancellationToken ct) =>
+        cluster.RequestAsync<T>(new ClusterIdentity {Identity = identity, Kind = kind}, message, context, ct);
 
     /// <summary>
     /// Sends a request to a virtual actor.
@@ -60,10 +56,8 @@ public static class ClusterExtensions
     /// <param name="clusterIdentity">Cluster identity of the actor</param>
     /// <param name="message">Message to send</param>
     /// <param name="ct">Token to cancel the operation</param>
-    /// <param name="requestTimeoutOverride">Represents a timeout for the single request retry. If not specified, <see cref="ClusterConfig.ActorRequestTimeout"/> is used.
-    /// Specifying custom timeout prevents optimizations around awaiting the timeout on .NET &lt; 6 and can have performance implications.</param>
     /// <typeparam name="T">Expected response type</typeparam>
     /// <returns>Response of null if timed out</returns>
-    public static Task<T> RequestAsync<T>(this Cluster cluster, ClusterIdentity clusterIdentity, object message, CancellationToken ct, TimeSpan requestTimeoutOverride = default) =>
-        cluster.RequestAsync<T>(clusterIdentity, message, cluster.System.Root, ct, requestTimeoutOverride);
+    public static Task<T> RequestAsync<T>(this Cluster cluster, ClusterIdentity clusterIdentity, object message, CancellationToken ct) =>
+        cluster.RequestAsync<T>(clusterIdentity, message, cluster.System.Root, ct);
 }
