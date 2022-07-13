@@ -12,8 +12,8 @@ using static Proto.Cluster.PubSub.Tests.WaitHelper;
 
 namespace Proto.Cluster.PubSub.Tests;
 
-[Collection("PubSub")] 
-public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
+[Collection("PubSub")]  // The CI is just to slow to run cluster fixture based tests in parallel
+public class PubSubTests : IClassFixture<PubSubClusterFixture>
 {
     private readonly PubSubClusterFixture _fixture;
     private readonly ITestOutputHelper _output;
@@ -24,10 +24,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
         _fixture.Output = output;
         _output = output;
         _fixture.Deliveries.Clear();
-        TestLog.Log = Log;
     }
-
-    public void Dispose() => TestLog.Log = null;
 
     [Fact]
     public async Task Can_deliver_single_messages()

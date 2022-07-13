@@ -78,7 +78,6 @@ public sealed class TopicActor : IActor
             var subscribers = await Task.WhenAll(pidTasks);
             var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
 
-            TestLog.Log?.Invoke($"TOPIC {_topic}: delivering message to members, members: {members.Count()}, messages: {batch.Envelopes.Count}");
             var memberDeliveries =
                 (from member in members
                  let address = member.Key
@@ -96,8 +95,6 @@ public sealed class TopicActor : IActor
         }
         catch (Exception e)
         {
-            TestLog.Log?.Invoke($"TOPIC {_topic}: An error occurred while delivering message to members: {e}");
-
             if (LogThrottle().IsOpen())
             {
                 Logger.LogWarning(e, "Error when delivering message batch");
@@ -138,8 +135,6 @@ public sealed class TopicActor : IActor
 
     private async Task OnNotifyAboutFailingSubscribers(IContext context, NotifyAboutFailingSubscribersRequest msg)
     {
-        TestLog.Log?.Invoke($"TOPIC {_topic}: Got notified about failing subscribers {msg}");
-
         await UnsubscribeUnreachablePidSubscribers(msg.InvalidDeliveries);
         LogDeliveryErrors(msg.InvalidDeliveries);
 

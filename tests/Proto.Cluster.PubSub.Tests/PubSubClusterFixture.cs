@@ -56,7 +56,6 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
             if (context.Message is DataPublished msg)
             {
                 Deliveries.Add(new Delivery(context.ClusterIdentity()!.Identity, msg.Data));
-                TestLog.Log?.Invoke($"$ACTOR: {context.ClusterIdentity()!.Identity} got {msg.Data}");
                 context.Respond(new Response());
             }
 
@@ -72,7 +71,6 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
         {
             if (context.Message is DataPublished msg)
             {
-                TestLog.Log?.Invoke($"ACTOR: {context.ClusterIdentity()!.Identity} got message {context.Message}");
                 await Task.Delay(4000, CancelWhenDisposing); // 4 seconds is longer than the configured subscriber timeout
                 Deliveries.Add(new Delivery(context.ClusterIdentity()!.Identity, msg.Data));
                 context.Respond(new Response());

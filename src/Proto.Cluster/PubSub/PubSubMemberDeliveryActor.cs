@@ -79,8 +79,6 @@ public class PubSubMemberDeliveryActor : IActor
     {
         try
         {
-            TestLog.Log?.Invoke($"DELIVERY: Delivering message from to cluster identity: {ci}, messages: {pub.Envelopes.Count}");
-
             // deliver to virtual actor
             // delivery should always be possible, since a virtual actor always exists
             var response = await context.ClusterRequestAsync<PublishResponse?>(ci.Identity, ci.Kind, pub,
@@ -89,14 +87,11 @@ public class PubSubMemberDeliveryActor : IActor
 
             if (response == null)
             {
-                TestLog.Log?.Invoke($"DELIVERY: Delivery to cluster identity: {ci} timed out, messages: {pub.Envelopes.Count}");
-
                 if (LogThrottle().IsOpen())
                     Logger.LogWarning("Pub-sub message delivered to {ClusterIdentity} timed out", ci.ToDiagnosticString());
                 return DeliveryStatus.Timeout;
             }
 
-            TestLog.Log?.Invoke($"DELIVERY: Delivery to cluster identity: {ci} succeeded, messages: {pub.Envelopes.Count}");
             return DeliveryStatus.Delivered;
         }
         catch (TimeoutException)
@@ -107,8 +102,6 @@ public class PubSubMemberDeliveryActor : IActor
         }
         catch (Exception e)
         {
-            TestLog.Log?.Invoke($"DELIVERY: Delivery to cluster identity: {ci} failed with error {e}");
-
             e.CheckFailFast();
             if (LogThrottle().IsOpen())
                 Logger.LogError(e, "Error while delivering pub-sub message to {ClusterIdentity}", ci.ToDiagnosticString());

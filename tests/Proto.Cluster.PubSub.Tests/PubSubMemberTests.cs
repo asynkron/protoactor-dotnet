@@ -9,7 +9,7 @@ using static Proto.Cluster.PubSub.Tests.WaitHelper;
 
 namespace Proto.Cluster.PubSub.Tests;
 
-[Collection("PubSub")] 
+[Collection("PubSub")] // The CI is just to slow to run cluster fixture based tests in parallel
 public class PubSubMemberTests : IAsyncLifetime
 {
     private readonly PubSubClusterFixture _fixture;
