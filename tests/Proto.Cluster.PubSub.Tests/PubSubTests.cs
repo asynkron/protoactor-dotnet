@@ -12,6 +12,7 @@ using static Proto.Cluster.PubSub.Tests.WaitHelper;
 
 namespace Proto.Cluster.PubSub.Tests;
 
+[Collection("PubSub")] 
 public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
 {
     private readonly PubSubClusterFixture _fixture;

@@ -18,7 +18,10 @@ public record PubSubConfig
     /// <summary>
     /// A timeout used when delivering a message batch to a subscriber. Default is 5s.
     /// </summary>
-    /// <remarks>This value gets rounded to seconds for optimization of cancellation token creation</remarks>
+    /// <remarks>This value gets rounded to seconds for optimization of cancellation token creation. Note that internally,
+    /// cluster request is used to deliver messages to <see cref="ClusterIdentity"/> subscribers. This means, that the timeout
+    /// for this request will be no less than <see cref="ClusterConfig.ActorRequestTimeout"/>. Subscriber timeout defines
+    /// a total timeout of the operation while <see cref="ClusterConfig.ActorRequestTimeout"/> defines a timeout for single retry.</remarks>
     public TimeSpan SubscriberTimeout { get; init; } = TimeSpan.FromSeconds(5);
 
     /// <summary>

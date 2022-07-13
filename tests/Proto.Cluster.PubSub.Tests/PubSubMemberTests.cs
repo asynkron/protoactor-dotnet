@@ -9,6 +9,7 @@ using static Proto.Cluster.PubSub.Tests.WaitHelper;
 
 namespace Proto.Cluster.PubSub.Tests;
 
+[Collection("PubSub")] 
 public class PubSubMemberTests : IAsyncLifetime
 {
     private readonly PubSubClusterFixture _fixture;
