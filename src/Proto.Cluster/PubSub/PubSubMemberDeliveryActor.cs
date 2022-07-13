@@ -79,7 +79,7 @@ public class PubSubMemberDeliveryActor : IActor
     {
         try
         {
-            TestLog.Log?.Invoke($"DELIVERY: Delivering message to cluster identity: {ci}, messages: {pub.Envelopes.Count}");
+            TestLog.Log?.Invoke($"DELIVERY: Delivering message from to cluster identity: {ci}, messages: {pub.Envelopes.Count}");
 
             // deliver to virtual actor
             // delivery should always be possible, since a virtual actor always exists

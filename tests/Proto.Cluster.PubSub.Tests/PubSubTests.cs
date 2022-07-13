@@ -245,14 +245,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>, IDisposable
         var tasks = Enumerable.Range(0, numMessages).Select(i => producer.ProduceAsync(new DataPublished(i)));
         await Task.WhenAll(tasks);
 
-        try
-        {
-            await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
-        }
-        catch (Exception e)
-        {
-            throw;
-        }
+        await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
 
     private void Log(string message) => _output.WriteLine($"[{DateTime.Now:hh:mm:ss.fff}] {message}");
