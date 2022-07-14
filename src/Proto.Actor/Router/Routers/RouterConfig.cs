@@ -20,8 +20,8 @@ public abstract record RouterConfig
     private PID SpawnRouterProcess(ActorSystem system, string name, Props props, PID? parent, Action<IContext>? callback)
     {
         var routerState = CreateRouterState();
-        var wg = new AutoResetEvent(false);
-        var p = props.WithProducer(() => new RouterActor(this, routerState, wg));
+        var notifyStarted = new RouterStartNotification();
+        var p = props.WithProducer(() => new RouterActor(this, routerState, notifyStarted));
 
         var mailbox = props.MailboxProducer();
         var dispatcher = props.Dispatcher;
@@ -35,7 +35,42 @@ public abstract record RouterConfig
         mailbox.RegisterHandlers(ctx, dispatcher);
         mailbox.PostSystemMessage(Started.Instance);
         mailbox.Start();
-        wg.WaitOne();
+
+        var (startSuccess, startException) = notifyStarted.Wait();
+
+        if (!startSuccess)
+        {
+            system.Root.Stop(self);
+            throw new RouterStartFailedException(startException!);
+        }
+
         return self;
+    }
+}
+
+public class RouterStartNotification
+{
+    private readonly ManualResetEvent _wg = new(false);
+    private Exception? _exception;
+
+    public void NotifyStarted() => _wg.Set();
+
+    public void NotifyFailed(Exception exception)
+    {
+        _exception = exception;
+        _wg.Set();
+    }
+
+    public (bool StartSuccess, Exception? Exception) Wait()
+    {
+        _wg.WaitOne();
+        return (_exception is null, _exception);
+    }
+}
+
+public class RouterStartFailedException : Exception
+{
+    public RouterStartFailedException(Exception inner) : base("Router failed to start", inner)
+    {
     }
 }
