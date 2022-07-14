@@ -115,28 +115,45 @@ public static class Extensions
                     (ctx, env) => {
                         return env.Message switch
                         {
-                            Started => HandleStart(baseReceive, ctx, env),
-                            Stopped => HandleStopped(baseReceive, ctx, env),
-                            _       => baseReceive(ctx, env)
+                            Started    => HandleStarted(baseReceive, ctx, env),
+                            Restarting => HandleRestarting(baseReceive, ctx, env),
+                            Stopped    => HandleStopped(baseReceive, ctx, env),
+                            _          => baseReceive(ctx, env)
                         };
                     }
             );
 
-        async Task HandleStart(
+        async Task HandleStarted(
             Receiver baseReceive,
             IReceiverContext ctx,
             MessageEnvelope startEnvelope
         )
         {
+            clusterKind.Inc();
             await baseReceive(ctx, startEnvelope);
+
             var identity = ctx.Get<ClusterIdentity>();
             var cluster = ctx.System.Cluster();
 #pragma warning disable 618
             var grainInit = new ClusterInit(identity!, cluster);
 #pragma warning restore 618
             var grainInitEnvelope = new MessageEnvelope(grainInit, null);
-            clusterKind.Inc();
             await baseReceive(ctx, grainInitEnvelope);
+        }
+
+        async Task HandleRestarting(
+            Receiver baseReceive,
+            IReceiverContext ctx,
+            MessageEnvelope restartingEnvelope
+        )
+        {
+            await baseReceive(ctx, restartingEnvelope);
+
+            // at this point the counter has been incremented by the Starting handler
+            // Restarting means that the actor is currently stopping (but it won't get Stopping message)
+            // the counter needs to be decremented to prepare for the Started message that follows next
+            // (unless the base handler for Restarting throws, but then we don't reach the decrement line)
+            clusterKind.Dec();
         }
 
         async Task HandleStopped(
@@ -152,10 +169,11 @@ public static class Extensions
             if (identity is not null)
             {
                 ctx.System.EventStream.Publish(new ActivationTerminating
-                {
-                    Pid = ctx.Self,
-                    ClusterIdentity = identity,
-                });
+                    {
+                        Pid = ctx.Self,
+                        ClusterIdentity = identity,
+                    }
+                );
                 cluster.PidCache.RemoveByVal(identity, ctx.Self);
             }
 
