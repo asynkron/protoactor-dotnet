@@ -55,7 +55,7 @@ public class BatchingProducer : IAsyncDisposable
     {
         Logger.LogDebug("Producer is starting the publisher loop for topic {Topic}", _topic);
 
-        var batch = new PubSubBatchWithReceipts();
+        var batchWrapper = new PubSubBatchWithReceipts();
 
         try
         {
@@ -67,26 +67,26 @@ public class BatchingProducer : IAsyncDisposable
                     {
                         if (!produceMessage.Cancel.IsCancellationRequested)
                         {
-                            batch.Batch.Envelopes.Add(produceMessage.Message);
-                            batch.DeliveryReports.Add(produceMessage.TaskCompletionSource);
-                            batch.CancelTokens.Add(produceMessage.Cancel);
+                            batchWrapper.Batch.Envelopes.Add(produceMessage.Message);
+                            batchWrapper.DeliveryReports.Add(produceMessage.TaskCompletionSource);
+                            batchWrapper.CancelTokens.Add(produceMessage.Cancel);
                         }
                         else
                         {
                             _ = produceMessage.TaskCompletionSource.TrySetCanceled(CancellationToken.None);
                         }
 
-                        if (batch.Batch.Envelopes.Count < _config.BatchSize) continue;
+                        if (batchWrapper.Batch.Envelopes.Count < _config.BatchSize) continue;
 
-                        await PublishBatch(batch);
-                        batch = new PubSubBatchWithReceipts();
+                        await PublishBatch(batchWrapper);
+                        batchWrapper = new PubSubBatchWithReceipts();
                     }
                     else
                     {
-                        if (batch.Batch.Envelopes.Count > 0)
+                        if (batchWrapper.Batch.Envelopes.Count > 0)
                         {
-                            await PublishBatch(batch);
-                            batch = new PubSubBatchWithReceipts();
+                            await PublishBatch(batchWrapper);
+                            batchWrapper = new PubSubBatchWithReceipts();
                         }
 
                         await _publisherChannel.Reader.WaitToReadAsync(cancel);
@@ -108,11 +108,11 @@ public class BatchingProducer : IAsyncDisposable
             if (_config.LogThrottle().IsOpen())
                 Logger.LogError(e, "Error in the publisher loop of Producer for topic {Topic}", _topic);
 
-            FailBatch(batch, e);
+            FailBatch(batchWrapper, e);
             await FailPendingMessages(e);
         }
 
-        CancelBatch(batch);
+        CancelBatch(batchWrapper);
         await CancelPendingMessages();
 
         Logger.LogDebug("Producer is stopping the publisher loop for topic {Topic}", _topic);
@@ -134,13 +134,13 @@ public class BatchingProducer : IAsyncDisposable
         }
     }
 
-    private void ClearBatch(PubSubBatchWithReceipts batch)
+    private void ClearBatch(PubSubBatchWithReceipts batchWrapper)
     {
         // we just remove the reference to the batch
         // the batch itself might still be in send pipeline, waiting to be serialized or delivered locally
-        batch.Batch = new PubSubBatch();
-        batch.DeliveryReports.Clear();
-        batch.CancelTokens.Clear();
+        batchWrapper.Batch = new PubSubBatch();
+        batchWrapper.DeliveryReports.Clear();
+        batchWrapper.CancelTokens.Clear();
     }
 
     private void FailBatch(PubSubBatchWithReceipts batch, Exception ex)
@@ -154,41 +154,41 @@ public class BatchingProducer : IAsyncDisposable
         ClearBatch(batch);
     }
 
-    private void CancelBatch(PubSubBatchWithReceipts batch)
+    private void CancelBatch(PubSubBatchWithReceipts batchWrapper)
     {
-        foreach (var deliveryReport in batch.DeliveryReports)
+        foreach (var deliveryReport in batchWrapper.DeliveryReports)
         {
             deliveryReport.SetCanceled();
         }
 
         // ensure once cancelled, we won't touch the batch anymore
-        ClearBatch(batch);
+        ClearBatch(batchWrapper);
     }
 
-    private void CompleteBatch(PubSubBatchWithReceipts batch)
+    private void CompleteBatch(PubSubBatchWithReceipts batchWrapper)
     {
-        foreach (var deliveryReport in batch.DeliveryReports)
+        foreach (var deliveryReport in batchWrapper.DeliveryReports)
         {
             deliveryReport.SetResult(true);
         }
 
         // ensure once completed, we won't touch the batch anymore
-        ClearBatch(batch);
+        ClearBatch(batchWrapper);
     }
 
-    private void RemoveCancelledFromBatch(PubSubBatchWithReceipts batch)
+    private void RemoveCancelledFromBatch(PubSubBatchWithReceipts batchWrapper)
     {
-        var cancelTokensCopy = batch.CancelTokens.ToArray();
+        var cancelTokensCopy = batchWrapper.CancelTokens.ToArray();
 
         for (var i = cancelTokensCopy.Length - 1; i >= 0; i--)
         {
             if (cancelTokensCopy[i].IsCancellationRequested)
             {
-                batch.DeliveryReports[i].SetCanceled();
+                batchWrapper.DeliveryReports[i].SetCanceled();
 
-                batch.DeliveryReports.RemoveAt(i);
-                batch.Batch.Envelopes.RemoveAt(i);
-                batch.CancelTokens.RemoveAt(i);
+                batchWrapper.DeliveryReports.RemoveAt(i);
+                batchWrapper.Batch.Envelopes.RemoveAt(i);
+                batchWrapper.CancelTokens.RemoveAt(i);
             }
         }
     }
@@ -199,7 +199,7 @@ public class BatchingProducer : IAsyncDisposable
             _publisherChannel.Writer.Complete();
     }
 
-    private async Task PublishBatch(PubSubBatchWithReceipts batch)
+    private async Task PublishBatch(PubSubBatchWithReceipts batchWrapper)
     {
         var retries = 0;
         var retry = true;
@@ -210,21 +210,21 @@ public class BatchingProducer : IAsyncDisposable
             {
                 retries++;
 
-                var response = await _publisher.PublishBatch(_topic, batch.Batch, CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
+                var response = await _publisher.PublishBatch(_topic, batchWrapper.Batch, CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
                 if (response == null)
                     throw new TimeoutException("Timeout when publishing message batch");
 
                 retry = false;
-                CompleteBatch(batch);
+                CompleteBatch(batchWrapper);
             }
             catch (Exception e)
             {
-                var decision = await _config.OnPublishingError(retries, e, batch.Batch);
+                var decision = await _config.OnPublishingError(retries, e, batchWrapper.Batch);
 
                 if (decision == PublishingErrorDecision.FailBatchAndStop)
                 {
                     StopAcceptingNewMessages();
-                    FailBatch(batch, e);
+                    FailBatch(batchWrapper, e);
                     throw; // let the main producer loop exit
                 }
 
@@ -233,14 +233,14 @@ public class BatchingProducer : IAsyncDisposable
 
                 if (decision == PublishingErrorDecision.FailBatchAndContinue)
                 {
-                    FailBatch(batch, e);
+                    FailBatch(batchWrapper, e);
                     return;
                 }
 
                 // the decision is to retry
                 // if any of the messages have been canceled in the meantime, remove them and cancel the delivery report
-                RemoveCancelledFromBatch(batch);
-                if (batch.IsEmpty())
+                RemoveCancelledFromBatch(batchWrapper);
+                if (batchWrapper.IsEmpty())
                     retry = false; // no messages left in the batch, so stop retrying
                 else if (decision.Delay != null)
                     await Task.Delay(decision.Delay.Value);
@@ -248,7 +248,7 @@ public class BatchingProducer : IAsyncDisposable
         }
 
         if (_cts.Token.IsCancellationRequested)
-            CancelBatch(batch);
+            CancelBatch(batchWrapper);
     }
 
     /// <summary>

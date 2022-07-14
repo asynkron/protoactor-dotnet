@@ -21,7 +21,9 @@ public class DefaultClusterContext : IClusterContext
 
     private readonly PidCache _pidCache;
     private readonly ShouldThrottle _requestLogThrottle;
-    private readonly TaskClock? _clock;
+#if !NET6_0_OR_GREATER
+    private readonly TaskClock _clock;
+#endif
     private readonly ActorSystem _system;
     private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
     private readonly int _requestTimeoutSeconds;
@@ -96,7 +98,7 @@ public class DefaultClusterContext : IClusterContext
 #if NET6_0_OR_GREATER
                     await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds));
 #else
-                    await Task.WhenAny(task, _clock!.CurrentBucket);
+                    await Task.WhenAny(task, _clock.CurrentBucket);
 #endif
 
                     if (task.IsCompleted)
