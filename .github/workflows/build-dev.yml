@@ -71,7 +71,7 @@ jobs:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet restore -p:TargetFrameworks=${{ matrix.dotnet }}
+          dotnet restore ${{ matrix.test }} -p:TargetFrameworks=${{ matrix.dotnet }}
           dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions --no-restore
 
   nuget:
