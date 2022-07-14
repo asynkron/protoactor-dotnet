@@ -3,7 +3,7 @@ name: Build and deploy to Nuget
 on:
   push:
     branches:
-      - dev
+      - "*"
     tags:
       - "*"
 env:
@@ -34,7 +34,6 @@ jobs:
         dotnet:
           - net7.0
           - net6.0
-          - net5.0
           - netcoreapp3.1
         test:
           - "tests/Proto.Actor.Tests/*.csproj"
@@ -54,17 +53,17 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "7.0.x"
-          include-prerelease: true        
+          include-prerelease: true
+        if: ${{ matrix.dotnet }} == "net7.0"
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "6.0.x"
           include-prerelease: true
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: "5.0.100"
+        if: ${{ matrix.dotnet }} == "net6.0"
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "3.1.x"          
+        if: ${{ matrix.dotnet }} == "netcoreapp3.1"
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
