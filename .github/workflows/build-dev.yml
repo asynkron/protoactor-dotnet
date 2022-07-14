@@ -24,10 +24,10 @@ jobs:
         ports:
           - 6379/tcp
         options: --entrypoint redis-server
-      mongodb:
-        image: mongo
-        ports:
-          - 27017/tcp
+#      mongodb:
+#        image: mongo
+#        ports:
+#          - 27017/tcp
 
     strategy:
       matrix:
@@ -67,6 +67,13 @@ jobs:
 
       - name: Remove global.json
         run: rm -f global.json
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
