@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Proto.Utils;
 
 namespace Proto.Cluster.PubSub;
@@ -19,7 +20,11 @@ public delegate Task<PublishingErrorDecision> PublishingErrorHandler(int retries
 
 public record BatchingProducerConfig
 {
-    public static readonly ShouldThrottle DefaultLogThrottle = Throttle.Create(3, TimeSpan.FromSeconds(10));
+    private static readonly ILogger Logger = Log.CreateLogger<BatchingProducer>();
+
+    public static readonly ShouldThrottle DefaultLogThrottle = Throttle.Create(3, TimeSpan.FromSeconds(10),
+        droppedLogs => Logger.LogInformation("[BatchingProducer] Throttled {LogCount} logs", droppedLogs)
+    );
 
     /// <summary>
     /// Maximum size of the published batch. Default: 2000.

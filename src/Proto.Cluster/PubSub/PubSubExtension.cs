@@ -21,8 +21,9 @@ public class PubSubExtension : IActorSystemExtension<PubSubExtension>
 
     public Task StartAsync()
     {
-        var props = Props.FromProducer(() => new PubSubMemberDeliveryActor());
-        _cluster.System.Root.SpawnNamedSystem(props, PubSubDeliveryName);
+        var props = Props.FromProducer(() => new PubSubMemberDeliveryActor(_cluster.Config.PubSubConfig.SubscriberTimeout));
+
+        _cluster.System.Root.SpawnNamed(props, PubSubDeliveryName);
 
         return Task.CompletedTask;
     }

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using JetBrains.Annotations;
 using Proto.Cluster.Identity;
+using Proto.Cluster.PubSub;
 using Proto.Remote;
 
 namespace Proto.Cluster;
@@ -129,17 +130,17 @@ public record ClusterConfig
     /// The <see cref="IIdentityLookup"/> to use for the cluster
     /// </summary>
     public IIdentityLookup IdentityLookup { get; }
-    
+
     /// <summary>
     /// Default window size for cluster deduplication (<see cref="Extensions.WithClusterRequestDeduplication"/>). Default is 30s.
     /// </summary>
     public TimeSpan ClusterRequestDeDuplicationWindow { get; init; }
-    
+
     /// <summary>
     /// TTL for remote PID cache. Default is 15min. Set to <see cref="TimeSpan.Zero"/> to disable.
     /// </summary>
     public TimeSpan RemotePidCacheTimeToLive { get; set; }
-    
+
     /// <summary>
     /// How often to check for stale PIDs in the remote PID cache. Default is 15s. Set to <see cref="TimeSpan.Zero"/> to disable.
     /// </summary>
@@ -149,6 +150,11 @@ public record ClusterConfig
     /// Creates the <see cref="IClusterContext"/>. The default implementation creates an instance of <see cref="DefaultClusterContext"/>
     /// </summary>
     public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } = c => new DefaultClusterContext(c);
+
+    /// <summary>
+    /// Configuration for the PubSub extension.
+    /// </summary>
+    public PubSubConfig PubSubConfig { get; init; } = PubSubConfig.Setup();
 
     /// <summary>
     /// Timeout for spawning an actor in the Partition Identity Lookup. Default is 5s.
@@ -313,6 +319,12 @@ public record ClusterConfig
     /// <returns></returns>
     public ClusterConfig WithHeartbeatExpiration(TimeSpan expiration) =>
         this with {HeartbeatExpiration = expiration};
+
+    /// <summary>
+    /// Configuration for the PubSub extension.
+    /// </summary>
+    public ClusterConfig WithPubSubConfig(PubSubConfig config) =>
+        this with {PubSubConfig = config};
 
     /// <summary>
     /// Creates a new <see cref="ClusterConfig"/>

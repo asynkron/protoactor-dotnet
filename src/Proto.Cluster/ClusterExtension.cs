@@ -52,7 +52,13 @@ public static class Extensions
     /// <param name="ct">Token to cancel the request</param>
     /// <typeparam name="T">Type of the expected response</typeparam>
     /// <returns>Response or null if timed out</returns>
-    public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct) =>
+    public static Task<T> ClusterRequestAsync<T>(
+        this IContext context,
+        string identity,
+        string kind,
+        object message,
+        CancellationToken ct
+    ) =>
         //call cluster RequestAsync using actor context
         context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
 

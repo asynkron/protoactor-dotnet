@@ -42,7 +42,7 @@ public static class PubSubExtensions
     /// <param name="subscriberKind">Cluster kind of the subscriber actor</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static Task Subscribe(
+    public static Task<SubscribeResponse?> Subscribe(
         this Cluster cluster,
         string topic,
         string subscriberIdentity,
