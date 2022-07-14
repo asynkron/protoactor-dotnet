@@ -71,9 +71,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-${{ matrix.dotnet}}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget
+          key: ${{ runner.os }}-${{ matrix.dotnet}}-${{ matrix.test }}-nuget
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
@@ -81,7 +79,7 @@ jobs:
           ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          find tests/**/*.csproj | xargs -I {} -r dotnet restore {} -p:TargetFrameworks=${{ matrix.dotnet }}
+          dotnet restore ${{ matrix.test }} -p:TargetFrameworks=${{ matrix.dotnet }}
           dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions --no-restore
 
   nuget:
