@@ -59,7 +59,7 @@ jobs:
         with:
           dotnet-version: "6.0.x"
           include-prerelease: true
-        if: ${{ matrix.dotnet == 'net6.0' }}
+        if: ${{ matrix.dotnet == 'net6.0' || matrix.dotnet == 'netcoreapp3.1' }} # sdk 6.0 needed to support c# 10
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "3.1.x"          
