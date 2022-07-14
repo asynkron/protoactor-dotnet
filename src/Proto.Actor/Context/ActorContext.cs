@@ -643,7 +643,16 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
         static async ValueTask Await(ActorContext self)
         {
-            await self.InvokeUserMessageAsync(Stopping.Instance);
+            try
+            {
+                await self.InvokeUserMessageAsync(Stopping.Instance);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "{Self} Error while handling Stopping message", self.Self);
+                // do not rethrow - prevent exceptions thrown from stopping handler from restarting the actor 
+            }
+
             await self.StopAllChildren();
         }
     }
