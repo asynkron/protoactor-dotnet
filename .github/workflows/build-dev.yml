@@ -65,6 +65,9 @@ jobs:
           dotnet-version: "3.1.x"          
         if: ${{ matrix.dotnet == 'netcoreapp3.1' }}
 
+      - name: Remove global.json
+        run: rm -f global.json
+
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
         env:
