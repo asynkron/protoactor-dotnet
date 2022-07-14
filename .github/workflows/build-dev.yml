@@ -18,17 +18,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      redis:
-        image: redis
-        ports:
-          - 6379/tcp
-        options: --entrypoint redis-server
-#      mongodb:
-#        image: mongo
-#        ports:
-#          - 27017/tcp
-
     strategy:
       matrix:
         dotnet:
@@ -42,8 +31,6 @@ jobs:
           - "tests/Proto.OpenTelemetry.Tests/*.csproj"
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.Identity.Tests/*.csproj"
-        #  - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
-          - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
         #  - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
           - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
           - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
@@ -71,7 +58,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-${{ matrix.dotnet}}-${{ matrix.test }}-nuget
+          key: ${{ runner.os }}-${{ matrix.dotnet}}-nuget-${{ hashFiles(matrix.test) }}
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
@@ -81,6 +68,59 @@ jobs:
         run: |
           dotnet restore ${{ matrix.test }} -p:TargetFrameworks=${{ matrix.dotnet }}
           dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions --no-restore
+
+  test-redis:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379/tcp
+        options: --entrypoint redis-server
+
+    strategy:
+      matrix:
+        dotnet:
+          - net7.0
+          - net6.0
+          - netcoreapp3.1
+        test:
+          - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "7.0.x"
+          include-prerelease: true
+        if: ${{ matrix.dotnet == 'net7.0' }}
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "6.0.x"
+          include-prerelease: true
+        if: ${{ matrix.dotnet == 'net6.0' || matrix.dotnet == 'netcoreapp3.1' }} # sdk 6.0 needed to support c# 10
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "3.1.x"
+        if: ${{ matrix.dotnet == 'netcoreapp3.1' }}
+
+      - name: Remove global.json
+        run: rm -f global.json
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-${{ matrix.dotnet}}-nuget-${{ hashFiles(matrix.test) }}
+
+      - name: Run tests ${{ matrix.test }}
+        timeout-minutes: 15
+        env:
+          ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
+        run: |
+          dotnet restore ${{ matrix.test }} -p:TargetFrameworks=${{ matrix.dotnet }}
+          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions --no-restore
+
 
   nuget:
     runs-on: ubuntu-latest
