@@ -147,7 +147,7 @@ jobs:
         env:
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet restore ${{ matrix.test }} -p:TargetFrameworks=${{ matrix.dotnet }};netstandard2.0
+          dotnet restore ${{ matrix.test }} "-p:TargetFrameworks=${{ matrix.dotnet }};netstandard2.0"
           dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions --no-restore
 
 
