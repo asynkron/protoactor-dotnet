@@ -28,7 +28,7 @@ public sealed record Props
     public ProducerWithSystemAndContext Producer { get; init; } = NullProducer;
     
     /// <summary>
-    /// Deletegate used to create the mailbox.
+    /// Delegate used to create the mailbox.
     /// </summary>
     public MailboxProducer MailboxProducer { get; init; } = () => UnboundedMailbox.Create();
     
@@ -104,21 +104,39 @@ public sealed record Props
         return self;
     }
 
+    /// <summary>
+    /// Delegate used to create the actor.
+    /// </summary>
     public Props WithProducer(Producer producer) =>
         this with {Producer = (_,_) => producer()};
 
+    /// <summary>
+    /// Delegate used to create the actor.
+    /// </summary>
     public Props WithProducer(ProducerWithSystem producer) =>
         this with {Producer = (system, _) => producer(system)};
         
+    /// <summary>
+    /// Delegate used to create the actor.
+    /// </summary>
     public Props WithProducer(ProducerWithSystemAndContext producer) =>
         this with {Producer = producer};
 
+    /// <summary>
+    /// Dispatcher to be used by the actor's mailbox.
+    /// </summary>
     public Props WithDispatcher(IDispatcher dispatcher) =>
         this with {Dispatcher = dispatcher};
 
+    /// <summary>
+    /// Delegate used to create the mailbox.
+    /// </summary>
     public Props WithMailbox(MailboxProducer mailboxProducer) =>
         this with {MailboxProducer = mailboxProducer};
 
+    /// <summary>
+    /// Adds a decorator for the actor context
+    /// </summary>
     public Props WithContextDecorator(params Func<IContext, IContext>[] contextDecorator)
     {
         var x = ContextDecorator.AddRange(contextDecorator);
@@ -135,12 +153,22 @@ public sealed record Props
         };
     }
 
+    /// <summary>
+    /// Used when actor is spawned at the root of the system. A guardian process will be created to handle failures of this actor,
+    /// according to the supervision strategy specified here.
+    /// </summary>
     public Props WithGuardianSupervisorStrategy(ISupervisorStrategy guardianStrategy) =>
         this with {GuardianStrategy = guardianStrategy};
 
+    /// <summary>
+    /// Supervision strategy for handling failures in actor's children.
+    /// </summary>
     public Props WithChildSupervisorStrategy(ISupervisorStrategy supervisorStrategy) =>
         this with {SupervisorStrategy = supervisorStrategy};
 
+    /// <summary>
+    /// Adds a middleware used when receiving a message. The middleware is applied in the order it is added.
+    /// </summary>
     public Props WithReceiverMiddleware(params Func<Receiver, Receiver>[] middleware)
     {
         var x = ReceiverMiddleware.AddRange(middleware);
@@ -152,6 +180,9 @@ public sealed record Props
         };
     }
 
+    /// <summary>
+    /// Adds a middleware used when sending a message. The middleware is applied in the order it is added.
+    /// </summary>
     public Props WithSenderMiddleware(params Func<Sender, Sender>[] middleware)
     {
         var x = SenderMiddleware.AddRange(middleware);
@@ -162,7 +193,10 @@ public sealed record Props
                 .Aggregate((Sender) Middleware.Sender, (inner, outer) => outer(inner))
         };
     }
-
+    
+    /// <summary>
+    /// Delegate that creates the actor and wires it with context and mailbox.
+    /// </summary>
     public Props WithSpawner(Spawner spawner) =>
         this with {Spawner = spawner};
 

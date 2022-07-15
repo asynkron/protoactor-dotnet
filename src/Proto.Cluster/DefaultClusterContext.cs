@@ -21,7 +21,9 @@ public class DefaultClusterContext : IClusterContext
 
     private readonly PidCache _pidCache;
     private readonly ShouldThrottle _requestLogThrottle;
+#if !NET6_0_OR_GREATER
     private readonly TaskClock _clock;
+#endif
     private readonly ActorSystem _system;
     private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
     private readonly int _requestTimeoutSeconds;
@@ -38,9 +40,12 @@ public class DefaultClusterContext : IClusterContext
             config.RequestLogThrottlePeriod,
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
-        _requestTimeoutSeconds = (int)config.ActorRequestTimeout.TotalSeconds;
-        _clock = new TaskClock(config.ActorRequestTimeout, TimeSpan.FromSeconds(1), cluster.System.Shutdown);
+        _requestTimeoutSeconds = (int) config.ActorRequestTimeout.TotalSeconds;
+#if !NET6_0_OR_GREATER
+        var updateInterval = TimeSpan.FromMilliseconds(Math.Min(config.ActorRequestTimeout.TotalMilliseconds / 2, 1000));
+        _clock = new TaskClock(config.ActorRequestTimeout, updateInterval, cluster.System.Shutdown);
         _clock.Start();
+#endif
     }
 
     public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
@@ -67,7 +72,8 @@ public class DefaultClusterContext : IClusterContext
 
                 if (pid is null)
                 {
-                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
+                    if (Logger.IsEnabled(LogLevel.Debug))
+                        Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
                     await Task.Delay(i * 20, CancellationToken.None);
                     continue;
                 }
@@ -81,7 +87,7 @@ public class DefaultClusterContext : IClusterContext
 
                 if (context.System.Metrics.Enabled)
                 {
-                    t=Stopwatch.StartNew();
+                    t = Stopwatch.StartNew();
                 }
 
                 try
@@ -157,7 +163,8 @@ public class DefaultClusterContext : IClusterContext
                 {
                     x.CheckFailFast();
                     if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
-                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                            Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
                     _pidCache.RemoveByVal(clusterIdentity, pid);
                     RefreshFuture();
                     await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
@@ -236,7 +243,7 @@ public class DefaultClusterContext : IClusterContext
                 return pid;
             }
         }
-        catch (Exception e) when(e is not IdentityIsBlocked)
+        catch (Exception e) when (e is not IdentityIsBlocked)
         {
             e.CheckFailFast();
             if (context.System.Shutdown.IsCancellationRequested) return default;

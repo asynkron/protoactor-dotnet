@@ -95,10 +95,13 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     public LogStore LogStore { get; } = new();
 
+    public virtual Task OnDisposing() => Task.CompletedTask;
+
     public async Task DisposeAsync()
     {
         try
         {
+            await OnDisposing();
             _tracerProvider?.Dispose();
             await Task.WhenAll(Members.ToList().Select(cluster => cluster.ShutdownAsync())).ConfigureAwait(false);
             Members.Clear(); // prevent multiple shutdown attempts if dispose is called multiple times

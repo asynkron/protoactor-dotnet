@@ -3,8 +3,8 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Proto.Router.Messages;
 using Proto.Router.Routers;
@@ -15,21 +15,28 @@ public class RouterActor : IActor
 {
     private readonly RouterConfig _config;
     private readonly RouterState _routerState;
-    private readonly AutoResetEvent _wg;
+    private readonly RouterStartNotification _startNotification;
 
-    public RouterActor(RouterConfig config, RouterState routerState, AutoResetEvent wg)
+    public RouterActor(RouterConfig config, RouterState routerState, RouterStartNotification startNotification)
     {
         _config = config;
         _routerState = routerState;
-        _wg = wg;
+        _startNotification = startNotification;
     }
 
     public Task ReceiveAsync(IContext context)
     {
         if (context.Message is Started)
         {
-            _config.OnStarted(context, _routerState);
-            _wg.Set();
+            try
+            {
+                _config.OnStarted(context, _routerState);
+                _startNotification.NotifyStarted();
+            }
+            catch (Exception e)
+            {
+                _startNotification.NotifyFailed(e);
+            }
             return Task.CompletedTask;
         }
 

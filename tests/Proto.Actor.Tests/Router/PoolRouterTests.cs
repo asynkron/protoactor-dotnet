@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Proto.Router.Messages;
+using Proto.Router.Routers;
 using Proto.TestFixtures;
 using Xunit;
 
@@ -57,5 +59,17 @@ public class PoolRouterTests
         var router = system.Root.Spawn(props);
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         Assert.Equal(3, routees.Pids.Count);
+    }
+
+    [Fact]
+    public async Task If_routee_props_then_router_creation_fails()
+    {
+        await using var system = new ActorSystem();
+
+        var failingProps = Props.FromProducer(() => throw new Exception("Failing props"));
+
+        system.Invoking(s => s.Root.Spawn(s.Root.NewRandomPool(failingProps, 3, 0)))
+            .Should().Throw<RouterStartFailedException>()
+            .WithInnerException<Exception>().WithMessage("Failing props");
     }
 }

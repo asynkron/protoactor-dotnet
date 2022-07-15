@@ -3,23 +3,22 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // ----------------------------------------------------------------------- 
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Proto.Cluster.Tests;
 using Xunit;
 using Xunit.Abstractions;
+using static Proto.Cluster.PubSub.Tests.WaitHelper;
 
 namespace Proto.Cluster.PubSub.Tests;
 
-public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixture>
+[Collection("PubSub")]  // The CI is just to slow to run cluster fixture based tests in parallel
+public class PubSubTests : IClassFixture<PubSubClusterFixture>
 {
-    private const string SubscriberKind = "Subscriber";
-
-    private readonly PubSubInMemoryClusterFixture _fixture;
+    private readonly PubSubClusterFixture _fixture;
     private readonly ITestOutputHelper _output;
 
-    public PubSubTests(PubSubInMemoryClusterFixture fixture, ITestOutputHelper output)
+    public PubSubTests(PubSubClusterFixture fixture, ITestOutputHelper output)
     {
         _fixture = fixture;
         _fixture.Output = output;
@@ -30,46 +29,43 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
     [Fact]
     public async Task Can_deliver_single_messages()
     {
-        var subscriberIds = SubscriberIds("single-test", 20);
+        var subscriberIds = _fixture.SubscriberIds("single-test", 20);
         const string topic = "single-test-topic";
         const int numMessages = 100;
 
-        await SubscribeAllTo(topic, subscriberIds);
+        await _fixture.SubscribeAllTo(topic, subscriberIds);
 
         for (var i = 0; i < numMessages; i++)
         {
-            var response = await PublishData(topic, i);
+            var response = await _fixture.PublishData(topic, i);
             if (response == null)
                 _output.WriteLine(await _fixture.Members.DumpClusterState());
             response.Should().NotBeNull("publishing should not time out");
+            response!.Status.Should().Be(PublishStatus.Ok);
         }
 
-        await UnsubscribeAllFrom(topic, subscriberIds);
-
-        VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
+        await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
 
     [Fact]
     public async Task Can_deliver_message_batches()
     {
-        var subscriberIds = SubscriberIds("batch-test", 20);
+        var subscriberIds = _fixture.SubscriberIds("batch-test", 20);
         const string topic = "batch-test-topic";
         const int numMessages = 100;
 
-        await SubscribeAllTo(topic, subscriberIds);
+        await _fixture.SubscribeAllTo(topic, subscriberIds);
 
         for (var i = 0; i < numMessages / 10; i++)
         {
             var data = Enumerable.Range(i * 10, 10).ToArray();
-            var response = await PublishDataBatch(topic, data);
+            var response = await _fixture.PublishDataBatch(topic, data);
             if (response == null)
                 _output.WriteLine(await _fixture.Members.DumpClusterState());
             response.Should().NotBeNull("publishing should not time out");
         }
 
-        await UnsubscribeAllFrom(topic, subscriberIds);
-
-        VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
+        await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
 
     [Fact]
@@ -79,13 +75,15 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         const string sub2 = "unsubscribe-test-2";
         const string topic = "unsubscribe-test";
 
-        await SubscribeTo(topic, sub1);
-        await SubscribeTo(topic, sub2);
+        await _fixture.SubscribeTo(topic, sub1);
+        await _fixture.SubscribeTo(topic, sub2);
 
-        await UnsubscribeFrom(topic, sub2);
+        await _fixture.UnsubscribeFrom(topic, sub2);
 
-        await PublishData(topic, 1);
+        await _fixture.PublishData(topic, 1);
+        await Task.Delay(1000); // give time for the message "not to be delivered" to second subscriber
 
+        await WaitUntil(() => _fixture.Deliveries.Count == 1, "only one delivery should happen because the other actor is unsubscribed");
         _fixture.Deliveries.Should().HaveCount(1, "only one delivery should happen because the other actor is unsubscribed");
         _fixture.Deliveries.First().Identity.Should().Be(sub1, "the other actor should be unsubscribed");
     }
@@ -107,10 +105,9 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         var pid = member.System.Root.Spawn(props);
         await member.Subscribe(topic, pid);
 
-        await PublishData(topic, 1);
+        await _fixture.PublishData(topic, 1);
 
-        await member.Unsubscribe(topic, pid);
-
+        await WaitUntil(() => deliveredMessage != null, "Message should be delivered");
         deliveredMessage.Should().BeEquivalentTo(new DataPublished(1));
     }
 
@@ -133,7 +130,8 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         await member.Subscribe(topic, pid);
         await member.Unsubscribe(topic, pid);
 
-        await PublishData(topic, 1);
+        await _fixture.PublishData(topic, 1);
+        await Task.Delay(1000); // give time for the message "not to be delivered" to second subscriber
 
         deliveryCount.Should().Be(0);
     }
@@ -162,176 +160,91 @@ public class PubSubTests : IClassFixture<PubSubTests.PubSubInMemoryClusterFixtur
         await member.Subscribe(topic, pid2);
 
         // publish one message
-        await PublishData(topic, 1);
+        await _fixture.PublishData(topic, 1);
+        await WaitUntil(() => deliveryCount == 2, "both messages should be delivered");
 
         // kill one of the actors
         await member.System.Root.StopAsync(pid2);
 
         // publish again
-        var response = await PublishData(topic, 2);
-
-        // clean up and assert
-        await member.Unsubscribe(topic, pid1, CancellationToken.None);
+        var response = await _fixture.PublishData(topic, 2);
 
         response.Should().NotBeNull("the publish operation shouldn't have timed out");
-        deliveryCount.Should().Be(3, "second publish should be delivered only to one of the actors");
+        await WaitUntil(() => deliveryCount == 3, "second publish should be delivered only to one of the actors");
+
+        await WaitUntil(async () => {
+                var subscribers = await _fixture.GetSubscribersForTopic(topic);
+                return !subscribers.Subscribers_!.Contains(new SubscriberIdentity {Pid = pid2});
+            }
+        );
+    }
+
+    [Fact]
+    public async Task Slow_PID_subscriber_that_times_out_does_not_prevent_subsequent_publishes()
+    {
+        const string topic = "slow-pid-subscriber";
+
+        var deliveryCount = 0;
+
+        // a slow subscriber that times out
+        var props = Props.FromFunc(async ctx => {
+                await Task.Delay(4000, _fixture.CancelWhenDisposing); // 4 seconds is longer than the subscriber timeout configured in the test fixture
+                Interlocked.Increment(ref deliveryCount);
+            }
+        );
+
+        // subscribe
+        var member = _fixture.RandomMember();
+        var pid = member.System.Root.Spawn(props);
+        await member.Subscribe(topic, pid);
+
+        // publish one message
+        await _fixture.PublishData(topic, 1);
+
+        // next published message should also be delivered
+        await _fixture.PublishData(topic, 1);
+
+        await WaitUntil(() => deliveryCount == 2, 
+            "A timing out subscriber should not prevent subsequent publishes", TimeSpan.FromSeconds(10)
+        );
+    }
+
+    [Fact]
+    public async Task Slow_ClusterIdentity_subscriber_that_times_out_does_not_prevent_subsequent_publishes()
+    {
+        const string topic = "slow-ci-subscriber";
+
+        // subscribe
+        await _fixture.SubscribeTo(topic, "slow-ci-1", PubSubClusterFixture.TimeoutSubscriberKind);
+
+        // publish one message
+        await _fixture.PublishData(topic, 1);
+
+        // next published message should also be delivered
+        await _fixture.PublishData(topic, 1);
+
+        await WaitUntil(() => _fixture.Deliveries.Count == 2,
+            "A timing out subscriber should not prevent subsequent publishes", TimeSpan.FromSeconds(10)
+        );
     }
 
     [Fact]
     [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     public async Task Can_publish_messages_via_batching_producer()
     {
-        var subscriberIds = SubscriberIds("batching-producer-test", 20);
+        var subscriberIds = _fixture.SubscriberIds("batching-producer-test", 20);
         const string topic = "batching-producer";
         const int numMessages = 100;
 
-        await SubscribeAllTo(topic, subscriberIds);
+        await _fixture.SubscribeAllTo(topic, subscriberIds);
 
         await using var producer = _fixture.Members.First().BatchingProducer(topic, new BatchingProducerConfig {BatchSize = 10});
 
         var tasks = Enumerable.Range(0, numMessages).Select(i => producer.ProduceAsync(new DataPublished(i)));
         await Task.WhenAll(tasks);
 
-        await UnsubscribeAllFrom(topic, subscriberIds);
-
-        VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
+        await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
 
-    private void VerifyAllSubscribersGotAllTheData(string[] subscriberIds, int numMessages)
-    {
-        var expected = subscriberIds
-            .SelectMany(id => Enumerable.Range(0, numMessages).Select(i => new Delivery(id, i)))
-            .ToArray();
-
-        var actual = _fixture.Deliveries.OrderBy(d => d.Identity).ThenBy(d => d.Data).ToArray();
-
-        try
-        {
-            actual.Should().Equal(expected, "the data published should be received by all subscribers");
-        }
-        catch
-        {
-            _output.WriteLine(actual
-                .GroupBy(d => d.Identity)
-                .Select(g => (g.Key, Data: g.Aggregate("", (acc, delivery) => acc + delivery.Data + ",")))
-                .Aggregate("", (acc, d) => $"{acc}ID: {d.Key}, got: {d.Data}\n")
-            );
-
-            throw;
-        }
-    }
-
-    private async Task SubscribeAllTo(string topic, string[] subscriberIds)
-    {
-        foreach (var id in subscriberIds)
-        {
-            await SubscribeTo(topic, id);
-        }
-    }
-
-    private async Task UnsubscribeAllFrom(string topic, string[] subscriberIds)
-    {
-        foreach (var id in subscriberIds)
-        {
-            await UnsubscribeFrom(topic, id);
-        }
-    }
-
-    private string[] SubscriberIds(string prefix, int count) => Enumerable.Range(1, count).Select(i => $"{prefix}-{i:D4}").ToArray();
-
-    private Task SubscribeTo(string topic, string identity, string kind = SubscriberKind)
-        => RequestViaRandomMember(identity, new Subscribe(topic), kind);
-
-    private Task UnsubscribeFrom(string topic, string identity, string kind = SubscriberKind)
-        => RequestViaRandomMember(identity, new Unsubscribe(topic), kind);
-
-    private Task<PublishResponse?> PublishData(string topic, int data) => PublishViaRandomMember(topic, new DataPublished(data));
-
-    private Task<PublishResponse?> PublishDataBatch(string topic, int[] data)
-        => PublishViaRandomMember(topic, data.Select(d => new DataPublished(d)).ToArray());
-
-    private readonly Random _random = new();
-
-    private async Task<Response?> RequestViaRandomMember(string identity, object message, string kind = SubscriberKind)
-    {
-        var response = await _fixture
-            .Members[_random.Next(_fixture.Members.Count)]
-            .RequestAsync<Response?>(identity, kind, message, CancellationTokens.FromSeconds(1));
-
-        if (response == null)
-            _output.WriteLine(await _fixture.Members.DumpClusterState());
-
-        response.Should().NotBeNull($"request {message.GetType().Name} should time out");
-
-        return response;
-    }
-
-    private Task<PublishResponse?> PublishViaRandomMember(string topic, object message) =>
-        _fixture
-            .Members[_random.Next(_fixture.Members.Count)]
-            .Publisher()
-            .Publish(topic, message, CancellationTokens.FromSeconds(1));
-
-    private Task<PublishResponse> PublishViaRandomMember<T>(string topic, T[] messages) =>
-        _fixture
-            .Members[_random.Next(_fixture.Members.Count)]
-            .Publisher()
-            .PublishBatch(topic, messages, CancellationTokens.FromSeconds(1));
-
-    private record DataPublished(int Data);
-
-    public record Delivery(string Identity, int Data);
-
-    private record Subscribe(string Topic);
-
-    private record Unsubscribe(string Topic);
-
-    private record Response;
-
-    public class PubSubInMemoryClusterFixture : BaseInMemoryClusterFixture
-    {
-        public ConcurrentBag<Delivery> Deliveries = new();
-        public ITestOutputHelper? Output;
-
-        public PubSubInMemoryClusterFixture() : base(3)
-        {
-        }
-
-        protected override ClusterKind[] ClusterKinds => new[]
-        {
-            new ClusterKind(SubscriberKind, SubscriberProps())
-        };
-
-        private Props SubscriberProps()
-        {
-            async Task Receive(IContext context)
-            {
-                switch (context.Message)
-                {
-                    case DataPublished msg:
-                        Deliveries.Add(new Delivery(context.ClusterIdentity()!.Identity, msg.Data));
-                        context.Respond(new Response());
-                        break;
-
-                    case Subscribe msg:
-                        var subRes = await context.Cluster().Subscribe(msg.Topic, context.ClusterIdentity()!);
-                        if (subRes == null)
-                            Output?.WriteLine($"{context.ClusterIdentity()!.Identity} failed to subscribe due to timeout");
-
-                        context.Respond(new Response());
-                        break;
-
-                    case Unsubscribe msg:
-                        var unsubRes = await context.Cluster().Unsubscribe(msg.Topic, context.ClusterIdentity()!);
-                        if (unsubRes == null)
-                            Output?.WriteLine($"{context.ClusterIdentity()!.Identity} failed to subscribe due to timeout");
-
-                        context.Respond(new Response());
-                        break;
-                }
-            }
-
-            return Props.FromFunc(Receive);
-        }
-    }
+    private void Log(string message) => _output.WriteLine($"[{DateTime.Now:hh:mm:ss.fff}] {message}");
 }

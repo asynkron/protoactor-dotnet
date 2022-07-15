@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
@@ -15,8 +14,14 @@ namespace Proto.Cluster.PubSub;
 
 public class PubSubMemberDeliveryActor : IActor
 {
-    private static readonly ShouldThrottle LogThrottle = Throttle.Create(10, TimeSpan.FromSeconds(1));
+    private static readonly ShouldThrottle LogThrottle = Throttle.Create(10, TimeSpan.FromSeconds(1),
+        droppedLogs => Logger?.LogInformation("[PubSubMemberDeliveryActor] Throttled {LogCount} logs", droppedLogs)
+    );
+
     private static readonly ILogger Logger = Log.CreateLogger<PubSubMemberDeliveryActor>();
+    private readonly int _subscriberTimeoutSeconds;
+
+    public PubSubMemberDeliveryActor(TimeSpan subscriberTimeout) => _subscriberTimeoutSeconds = (int) subscriberTimeout.TotalSeconds;
 
     public Task ReceiveAsync(IContext context)
     {
@@ -29,22 +34,36 @@ public class PubSubMemberDeliveryActor : IActor
                     .Select(sub => DeliverBatch(context, topicBatch, sub))
                     .ToArray();
 
-            context.ReenterAfter(Task.WhenAll(tasks), () => ReportDelivery(tasks, context));
+            context.ReenterAfter(Task.WhenAll(tasks), () => NotifyAboutInvalidDeliveries(tasks, deliveryBatch.Topic, context));
         }
 
         return Task.CompletedTask;
     }
 
-    private void ReportDelivery(IEnumerable<Task<SubscriberDeliveryReport>> tasks, IContext context)
+    private void NotifyAboutInvalidDeliveries(IEnumerable<Task<SubscriberDeliveryReport>> tasks, string topic, IContext context)
     {
         var invalidDeliveries = tasks
             .Select(t => t.Result)
-            .Where(t => t.Status != DeliveryStatus.Delivered);
+            .Where(t => t.Status != DeliveryStatus.Delivered)
+            .ToArray();
 
-        context.Respond(new DeliverBatchResponse {InvalidDeliveries = {invalidDeliveries}});
+        if (invalidDeliveries.Length > 0)
+        {
+            // no need to await here
+            // we use cluster.RequestAsync to locate the topic actor in the cluster
+            // but we don't care about the result of the request
+            _ = context.Cluster().RequestAsync<NotifyAboutFailingSubscribersResponse>(
+                topic,
+                TopicActor.Kind,
+                new NotifyAboutFailingSubscribersRequest
+                {
+                    InvalidDeliveries = {invalidDeliveries}
+                }, CancellationTokens.FromSeconds(15)
+            );
+        }
     }
 
-    private static async Task<SubscriberDeliveryReport> DeliverBatch(IContext context, PubSubAutoRespondBatch pub, SubscriberIdentity s)
+    private async Task<SubscriberDeliveryReport> DeliverBatch(IContext context, PubSubAutoRespondBatch pub, SubscriberIdentity s)
     {
         var status = await (s.IdentityCase switch
         {
@@ -56,14 +75,30 @@ public class PubSubMemberDeliveryActor : IActor
         return new SubscriberDeliveryReport {Subscriber = s, Status = status};
     }
 
-    private static async Task<DeliveryStatus> DeliverToClusterIdentity(IContext context, PubSubAutoRespondBatch pub, ClusterIdentity ci)
+    private async Task<DeliveryStatus> DeliverToClusterIdentity(IContext context, PubSubAutoRespondBatch pub, ClusterIdentity ci)
     {
         try
         {
             // deliver to virtual actor
             // delivery should always be possible, since a virtual actor always exists
-            await context.ClusterRequestAsync<object>(ci.Identity, ci.Kind, pub, CancellationToken.None);
+            var response = await context.ClusterRequestAsync<PublishResponse?>(ci.Identity, ci.Kind, pub,
+                CancellationTokens.FromSeconds(_subscriberTimeoutSeconds)
+            );
+
+            if (response == null)
+            {
+                if (LogThrottle().IsOpen())
+                    Logger.LogWarning("Pub-sub message delivered to {ClusterIdentity} timed out", ci.ToDiagnosticString());
+                return DeliveryStatus.Timeout;
+            }
+
             return DeliveryStatus.Delivered;
+        }
+        catch (TimeoutException)
+        {
+            if (LogThrottle().IsOpen())
+                Logger.LogWarning("Pub-sub message delivered to: {ClusterIdentity} timed out", ci.ToDiagnosticString());
+            return DeliveryStatus.Timeout;
         }
         catch (Exception e)
         {
@@ -75,13 +110,19 @@ public class PubSubMemberDeliveryActor : IActor
         }
     }
 
-    private static async Task<DeliveryStatus> DeliverToPid(IContext context, PubSubAutoRespondBatch pub, PID pid)
+    private async Task<DeliveryStatus> DeliverToPid(IContext context, PubSubAutoRespondBatch pub, PID pid)
     {
         try
         {
             // deliver to PID
-            await context.RequestAsync<PublishResponse>(pid, pub);
+            await context.RequestAsync<PublishResponse>(pid, pub, CancellationTokens.FromSeconds(_subscriberTimeoutSeconds));
             return DeliveryStatus.Delivered;
+        }
+        catch (TimeoutException)
+        {
+            if (LogThrottle().IsOpen())
+                Logger.LogWarning("Pub-sub message delivered to {PID} timed out", pid.ToDiagnosticString());
+            return DeliveryStatus.Timeout;
         }
         catch (DeadLetterException)
         {
