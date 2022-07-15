@@ -113,20 +113,12 @@ jobs:
           - 6379/tcp
         options: --entrypoint redis-server
 
-    strategy:
-      matrix:
-        dotnet:
-          - net6.0
-        test:
-          - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
-
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "6.0.x"
+          dotnet-version: "7.0.x"
           include-prerelease: true
-        if: ${{ matrix.dotnet == 'net6.0' || matrix.dotnet == 'netcoreapp3.1' }} # sdk 6.0 needed to support c# 10
 
       - name: Remove global.json  # prevent forcing sdk version
         run: rm -f global.json
@@ -134,7 +126,7 @@ jobs:
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
         run: |
-          dotnet test ${{ matrix.test }} -c Release --logger GitHubActions
+          dotnet test "tests/Proto.Cluster.CodeGen.Tests/*.csproj" -f ${{ matrix.dotnet }} -c Release --logger GitHubActions
 
 
 
