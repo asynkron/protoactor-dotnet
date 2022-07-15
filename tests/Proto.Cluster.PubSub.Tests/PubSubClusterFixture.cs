@@ -29,9 +29,9 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
 
     public ITestOutputHelper? Output;
 
-    public PubSubClusterFixture() : this(false) {} // xunit requires single, public, parameterless constructor
+    public PubSubClusterFixture() : this(3, false) {} // xunit requires single, public, parameterless constructor
     
-    internal PubSubClusterFixture(bool useDefaultTopicRegistration) : base(3, config =>
+    internal PubSubClusterFixture(int clusterSize, bool useDefaultTopicRegistration) : base(clusterSize, config =>
         config
             .WithActorRequestTimeout(TimeSpan.FromSeconds(1))
             .WithPubSubConfig(PubSubConfig.Setup()

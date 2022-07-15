@@ -13,7 +13,7 @@ public class PubSubDefaultTopicRegistrationTests : IAsyncLifetime
 {
     private readonly PubSubClusterFixture _fixture;
 
-    public PubSubDefaultTopicRegistrationTests() => _fixture = new PubSubClusterFixture(useDefaultTopicRegistration: true);
+    public PubSubDefaultTopicRegistrationTests() => _fixture = new PubSubClusterFixture(clusterSize: 1, useDefaultTopicRegistration: true);
 
     public Task InitializeAsync() => _fixture.InitializeAsync();
     
