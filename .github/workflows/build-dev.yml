@@ -1,7 +1,6 @@
 name: Build and deploy to Nuget
 
 on:
-  pull_request: {}
   push:
     branches:
       - dev
