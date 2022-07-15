@@ -47,7 +47,7 @@ jobs:
 #          dotnet-version: "3.1.x"          
 #        if: ${{ matrix.dotnet == 'netcoreapp3.1' }}
 #
-#      - name: Remove global.json  # prevent forcing net6.0 sdk
+#      - name: Remove global.json  # prevent forcing sdk version
 #        run: rm -f global.json
 #
 #      - name: Run tests ${{ matrix.test }}
@@ -92,7 +92,7 @@ jobs:
 #          dotnet-version: "3.1.x"
 #        if: ${{ matrix.dotnet == 'netcoreapp3.1' }}
 #
-#      - name: Remove global.json  # prevent forcing net6.0 sdk
+#      - name: Remove global.json  # prevent forcing sdk version
 #        run: rm -f global.json
 #
 #      - name: Run tests ${{ matrix.test }}
@@ -124,9 +124,9 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "3.1.x"
+          dotnet-version: "6.0.x"  # sdk 6.0 needed to support c# 10
 
-      - name: Remove global.json  # prevent forcing net6.0 sdk
+      - name: Remove global.json  # prevent forcing sdk version
         run: rm -f global.json
 
       - name: Run tests ${{ matrix.test }}
