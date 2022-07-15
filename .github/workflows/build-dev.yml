@@ -142,7 +142,7 @@ jobs:
   nuget:
     runs-on: ubuntu-latest
     #needs: [test, test-redis, test-codegen]
-    needs: [test]
+    needs: [test-codegen]
 
     steps:
       - uses: actions/checkout@v1
