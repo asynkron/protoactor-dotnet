@@ -123,10 +123,10 @@ jobs:
       - name: Remove global.json  # prevent forcing sdk version
         run: rm -f global.json
 
-      - name: Run tests ${{ matrix.test }}
+      - name: Run tests 
         timeout-minutes: 15
         run: |
-          dotnet test "tests/Proto.Cluster.CodeGen.Tests/*.csproj" -f ${{ matrix.dotnet }} -c Release --logger GitHubActions
+          dotnet test "tests/Proto.Cluster.CodeGen.Tests/*.csproj" -f net7.0 -c Release --logger GitHubActions
 
 
 
