@@ -114,7 +114,7 @@ jobs:
         options: --entrypoint redis-server
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: "7.0.x"
@@ -126,7 +126,7 @@ jobs:
       - name: Run tests 
         timeout-minutes: 15
         run: |
-          dotnet test "tests/Proto.Cluster.CodeGen.Tests/*.csproj" -f net7.0 -c Release --logger GitHubActions
+          dotnet test tests/Proto.Cluster.CodeGen.Tests/*.csproj -f net7.0 -c Release --logger GitHubActions
 
 
 
