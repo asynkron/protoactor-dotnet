@@ -1,17 +1,41 @@
-name: Build and deploy to Nuget
+﻿name: Build and test PRs
 
-on:
-  pull_request: {}
-  push:
-    branches:
-      - dev
-    tags:
-      - "*"
+on: [pull_request]
+
 env:
   DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
   TERM: xterm
   
 jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379/tcp
+        options: --entrypoint redis-server
+      mongodb:
+        image: mongo
+        ports:
+          - 27017/tcp
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: "7.0.x"
+          include-prerelease: true
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.x
+            3.1.x
+
+      - name: Build
+        run: dotnet build ProtoActor.sln -c Release
+
   test-slow:  # slow tests that should run in parallel
     runs-on: ubuntu-latest
     
@@ -34,7 +58,7 @@ jobs:
           - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
-          
+    
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-dotnet@v2
@@ -49,7 +73,7 @@ jobs:
         if: ${{ matrix.dotnet == 'net6.0' || matrix.dotnet == 'netcoreapp3.1' }} # sdk 6.0 needed to support c# 10
       - uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: "3.1.x"          
+          dotnet-version: "3.1.x"
         if: ${{ matrix.dotnet == 'netcoreapp3.1' }}
 
       - name: Remove global.json  # prevent forcing sdk version
@@ -73,7 +97,7 @@ jobs:
           - "tests/Proto.Persistence.Tests/*.csproj"
           - "tests/Proto.OpenTelemetry.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
-            
+    
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-dotnet@v2
@@ -89,25 +113,3 @@ jobs:
         timeout-minutes: 15
         run: |
           dotnet test ${{ matrix.test }} -c Release --logger GitHubActions
-
-  nuget:
-    runs-on: ubuntu-latest
-    needs: [test-slow, test-fast]
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: "7.0.x"
-          include-prerelease: true
-      - uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: |
-            6.0.x
-            3.1.x
-          
-      - name: Create and push NuGet package
-        run: |
-          dotnet pack ProtoActor.sln -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
-          dotnet nuget push nuget/**/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-          
