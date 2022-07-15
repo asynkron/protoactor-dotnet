@@ -10,10 +10,6 @@ env:
   DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
   TERM: xterm
   
-#concurrency:
-#  group: protoactor
-#  cancel-in-progress: true  
-  
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -31,7 +27,6 @@ jobs:
           - "tests/Proto.OpenTelemetry.Tests/*.csproj"
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.Identity.Tests/*.csproj"
-        #  - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
           - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
           - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
 
@@ -52,24 +47,16 @@ jobs:
           dotnet-version: "3.1.x"          
         if: ${{ matrix.dotnet == 'netcoreapp3.1' }}
 
-      - name: Remove global.json
+      - name: Remove global.json  # prevent forcing net6.0 sdk
         run: rm -f global.json
-
-      - uses: actions/cache@v3
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-${{ matrix.dotnet}}-nuget-${{ hashFiles(matrix.test) }}
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
-        env:
-          ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
-          ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
           dotnet restore ${{ matrix.test }} -p:TargetFrameworks=${{ matrix.dotnet }}
           dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions --no-restore
 
-  test-redis:
+  test-redis: # separate job to save time starting redis for all the other jobs
     runs-on: ubuntu-latest
 
     services:
@@ -105,13 +92,8 @@ jobs:
           dotnet-version: "3.1.x"
         if: ${{ matrix.dotnet == 'netcoreapp3.1' }}
 
-      - name: Remove global.json
+      - name: Remove global.json  # prevent forcing net6.0 sdk
         run: rm -f global.json
-
-      - uses: actions/cache@v3
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-${{ matrix.dotnet}}-nuget-${{ hashFiles(matrix.test) }}
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
@@ -121,10 +103,44 @@ jobs:
           dotnet restore ${{ matrix.test }} -p:TargetFrameworks=${{ matrix.dotnet }}
           dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions --no-restore
 
+  test-codegen: # separate job to make it work with netstandard2.0
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379/tcp
+        options: --entrypoint redis-server
+
+    strategy:
+      matrix:
+        dotnet:
+          - netstandard2.0
+        test:
+          - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "3.1.x"
+
+      - name: Remove global.json  # prevent forcing net6.0 sdk
+        run: rm -f global.json
+
+      - name: Run tests ${{ matrix.test }}
+        timeout-minutes: 15
+        env:
+          ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
+        run: |
+          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions
+
+
 
   nuget:
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [test, test-redis]
 
     steps:
       - uses: actions/checkout@v1
