@@ -11,7 +11,7 @@ env:
   TERM: xterm
   
 jobs:
-  test-slow:
+  test-slow:  # slow tests that should run in parallel
     runs-on: ubuntu-latest
     
     services:
@@ -32,6 +32,7 @@ jobs:
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
+          - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
           
     steps:
       - uses: actions/checkout@v3
@@ -61,7 +62,7 @@ jobs:
           dotnet restore ${{ matrix.test }} -p:TargetFrameworks=${{ matrix.dotnet }}
           dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions --no-restore
 
-  test-fast:
+  test-fast:  # fast tests where setting up a parallel job run is more overhead than just running the tests side by side
     runs-on: ubuntu-latest
 
     strategy:
@@ -70,7 +71,6 @@ jobs:
           - "tests/Proto.Remote.Tests/*.csproj"
           - "tests/Proto.Persistence.Tests/*.csproj"
           - "tests/Proto.OpenTelemetry.Tests/*.csproj"
-          - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
             
     steps:
@@ -83,7 +83,6 @@ jobs:
         with:
           dotnet-version: |
             6.0.x
-            5.0.x
             3.1.x
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
@@ -104,7 +103,6 @@ jobs:
         with:
           dotnet-version: |
             6.0.x
-            5.0.x
             3.1.x
           
       - name: Create and push NuGet package
