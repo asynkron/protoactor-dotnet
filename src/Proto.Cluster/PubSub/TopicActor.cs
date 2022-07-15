@@ -221,7 +221,7 @@ public sealed class TopicActor : IActor
             //TODO: cancellation token config?
             var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None);
             Logger.LogDebug("Topic {Topic} loaded subscriptions {Subscriptions}", _topic, state);
-            return state;
+            return state ?? new Subscribers();
         }
         catch (Exception e)
         {

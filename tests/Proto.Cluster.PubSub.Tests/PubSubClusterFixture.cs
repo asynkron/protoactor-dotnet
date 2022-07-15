@@ -18,6 +18,7 @@ public record Response;
 
 public class PubSubClusterFixture : BaseInMemoryClusterFixture
 {
+    private readonly bool _useDefaultTopicRegistration;
     public const string SubscriberKind = "Subscriber";
     public const string TimeoutSubscriberKind = "TimeoutSubscriber";
 
@@ -28,26 +29,34 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
 
     public ITestOutputHelper? Output;
 
-    public PubSubClusterFixture() : base(3, config =>
+    public PubSubClusterFixture() : this(3, false) {} // xunit requires single, public, parameterless constructor
+    
+    internal PubSubClusterFixture(int clusterSize, bool useDefaultTopicRegistration) : base(clusterSize, config =>
         config
             .WithActorRequestTimeout(TimeSpan.FromSeconds(1))
             .WithPubSubConfig(PubSubConfig.Setup()
                 .WithSubscriberTimeout(TimeSpan.FromSeconds(2))
             )
-    )
-    {
-    }
+    ) => _useDefaultTopicRegistration = useDefaultTopicRegistration;
 
     private readonly InMemorySubscribersStore _subscribersStore = new();
     
     public Task<Subscribers> GetSubscribersForTopic(string topic) => _subscribersStore.GetAsync(topic, CancellationToken.None);
 
-    protected override ClusterKind[] ClusterKinds => new[]
-    {
-        new ClusterKind(TopicActor.Kind, Props.FromProducer(() => new TopicActor(_subscribersStore))),
-        new ClusterKind(SubscriberKind, SubscriberProps()),
-        new ClusterKind(TimeoutSubscriberKind, TimeoutSubscriberProps())
-    };
+    protected override ClusterKind[] ClusterKinds {
+        get {
+            var kinds = new List<ClusterKind>
+            {
+                new(SubscriberKind, SubscriberProps()),
+                new(TimeoutSubscriberKind, TimeoutSubscriberProps())
+            };
+            
+            if(!_useDefaultTopicRegistration)
+                kinds.Add(new ClusterKind(TopicActor.Kind, Props.FromProducer(() => new TopicActor(_subscribersStore))));
+
+            return kinds.ToArray();
+        }
+    }
 
     private Props SubscriberProps()
     {
@@ -136,29 +145,39 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
 
     public async Task SubscribeTo(string topic, string identity, string kind = PubSubClusterFixture.SubscriberKind)
     {
-        var subRes = await RandomMember().Subscribe(topic, identity, kind);
+        var subRes = await RandomMember().Subscribe(topic, identity, kind, CancellationTokens.FromSeconds(5));
         if (subRes == null)
             Output?.WriteLine($"{kind}/{identity} failed to subscribe due to timeout");
+        subRes.Should().NotBeNull("subscribing should not time out");
     }
 
     public async Task UnsubscribeFrom(string topic, string identity, string kind = PubSubClusterFixture.SubscriberKind)
     {
-        var unsubRes = await RandomMember().Unsubscribe(topic, identity, kind);
+        var unsubRes = await RandomMember().Unsubscribe(topic, identity, kind, CancellationTokens.FromSeconds(5));
         if (unsubRes == null)
             Output?.WriteLine($"{kind}/{identity} failed to subscribe due to timeout");
+        unsubRes.Should().NotBeNull("unsubscribing should not time out");
     }
 
     public Task<PublishResponse?> PublishData(string topic, int data, CancellationToken cancel = default)
-        => RandomMember()
+    {
+        if(cancel == default) cancel = CancellationTokens.FromSeconds(5);
+        
+        return RandomMember()
             .Publisher()
             .Publish(topic, new DataPublished(data), cancel);
+    }
 
     public Task<PublishResponse?> PublishDataBatch(string topic, int[] data, CancellationToken cancel = default)
-        => RandomMember()
+    {
+        if (cancel == default) cancel = CancellationTokens.FromSeconds(5);
+
+        return RandomMember()
             .Publisher()
             .PublishBatch(
                 topic,
                 data.Select(d => new DataPublished(d)).ToArray(),
                 cancel
             );
+    }
 }
