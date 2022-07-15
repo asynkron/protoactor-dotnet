@@ -72,6 +72,7 @@ jobs:
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
             
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/setup-dotnet@v2
         with:
           dotnet-version: "7.0.x"
@@ -87,7 +88,7 @@ jobs:
         env:
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ${{ matrix.test }} -c Release --logger GitHubActions --no-restore
+          dotnet test ${{ matrix.test }} -c Release --logger GitHubActions
 
   nuget:
     runs-on: ubuntu-latest
