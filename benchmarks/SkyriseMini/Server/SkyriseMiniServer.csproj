@@ -29,7 +29,7 @@
       <PackageReference Include="Serilog.AspNetCore" Version="6.0.0-dev-00265" />
       <PackageReference Include="Serilog.Sinks.Console" Version="4.0.2-dev-00890" />
       <PackageReference Include="Serilog.Sinks.Seq" Version="5.1.2-dev-00225" />
-      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.1" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.2" />
     </ItemGroup>
 
     <ItemGroup>
