@@ -76,3 +76,31 @@ jobs:
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
           dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions
+
+  test-fast:  # fast tests where setting up a parallel job run is more overhead than just running the tests side by side
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        test:
+          - "tests/Proto.Actor.Tests/*.csproj"
+          - "tests/Proto.Remote.Tests/*.csproj"
+          - "tests/Proto.Persistence.Tests/*.csproj"
+          - "tests/Proto.OpenTelemetry.Tests/*.csproj"
+          - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
+    
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: "7.0.x"
+          include-prerelease: true
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.x
+            3.1.x
+      - name: Run tests ${{ matrix.test }}
+        timeout-minutes: 15
+        run: |
+          dotnet test ${{ matrix.test }} -c Release --logger GitHubActions
