@@ -64,52 +64,15 @@ jobs:
         with:
           dotnet-version: "7.0.x"
           include-prerelease: true
-        if: ${{ matrix.dotnet == 'net7.0' }}
       - uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: "6.0.x"
-          include-prerelease: true
-        if: ${{ matrix.dotnet == 'net6.0' || matrix.dotnet == 'netcoreapp3.1' }} # sdk 6.0 needed to support c# 10
-      - uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: "3.1.x"
-        if: ${{ matrix.dotnet == 'netcoreapp3.1' }}
-
-      - name: Remove global.json  # prevent forcing sdk version
-        run: rm -f global.json
+          dotnet-version: |
+            6.0.x
+            3.1.x
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
         env:
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet restore ${{ matrix.test }} -p:TargetFrameworks=${{ matrix.dotnet }}
-          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions --no-restore
-
-  test-fast:  # fast tests where setting up a parallel job run is more overhead than just running the tests side by side
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        test:
-          - "tests/Proto.Actor.Tests/*.csproj"
-          - "tests/Proto.Remote.Tests/*.csproj"
-          - "tests/Proto.Persistence.Tests/*.csproj"
-          - "tests/Proto.OpenTelemetry.Tests/*.csproj"
-          - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
-    
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: "7.0.x"
-          include-prerelease: true
-      - uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: |
-            6.0.x
-            3.1.x
-      - name: Run tests ${{ matrix.test }}
-        timeout-minutes: 15
-        run: |
-          dotnet test ${{ matrix.test }} -c Release --logger GitHubActions
+          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions
