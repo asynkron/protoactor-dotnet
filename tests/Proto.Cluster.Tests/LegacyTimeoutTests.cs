@@ -22,7 +22,7 @@ public class LegacyTimeoutTests
         await fixture.InitializeAsync();
 
         var response = await fixture.Members.First().RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
-            new SlowPing {Message = "hi", DelayMs = 2000}, new CancellationTokenSource(500).Token
+            new SlowPing {Message = "hi", DelayMs = 4000}, new CancellationTokenSource(500).Token
         );
 
         response.Should().BeNull();
