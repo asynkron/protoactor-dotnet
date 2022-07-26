@@ -111,7 +111,7 @@ namespace Acme.OtherSystem.Foo
                 GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                //timeout
+                // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
@@ -132,7 +132,7 @@ namespace Acme.OtherSystem.Foo
                 GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                //timeout
+                // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
@@ -152,7 +152,7 @@ namespace Acme.OtherSystem.Foo
                 GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                //timeout
+                // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
@@ -173,7 +173,7 @@ namespace Acme.OtherSystem.Foo
                 GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                //timeout
+                // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
@@ -193,7 +193,7 @@ namespace Acme.OtherSystem.Foo
                 GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                //timeout
+                // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
@@ -214,7 +214,7 @@ namespace Acme.OtherSystem.Foo
                 GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response?)grainResponse.ResponseMessage,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                //timeout
+                // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
@@ -234,7 +234,7 @@ namespace Acme.OtherSystem.Foo
                 GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                //timeout
+                // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
@@ -255,7 +255,7 @@ namespace Acme.OtherSystem.Foo
                 GrainResponseMessage grainResponse => Nothing.Instance,
                 // error response
                 GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
-                //timeout
+                // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
                 _ => throw new NotSupportedException($"Unknown response type {res.GetType().FullName}")
