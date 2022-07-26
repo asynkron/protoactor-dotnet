@@ -58,14 +58,6 @@ public abstract class ClusterTests : ClusterTestBase
     }
 
     [Fact]
-    public async Task ThrowsWhenTimeoutExceeded()
-        => await Members.First()
-            .Invoking(m => m.RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
-                    new SlowPing {Message = "hi", DelayMs = 5000}, new CancellationTokenSource(2000).Token
-                )
-            ).Should().ThrowAsync<TimeoutException>();
-
-    [Fact]
     public async Task SupportsMessageEnvelopeResponses()
     {
         var timeout = new CancellationTokenSource(20000).Token;
