@@ -39,7 +39,7 @@ public abstract class ClusterTests : ClusterTestBase
             .WaitUpTo(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
 
         _testOutputHelper.WriteLine(await Members.DumpClusterState());
-        
+
         consensus.completed.Should().BeTrue("All members should have gotten consensus on the same topology hash");
         _testOutputHelper.WriteLine(LogStore.ToFormattedString());
     }
@@ -56,6 +56,14 @@ public abstract class ClusterTests : ClusterTestBase
         response.Should().NotBeNull();
         response.Message.Should().Be(msg);
     }
+
+    [Fact]
+    public async Task ThrowsWhenTimeoutExceeded()
+        => await Members.First()
+            .Invoking(m => m.RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
+                    new SlowPing {Message = "hi", DelayMs = 5000}, new CancellationTokenSource(2000).Token
+                )
+            ).Should().ThrowAsync<TimeoutException>();
 
     [Fact]
     public async Task SupportsMessageEnvelopeResponses()
@@ -346,15 +354,21 @@ public abstract class ClusterTests : ClusterTestBase
     {
         await Task.Yield();
 
-        var response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
-        var tries = 1;
+        Pong response = null;
 
-        while (response == null && !token.IsCancellationRequested)
+        do
         {
-            await Task.Delay(200, token);
-            //_testOutputHelper.WriteLine($"Retrying ping {kind}/{id}, attempt {++tries}");
-            response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
-        }
+            try
+            {
+                response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
+            }
+            catch (TimeoutException)
+            {
+                // expected
+            }
+
+            if (response == null) await Task.Delay(200, token);
+        } while (response == null && !token.IsCancellationRequested);
 
         response.Should().NotBeNull($"We expect a response before timeout on {kind}/{id}");
 

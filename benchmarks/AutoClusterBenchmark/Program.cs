@@ -29,15 +29,16 @@ public static class Program
     private static object Request = new HelloRequest();
 
     public static async Task Main(string[] args)
-    { 
+    {
         ThreadPool.SetMinThreads(0, 0);
-        foreach (var batchSize in new[] { 100, 150, 200, 250, 300 })
+
+        foreach (var batchSize in new[] {100, 150, 200, 250, 300})
         {
             Configuration.ResetAgent();
             ResetCounters();
-                
+
             var cluster = await Configuration.SpawnClient();
-                
+
             var elapsed = await RunWorkers(() => new RunMemberInProcGraceful(), () => RunBatchClient(batchSize, cluster));
             var tps = requestCount / elapsed.TotalMilliseconds * 1000;
             Console.WriteLine();
@@ -47,7 +48,7 @@ public static class Program
             Console.WriteLine($"Failures:\t{failureCount:N0}");
             Console.WriteLine($"Throughput:\t{tps:N0} requests/sec -> {(tps * 2):N0} msg/sec");
             await cluster.ShutdownAsync();
-                
+
             await Task.Delay(5000);
         }
     }
@@ -70,11 +71,10 @@ public static class Program
 
         try
         {
-                
-            var x = await cluster.RequestAsync<object>(id, Request, context, cancellationToken);
-
-            if (x != null)
+            try
             {
+                await cluster.RequestAsync<object>(id, Request, context, cancellationToken);
+
                 var res = Interlocked.Increment(ref successCount);
 
                 if (res % 10000 == 0)
@@ -85,6 +85,10 @@ public static class Program
                 }
 
                 return;
+            }
+            catch (TimeoutException)
+            {
+                // ignored                
             }
 
             OnError();
@@ -109,16 +113,16 @@ public static class Program
     private static void RunBatchClient(int batchSize, Cluster cluster)
     {
         var identities = new ClusterIdentity[actorCount];
+
         for (var i = 0; i < actorCount; i++)
         {
             var id = "myactor" + i;
-            identities[i] = ClusterIdentity.Create(id,"hello");
+            identities[i] = ClusterIdentity.Create(id, "hello");
         }
-            
+
         var logger = Log.CreateLogger(nameof(Program));
 
         _ = SafeTask.Run(() => {
-                   
                 var rnd = new Random();
                 var semaphore = new AsyncSemaphore(5);
 
@@ -139,7 +143,8 @@ public static class Program
             {
                 var ct = CancellationTokens.FromSeconds(20);
 
-                var ctx = cluster.System.Root.CreateBatchContext(batchSize,ct);
+                var ctx = cluster.System.Root.CreateBatchContext(batchSize, ct);
+
                 for (var i = 0; i < batchSize; i++)
                 {
                     var id = identities[rnd!.Next(0, actorCount)];

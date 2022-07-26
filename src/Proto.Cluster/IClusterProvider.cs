@@ -23,7 +23,8 @@ public interface IClusterProvider
     Task StartMemberAsync(Cluster cluster);
 
     /// <summary>
-    /// Starts the cluster provider in client mode. The client member does not support any kinds.
+    /// Starts the cluster provider in client mode. The client member does not host any virtual actors and it is not registered in the membership provider.
+    /// It only monitors other member's presence and allows to send messages to virtual actors hosted by other members.
     /// </summary>
     /// <param name="cluster"></param>
     /// <returns></returns>
