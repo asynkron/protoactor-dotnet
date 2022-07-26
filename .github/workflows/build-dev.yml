@@ -10,96 +10,94 @@ env:
   DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
   TERM: xterm
   
-#concurrency:
-#  group: protoactor
-#  cancel-in-progress: true  
-  
 jobs:
-  test:
+  test-slow:  # slow tests that should run in parallel
     runs-on: ubuntu-latest
-
+    
     services:
       redis:
         image: redis
         ports:
           - 6379/tcp
         options: --entrypoint redis-server
-      mongodb:
-        image: mongo
-        ports:
-          - 27017/tcp
-
+    
     strategy:
       matrix:
         dotnet:
           - net7.0
           - net6.0
-          - net5.0
           - netcoreapp3.1
+        test:
+          - "tests/Proto.Cluster.Tests/*.csproj"
+          - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
+          - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
+          - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
+          
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: "7.0.x"
+          include-prerelease: true
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.x
+            3.1.x
+
+      - name: Run tests ${{ matrix.test }}
+        timeout-minutes: 15
+        env:
+          ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
+        run: |
+          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions
+          
+  test-fast:  # fast tests where setting up a parallel job run is more overhead than just running the tests side by side
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
         test:
           - "tests/Proto.Actor.Tests/*.csproj"
           - "tests/Proto.Remote.Tests/*.csproj"
           - "tests/Proto.Persistence.Tests/*.csproj"
           - "tests/Proto.OpenTelemetry.Tests/*.csproj"
-          - "tests/Proto.Cluster.Tests/*.csproj"
-          - "tests/Proto.Cluster.Identity.Tests/*.csproj"
-        #  - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
-          - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
-          - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
-          - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
-
+            
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v2
         with:
           dotnet-version: "7.0.x"
-          include-prerelease: true        
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: "6.0.x"
           include-prerelease: true
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: "5.0.100"
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: "3.1.x"          
-
+          dotnet-version: |
+            6.0.x
+            3.1.x
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
-        env:
-          ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
-          ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions
+          dotnet test ${{ matrix.test }} -c Release --logger GitHubActions
 
   nuget:
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [test-slow, test-fast]
 
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v2
         with:
           dotnet-version: "7.0.x"
           include-prerelease: true
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: "6.0.x"   
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: "3.1.x"  
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: "5.0.x"
-          source-url: https://nuget.pkg.github.com/asynkron/index.json          
-        env:
-          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}             
-
+          dotnet-version: |
+            6.0.x
+            3.1.x
+          
       - name: Create and push NuGet package
         run: |
           dotnet pack ProtoActor.sln -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
           dotnet nuget push nuget/**/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-          # dotnet nuget push nuget/**/*.nupkg --api-key ${{secrets.GITHUB_TOKEN}} --skip-duplicate
           
