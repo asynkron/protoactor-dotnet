@@ -131,8 +131,8 @@ EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ci", "ci", "{8B241043-F933-4C1F-AB57-BAE8B624F133}"
 ProjectSection(SolutionItems) = preProject
-	.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
 	.github\workflows\build-dev.yml = .github\workflows\build-dev.yml
+	.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
 EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HostedService", "benchmarks\HostedService\HostedService.csproj", "{7840C651-9352-4CB2-9152-4793EC219DE9}"

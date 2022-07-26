@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net5.0;net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <OutputType>Exe</OutputType>
         <LangVersion>10</LangVersion>
         <RootNamespace>ClusterExperiment1</RootNamespace>
