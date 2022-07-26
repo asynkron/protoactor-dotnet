@@ -112,7 +112,7 @@ public class DefaultClusterContext : IClusterContext
                             return t1;
                         }
 
-                        if (untypedResult == null) // TODO: what if request response is actually null?
+                        if (untypedResult == null) // timeout, actual valid response cannot be null 
                         {
                             return TimeoutOrThrow();
                         }
