@@ -96,7 +96,19 @@ public class ConcurrentSpawnBenchmark
             tasks[i] = _cluster.RequestAsync<Terminated>(id, PoisonPill.Instance, cts.Token);
         }
 
-        Task.WhenAll(tasks).GetAwaiter().GetResult();
+        try
+        {
+            Task.WhenAll(tasks).GetAwaiter().GetResult();
+        }
+        catch (TimeoutException)
+        {
+            // ignore
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     public enum IdentityLookup

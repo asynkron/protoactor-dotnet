@@ -157,6 +157,12 @@ public record ClusterConfig
     public PubSubConfig PubSubConfig { get; init; } = PubSubConfig.Setup();
 
     /// <summary>
+    /// Backwards compatibility. Set to true to have timed out requests return default(TResponse) instead of throwing <see cref="TimeoutException"/>
+    /// Default is false.
+    /// </summary>
+    public bool LegacyRequestTimeoutBehavior { get; init; }
+
+    /// <summary>
     /// Timeout for spawning an actor in the Partition Identity Lookup. Default is 5s.
     /// </summary>
     /// <param name="timeSpan"></param>
@@ -325,6 +331,13 @@ public record ClusterConfig
     /// </summary>
     public ClusterConfig WithPubSubConfig(PubSubConfig config) =>
         this with {PubSubConfig = config};
+
+    /// <summary>
+    /// Backwards compatibility. Set to true to have timed out requests return default(TResponse) instead of throwing <see cref="TimeoutException"/>
+    /// Default is false.
+    /// </summary>
+    public ClusterConfig WithLegacyRequestTimeoutBehavior(bool enabled = true) =>
+        this with {LegacyRequestTimeoutBehavior = enabled};
 
     /// <summary>
     /// Creates a new <see cref="ClusterConfig"/>

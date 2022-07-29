@@ -27,6 +27,7 @@ public class DefaultClusterContext : IClusterContext
     private readonly ActorSystem _system;
     private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
     private readonly int _requestTimeoutSeconds;
+    private readonly bool _legacyTimeouts;
 
     public DefaultClusterContext(Cluster cluster)
     {
@@ -41,6 +42,7 @@ public class DefaultClusterContext : IClusterContext
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
         _requestTimeoutSeconds = (int) config.ActorRequestTimeout.TotalSeconds;
+        _legacyTimeouts = config.LegacyRequestTimeoutBehavior;
 #if !NET6_0_OR_GREATER
         var updateInterval = TimeSpan.FromMilliseconds(Math.Min(config.ActorRequestTimeout.TotalMilliseconds / 2, 1000));
         _clock = new TaskClock(config.ActorRequestTimeout, updateInterval, cluster.System.Shutdown);
@@ -110,15 +112,14 @@ public class DefaultClusterContext : IClusterContext
                             return t1;
                         }
 
+                        if (untypedResult == null) // timeout, actual valid response cannot be null 
+                        {
+                            return TimeoutOrThrow();
+                        }
+
                         if (typeof(T) == typeof(MessageEnvelope))
                         {
                             return (T) (object) MessageEnvelope.Wrap(task.Result);
-                        }
-
-                        if (untypedResult == null)
-                        {
-                            //null = timeout
-                            return default;
                         }
 
                         if (untypedResult is DeadLetterResponse)
@@ -199,7 +200,7 @@ public class DefaultClusterContext : IClusterContext
                 Logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}", clusterIdentity);
             }
 
-            return default!;
+            return TimeoutOrThrow();
         }
         finally
         {
@@ -211,6 +212,17 @@ public class DefaultClusterContext : IClusterContext
             future.Dispose();
             future = context.GetFuture();
             lastPid = null;
+        }
+
+        T? TimeoutOrThrow()
+        {
+            if (_legacyTimeouts)
+            {
+                //null = timeout
+                return default;
+            }
+
+            throw new TimeoutException("Request timed out");
         }
     }
 

@@ -39,13 +39,13 @@ public static class Program
         if (args.Length > 0)
         {
             // InteractiveOutput = args[0] == "1";
-                
+
             var l = typeof(Program).Assembly.Location;
             Console.WriteLine($"Worker running {l}");
             var worker = await Configuration.SpawnMember();
             AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
             Thread.Sleep(Timeout.Infinite);
-                
+
             return;
         }
 
@@ -154,7 +154,6 @@ public static class Program
 
     private static void RunNoopClient()
     {
-            
     }
 
     private static void RunFireForgetClient()
@@ -166,6 +165,7 @@ public static class Program
                 var cluster = await Configuration.SpawnClient();
                 // var rnd = new Random();
                 var i = 0;
+
                 while (true)
                 {
                     var id = "myactor" + (i++ % actorCount);
@@ -186,10 +186,10 @@ public static class Program
 
         try
         {
-            var x = await cluster.RequestAsync<object>(id, Request, context, cancellationToken);
-
-            if (x != null)
+            try
             {
+                await cluster.RequestAsync<object>(id, Request, context, cancellationToken);
+
                 var res = Interlocked.Increment(ref successCount);
 
                 if (res % 10000 == 0)
@@ -200,6 +200,10 @@ public static class Program
                 }
 
                 return;
+            }
+            catch (TimeoutException)
+            {
+                // ignored                
             }
 
             OnError();
@@ -218,7 +222,7 @@ public static class Program
             Console.ResetColor();
         }
     }
-        
+
     private static async Task<bool> SendRequest(Cluster cluster, string id, CancellationToken cancellationToken, ISenderContext? context = null)
     {
         Interlocked.Increment(ref requestCount);
@@ -230,10 +234,10 @@ public static class Program
 
         try
         {
-            var x = await cluster.RequestAsync<object>(id, "hello", Request, context, cancellationToken);
-
-            if (x != null)
+            try
             {
+                await cluster.RequestAsync<object>(id, "hello", Request, context, cancellationToken);
+
                 var res = Interlocked.Increment(ref successCount);
 
                 if (res % 10000 == 0)
@@ -244,6 +248,10 @@ public static class Program
                 }
 
                 return true;
+            }
+            catch (TimeoutException)
+            {
+                // ignored                
             }
 
             OnError();
@@ -268,12 +276,13 @@ public static class Program
     private static void RunBatchClient(int batchSize)
     {
         var identities = new ClusterIdentity[actorCount];
+
         for (var i = 0; i < actorCount; i++)
         {
             var id = "myactor" + i;
-            identities[i] = ClusterIdentity.Create(id,"hello");
+            identities[i] = ClusterIdentity.Create(id, "hello");
         }
-            
+
         var logger = Log.CreateLogger(nameof(Program));
 
         _ = SafeTask.Run(async () => {
@@ -281,6 +290,7 @@ public static class Program
                 // var rnd = new Random();
                 var semaphore = new AsyncSemaphore(5);
                 var i = 0;
+
                 while (true)
                 {
                     var b = i;
@@ -298,7 +308,8 @@ public static class Program
             {
                 var ct = CancellationTokens.FromSeconds(20);
 
-                var ctx = cluster.System.Root.CreateBatchContext(batchSize,ct);
+                var ctx = cluster.System.Root.CreateBatchContext(batchSize, ct);
+
                 for (var i = 0; i < batchSize; i++)
                 {
                     var id = identities[(startIndex + i) % identities.Length];
@@ -315,7 +326,7 @@ public static class Program
             }
         }
     }
-        
+
     private static void RunDebugClient()
     {
         var logger = Log.CreateLogger(nameof(Program));
@@ -332,7 +343,7 @@ public static class Program
 
                     if (!res)
                     {
-                        var pid = await cluster.GetAsync(ClusterIdentity.Create(id,"hello"),CancellationTokens.FromSeconds(10));
+                        var pid = await cluster.GetAsync(ClusterIdentity.Create(id, "hello"), CancellationTokens.FromSeconds(10));
 
                         if (pid != null)
                         {

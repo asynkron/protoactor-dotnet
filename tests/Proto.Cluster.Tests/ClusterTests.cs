@@ -39,7 +39,7 @@ public abstract class ClusterTests : ClusterTestBase
             .WaitUpTo(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
 
         _testOutputHelper.WriteLine(await Members.DumpClusterState());
-        
+
         consensus.completed.Should().BeTrue("All members should have gotten consensus on the same topology hash");
         _testOutputHelper.WriteLine(LogStore.ToFormattedString());
     }
@@ -346,15 +346,21 @@ public abstract class ClusterTests : ClusterTestBase
     {
         await Task.Yield();
 
-        var response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
-        var tries = 1;
+        Pong response = null;
 
-        while (response == null && !token.IsCancellationRequested)
+        do
         {
-            await Task.Delay(200, token);
-            //_testOutputHelper.WriteLine($"Retrying ping {kind}/{id}, attempt {++tries}");
-            response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
-        }
+            try
+            {
+                response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
+            }
+            catch (TimeoutException)
+            {
+                // expected
+            }
+
+            if (response == null) await Task.Delay(200, token);
+        } while (response == null && !token.IsCancellationRequested);
 
         response.Should().NotBeNull($"We expect a response before timeout on {kind}/{id}");
 
