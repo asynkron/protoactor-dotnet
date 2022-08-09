@@ -127,7 +127,7 @@ namespace {{CsNamespace}}
 
     public class {{Name}}Actor : IActor
     {
-        public const string Kind = ""{{Name}}"";
+        public const string Kind = ""{{../CsNamespace}}/{{Name}}"";
 
         private {{Name}}Base? _inner;
         private IContext? _context;
