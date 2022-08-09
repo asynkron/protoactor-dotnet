@@ -18,6 +18,7 @@ public class ProtoGrainGenerationTests
 
     [Theory]
     [InlineData("foo.proto", "ExpectedOutput.cs")]
+    [InlineData("foo_packageless.proto", "ExpectedOutputPackageless.cs")]
     public void CanGenerateGrains(string protoDefinitionFile, string expectedOutputFile)
     {
         var r = new FileInfo(protoDefinitionFile).OpenText();
@@ -36,7 +37,7 @@ public class ProtoGrainGenerationTests
         var expectedOutput = File.ReadAllText(expectedOutputFile).Trim();
         Assert.Equal(expectedOutput, res.Single().Text.Trim());
     }
-        
+
     [Theory]
     [InlineData("invalid.proto","Unable to resolve return type for InvalidTestGrain.GetState")]
     [InlineData("invalid2.proto","Unable to resolve input parameter type for InvalidTestGrain2.SomeCommand")]

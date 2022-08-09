@@ -63,6 +63,7 @@ public class CodeGenerator : CommonCodeGenerator
                     s => new ProtoService
                     {
                         Name = s.Name,
+                        Kind = GetKind(file.Package, s.Name),
                         Methods = s.Methods.ToArray()
                             .Select(
                                 (m, i) => new ProtoMethod
@@ -114,6 +115,11 @@ public class CodeGenerator : CommonCodeGenerator
             }
 
             return res;
+        }
+
+        static string GetKind(string? packageName, string serviceName)
+        {
+            return string.IsNullOrEmpty(packageName) ? serviceName : $"{packageName}/{serviceName}";
         }
     }
 

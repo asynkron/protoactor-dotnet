@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <IsPackable>false</IsPackable>
@@ -22,11 +22,14 @@
 
     <ItemGroup>
         <Compile Remove="ExpectedOutput.cs" />
+        <Compile Remove="ExpectedOutputPackageless.cs" />
         <Content Include="foo.proto" CopyToOutputDirectory="Always" />
+        <Content Include="foo_packageless.proto" CopyToOutputDirectory="Always" />
         <Content Include="bar.proto" CopyToOutputDirectory="Always" />
         <Content Include="invalid.proto" CopyToOutputDirectory="Always" />
         <Content Include="invalid2.proto" CopyToOutputDirectory="Always" />
         <Content Include="ExpectedOutput.cs" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="ExpectedOutputPackageless.cs" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 
