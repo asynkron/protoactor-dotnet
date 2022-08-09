@@ -18,28 +18,8 @@ public class ProtoGrainGenerationTests
 
     [Theory]
     [InlineData("foo.proto", "ExpectedOutput.cs")]
-    public void CanGenerateGrains(string protoDefinitionFile, string expectedOutputFile)
-    {
-        var r = new FileInfo(protoDefinitionFile).OpenText();
-        var set = new FileDescriptorSet();
-        set.AddImportPath(".");
-        set.Add(protoDefinitionFile, true, r);
-        set.Process();
-        var c = new CodeGenerator(Template.DefaultTemplate);
-        var res = c.Generate(set, NameNormalizer.Default, new Dictionary<string, string>()).ToArray();
-
-        foreach (var codeFile in res)
-        {
-            _testOutputHelper.WriteLine(codeFile.Text);
-        }
-
-        var expectedOutput = File.ReadAllText(expectedOutputFile).Trim();
-        Assert.Equal(expectedOutput, res.Single().Text.Trim());
-    }
-        
-    [Theory]
     [InlineData("foo_packageless.proto", "ExpectedOutputPackageless.cs")]
-    public void CanGenerateGrainsWithoutPackage(string protoDefinitionFile, string expectedOutputFile)
+    public void CanGenerateGrains(string protoDefinitionFile, string expectedOutputFile)
     {
         var r = new FileInfo(protoDefinitionFile).OpenText();
         var set = new FileDescriptorSet();
