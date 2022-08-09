@@ -8,5 +8,6 @@ namespace Proto.Cluster.CodeGen.model;
 public class ProtoService
 {
     public string Name { get; set; } = null!;
+    public string Kind { get; set; } = null!;
     public ProtoMethod[] Methods { get; set; } = null!;
 }
