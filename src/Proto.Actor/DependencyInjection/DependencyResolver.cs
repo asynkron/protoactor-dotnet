@@ -21,7 +21,8 @@ public class DependencyResolver : IDependencyResolver
 
             try
             {
-                return (IActor) ActivatorUtilities.CreateInstance(_services, actorType, args);
+                var s = _services.CreateScope();
+                return (IActor) ActivatorUtilities.CreateInstance(s.ServiceProvider, actorType, args);
             }
             catch (Exception x)
             {
@@ -36,7 +37,8 @@ public class DependencyResolver : IDependencyResolver
     public Props PropsFor(Type actorType) => Props.FromProducer(() => {
             try
             {
-                return (IActor) _services.GetRequiredService(actorType);
+                var s = _services.CreateScope();
+                return (IActor) s.ServiceProvider.GetRequiredService(actorType);
             }
             catch (Exception x)
             {
