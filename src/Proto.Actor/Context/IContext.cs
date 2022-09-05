@@ -45,11 +45,6 @@ public interface IContext : ISenderContext, IReceiverContext, ISpawnerContext, I
     void Respond(object message, MessageHeader header) => Respond(new MessageEnvelope(message, null, header));
 
     /// <summary>
-    ///     Stashes the current message on a stack for re-processing when the actor restarts.
-    /// </summary>
-    void Stash();
-
-    /// <summary>
     ///     Registers the actor as a watcher for the specified PID. When the PID terminates the watcher is notified with <see cref="Terminated"/> message.
     /// </summary>
     /// <param name="pid">The PID to watch</param>

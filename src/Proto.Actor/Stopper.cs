@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace Proto;
 
-public class Stopper
+class Stopper
 {
     private readonly CancellationTokenSource _cts = new();
 

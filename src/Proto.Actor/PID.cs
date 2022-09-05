@@ -61,7 +61,7 @@ public partial class PID : ICustomDiagnosticMessage
         reff.SendUserMessage(this, message);
     }
 
-    public void SendSystemMessage(ActorSystem system, SystemMessage sys)
+    internal void SendSystemMessage(ActorSystem system, SystemMessage sys)
     {
         var reff = Ref(system) ?? system.ProcessRegistry.Get(this);
         reff.SendSystemMessage(this, sys);

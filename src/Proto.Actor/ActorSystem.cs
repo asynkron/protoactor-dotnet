@@ -78,7 +78,12 @@ public sealed class ActorSystem : IAsyncDisposable
     /// Allows to access the stop cancellation token and stop reason.
     /// Use <see cref="ShutdownAsync"/> to stop the actor system.
     /// </summary>
-    public Stopper Stopper { get; }
+    internal Stopper Stopper { get; }
+
+    /// <summary>
+    /// For stopped <see cref="ActorSystem"/>, returns the reason for the shutdown.
+    /// </summary>
+    public string StoppedReason => Stopper.StoppedReason;
 
     /// <summary>
     /// Manages all the guardians in the actor system.
@@ -117,13 +122,13 @@ public sealed class ActorSystem : IAsyncDisposable
 
     private void RunThreadPoolStats()
     {
-        var metricTags = new KeyValuePair<string, object?>[]{ new("id", Id), new("address", Address)};
+        var metricTags = new KeyValuePair<string, object?>[] {new("id", Id), new("address", Address)};
 
         var logger = Log.CreateLogger(nameof(ThreadPoolStats));
         _ = ThreadPoolStats.Run(TimeSpan.FromSeconds(5),
             t => {
                 //collect the latency metrics
-                if(Metrics.Enabled)
+                if (Metrics.Enabled)
                     ActorMetrics.ThreadPoolLatency.Record(t.TotalSeconds, metricTags);
 
                 //does it take longer than 1 sec for a task to start executing?
@@ -144,7 +149,7 @@ public sealed class ActorSystem : IAsyncDisposable
     /// </summary>
     /// <param name="reason">Shutdown reason</param>
     /// <returns></returns>
-    public Task ShutdownAsync(string reason="")
+    public Task ShutdownAsync(string reason = "")
     {
         try
         {
@@ -195,15 +200,15 @@ public sealed class ActorSystem : IAsyncDisposable
     /// </summary>
     /// <param name="props"></param>
     /// <returns></returns>
-    public Props ConfigureProps(Props props) => Config.ConfigureProps(props);
-    
+    internal Props ConfigureProps(Props props) => Config.ConfigureProps(props);
+
     /// <summary>
     /// Applies props configuration delegate for system actors.
     /// </summary>
     /// <param name="name"></param>
     /// <param name="props"></param>
     /// <returns></returns>
-    public Props ConfigureSystemProps(string name, Props props) => Config.ConfigureSystemProps(name, props);
+    internal Props ConfigureSystemProps(string name, Props props) => Config.ConfigureSystemProps(name, props);
 
     /// <summary>
     /// Stops the actor system with reason = "Disposed"
