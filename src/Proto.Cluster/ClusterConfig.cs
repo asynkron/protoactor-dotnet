@@ -29,9 +29,8 @@ public record ClusterConfig
     {
         ClusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
         ClusterProvider = clusterProvider ?? throw new ArgumentNullException(nameof(clusterProvider));
-        TimeoutTimespan = TimeSpan.FromSeconds(5);
         ActorRequestTimeout = TimeSpan.FromSeconds(5);
-        ActorSpawnTimeout = TimeSpan.FromSeconds(5);
+        ActorSpawnVerificationTimeout = TimeSpan.FromSeconds(5);
         ActorActivationTimeout = TimeSpan.FromSeconds(5);
         MaxNumberOfEventsInRequestLogThrottlePeriod = 3;
         RequestLogThrottlePeriod = TimeSpan.FromSeconds(2);
@@ -88,7 +87,8 @@ public record ClusterConfig
     /// <summary>
     /// Timeout for spawning an actor in the Partition Identity Lookup. Default is 5s.
     /// </summary>
-    public TimeSpan TimeoutTimespan { get; init; }
+    [Obsolete("Use ActorActivationTimeout instead")]
+    public TimeSpan TimeoutTimespan => ActorActivationTimeout;
 
     /// <summary>
     /// Timeout for single retry of actor request. Default is 5s.
@@ -99,10 +99,10 @@ public record ClusterConfig
     /// <summary>
     /// Timeout for running the <see cref="ClusterKind.CanSpawnIdentity"/> check. Default is 5s.
     /// </summary>
-    public TimeSpan ActorSpawnTimeout { get; init; }
+    public TimeSpan ActorSpawnVerificationTimeout { get; init; }
 
     /// <summary>
-    /// Timeout for DB Identity Lookup operations. Default is 5s.
+    /// Timeout for activating an actor. Exact usage varies depending on <see cref="IIdentityLookup"/> used. Default is 5s.
     /// </summary>
     public TimeSpan ActorActivationTimeout { get; init; }
 
@@ -165,10 +165,10 @@ public record ClusterConfig
     /// <summary>
     /// Timeout for spawning an actor in the Partition Identity Lookup. Default is 5s.
     /// </summary>
-    /// <param name="timeSpan"></param>
+    /// <param name="timeout"></param>
     /// <returns></returns>
-    public ClusterConfig WithTimeout(TimeSpan timeSpan) =>
-        this with {TimeoutTimespan = timeSpan};
+    [Obsolete("Use ActorActivationTimeout instead")]
+    public ClusterConfig WithTimeout(TimeSpan timeout) => WithActorActivationTimeout(timeout);
 
     /// <summary>
     /// Timeout for single retry of actor request. Default is 5s.
@@ -184,8 +184,8 @@ public record ClusterConfig
     /// </summary>
     /// <param name="timeSpan"></param>
     /// <returns></returns>
-    public ClusterConfig WithActorSpawnTimeout(TimeSpan timeSpan) =>
-        this with {ActorSpawnTimeout = timeSpan};
+    public ClusterConfig WithActorSpawnVerificationTimeout(TimeSpan timeSpan) =>
+        this with {ActorSpawnVerificationTimeout = timeSpan};
 
     /// <summary>
     /// Timeout for DB Identity Lookup operations. Default is 5s.
