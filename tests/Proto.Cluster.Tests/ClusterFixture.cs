@@ -11,6 +11,7 @@ using Proto.Cluster.Cache;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Cluster.PartitionActivator;
+using Proto.Cluster.SingleNode;
 using Proto.Cluster.Testing;
 using Proto.Logging;
 using Proto.OpenTelemetry;
@@ -29,6 +30,7 @@ public interface IClusterFixture
     public Task<Cluster> SpawnNode();
 
     LogStore LogStore { get; }
+    int ClusterSize { get; }
 
     Task RemoveNode(Cluster member, bool graceful = true);
 }
@@ -39,7 +41,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     public const string InvalidIdentity = "invalid";
 
     protected readonly string ClusterName;
-    private readonly int _clusterSize;
+    public int ClusterSize { get; }
     private readonly Func<ClusterConfig, ClusterConfig>? _configure;
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
     private readonly TracerProvider? _tracerProvider;
@@ -50,7 +52,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 #if NETCOREAPP3_1
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
-        _clusterSize = clusterSize;
+        ClusterSize = clusterSize;
         _configure = configure;
         ClusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
 
@@ -89,7 +91,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     public async Task InitializeAsync()
     {
-        var nodes = await SpawnClusterNodes(_clusterSize, _configure).ConfigureAwait(false);
+        var nodes = await SpawnClusterNodes(ClusterSize, _configure).ConfigureAwait(false);
         _members.AddRange(nodes);
     }
 
@@ -178,9 +180,11 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         var actorSystemConfig = ActorSystemConfig.Setup();
 
         // ReSharper disable once HeuristicUnreachableCode
-        return EnableTracing ? actorSystemConfig
-            .WithConfigureProps(props => props.WithTracing())
-            .WithConfigureRootContext(context => context.WithTracing()): actorSystemConfig;
+        return EnableTracing
+            ? actorSystemConfig
+                .WithConfigureProps(props => props.WithTracing())
+                .WithConfigureRootContext(context => context.WithTracing())
+            : actorSystemConfig;
     }
 
     protected abstract IClusterProvider GetClusterProvider();
@@ -216,7 +220,6 @@ public abstract class BaseInMemoryClusterFixture : ClusterFixture
     protected override IClusterProvider GetClusterProvider() => new TestProvider(new TestProviderOptions(), InMemAgent);
 }
 
-// ReSharper disable once ClassNeverInstantiated.Global
 public class InMemoryClusterFixture : BaseInMemoryClusterFixture
 {
     public InMemoryClusterFixture() : base(3, config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
@@ -224,7 +227,6 @@ public class InMemoryClusterFixture : BaseInMemoryClusterFixture
     }
 }
 
-// ReSharper disable once ClassNeverInstantiated.Global
 public class InMemoryClusterFixtureWithPartitionActivator : BaseInMemoryClusterFixture
 {
     public InMemoryClusterFixtureWithPartitionActivator() : base(3, config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
@@ -271,4 +273,15 @@ public class InMemoryPidCacheInvalidationClusterFixture : BaseInMemoryClusterFix
         var cluster = await base.SpawnClusterMember(configure);
         return cluster.WithPidCacheInvalidation();
     }
+}
+
+public class SingleNodeProviderFixture : ClusterFixture
+{
+    public SingleNodeProviderFixture() : base(1, config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
+    {
+    }
+
+    protected override IClusterProvider GetClusterProvider() => new SingleNodeProvider();
+
+    protected override IIdentityLookup GetIdentityLookup(string clusterName) => new SingleNodeLookup();
 }

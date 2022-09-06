@@ -74,6 +74,12 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task StateIsReplicatedAcrossCluster()
     {
+        if (ClusterFixture.ClusterSize < 2)
+        {
+            _testOutputHelper.WriteLine("Skipped test, cluster size is less than 2");
+            return;
+        }
+        
         var sourceMember = Members.First();
         var sourceMemberId = sourceMember.System.Id;
         var targetMember = Members.Last();
@@ -115,6 +121,12 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task ReSpawnsClusterActorsFromDifferentNodes()
     {
+        if (ClusterFixture.ClusterSize < 2)
+        {
+            _testOutputHelper.WriteLine("Skipped test, cluster size is less than 2");
+            return;
+        }
+        
         var timeout = new CancellationTokenSource(10000).Token;
         var id = CreateIdentity("1");
         await PingPong(Members[0], id, timeout);
@@ -140,6 +152,12 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task HandlesLosingANode()
     {
+        if (ClusterFixture.ClusterSize < 2)
+        {
+            _testOutputHelper.WriteLine("Skipped test, cluster size is less than 2");
+            return;
+        }
+
         var ids = Enumerable.Range(1, 10).Select(id => id.ToString()).ToList();
 
         await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
@@ -158,6 +176,12 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task HandlesLosingANodeWhileProcessing()
     {
+        if (ClusterFixture.ClusterSize < 2)
+        {
+            _testOutputHelper.WriteLine("Skipped test, cluster size is less than 2");
+            return;
+        }
+
         var ingressNodes = new[] {Members[0], Members[1]};
         var victim = Members[2];
         var ids = Enumerable.Range(1, 20).Select(id => id.ToString()).ToList();
@@ -379,6 +403,15 @@ public class InMemoryPartitionActivatorClusterTests : ClusterTests, IClassFixtur
 {
     // ReSharper disable once SuggestBaseTypeForParameterInConstructor
     public InMemoryPartitionActivatorClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixtureWithPartitionActivator clusterFixture)
+        : base(testOutputHelper, clusterFixture)
+    {
+    }
+}
+
+public class SingleNodeProviderClusterTests : ClusterTests, IClassFixture<SingleNodeProviderFixture>
+{
+    // ReSharper disable once SuggestBaseTypeForParameterInConstructor
+    public SingleNodeProviderClusterTests(ITestOutputHelper testOutputHelper, SingleNodeProviderFixture clusterFixture)
         : base(testOutputHelper, clusterFixture)
     {
     }
