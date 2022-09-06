@@ -54,14 +54,14 @@ public static class Extensions
         return system;
     }
 
-    public static IServiceCollection AddRemote(this IServiceCollection services, Func<IServiceProvider, GrpcNetRemoteConfig> configure)
+    internal static IServiceCollection AddRemote(this IServiceCollection services, Func<IServiceProvider, GrpcNetRemoteConfig> configure)
     {
         services.AddSingleton(configure);
         AddAllServices(services);
         return services;
     }
 
-    public static IServiceCollection AddRemote(
+    internal static IServiceCollection AddRemote(
         this IServiceCollection services,
         GrpcNetRemoteConfig config
     )
@@ -71,7 +71,7 @@ public static class Extensions
         return services;
     }
 
-    public static IServiceCollection AddClientRemote(
+    internal static IServiceCollection AddClientRemote(
         this IServiceCollection services,
         GrpcNetRemoteConfig config
     )
@@ -103,7 +103,7 @@ public static class Extensions
         return endpoints.MapGrpcService<Remoting.RemotingBase>();
     }
 
-    public static void UseProtoRemote(this IApplicationBuilder applicationBuilder)
+    internal static void UseProtoRemote(this IApplicationBuilder applicationBuilder)
     {
         var hostedRemote = applicationBuilder.ApplicationServices.GetRequiredService<HostedGrpcNetRemote>();
         hostedRemote.ServerAddressesFeature = applicationBuilder.ServerFeatures.Get<IServerAddressesFeature>();
@@ -111,7 +111,7 @@ public static class Extensions
         applicationBuilder.UseEndpoints(c => AddProtoRemoteEndpoint(c));
     }
 
-    public static void UseProtoRemote(this IApplicationBuilder applicationBuilder, Action<GrpcServiceEndpointConventionBuilder> configure)
+    internal static void UseProtoRemote(this IApplicationBuilder applicationBuilder, Action<GrpcServiceEndpointConventionBuilder> configure)
     {
         var hostedRemote = applicationBuilder.ApplicationServices.GetRequiredService<HostedGrpcNetRemote>();
         hostedRemote.ServerAddressesFeature = applicationBuilder.ServerFeatures.Get<IServerAddressesFeature>();

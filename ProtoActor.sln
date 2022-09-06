@@ -203,7 +203,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "examples\remotech
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "examples\remotechannels\Client\Client.csproj", "{5EACFB26-C757-452C-A536-E633BC352A69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\remotechannels\Messages\Messages.csproj", "{D33722CB-96B8-4B9C-AB59-B18B7FF28539}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "examples\remotechannels\Common\Common.csproj", "{D33722CB-96B8-4B9C-AB59-B18B7FF28539}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.AmazonECS", "src\Proto.Cluster.AmazonECS\Proto.Cluster.AmazonECS.csproj", "{F5EB4AD3-5BCB-48E9-B974-A93EB19CE43C}"
 EndProject
@@ -258,10 +258,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyriseMiniClient", "benchmarks\SkyriseMini\Client\SkyriseMiniClient.csproj", "{8B0466D8-C57E-4D29-98B3-CB2D087765DC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyriseMiniServer", "benchmarks\SkyriseMini\Server\SkyriseMiniServer.csproj", "{7C08B7D5-90BD-45E9-BADF-1B6CEB1A3E97}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Channels", "examples\Channels\Channels.csproj", "{038B6BB0-3B3A-4073-B78F-2999D7F15978}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Channels", "Channels", "{E194E380-E6DE-4137-83D9-EADB54436B56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1293,18 +1289,6 @@ Global
 		{7C08B7D5-90BD-45E9-BADF-1B6CEB1A3E97}.Release|x64.Build.0 = Release|Any CPU
 		{7C08B7D5-90BD-45E9-BADF-1B6CEB1A3E97}.Release|x86.ActiveCfg = Release|Any CPU
 		{7C08B7D5-90BD-45E9-BADF-1B6CEB1A3E97}.Release|x86.Build.0 = Release|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Debug|x64.Build.0 = Debug|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Debug|x86.Build.0 = Debug|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Release|Any CPU.Build.0 = Release|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Release|x64.ActiveCfg = Release|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Release|x64.Build.0 = Release|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Release|x86.ActiveCfg = Release|Any CPU
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1424,8 +1408,6 @@ Global
 		{DF09798D-20CC-418C-901B-DEFEEFF02E1B} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{8B0466D8-C57E-4D29-98B3-CB2D087765DC} = {DF09798D-20CC-418C-901B-DEFEEFF02E1B}
 		{7C08B7D5-90BD-45E9-BADF-1B6CEB1A3E97} = {DF09798D-20CC-418C-901B-DEFEEFF02E1B}
-		{E194E380-E6DE-4137-83D9-EADB54436B56} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
-		{038B6BB0-3B3A-4073-B78F-2999D7F15978} = {E194E380-E6DE-4137-83D9-EADB54436B56}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}

@@ -4,9 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading.Channels;
+using System.Threading.Tasks;
 using Proto;
 
-namespace Channels;
+namespace Common;
 
 public static class ChannelSubscriber
 {

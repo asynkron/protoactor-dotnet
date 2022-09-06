@@ -9,7 +9,7 @@ using System.Threading;
 namespace Proto.Utils;
 
 // ReSharper disable once UnusedTypeParameter
-public class TypeDictionary<TValue, TNamespace>
+class TypeDictionary<TValue, TNamespace>
 {
     private readonly double _growthFactor;
 

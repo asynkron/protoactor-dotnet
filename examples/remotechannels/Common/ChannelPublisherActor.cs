@@ -3,10 +3,12 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+using System.Collections.Generic;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 using Proto;
 
-namespace Channels;
+namespace Common;
 
 public static class ChannelPublisher
 {

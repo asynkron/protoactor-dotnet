@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
 using Proto.Utils;
@@ -29,7 +28,7 @@ public sealed class ActorContextExtras: IDisposable
     public IContext Context { get; }
     public CancellationTokenSource CancellationTokenSource { get; } = new();
 
-    public TypeDictionary<object, ActorContextExtras> Store { get; } = new(5, 1);
+    internal TypeDictionary<object, ActorContextExtras> Store { get; } = new(5, 1);
 
     public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
 

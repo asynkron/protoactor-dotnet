@@ -5,4 +5,8 @@
         <LangVersion>10</LangVersion>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
+    </ItemGroup>
+
 </Project>
