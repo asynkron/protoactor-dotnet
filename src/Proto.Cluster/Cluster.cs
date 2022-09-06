@@ -63,9 +63,9 @@ public class Cluster : IActorSystemExtension<Cluster>
         SubscribeToTopologyEvents();
     }
 
-    public static ILogger Logger { get; } = Log.CreateLogger<Cluster>();
+    internal static ILogger Logger { get; } = Log.CreateLogger<Cluster>();
 
-    public IClusterContext ClusterContext { get; private set; } = null!;
+    internal IClusterContext ClusterContext { get; private set; } = null!;
 
     public Gossiper Gossip { get; }
 
@@ -79,7 +79,7 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// </summary>
     public ActorSystem System { get; }
 
-    public IRemote Remote { get; private set; } = null!;
+    internal IRemote Remote { get; private set; } = null!;
 
     /// <summary>
     /// A list of known cluster members. See <see cref="Proto.Cluster.MemberList"/> for details
@@ -90,7 +90,7 @@ public class Cluster : IActorSystemExtension<Cluster>
 
     internal IClusterProvider Provider { get; set; } = null!;
 
-    public PidCache PidCache { get; }
+    internal PidCache PidCache { get; }
 
     private void SubscribeToTopologyEvents() =>
         System.EventStream.Subscribe<ClusterTopology>(e => {
@@ -101,6 +101,10 @@ public class Cluster : IActorSystemExtension<Cluster>
             }
         );
 
+    /// <summary>
+    /// Gets cluster kinds registered on this cluster member
+    /// </summary>
+    /// <returns></returns>
     public string[] GetClusterKinds() => _clusterKinds.Keys.ToArray();
 
     /// <summary>
@@ -270,7 +274,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         return clusterKind;
     }
 
-    public ActivatedClusterKind? TryGetClusterKind(string kind)
+    internal ActivatedClusterKind? TryGetClusterKind(string kind)
     {
         _clusterKinds.TryGetValue(kind, out var clusterKind);
 

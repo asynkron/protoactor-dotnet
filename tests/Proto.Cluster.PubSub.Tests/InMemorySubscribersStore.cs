@@ -12,7 +12,7 @@ public class InMemorySubscribersStore : IKeyValueStore<Subscribers>
 {
     private readonly ConcurrentDictionary<string, Subscribers> _store = new();
     
-    public Task<Subscribers> GetAsync(string id, CancellationToken ct)
+    public Task<Subscribers?> GetAsync(string id, CancellationToken ct)
     {
         _store.TryGetValue(id, out var subscribers);
         return subscribers == null ? Task.FromResult(new Subscribers()) : Task.FromResult(subscribers);
