@@ -35,7 +35,7 @@ public class BlockList
 
     private ImmutableDictionary<string, DateTime> _blockedMembers  = ImmutableDictionary<string,DateTime>.Empty;
     
-    public void Block(IEnumerable<string> memberIds)
+    internal void Block(IEnumerable<string> memberIds)
     {
         lock (_lock)
         {
