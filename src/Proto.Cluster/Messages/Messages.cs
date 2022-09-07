@@ -113,8 +113,6 @@ public sealed partial class PackedActivations
             );
 }
 
-public record Tick;
-
 public partial class ClusterTopology
 {
     //this ignores joined and left members, only the actual members are relevant
