@@ -16,6 +16,7 @@ namespace Proto.Deduplication;
 /// Extracts the deduplication key from the message.
 /// </summary>
 /// <typeparam name="T">Type of the key</typeparam>
+/// <param name="envelope">Message to extract from</param>
 /// <param name="key">The key should be returned in this variable</param>
 /// <returns>Returns true if the key was successfully extracted, false otherwise</returns>
 public delegate bool TryGetDeduplicationKey<T>(MessageEnvelope envelope, out T? key);

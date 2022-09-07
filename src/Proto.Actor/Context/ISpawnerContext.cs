@@ -26,6 +26,7 @@ public static class SpawnerContextExtensions
     /// <summary>
     ///     Spawns a new child actor based on props and named with a unique ID.
     /// </summary>
+    /// <param name="self"></param>
     /// <param name="props">The Props used to spawn the actor</param>
     /// <returns>The PID of the child actor</returns>
     public static PID Spawn(this ISpawnerContext self, Props props)
@@ -36,6 +37,7 @@ public static class SpawnerContextExtensions
     /// <summary>
     ///     Spawns a new child actor based on props and named with a unique ID.
     /// </summary>
+    /// <param name="self"></param>
     /// <param name="props">The Props used to spawn the actor</param>
     /// <param name="callback"></param>
     /// <returns>The PID of the child actor</returns>

@@ -17,6 +17,7 @@ public static class IRemoteExtensions
     /// <summary>
     ///     Spawn a remote actor with auto-generated name
     /// </summary>
+    /// <param name="remote"></param>
     /// <param name="address">Remote node address</param>
     /// <param name="kind">Actor kind, must be known on the remote node</param>
     /// <param name="timeout">Timeout for the confirmation to be received from the remote node</param>
@@ -27,6 +28,7 @@ public static class IRemoteExtensions
     /// <summary>
     ///     Spawn a remote actor with a name
     /// </summary>
+    /// <param name="remote"></param>
     /// <param name="address">Remote node address</param>
     /// <param name="name">Remote actor name</param>
     /// <param name="kind">Actor kind, must be known on the remote node</param>
