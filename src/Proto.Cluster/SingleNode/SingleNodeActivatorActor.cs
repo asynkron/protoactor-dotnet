@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="PartitionActivatorActor.cs" company="Asynkron AB">
+// <copyright file="SingleNodeActivatorActor.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
@@ -8,41 +8,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Proto.Utils;
 
-namespace Proto.Cluster.PartitionActivator;
+namespace Proto.Cluster.SingleNode;
 
-public class PartitionActivatorActor : IActor
+class SingleNodeActivatorActor : IActor
 {
-    private static readonly ILogger Logger = Log.CreateLogger<PartitionActivatorActor>();
+    private static readonly ILogger Logger = Log.CreateLogger<SingleNodeActivatorActor>();
 
-    private readonly ShouldThrottle _wrongPartitionLogThrottle = Throttle.Create(1, TimeSpan.FromSeconds(1), wrongNodeCount => {
-            if (wrongNodeCount > 1)
-            {
-                Logger.LogWarning("[PartitionActivator] Forwarded {SpawnCount} attempts to spawn on wrong node", wrongNodeCount);
-            }
-        }
-    );
 
-    private ulong _topologyHash;
     private readonly Cluster _cluster;
-    private readonly PartitionActivatorManager _manager;
     private readonly Dictionary<ClusterIdentity, PID> _actors = new();
     private readonly HashSet<ClusterIdentity> _inFlightIdentityChecks = new();
-    private readonly string _myAddress;
 
-    public PartitionActivatorActor(Cluster cluster, PartitionActivatorManager manager)
-    {
-        _cluster = cluster;
-        _manager = manager;
-        _myAddress = cluster.System.Address;
-    }
+    public SingleNodeActivatorActor(Cluster cluster) => _cluster = cluster;
 
     private Task OnStarted(IContext context)
     {
         var self = context.Self;
-        _cluster.System.EventStream.Subscribe<ActivationTerminated>(context.System.Root, context.Self);
-        _cluster.System.EventStream.Subscribe<ActivationTerminating>(context.System.Root, context.Self);
+        _cluster.System.EventStream.Subscribe<ActivationTerminated>(context.System.Root, self);
+        _cluster.System.EventStream.Subscribe<ActivationTerminating>(context.System.Root, self);
 
         return Task.CompletedTask;
     }
@@ -51,30 +35,26 @@ public class PartitionActivatorActor : IActor
         context.Message switch
         {
             Started                   => OnStarted(context),
+            Stopping                  => OnStopping(context),
             ActivationRequest msg     => OnActivationRequest(msg, context),
             ActivationTerminated msg  => OnActivationTerminated(msg),
             ActivationTerminating msg => OnActivationTerminating(msg),
-            ClusterTopology msg       => OnClusterTopology(msg, context),
             _                         => Task.CompletedTask
         };
 
-    private async Task OnClusterTopology(ClusterTopology msg, IContext context)
+    private async Task OnStopping(IContext context)
     {
-        if (msg.TopologyHash == _topologyHash)
-            return;
+        await StopActors(context);
+        _cluster.PidCache.RemoveByPredicate(kv => kv.Value.Address.Equals(context.System.Address, StringComparison.Ordinal));
+    }
 
-        _topologyHash = msg.TopologyHash;
-
-        var toRemove = _actors
-            .Where(kvp => _manager.Selector.GetOwnerAddress(kvp.Key) != _cluster.System.Address)
-            .Select(kvp => kvp.Key)
-            .ToList();
-
-        //stop and remove all actors we don't own anymore
-        Logger.LogWarning("[PartitionActivator] ClusterTopology - Stopping {ActorCount} actors", toRemove.Count);
+    private async Task StopActors(IContext context)
+    {
         var stopping = new List<Task>();
 
-        foreach (var ci in toRemove)
+        var clusterIdentities = _actors.Keys.ToList();
+
+        foreach (var ci in clusterIdentities)
         {
             var pid = _actors[ci];
             var stoppingTask = context.PoisonAsync(pid);
@@ -82,24 +62,17 @@ public class PartitionActivatorActor : IActor
             _actors.Remove(ci);
         }
 
-        //await graceful shutdown of all actors we no longer own
+        //await graceful shutdown of all actors
         await Task.WhenAll(stopping);
-        Logger.LogWarning("[PartitionActivator] ClusterTopology - Stopped {ActorCount} actors", toRemove.Count);
-
-        // Remove all cached PIDs from PidCache that now points to
-        // an address where the ClusterIdentity doesn't belong.
-        _cluster.PidCache.RemoveByPredicate(cache =>
-            _manager.Selector.GetOwnerAddress(cache.Key) != cache.Value.Address
-        );
+        Logger.LogInformation("[SingleNode] - Stopped {ActorCount} actors", clusterIdentities.Count);
     }
 
     private Task OnActivationTerminated(ActivationTerminated msg)
     {
         _cluster.PidCache.RemoveByVal(msg.ClusterIdentity, msg.Pid);
-
-        // we get this via broadcast to all nodes, remove if we have it, or ignore
+        
         if (Logger.IsEnabled(LogLevel.Trace))
-            Logger.LogTrace("[PartitionActivator] Terminated {Pid}", msg.Pid);
+            Logger.LogTrace("[SingleNode] Terminated {Pid}", msg.Pid);
 
         return Task.CompletedTask;
     }
@@ -113,7 +86,7 @@ public class PartitionActivatorActor : IActor
             return Task.CompletedTask;
 
         if (Logger.IsEnabled(LogLevel.Trace))
-            Logger.LogTrace("[PartitionActivator] Terminating {Pid}", msg.Pid);
+            Logger.LogTrace("[SingleNode] Terminating {Pid}", msg.Pid);
 
         _actors.Remove(msg.ClusterIdentity);
 
@@ -131,25 +104,6 @@ public class PartitionActivatorActor : IActor
 
     private Task OnActivationRequest(ActivationRequest msg, IContext context)
     {
-        //who owns this?
-        var ownerAddress = _manager.Selector.GetOwnerAddress(msg.ClusterIdentity);
-
-        //is it not me?
-        if (ownerAddress != _myAddress)
-        {
-            //get the owner
-            var ownerPid = PartitionActivatorManager.RemotePartitionActivatorActor(ownerAddress);
-
-            if (_wrongPartitionLogThrottle().IsOpen())
-            {
-                Logger.LogWarning("[PartitionActivator] Tried to spawn on wrong node, forwarding");
-            }
-
-            context.Forward(ownerPid);
-
-            return Task.CompletedTask;
-        }
-
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
         {
             context.Respond(new ActivationResponse
@@ -182,7 +136,7 @@ public class PartitionActivatorActor : IActor
 
         if (_inFlightIdentityChecks.Contains(clusterIdentity))
         {
-            Logger.LogError("[PartitionActivator] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
+            Logger.LogError("[SingleNode] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
             context.Respond(new ActivationResponse
                 {
                     Failed = true,
@@ -208,7 +162,7 @@ public class PartitionActivatorActor : IActor
                 }
                 else
                 {
-                    Logger.LogError("[PartitionActivator] Error when checking {ClusterIdentity}", clusterIdentity);
+                    Logger.LogError("[SingleNode] Error when checking {ClusterIdentity}", clusterIdentity);
                     context.Respond(new ActivationResponse
                         {
                             Failed = true,
@@ -236,7 +190,7 @@ public class PartitionActivatorActor : IActor
         catch (Exception e)
         {
             e.CheckFailFast();
-            Logger.LogError(e, "[PartitionActivator] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
+            Logger.LogError(e, "[SingleNode] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
             context.Respond(new ActivationResponse {Failed = true});
         }
     }
