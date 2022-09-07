@@ -25,8 +25,8 @@ class SingleNodeActivatorActor : IActor
     private Task OnStarted(IContext context)
     {
         var self = context.Self;
-        _cluster.System.EventStream.Subscribe<ActivationTerminated>(e => _cluster.System.Root.Send(self, e));
-        _cluster.System.EventStream.Subscribe<ActivationTerminating>(e => _cluster.System.Root.Send(self, e));
+        _cluster.System.EventStream.Subscribe<ActivationTerminated>(context.System.Root, self);
+        _cluster.System.EventStream.Subscribe<ActivationTerminating>(context.System.Root, self);
 
         return Task.CompletedTask;
     }
@@ -62,7 +62,7 @@ class SingleNodeActivatorActor : IActor
             _actors.Remove(ci);
         }
 
-        //await graceful shutdown of all actors we no longer own
+        //await graceful shutdown of all actors
         await Task.WhenAll(stopping);
         Logger.LogInformation("[SingleNode] - Stopped {ActorCount} actors", clusterIdentities.Count);
     }
@@ -70,8 +70,7 @@ class SingleNodeActivatorActor : IActor
     private Task OnActivationTerminated(ActivationTerminated msg)
     {
         _cluster.PidCache.RemoveByVal(msg.ClusterIdentity, msg.Pid);
-
-        // we get this via broadcast to all nodes, remove if we have it, or ignore
+        
         if (Logger.IsEnabled(LogLevel.Trace))
             Logger.LogTrace("[SingleNode] Terminated {Pid}", msg.Pid);
 

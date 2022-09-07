@@ -199,7 +199,7 @@ class PartitionIdentityActor : IActor
     private Task OnStarted(IContext context)
     {
         var self = context.Self;
-        _cluster.System.EventStream.Subscribe<ActivationTerminated>(e => _cluster.System.Root.Send(self, e));
+        _cluster.System.EventStream.Subscribe<ActivationTerminated>(context.System.Root, context.Self);
 
         return Task.CompletedTask;
     }
