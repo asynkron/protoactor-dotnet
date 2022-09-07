@@ -79,7 +79,10 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// </summary>
     public ActorSystem System { get; }
 
-    internal IRemote Remote { get; private set; } = null!;
+    /// <summary>
+    /// IRemote implementation the cluster is using
+    /// </summary>
+    public IRemote Remote { get; private set; } = null!;
 
     /// <summary>
     /// A list of known cluster members. See <see cref="Proto.Cluster.MemberList"/> for details
