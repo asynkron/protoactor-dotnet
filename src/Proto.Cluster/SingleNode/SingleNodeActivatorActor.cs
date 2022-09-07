@@ -64,7 +64,7 @@ class SingleNodeActivatorActor : IActor
 
         //await graceful shutdown of all actors we no longer own
         await Task.WhenAll(stopping);
-        Logger.LogInformation("[SingleNodeActivator] - Stopped {ActorCount} actors", clusterIdentities.Count);
+        Logger.LogInformation("[SingleNode] - Stopped {ActorCount} actors", clusterIdentities.Count);
     }
 
     private Task OnActivationTerminated(ActivationTerminated msg)
@@ -73,7 +73,7 @@ class SingleNodeActivatorActor : IActor
 
         // we get this via broadcast to all nodes, remove if we have it, or ignore
         if (Logger.IsEnabled(LogLevel.Trace))
-            Logger.LogTrace("[SingleNodeActivator] Terminated {Pid}", msg.Pid);
+            Logger.LogTrace("[SingleNode] Terminated {Pid}", msg.Pid);
 
         return Task.CompletedTask;
     }
@@ -87,7 +87,7 @@ class SingleNodeActivatorActor : IActor
             return Task.CompletedTask;
 
         if (Logger.IsEnabled(LogLevel.Trace))
-            Logger.LogTrace("[SingleNodeActivator] Terminating {Pid}", msg.Pid);
+            Logger.LogTrace("[SingleNode] Terminating {Pid}", msg.Pid);
 
         _actors.Remove(msg.ClusterIdentity);
 
@@ -137,7 +137,7 @@ class SingleNodeActivatorActor : IActor
 
         if (_inFlightIdentityChecks.Contains(clusterIdentity))
         {
-            Logger.LogError("[SingleNodeActivator] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
+            Logger.LogError("[SingleNode] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
             context.Respond(new ActivationResponse
                 {
                     Failed = true,
@@ -163,7 +163,7 @@ class SingleNodeActivatorActor : IActor
                 }
                 else
                 {
-                    Logger.LogError("[SingleNodeActivator] Error when checking {ClusterIdentity}", clusterIdentity);
+                    Logger.LogError("[SingleNode] Error when checking {ClusterIdentity}", clusterIdentity);
                     context.Respond(new ActivationResponse
                         {
                             Failed = true,
@@ -191,7 +191,7 @@ class SingleNodeActivatorActor : IActor
         catch (Exception e)
         {
             e.CheckFailFast();
-            Logger.LogError(e, "[SingleNodeActivator] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
+            Logger.LogError(e, "[SingleNode] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
             context.Respond(new ActivationResponse {Failed = true});
         }
     }

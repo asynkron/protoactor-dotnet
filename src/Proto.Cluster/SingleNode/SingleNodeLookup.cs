@@ -53,18 +53,18 @@ public class SingleNodeLookup : IIdentityLookup
         }
         catch (DeadLetterException)
         {
-            Logger.LogInformation("[SingleNodeActivator] Remote PID request deadletter {@Request}", req);
+            Logger.LogInformation("[SingleNode] Remote PID request deadletter {@Request}", req);
             return null;
         }
         catch (TimeoutException)
         {
-            Logger.LogInformation("[SingleNodeActivator] Remote PID request timeout {@Request}", req);
+            Logger.LogInformation("[SingleNode] Remote PID request timeout {@Request}", req);
             return null;
         }
         catch (Exception e) when (e is not IdentityIsBlocked)
         {
             e.CheckFailFast();
-            Logger.LogError(e, "[SingleNodeActivator] Error occured requesting remote PID {@Request}", req);
+            Logger.LogError(e, "[SingleNode] Error occured requesting remote PID {@Request}", req);
             return null;
         }
     }
