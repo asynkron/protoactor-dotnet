@@ -82,11 +82,6 @@ You should see the output `Hello Alex`.
 
 [https://github.com/asynkron/realtimemap-dotnet](https://github.com/asynkron/realtimemap-dotnet)
 
-## Sponsors
-Our awesome sponsors:
-
-<!-- sponsors --><a href="https://github.com/jhston02"><img src="https://github.com/jhston02.png" width="60px" alt="" /></a><a href="https://github.com/schafer14"><img src="https://github.com/schafer14.png" width="60px" alt="" /></a><a href="https://github.com/nbokovoy"><img src="https://github.com/nbokovoy.png" width="60px" alt="" /></a><!-- sponsors -->
-
 ## Contributors
 
 <a href="https://github.com/asynkron/protoactor-dotnet/graphs/contributors">
