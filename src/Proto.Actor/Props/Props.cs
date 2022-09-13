@@ -60,8 +60,8 @@ public sealed record Props
     public ImmutableList<Func<Sender, Sender>> SenderMiddleware { get; init; } =
         ImmutableList<Func<Sender, Sender>>.Empty;
 
-    public Receiver? ReceiverMiddlewareChain { get; init; }
-    public Sender? SenderMiddlewareChain { get; init; }
+    internal Receiver? ReceiverMiddlewareChain { get; init; }
+    internal Sender? SenderMiddlewareChain { get; init; }
 
     /// <summary>
     /// List of decorators for the actor context
@@ -69,7 +69,7 @@ public sealed record Props
     public ImmutableList<Func<IContext, IContext>> ContextDecorator { get; init; } =
         ImmutableList<Func<IContext, IContext>>.Empty;
 
-    public Func<IContext, IContext>? ContextDecoratorChain { get; init; }
+    internal Func<IContext, IContext>? ContextDecoratorChain { get; init; }
 
     /// <summary>
     /// Delegate that creates the actor and wires it with context and mailbox.

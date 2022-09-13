@@ -29,7 +29,7 @@ public static class Extensions
 
             if (c.System.Shutdown.IsCancellationRequested)
             {
-                sb.AppendLine("\tStopped, reason: " + c.System.Stopper.StoppedReason);
+                sb.AppendLine("\tStopped, reason: " + c.System.StoppedReason);
                 continue;
             }
 

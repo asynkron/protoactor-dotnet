@@ -144,7 +144,7 @@ class SingleNodeActivatorActor : IActor
             );
         }
 
-        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity, CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnTimeout));
+        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity, CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnVerificationTimeout));
 
         if (canSpawn.IsCompleted)
         {

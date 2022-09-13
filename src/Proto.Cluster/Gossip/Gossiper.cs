@@ -58,8 +58,18 @@ public class Gossiper
         _context = _cluster.System.Root;
     }
 
+    /// <summary>
+    /// Gets the current full gossip state as seen by current member
+    /// </summary>
+    /// <returns></returns>
     public Task<GossipState> GetStateSnapshot() => _context.RequestAsync<GossipState>(_pid, new GetGossipStateSnapshot());
 
+    /// <summary>
+    /// Gets gossip state entry by key, for each member represented in the gossip state, as seen by current member
+    /// </summary>
+    /// <param name="key"></param>
+    /// <typeparam name="T">Dictionary where member id is the key and gossip state value is the value</typeparam>
+    /// <returns></returns>
     public async Task<ImmutableDictionary<string, T>> GetState<T>(string key) where T : IMessage, new()
     {
         _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
@@ -87,6 +97,11 @@ public class Gossiper
         return ImmutableDictionary<string, T>.Empty;
     }
 
+    /// <summary>
+    /// Gets the gossip state entry by key, for each member represented in the gossip state, as seen by current member
+    /// </summary>
+    /// <param name="key">Dictionary where member id is the key and gossip state value is the value, wrapped in <see cref="GossipKeyValue"/></param>
+    /// <returns></returns>
     public async Task<ImmutableDictionary<string, GossipKeyValue>> GetStateEntry(string key)
     {
         _context.System.Logger()?.LogDebug("Gossiper getting state from {Pid}", _pid);
@@ -105,8 +120,11 @@ public class Gossiper
         return ImmutableDictionary<string, GossipKeyValue>.Empty;
     }
 
-    // Send message to update member state
-    // Will not wait for completed state update
+    /// <summary>
+    /// Sets a gossip state key to provided value. This will not wait for the state to be actually updated in current member's gossip state.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
     public void SetState(string key, IMessage value)
     {
         if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
@@ -117,6 +135,11 @@ public class Gossiper
         _context.Send(_pid, new SetGossipStateKey(key, value));
     }
 
+    /// <summary>
+    /// Sets a gossip state key to provided value. Waits for the state to be updated in current member's gossip state.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
     public async Task SetStateAsync(string key, IMessage value)
     {
         if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Gossiper setting state to {Pid}", _pid);

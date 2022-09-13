@@ -6,11 +6,10 @@
 using System.Collections.Generic;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+using Proto;
 
-namespace Proto.Channels;
+namespace Common;
 
-[PublicAPI]
 public static class ChannelPublisher
 {
     /// <summary>
@@ -40,7 +39,6 @@ public static class ChannelPublisher
     }
 }
 
-[PublicAPI]
 public class ChannelPublisherActor<T> : IActor
 {
     private readonly HashSet<PID> _subscribers = new();
@@ -56,13 +54,17 @@ public class ChannelPublisherActor<T> : IActor
                 }
 
                 break;
+
             case PID subscriber:
                 _subscribers.Add(subscriber);
                 context.Watch(subscriber);
+                context.Respond(new Subscribed());
                 break;
+            
             case Terminated terminated:
                 _subscribers.Remove(terminated.Who);
                 break;
+            
             case T typed:
                 foreach (var sub in _subscribers)
                 {

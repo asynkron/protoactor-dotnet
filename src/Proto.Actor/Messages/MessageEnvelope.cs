@@ -114,7 +114,7 @@ public record MessageEnvelope
     /// <summary>
     /// Extends the message envelope with additional headers.
     /// </summary>
-    /// <param name="header"></param>
+    /// <param name="items"></param>
     /// <returns>New envelope</returns>
     public MessageEnvelope WithHeaders(IEnumerable<KeyValuePair<string, string>> items)
     {

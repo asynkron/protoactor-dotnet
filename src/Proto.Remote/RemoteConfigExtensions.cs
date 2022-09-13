@@ -66,6 +66,7 @@ public static class RemoteConfigExtensions
     /// the external port in order for other systems to be able to connect to it.
     /// Advertised port can be different from the bound port, e.g. in container scenarios
     /// </summary>
+    /// <param name="remoteConfig"></param>
     /// <param name="advertisedPort"></param>
     /// <returns></returns>
     public static TRemoteConfig WithAdvertisedPort<TRemoteConfig>(this TRemoteConfig remoteConfig, int? advertisedPort)
@@ -197,7 +198,7 @@ public static class RemoteConfigExtensions
     /// <param name="options"></param>
     /// <typeparam name="TRemoteConfig"></typeparam>
     /// <returns></returns>
-    public static TRemoteConfig WithJsonSerializerOptions<TRemoteConfig>(this TRemoteConfig remoteConfig, System.Text.Json.JsonSerializerOptions options)
+    public static TRemoteConfig WithJsonSerializerOptions<TRemoteConfig>(this TRemoteConfig remoteConfig, JsonSerializerOptions options)
         where TRemoteConfig : RemoteConfigBase
     {
         remoteConfig.Serialization.JsonSerializerOptions = options;

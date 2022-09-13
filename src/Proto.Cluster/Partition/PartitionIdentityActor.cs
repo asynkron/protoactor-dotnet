@@ -621,7 +621,7 @@ class PartitionIdentityActor : IActor
                 Logger.LogTrace("[PartitionIdentity] Spawning Remote Actor {Activator} {Identity} {Kind}",
                     activatorAddress, req.Identity, req.Kind);
             }
-            var timeout = _cluster.Config.TimeoutTimespan;
+            var timeout = _cluster.Config.ActorActivationTimeout;
             var activatorPid = PartitionManager.RemotePartitionPlacementActor(activatorAddress);
 
             var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activatorPid, req, timeout);

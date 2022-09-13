@@ -12,7 +12,12 @@ namespace Proto;
 /// </summary>
 /// <param name="MessageEnvelope">Message to store</param>
 /// <param name="Context">Context to store</param>
-public record CapturedContext(MessageEnvelope MessageEnvelope, IContext Context){
+public record CapturedContext(MessageEnvelope MessageEnvelope, IContext Context)
+{
+    /// <summary>
+    /// Reprocesses the captured message on the captured context.
+    /// It captures current context before processing and restores it after processing.
+    /// </summary>
     public async Task Receive()
     {
         var current = Context.Capture();

@@ -71,11 +71,6 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     public TimeSpan ReceiveTimeout { get; private set; }
 
-    public void Stash()
-    {
-        if (_messageOrEnvelope is not null) EnsureExtras().Stash.Push(_messageOrEnvelope);
-    }
-
     public void Respond(object message)
     {
         if (Sender is not null)
@@ -714,19 +709,6 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         Self.SendSystemMessage(System, ResumeMailbox.Instance);
 
         await InvokeUserMessageAsync(Started.Instance);
-
-        if (_extras?.Stash is not null)
-        {
-            var currentStash = new Stack<object>(_extras.Stash);
-            _extras.Stash.Clear();
-
-            //TODO: what happens if we hit a failure here?
-            while (currentStash.Any())
-            {
-                var msg = currentStash.Pop();
-                await InvokeUserMessageAsync(msg);
-            }
-        }
     }
 
     private ValueTask DisposeActorIfDisposable()

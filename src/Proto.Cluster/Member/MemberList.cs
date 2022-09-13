@@ -112,10 +112,10 @@ public record MemberList
     internal void InitializeTopologyConsensus() => _topologyConsensus =
         _cluster.Gossip.RegisterConsensusCheck<ClusterTopology, ulong>(GossipKeys.Topology, topology => topology.TopologyHash);
 
-    public Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct)
+    internal Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct)
         => _topologyConsensus?.TryGetConsensus(ct) ?? Task.FromResult<(bool consensus, ulong topologyHash)>(default);
 
-    public Member? GetActivator(string kind, string requestSourceAddress)
+    internal Member? GetActivator(string kind, string requestSourceAddress)
     {
         //immutable, don't lock
         if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
@@ -265,7 +265,7 @@ public record MemberList
         _ = _cluster.ShutdownAsync(reason: "Blocked by MemberList");
     }
 
-    public MetaMember? GetMetaMember(string memberId)
+    internal MetaMember? GetMetaMember(string memberId)
     {
         _metaMembers.TryGetValue(memberId, out var meta);
         return meta;
@@ -344,9 +344,9 @@ public record MemberList
     public bool TryGetMember(string memberId, out Member? value) => _activeMembers.Lookup.TryGetValue(memberId, out value);
 
     
-    public bool TryGetMemberIndexByAddress(string address, out int value) => _indexByAddress.TryGetValue(address, out value);
+    internal bool TryGetMemberIndexByAddress(string address, out int value) => _indexByAddress.TryGetValue(address, out value);
 
-    public bool TryGetMemberByIndex(int memberIndex, out Member? value) => _membersByIndex.TryGetValue(memberIndex, out value);
+    internal bool TryGetMemberByIndex(int memberIndex, out Member? value) => _membersByIndex.TryGetValue(memberIndex, out value);
 
     /// <summary>
     /// Gets a list of active <see cref="Member"/>

@@ -7,6 +7,7 @@ using System;
 
 namespace Proto.Cluster;
 
+// TODO: remove once new version of code gen nuget is built and used in the examples
 [Obsolete("Replace with 'Started' lifecycle message. '.ClusterIdentity()' and '.Cluster()' is available on IContext")]
 public class ClusterInit
 {

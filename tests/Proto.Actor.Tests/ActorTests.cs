@@ -138,19 +138,26 @@ public class ActorTests
         var messages = new Queue<object>();
         var i = 0;
 
+        CapturedContext? capturedContext = null;
+        
         async Task HandleMessage(IContext ctx)
         {
             if (ctx.Message is string && i++ == 0)
             {
-                ctx.Stash();
+                capturedContext = ctx.Capture();
                 throw new Exception("Test");
             }
-
+            
             messages.Enqueue(ctx.Message!);
+
+            if (ctx.Message is Started && capturedContext != null)
+            {
+                await capturedContext.Receive();
+            }
+
             await Task.Yield();
         }
 
-        ;
         var pid = context.Spawn(
             Props.FromFunc(ctx => ctx.Message switch
                 {
