@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using k8s;
@@ -47,7 +48,7 @@ public class KubernetesProvider : IClusterProvider
 
         _config = config;
     }
-    
+
     [Obsolete("Do not pass a Kubernetes client directly, pass Client factory as part of Config, or use Config defaults", true)]
     public KubernetesProvider(IKubernetes kubernetes, KubernetesProviderConfig config)
     {
@@ -112,7 +113,7 @@ public class KubernetesProvider : IClusterProvider
 
         Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: {Namespace}", pod.Namespace());
 
-        Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: {Port}" , _port);
+        Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: {Port}", _port);
 
         var existingLabels = pod.Metadata.Labels;
 
@@ -123,10 +124,12 @@ public class KubernetesProvider : IClusterProvider
             [LabelMemberId] = _cluster.System.Id
         };
 
+        var i = 0;
+
         foreach (var kind in _kinds)
         {
-            var labelKey = $"{LabelKind}-{kind}";
-            labels.TryAdd(labelKey, "true");
+            var labelKey = $"{LabelKind}-{i++}";
+            labels.TryAdd(labelKey, kind);
         }
 
         //add existing labels back
@@ -186,23 +189,11 @@ public class KubernetesProvider : IClusterProvider
 
         var pod = await kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
 
-        var labels = new Dictionary<string, string>(pod.Metadata.Labels);
-        foreach (var kind in _kinds)
-        {
-            try
-            {
-                var labelKey = $"{LabelKind}-{kind}";
-                labels.Remove(labelKey);
-            }
-            catch (Exception x)
-            {
-                Logger.LogError(x, "[Cluster][KubernetesProvider] Failed to remove label");
-            }
-        }
+        var labels = pod.Metadata.Labels
+            .Where(label => !label.Key.StartsWith(LabelPrefix, StringComparison.Ordinal))
+            .ToDictionary(label => label.Key, label => label.Value);
 
-        labels.Remove(LabelCluster);
-
-        await kubernetes.ReplacePodLabels(_podName, kubeNamespace,pod, labels);
+        await kubernetes.ReplacePodLabels(_podName, kubeNamespace, pod, labels);
 
         cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
     }

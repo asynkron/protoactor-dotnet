@@ -7,7 +7,7 @@ namespace Proto.Cluster.Kubernetes;
 
 public static class ProtoLabels
 {
-    private const string LabelPrefix = "cluster.proto.actor/";
+    internal const string LabelPrefix = "cluster.proto.actor/";
     public const string LabelPort = LabelPrefix + "port";
     public const string LabelKind = LabelPrefix + "kind";
     public const string LabelCluster = LabelPrefix + "cluster";

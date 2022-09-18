@@ -58,8 +58,8 @@ static class KubernetesExtensions
         var kinds = pod
             .Metadata
             .Labels
-            .Where(l => l.Key.StartsWith(LabelKind) && l.Value == "true")
-            .Select(l => l.Key.Substring(LabelKind.Length + 1))
+            .Where(l => l.Key.StartsWith(LabelKind))
+            .Select(l => l.Value)
             .ToArray();
 
         var host = pod.Status.PodIP ?? "";
