@@ -117,10 +117,7 @@ public class CodeGenerator : CommonCodeGenerator
             return res;
         }
 
-        static string GetKind(string? packageName, string serviceName)
-        {
-            return string.IsNullOrEmpty(packageName) ? serviceName : $"{packageName}/{serviceName}";
-        }
+        static string GetKind(string? packageName, string serviceName) => string.IsNullOrEmpty(packageName) ? serviceName : $"{packageName}.{serviceName}";
     }
 
     #region UnusedMethods
