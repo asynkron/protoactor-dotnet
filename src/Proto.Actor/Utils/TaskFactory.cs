@@ -24,15 +24,13 @@ public static class SafeTask
     /// <param name="name"></param>
     public static async Task Run(Func<Task> body, CancellationToken cancellationToken = default, [CallerMemberName] string name = "")
     {
-        Task? t = null;
         try
         {
-            t = Task.Run(body, cancellationToken);
-            await t;
+            await Task.Run(body, cancellationToken);
         }
-        catch (TaskCanceledException e) when (e.Task == t)
+        catch (TaskCanceledException)
         {
-            //pass. do not log if our own task was cancelled
+            // Pass. Do not log when the task is canceled.
         }
         catch (Exception x)
         {
