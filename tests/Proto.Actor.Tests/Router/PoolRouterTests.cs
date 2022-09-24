@@ -20,6 +20,7 @@ public class PoolRouterTests
 
         var props = system.Root.NewBroadcastPool(MyActorProps, 3)
             .WithMailbox(() => new TestMailbox());
+
         var router = system.Root.Spawn(props);
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         Assert.Equal(3, routees.Pids.Count);
@@ -32,6 +33,7 @@ public class PoolRouterTests
 
         var props = system.Root.NewRoundRobinPool(MyActorProps, 3)
             .WithMailbox(() => new TestMailbox());
+
         var router = system.Root.Spawn(props);
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         Assert.Equal(3, routees.Pids.Count);
@@ -44,6 +46,7 @@ public class PoolRouterTests
 
         var props = system.Root.NewConsistentHashPool(MyActorProps, 3)
             .WithMailbox(() => new TestMailbox());
+
         var router = system.Root.Spawn(props);
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         Assert.Equal(3, routees.Pids.Count);
@@ -56,6 +59,7 @@ public class PoolRouterTests
 
         var props = system.Root.NewRandomPool(MyActorProps, 3, 0)
             .WithMailbox(() => new TestMailbox());
+
         var router = system.Root.Spawn(props);
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         Assert.Equal(3, routees.Pids.Count);

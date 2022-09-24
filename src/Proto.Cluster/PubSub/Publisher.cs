@@ -23,7 +23,7 @@ public class Publisher : IPublisher
     /// <param name="batch">Message batch</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public Task<PublishResponse?> PublishBatch(
+    public Task<PublishResponse> PublishBatch(
         string topic,
         PubSubBatch batch,
         CancellationToken ct = default

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,9 +24,12 @@ public class PartitionIdentityTests
 {
     private readonly ITestOutputHelper _output;
 
-    public PartitionIdentityTests(ITestOutputHelper output) => _output = output;
+    private long _requests;
 
-    private long _requests = 0;
+    public PartitionIdentityTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
 
     [Theory]
     [InlineData(100, 5, 12, 20, PartitionIdentityLookup.Mode.Pull, PartitionIdentityLookup.Send.Full)]
@@ -67,7 +71,9 @@ public class PartitionIdentityTests
             await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
             var now = Interlocked.Read(ref _requests);
 
-            _output.WriteLine($"Consistent responses: {((now - prev) / (double)timer.ElapsedMilliseconds) * 1000d:N0} / s");
+            _output.WriteLine(
+                $"Consistent responses: {(now - prev) / (double)timer.ElapsedMilliseconds * 1000d:N0} / s");
+
             timer.Restart();
             prev = now;
         }
@@ -98,29 +104,35 @@ public class PartitionIdentityTests
         List<string> identities,
         int batchSize,
         CancellationToken cancellationToken
-    ) => _ = Task.Run(async () => {
-            var rnd = new Random();
-            var identityIndex = rnd.Next(identities.Count);
-            var tasks = new List<Task>();
-
-            while (!cancellationToken.IsCancellationRequested)
+    )
+    {
+        _ = Task.Run(async () =>
             {
-                for (int i = 0; i < batchSize; i++)
+                var rnd = new Random();
+                var identityIndex = rnd.Next(identities.Count);
+                var tasks = new List<Task>();
+
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    var id = identities[identityIndex++ % identities.Count];
+                    for (var i = 0; i < batchSize; i++)
+                    {
+                        var id = identities[identityIndex++ % identities.Count];
 
-                    tasks.Add(Inc(clusterFixture.Members[0], id, cancellationToken));
-                    tasks.Add(Inc(clusterFixture.Members[1], id, cancellationToken));
+                        tasks.Add(Inc(clusterFixture.Members[0], id, cancellationToken));
+                        tasks.Add(Inc(clusterFixture.Members[1], id, cancellationToken));
+                    }
+
+                    await Task.WhenAll(tasks);
+                    tasks.Clear();
                 }
-
-                await Task.WhenAll(tasks);
-                tasks.Clear();
             }
-        }
-    );
+        );
+    }
 
     private static Cluster RandomMember(IList<Cluster> members, Random rnd)
-        => members[rnd.Next(members.Count)];
+    {
+        return members[rnd.Next(members.Count)];
+    }
 
     private async Task Inc(Cluster member, string id, CancellationToken cancellationToken)
     {
@@ -138,7 +150,8 @@ public class PartitionIdentityTests
 
             if (response.Count != response.ExpectedCount)
             {
-                _output.WriteLine($"Inconsistent state {id}/{response.SessionId} {response.Count} instead of {response.ExpectedCount}");
+                _output.WriteLine(
+                    $"Inconsistent state {id}/{response.SessionId} {response.Count} instead of {response.ExpectedCount}");
                 // response.Count.Should().Be(response.ExpectedCount, $"Inconsistent state {id}/{response.SessionId} {response.Count} instead of {response.ExpectedCount}")
             }
         }
@@ -148,83 +161,106 @@ public class PartitionIdentityTests
         IClusterFixture clusterFixture,
         List<string> identities,
         CancellationToken cancellationToken
-    ) => _ = Task.Run(async () => {
-            var rnd = new Random();
-
-            while (!cancellationToken.IsCancellationRequested)
+    )
+    {
+        _ = Task.Run(async () =>
             {
-                await Task.Delay(rnd.Next(50), cancellationToken);
-                var id = RandomIdentity(identities, rnd);
-                var member = clusterFixture.Members[rnd.Next(clusterFixture.Members.Count)];
-                var clusterIdentity = new ClusterIdentity
-                {
-                    Identity = id,
-                    Kind = ConcurrencyVerificationActor.Kind
-                };
-                await member.RequestAsync<Ack>(clusterIdentity, new Die(), cancellationToken
-                );
-                Interlocked.Increment(ref _requests);
-            }
-        }
-    );
+                var rnd = new Random();
 
-    private static string RandomIdentity(List<string> identities, Random rnd) => identities[rnd.Next(identities.Count)];
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(rnd.Next(50), cancellationToken);
+                    var id = RandomIdentity(identities, rnd);
+                    var member = clusterFixture.Members[rnd.Next(clusterFixture.Members.Count)];
+
+                    var clusterIdentity = new ClusterIdentity
+                    {
+                        Identity = id,
+                        Kind = ConcurrencyVerificationActor.Kind
+                    };
+
+                    await member.RequestAsync<Ack>(clusterIdentity, new Die(), cancellationToken
+                    );
+
+                    Interlocked.Increment(ref _requests);
+                }
+            }
+        );
+    }
+
+    private static string RandomIdentity(List<string> identities, Random rnd)
+    {
+        return identities[rnd.Next(identities.Count)];
+    }
 
     private void StartSpawningAndStoppingMembers(
         IClusterFixture clusterFixture,
         CancellationToken cancellationToken
-    ) => _ = Task.Run(async () => {
-            const int maxMembers = 10;
-            const int minMembers = 2;
-            var rnd = new Random();
-
-            try
+    )
+    {
+        _ = Task.Run(async () =>
             {
-                while (!cancellationToken.IsCancellationRequested)
+                const int maxMembers = 10;
+                const int minMembers = 2;
+                var rnd = new Random();
+
+                try
                 {
-                    await Task.Delay(rnd.Next(10000), cancellationToken).ConfigureAwait(false);
-                    var spawn = rnd.Next() % 2 == 0;
-
-                    for (var i = 0; i <= rnd.Next() % 2; i++)
+                    while (!cancellationToken.IsCancellationRequested)
                     {
-                        if (spawn)
-                        {
-                            if (clusterFixture.Members.Count < maxMembers)
-                            {
-                                _output.WriteLine($"[{DateTimeOffset.Now:O}] Starting cluster member");
-                                _ = clusterFixture.SpawnNode().ContinueWith(t => { _output.WriteLine($"[{DateTimeOffset.Now:O}] Spawned cluster member {t.Result.System.Id}"); },
-                                    TaskContinuationOptions.NotOnFaulted
-                                );
+                        await Task.Delay(rnd.Next(10000), cancellationToken).ConfigureAwait(false);
+                        var spawn = rnd.Next() % 2 == 0;
 
+                        for (var i = 0; i <= rnd.Next() % 2; i++)
+                        {
+                            if (spawn)
+                            {
+                                if (clusterFixture.Members.Count < maxMembers)
+                                {
+                                    _output.WriteLine($"[{DateTimeOffset.Now:O}] Starting cluster member");
+
+                                    _ = clusterFixture.SpawnNode().ContinueWith(
+                                        t =>
+                                        {
+                                            _output.WriteLine(
+                                                $"[{DateTimeOffset.Now:O}] Spawned cluster member {t.Result.System.Id}");
+                                        },
+                                        TaskContinuationOptions.NotOnFaulted
+                                    );
+                                }
                             }
-                        }
-                        else
-                        {
-                            // var graceful = rnd.Next() % 2 != 0;
-                            const bool graceful = true;
-
-                            if (clusterFixture.Members.Count > minMembers)
+                            else
                             {
-                                _ = StopRandomMember(clusterFixture, clusterFixture.Members.Skip(2).ToList(), rnd, graceful);
+                                // var graceful = rnd.Next() % 2 != 0;
+                                const bool graceful = true;
+
+                                if (clusterFixture.Members.Count > minMembers)
+                                {
+                                    _ = StopRandomMember(clusterFixture, clusterFixture.Members.Skip(2).ToList(), rnd,
+                                        graceful);
+                                }
                             }
                         }
                     }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception e)
-            {
-                _output.WriteLine(e.ToString());
-            }
-        }, cancellationToken
-    );
+                catch (OperationCanceledException)
+                {
+                }
+                catch (Exception e)
+                {
+                    _output.WriteLine(e.ToString());
+                }
+            }, cancellationToken
+        );
+    }
 
     private async Task StopRandomMember(IClusterFixture fixture, IList<Cluster> candidates, Random rnd, bool graceful)
     {
         var member = RandomMember(candidates, rnd);
-        _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopping cluster member {member.System.Id} " + (graceful ? "gracefully" : "with wanton disregard"));
+
+        _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopping cluster member {member.System.Id} " +
+                          (graceful ? "gracefully" : "with wanton disregard"));
+
         await fixture.RemoveNode(member, graceful);
         _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopped cluster member {member.System.Id}");
     }
@@ -237,16 +273,17 @@ public class PartitionIdentityTests
     {
         var fixture = new PartitionIdentityClusterFixture(memberCount, mode, send);
         await fixture.InitializeAsync();
+
         return fixture;
     }
 }
 
 public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
 {
+    private readonly int _chunkSize;
     private readonly PartitionIdentityLookup.Mode _mode;
     private readonly PartitionIdentityLookup.Send _send;
     public readonly ActorStateRepo Repository = new();
-    private readonly int _chunkSize;
 
     public PartitionIdentityClusterFixture(
         int memberCount,
@@ -260,15 +297,22 @@ public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
         _chunkSize = chunkSize;
     }
 
-    protected override IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionIdentityLookup( new PartitionConfig
-    {
-        GetPidTimeout = TimeSpan.FromSeconds(5),
-        HandoverChunkSize = _chunkSize,
-        RebalanceRequestTimeout = TimeSpan.FromSeconds(3),
-        Mode = _mode,
-        Send = _send
-    });
-
     protected override ClusterKind[] ClusterKinds
-        => new[] {new ClusterKind(ConcurrencyVerificationActor.Kind, Props.FromProducer(() => new ConcurrencyVerificationActor(Repository, this)))};
+        => new[]
+        {
+            new ClusterKind(ConcurrencyVerificationActor.Kind,
+                Props.FromProducer(() => new ConcurrencyVerificationActor(Repository, this)))
+        };
+
+    protected override IIdentityLookup GetIdentityLookup(string clusterName)
+    {
+        return new PartitionIdentityLookup(new PartitionConfig
+        {
+            GetPidTimeout = TimeSpan.FromSeconds(5),
+            HandoverChunkSize = _chunkSize,
+            RebalanceRequestTimeout = TimeSpan.FromSeconds(3),
+            Mode = _mode,
+            Send = _send
+        });
+    }
 }

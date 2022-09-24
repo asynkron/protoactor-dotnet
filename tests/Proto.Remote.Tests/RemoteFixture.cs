@@ -27,9 +27,10 @@ public abstract class RemoteFixture : IRemoteFixture
 {
     public static readonly Props EchoActorProps = Props.FromProducer(() => new EchoActor());
 
-    private static LogStore _logStore = new();
+    private static readonly LogStore _logStore = new();
+    public IRemote ServerRemote2 { get; protected set; }
     public LogStore LogStore { get; } = _logStore;
-        
+
     public string RemoteAddress => ServerRemote1.System.Address;
     public string RemoteAddress2 => ServerRemote2.System.Address;
 
@@ -37,7 +38,6 @@ public abstract class RemoteFixture : IRemoteFixture
     public ActorSystem ActorSystem => Remote.System;
 
     public IRemote ServerRemote1 { get; protected set; }
-    public IRemote ServerRemote2 { get; protected set; }
 
     public virtual async Task InitializeAsync()
     {
@@ -47,27 +47,33 @@ public abstract class RemoteFixture : IRemoteFixture
         ServerRemote1.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
         ServerRemote2.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
     }
-        
 
-    public virtual Task DisposeAsync() => Task.WhenAll(Remote.ShutdownAsync(),
-        ServerRemote1.ShutdownAsync(),
-        ServerRemote2.ShutdownAsync()
-    );
+    public virtual Task DisposeAsync()
+    {
+        return Task.WhenAll(Remote.ShutdownAsync(),
+            ServerRemote1.ShutdownAsync(),
+            ServerRemote2.ShutdownAsync()
+        );
+    }
 
     protected static TRemoteConfig ConfigureServerRemoteConfig<TRemoteConfig>(TRemoteConfig serverRemoteConfig)
-        where TRemoteConfig : RemoteConfigBase =>
-        serverRemoteConfig
+        where TRemoteConfig : RemoteConfigBase
+    {
+        return serverRemoteConfig
             .WithProtoMessages(Messages.ProtosReflection.Descriptor)
             .WithRemoteKinds(("EchoActor", EchoActorProps));
+    }
 
     protected static TRemoteConfig ConfigureClientRemoteConfig<TRemoteConfig>(TRemoteConfig clientRemoteConfig)
-        where TRemoteConfig : RemoteConfigBase =>
-        clientRemoteConfig
+        where TRemoteConfig : RemoteConfigBase
+    {
+        return clientRemoteConfig
             .WithEndpointWriterMaxRetries(2)
             .WithEndpointWriterRetryBackOff(TimeSpan.FromMilliseconds(10))
             .WithEndpointWriterRetryTimeSpan(TimeSpan.FromSeconds(120))
             .WithProtoMessages(Messages.ProtosReflection.Descriptor)
             .WithRemoteKinds(("EchoActor", EchoActorProps));
+    }
 
     protected static (IHost, HostedGrpcNetRemote) GetHostedGrpcNetRemote(GrpcNetRemoteConfig config)
     {
@@ -75,36 +81,47 @@ public abstract class RemoteFixture : IRemoteFixture
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
         var hostBuilder = Host.CreateDefaultBuilder(Array.Empty<string>())
-            .ConfigureServices(services => {
+            .ConfigureServices(services =>
+                {
                     services.AddGrpc();
                     services.AddSingleton(Log.GetLoggerFactory());
-                    services.AddSingleton(sp => {
-                            var system= new ActorSystem();
-                            system.Extensions.Register(new InstanceLogger(LogLevel.Debug,_logStore,category:system.Id));
+
+                    services.AddSingleton(sp =>
+                        {
+                            var system = new ActorSystem();
+
+                            system.Extensions.Register(new InstanceLogger(LogLevel.Debug, _logStore,
+                                category: system.Id));
+
                             return system;
                         }
                     );
+
                     services.AddRemote(config);
                 }
             )
-            .ConfigureWebHostDefaults(webBuilder => {
-                    webBuilder.ConfigureKestrel(kestrelServerOptions => {
+            .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.ConfigureKestrel(kestrelServerOptions =>
+                            {
                                 kestrelServerOptions.Listen(IPAddress.Parse(config.Host), config.Port,
                                     listenOption => { listenOption.Protocols = HttpProtocols.Http2; }
                                 );
                             }
                         )
-                        .Configure(app => {
+                        .Configure(app =>
+                            {
                                 app.UseRouting();
                                 app.UseProtoRemote();
                             }
                         );
                 }
             );
+
         var host = hostBuilder.Start();
+
         return (host, host.Services.GetRequiredService<HostedGrpcNetRemote>());
     }
-        
 
     protected static GrpcNetRemote GetGrpcNetRemote(GrpcNetRemoteConfig config)
     {
@@ -113,6 +130,7 @@ public abstract class RemoteFixture : IRemoteFixture
 #endif
         return new GrpcNetRemote(new ActorSystem(), config);
     }
+
     protected static GrpcNetClientRemote GetGrpcNetClientRemote(GrpcNetRemoteConfig config)
     {
 #if NETCOREAPP3_1

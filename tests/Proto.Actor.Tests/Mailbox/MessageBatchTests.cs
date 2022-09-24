@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -20,8 +21,13 @@ public class MessageBatchTests
         var messages = new List<object>();
 
         var system = new ActorSystem();
-        var props = Props.FromFunc(ctx => {
-                if (ctx.Message is string str) messages.Add(str);
+
+        var props = Props.FromFunc(ctx =>
+            {
+                if (ctx.Message is string str)
+                {
+                    messages.Add(str);
+                }
 
                 return Task.CompletedTask;
             }
@@ -31,12 +37,15 @@ public class MessageBatchTests
         system.Root.Send(pid, batch);
         await system.Root.PoisonAsync(pid);
 
-        var expected = new[] {"hello", "world", "batch"};
+        var expected = new[] { "hello", "world", "batch" };
         messages.Should().ContainInOrder(expected);
     }
 
     private class MyMessageBatch : IMessageBatch
     {
-        public IReadOnlyCollection<object> GetMessages() => new[] {"hello", "world", "batch"};
+        public IReadOnlyCollection<object> GetMessages()
+        {
+            return new[] { "hello", "world", "batch" };
+        }
     }
 }

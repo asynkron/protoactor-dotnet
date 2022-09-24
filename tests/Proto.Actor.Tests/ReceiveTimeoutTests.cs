@@ -17,21 +17,25 @@ public class ReceiveTimeoutTests
         var timeoutReceived = false;
         var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-        var props = Props.FromFunc(ctx => {
+        var props = Props.FromFunc(ctx =>
+            {
                 switch (ctx.Message)
                 {
                     case Started _:
                         ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
+
                         break;
                     case ReceiveTimeout _:
                         timeoutReceived = true;
                         receiveTimeoutWaiter.SetResult(0);
+
                         break;
                 }
 
                 return Task.CompletedTask;
             }
         );
+
         context.Spawn(props);
 
         await GetSafeAwaitableTask(receiveTimeoutWaiter);
@@ -47,23 +51,29 @@ public class ReceiveTimeoutTests
         var timeoutReceived = false;
         var receiveTimeoutWaiter = GetExpiringTaskCompletionSource(1000);
 
-        var props = Props.FromFunc(ctx => {
+        var props = Props.FromFunc(ctx =>
+            {
                 switch (ctx.Message)
                 {
                     case Started _:
                         ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
+
                         break;
                     case ReceiveTimeout _:
                         timeoutReceived = true;
                         receiveTimeoutWaiter.SetResult(0);
+
                         break;
                 }
 
                 return Task.CompletedTask;
             }
         );
+
         var pid = context.Spawn(props);
-        _ = Task.Run(async () => {
+
+        _ = Task.Run(async () =>
+            {
                 while (!receiveTimeoutWaiter.Task.IsCompleted)
                 {
                     context.Send(pid, new IgnoreMe());
@@ -85,21 +95,25 @@ public class ReceiveTimeoutTests
         var timeoutReceived = false;
         var actorStartedWaiter = GetExpiringTaskCompletionSource();
 
-        var props = Props.FromFunc(ctx => {
+        var props = Props.FromFunc(ctx =>
+            {
                 switch (ctx.Message)
                 {
                     case Started:
                         ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(1500));
                         actorStartedWaiter.SetResult(0);
+
                         break;
                     case ReceiveTimeout:
                         timeoutReceived = true;
+
                         break;
                 }
 
                 return Task.CompletedTask;
             }
         );
+
         context.Spawn(props);
 
         await GetSafeAwaitableTask(actorStartedWaiter);
@@ -116,23 +130,27 @@ public class ReceiveTimeoutTests
         var endingTimeout = TimeSpan.MaxValue;
         var autoExpiringWaiter = GetExpiringTaskCompletionSource(1500);
 
-        var props = Props.FromFunc(ctx => {
+        var props = Props.FromFunc(ctx =>
+            {
                 switch (ctx.Message)
                 {
                     case Started _:
                         ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
                         ctx.CancelReceiveTimeout();
                         endingTimeout = ctx.ReceiveTimeout;
+
                         break;
                     case ReceiveTimeout _:
                         timeoutReceived = true;
                         autoExpiringWaiter.SetResult(0); // should never happen
+
                         break;
                 }
 
                 return Task.CompletedTask;
             }
         );
+
         context.Spawn(props);
 
         // this task should auto cancel
@@ -152,23 +170,27 @@ public class ReceiveTimeoutTests
         var timeoutReceived = false;
         var receiveTimeoutWaiter = GetExpiringTaskCompletionSource();
 
-        var props = Props.FromFunc(ctx => {
+        var props = Props.FromFunc(ctx =>
+            {
                 switch (ctx.Message)
                 {
                     case Started _:
                         ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
                         ctx.CancelReceiveTimeout();
                         ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
+
                         break;
                     case ReceiveTimeout _:
                         timeoutReceived = true;
                         receiveTimeoutWaiter.SetResult(0);
+
                         break;
                 }
 
                 return Task.CompletedTask;
             }
         );
+
         context.Spawn(props);
 
         await GetSafeAwaitableTask(receiveTimeoutWaiter);
@@ -181,12 +203,16 @@ public class ReceiveTimeoutTests
         var ct = new CancellationTokenSource();
         ct.Token.Register(() => tcs.TrySetCanceled());
         ct.CancelAfter(timeoutMs);
+
         return tcs;
     }
 
-    private ConfiguredTaskAwaitable<Task<int>> GetSafeAwaitableTask(TaskCompletionSource<int> tcs) => tcs.Task
-        .ContinueWith(t => t) // suppress any TaskCanceledException
-        .ConfigureAwait(false);
+    private ConfiguredTaskAwaitable<Task<int>> GetSafeAwaitableTask(TaskCompletionSource<int> tcs)
+    {
+        return tcs.Task
+            .ContinueWith(t => t) // suppress any TaskCanceledException
+            .ConfigureAwait(false);
+    }
 
     private record IgnoreMe : INotInfluenceReceiveTimeout;
 }

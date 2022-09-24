@@ -20,12 +20,16 @@ public class SupervisionTestsAllForOne
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
         var child2MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
+
         var child1Props = Props.FromProducer(() => new ChildActor())
             .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+
         var child2Props = Props.FromProducer(() => new ChildActor())
             .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+
         var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
@@ -46,12 +50,16 @@ public class SupervisionTestsAllForOne
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
+
         var child1Props = Props.FromProducer(() => new ChildActor())
             .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+
         var child2Props = Props.FromProducer(() => new ChildActor())
             .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+
         var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
@@ -73,12 +81,16 @@ public class SupervisionTestsAllForOne
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+
         var child1Props = Props.FromProducer(() => new ChildActor())
             .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+
         var child2Props = Props.FromProducer(() => new ChildActor())
             .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+
         var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
@@ -100,12 +112,16 @@ public class SupervisionTestsAllForOne
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+
         var child1Props = Props.FromProducer(() => new ChildActor())
             .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+
         var child2Props = Props.FromProducer(() => new ChildActor())
             .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+
         var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
@@ -127,9 +143,11 @@ public class SupervisionTestsAllForOne
         var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
         var childProps = Props.FromProducer(() => new ChildActor());
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps, childProps))
             .WithChildSupervisorStrategy(strategy)
             .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");

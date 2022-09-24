@@ -16,15 +16,30 @@ public class DummyIdentityLookup : IIdentityLookup
 {
     private readonly PID _pid;
 
-    public DummyIdentityLookup(PID pid) => _pid = pid;
+    public DummyIdentityLookup(PID pid)
+    {
+        _pid = pid;
+    }
 
-    public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => Task.FromResult(_pid)!;
+    public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
+    {
+        return Task.FromResult(_pid)!;
+    }
 
-    public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) => Task.CompletedTask;
+    public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
+    {
+        return Task.CompletedTask;
+    }
 
-    public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient) => Task.CompletedTask;
+    public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
+    {
+        return Task.CompletedTask;
+    }
 
-    public Task ShutdownAsync() => Task.CompletedTask;
+    public Task ShutdownAsync()
+    {
+        return Task.CompletedTask;
+    }
 }
 
 public class PidCacheTests
@@ -61,6 +76,7 @@ public class PidCacheTests
     public async Task PurgesPidCacheOnVirtualActorShutdown()
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
         var system = new ActorSystem()
             .WithRemote(GrpcNetRemoteConfig.BindToLocalhost())
             .WithCluster(GetClusterConfig());
@@ -78,11 +94,14 @@ public class PidCacheTests
         cluster.PidCache.TryGet(identity, out _).Should().BeFalse();
     }
 
-    ClusterConfig GetClusterConfig() => ClusterConfig
-        .Setup(
-            "MyCluster",
-            new TestProvider(new TestProviderOptions(), new InMemAgent()),
-            new PartitionIdentityLookup()
-        )
-        .WithClusterKind("echo", Props.FromProducer(() => new EchoActor()));
+    private ClusterConfig GetClusterConfig()
+    {
+        return ClusterConfig
+            .Setup(
+                "MyCluster",
+                new TestProvider(new TestProviderOptions(), new InMemAgent()),
+                new PartitionIdentityLookup()
+            )
+            .WithClusterKind("echo", Props.FromProducer(() => new EchoActor()));
+    }
 }

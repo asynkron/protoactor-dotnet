@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto.Diagnostics;
@@ -12,9 +13,15 @@ namespace Proto.Tests.Diagnostics;
 
 public class MyDiagnosticsActor : IActor, IActorDiagnostics
 {
-    public Task ReceiveAsync(IContext context) => Task.CompletedTask;
+    public Task ReceiveAsync(IContext context)
+    {
+        return Task.CompletedTask;
+    }
 
-    public string GetDiagnosticsString() => "Hello World";
+    public string GetDiagnosticsString()
+    {
+        return "Hello World";
+    }
 }
 
 public class DiagnosticsTests

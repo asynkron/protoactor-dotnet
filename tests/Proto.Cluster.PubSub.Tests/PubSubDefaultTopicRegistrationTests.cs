@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using FluentAssertions;
 using Xunit;
 
@@ -13,10 +14,21 @@ public class PubSubDefaultTopicRegistrationTests : IAsyncLifetime
 {
     private readonly PubSubClusterFixture _fixture;
 
-    public PubSubDefaultTopicRegistrationTests() => _fixture = new PubSubClusterFixture(clusterSize: 1, useDefaultTopicRegistration: true);
+    public PubSubDefaultTopicRegistrationTests()
+    {
+        _fixture = new PubSubClusterFixture(1, true);
+    }
 
-    public Task InitializeAsync() => _fixture.InitializeAsync();
-    
+    public Task InitializeAsync()
+    {
+        return _fixture.InitializeAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return _fixture.DisposeAsync();
+    }
+
     [Fact]
     public async Task Pub_sub_works_with_default_topic_registration()
     {
@@ -35,6 +47,4 @@ public class PubSubDefaultTopicRegistrationTests : IAsyncLifetime
 
         await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
-
-    public Task DisposeAsync() => _fixture.DisposeAsync();
 }

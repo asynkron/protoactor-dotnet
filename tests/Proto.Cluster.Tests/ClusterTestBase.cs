@@ -27,9 +27,14 @@ public abstract class ClusterTestBase
     /// </summary>
     /// <param name="baseId"></param>
     /// <returns></returns>
-    protected string CreateIdentity(string baseId) => $"{_runId}-{baseId}-";
+    protected string CreateIdentity(string baseId)
+    {
+        return $"{_runId}-{baseId}-";
+    }
 
-    protected IEnumerable<string> GetActorIds(int count) =>
-        Enumerable.Range(1, count)
+    protected IEnumerable<string> GetActorIds(int count)
+    {
+        return Enumerable.Range(1, count)
             .Select(i => CreateIdentity(i.ToString()));
+    }
 }

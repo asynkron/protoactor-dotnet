@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using Proto.Future;
 
 namespace Proto.Tests;
@@ -10,5 +11,8 @@ namespace Proto.Tests;
 // ReSharper disable once UnusedType.Global
 public class FutureProcessTests : BaseFutureTests
 {
-    protected override IFuture GetFuture() => new FutureProcess(System);
+    protected override IFuture GetFuture()
+    {
+        return new FutureProcess(System);
+    }
 }

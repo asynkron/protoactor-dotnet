@@ -14,7 +14,8 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 {
     private static readonly Props ProxyTraceActorProps = Props.FromProducer(() => new TraceTestActor()).WithTracing();
 
-    private static readonly Props InnerTraceActorProps = Props.FromFunc(context => {
+    private static readonly Props InnerTraceActorProps = Props.FromFunc(context =>
+        {
             if (context.Message is TraceMe)
             {
                 Activity.Current?.SetTag("inner", "true");
@@ -24,7 +25,6 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
                     context.Respond(new TraceResponse());
                 }
             }
-            
 
             return Task.CompletedTask;
         }
@@ -34,52 +34,70 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 
     private readonly ActivityFixture _fixture;
 
-    public OpenTelemetryTracingTests(ActivityFixture activityFixture) => _fixture = activityFixture;
+    public OpenTelemetryTracingTests(ActivityFixture activityFixture)
+    {
+        _fixture = activityFixture;
+    }
 
     [Fact]
     public async Task TracesPropagateCorrectlyForSend()
-        => await VerifyTrace(async (rootContext, target) => {
+    {
+        await VerifyTrace(async (rootContext, target) =>
+            {
                 rootContext.Send(target, new TraceMe(SendAs.Send));
                 await Task.Delay(100);
             }
         );
+    }
 
     [Fact]
     public async Task TracesPropagateCorrectlyForRequestAsync()
-        => await VerifyTrace(async (rootContext, target) => {
+    {
+        await VerifyTrace(async (rootContext, target) =>
+            {
                 var response = await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.RequestAsync));
                 response.Should().Be(new TraceResponse());
             }
         );
+    }
 
     [Fact]
     public async Task TracesPropagateCorrectlyForRequest()
-        => await VerifyTrace(async (rootContext, target) => {
+    {
+        await VerifyTrace(async (rootContext, target) =>
+            {
                 rootContext.Request(target, new TraceMe(SendAs.Request));
                 await Task.Delay(100);
             }
         );
+    }
 
     [Fact]
     public async Task TracesPropagateCorrectlyForRequestWithForward()
-        => await VerifyTrace(async (rootContext, target) => {
+    {
+        await VerifyTrace(async (rootContext, target) =>
+            {
                 await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.Forward));
             }
         );
+    }
 
     [Fact]
     public async Task TracesPropagateCorrectlyForRequestWithSender()
-        => await VerifyTrace(async (rootContext, target) => {
+    {
+        await VerifyTrace(async (rootContext, target) =>
+            {
                 var future = new FutureProcess(rootContext.System);
                 rootContext.Request(target, new TraceMe(SendAs.Request), future.Pid);
-                var response = (MessageEnvelope) await future.Task;
+                var response = (MessageEnvelope)await future.Task;
                 response.Message.Should().Be(new TraceResponse());
             }
         );
+    }
 
     /// <summary>
-    /// Checks that we have both the outer and innermost trace present, meaning that the trace has propagated
-    /// across the context boundaries
+    ///     Checks that we have both the outer and innermost trace present, meaning that the trace has propagated
+    ///     across the context boundaries
     /// </summary>
     /// <param name="outerSpanId"></param>
     /// <param name="traceId"></param>
@@ -120,7 +138,8 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         var tracedRoot = actorSystem.Root.WithTracing();
         var testRoot = tracedRoot.SpawnNamed(ProxyTraceActorProps, "trace-test");
 
-        var (_, activityTraceId) = await Trace(async () => {
+        var (_, activityTraceId) = await Trace(async () =>
+            {
                 tracedRoot.Send(testRoot, new TraceMe(SendAs.Invalid));
                 await Task.Delay(100);
             }
@@ -135,7 +154,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         receiveActivity.Events.Single().Tags.Where(tag => tag.Key.StartsWith("exception")).Should().NotBeEmpty();
     }
 
-    enum SendAs
+    private enum SendAs
     {
         RequestAsync,
         Request,
@@ -144,9 +163,9 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         Invalid
     }
 
-    record TraceMe(SendAs Method);
+    private record TraceMe(SendAs Method);
 
-    record TraceResponse();
+    private record TraceResponse;
 
     public class TraceTestActor : IActor
     {
@@ -168,19 +187,23 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
             {
                 case SendAs.RequestAsync:
                     ConditionalRespond(context, await context.RequestAsync<object>(target, msg));
+
                     break;
                 case SendAs.Request:
                     var future = new FutureProcess(context.System);
                     context.Request(target, msg, future.Pid);
-                    var response = (MessageEnvelope) await future.Task;
+                    var response = (MessageEnvelope)await future.Task;
                     ConditionalRespond(context, response.Message);
+
                     break;
                 case SendAs.Send:
                     context.Send(target, msg);
+
                     break;
 
                 case SendAs.Forward:
                     context.Forward(target);
+
                     break;
                 default: throw new ArgumentOutOfRangeException(nameof(msg.Method), msg.Method.ToString());
             }
@@ -195,6 +218,8 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         }
 
         private PID GetChild(IContext context)
-            => _child ??= context.Spawn(InnerTraceActorProps);
+        {
+            return _child ??= context.Spawn(InnerTraceActorProps);
+        }
     }
 }

@@ -180,7 +180,9 @@ public class ConsistentHashGroupTests
                 routee1, routee2, routee3
             )
             .WithMailbox(() => new TestMailbox());
+
         var router = system.Root.Spawn(props);
+
         return (router, routee1, routee2, routee3);
     }
 
@@ -188,14 +190,45 @@ public class ConsistentHashGroupTests
     {
         public static uint Hash(string hashKey)
         {
-            if (hashKey.EndsWith("routee1")) return 10;
-            if (hashKey.EndsWith("routee2")) return 20;
-            if (hashKey.EndsWith("routee3")) return 30;
-            if (hashKey.EndsWith("routee4")) return 40;
-            if (hashKey.EndsWith("message1")) return 9;
-            if (hashKey.EndsWith("message2")) return 19;
-            if (hashKey.EndsWith("message3")) return 29;
-            if (hashKey.EndsWith("message4")) return 39;
+            if (hashKey.EndsWith("routee1"))
+            {
+                return 10;
+            }
+
+            if (hashKey.EndsWith("routee2"))
+            {
+                return 20;
+            }
+
+            if (hashKey.EndsWith("routee3"))
+            {
+                return 30;
+            }
+
+            if (hashKey.EndsWith("routee4"))
+            {
+                return 40;
+            }
+
+            if (hashKey.EndsWith("message1"))
+            {
+                return 9;
+            }
+
+            if (hashKey.EndsWith("message2"))
+            {
+                return 19;
+            }
+
+            if (hashKey.EndsWith("message3"))
+            {
+                return 29;
+            }
+
+            if (hashKey.EndsWith("message4"))
+            {
+                return 39;
+            }
 
             return 0;
         }
@@ -205,11 +238,20 @@ public class ConsistentHashGroupTests
     {
         private readonly string _value;
 
-        public Message(string value) => _value = value;
+        public Message(string value)
+        {
+            _value = value;
+        }
 
-        public string HashBy() => _value;
+        public string HashBy()
+        {
+            return _value;
+        }
 
-        public override string ToString() => _value;
+        public override string ToString()
+        {
+            return _value;
+        }
     }
 
     internal class MyTestActor : IActor
@@ -222,12 +264,15 @@ public class ConsistentHashGroupTests
             {
                 case string msg when msg == "received?":
                     context.Respond(_receivedMessages.Count);
+
                     break;
                 case Message msg:
                     _receivedMessages.Add(msg.ToString());
+
                     break;
                 case string msg:
                     _receivedMessages.Add(msg);
+
                     break;
             }
 

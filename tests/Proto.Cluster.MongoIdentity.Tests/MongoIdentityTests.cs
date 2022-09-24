@@ -1,4 +1,5 @@
 ﻿// ReSharper disable UnusedType.Global
+
 using System;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
@@ -14,7 +15,8 @@ namespace Proto.Cluster.MongoIdentity.Tests;
 
 public class MongoIdentityClusterFixture : BaseInMemoryClusterFixture
 {
-    public MongoIdentityClusterFixture() : base(3, config => config with {ActorActivationTimeout = TimeSpan.FromSeconds(10)})
+    public MongoIdentityClusterFixture() : base(3,
+        config => config with { ActorActivationTimeout = TimeSpan.FromSeconds(10) })
     {
 #if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -25,6 +27,7 @@ public class MongoIdentityClusterFixture : BaseInMemoryClusterFixture
     {
         var pids = MongoFixture.Database.GetCollection<PidLookupEntity>("pids");
         var identity = new IdentityStorageLookup(new MongoIdentityStorage(clusterName, pids));
+
         return identity;
     }
 
@@ -40,28 +43,33 @@ public class MongoIdentityClusterFixture : BaseInMemoryClusterFixture
 
 public class ChaosMongoIdentityClusterFixture : BaseInMemoryClusterFixture
 {
-    public ChaosMongoIdentityClusterFixture() : base(3, config => config with {ActorActivationTimeout = TimeSpan.FromSeconds(10)})
+    public ChaosMongoIdentityClusterFixture() : base(3,
+        config => config with { ActorActivationTimeout = TimeSpan.FromSeconds(10) })
     {
     }
 
     protected override IIdentityLookup GetIdentityLookup(string clusterName)
     {
         var pids = MongoFixture.Database.GetCollection<PidLookupEntity>("pids");
-        var identity = new IdentityStorageLookup(new FailureInjectionStorage(new MongoIdentityStorage(clusterName, pids)));
+
+        var identity =
+            new IdentityStorageLookup(new FailureInjectionStorage(new MongoIdentityStorage(clusterName, pids)));
+
         return identity;
     }
 
     public class ChaosMongoClusterTests : ClusterTests, IClassFixture<ChaosMongoIdentityClusterFixture>
     {
         // ReSharper disable once SuggestBaseTypeForParameter
-        public ChaosMongoClusterTests(ITestOutputHelper testOutputHelper, ChaosMongoIdentityClusterFixture clusterFixture)
+        public ChaosMongoClusterTests(ITestOutputHelper testOutputHelper,
+            ChaosMongoIdentityClusterFixture clusterFixture)
             : base(testOutputHelper, clusterFixture)
         {
         }
     }
 }
 
-static class MongoFixture
+internal static class MongoFixture
 {
     static MongoFixture()
     {
@@ -86,5 +94,7 @@ public class MongoStorageTests : IdentityStorageTests
     }
 
     private static IIdentityStorage Init(string clusterName)
-        => new MongoIdentityStorage(clusterName, MongoFixture.Database.GetCollection<PidLookupEntity>("pids"));
+    {
+        return new MongoIdentityStorage(clusterName, MongoFixture.Database.GetCollection<PidLookupEntity>("pids"));
+    }
 }

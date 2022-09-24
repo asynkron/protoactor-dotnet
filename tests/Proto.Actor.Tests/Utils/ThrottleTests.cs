@@ -17,7 +17,10 @@ public class ThrottleTests
 
         for (var i = 0; i < 10000; i++)
         {
-            if (shouldThrottle().IsOpen()) triggered++;
+            if (shouldThrottle().IsOpen())
+            {
+                triggered++;
+            }
         }
 
         triggered.Should().Be(maxEvents);
@@ -32,7 +35,10 @@ public class ThrottleTests
 
         for (var i = 0; i < 100; i++)
         {
-            if (shouldThrottle().IsOpen()) triggered++;
+            if (shouldThrottle().IsOpen())
+            {
+                triggered++;
+            }
         }
 
         triggered.Should().Be(maxEvents);
@@ -41,7 +47,10 @@ public class ThrottleTests
 
         for (var i = 0; i < 100; i++)
         {
-            if (shouldThrottle().IsOpen()) triggered++;
+            if (shouldThrottle().IsOpen())
+            {
+                triggered++;
+            }
         }
 
         triggered.Should().Be(maxEvents * 2, "We expect the throttle to open after the timespan");

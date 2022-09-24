@@ -130,7 +130,8 @@ public class BroadcastGroupTests
         Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
     }
 
-    private static (PID router, PID routee1, PID routee2, PID routee3) CreateBroadcastGroupRouterWith3Routees(ActorSystem system)
+    private static (PID router, PID routee1, PID routee2, PID routee3) CreateBroadcastGroupRouterWith3Routees(
+        ActorSystem system)
     {
         var routee1 = system.Root.Spawn(MyActorProps);
         var routee2 = system.Root.Spawn(MyActorProps);
@@ -138,7 +139,9 @@ public class BroadcastGroupTests
 
         var props = system.Root.NewBroadcastGroup(routee1, routee2, routee3)
             .WithMailbox(() => new TestMailbox());
+
         var router = system.Root.Spawn(props);
+
         return (router, routee1, routee2, routee3);
     }
 
@@ -152,12 +155,15 @@ public class BroadcastGroupTests
             {
                 case "received?":
                     context.Respond(_received!);
+
                     break;
                 case "go slow":
                     await Task.Delay(5000);
+
                     break;
                 case string msg:
                     _received = msg;
+
                     break;
             }
         }

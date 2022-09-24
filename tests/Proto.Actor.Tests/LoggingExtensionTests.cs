@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Context;
@@ -70,7 +71,9 @@ public class LoggingExtensionTests
         var logger = system.Logger();
 
         var i = 0;
-        logger?.LogDebug("hello", ++i); //we can pass a lot of args, call ToString etc. if logger is not enabled, it will be free
+
+        logger?.LogDebug("hello",
+            ++i); //we can pass a lot of args, call ToString etc. if logger is not enabled, it will be free
 
         Assert.Equal(0, i);
     }

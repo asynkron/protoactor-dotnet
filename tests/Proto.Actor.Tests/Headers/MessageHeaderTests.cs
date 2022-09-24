@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -16,27 +17,34 @@ public class MessageHeaderTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
 
-    public MessageHeaderTests(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
+    public MessageHeaderTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
 
     [Fact]
     public async Task HeadersArePropagatedBackInReply()
     {
-        Sender PropagateHeaders(Sender next) =>
-            (context, target, envelope) =>
+        Sender PropagateHeaders(Sender next)
+        {
+            return (context, target, envelope) =>
                 next(context, target, envelope.WithHeader(context.Headers));
+        }
 
         var headers = MessageHeader.Empty.With("foo", "bar");
 
-        
         var system = new ActorSystem(ActorSystemConfig.Setup() with
         {
             ConfigureRootContext = context => context.WithHeaders(headers)
         });
-        var props1 = Props.FromFunc(ctx => {
+
+        var props1 = Props.FromFunc(ctx =>
+            {
                 switch (ctx.Message)
                 {
                     case SomeRequest:
                         ctx.Respond(new SomeResponse());
+
                         return Task.CompletedTask;
                     default:
                         return Task.CompletedTask;
@@ -48,15 +56,19 @@ public class MessageHeaderTests
 
         var tcs1 = new TaskCompletionSource<MessageHeader>();
         var tcs2 = new TaskCompletionSource<MessageHeader>();
-        var props2 = Props.FromFunc(ctx => {
+
+        var props2 = Props.FromFunc(ctx =>
+            {
                 switch (ctx.Message)
                 {
                     case StartMessage:
                         tcs1.SetResult(ctx.Headers);
                         ctx.Request(pid1, new SomeRequest());
+
                         break;
                     case SomeResponse:
                         tcs2.SetResult(ctx.Headers);
+
                         break;
                 }
 
@@ -89,7 +101,9 @@ public class MessageHeaderTests
     public async Task Actors_can_reply_with_headers()
     {
         await using var system = new ActorSystem();
-        var echo = Props.FromFunc(ctx => {
+
+        var echo = Props.FromFunc(ctx =>
+            {
                 if (ctx.Sender is not null && ctx.Message is not null)
                 {
                     var messageHeader = MessageHeader.Empty.With("foo", "bar");
@@ -99,6 +113,7 @@ public class MessageHeaderTests
                 return Task.CompletedTask;
             }
         );
+
         var pid = system.Root.Spawn(echo);
 
         const int message = 1;
@@ -112,16 +127,24 @@ public class MessageHeaderTests
     public async Task RequestAsync_honors_message_envelopes()
     {
         await using var system = new ActorSystem();
-        var echo = Props.FromFunc(ctx => {
-                if (ctx.Sender is not null && ctx.Headers.Count == 1) ctx.Respond(ctx.Headers["foo"]);
+
+        var echo = Props.FromFunc(ctx =>
+            {
+                if (ctx.Sender is not null && ctx.Headers.Count == 1)
+                {
+                    ctx.Respond(ctx.Headers["foo"]);
+                }
 
                 return Task.CompletedTask;
             }
         );
+
         var pid = system.Root.Spawn(echo);
 
         var wrongPid = PID.FromAddress("some-incorrect-address", "some-id");
-        var response = await system.Root.RequestAsync<string>(pid, new MessageEnvelope(1, wrongPid, MessageHeader.Empty.With("foo", "bar")),
+
+        var response = await system.Root.RequestAsync<string>(pid,
+            new MessageEnvelope(1, wrongPid, MessageHeader.Empty.With("foo", "bar")),
             CancellationTokens.FromSeconds(1)
         );
 

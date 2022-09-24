@@ -23,15 +23,24 @@ public class HostedGrpcNetWithCustomSerializerTests
         public object Deserialize(ByteString bytes, string typeName)
         {
             var type = _types.GetOrAdd(typeName, name => Type.GetType(name));
+
             return System.Text.Json.JsonSerializer.Deserialize(bytes.ToStringUtf8(), type);
         }
 
-        public string GetTypeName(object message) => message.GetType().AssemblyQualifiedName;
+        public string GetTypeName(object message)
+        {
+            return message.GetType().AssemblyQualifiedName;
+        }
 
-        public ByteString Serialize(object obj) =>
-            ByteString.CopyFromUtf8(System.Text.Json.JsonSerializer.Serialize(obj));
+        public ByteString Serialize(object obj)
+        {
+            return ByteString.CopyFromUtf8(System.Text.Json.JsonSerializer.Serialize(obj));
+        }
 
-        public bool CanSerialize(object obj) => true;
+        public bool CanSerialize(object obj)
+        {
+            return true;
+        }
     }
 
     public class Fixture : RemoteFixture
@@ -43,12 +52,16 @@ public class HostedGrpcNetWithCustomSerializerTests
         public Fixture()
         {
             var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
-                .WithSerializer(serializerId: 2, priority: 1000, new CustomSerializer());
+                .WithSerializer(2, 1000, new CustomSerializer());
+
             (_clientHost, Remote) = GetHostedGrpcNetRemote(clientConfig);
+
             var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
-                .WithSerializer(serializerId: 2, priority: 1000, new CustomSerializer());
+                .WithSerializer(2, 1000, new CustomSerializer());
+
             var serverConfig2 = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
-                .WithSerializer(serializerId: 2, priority: 1000, new CustomSerializer());
+                .WithSerializer(2, 1000, new CustomSerializer());
+
             (_serverHost, ServerRemote1) = GetHostedGrpcNetRemote(serverConfig);
             (_serverHost2, ServerRemote2) = GetHostedGrpcNetRemote(serverConfig2);
         }

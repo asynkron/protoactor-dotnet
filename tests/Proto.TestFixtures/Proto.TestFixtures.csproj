@@ -1,25 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <IsTestProject>false</IsTestProject>
-    <LangVersion>10</LangVersion>
-    <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Remove="AutoFixture.Xunit2" />
-    <PackageReference Remove="FluentAssertions" />
-    <PackageReference Remove="Microsoft.NET.Test.Sdk" />
-    <PackageReference Remove="xunit" />
-    <PackageReference Remove="xunit.runner.visualstudio" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
-    <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
-  </ItemGroup>
+    <PropertyGroup>
+        <IsTestProject>false</IsTestProject>
+        <LangVersion>10</LangVersion>
+        <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Remove="AutoFixture.Xunit2"/>
+        <PackageReference Remove="FluentAssertions"/>
+        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Remove="xunit"/>
+        <PackageReference Remove="xunit.runner.visualstudio"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0"/>
+        <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj"/>
+    </ItemGroup>
 </Project>

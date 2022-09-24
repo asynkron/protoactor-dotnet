@@ -47,24 +47,33 @@ public class BehaviorTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
+        PID SpawnActorFromFunc(Receive receive)
+        {
+            return context.Spawn(Props.FromFunc(receive));
+        }
 
         var behavior = new Behavior();
-        behavior.Become(ctx => {
+
+        behavior.Become(ctx =>
+            {
                 if (ctx.Message is string)
                 {
-                    behavior.BecomeStacked(ctx2 => {
+                    behavior.BecomeStacked(ctx2 =>
+                        {
                             ctx2.Respond(42);
                             behavior.UnbecomeStacked();
+
                             return Task.CompletedTask;
                         }
                     );
+
                     ctx.Respond(ctx.Message);
                 }
 
                 return Task.CompletedTask;
             }
         );
+
         var pid = SpawnActorFromFunc(behavior.ReceiveAsync);
 
         var reply = await context.RequestAsync<string>(pid, "number");
@@ -94,12 +103,15 @@ public class LightBulb : IActor
             case HitWithHammer _:
                 context.Respond("Smashed!");
                 _smashed = true;
+
                 return Task.CompletedTask;
             case PressSwitch _ when _smashed:
                 context.Respond("Broken");
+
                 return Task.CompletedTask;
             case Touch _ when _smashed:
                 context.Respond("OW!");
+
                 return Task.CompletedTask;
         }
 
@@ -114,9 +126,11 @@ public class LightBulb : IActor
             case PressSwitch _:
                 context.Respond("Turning on");
                 _behavior.Become(On);
+
                 break;
             case Touch _:
                 context.Respond("Cold");
+
                 break;
         }
 
@@ -130,9 +144,11 @@ public class LightBulb : IActor
             case PressSwitch _:
                 context.Respond("Turning off");
                 _behavior.Become(Off);
+
                 break;
             case Touch _:
                 context.Respond("Hot!");
+
                 break;
         }
 

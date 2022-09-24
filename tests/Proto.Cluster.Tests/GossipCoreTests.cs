@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Immutable;
 using System.Linq;
@@ -24,7 +25,7 @@ public class GossipCoreTests
     {
         _output = output;
     }
-        
+
     [Fact]
     public async Task Large_cluster_should_get_topology_consensus()
     {
@@ -34,17 +35,20 @@ public class GossipCoreTests
         var members =
             Enumerable
                 .Range(0, memberCount)
-                .Select(_ => new Member() {Id = Guid.NewGuid().ToString("N")})
+                .Select(_ => new Member { Id = Guid.NewGuid().ToString("N") })
                 .ToList();
 
         var environment =
             members
                 .ToDictionary(
-                    m => m.Id, 
-                    m => (Gossip: new Gossip.Gossip(m.Id, fanout, memberCount, null, () => members.Select(m => m.Id).ToImmutableHashSet()),
+                    m => m.Id,
+                    m => (
+                        Gossip: new Gossip.Gossip(m.Id, fanout, memberCount, null,
+                            () => members.Select(m => m.Id).ToImmutableHashSet()),
                         Member: m));
 
         var sends = 0L;
+
         void SendState(MemberStateDelta memberStateDelta, Member targetMember, InstanceLogger _)
         {
             Interlocked.Increment(ref sends);
@@ -53,7 +57,7 @@ public class GossipCoreTests
             memberStateDelta.CommitOffsets();
         }
 
-        var topology = new ClusterTopology()
+        var topology = new ClusterTopology
         {
             TopologyHash = Member.TopologyHash(members),
             Members = { members }
@@ -66,25 +70,30 @@ public class GossipCoreTests
 
         var first = environment.Values.First().Gossip;
 
-        var checkDefinition = Gossiper.ConsensusCheckBuilder<ulong>.Create(GossipKeys.Topology, (ClusterTopology tp) => tp.TopologyHash);
+        var checkDefinition =
+            Gossiper.ConsensusCheckBuilder<ulong>.Create(GossipKeys.Topology, (ClusterTopology tp) => tp.TopologyHash);
+
         var id = Guid.NewGuid().ToString();
         var (handle, check) = checkDefinition.Build(() => first.RemoveConsensusCheck(id));
         first.AddConsensusCheck(id, check);
 
         var gossipGenerations = 0L;
         var ct = CancellationTokens.FromSeconds(10);
-        _ = Task.Run(() => {
+
+        _ = Task.Run(() =>
+            {
                 while (!ct.IsCancellationRequested)
                 {
                     // ReSharper disable once AccessToModifiedClosure
                     Interlocked.Increment(ref gossipGenerations);
+
                     foreach (var m in environment.Values)
                     {
                         m.Gossip.SendState(SendState);
                     }
                 }
             }
-            ,ct);
+            , ct);
 
         var x = await handle.TryGetConsensus(ct);
 

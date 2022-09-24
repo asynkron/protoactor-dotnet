@@ -6,8 +6,12 @@ namespace Proto.Tests;
 
 public class DeadLetterResponseTests
 {
-    private static readonly Props EchoProps = Props.FromFunc(context => {
-            if (context.Message is string s) context.Respond(s);
+    private static readonly Props EchoProps = Props.FromFunc(context =>
+        {
+            if (context.Message is string s)
+            {
+                context.Respond(s);
+            }
 
             return Task.CompletedTask;
         }
@@ -59,10 +63,13 @@ public class DeadLetterResponseTests
                     _deadLetterTarget = context.Spawn(EchoProps);
                     await context.PoisonAsync(_deadLetterTarget);
                     context.Request(_deadLetterTarget, "One dead letter please");
+
                     break;
-                case DeadLetterResponse response: {
+                case DeadLetterResponse response:
+                {
                     response.Target.Should().Be(_deadLetterTarget);
                     context.Send(_sender!, "Validated");
+
                     break;
                 }
             }

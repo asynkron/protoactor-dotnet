@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Proto.Cluster.Cache;
@@ -27,10 +28,10 @@ public interface IClusterFixture
 {
     IList<Cluster> Members { get; }
 
-    public Task<Cluster> SpawnNode();
-
     LogStore LogStore { get; }
     int ClusterSize { get; }
+
+    public Task<Cluster> SpawnNode();
 
     Task RemoveNode(Cluster member, bool graceful = true);
 }
@@ -39,13 +40,12 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 {
     private const bool EnableTracing = false;
     public const string InvalidIdentity = "invalid";
-
-    protected readonly string ClusterName;
-    public int ClusterSize { get; }
     private readonly Func<ClusterConfig, ClusterConfig>? _configure;
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
-    private readonly TracerProvider? _tracerProvider;
     private readonly List<Cluster> _members = new();
+    private readonly TracerProvider? _tracerProvider;
+
+    protected readonly string ClusterName;
 
     protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
     {
@@ -65,15 +65,6 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 #pragma warning restore CS0162
     }
 
-    private static TracerProvider InitOpenTelemetryTracing() => global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
-        .SetResourceBuilder(ResourceBuilder.CreateDefault()
-            .AddService("Proto.Cluster.Tests")
-        )
-        .AddProtoActorInstrumentation()
-        .AddSource(Tracing.ActivitySourceName)
-        .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317"))
-        .Build();
-
     protected virtual ClusterKind[] ClusterKinds => new[]
     {
         new ClusterKind(EchoActor.Kind, EchoActor.Props.WithClusterRequestDeduplication()),
@@ -82,22 +73,25 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         new ClusterKind(EchoActor.FilteredKind, EchoActor.Props).WithSpawnPredicate((identity, _)
             => new ValueTask<bool>(!identity.Equals(InvalidIdentity, StringComparison.InvariantCultureIgnoreCase))
         ),
-        new ClusterKind(EchoActor.AsyncFilteredKind, EchoActor.Props).WithSpawnPredicate(async (identity, ct) => {
+        new ClusterKind(EchoActor.AsyncFilteredKind, EchoActor.Props).WithSpawnPredicate(async (identity, ct) =>
+            {
                 await Task.Delay(100, ct);
+
                 return !identity.Equals(InvalidIdentity, StringComparison.InvariantCultureIgnoreCase);
             }
-        ),
+        )
     };
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        await DisposeAsync();
+    }
 
     public async Task InitializeAsync()
     {
         var nodes = await SpawnClusterNodes(ClusterSize, _configure).ConfigureAwait(false);
         _members.AddRange(nodes);
     }
-
-    public LogStore LogStore { get; } = new();
-
-    public virtual Task OnDisposing() => Task.CompletedTask;
 
     public async Task DisposeAsync()
     {
@@ -111,9 +105,14 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         catch (Exception e)
         {
             _logger.LogError(e, "Failed to shutdown gracefully");
+
             throw;
         }
     }
+
+    public int ClusterSize { get; }
+
+    public LogStore LogStore { get; } = new();
 
     public async Task RemoveNode(Cluster member, bool graceful = true)
     {
@@ -122,7 +121,10 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             Members.Remove(member);
             await member.ShutdownAsync(graceful, "Stopped by ClusterFixture").ConfigureAwait(false);
         }
-        else throw new ArgumentException("No such member");
+        else
+        {
+            throw new ArgumentException("No such member");
+        }
     }
 
     /// <summary>
@@ -134,18 +136,39 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     {
         var newMember = await SpawnClusterMember(_configure);
         Members.Add(newMember);
+
         return newMember;
     }
 
     public IList<Cluster> Members => _members;
 
+    private static TracerProvider InitOpenTelemetryTracing()
+    {
+        return Sdk.CreateTracerProviderBuilder()
+            .SetResourceBuilder(ResourceBuilder.CreateDefault()
+                .AddService("Proto.Cluster.Tests")
+            )
+            .AddProtoActorInstrumentation()
+            .AddSource(Tracing.ActivitySourceName)
+            .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317"))
+            .Build();
+    }
+
+    public virtual Task OnDisposing()
+    {
+        return Task.CompletedTask;
+    }
+
     private async Task<IList<Cluster>> SpawnClusterNodes(
         int count,
         Func<ClusterConfig, ClusterConfig>? configure = null
-    ) => (await Task.WhenAll(
-        Enumerable.Range(0, count)
-            .Select(_ => SpawnClusterMember(configure))
-    )).ToList();
+    )
+    {
+        return (await Task.WhenAll(
+            Enumerable.Range(0, count)
+                .Select(_ => SpawnClusterMember(configure))
+        )).ToList();
+    }
 
     protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig>? configure)
     {
@@ -163,7 +186,11 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         system.Extensions.Register(new InstanceLogger(LogLevel.Debug, LogStore, category: system.Id));
 
         var logger = system.Logger()?.BeginScope<EventStream>();
-        system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{Message}", e.GetType().Name, e); }
+
+        system.EventStream.Subscribe<object>(e =>
+            {
+                logger?.LogDebug("EventStream {MessageType}:{Message}", e.GetType().Name, e);
+            }
         );
 
         var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
@@ -172,6 +199,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         var cluster = new Cluster(system, config);
 
         await cluster.StartMemberAsync();
+
         return cluster;
     }
 
@@ -189,18 +217,19 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     protected abstract IClusterProvider GetClusterProvider();
 
-    protected virtual IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionIdentityLookup(
-        new PartitionConfig
-        {
-            RebalanceActivationsCompletionTimeout = TimeSpan.FromSeconds(3),
-            GetPidTimeout = TimeSpan.FromSeconds(2),
-            HandoverChunkSize = 1000,
-            RebalanceRequestTimeout = TimeSpan.FromSeconds(1),
-            Mode = PartitionIdentityLookup.Mode.Pull
-        }
-    );
-
-    async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
+    protected virtual IIdentityLookup GetIdentityLookup(string clusterName)
+    {
+        return new PartitionIdentityLookup(
+            new PartitionConfig
+            {
+                RebalanceActivationsCompletionTimeout = TimeSpan.FromSeconds(3),
+                GetPidTimeout = TimeSpan.FromSeconds(2),
+                HandoverChunkSize = 1000,
+                RebalanceRequestTimeout = TimeSpan.FromSeconds(1),
+                Mode = PartitionIdentityLookup.Mode.Pull
+            }
+        );
+    }
 }
 
 public abstract class BaseInMemoryClusterFixture : ClusterFixture
@@ -217,7 +246,10 @@ public abstract class BaseInMemoryClusterFixture : ClusterFixture
 
     private InMemAgent InMemAgent => _inMemAgent.Value;
 
-    protected override IClusterProvider GetClusterProvider() => new TestProvider(new TestProviderOptions(), InMemAgent);
+    protected override IClusterProvider GetClusterProvider()
+    {
+        return new TestProvider(new TestProviderOptions(), InMemAgent);
+    }
 }
 
 public class InMemoryClusterFixture : BaseInMemoryClusterFixture
@@ -229,11 +261,15 @@ public class InMemoryClusterFixture : BaseInMemoryClusterFixture
 
 public class InMemoryClusterFixtureWithPartitionActivator : BaseInMemoryClusterFixture
 {
-    public InMemoryClusterFixtureWithPartitionActivator() : base(3, config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
+    public InMemoryClusterFixtureWithPartitionActivator() : base(3,
+        config => config.WithActorRequestTimeout(TimeSpan.FromSeconds(4)))
     {
     }
 
-    protected override IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionActivatorLookup();
+    protected override IIdentityLookup GetIdentityLookup(string clusterName)
+    {
+        return new PartitionActivatorLookup();
+    }
 }
 
 public class InMemoryClusterFixtureAlternativeClusterContext : BaseInMemoryClusterFixture
@@ -255,7 +291,10 @@ public class InMemoryClusterFixtureSharedFutures : BaseInMemoryClusterFixture
     {
     }
 
-    protected override ActorSystemConfig GetActorSystemConfig() => base.GetActorSystemConfig().WithSharedFutures();
+    protected override ActorSystemConfig GetActorSystemConfig()
+    {
+        return base.GetActorSystemConfig().WithSharedFutures();
+    }
 }
 
 public class InMemoryPidCacheInvalidationClusterFixture : BaseInMemoryClusterFixture
@@ -266,11 +305,13 @@ public class InMemoryPidCacheInvalidationClusterFixture : BaseInMemoryClusterFix
     {
     }
 
-    protected override ClusterKind[] ClusterKinds => base.ClusterKinds.Select(ck => ck.WithPidCacheInvalidation()).ToArray();
+    protected override ClusterKind[] ClusterKinds =>
+        base.ClusterKinds.Select(ck => ck.WithPidCacheInvalidation()).ToArray();
 
     protected override async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig>? configure)
     {
         var cluster = await base.SpawnClusterMember(configure);
+
         return cluster.WithPidCacheInvalidation();
     }
 }
@@ -281,7 +322,13 @@ public class SingleNodeProviderFixture : ClusterFixture
     {
     }
 
-    protected override IClusterProvider GetClusterProvider() => new SingleNodeProvider();
+    protected override IClusterProvider GetClusterProvider()
+    {
+        return new SingleNodeProvider();
+    }
 
-    protected override IIdentityLookup GetIdentityLookup(string clusterName) => new SingleNodeLookup();
+    protected override IIdentityLookup GetIdentityLookup(string clusterName)
+    {
+        return new SingleNodeLookup();
+    }
 }

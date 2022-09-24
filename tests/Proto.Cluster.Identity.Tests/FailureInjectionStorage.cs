@@ -12,31 +12,40 @@ public sealed class FailureInjectionStorage : IIdentityStorage
     private readonly IIdentityStorage _identityStorageImplementation;
 
     public FailureInjectionStorage(IIdentityStorage identityStorageImplementation)
-        => _identityStorageImplementation = identityStorageImplementation;
+    {
+        _identityStorageImplementation = identityStorageImplementation;
+    }
 
-    public void Dispose() => _identityStorageImplementation.Dispose();
+    public void Dispose()
+    {
+        _identityStorageImplementation.Dispose();
+    }
 
     public Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity, CancellationToken ct)
     {
         MaybeFail();
+
         return _identityStorageImplementation.TryGetExistingActivation(clusterIdentity, ct);
     }
 
     public Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct)
     {
         MaybeFail();
+
         return _identityStorageImplementation.TryAcquireLock(clusterIdentity, ct);
     }
 
     public Task<StoredActivation?> WaitForActivation(ClusterIdentity clusterIdentity, CancellationToken ct)
     {
         MaybeFail();
+
         return _identityStorageImplementation.WaitForActivation(clusterIdentity, ct);
     }
 
     public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct)
     {
         MaybeFail();
+
         return _identityStorageImplementation.RemoveLock(spawnLock, ct);
     }
 
@@ -45,6 +54,7 @@ public sealed class FailureInjectionStorage : IIdentityStorage
         if (Mayhem.NextDouble() > SuccessRate)
         {
             RemoveLock(spawnLock, ct);
+
             throw Mayhem.Next() % 2 == 0
                 ? new Exception("Activation fail")
                 : new LockNotFoundException("fake lock");
@@ -53,16 +63,27 @@ public sealed class FailureInjectionStorage : IIdentityStorage
         return _identityStorageImplementation.StoreActivation(memberId, spawnLock, pid, ct);
     }
 
-    public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) =>
+    public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
+    {
         // MaybeFail();
-        _identityStorageImplementation.RemoveActivation(clusterIdentity, pid, ct);
+        return _identityStorageImplementation.RemoveActivation(clusterIdentity, pid, ct);
+    }
 
-    public Task RemoveMember(string memberId, CancellationToken ct) => _identityStorageImplementation.RemoveMember(memberId, ct);
+    public Task RemoveMember(string memberId, CancellationToken ct)
+    {
+        return _identityStorageImplementation.RemoveMember(memberId, ct);
+    }
 
-    public Task Init() => _identityStorageImplementation.Init();
+    public Task Init()
+    {
+        return _identityStorageImplementation.Init();
+    }
 
     private static void MaybeFail()
     {
-        if (Mayhem.NextDouble() > SuccessRate) throw new Exception("Chaos monkey at work");
+        if (Mayhem.NextDouble() > SuccessRate)
+        {
+            throw new Exception("Chaos monkey at work");
+        }
     }
 }

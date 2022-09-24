@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.IO;
 using System.Linq;
 using FluentAssertions;
@@ -34,10 +35,11 @@ public class PathPolyfillTests
     {
         var relativeTo = AdjustToCurrentOs(basePath);
         var path = AdjustToCurrentOs(unadjustedPath);
-            
+
         var relativePath = PathPolyfill.GetRelativePath(relativeTo, path);
 
         var expected = Path.GetRelativePath(relativeTo, path);
+
         relativePath
             .Should()
             .Be(expected, "Should match the Path.GetRelativePath poly-filled behavior");
@@ -65,7 +67,10 @@ public class PathPolyfillTests
             .Be(Path.GetRelativePath(path, path));
     }
 
-    private static string AdjustToCurrentOs(string path) => path
-        .Split(@"\")
-        .Aggregate(Path.Combine);
+    private static string AdjustToCurrentOs(string path)
+    {
+        return path
+            .Split(@"\")
+            .Aggregate(Path.Combine);
+    }
 }

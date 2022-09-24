@@ -137,7 +137,9 @@ public class RoundRobinGroupTests
 
         var props = system.Root.NewRoundRobinGroup(routee1, routee2, routee3)
             .WithMailbox(() => new TestMailbox());
+
         var router = system.Root.Spawn(props);
+
         return (router, routee1, routee2, routee3);
     }
 
@@ -151,9 +153,11 @@ public class RoundRobinGroupTests
             {
                 case "received?":
                     context.Respond(_received!);
+
                     break;
                 case string msg:
                     _received = msg;
+
                     break;
             }
 
