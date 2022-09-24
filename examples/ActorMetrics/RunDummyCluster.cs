@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -38,7 +39,7 @@ public static class RunDummyCluster
         var system = new ActorSystem(config)
             .WithRemote(remoteConfig)
             .WithCluster(clusterConfig);
-            
+
         Console.WriteLine($"System 1 Id {system.Id}");
 
         var memberCluster1 = system
@@ -60,7 +61,8 @@ public static class RunDummyCluster
 
         var clusterConfig2 =
             ClusterConfig
-                .Setup("MyCluster", new SeedNodeClusterProvider(new(system.GetAddress())),
+                .Setup("MyCluster",
+                    new SeedNodeClusterProvider(new SeedNodeClusterProviderOptions(system.GetAddress())),
                     new PartitionIdentityLookup()
                 )
                 .WithClusterKind("somekind", props);
@@ -79,7 +81,8 @@ public static class RunDummyCluster
             .GetAwaiter()
             .GetResult();
 
-        _ = SafeTask.Run(async () => {
+        _ = SafeTask.Run(async () =>
+            {
                 var r = new Random();
 
                 await Task.Delay(5000);

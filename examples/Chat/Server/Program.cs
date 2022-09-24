@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,7 +16,7 @@ using static Proto.Remote.GrpcNet.GrpcNetRemoteConfig;
 
 namespace Server;
 
-static class Program
+internal static class Program
 {
     private static IRootContext context;
 
@@ -25,6 +26,7 @@ static class Program
             .SetMinimumLevel(LogLevel.Information)
             .AddConsole()
         ));
+
         InitializeActorSystem();
         SpawnServer();
 
@@ -56,7 +58,8 @@ static class Program
 
         context.SpawnNamed(
             Props.FromFunc(
-                ctx => {
+                ctx =>
+                {
                     switch (ctx.Message)
                     {
                         case Connect connect:
@@ -83,6 +86,7 @@ static class Program
                                     Message = "Welcome!"
                                 }
                             );
+
                             break;
                         case SayRequest sayRequest:
                             foreach (var client in clients)

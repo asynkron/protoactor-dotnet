@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,13 +17,17 @@ public class LoggingRootDecorator : RootContextDecorator
     {
     }
 
-    protected override IRootContext WithInnerContext(IRootContext context) => new LoggingRootDecorator(context);
+    protected override IRootContext WithInnerContext(IRootContext context)
+    {
+        return new LoggingRootDecorator(context);
+    }
 
     public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken ct)
     {
         Console.WriteLine("Enter RequestAsync");
         var res = await base.RequestAsync<T>(target, message, ct);
         Console.WriteLine("Exit RequestAsync");
+
         return res;
     }
 }
@@ -31,7 +36,10 @@ public class LoggingDecorator : ActorContextDecorator
 {
     private readonly string _loggerName;
 
-    public LoggingDecorator(IContext context, string loggerName) : base(context) => _loggerName = loggerName;
+    public LoggingDecorator(IContext context, string loggerName) : base(context)
+    {
+        _loggerName = loggerName;
+    }
 
     //we are just logging this single method
     public override void Respond(object message)
@@ -42,12 +50,14 @@ public class LoggingDecorator : ActorContextDecorator
     }
 }
 
-class Program
+internal class Program
 {
     private static void Main(string[] args)
     {
         var context = new LoggingRootDecorator(new RootContext(new ActorSystem()));
-        var props = Props.FromFunc(ctx => {
+
+        var props = Props.FromFunc(ctx =>
+                    {
                         if (ctx.Message is string str)
                         {
                             Console.WriteLine("Inside Actor: " + str);

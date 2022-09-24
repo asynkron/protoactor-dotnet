@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -15,16 +16,20 @@ public class DependencyInjectedActor : IActor
 {
     private readonly ILogger<DependencyInjectedActor> _logger;
 
-    public DependencyInjectedActor(ILogger<DependencyInjectedActor> logger) =>
+    public DependencyInjectedActor(ILogger<DependencyInjectedActor> logger)
+    {
         //dependency injected arguments here
         _logger = logger;
+    }
 
-    public Task ReceiveAsync(IContext context) =>
-        context.Message switch
+    public Task ReceiveAsync(IContext context)
+    {
+        return context.Message switch
         {
             HelloRequest msg => OnHelloMessage(msg, context),
             _                => Task.CompletedTask
         };
+    }
 
     private Task OnHelloMessage(HelloRequest msg, IContext context)
     {
@@ -32,6 +37,7 @@ public class DependencyInjectedActor : IActor
 
         var greeting = $"Hello to you {msg.Name}";
         context.Respond(new HelloResponse(greeting));
+
         return Task.CompletedTask;
     }
 }
@@ -40,12 +46,16 @@ public record HelloRequest(string Name);
 
 public record HelloResponse(string Greeting);
 
-[ApiController, Route("[controller]")]
+[ApiController]
+[Route("[controller]")]
 public class ActorController : ControllerBase
 {
     private readonly ActorSystem _actorSystem;
 
-    public ActorController(ActorSystem actorSystem) => _actorSystem = actorSystem;
+    public ActorController(ActorSystem actorSystem)
+    {
+        _actorSystem = actorSystem;
+    }
 
     [HttpGet]
     public async Task<string> Get()

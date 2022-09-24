@@ -3,13 +3,14 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using Proto;
 using Proto.Persistence;
 
 namespace Saga.Factories;
 
-class TransferFactory
+internal class TransferFactory
 {
     private readonly double _availability;
     private readonly IContext _context;
@@ -40,14 +41,17 @@ class TransferFactory
         string persistenceId
     )
     {
-        var transferProps = 
+        var transferProps =
             Props.FromProducer(() =>
-                    new TransferProcess(fromAccount, toAccount, amount, _provider, persistenceId, _random, _availability)
+                    new TransferProcess(fromAccount, toAccount, amount, _provider, persistenceId, _random,
+                        _availability)
                 )
                 .WithChildSupervisorStrategy(
                     new OneForOneStrategy((_, _) => SupervisorDirective.Restart, _retryAttempts, null)
                 );
+
         var transfer = _context.SpawnNamed(transferProps, actorName);
+
         return transfer;
     }
 }

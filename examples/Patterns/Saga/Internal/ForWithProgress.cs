@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Saga.Internal;
@@ -27,17 +28,28 @@ public class ForWithProgress
         for (var i = 1; i < _total + 1; i++)
         {
             var must = MustRunNth(i);
-            if (must) everyNthAction(i);
-            if (must && !_runBothOnEvery) continue;
+
+            if (must)
+            {
+                everyNthAction(i);
+            }
+
+            if (must && !_runBothOnEvery)
+            {
+                continue;
+            }
 
             everyAction(i, must);
         }
-            
-        bool MustRunNth(int current) => current switch
+
+        bool MustRunNth(int current)
         {
-            0 when _runOnStart => true,
-            0                  => false,
-            _                  => current % _everyNth == 0
-        };
+            return current switch
+            {
+                0 when _runOnStart => true,
+                0                  => false,
+                _                  => current % _everyNth == 0
+            };
+        }
     }
 }

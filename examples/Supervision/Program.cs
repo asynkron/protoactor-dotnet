@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
 
-class Program
+internal class Program
 {
     private static void Main()
     {
@@ -28,6 +29,7 @@ class Program
                 Who = "Alex"
             }
         );
+
         context.Send(actor, new Recoverable());
         context.Send(actor, new Fatal());
         //why wait?
@@ -42,12 +44,14 @@ class Program
     private static class Decider
     {
         public static SupervisorDirective Decide(PID pid, Exception reason)
-            => reason switch
+        {
+            return reason switch
             {
                 RecoverableException _ => SupervisorDirective.Restart,
                 FatalException _       => SupervisorDirective.Stop,
                 _                      => SupervisorDirective.Escalate
             };
+        }
     }
 
     private class ParentActor : IActor
@@ -62,7 +66,9 @@ class Program
                 child = context.Spawn(props);
             }
             else
+            {
                 child = context.Children.First();
+            }
 
             switch (context.Message)
             {
@@ -70,9 +76,11 @@ class Program
                 case Recoverable _:
                 case Fatal _:
                     context.Forward(child);
+
                     break;
                 case Terminated r:
                     Console.WriteLine("Watched actor was Terminated, {0}", r.Who);
+
                     break;
             }
 
@@ -90,6 +98,7 @@ class Program
             {
                 case Hello r:
                     _logger.LogDebug($"Hello {r.Who}");
+
                     break;
                 case Recoverable _:
                     throw new RecoverableException();
@@ -97,15 +106,19 @@ class Program
                     throw new FatalException();
                 case Started _:
                     _logger.LogDebug("Started, initialize actor here");
+
                     break;
                 case Stopping _:
                     _logger.LogDebug("Stopping, actor is about shut down");
+
                     break;
                 case Stopped _:
                     _logger.LogDebug("Stopped, actor and it's children are stopped");
+
                     break;
                 case Restarting _:
                     _logger.LogDebug("Restarting, actor is about restart");
+
                     break;
             }
 

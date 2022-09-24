@@ -6,9 +6,9 @@ namespace MessageHeaders;
 
 public record MyMessage(string SomeProperty);
 
-class Program
+internal class Program
 {
-    static void Main()
+    private static void Main()
     {
         var headers = MessageHeader
             .Empty
@@ -19,8 +19,9 @@ class Program
         {
             ConfigureRootContext = context => context.WithHeaders(headers)
         });
-        
-        var props = Props.FromFunc(ctx => {
+
+        var props = Props.FromFunc(ctx =>
+            {
                 if (ctx.Message is MyMessage msg)
                 {
                     Console.WriteLine($"Got message {msg.SomeProperty}");
@@ -43,9 +44,11 @@ class Program
         //e.g. RootContext might contain SpanID 123. but on the outgoing data, this is now ParentSpanID 123
 
         //This bit of code does a verbatim copy of all headers and pass them along
-        static Sender PropagateHeaders(Sender next) =>
-            (context, target, envelope) =>
+        static Sender PropagateHeaders(Sender next)
+        {
+            return (context, target, envelope) =>
                 next(context, target, envelope.WithHeader(context.Headers));
+        }
 
         //set up a sender context that knows what headers to pass along.
         var context = system

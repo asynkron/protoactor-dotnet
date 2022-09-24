@@ -12,11 +12,9 @@ using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
 
-using MyMessagesReflection = KafkaVirtualActorIngress.Messages.MyMessagesReflection;
-
 namespace KafkaVirtualActorIngress;
 
-class Program
+internal class Program
 {
     private static async Task Main()
     {
@@ -48,9 +46,9 @@ class Program
             {
                 object m = message.MessageCase switch
                 {
-                    MyEnvelope.MessageOneofCase.SomeMessage      => message.SomeMessage,
+                    MyEnvelope.MessageOneofCase.SomeMessage => message.SomeMessage,
                     MyEnvelope.MessageOneofCase.SomeOtherMessage => message.SomeOtherMessage,
-                    _                                            => throw new ArgumentOutOfRangeException(nameof(message), "Unknown message case")
+                    _ => throw new ArgumentOutOfRangeException(nameof(message), "Unknown message case")
                 };
 
                 var task = cluster
@@ -76,7 +74,7 @@ class Program
         var messages = new List<MyEnvelope>();
         var rnd = new Random();
 
-        for (int i = 0; i < 50; i++)
+        for (var i = 0; i < 50; i++)
         {
             var message = new MyEnvelope
             {
@@ -86,6 +84,7 @@ class Program
                     Data = Guid.NewGuid().ToString()
                 }
             };
+
             messages.Add(message);
 
             var message2 = new MyEnvelope
@@ -96,37 +95,45 @@ class Program
                     IntProperty = rnd.Next(1, 100000)
                 }
             };
+
             messages.Add(message2);
         }
 
         return messages;
     }
 
-    private static ActorSystemConfig GetSystemConfig() =>
-
-        ActorSystemConfig
+    private static ActorSystemConfig GetSystemConfig()
+    {
+        return ActorSystemConfig
             .Setup()
             .WithDeadLetterThrottleCount(3)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
             .WithDeveloperSupervisionLogging(true);
+    }
     //TODO: Uncomment to enable metrics
     //  .WithMetricsProviders(new StatsdConfigurator(new[] { new Label("service", "my-system-name") }));
 
-    private static GrpcNetRemoteConfig GetRemoteConfig() => GrpcNetRemoteConfig
-        .BindTo("127.0.0.1")
-        //   .WithAdvertisedHost("the hostname or ip of this pod")
-        .WithProtoMessages(MyMessagesReflection.Descriptor);
+    private static GrpcNetRemoteConfig GetRemoteConfig()
+    {
+        return GrpcNetRemoteConfig
+            .BindTo("127.0.0.1")
+            //   .WithAdvertisedHost("the hostname or ip of this pod")
+            .WithProtoMessages(MyMessagesReflection.Descriptor);
+    }
 
-    private static ClusterConfig GetClusterConfig(string clusterName) => ClusterConfig
-        .Setup(clusterName, GetClusterProvider(), new IdentityStorageLookup(GetIdentityLookup(clusterName)))
-        .WithClusterKind("device", Props.FromProducer(() => new DeviceActor())
-            //TODO: Uncomment to enable tracing
-            // .WithOpenTracing()
+    private static ClusterConfig GetClusterConfig(string clusterName)
+    {
+        return ClusterConfig
+            .Setup(clusterName, GetClusterProvider(), new IdentityStorageLookup(GetIdentityLookup(clusterName)))
+            .WithClusterKind("device", Props.FromProducer(() => new DeviceActor())
+                //TODO: Uncomment to enable tracing
+                // .WithOpenTracing()
 
-            //TODO: Uncomment to enable local affinity
-            // .WithPoisonOnRemoteTraffic(0.1f)
-            // .WithPidCacheInvalidation()
-        );
+                //TODO: Uncomment to enable local affinity
+                // .WithPoisonOnRemoteTraffic(0.1f)
+                // .WithPidCacheInvalidation()
+            );
+    }
 
     //TODO: Uncomment to enable local affinity
     // .WithMemberStrategyBuilder((cluster, kind) => {
@@ -139,11 +146,15 @@ class Program
     //     }
     // );
 
-    private static IClusterProvider GetClusterProvider() =>
-        new ConsulProvider(new ConsulProviderConfig());
+    private static IClusterProvider GetClusterProvider()
+    {
+        return new ConsulProvider(new ConsulProviderConfig());
+    }
 
-    private static IIdentityStorage GetIdentityLookup(string clusterName) =>
-        new RedisIdentityStorage(clusterName, ConnectionMultiplexer
+    private static IIdentityStorage GetIdentityLookup(string clusterName)
+    {
+        return new RedisIdentityStorage(clusterName, ConnectionMultiplexer
             .Connect("localhost:6379" /* use proper config */)
         );
+    }
 }

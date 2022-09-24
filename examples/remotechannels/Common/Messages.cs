@@ -1,3 +1,5 @@
 ﻿namespace Common;
 
-public record MyMessage(int Value){}
+public record MyMessage(int Value)
+{
+}

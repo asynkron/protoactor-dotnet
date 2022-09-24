@@ -6,7 +6,7 @@ namespace EventStream;
 //define some form of message
 public record SomeMessage(string Name);
 
-class Program
+internal class Program
 {
     private static void Main()
     {

@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Proto.Persistence.MongoDB\Proto.Persistence.MongoDB.csproj" />
-    <ProjectReference Include="..\..\..\src\Proto.Persistence.Sqlite\Proto.Persistence.Sqlite.csproj" />
-    <ProjectReference Include="..\Messages\Messages.csproj" />
-  </ItemGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\Proto.Persistence.MongoDB\Proto.Persistence.MongoDB.csproj"/>
+        <ProjectReference Include="..\..\..\src\Proto.Persistence.Sqlite\Proto.Persistence.Sqlite.csproj"/>
+        <ProjectReference Include="..\Messages\Messages.csproj"/>
+    </ItemGroup>
 </Project>

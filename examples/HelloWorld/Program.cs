@@ -3,13 +3,14 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
 
 namespace HelloWorld;
 
-class Program
+internal class Program
 {
     private static void Main(string[] args)
     {
@@ -23,7 +24,10 @@ class Program
     //Messages should be immutable to prevent race conditions between multiple actors
     private class Hello
     {
-        public Hello(string who) => Who = who;
+        public Hello(string who)
+        {
+            Who = who;
+        }
 
         public string Who { get; }
     }
@@ -34,7 +38,12 @@ class Program
         public Task ReceiveAsync(IContext context)
         {
             var msg = context.Message;
-            if (msg is Hello r) Console.WriteLine($"Hello {r.Who}");
+
+            if (msg is Hello r)
+            {
+                Console.WriteLine($"Hello {r.Who}");
+            }
+
             return Task.CompletedTask;
         }
     }

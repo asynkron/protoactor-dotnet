@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 using KafkaVirtualActorIngress.Messages;
 using Proto;
@@ -15,13 +16,16 @@ public class DeviceActor : IActor
     private string _deviceId;
     private DeviceState _state;
 
-    public Task ReceiveAsync(IContext context) => context.Message switch
+    public Task ReceiveAsync(IContext context)
     {
-        Started _           => OnStarted(context),
-        SomeMessage sm      => OnSomeMessage(context, sm),
-        SomeOtherMessage sm => OnSomeOtherMessage(context, sm),
-        _                   => Task.CompletedTask
-    };
+        return context.Message switch
+        {
+            Started _           => OnStarted(context),
+            SomeMessage sm      => OnSomeMessage(context, sm),
+            SomeOtherMessage sm => OnSomeOtherMessage(context, sm),
+            _                   => Task.CompletedTask
+        };
+    }
 
     private async Task OnSomeOtherMessage(IContext context, SomeOtherMessage sm)
     {
@@ -54,10 +58,12 @@ public class DeviceActor : IActor
         return Task.CompletedTask;
     }
 
-    private Task SaveState() =>
-        //TODO: write _state to some db
+    private Task SaveState()
+    {
         //db.save(_deviceId, _state);
-        Task.CompletedTask;
+        //TODO: write _state to some db
+        return Task.CompletedTask;
+    }
 
     private async Task OnStarted(IContext ctx)
     {
@@ -70,6 +76,7 @@ public class DeviceActor : IActor
         //TODO: get from database
         //fake db call;
         await Task.Yield();
+
         return new DeviceState();
     }
 }

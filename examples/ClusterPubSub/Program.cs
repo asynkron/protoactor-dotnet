@@ -13,9 +13,9 @@ using Proto.Timers;
 
 namespace ClusterPubSub;
 
-static class Program
+internal static class Program
 {
-    static async Task Main()
+    private static async Task Main()
     {
         Log.SetLoggerFactory(LoggerFactory.Create(l =>
                 l.AddConsole().SetMinimumLevel(LogLevel.Information)
@@ -24,7 +24,7 @@ static class Program
 
         var system = GetSystem();
         var cluster = system.Cluster();
-        
+
         await cluster.StartMemberAsync();
 
         for (var i = 0; i < 3; i++)
@@ -37,44 +37,65 @@ static class Program
         await cluster.ShutdownAsync();
     }
 
-    private static ActorSystem GetSystem() => new ActorSystem()
-        .WithRemote(GetRemoteConfig())
-        .WithCluster(GetClusterConfig());
+    private static ActorSystem GetSystem()
+    {
+        return new ActorSystem()
+            .WithRemote(GetRemoteConfig())
+            .WithCluster(GetClusterConfig());
+    }
 
-    private static GrpcNetRemoteConfig GetRemoteConfig() => GrpcNetRemoteConfig
-        .BindToLocalhost()
-        .WithProtoMessages(ProtosReflection.Descriptor);
+    private static GrpcNetRemoteConfig GetRemoteConfig()
+    {
+        return GrpcNetRemoteConfig
+            .BindToLocalhost()
+            .WithProtoMessages(ProtosReflection.Descriptor);
+    }
 
     private static ClusterConfig GetClusterConfig()
     {
         var clusterConfig =
             ClusterConfig
-                .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()), new PartitionIdentityLookup())
-                .WithClusterKind(UserActorActor.Kind, Props.FromProducer(() => new UserActorActor((c, _) => new User(c))));
+                .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()),
+                    new PartitionIdentityLookup())
+                .WithClusterKind(UserActorActor.Kind,
+                    Props.FromProducer(() => new UserActorActor((c, _) => new User(c))));
+
         return clusterConfig;
     }
 }
 
 public class User : UserActorBase
 {
-    private CancellationTokenSource _schedule;
     private const string ChatTopic = "chat";
-    
-    public User(IContext context) : base(context) { }
+
+    private static readonly string[] _messages =
+    {
+        "Good day sir!",
+        "Lovely weather, innit?",
+        "How do you do?",
+        "Pardon me!"
+    };
+
+    private CancellationTokenSource _schedule;
+
+    public User(IContext context) : base(context)
+    {
+    }
 
     public override Task Connect()
     {
         _schedule = Context.Scheduler().SendRepeatedly(
-            TimeSpan.FromSeconds(new Random().Next(2, 5)), 
-            Context.Self, 
+            TimeSpan.FromSeconds(new Random().Next(2, 5)),
+            Context.Self,
             new Tick());
-        
+
         return Context.Cluster().Subscribe(ChatTopic, Context.ClusterIdentity()!);
     }
 
     public override Task OnStopping()
     {
         _schedule.Cancel();
+
         return Context.Cluster().Unsubscribe(ChatTopic, Context.ClusterIdentity()!);
     }
 
@@ -85,30 +106,23 @@ public class User : UserActorBase
             case Tick:
                 var message = _messages[new Random().Next(0, _messages.Length)];
                 Console.WriteLine($"{Context.ClusterIdentity()!.Identity} publishes '{message}'");
-                
+
                 _ = Context.Cluster().Publisher().Publish(ChatTopic, new ChatMessage
                 {
-                    Sender = Context.ClusterIdentity()!.Identity, 
+                    Sender = Context.ClusterIdentity()!.Identity,
                     Message = message
                 });
-                
+
                 break;
-            
+
             case ChatMessage msg:
                 Console.WriteLine($"{Context.ClusterIdentity()!.Identity} received '{msg.Message}' from {msg.Sender}");
+
                 break;
         }
 
         return Task.CompletedTask;
     }
-
-    private static string[] _messages = new[]
-    {
-        "Good day sir!",
-        "Lovely weather, innit?",
-        "How do you do?",
-        "Pardon me!"
-    };
 }
 
-record Tick;
+internal record Tick;
