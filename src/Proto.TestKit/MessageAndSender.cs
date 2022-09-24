@@ -3,9 +3,10 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.TestKit;
 
-class MessageAndSender
+internal class MessageAndSender
 {
     public MessageAndSender(ISenderContext context) : this(context.Sender, context.Message)
     {

@@ -3,11 +3,11 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,11 +24,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     private static readonly ILogger Logger = Log.CreateLogger<ActorContext>();
     private static readonly ImmutableHashSet<PID> EmptyChildren = ImmutableHashSet<PID>.Empty;
     private readonly IMailbox _mailbox;
+    private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
     private readonly Props _props;
     private ActorContextExtras? _extras;
     private object? _messageOrEnvelope;
     private ContextState _state;
-    private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
 
     public ActorContext(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)
     {
@@ -46,17 +46,14 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         if (System.Metrics.Enabled)
         {
             _metricTags = new KeyValuePair<string, object?>[]
-                {new("id", System.Id), new("address", System.Address), new("actortype", Actor.GetType().Name)};
+                { new("id", System.Id), new("address", System.Address), new("actortype", Actor.GetType().Name) };
 
             ActorMetrics.ActorSpawnCount.Add(1, _metricTags);
         }
     }
 
-     
-
     public ActorSystem System { get; }
     public CancellationToken CancellationToken => EnsureExtras().CancellationTokenSource.Token;
-    public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
     IReadOnlyCollection<PID> IContext.Children => Children;
 
     public IActor Actor { get; private set; }
@@ -75,27 +72,34 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         if (Sender is not null)
         {
-            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
+            }
 
             SendUserMessage(Sender, message);
         }
         else
+        {
             Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}", Self, message);
+        }
     }
 
     public PID SpawnNamed(Props props, string name, Action<IContext>? callback = null)
     {
         if (props.GuardianStrategy is not null)
+        {
             throw new ArgumentException("Props used to spawn child cannot have GuardianStrategy.");
+        }
 
         try
         {
             var id = name switch
             {
                 "" => System.ProcessRegistry.NextId(),
-                _  => $"{Self.Id}/{name}",
+                _  => $"{Self.Id}/{name}"
             };
-            
+
             var pid = props.Spawn(System, id, Self, callback);
             EnsureExtras().AddChild(pid);
 
@@ -104,31 +108,52 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         catch (Exception x)
         {
             Logger.LogError(x, "{Self} Failed to spawn child actor {Name}", Self, name);
+
             throw;
         }
     }
 
-    public void Watch(PID pid) => pid.SendSystemMessage(System, new Watch(Self));
+    public void Watch(PID pid)
+    {
+        pid.SendSystemMessage(System, new Watch(Self));
+    }
 
-    public void Unwatch(PID pid) => pid.SendSystemMessage(System, new Unwatch(Self));
+    public void Unwatch(PID pid)
+    {
+        pid.SendSystemMessage(System, new Unwatch(Self));
+    }
 
     public void Set<T, TI>(TI obj) where TI : T
     {
-        if (obj is null) throw new NullReferenceException(nameof(obj));
+        if (obj is null)
+        {
+            throw new NullReferenceException(nameof(obj));
+        }
 
         EnsureExtras().Store.Add<T>(obj);
     }
 
-    public void Remove<T>() => _extras?.Store.Remove<T>();
+    public void Remove<T>()
+    {
+        _extras?.Store.Remove<T>();
+    }
 
-    public T? Get<T>() => (T?) _extras?.Store.Get<T>();
+    public T? Get<T>()
+    {
+        return (T?)_extras?.Store.Get<T>();
+    }
 
     public void SetReceiveTimeout(TimeSpan duration)
     {
         if (duration <= TimeSpan.Zero)
+        {
             throw new ArgumentOutOfRangeException(nameof(duration), duration, "Duration must be greater than zero");
+        }
 
-        if (duration == ReceiveTimeout) return;
+        if (duration == ReceiveTimeout)
+        {
+            return;
+        }
 
         ReceiveTimeout = duration;
 
@@ -141,12 +166,18 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
                 new Timer(ReceiveTimeoutCallback, null, ReceiveTimeout, ReceiveTimeout)
             );
         }
-        else extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
+        else
+        {
+            extras.ResetReceiveTimeoutTimer(ReceiveTimeout);
+        }
     }
 
     public void CancelReceiveTimeout()
     {
-        if (_extras?.ReceiveTimeoutTimer is null) return;
+        if (_extras?.ReceiveTimeoutTimer is null)
+        {
+            return;
+        }
 
         _extras.StopReceiveTimeoutTimer();
         _extras.KillReceiveTimeoutTimer();
@@ -154,7 +185,10 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         ReceiveTimeout = TimeSpan.Zero;
     }
 
-    public void Send(PID target, object message) => SendUserMessage(target, message);
+    public void Send(PID target, object message)
+    {
+        SendUserMessage(target, message);
+    }
 
     public void Forward(PID target)
     {
@@ -162,12 +196,15 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         {
             case null:
                 Logger.LogWarning("Message is null");
+
                 return;
             case SystemMessage _:
                 Logger.LogWarning("SystemMessage cannot be forwarded. {Message}", _messageOrEnvelope);
+
                 return;
             default:
                 SendUserMessage(target, _messageOrEnvelope);
+
                 break;
         }
     }
@@ -181,21 +218,27 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     //why does this method exist here and not as an extension?
     //because DecoratorContexts needs to go this way if we want to intercept this method for the context
     public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-        => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
+    {
+        return SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
+    }
 
     /// <summary>
-    /// Calls the callback on token cancellation. If CancellationToken is non-cancellable, this is a noop.
+    ///     Calls the callback on token cancellation. If CancellationToken is non-cancellable, this is a noop.
     /// </summary>
     public void ReenterAfterCancellation(CancellationToken token, Action onCancelled)
     {
         if (token.IsCancellationRequested)
         {
             ReenterAfter(Task.CompletedTask, onCancelled);
+
             return;
         }
 
         // Noop
-        if (!token.CanBeCanceled) return;
+        if (!token.CanBeCanceled)
+        {
+            return;
+        }
 
         var tcs = new TaskCompletionSource<bool>();
         var registration = token.Register(() => tcs.SetResult(true));
@@ -203,7 +246,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         // Ensures registration is disposed with the actor
         var inceptionRegistration = CancellationToken.Register(() => registration.Dispose());
 
-        ReenterAfter(tcs.Task, () => {
+        ReenterAfter(tcs.Task, () =>
+            {
                 inceptionRegistration.Dispose();
                 onCancelled();
             }
@@ -223,8 +267,10 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         var msg = _messageOrEnvelope;
 
         var cont = new Continuation(
-            () => {
+            () =>
+            {
                 action();
+
                 return Task.CompletedTask;
             },
             msg,
@@ -232,14 +278,16 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
         ScheduleContinuation(target, cont);
     }
-    
+
     public void ReenterAfter(Task target, Action<Task> action)
     {
         var msg = _messageOrEnvelope;
 
         var cont = new Continuation(
-            () => {
+            () =>
+            {
                 action(target);
+
                 return Task.CompletedTask;
             },
             msg,
@@ -247,8 +295,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
         ScheduleContinuation(target, cont);
     }
-    
-    public void ReenterAfter(Task target, Func<Task,Task> action)
+
+    public void ReenterAfter(Task target, Func<Task, Task> action)
     {
         var msg = _messageOrEnvelope;
 
@@ -263,19 +311,73 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     public Task Receive(MessageEnvelope envelope)
     {
         _messageOrEnvelope = envelope;
+
         return DefaultReceive();
     }
 
-    public IFuture GetFuture() => System.Future.Get();
+    public IFuture GetFuture()
+    {
+        return System.Future.Get();
+    }
+
+    public CapturedContext Capture()
+    {
+        return new(MessageEnvelope.Wrap(_messageOrEnvelope!), this);
+    }
+
+    public void Apply(CapturedContext capturedContext)
+    {
+        _messageOrEnvelope = capturedContext.MessageEnvelope;
+    }
+
+    public void Stop(PID pid)
+    {
+        if (System.Metrics.Enabled)
+        {
+            ActorMetrics.ActorStoppedCount.Add(1, _metricTags);
+        }
+
+        pid.Stop(System);
+    }
+
+    public Task StopAsync(PID pid)
+    {
+        var future = System.Future.Get();
+
+        pid.SendSystemMessage(System, new Watch(future.Pid));
+        Stop(pid);
+
+        return future.Task;
+    }
+
+    public void Poison(PID pid)
+    {
+        pid.SendUserMessage(System, PoisonPill.Instance);
+    }
+
+    public Task PoisonAsync(PID pid)
+    {
+        var future = System.Future.Get();
+
+        pid.SendSystemMessage(System, new Watch(future.Pid));
+        Poison(pid);
+
+        return future.Task;
+    }
+
+    public CancellationTokenSource? CancellationTokenSource => _extras?.CancellationTokenSource;
 
     public void EscalateFailure(Exception reason, object? message)
     {
         reason.CheckFailFast();
-        
+
         if (System.Config.DeveloperSupervisionLogging)
         {
-            Console.WriteLine($"[Supervision] Actor {Self} : {Actor.GetType().Name} failed with message:{message} exception:{reason}");
-            Logger.LogError(reason, "[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}", Self,
+            Console.WriteLine(
+                $"[Supervision] Actor {Self} : {Actor.GetType().Name} failed with message:{message} exception:{reason}");
+
+            Logger.LogError(reason,
+                "[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}", Self,
                 Actor.GetType().Name, message, reason
             );
         }
@@ -285,9 +387,13 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         Self.SendSystemMessage(System, SuspendMailbox.Instance);
 
         if (Parent is null)
+        {
             HandleRootFailure(failure);
+        }
         else
+        {
             Parent.SendSystemMessage(System, failure);
+        }
     }
 
     public ValueTask InvokeSystemMessageAsync(SystemMessage msg)
@@ -313,19 +419,17 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         catch (Exception x)
         {
             Logger.LogError(x, "Error handling SystemMessage {Message}", msg);
+
             throw;
         }
     }
 
-    private async ValueTask HandleReceiveTimeout()
-    {
-        _messageOrEnvelope = Proto.ReceiveTimeout.Instance;
-        await DefaultReceive();
-    }
-
     public ValueTask InvokeUserMessageAsync(object msg)
     {
-        if (!System.Metrics.Enabled) return InternalInvokeUserMessageAsync(msg);
+        if (!System.Metrics.Enabled)
+        {
+            return InternalInvokeUserMessageAsync(msg);
+        }
 
         return Await(this, msg, _metricTags);
 
@@ -348,7 +452,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             {
                 ActorMetrics.ActorMessageReceiveDuration.Record(sw.Elapsed.TotalSeconds,
                     metricTags[0], metricTags[1], metricTags[2],
-                    new("messagetype", MessageEnvelope.UnwrapMessage(msg)?.GetType().Name ?? "{null}")
+                    new KeyValuePair<string, object?>("messagetype",
+                        MessageEnvelope.UnwrapMessage(msg)?.GetType().Name ?? "{null}")
                 );
             }
         }
@@ -356,12 +461,26 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
 
-    public void RestartChildren(Exception reason, params PID[] pids) =>
+    public void RestartChildren(Exception reason, params PID[] pids)
+    {
         pids.SendSystemMessage(new Restart(reason), System);
+    }
 
-    public void StopChildren(params PID[] pids) => pids.SendSystemMessage(Proto.Stop.Instance, System);
+    public void StopChildren(params PID[] pids)
+    {
+        pids.SendSystemMessage(Proto.Stop.Instance, System);
+    }
 
-    public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
+    public void ResumeChildren(params PID[] pids)
+    {
+        pids.SendSystemMessage(ResumeMailbox.Instance, System);
+    }
+
+    private async ValueTask HandleReceiveTimeout()
+    {
+        _messageOrEnvelope = Proto.ReceiveTimeout.Instance;
+        await DefaultReceive();
+    }
 
     private ValueTask HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
     {
@@ -389,6 +508,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         {
             //already stopped, send message to deadletter process
             System.DeadLetter.SendUserMessage(Self, msg);
+
             return default;
         }
 
@@ -404,11 +524,15 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
         //slow path, there is middleware, message must be wrapped in an envelope
         if (_props.ReceiverMiddlewareChain is not null)
+        {
             t = _props.ReceiverMiddlewareChain(EnsureExtras().Context, MessageEnvelope.Wrap(msg));
+        }
         else
         {
             if (_props.ContextDecoratorChain is not null)
+            {
                 t = EnsureExtras().Context.Receive(MessageEnvelope.Wrap(msg));
+            }
             else
             {
                 _messageOrEnvelope = msg;
@@ -442,8 +566,10 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
     }
 
-    public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox) =>
-        new(system, props, parent, self, mailbox);
+    public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)
+    {
+        return new(system, props, parent, self, mailbox);
+    }
 
     //Note to self, the message must be sent no-matter if the task failed or not.
     //do not mess this up by first awaiting and then sending on success only
@@ -465,7 +591,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
                 ctx.Self.SendSystemMessage(ctx.System, cont);
             }
         }
-      
+
         // We pass System.Shutdown to ContinueWith so that when the ActorSystem is shutdown,
         // continuations will not execute anymore.
         // ReSharper disable once MethodSupportsCancellation
@@ -476,6 +602,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         //TODO: sounds like a pretty severe issue if we end up here? what todo?
         Logger.LogWarning("Unknown system message {Message}", msg);
+
         return default;
     }
 
@@ -484,7 +611,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         // Don't execute the continuation if the actor instance changed.
         // Without this, Continuation's Action closure would execute with
         // an older Actor instance.
-        if (cont.Actor != Actor && cont is not {Actor: null})
+        if (cont.Actor != Actor && cont is not { Actor: null })
         {
             if (Logger.IsEnabled(LogLevel.Warning))
             {
@@ -504,7 +631,10 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     private ActorContextExtras EnsureExtras()
     {
-        if (_extras is not null) return _extras;
+        if (_extras is not null)
+        {
+            return _extras;
+        }
 
         var context = _props.ContextDecoratorChain?.Invoke(this) ?? this;
         _extras = new ActorContextExtras(context);
@@ -513,13 +643,15 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Task DefaultReceive() =>
-        Message switch
+    private Task DefaultReceive()
+    {
+        return Message switch
         {
-            PoisonPill               => HandlePoisonPill(),
+            PoisonPill => HandlePoisonPill(),
             IAutoRespond autoRespond => HandleAutoRespond(autoRespond),
-            _                        => Actor.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this)
+            _ => Actor.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this)
         };
+    }
 
     private Task HandleAutoRespond(IAutoRespond autoRespond)
     {
@@ -528,6 +660,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         //then respond automatically
         var response = autoRespond.GetAutoResponse(this);
         Respond(response);
+
         //return task from receive
         return res;
     }
@@ -535,6 +668,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     private Task HandlePoisonPill()
     {
         Stop(Self);
+
         return Task.CompletedTask;
     }
 
@@ -555,6 +689,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     private IActor IncarnateActor()
     {
         _state = ContextState.Alive;
+
         return _props.Producer(System, this);
     }
 
@@ -566,21 +701,28 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         await StopAllChildren();
 
         if (System.Metrics.Enabled)
+        {
             ActorMetrics.ActorRestartedCount.Add(1, _metricTags);
+        }
     }
 
     private ValueTask HandleUnwatch(Unwatch uw)
     {
         _extras?.Unwatch(uw.Watcher);
+
         return default;
     }
 
     private ValueTask HandleWatch(Watch w)
     {
         if (_state >= ContextState.Stopping)
+        {
             w.Watcher.SendSystemMessage(System, Terminated.From(Self, TerminatedReason.Stopped));
+        }
         else
+        {
             EnsureExtras().Watch(w.Watcher);
+        }
 
         return default;
     }
@@ -593,12 +735,14 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             // ReSharper disable once SuspiciousTypeConversion.Global
             case ISupervisorStrategy supervisor:
                 supervisor.HandleFailure(this, msg.Who, msg.RestartStatistics, msg.Reason, msg.Message);
+
                 break;
             default:
                 _props.SupervisorStrategy.HandleFailure(
                     this, msg.Who, msg.RestartStatistics, msg.Reason,
                     msg.Message
                 );
+
                 break;
         }
 
@@ -613,14 +757,19 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         _extras?.RemoveChild(msg.Who);
         await InvokeUserMessageAsync(msg);
 
-        if (_state is ContextState.Stopping or ContextState.Restarting) await TryRestartOrStopAsync();
+        if (_state is ContextState.Stopping or ContextState.Restarting)
+        {
+            await TryRestartOrStopAsync();
+        }
     }
 
     private void HandleRootFailure(Failure failure)
-        => Supervision.DefaultStrategy.HandleFailure(
+    {
+        Supervision.DefaultStrategy.HandleFailure(
             this, failure.Who, failure.RestartStatistics, failure.Reason,
             failure.Message
         );
+    }
 
     //Initiate stopping, not final
     private ValueTask HandleStopAsync()
@@ -669,7 +818,10 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     //this is directly triggered by StopAllChildren, or by Terminated messages from stopping children
     private ValueTask TryRestartOrStopAsync()
     {
-        if (_extras?.Children.Count > 0) return default;
+        if (_extras?.Children.Count > 0)
+        {
+            return default;
+        }
 
         CancelReceiveTimeout();
 
@@ -719,6 +871,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
                 return asyncDisposableActor.DisposeAsync();
             case IDisposable disposableActor:
                 disposableActor.Dispose();
+
                 break;
         }
 
@@ -727,41 +880,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     private void ReceiveTimeoutCallback(object? state)
     {
-        if (_extras?.ReceiveTimeoutTimer is null) return;
+        if (_extras?.ReceiveTimeoutTimer is null)
+        {
+            return;
+        }
 
-        
         Self.SendSystemMessage(System, Proto.ReceiveTimeout.Instance);
-    }
-
-    public CapturedContext Capture() => new(MessageEnvelope.Wrap(_messageOrEnvelope!), this);
-
-    public void Apply(CapturedContext capturedContext) => _messageOrEnvelope = capturedContext.MessageEnvelope;
-
-    public void Stop(PID pid)
-    {
-        if (System.Metrics.Enabled)
-            ActorMetrics.ActorStoppedCount.Add(1, _metricTags);
-
-        pid.Stop(System);
-    }
-
-    public Task StopAsync(PID pid)
-    {
-        var future = System.Future.Get();
-
-        pid.SendSystemMessage(System, new Watch(future.Pid));
-        Stop(pid);
-        return future.Task;
-    }
-
-    public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
-
-    public Task PoisonAsync(PID pid)
-    {
-        var future = System.Future.Get();
-
-        pid.SendSystemMessage(System, new Watch(future.Pid));
-        Poison(pid);
-        return future.Task;
     }
 }

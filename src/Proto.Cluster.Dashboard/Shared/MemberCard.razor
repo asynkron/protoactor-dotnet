@@ -1,4 +1,3 @@
-@using MudBlazor
 <style scoped>
     .member-card {
         cursor: pointer;
@@ -13,7 +12,9 @@
         </CardHeaderAvatar>
         <CardHeaderContent>
             <MudText Typo="Typo.h5" Color="Color.Info">Member @Member.Id</MudText>
-            <MudText Typo="Typo.body2"><b>Address:</b> @Member.Address</MudText>
+            <MudText Typo="Typo.body2">
+                <b>Address:</b> @Member.Address
+            </MudText>
         </CardHeaderContent>
         @* <CardHeaderActions> *@
         @*     <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default"/> *@
@@ -29,7 +30,9 @@
         </MudChipSet>
     </MudCardActions>
 </MudCard>
+
 @code {
+
     [Parameter]
     public Member Member { get; set; } = null!;
 
@@ -38,7 +41,7 @@
 
     [Parameter]
     public bool Outlined { get; set; } = true;
-    
+
     [Parameter]
     public bool Square { get; set; } = false;
 

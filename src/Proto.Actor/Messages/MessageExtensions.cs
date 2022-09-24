@@ -3,14 +3,17 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto;
 
 public partial class Terminated
 {
     public static Terminated From(PID who, TerminatedReason why)
-        => new()
+    {
+        return new()
         {
             Who = who,
             why_ = why
         };
+    }
 }

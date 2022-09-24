@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,19 +14,19 @@ using Microsoft.Extensions.Logging;
 namespace Proto.Logging;
 
 /// <summary>
-/// Stores and queries log entries created by the <see cref="InstanceLogger"/>
+///     Stores and queries log entries created by the <see cref="InstanceLogger" />
 /// </summary>
 [PublicAPI]
 public class LogStore
 {
-    private readonly object _lock = new();
     private readonly List<LogStoreEntry> _entries = new();
+    private readonly object _lock = new();
 
     public void Append(LogLevel logLevel, string category, string template, Exception? x, params object[] args)
     {
         lock (_lock)
         {
-            _entries.Add(new LogStoreEntry(_entries.Count, DateTimeOffset.Now, logLevel, category, template,x, args));
+            _entries.Add(new LogStoreEntry(_entries.Count, DateTimeOffset.Now, logLevel, category, template, x, args));
         }
     }
 
@@ -41,16 +42,20 @@ public class LogStore
     {
         lock (_lock)
         {
-            var entry = GetEntries().FirstOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+            var entry = GetEntries()
+                .FirstOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+
             return entry;
         }
     }
-        
+
     public LogStoreEntry? FindLastEntry(string partialTemplate)
     {
         lock (_lock)
         {
-            var entry = GetEntries().LastOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+            var entry = GetEntries()
+                .LastOrDefault(e => e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+
             return entry;
         }
     }
@@ -59,16 +64,22 @@ public class LogStore
     {
         lock (_lock)
         {
-            var entry = GetEntries().FirstOrDefault(e => e.Category.Contains(partialCategory, StringComparison.InvariantCulture) && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+            var entry = GetEntries().FirstOrDefault(e =>
+                e.Category.Contains(partialCategory, StringComparison.InvariantCulture) &&
+                e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+
             return entry;
         }
     }
-        
+
     public LogStoreEntry? FindLastEntryByCategory(string partialCategory, string partialTemplate)
     {
         lock (_lock)
         {
-            var entry = GetEntries().LastOrDefault(e => e.Category.Contains(partialCategory, StringComparison.InvariantCulture) && e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+            var entry = GetEntries().LastOrDefault(e =>
+                e.Category.Contains(partialCategory, StringComparison.InvariantCulture) &&
+                e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+
             return entry;
         }
     }
@@ -80,7 +91,6 @@ public class LogStore
             _entries.Clear();
         }
     }
-
 
     public string ToFormattedString()
     {

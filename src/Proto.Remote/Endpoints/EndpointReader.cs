@@ -35,7 +35,9 @@ public sealed class EndpointReader : Remoting.RemotingBase
     {
         if (_endpointManager.CancellationToken.IsCancellationRequested)
         {
-            Logger.LogWarning("[EndpointReader][{SystemAddress}] Attempt to connect to the suspended reader has been rejected", _system.Address);
+            Logger.LogWarning(
+                "[EndpointReader][{SystemAddress}] Attempt to connect to the suspended reader has been rejected",
+                _system.Address);
 
             throw new RpcException(Status.DefaultCancelled, "Suspended");
         }
@@ -48,12 +50,15 @@ public sealed class EndpointReader : Remoting.RemotingBase
                 {
                     DisconnectRequest = new DisconnectRequest()
                 };
+
                 await responseStream.WriteAsync(disconnectMsg).ConfigureAwait(false);
             }
             catch (Exception x)
             {
                 x.CheckFailFast();
-                Logger.LogWarning("[EndpointReader][{SystemAddress}] Failed to write disconnect message to the stream", _system.Address);
+
+                Logger.LogWarning("[EndpointReader][{SystemAddress}] Failed to write disconnect message to the stream",
+                    _system.Address);
             }
         }
 
@@ -62,8 +67,9 @@ public sealed class EndpointReader : Remoting.RemotingBase
             IEndpoint endpoint;
             string? address = null;
             string systemId;
-            
-            Logger.LogInformation("[EndpointReader][{SystemAddress}] Accepted connection request from {Remote} to {Local}",
+
+            Logger.LogInformation(
+                "[EndpointReader][{SystemAddress}] Accepted connection request from {Remote} to {Local}",
                 _system.Address, context.Peer, context.Host
             );
 
@@ -79,12 +85,16 @@ public sealed class EndpointReader : Remoting.RemotingBase
 
             switch (connectRequest.ConnectionTypeCase)
             {
-                case ConnectRequest.ConnectionTypeOneofCase.ClientConnection: {
+                case ConnectRequest.ConnectionTypeOneofCase.ClientConnection:
+                {
                     var clientConnection = connectRequest.ClientConnection;
 
                     if (_system.Remote().BlockList.IsBlocked(clientConnection.MemberId))
                     {
-                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected", _system.Address);
+                        Logger.LogWarning(
+                            "[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected",
+                            _system.Address);
+
                         await responseStream.WriteAsync(new RemoteMessage
                             {
                                 ConnectResponse = new ConnectResponse
@@ -94,6 +104,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
                                 }
                             }
                         ).ConfigureAwait(false);
+
                         return;
                     }
 
@@ -105,19 +116,30 @@ public sealed class EndpointReader : Remoting.RemotingBase
                             }
                         }
                     ).ConfigureAwait(false);
+
                     systemId = clientConnection.MemberId;
                     endpoint = _endpointManager.GetOrAddClientEndpoint(systemId);
-                    _ = Task.Run(async () => { await RunClientWriter(responseStream, cancellationTokenSource, endpoint, systemId); });
+
+                    _ = Task.Run(async () =>
+                    {
+                        await RunClientWriter(responseStream, cancellationTokenSource, endpoint, systemId);
+                    });
                 }
+
                     break;
-                case ConnectRequest.ConnectionTypeOneofCase.ServerConnection: {
+                case ConnectRequest.ConnectionTypeOneofCase.ServerConnection:
+                {
                     var serverConnection = connectRequest.ServerConnection;
                     var shouldExit = false;
                     var blocked = serverConnection.BlockList.ToHashSet();
 
                     if (_system.Remote().BlockList.IsBlocked(serverConnection.MemberId))
                     {
-                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, they are blocked", _system.Address, connectRequest.ServerConnection.MemberId, connectRequest.ServerConnection.Address);
+                        Logger.LogWarning(
+                            "[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, they are blocked",
+                            _system.Address, connectRequest.ServerConnection.MemberId,
+                            connectRequest.ServerConnection.Address);
+
                         await responseStream.WriteAsync(new RemoteMessage
                             {
                                 ConnectResponse = new ConnectResponse
@@ -127,12 +149,17 @@ public sealed class EndpointReader : Remoting.RemotingBase
                                 }
                             }
                         ).ConfigureAwait(false);
+
                         shouldExit = true;
                     }
 
                     if (blocked.Contains(_system.Id))
                     {
-                        Logger.LogWarning("[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, we are blocked", _system.Address, connectRequest.ServerConnection.MemberId, connectRequest.ServerConnection.Address);
+                        Logger.LogWarning(
+                            "[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, we are blocked",
+                            _system.Address, connectRequest.ServerConnection.MemberId,
+                            connectRequest.ServerConnection.Address);
+
                         shouldExit = true;
                     }
 
@@ -154,10 +181,12 @@ public sealed class EndpointReader : Remoting.RemotingBase
                             }
                         }
                     ).ConfigureAwait(false);
+
                     address = serverConnection.Address;
                     systemId = serverConnection.MemberId;
                     endpoint = _endpointManager.GetOrAddServerEndpoint(address);
                 }
+
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -167,13 +196,15 @@ public sealed class EndpointReader : Remoting.RemotingBase
         }
     }
 
-    private async Task RunReader(IAsyncStreamReader<RemoteMessage> requestStream, string? address, CancellationTokenSource cancellationTokenSource, string systemId)
+    private async Task RunReader(IAsyncStreamReader<RemoteMessage> requestStream, string? address,
+        CancellationTokenSource cancellationTokenSource, string systemId)
     {
         try
         {
             while (await requestStream.MoveNext(CancellationToken.None).ConfigureAwait(false))
             {
                 var currentMessage = requestStream.Current;
+
                 if (_endpointManager.CancellationToken.IsCancellationRequested)
                 {
                     continue;
@@ -193,14 +224,16 @@ public sealed class EndpointReader : Remoting.RemotingBase
         }
     }
 
-    private async Task RunClientWriter(IAsyncStreamWriter<RemoteMessage> responseStream, CancellationTokenSource cancellationTokenSource, IEndpoint endpoint, string systemId)
+    private async Task RunClientWriter(IAsyncStreamWriter<RemoteMessage> responseStream,
+        CancellationTokenSource cancellationTokenSource, IEndpoint endpoint, string systemId)
     {
         try
         {
             while (!cancellationTokenSource.Token.IsCancellationRequested)
             {
                 //consume stash
-                while (!cancellationTokenSource.Token.IsCancellationRequested && endpoint.OutgoingStash.TryPop(out var message))
+                while (!cancellationTokenSource.Token.IsCancellationRequested &&
+                       endpoint.OutgoingStash.TryPop(out var message))
                 {
                     try
                     {
@@ -209,6 +242,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
                     catch (Exception)
                     {
                         _ = endpoint.OutgoingStash.Append(message);
+
                         throw;
                     }
                 }
@@ -216,7 +250,8 @@ public sealed class EndpointReader : Remoting.RemotingBase
                 //
                 while (endpoint.OutgoingStash.IsEmpty && !cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    var message = await endpoint.Outgoing.Reader.ReadAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+                    var message = await endpoint.Outgoing.Reader.ReadAsync(cancellationTokenSource.Token)
+                        .ConfigureAwait(false);
 
                     try
                     {
@@ -226,6 +261,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
                     catch (Exception)
                     {
                         _ = endpoint.OutgoingStash.Append(message);
+
                         throw;
                     }
                 }
@@ -233,12 +269,15 @@ public sealed class EndpointReader : Remoting.RemotingBase
         }
         catch (OperationCanceledException)
         {
-            Logger.LogDebug("[EndpointReader][{SystemAddress}] Writer closed for {SystemId}", _system.Address, systemId);
+            Logger.LogDebug("[EndpointReader][{SystemAddress}] Writer closed for {SystemId}", _system.Address,
+                systemId);
         }
         catch (Exception e)
         {
             e.CheckFailFast();
-            Logger.LogWarning(e, "[EndpointReader][{SystemAddress}] Writing error to {SystemId}", _system.Address, systemId);
+
+            Logger.LogWarning(e, "[EndpointReader][{SystemAddress}] Writing error to {SystemId}", _system.Address,
+                systemId);
         }
     }
 
@@ -251,29 +290,35 @@ public sealed class EndpointReader : Remoting.RemotingBase
 
         switch (request.Type)
         {
-            case ListProcessesMatchType.MatchPartOfString: {
+            case ListProcessesMatchType.MatchPartOfString:
+            {
                 var pids = _system.ProcessRegistry.Find(request.Pattern).ToArray();
-                return Task.FromResult(new ListProcessesResponse()
+
+                return Task.FromResult(new ListProcessesResponse
                     {
-                        Pids = {pids}
+                        Pids = { pids }
                     }
                 );
             }
-            case ListProcessesMatchType.MatchExactString: {
+            case ListProcessesMatchType.MatchExactString:
+            {
                 var pids = _system.ProcessRegistry.Find(id => id == request.Pattern).ToArray();
-                return Task.FromResult(new ListProcessesResponse()
+
+                return Task.FromResult(new ListProcessesResponse
                     {
-                        Pids = {pids}
+                        Pids = { pids }
                     }
                 );
             }
-            case ListProcessesMatchType.MatchRegex: {
+            case ListProcessesMatchType.MatchRegex:
+            {
                 var regex = new Regex(request.Pattern);
-                
+
                 var pids = _system.ProcessRegistry.Find(id => regex.IsMatch(id)).ToArray();
-                return Task.FromResult(new ListProcessesResponse()
+
+                return Task.FromResult(new ListProcessesResponse
                     {
-                        Pids = {pids}
+                        Pids = { pids }
                     }
                 );
             }
@@ -292,7 +337,8 @@ public sealed class EndpointReader : Remoting.RemotingBase
         }
 
         var res = await DiagnosticTools.GetDiagnosticsString(_system, request.Pid).ConfigureAwait(false);
-        return new GetProcessDiagnosticsResponse()
+
+        return new GetProcessDiagnosticsResponse
         {
             DiagnosticsString = res
         };

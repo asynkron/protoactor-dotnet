@@ -3,21 +3,20 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using Google.Protobuf;
 using Proto.Mailbox;
 
 namespace Proto;
 
 /// <summary>
-/// PID is a reference to an actor (or any other process). It consists of actor system address and an identifier.
+///     PID is a reference to an actor (or any other process). It consists of actor system address and an identifier.
 /// </summary>
 // ReSharper disable once InconsistentNaming
 public partial class PID : ICustomDiagnosticMessage
 {
-    private Process? _process;
-
     /// <summary>
-    /// Creates a new PID instance from address and identifier.
+    ///     Creates a new PID instance from address and identifier.
     /// </summary>
     /// <param name="address">Actor system address</param>
     /// <param name="id">Actor identifier</param>
@@ -27,33 +26,49 @@ public partial class PID : ICustomDiagnosticMessage
         Id = id;
     }
 
-    internal PID(string address, string id, Process process) : this(address, id) => _process = process;
+    internal PID(string address, string id, Process process) : this(address, id)
+    {
+        CurrentRef = process;
+    }
 
-    public string ToDiagnosticString() => $"{Address}/{Id}";
+    internal Process? CurrentRef { get; private set; }
+
+    public string ToDiagnosticString()
+    {
+        return $"{Address}/{Id}";
+    }
 
     /// <summary>
-    /// Creates a new PID instance from address and identifier.
+    ///     Creates a new PID instance from address and identifier.
     /// </summary>
     /// <param name="address">Actor system address</param>
     /// <param name="id">Actor identifier</param>
-    public static PID FromAddress(string address, string id) => new(address, id);
+    public static PID FromAddress(string address, string id)
+    {
+        return new(address, id);
+    }
 
     internal Process? Ref(ActorSystem system)
     {
-        if (_process is not null)
+        if (CurrentRef is not null)
         {
-            if (_process is ActorProcess {IsDead: true}) _process = null;
+            if (CurrentRef is ActorProcess { IsDead: true })
+            {
+                CurrentRef = null;
+            }
 
-            return _process;
+            return CurrentRef;
         }
 
         var reff = system.ProcessRegistry.Get(this);
-        if (reff is not DeadLetterProcess) _process = reff;
 
-        return _process;
+        if (reff is not DeadLetterProcess)
+        {
+            CurrentRef = reff;
+        }
+
+        return CurrentRef;
     }
-
-    internal Process? CurrentRef => _process;
 
     internal void SendUserMessage(ActorSystem system, object message)
     {
@@ -68,25 +83,28 @@ public partial class PID : ICustomDiagnosticMessage
     }
 
     /// <summary>
-    /// Stops the referenced actor.
+    ///     Stops the referenced actor.
     /// </summary>
     /// <param name="system">Actor system this PID belongs to</param>
     public void Stop(ActorSystem system)
     {
-        var reff = _process ?? system.ProcessRegistry.Get(this);
+        var reff = CurrentRef ?? system.ProcessRegistry.Get(this);
         reff.Stop(this);
     }
 
     /// <summary>
-    /// Used internally to track requests in context of shared futures and future batches.
+    ///     Used internally to track requests in context of shared futures and future batches.
     /// </summary>
     /// <param name="requestId"></param>
     /// <returns></returns>
-    public PID WithRequestId(uint requestId) => new()
+    public PID WithRequestId(uint requestId)
     {
-        Id = Id,
-        Address = Address,
-        _process = _process,
-        RequestId = requestId
-    };
+        return new()
+        {
+            Id = Id,
+            Address = Address,
+            CurrentRef = CurrentRef,
+            RequestId = requestId
+        };
+    }
 }

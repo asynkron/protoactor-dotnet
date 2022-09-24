@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -28,9 +29,15 @@ public sealed class InMemAgent
 
     public event EventHandler StatusUpdate;
 
-    private void OnStatusUpdate(EventArgs e) => StatusUpdate?.Invoke(this, e);
+    private void OnStatusUpdate(EventArgs e)
+    {
+        StatusUpdate?.Invoke(this, e);
+    }
 
-    public AgentServiceStatus[] GetServicesHealth() => _services.Values.ToArray();
+    public AgentServiceStatus[] GetServicesHealth()
+    {
+        return _services.Values.ToArray();
+    }
 
     public void RegisterService(AgentServiceRegistration registration)
     {
@@ -43,6 +50,7 @@ public sealed class InMemAgent
                 Port = registration.Port
             }
         );
+
         OnStatusUpdate(EventArgs.Empty);
     }
 
@@ -55,8 +63,14 @@ public sealed class InMemAgent
     public void RefreshServiceTTL(string id)
     {
         //TODO: this is racy, but yolo for now
-        if (_services.TryGetValue(id, out var service)) service.TTL = DateTimeOffset.Now;
+        if (_services.TryGetValue(id, out var service))
+        {
+            service.TTL = DateTimeOffset.Now;
+        }
     }
 
-    public void ForceUpdate() => OnStatusUpdate(EventArgs.Empty);
+    public void ForceUpdate()
+    {
+        OnStatusUpdate(EventArgs.Empty);
+    }
 }

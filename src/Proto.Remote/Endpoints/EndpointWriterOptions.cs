@@ -16,7 +16,8 @@ public class EndpointWriterOptions
     public int MaxRetries { get; set; } = 8;
 
     /// <summary>
-    ///     The timespan that restarts are counted within, meaning that the retry counter resets after this timespan if no errors.
+    ///     The timespan that restarts are counted within, meaning that the retry counter resets after this timespan if no
+    ///     errors.
     ///     The default value is 3 minutes.
     /// </summary>
     public TimeSpan RetryTimeSpan { get; set; } = TimeSpan.FromMinutes(3);

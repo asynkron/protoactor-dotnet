@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Proto.Mailbox;
 
-static class MailboxStatus
+internal static class MailboxStatus
 {
     public const int Idle = 0;
     public const int Busy = 1;
@@ -31,14 +32,18 @@ public interface IMailbox
 
 public static class BoundedMailbox
 {
-    public static IMailbox Create(int size, params IMailboxStatistics[] stats) =>
-        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new BoundedMailboxQueue(size), stats);
+    public static IMailbox Create(int size, params IMailboxStatistics[] stats)
+    {
+        return new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new BoundedMailboxQueue(size), stats);
+    }
 }
 
 public static class UnboundedMailbox
 {
-    public static IMailbox Create(params IMailboxStatistics[] stats) =>
-        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new UnboundedMailboxQueue(), stats);
+    public static IMailbox Create(params IMailboxStatistics[] stats)
+    {
+        return new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new UnboundedMailboxQueue(), stats);
+    }
 }
 
 public sealed class DefaultMailbox : IMailbox
@@ -82,7 +87,7 @@ public sealed class DefaultMailbox : IMailbox
         _invoker = NoopInvoker.Instance;
     }
 
-    public int Status => (int) Interlocked.Read(ref _status);
+    public int Status => (int)Interlocked.Read(ref _status);
 
     public int UserMessageCount => _userMailbox.Length;
 
@@ -90,9 +95,9 @@ public sealed class DefaultMailbox : IMailbox
     {
         // if the message is a batch message, we unpack the content as individual messages in the mailbox
         // feature Aka: Samkuvertering in Swedish...
-        if (msg is IMessageBatch || msg is MessageEnvelope e && e.Message is IMessageBatch)
+        if (msg is IMessageBatch || (msg is MessageEnvelope e && e.Message is IMessageBatch))
         {
-            var batch = (IMessageBatch) MessageEnvelope.UnwrapMessage(msg)!;
+            var batch = (IMessageBatch)MessageEnvelope.UnwrapMessage(msg)!;
             var messages = batch.GetMessages();
 
             foreach (var message in messages)
@@ -137,7 +142,9 @@ public sealed class DefaultMailbox : IMailbox
         _systemMessages.Push(msg);
 
         if (msg is Stop)
+        {
             _invoker?.CancellationTokenSource?.Cancel();
+        }
 
         foreach (var t in _stats)
         {
@@ -172,7 +179,7 @@ public sealed class DefaultMailbox : IMailbox
 
         Interlocked.Exchange(ref mailbox._status, MailboxStatus.Idle);
 
-        if (mailbox._systemMessages.HasMessages || !mailbox._suspended && mailbox._userMailbox.HasMessages)
+        if (mailbox._systemMessages.HasMessages || (!mailbox._suspended && mailbox._userMailbox.HasMessages))
         {
             mailbox.Schedule();
         }
@@ -192,7 +199,7 @@ public sealed class DefaultMailbox : IMailbox
 
             Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
 
-            if (self._systemMessages.HasMessages || !self._suspended && self._userMailbox.HasMessages)
+            if (self._systemMessages.HasMessages || (!self._suspended && self._userMailbox.HasMessages))
             {
                 self.Schedule();
             }
@@ -240,7 +247,10 @@ public sealed class DefaultMailbox : IMailbox
                     continue;
                 }
 
-                if (_suspended) break;
+                if (_suspended)
+                {
+                    break;
+                }
 
                 msg = _userMailbox.Pop();
 
@@ -259,7 +269,9 @@ public sealed class DefaultMailbox : IMailbox
                     }
                 }
                 else
+                {
                     break;
+                }
             }
         }
         catch (Exception e)
@@ -301,9 +313,7 @@ public sealed class DefaultMailbox : IMailbox
         }
     }
 
-
-
-#if NET5_0_OR_GREATER    
+#if NET5_0_OR_GREATER
     public void Execute()
     {
         _ = RunAsync(this);
@@ -312,7 +322,7 @@ public sealed class DefaultMailbox : IMailbox
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void RunWrapper(object state)
     {
-        var y = (DefaultMailbox) state;
+        var y = (DefaultMailbox)state;
         RunAsync(y);
     }
 #endif

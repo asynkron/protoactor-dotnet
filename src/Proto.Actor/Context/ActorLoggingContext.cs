@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,19 +21,23 @@ public static class ActorLoggingContextExtensions
         LogLevel logLevel = LogLevel.Debug,
         LogLevel infrastructureLogLevel = LogLevel.None,
         LogLevel exceptionLogLevel = LogLevel.Error
-    ) =>
-        props.WithContextDecorator(ctx => new ActorLoggingContext(ctx, logger, logLevel, infrastructureLogLevel, exceptionLogLevel));
+    )
+    {
+        return props.WithContextDecorator(ctx =>
+            new ActorLoggingContext(ctx, logger, logLevel, infrastructureLogLevel, exceptionLogLevel));
+    }
 }
 
 /// <summary>
-/// A decorator for <see cref="Proto.Context.ActorContext"/> that logs events related to message delivery to the actor.
+///     A decorator for <see cref="Proto.Context.ActorContext" /> that logs events related to message delivery to the
+///     actor.
 /// </summary>
 public class ActorLoggingContext : ActorContextDecorator
 {
+    private readonly LogLevel _exceptionLogLevel;
+    private readonly LogLevel _infrastructureLogLevel;
     private readonly ILogger _logger;
     private readonly LogLevel _logLevel;
-    private readonly LogLevel _infrastructureLogLevel;
-    private readonly LogLevel _exceptionLogLevel;
 
     public ActorLoggingContext(
         IContext context,
@@ -48,6 +53,8 @@ public class ActorLoggingContext : ActorContextDecorator
         _exceptionLogLevel = exceptionLogLevel;
     }
 
+    private string ActorType => Actor?.GetType().Name ?? "None";
+
     public override async Task Receive(MessageEnvelope envelope)
     {
         var message = envelope.Message;
@@ -56,8 +63,9 @@ public class ActorLoggingContext : ActorContextDecorator
 
         if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
         {
-            _logger.Log(logLevel, "Actor {Self} {ActorType} received message {MessageType}:{Message} from {Sender}", Self, ActorType, message.GetType().Name,
-                message, 
+            _logger.Log(logLevel, "Actor {Self} {ActorType} received message {MessageType}:{Message} from {Sender}",
+                Self, ActorType, message.GetType().Name,
+                message,
                 SenderOrNone(envelope)
             );
         }
@@ -68,7 +76,8 @@ public class ActorLoggingContext : ActorContextDecorator
 
             if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
             {
-                _logger.Log(logLevel, "Actor {Self} {ActorType} completed message {MessageType}:{Message} from {Sender}", Self, ActorType,
+                _logger.Log(logLevel,
+                    "Actor {Self} {ActorType} completed message {MessageType}:{Message} from {Sender}", Self, ActorType,
                     message.GetType().Name,
                     message,
                     SenderOrNone(envelope)
@@ -79,8 +88,10 @@ public class ActorLoggingContext : ActorContextDecorator
         {
             if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
             {
-                _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed during message {MessageType}:{Message} from {Sender}", Self, ActorType,
-                    message.GetType().Name, message, 
+                _logger.Log(_exceptionLogLevel, x,
+                    "Actor {Self} {ActorType} failed during message {MessageType}:{Message} from {Sender}", Self,
+                    ActorType,
+                    message.GetType().Name, message,
                     SenderOrNone(envelope)
                 );
             }
@@ -93,8 +104,10 @@ public class ActorLoggingContext : ActorContextDecorator
     {
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} ReenterAfter {Action}", Self, ActorType, action.Method.Name);
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} ReenterAfter {Action}", Self, ActorType,
+                action.Method.Name);
         }
+
         base.ReenterAfter(target, action);
     }
 
@@ -102,8 +115,10 @@ public class ActorLoggingContext : ActorContextDecorator
     {
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} ReenterAfter {Action}", Self, ActorType, action.Method.Name);
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} ReenterAfter {Action}", Self, ActorType,
+                action.Method.Name);
         }
+
         base.ReenterAfter(target, action);
     }
 
@@ -111,7 +126,8 @@ public class ActorLoggingContext : ActorContextDecorator
     {
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending RequestAsync {MessageType}:{Message} to {Target}", Self, ActorType,
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending RequestAsync {MessageType}:{Message} to {Target}",
+                Self, ActorType,
                 message.GetType().Name, message, target
             );
         }
@@ -122,7 +138,8 @@ public class ActorLoggingContext : ActorContextDecorator
 
             if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
             {
-                _logger.Log(_logLevel, "Actor {Self} {ActorType} Got response {Response} to {MessageType}:{Message} from {Target}", Self,
+                _logger.Log(_logLevel,
+                    "Actor {Self} {ActorType} Got response {Response} to {MessageType}:{Message} from {Target}", Self,
                     ActorType,
                     response, message.GetType().Name, message, target
                 );
@@ -135,7 +152,8 @@ public class ActorLoggingContext : ActorContextDecorator
             if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
             {
                 _logger.Log(_exceptionLogLevel, x,
-                    "Actor {Self} {ActorType} Got exception waiting for RequestAsync response of {MessageType}:{Message} from {Target}", Self,
+                    "Actor {Self} {ActorType} Got exception waiting for RequestAsync response of {MessageType}:{Message} from {Target}",
+                    Self,
                     ActorType,
                     message.GetType().Name, message, target
                 );
@@ -144,17 +162,22 @@ public class ActorLoggingContext : ActorContextDecorator
             throw;
         }
     }
- 
 
-    private static string SenderOrNone(MessageEnvelope envelope) => envelope.Sender?.ToString() ?? "[No Sender]";
+    private static string SenderOrNone(MessageEnvelope envelope)
+    {
+        return envelope.Sender?.ToString() ?? "[No Sender]";
+    }
 
     private LogLevel GetLogLevel(object message)
     {
         // Don't log certain messages, as the Partition*Actor ends up spamming logs without this.
         if (message is Terminated or Touch)
+        {
             return LogLevel.None;
+        }
 
         var logLevel = message is InfrastructureMessage ? _infrastructureLogLevel : _logLevel;
+
         return logLevel;
     }
 
@@ -166,7 +189,8 @@ public class ActorLoggingContext : ActorContextDecorator
 
             if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
             {
-                _logger.Log(_logLevel, "Actor {Self} {ActorType} Spawned child actor {Name} with PID {Pid}", Self, ActorType, name, pid
+                _logger.Log(_logLevel, "Actor {Self} {ActorType} Spawned child actor {Name} with PID {Pid}", Self,
+                    ActorType, name, pid
                 );
             }
 
@@ -176,7 +200,8 @@ public class ActorLoggingContext : ActorContextDecorator
         {
             if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
             {
-                _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed when spawning child actor {Name}", Self, ActorType, name);
+                _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed when spawning child actor {Name}",
+                    Self, ActorType, name);
             }
 
             throw;
@@ -189,13 +214,12 @@ public class ActorLoggingContext : ActorContextDecorator
 
         if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
         {
-            _logger.Log(logLevel, "Actor {Self} {ActorType} responded with {MessageType}:{Message} to {Sender}", Self, ActorType,
+            _logger.Log(logLevel, "Actor {Self} {ActorType} responded with {MessageType}:{Message} to {Sender}", Self,
+                ActorType,
                 message.GetType().Name, message, Sender
             );
         }
 
         base.Respond(message);
     }
-
-    private string ActorType => Actor?.GetType().Name ?? "None";
 }

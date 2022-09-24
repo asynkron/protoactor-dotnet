@@ -3,10 +3,11 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Persistence;
 
 /// <summary>
-/// Actor's persistent event
+///     Actor's persistent event
 /// </summary>
 public class Event
 {
@@ -17,18 +18,18 @@ public class Event
     }
 
     /// <summary>
-    /// Event data
+    ///     Event data
     /// </summary>
     public object Data { get; }
 
     /// <summary>
-    /// Event index
+    ///     Event index
     /// </summary>
     public long Index { get; }
 }
 
 /// <summary>
-/// Represents snapshot to be persisted
+///     Represents snapshot to be persisted
 /// </summary>
 public class PersistedSnapshot : Snapshot
 {
@@ -38,7 +39,7 @@ public class PersistedSnapshot : Snapshot
 }
 
 /// <summary>
-/// Represents snapshot that is being recovered
+///     Represents snapshot that is being recovered
 /// </summary>
 public class RecoverSnapshot : Snapshot
 {
@@ -48,7 +49,7 @@ public class RecoverSnapshot : Snapshot
 }
 
 /// <summary>
-/// Wrapper for persistent snapshot
+///     Wrapper for persistent snapshot
 /// </summary>
 public class Snapshot
 {
@@ -59,18 +60,18 @@ public class Snapshot
     }
 
     /// <summary>
-    /// Snapshot data
+    ///     Snapshot data
     /// </summary>
     public object State { get; }
 
     /// <summary>
-    /// Index of the last event included in the snapshot + 1
+    ///     Index of the last event included in the snapshot + 1
     /// </summary>
     public long Index { get; }
 }
 
 /// <summary>
-/// Represents an event being recovered
+///     Represents an event being recovered
 /// </summary>
 public class RecoverEvent : Event
 {
@@ -80,7 +81,7 @@ public class RecoverEvent : Event
 }
 
 /// <summary>
-/// Represents an event being replayed
+///     Represents an event being replayed
 /// </summary>
 public class ReplayEvent : Event
 {
@@ -90,7 +91,7 @@ public class ReplayEvent : Event
 }
 
 /// <summary>
-/// Represents an event being stored
+///     Represents an event being stored
 /// </summary>
 public class PersistedEvent : Event
 {

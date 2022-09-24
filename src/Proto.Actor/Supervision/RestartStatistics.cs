@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 
@@ -23,19 +24,31 @@ public class RestartStatistics
 
     public int FailureCount => _failureTimes.Count;
 
-    public void Fail() => _failureTimes.Add(DateTimeOffset.UtcNow);
+    public void Fail()
+    {
+        _failureTimes.Add(DateTimeOffset.UtcNow);
+    }
 
-    public void Reset() => _failureTimes.Clear();
+    public void Reset()
+    {
+        _failureTimes.Clear();
+    }
 
     public int NumberOfFailures(TimeSpan? within)
     {
         if (!within.HasValue)
+        {
             return _failureTimes.Count;
+        }
+
         var result = 0;
+
         foreach (var failureTime in _failureTimes)
         {
             if (DateTimeOffset.UtcNow - failureTime < within)
+            {
                 result++;
+            }
         }
 
         return result;

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -34,10 +35,15 @@ public class NonBlockingBoundedMailbox : IMailboxQueue
             _messages.Enqueue(message);
         }
         else
+        {
             _overflowAction(message);
+        }
     }
 
-    public object? Pop() => _messages.TryDequeue(out var message) ? message : null;
+    public object? Pop()
+    {
+        return _messages.TryDequeue(out var message) ? message : null;
+    }
 
     public bool HasMessages => !_messages.IsEmpty;
 }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -14,10 +15,14 @@ public class Publisher : IPublisher
 {
     private readonly Cluster _cluster;
 
-    public Publisher(Cluster cluster) => _cluster = cluster;
+    public Publisher(Cluster cluster)
+    {
+        _cluster = cluster;
+    }
 
     /// <summary>
-    /// Publishes a batch of messages to PubSub topic. For high throughput scenarios consider using <see cref="Proto.Cluster.PubSub.BatchingProducer"></see>.
+    ///     Publishes a batch of messages to PubSub topic. For high throughput scenarios consider using
+    ///     <see cref="Proto.Cluster.PubSub.BatchingProducer"></see>.
     /// </summary>
     /// <param name="topic">Topic to publish to</param>
     /// <param name="batch">Message batch</param>
@@ -27,13 +32,17 @@ public class Publisher : IPublisher
         string topic,
         PubSubBatch batch,
         CancellationToken ct = default
-    ) => _cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, ct);
+    )
+    {
+        return _cluster.RequestAsync<PublishResponse>(topic, TopicActor.Kind, batch, ct);
+    }
 }
 
 public static class PublisherExtensions
 {
     /// <summary>
-    /// Publishes a batch of messages to PubSub topic. For high throughput scenarios consider using <see cref="Proto.Cluster.PubSub.BatchingProducer"></see>.
+    ///     Publishes a batch of messages to PubSub topic. For high throughput scenarios consider using
+    ///     <see cref="Proto.Cluster.PubSub.BatchingProducer"></see>.
     /// </summary>
     /// <param name="publisher"></param>
     /// <param name="topic">Topic to publish to</param>
@@ -49,11 +58,13 @@ public static class PublisherExtensions
     {
         var batch = new PubSubBatch();
         batch.Envelopes.AddRange(messages.Cast<object>());
+
         return publisher.PublishBatch(topic, batch, ct);
     }
 
     /// <summary>
-    /// Publishes a message to PubSub topic. For high throughput scenarios consider using <see cref="Proto.Cluster.PubSub.BatchingProducer"></see>.
+    ///     Publishes a message to PubSub topic. For high throughput scenarios consider using
+    ///     <see cref="Proto.Cluster.PubSub.BatchingProducer"></see>.
     /// </summary>
     /// <param name="publisher"></param>
     /// <param name="topic">Topic to publish to</param>
@@ -67,7 +78,8 @@ public static class PublisherExtensions
         CancellationToken ct = default
     )
     {
-        var batch = new PubSubBatch {Envelopes = {message}};
+        var batch = new PubSubBatch { Envelopes = { message } };
+
         return publisher.PublishBatch(topic, batch, ct);
     }
 }

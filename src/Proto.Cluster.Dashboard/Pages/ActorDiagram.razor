@@ -10,7 +10,7 @@
     {
         <MudPaper Elevation="2" Outlined>
             <MudTreeView
-                
+
                 Height="300px"
                 MaxHeight="300px"
                 ServerData="LoadServerData"
@@ -20,7 +20,7 @@
                 SelectedValueChanged="(TreeNode node) => SelectedValueChanged(node)">
                 <ItemTemplate>
                     <MudTreeViewItem
-                        Icon="@(context.Pid==null?Icons.Filled.Computer:Icons.Filled.Circle)"
+                        Icon="@(context.Pid == null ? Icons.Filled.Computer : Icons.Filled.Circle)"
                         IconColor="Color.Success"
                         Value="@context"
                         LoadingIconColor="Color.Info"
@@ -68,7 +68,6 @@
 
         _selected = x;
         _ = GetDiagnostics(x.Pid);
-
     }
 
     protected override async Task OnInitializedAsync()
@@ -91,9 +90,9 @@
         var root = new TreeNode();
         foreach (var pid in pids)
         {
-            //ignore futures and internals
+    //ignore futures and internals
             if (pid.Id.StartsWith("$")) continue;
-            
+
             var treeNode = root.GetChildFor(pid);
         }
         _root = root;
@@ -120,24 +119,27 @@
         StateHasChanged();
     }
 
-    private Task<HashSet<TreeNode>> LoadServerData(TreeNode parentNode) =>
-        Task.FromResult(parentNode.Children);
+    private Task<HashSet<TreeNode>> LoadServerData(TreeNode parentNode)
+    {
+        return Task.FromResult(parentNode.Children);
+    }
 
     private async Task OpenLogs()
     {
         if (_selected?.Pid == null) return;
-        
+
         var pidStr = _selected.Pid.ToString();
         var url = Settings.LogSearchPattern!.Replace("%PID%", pidStr);
-        await JsRuntime.InvokeAsync<object>("open",  new object[]{ url, "_blank"});
+        await JsRuntime.InvokeAsync<object>("open", new object[] { url, "_blank" });
     }
 
     private async Task OpenTraces()
     {
         if (_selected?.Pid == null) return;
-        
+
         var pidStr = _selected.Pid.ToString();
         var url = Settings.TraceSearchPattern!.Replace("%PID%", pidStr);
-        await JsRuntime.InvokeAsync<object>("open",  new object[]{ url, "_blank"});
+        await JsRuntime.InvokeAsync<object>("open", new object[] { url, "_blank" });
     }
+
 }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -11,22 +12,29 @@ using JetBrains.Annotations;
 namespace Proto;
 
 [PublicAPI]
-class EventExpectation<T>
+internal class EventExpectation<T>
 {
     private readonly Func<T, bool> _predicate;
 
     private readonly TaskCompletionSource<T> _source =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    public EventExpectation(Func<T, bool> predicate) => _predicate = predicate;
+    public EventExpectation(Func<T, bool> predicate)
+    {
+        _predicate = predicate;
+    }
 
     public Task<T> Task => _source.Task;
 
     public bool Evaluate(T @event)
     {
-        if (!_predicate(@event)) return false;
+        if (!_predicate(@event))
+        {
+            return false;
+        }
 
         _source.SetResult(@event);
+
         return true;
     }
 }

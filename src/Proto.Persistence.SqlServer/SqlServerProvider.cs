@@ -9,8 +9,10 @@ namespace Proto.Persistence.SqlServer;
 
 public class SqlServerProvider : IProvider
 {
-    private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
-    private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+    private static readonly JsonSerializerSettings
+        AutoTypeSettings = new() { TypeNameHandling = TypeNameHandling.Auto };
+
+    private static readonly JsonSerializerSettings AllTypeSettings = new() { TypeNameHandling = TypeNameHandling.All };
     private readonly string _connectionString;
 
     private readonly string _sqlDeleteEvents;
@@ -37,13 +39,19 @@ public class SqlServerProvider : IProvider
 
         if (autoCreateTables)
         {
-            if (!_tableSchema.Equals("dbo", StringComparison.OrdinalIgnoreCase)) CreateCustomSchema();
+            if (!_tableSchema.Equals("dbo", StringComparison.OrdinalIgnoreCase))
+            {
+                CreateCustomSchema();
+            }
+
             CreateSnapshotTable();
             CreateEventTable();
         }
 
         // execute string interpolation once
-        _sqlDeleteEvents = $@"DELETE FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
+        _sqlDeleteEvents =
+            $@"DELETE FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
+
         _sqlDeleteSnapshots =
             $@"DELETE FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName AND SnapshotIndex <= @SnapshotIndex";
 
@@ -61,18 +69,22 @@ public class SqlServerProvider : IProvider
     }
 
     public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
-        => ExecuteNonQueryAsync(
+    {
+        return ExecuteNonQueryAsync(
             _sqlDeleteEvents,
             CreateParameter("ActorName", NVarChar, actorName),
             CreateParameter("EventIndex", BigInt, inclusiveToIndex)
         );
+    }
 
     public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-        => ExecuteNonQueryAsync(
+    {
+        return ExecuteNonQueryAsync(
             _sqlDeleteSnapshots,
             CreateParameter("ActorName", NVarChar, actorName),
             CreateParameter("SnapshotIndex", BigInt, inclusiveToIndex)
         );
+    }
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
@@ -97,7 +109,7 @@ public class SqlServerProvider : IProvider
 
         while (await eventReader.ReadAsync())
         {
-            lastIndex = (long) eventReader["EventIndex"];
+            lastIndex = (long)eventReader["EventIndex"];
 
             callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), AutoTypeSettings));
         }
@@ -217,10 +229,12 @@ public class SqlServerProvider : IProvider
     }
 
     private static SqlParameter CreateParameter(string name, SqlDbType type, object value)
-        => new SqlParameter(name, type)
+    {
+        return new(name, type)
         {
             SqlValue = value
         };
+    }
 
     private async Task ExecuteNonQueryAsync(string sql, params SqlParameter[] parameters)
     {
@@ -234,7 +248,10 @@ public class SqlServerProvider : IProvider
 
         command.Transaction = tx;
 
-        if (parameters.Length > 0) command.Parameters.AddRange(parameters);
+        if (parameters.Length > 0)
+        {
+            command.Parameters.AddRange(parameters);
+        }
 
         await command.ExecuteNonQueryAsync();
 

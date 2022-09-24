@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -14,9 +15,15 @@ public abstract class RouterState
     protected HashSet<PID> Routees = new();
     protected ImmutableList<PID> Values = ImmutableList<PID>.Empty;
 
-    public virtual HashSet<PID> GetRoutees() => Routees;
+    public virtual HashSet<PID> GetRoutees()
+    {
+        return Routees;
+    }
 
-    protected ImmutableList<PID> GetValues() => Values;
+    protected ImmutableList<PID> GetValues()
+    {
+        return Values;
+    }
 
     public virtual void SetRoutees(PID[] routees)
     {

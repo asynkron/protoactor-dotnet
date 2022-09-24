@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Diagnostics.Metrics;
 using Proto.Metrics;
 
@@ -11,13 +12,13 @@ namespace Proto.Cluster.Metrics;
 public static class ClusterMetrics
 {
     public static readonly Histogram<double> ClusterActorSpawnDuration =
-        ProtoMetrics.Meter.CreateHistogram<double>("protocluster_virtualactor_spawn_duration", unit: "seconds",
-            description: "Time it takes to spawn a virtual actor"
+        ProtoMetrics.Meter.CreateHistogram<double>("protocluster_virtualactor_spawn_duration", "seconds",
+            "Time it takes to spawn a virtual actor"
         );
 
     public static readonly Histogram<double> ClusterRequestDuration = ProtoMetrics.Meter.CreateHistogram<double>(
-        "protocluster_virtualactor_requestasync_duration", unit: "seconds",
-        description: "Cluster request duration"
+        "protocluster_virtualactor_requestasync_duration", "seconds",
+        "Cluster request duration"
     );
 
     public static readonly Counter<long> ClusterRequestRetryCount = ProtoMetrics.Meter.CreateCounter<long>(
@@ -26,8 +27,8 @@ public static class ClusterMetrics
     );
 
     public static readonly Histogram<double> ClusterResolvePidDuration =
-        ProtoMetrics.Meter.CreateHistogram<double>("protocluster_resolve_pid_duration", unit: "seconds",
-            description: "Time it takes to resolve a pid"
+        ProtoMetrics.Meter.CreateHistogram<double>("protocluster_resolve_pid_duration", "seconds",
+            "Time it takes to resolve a pid"
         );
 
     public static readonly ObservableGaugeWrapper<long> VirtualActorsCount = new();

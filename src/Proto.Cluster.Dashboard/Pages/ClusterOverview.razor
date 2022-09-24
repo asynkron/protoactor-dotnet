@@ -10,7 +10,7 @@
             <MudRadio Option="@("3")" Color="Color.Tertiary">Aggregated</MudRadio>
         </MudRadioGroup>
     </MudPaper>
-    
+
     <MudChart ChartType="ChartType.Bar" LegendPosition="Position.Bottom" ChartSeries="@Series" XAxisLabels="@XAxisLabels.ToArray()" Width="100%" Height="350px">
         <CustomGraphics>
 
@@ -38,9 +38,9 @@
         {
             var memberHeartbeats = await System.Cluster().Gossip.GetState<MemberHeartbeat>(GossipKeys.Heartbeat);
             var stats = (from x in memberHeartbeats
-                         let memberId = x.Key
-                         from y in x.Value.ActorStatistics.ActorCount
-                         select (MemberId: memberId, Kind: y.Key, Count: y.Value))
+                let memberId = x.Key
+                from y in x.Value.ActorStatistics.ActorCount
+                select (MemberId: memberId, Kind: y.Key, Count: y.Value))
                 .ToList();
 
             var statsByKind = stats.ToLookup(t => t.Kind, t => t);
@@ -51,7 +51,8 @@
 
             switch (SelectedOption)
             {
-                case "1": {
+                case "1":
+                {
                     foreach (var label in statsByKind)
                     {
                         XAxisLabels.Add(Trim(label.Key));
@@ -62,12 +63,13 @@
                         Series.Add(new ChartSeries
                         {
                             Name = Trim(series.Key),
-                            Data = series.Select(l => (double) l.Count).ToArray()
+                            Data = series.Select(l => (double)l.Count).ToArray()
                         });
                     }
                     break;
                 }
-                case "2": {
+                case "2":
+                {
                     foreach (var label in statsByMember)
                     {
                         XAxisLabels.Add(Trim(label.Key));
@@ -78,12 +80,13 @@
                         Series.Add(new ChartSeries
                         {
                             Name = Trim(series.Key),
-                            Data = series.Select(l => (double) l.Count).ToArray()
+                            Data = series.Select(l => (double)l.Count).ToArray()
                         });
                     }
                     break;
                 }
-                case "3": {
+                case "3":
+                {
                     foreach (var label in statsByKind)
                     {
                         XAxisLabels.Add(label.Key);
@@ -92,7 +95,7 @@
                     Series.Add(new ChartSeries
                     {
                         Name = "Aggregated",
-                        Data = statsByKind.Select(series => series.Sum(l => (double) l.Count)).ToArray()
+                        Data = statsByKind.Select(series => series.Sum(l => (double)l.Count)).ToArray()
                     });
                     break;
                 }
@@ -113,7 +116,10 @@
         return text.Substring(0, max) + "...";
     }
 
-    public void Dispose() => Dispose(true);
+    public void Dispose()
+    {
+        Dispose(true);
+    }
 
     public void Dispose(bool disposing)
     {

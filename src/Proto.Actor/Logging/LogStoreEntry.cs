@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -20,14 +21,21 @@ public record LogStoreEntry(
     object[] Args
 )
 {
-    public bool IsBefore(LogStoreEntry other) => Index < other.Index;
+    public bool IsBefore(LogStoreEntry other)
+    {
+        return Index < other.Index;
+    }
 
-    public bool IsAfter(LogStoreEntry other) => Index > other.Index;
+    public bool IsAfter(LogStoreEntry other)
+    {
+        return Index > other.Index;
+    }
 
     public string ToFormattedString()
     {
         var formatter = new LogValuesFormatter(Template);
         var str = formatter.Format(Args);
+
         return $"[{Timestamp:hh:mm:ss.fff}] [{Category}][{LogLevel}] {str} {Exception}";
     }
 }

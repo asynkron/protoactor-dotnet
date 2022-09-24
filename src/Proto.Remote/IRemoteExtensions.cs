@@ -6,13 +6,19 @@ namespace Proto.Remote;
 public static class IRemoteExtensions
 {
     /// <summary>
-    /// Gets the <see cref="IRemote"/> extension registered on the <see cref="ActorSystem"/>
+    ///     Gets the <see cref="IRemote" /> extension registered on the <see cref="ActorSystem" />
     /// </summary>
     /// <param name="system"></param>
     /// <returns></returns>
-    public static IRemote Remote(this ActorSystem system) => system.Extensions.Get<IRemote>()!;
+    public static IRemote Remote(this ActorSystem system)
+    {
+        return system.Extensions.Get<IRemote>()!;
+    }
 
-    public static IRemote Remote(this IContext context) => context.System.Remote();
+    public static IRemote Remote(this IContext context)
+    {
+        return context.System.Remote();
+    }
 
     /// <summary>
     ///     Spawn a remote actor with auto-generated name
@@ -22,8 +28,10 @@ public static class IRemoteExtensions
     /// <param name="kind">Actor kind, must be known on the remote node</param>
     /// <param name="timeout">Timeout for the confirmation to be received from the remote node</param>
     /// <returns></returns>
-    public static Task<ActorPidResponse> SpawnAsync(this IRemote remote, string address, string kind, TimeSpan timeout) =>
-        SpawnNamedAsync(remote, address, "", kind, timeout);
+    public static Task<ActorPidResponse> SpawnAsync(this IRemote remote, string address, string kind, TimeSpan timeout)
+    {
+        return SpawnNamedAsync(remote, address, "", kind, timeout);
+    }
 
     /// <summary>
     ///     Spawn a remote actor with a name
@@ -34,7 +42,8 @@ public static class IRemoteExtensions
     /// <param name="kind">Actor kind, must be known on the remote node</param>
     /// <param name="timeout">Timeout for the confirmation to be received from the remote node</param>
     /// <returns></returns>
-    public static async Task<ActorPidResponse> SpawnNamedAsync(this IRemote remote, string address, string name, string kind, TimeSpan timeout)
+    public static async Task<ActorPidResponse> SpawnNamedAsync(this IRemote remote, string address, string name,
+        string kind, TimeSpan timeout)
     {
         var activator = ActivatorForAddress(address);
 
@@ -48,6 +57,9 @@ public static class IRemoteExtensions
 
         return res;
 
-        static PID ActivatorForAddress(string address) => PID.FromAddress(address, EndpointManager.ActivatorActorName);
+        static PID ActivatorForAddress(string address)
+        {
+            return PID.FromAddress(address, EndpointManager.ActivatorActorName);
+        }
     }
 }

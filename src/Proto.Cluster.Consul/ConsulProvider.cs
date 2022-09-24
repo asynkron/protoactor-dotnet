@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,7 @@ namespace Proto.Cluster.Consul;
 [PublicAPI]
 public class ConsulProvider : IClusterProvider
 {
+    private static ILogger _logger = Log.CreateLogger<ConsulProvider>();
     private readonly TimeSpan _blockingWaitTime;
     private readonly ConsulClient _client;
 
@@ -43,7 +45,6 @@ public class ConsulProvider : IClusterProvider
     private string _host;
 
     private string[] _kinds;
-    private static ILogger _logger = Log.CreateLogger<ConsulProvider>();
     private MemberList _memberList;
     private int _port;
     private bool _shutdown;
@@ -129,7 +130,8 @@ public class ConsulProvider : IClusterProvider
 
     private void StartMonitorMemberStatusChangesLoop()
     {
-        _ = SafeTask.Run(async () => {
+        _ = SafeTask.Run(async () =>
+            {
                 var waitIndex = 0ul;
 
                 while (!_shutdown && !_cluster.System.Shutdown.IsCancellationRequested)
@@ -143,7 +145,11 @@ public class ConsulProvider : IClusterProvider
                             }
                             , _cluster.System.Shutdown
                         );
-                        if (_deregistered) break;
+
+                        if (_deregistered)
+                        {
+                            break;
+                        }
 
                         _logger.LogDebug("Got status updates from Consul");
 
@@ -155,7 +161,7 @@ public class ConsulProvider : IClusterProvider
                                 .Where(v => IsAlive(v.Checks)) //only include members that are alive
                                 .Select(ToMember)
                                 .ToArray();
-                            
+
                         _memberList.UpdateClusterTopology(currentMembers);
                     }
                     catch (Exception x)
@@ -187,23 +193,30 @@ public class ConsulProvider : IClusterProvider
         }
     }
 
-    private void StartUpdateTtlLoop() => _ = SafeTask.Run(async () => {
-            while (!_shutdown)
+    private void StartUpdateTtlLoop()
+    {
+        _ = SafeTask.Run(async () =>
             {
-                try
+                while (!_shutdown)
                 {
-                    await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");
-                    await Task.Delay(_refreshTtl, _cluster.System.Shutdown);
+                    try
+                    {
+                        await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "");
+                        await Task.Delay(_refreshTtl, _cluster.System.Shutdown);
+                    }
+                    catch (Exception x)
+                    {
+                        if (!_cluster.System.Shutdown.IsCancellationRequested)
+                        {
+                            _logger.LogError(x, "Consul TTL Loop failed");
+                        }
+                    }
                 }
-                catch (Exception x)
-                {
-                    if (!_cluster.System.Shutdown.IsCancellationRequested) _logger.LogError(x, "Consul TTL Loop failed");
-                }
-            }
 
-            _logger.LogInformation("Consul Exiting TTL loop");
-        }
-    );
+                _logger.LogInformation("Consul Exiting TTL loop");
+            }
+        );
+    }
 
     //register this cluster in consul.
     private async Task RegisterMemberAsync()
@@ -226,9 +239,10 @@ public class ConsulProvider : IClusterProvider
                 //if a node with host X and port Y, joins, then leaves, then joins again.
                 //we need a way to distinguish the new node from the old node.
                 //this is what this ID is for
-                {"id", _cluster.System.Id}
+                { "id", _cluster.System.Id }
             }
         };
+
         await _client.Agent.ServiceRegister(s);
     }
 
@@ -239,6 +253,8 @@ public class ConsulProvider : IClusterProvider
         _logger.LogInformation("Deregistered service");
     }
 
-    private static bool IsAlive(HealthCheck[] serviceChecks) =>
-        serviceChecks.All(c => c.Status == HealthStatus.Passing);
+    private static bool IsAlive(HealthCheck[] serviceChecks)
+    {
+        return serviceChecks.All(c => c.Status == HealthStatus.Passing);
+    }
 }

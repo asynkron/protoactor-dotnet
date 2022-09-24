@@ -3,20 +3,27 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Router.Routers;
 
-record RandomGroupRouterConfig : GroupRouterConfig
+internal record RandomGroupRouterConfig : GroupRouterConfig
 {
     private readonly int _seed;
 
     public RandomGroupRouterConfig(ISenderContext senderContext, int seed, params PID[] routees) : base(
         senderContext, routees
-    ) => _seed = seed;
+    )
+    {
+        _seed = seed;
+    }
 
     public RandomGroupRouterConfig(ISenderContext senderContext, params PID[] routees) : base(senderContext, routees
     )
     {
     }
 
-    protected override RouterState CreateRouterState() => new RandomRouterState(SenderContext, _seed);
+    protected override RouterState CreateRouterState()
+    {
+        return new RandomRouterState(SenderContext, _seed);
+    }
 }

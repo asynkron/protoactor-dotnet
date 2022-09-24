@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -48,7 +49,9 @@ public sealed class RedisIdentityStorage : IIdentityStorage
     public async Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct)
     {
         var requestId = Guid.NewGuid().ToString("N");
-        var hasLock = await _asyncSemaphore.WaitAsync(() => TryAcquireLockAsync(clusterIdentity, requestId)).ConfigureAwait(false);
+
+        var hasLock = await _asyncSemaphore.WaitAsync(() => TryAcquireLockAsync(clusterIdentity, requestId))
+            .ConfigureAwait(false);
 
         return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
     }
@@ -70,22 +73,32 @@ public sealed class RedisIdentityStorage : IIdentityStorage
             //There is an active lock on the pid, spin wait
             var i = 1;
 
-            do await Task.Delay(20 * i++, ct);
-            while (!ct.IsCancellationRequested
-                && _maxLockTime > timer.Elapsed
-                && (activationStatus = await LookupKey(db, key).ConfigureAwait(false))?.ActiveLockId == lockId
-                  );
+            do
+            {
+                await Task.Delay(20 * i++, ct);
+            } while (!ct.IsCancellationRequested
+                     && _maxLockTime > timer.Elapsed
+                     && (activationStatus = await LookupKey(db, key).ConfigureAwait(false))?.ActiveLockId == lockId
+                    );
         }
 
         //the lookup entity was lost, stale lock maybe?
-        if (activationStatus == null) return null;
+        if (activationStatus == null)
+        {
+            return null;
+        }
 
         //lookup was unlocked, return this pid
         if (activationStatus.Activation != null)
+        {
             return activationStatus.Activation;
+        }
 
         //Still locked but not by the same request that originally locked it, so not stale
-        if (activationStatus.ActiveLockId != lockId) return null;
+        if (activationStatus.ActiveLockId != lockId)
+        {
+            return null;
+        }
 
         //Stale lock. just delete it and let cluster retry
         await RemoveLock(new SpawnLock(lockId!, clusterIdentity), CancellationToken.None).ConfigureAwait(false);
@@ -101,6 +114,7 @@ public sealed class RedisIdentityStorage : IIdentityStorage
         var transaction = db.CreateTransaction();
         transaction.AddCondition(Condition.HashEqual(key, LockId, spawnLock.LockId));
         _ = transaction.HashDeleteAsync(key, LockId);
+
         return transaction.ExecuteAsync();
     }
 
@@ -121,7 +135,8 @@ public sealed class RedisIdentityStorage : IIdentityStorage
             new HashEntry(LockId, RedisValue.EmptyString)
         };
 
-        var executed = await _asyncSemaphore.WaitAsync(() => {
+        var executed = await _asyncSemaphore.WaitAsync(() =>
+            {
                 var db = GetDb();
 
                 var transaction = db.CreateTransaction();
@@ -129,11 +144,15 @@ public sealed class RedisIdentityStorage : IIdentityStorage
                 _ = transaction.HashSetAsync(key, values, CommandFlags.DemandMaster);
                 _ = transaction.SetAddAsync(MemberKey(memberId), key.ToString());
                 _ = transaction.KeyPersistAsync(key);
+
                 return transaction.ExecuteAsync();
             }
         ).ConfigureAwait(false);
 
-        if (!executed) throw new LockNotFoundException($"Failed to store activation of {pid}");
+        if (!executed)
+        {
+            throw new LockNotFoundException($"Failed to store activation of {pid}");
+        }
     }
 
     public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
@@ -147,9 +166,12 @@ public sealed class RedisIdentityStorage : IIdentityStorage
                                  "return redis.call('DEL', KEYS[1]);";
 
         var key = IdKey(clusterIdentity);
+
         return _asyncSemaphore.WaitAsync(()
-                => {
-                return GetDb().ScriptEvaluateAsync(removePid, new[] {key}, new RedisValue[] {pid.Id, pid.Address, _memberKey.ToString()}
+                =>
+            {
+                return GetDb().ScriptEvaluateAsync(removePid, new[] { key },
+                    new RedisValue[] { pid.Id, pid.Address, _memberKey.ToString() }
                 );
             }
         );
@@ -169,7 +191,8 @@ public sealed class RedisIdentityStorage : IIdentityStorage
                                     "until cursor == '0'\n" +
                                     "redis.call('DEL', KEYS[1]);";
 
-        return _asyncSemaphore.WaitAsync(() => GetDb().ScriptEvaluateAsync(removeMember, new[] {memberKey}, new[] {mVal}));
+        return _asyncSemaphore.WaitAsync(() =>
+            GetDb().ScriptEvaluateAsync(removeMember, new[] { memberKey }, new[] { mVal }));
     }
 
     public async Task<StoredActivation?> TryGetExistingActivation(
@@ -178,6 +201,7 @@ public sealed class RedisIdentityStorage : IIdentityStorage
     )
     {
         var activationStatus = await LookupKey(GetDb(), IdKey(clusterIdentity)).ConfigureAwait(false);
+
         return activationStatus?.Activation;
     }
 
@@ -185,9 +209,15 @@ public sealed class RedisIdentityStorage : IIdentityStorage
     {
     }
 
-    public Task Init() => Task.CompletedTask;
+    public Task Init()
+    {
+        return Task.CompletedTask;
+    }
 
-    private IDatabase GetDb() => _connections.GetDatabase();
+    private IDatabase GetDb()
+    {
+        return _connections.GetDatabase();
+    }
 
     private Task<bool> TryAcquireLockAsync(
         ClusterIdentity clusterIdentity,
@@ -216,6 +246,7 @@ public sealed class RedisIdentityStorage : IIdentityStorage
                 return new ActivationStatus(result.First(entry => entry.Name == LockId).Value);
             case 4:
                 var values = result.ToDictionary();
+
                 return new ActivationStatus
                 (values[UniqueIdentity],
                     values[Address],
@@ -226,20 +257,32 @@ public sealed class RedisIdentityStorage : IIdentityStorage
         }
     }
 
-    private RedisKey IdKey(ClusterIdentity clusterIdentity) => _clusterIdentityKey.Append(clusterIdentity.ToString());
+    private RedisKey IdKey(ClusterIdentity clusterIdentity)
+    {
+        return _clusterIdentityKey.Append(clusterIdentity.ToString());
+    }
 
-    private RedisKey MemberKey(string memberId) => _memberKey.Append(memberId);
+    private RedisKey MemberKey(string memberId)
+    {
+        return _memberKey.Append(memberId);
+    }
 
     private class ActivationStatus
     {
         public ActivationStatus(string? uniqueIdentity, string? address, string? memberId)
         {
-            if (uniqueIdentity == null || address == null || memberId == null) throw new ArgumentException();
+            if (uniqueIdentity == null || address == null || memberId == null)
+            {
+                throw new ArgumentException();
+            }
 
             Activation = new StoredActivation(memberId, PID.FromAddress(address, uniqueIdentity));
         }
 
-        public ActivationStatus(string? lockId) => ActiveLockId = lockId;
+        public ActivationStatus(string? lockId)
+        {
+            ActiveLockId = lockId;
+        }
 
         public StoredActivation? Activation { get; }
 

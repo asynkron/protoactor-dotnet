@@ -69,18 +69,22 @@ public class RavenDBProvider : IProvider
     }
 
     public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
-        => _store.Operations.SendAsync(
+    {
+        return _store.Operations.SendAsync(
             new DeleteByQueryOperation<Event>("DeleteEventIndex",
                 x => x.ActorName == actorName && x.Index <= inclusiveToIndex
             )
         );
+    }
 
     public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-        => _store.Operations.SendAsync(
+    {
+        return _store.Operations.SendAsync(
             new DeleteByQueryOperation<Snapshot>("DeleteSnapshotIndex",
                 x => x.ActorName == actorName && x.Index <= inclusiveToIndex
             )
         );
+    }
 
     private void SetupIndexes()
     {

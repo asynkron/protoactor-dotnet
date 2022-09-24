@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 namespace Proto.Cluster.Identity;
 
 /// <summary>
-/// <see cref="IIdentityLookup"/> implementation that uses external database for storing and retrieving identities.
-/// See the <a href="https://proto.actor/docs/cluster/db-identity-lookup/">documentation</a> for more information.
+///     <see cref="IIdentityLookup" /> implementation that uses external database for storing and retrieving identities.
+///     See the <a href="https://proto.actor/docs/cluster/db-identity-lookup/">documentation</a> for more information.
 /// </summary>
 public class IdentityStorageLookup : IIdentityLookup
 {
@@ -19,7 +19,10 @@ public class IdentityStorageLookup : IIdentityLookup
     internal Cluster Cluster = null!;
     internal MemberList MemberList = null!;
 
-    public IdentityStorageLookup(IIdentityStorage storage) => Storage = storage;
+    public IdentityStorageLookup(IIdentityStorage storage)
+    {
+        Storage = storage;
+    }
 
     internal IIdentityStorage Storage { get; }
 
@@ -33,6 +36,7 @@ public class IdentityStorageLookup : IIdentityLookup
         {
             throw new IdentityIsBlocked(clusterIdentity);
         }
+
         return res?.Pid;
     }
 
@@ -49,7 +53,8 @@ public class IdentityStorageLookup : IIdentityLookup
         _worker = _system.Root.SpawnNamedSystem(workerProps, WorkerActorName);
 
         //hook up events
-        cluster.System.EventStream.Subscribe<ClusterTopology>(e => {
+        cluster.System.EventStream.Subscribe<ClusterTopology>(e =>
+            {
                 //delete all members that have left from the lookup
                 foreach (var left in e.Left)
                     //YOLO. event stream is not async
@@ -59,7 +64,10 @@ public class IdentityStorageLookup : IIdentityLookup
             }
         );
 
-        if (isClient) return;
+        if (isClient)
+        {
+            return;
+        }
 
         var props = Props.FromProducer(() => new IdentityStoragePlacementActor(Cluster, this));
         _placementActor = _system.Root.SpawnNamedSystem(props, PlacementActorName);
@@ -68,19 +76,32 @@ public class IdentityStorageLookup : IIdentityLookup
     public async Task ShutdownAsync()
     {
         await Cluster.System.Root.StopAsync(_worker);
-        if (!_isClient) await Cluster.System.Root.StopAsync(_placementActor);
+
+        if (!_isClient)
+        {
+            await Cluster.System.Root.StopAsync(_placementActor);
+        }
 
         await RemoveMemberAsync(_memberId);
     }
 
     public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
     {
-        if (_system.Shutdown.IsCancellationRequested) return Task.CompletedTask;
+        if (_system.Shutdown.IsCancellationRequested)
+        {
+            return Task.CompletedTask;
+        }
 
         return Storage.RemoveActivation(clusterIdentity, pid, ct);
     }
 
-    internal Task RemoveMemberAsync(string memberId) => Storage.RemoveMember(memberId, CancellationToken.None);
+    internal Task RemoveMemberAsync(string memberId)
+    {
+        return Storage.RemoveMember(memberId, CancellationToken.None);
+    }
 
-    internal PID RemotePlacementActor(string address) => PID.FromAddress(address, PlacementActorName);
+    internal PID RemotePlacementActor(string address)
+    {
+        return PID.FromAddress(address, PlacementActorName);
+    }
 }

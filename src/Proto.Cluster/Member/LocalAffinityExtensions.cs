@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -16,23 +17,27 @@ public static class LocalAffinityExtensions
     private static readonly ILogger Logger = Log.CreateLogger(nameof(LocalAffinityExtensions));
 
     /// <summary>
-    /// Uses local affinity strategy for placing activations of the cluster kind.
-    /// See the <a href="https://proto.actor/docs/cluster/member-strategies/#localaffinitystrategy">documentation</a> for more information.
+    ///     Uses local affinity strategy for placing activations of the cluster kind.
+    ///     See the <a href="https://proto.actor/docs/cluster/member-strategies/#localaffinitystrategy">documentation</a> for
+    ///     more information.
     /// </summary>
     /// <param name="clusterKind"></param>
     /// <param name="options"></param>
     /// <returns></returns>
-    public static ClusterKind WithLocalAffinityRelocationStrategy(this ClusterKind clusterKind, LocalAffinityOptions? options = null)
-        => clusterKind with
+    public static ClusterKind WithLocalAffinityRelocationStrategy(this ClusterKind clusterKind,
+        LocalAffinityOptions? options = null)
+    {
+        return clusterKind with
         {
-            Props = clusterKind.Props.WithRelocateOnRemoteSender(options?.RelocationThroughput?.Create(), options?.TriggersLocalAffinity),
+            Props = clusterKind.Props.WithRelocateOnRemoteSender(options?.RelocationThroughput?.Create(),
+                options?.TriggersLocalAffinity),
             StrategyBuilder = cluster => new LocalAffinityStrategy(cluster)
         };
-
+    }
 
     /// <summary>
-    /// Adds middleware which relocates the virtual actor on remote traffic
-    /// Useful with local affinity strategy to move partitioned workloads to the right node after a re-balance
+    ///     Adds middleware which relocates the virtual actor on remote traffic
+    ///     Useful with local affinity strategy to move partitioned workloads to the right node after a re-balance
     /// </summary>
     /// <param name="props"></param>
     /// <param name="throttle">Throttling max relocations per timespan</param>
@@ -46,23 +51,35 @@ public static class LocalAffinityExtensions
     {
         hasLocalAffinity ??= _ => true;
 
-        return props.WithReceiverMiddleware(receiver => (context, envelope) => {
+        return props.WithReceiverMiddleware(receiver => (context, envelope) =>
+            {
                 var task = receiver(context, envelope);
                 //Sender is removed from context after call
                 var sender = context.Sender;
-                if (sender is null || envelope.Message is PoisonPill || context.IsMarkedForRelocation()) return task;
+
+                if (sender is null || envelope.Message is PoisonPill || context.IsMarkedForRelocation())
+                {
+                    return task;
+                }
 
                 if (sender.IsRemote(context)
-                 && hasLocalAffinity(envelope)
-                 && throttle?.Invoke() != Throttle.Valve.Closed
+                    && hasLocalAffinity(envelope)
+                    && throttle?.Invoke() != Throttle.Valve.Closed
                    )
                 {
                     var self = context.Self;
-                    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Relocating {ActorPid}, because of {MessageType} from {Sender}", context.Self,
-                        envelope.Message.GetType(), sender
-                    );
+
+                    if (Logger.IsEnabled(LogLevel.Debug))
+                    {
+                        Logger.LogDebug("Relocating {ActorPid}, because of {MessageType} from {Sender}", context.Self,
+                            envelope.Message.GetType(), sender
+                        );
+                    }
+
                     context.MarkForRelocation();
-                    context.System.Root.PoisonAsync(self).ContinueWith(_ => ActivateByProxy(context, sender.Address, context.Get<ClusterIdentity>()!, self));
+
+                    context.System.Root.PoisonAsync(self).ContinueWith(_ =>
+                        ActivateByProxy(context, sender.Address, context.Get<ClusterIdentity>()!, self));
                 }
 
                 return task;
@@ -70,16 +87,14 @@ public static class LocalAffinityExtensions
         );
     }
 
-    private static bool IsMarkedForRelocation(this IContextStore context) => context.Get<Tombstone>() is not null;
-
-    private static void MarkForRelocation(this IContextStore context) => context.Set(Tombstone.Instance);
-
-    /// <summary>
-    /// Marks the actor, to avoid poisoning twice
-    /// </summary>
-    private class Tombstone
+    private static bool IsMarkedForRelocation(this IContextStore context)
     {
-        public static Tombstone Instance => new();
+        return context.Get<Tombstone>() is not null;
+    }
+
+    private static void MarkForRelocation(this IContextStore context)
+    {
+        context.Set(Tombstone.Instance);
     }
 
     private static Task ActivateByProxy(IReceiverContext context, string address, ClusterIdentity id, PID activation)
@@ -91,17 +106,32 @@ public static class LocalAffinityExtensions
                 ReplacedActivation = activation
             }
         );
+
         return Task.CompletedTask;
     }
 
     private static Func<bool> CreateShouldRelocate(float relocationFactor)
     {
-        if (relocationFactor >= 1) return () => true;
+        if (relocationFactor >= 1)
+        {
+            return () => true;
+        }
 
         var random = new Random();
+
         return () => random.NextDouble() < relocationFactor;
     }
 
     private static bool IsRemote(this PID? sender, IInfoContext context)
-        => sender is not null && !sender.Address.Equals(context.System.Address, StringComparison.OrdinalIgnoreCase);
+    {
+        return sender is not null && !sender.Address.Equals(context.System.Address, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     Marks the actor, to avoid poisoning twice
+    /// </summary>
+    private class Tombstone
+    {
+        public static Tombstone Instance => new();
+    }
 }

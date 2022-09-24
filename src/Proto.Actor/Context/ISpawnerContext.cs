@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+
 using System;
 
 namespace Proto;
@@ -18,7 +19,7 @@ public interface ISpawnerContext : ISystemContext
     /// <param name="name">The actor name</param>
     /// <param name="callback"></param>
     /// <returns>The PID of the child actor</returns>
-    PID SpawnNamed(Props props, string name, Action<IContext>? callback=null);
+    PID SpawnNamed(Props props, string name, Action<IContext>? callback = null);
 }
 
 public static class SpawnerContextExtensions
@@ -52,9 +53,10 @@ public static class SpawnerContextExtensions
     /// <param name="self"></param>
     /// <param name="props">The Props used to spawn the actor</param>
     /// <param name="prefix">The prefix for the actor name</param>
-    public static PID SpawnPrefix(this ISpawnerContext self,Props props, string prefix)
+    public static PID SpawnPrefix(this ISpawnerContext self, Props props, string prefix)
     {
         var name = prefix + self.System.ProcessRegistry.NextId();
+
         return self.SpawnNamed(props, name);
     }
 
@@ -65,9 +67,10 @@ public static class SpawnerContextExtensions
     /// <param name="props">The Props used to spawn the actor</param>
     /// <param name="prefix">The prefix for the actor name</param>
     /// <param name="callback"></param>
-    public static PID SpawnPrefix(this ISpawnerContext self,Props props, string prefix, Action<IContext> callback)
+    public static PID SpawnPrefix(this ISpawnerContext self, Props props, string prefix, Action<IContext> callback)
     {
         var name = prefix + self.System.ProcessRegistry.NextId();
+
         return self.SpawnNamed(props, name, callback);
     }
 }

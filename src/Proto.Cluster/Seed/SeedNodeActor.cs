@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Immutable;
 using System.Linq;
@@ -17,27 +18,35 @@ public class SeedNodeActor : IActor
 {
     public const string Name = "$server_seed";
     private static readonly ILogger Logger = Log.CreateLogger<SeedNodeActor>();
-    private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
+    private readonly SeedNodeClusterProviderOptions _options;
     private ImmutableList<PID> _clients = ImmutableList<PID>.Empty;
     private ClusterTopology? _lastestTopology;
-    private readonly SeedNodeClusterProviderOptions _options;
-    private SeedNodeActor(SeedNodeClusterProviderOptions options) => _options = options;
+    private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
 
-    public Task ReceiveAsync(IContext context) => context.Message switch
+    private SeedNodeActor(SeedNodeClusterProviderOptions options)
     {
-        Started                                        => OnStarted(context),
-        Connect                                        => OnConnect(context),
-        GossipUpdate {Key: GossipKeys.Topology} update => OnTopologyUpdate(context, update),
-        ClusterTopology clusterTopology                => OnClusterTopology(context, clusterTopology),
-        JoinRequest request                            => OnJoinRequest(context, request),
-        JoinAsClientRequest request                    => OnJoinAsClientRequest(context, request),
-        Terminated pid                                 => OnClientTerminated(pid),
-        _                                              => Task.CompletedTask
-    };
+        _options = options;
+    }
+
+    public Task ReceiveAsync(IContext context)
+    {
+        return context.Message switch
+        {
+            Started                                          => OnStarted(context),
+            Connect                                          => OnConnect(context),
+            GossipUpdate { Key: GossipKeys.Topology } update => OnTopologyUpdate(context, update),
+            ClusterTopology clusterTopology                  => OnClusterTopology(context, clusterTopology),
+            JoinRequest request                              => OnJoinRequest(context, request),
+            JoinAsClientRequest request                      => OnJoinAsClientRequest(context, request),
+            Terminated pid                                   => OnClientTerminated(pid),
+            _                                                => Task.CompletedTask
+        };
+    }
 
     private async Task OnConnect(IContext context)
     {
         var (selfHost, selfPort) = context.System.GetAddress();
+
         if (_options.SeedNodes.Except(new[] { (selfHost, selfPort) }).Any())
         {
             foreach (var (host, port) in _options.SeedNodes)
@@ -51,12 +60,15 @@ public class SeedNodeActor : IActor
                 try
                 {
                     var pid = PID.FromAddress(host + ":" + port, Name);
+
                     var res = await context.System.Root.RequestAsync<JoinResponse>(pid, new JoinRequest
                         {
                             Joiner = context.Cluster().MemberList.Self
                         }
                     );
+
                     context.Respond(new Connected(res.Member));
+
                     return;
                 }
                 catch (Exception x)
@@ -65,6 +77,7 @@ public class SeedNodeActor : IActor
                     Logger.LogError(x, "Failed to connect to seed node {Host}:{Port}", host, port);
                 }
             }
+
             context.Respond(new FailedToConnect());
         }
         else
@@ -72,10 +85,12 @@ public class SeedNodeActor : IActor
             context.Respond(new Connected(context.Cluster().MemberList.Self));
         }
     }
+
     private Task OnClusterTopology(IContext context, ClusterTopology clusterTopology)
     {
         _lastestTopology = clusterTopology;
         NotifyClients(context, clusterTopology);
+
         return Task.CompletedTask;
     }
 
@@ -83,6 +98,7 @@ public class SeedNodeActor : IActor
     {
         _clients = _clients.Remove(pid.Who);
         Logger.LogInformation("Client {Client} left", pid.Who);
+
         return Task.CompletedTask;
     }
 
@@ -91,18 +107,23 @@ public class SeedNodeActor : IActor
         Logger.LogInformation("Started SeedNodeActor");
         SetMember(context.Cluster().MemberList.Self);
         UpdateMemberList(context);
+
         return Task.CompletedTask;
     }
 
     private Task OnJoinAsClientRequest(IContext context, JoinAsClientRequest request)
     {
         Logger.LogInformation("Got JoinRequest from Client {Client}", context.Sender!);
+
         if (context.Sender?.IsClientId() == true)
         {
-            var clientSeed = PID.FromAddress(context.Sender.Address, $"{ActorSystem.Client}/{request.SystemId}/{SeedClientNodeActor.Name}");
+            var clientSeed = PID.FromAddress(context.Sender.Address,
+                $"{ActorSystem.Client}/{request.SystemId}/{SeedClientNodeActor.Name}");
+
             context.Watch(clientSeed);
             _clients = _clients.Add(clientSeed);
-            context.Respond(new JoinResponse() { Member = context.Cluster().MemberList.Self });
+            context.Respond(new JoinResponse { Member = context.Cluster().MemberList.Self });
+
             if (_lastestTopology != null)
             {
                 context.Send(clientSeed, _lastestTopology);
@@ -117,12 +138,14 @@ public class SeedNodeActor : IActor
             var clientSeed = PID.FromAddress(context.Sender.Address, SeedClientNodeActor.Name);
             context.Watch(clientSeed);
             _clients = _clients.Add(clientSeed);
-            context.Respond(new JoinResponse() { Member = context.Cluster().MemberList.Self });
+            context.Respond(new JoinResponse { Member = context.Cluster().MemberList.Self });
+
             if (_lastestTopology != null)
             {
                 context.Send(clientSeed, _lastestTopology);
             }
         }
+
         return Task.CompletedTask;
     }
 
@@ -131,7 +154,8 @@ public class SeedNodeActor : IActor
         Logger.LogInformation("Got JoinRequest from Member {Member}", request.Joiner);
         SetMember(request.Joiner);
         UpdateMemberList(context);
-        context.Respond(new JoinResponse() { Member = context.Cluster().MemberList.Self });
+        context.Respond(new JoinResponse { Member = context.Cluster().MemberList.Self });
+
         return Task.CompletedTask;
     }
 
@@ -139,6 +163,7 @@ public class SeedNodeActor : IActor
     {
         var topology = update.Value.Unpack<ClusterTopology>();
         _lastestTopology = topology;
+
         foreach (var m in topology.Members)
         {
             SetMember(m);
@@ -155,6 +180,7 @@ public class SeedNodeActor : IActor
         {
             context.Send(client, topology);
         }
+
         return Task.CompletedTask;
     }
 
@@ -172,5 +198,8 @@ public class SeedNodeActor : IActor
         context.Cluster().MemberList.UpdateClusterTopology(members);
     }
 
-    public static Props Props(SeedNodeClusterProviderOptions options) => Proto.Props.FromProducer(() => new SeedNodeActor(options));
+    public static Props Props(SeedNodeClusterProviderOptions options)
+    {
+        return Proto.Props.FromProducer(() => new SeedNodeActor(options));
+    }
 }

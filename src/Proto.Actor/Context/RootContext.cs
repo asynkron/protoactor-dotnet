@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading;
@@ -17,8 +18,9 @@ namespace Proto;
 public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
 {
     /// <summary>
-    /// Add sender middleware to the root context. Every message sent through the root context will be passed through the middleware.
-    /// The middleware will overwrite any other middleware previously added to the root context.
+    ///     Add sender middleware to the root context. Every message sent through the root context will be passed through the
+    ///     middleware.
+    ///     The middleware will overwrite any other middleware previously added to the root context.
     /// </summary>
     /// <param name="middleware">Middleware to use. First entry is the outermost middleware, while last entry is innermost.</param>
     /// <returns></returns>
@@ -29,6 +31,7 @@ public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
 public sealed record RootContext : IRootContext
 {
     private static readonly ILogger Logger = Log.CreateLogger<RootContext>();
+
     public RootContext(ActorSystem system)
     {
         System = system;
@@ -41,20 +44,30 @@ public sealed record RootContext : IRootContext
         System = system;
 
         SenderMiddleware = middleware.Reverse()
-            .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner));
+            .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
+
         Headers = messageHeader ?? MessageHeader.Empty;
     }
 
     private Sender? SenderMiddleware { get; init; }
-    public ActorSystem System { get; }
 
     private TypeDictionary<object, RootContext> Store { get; } = new(0, 1);
+    public ActorSystem System { get; }
 
-    public T? Get<T>() => (T?) Store.Get<T>();
+    public T? Get<T>()
+    {
+        return (T?)Store.Get<T>();
+    }
 
-    public void Set<T, TI>(TI obj) where TI : T => Store.Add<T>(obj!);
+    public void Set<T, TI>(TI obj) where TI : T
+    {
+        Store.Add<T>(obj!);
+    }
 
-    public void Remove<T>() => Store.Remove<T>();
+    public void Remove<T>()
+    {
+        Store.Remove<T>();
+    }
 
     public MessageHeader Headers { get; init; }
 
@@ -63,7 +76,7 @@ public sealed record RootContext : IRootContext
     PID? IInfoContext.Sender => null;
     public IActor? Actor => null;
 
-    public PID SpawnNamed(Props props, string name, Action<IContext>? callback=null)
+    public PID SpawnNamed(Props props, string name, Action<IContext>? callback = null)
     {
         try
         {
@@ -71,24 +84,27 @@ public sealed record RootContext : IRootContext
             {
                 name = System.ProcessRegistry.NextId();
             }
-            
+
             var parent = props.GuardianStrategy is not null
                 ? System.Guardians.GetGuardianPid(props.GuardianStrategy)
                 : null;
+
             return props.Spawn(System, name, parent, callback);
         }
         catch (Exception x)
         {
             Logger.LogError(x, "RootContext Failed to spawn root level actor {Name}", name);
+
             throw;
         }
     }
-    
-    
 
     public object? Message => null;
 
-    public void Send(PID target, object message) => SendUserMessage(target, message);
+    public void Send(PID target, object message)
+    {
+        SendUserMessage(target, message);
+    }
 
     public void Request(PID target, object message, PID? sender)
     {
@@ -99,45 +115,30 @@ public sealed record RootContext : IRootContext
     //why does this method exist here and not as an extension?
     //because DecoratorContexts needs to go this way if we want to intercept this method for the context
     public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-        => SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
-        
-    public IRootContext WithHeaders(MessageHeader headers) =>
-        this with {Headers = headers};
+    {
+        return SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
+    }
 
-    public IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) =>
-        this with
+    public IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware)
+    {
+        return this with
         {
             SenderMiddleware = middleware.Reverse()
-                .Aggregate((Sender) DefaultSender, (inner, outer) => outer(inner))
+                .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner))
         };
-
-    private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
-    {
-        target.SendUserMessage(context.System, message);
-        return Task.CompletedTask;
     }
 
-    private void SendUserMessage(PID target, object message)
+    public IFuture GetFuture()
     {
-        if (target is null) throw new ArgumentNullException(nameof(target));
-
-        if (SenderMiddleware is not null)
-        {
-            //slow path
-            SenderMiddleware(this, target, MessageEnvelope.Wrap(message));
-        }
-        else
-        {
-            //fast path, 0 alloc
-            target.SendUserMessage(System, message);
-        }
+        return System.Future.Get();
     }
 
-    public IFuture GetFuture() => System.Future.Get();
-        
     public void Stop(PID? pid)
     {
-        if (pid is null) return;
+        if (pid is null)
+        {
+            return;
+        }
 
         var reff = System.ProcessRegistry.Get(pid);
         reff.Stop(pid);
@@ -151,8 +152,11 @@ public sealed record RootContext : IRootContext
 
         return future.Task;
     }
-        
-    public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
+
+    public void Poison(PID pid)
+    {
+        pid.SendUserMessage(System, PoisonPill.Instance);
+    }
 
     public Task PoisonAsync(PID pid)
     {
@@ -161,5 +165,36 @@ public sealed record RootContext : IRootContext
         Poison(pid);
 
         return future.Task;
+    }
+
+    public IRootContext WithHeaders(MessageHeader headers)
+    {
+        return this with { Headers = headers };
+    }
+
+    private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
+    {
+        target.SendUserMessage(context.System, message);
+
+        return Task.CompletedTask;
+    }
+
+    private void SendUserMessage(PID target, object message)
+    {
+        if (target is null)
+        {
+            throw new ArgumentNullException(nameof(target));
+        }
+
+        if (SenderMiddleware is not null)
+        {
+            //slow path
+            SenderMiddleware(this, target, MessageEnvelope.Wrap(message));
+        }
+        else
+        {
+            //fast path, 0 alloc
+            target.SendUserMessage(System, message);
+        }
     }
 }

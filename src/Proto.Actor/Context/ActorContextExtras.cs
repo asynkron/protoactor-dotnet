@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Immutable;
 using System.Threading;
@@ -17,9 +18,12 @@ namespace Proto;
 //because most actors do not need any of this, it is extra state that comes at a cost
 //most actors are short lived, no children. no stash, no timers
 //therefore we only use this extra state when needed, to keep actors as lightweight as possible
-public sealed class ActorContextExtras: IDisposable
+public sealed class ActorContextExtras : IDisposable
 {
-    public ActorContextExtras(IContext context) => Context = context;
+    public ActorContextExtras(IContext context)
+    {
+        Context = context;
+    }
 
     public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
     public Timer? ReceiveTimeoutTimer { get; private set; }
@@ -30,11 +34,26 @@ public sealed class ActorContextExtras: IDisposable
 
     internal TypeDictionary<object, ActorContextExtras> Store { get; } = new(5, 1);
 
-    public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
+    public void Dispose()
+    {
+        ReceiveTimeoutTimer?.Dispose();
+        CancellationTokenSource.Dispose();
+    }
 
-    public void ResetReceiveTimeoutTimer(TimeSpan timeout) => ReceiveTimeoutTimer?.Change(timeout, timeout);
+    public void InitReceiveTimeoutTimer(Timer timer)
+    {
+        ReceiveTimeoutTimer = timer;
+    }
 
-    public void StopReceiveTimeoutTimer() => ReceiveTimeoutTimer?.Change(-1, -1);
+    public void ResetReceiveTimeoutTimer(TimeSpan timeout)
+    {
+        ReceiveTimeoutTimer?.Change(timeout, timeout);
+    }
+
+    public void StopReceiveTimeoutTimer()
+    {
+        ReceiveTimeoutTimer?.Change(-1, -1);
+    }
 
     public void KillReceiveTimeoutTimer()
     {
@@ -42,17 +61,23 @@ public sealed class ActorContextExtras: IDisposable
         ReceiveTimeoutTimer = null;
     }
 
-    public void AddChild(PID pid) => Children = Children.Add(pid);
-
-    public void RemoveChild(PID msgWho) => Children = Children.Remove(msgWho);
-
-    public void Watch(PID watcher) => Watchers = Watchers.Add(watcher);
-
-    public void Unwatch(PID watcher) => Watchers = Watchers.Remove(watcher);
-
-    public void Dispose()
+    public void AddChild(PID pid)
     {
-        ReceiveTimeoutTimer?.Dispose();
-        CancellationTokenSource.Dispose();
+        Children = Children.Add(pid);
+    }
+
+    public void RemoveChild(PID msgWho)
+    {
+        Children = Children.Remove(msgWho);
+    }
+
+    public void Watch(PID watcher)
+    {
+        Watchers = Watchers.Add(watcher);
+    }
+
+    public void Unwatch(PID watcher)
+    {
+        Watchers = Watchers.Remove(watcher);
     }
 }

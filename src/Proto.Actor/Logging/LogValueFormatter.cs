@@ -6,34 +6,34 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 
 namespace Proto.Logging;
 
 /// <summary>
-/// Formatter to convert the named format items like {NamedformatItem} to <see cref="string.Format(IFormatProvider, string, object)"/> format.
+///     Formatter to convert the named format items like {NamedformatItem} to
+///     <see cref="string.Format(IFormatProvider, string, object)" /> format.
 /// </summary>
 internal class LogValuesFormatter
 {
     private const string NullValue = "(null)";
-    private static readonly char[] FormatDelimiters = {',', ':'};
+    private static readonly char[] FormatDelimiters = { ',', ':' };
     private readonly string _format;
-    private readonly List<string> _valueNames = new List<string>();
 
     public LogValuesFormatter(string format)
     {
         OriginalFormat = format;
 
         var sb = new StringBuilder();
-        int scanIndex = 0;
-        int endIndex = format.Length;
+        var scanIndex = 0;
+        var endIndex = format.Length;
 
         while (scanIndex < endIndex)
         {
-            int openBraceIndex = FindBraceIndex(format, '{', scanIndex, endIndex);
-            int closeBraceIndex = FindBraceIndex(format, '}', openBraceIndex, endIndex);
+            var openBraceIndex = FindBraceIndex(format, '{', scanIndex, endIndex);
+            var closeBraceIndex = FindBraceIndex(format, '}', openBraceIndex, endIndex);
 
             if (closeBraceIndex == endIndex)
             {
@@ -43,11 +43,11 @@ internal class LogValuesFormatter
             else
             {
                 // Format item syntax : { index[,alignment][ :formatString] }.
-                int formatDelimiterIndex = FindIndexOfAny(format, FormatDelimiters, openBraceIndex, closeBraceIndex);
+                var formatDelimiterIndex = FindIndexOfAny(format, FormatDelimiters, openBraceIndex, closeBraceIndex);
 
                 sb.Append(format, scanIndex, openBraceIndex - scanIndex + 1);
-                sb.Append(_valueNames.Count.ToString(CultureInfo.InvariantCulture));
-                _valueNames.Add(format.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1));
+                sb.Append(ValueNames.Count.ToString(CultureInfo.InvariantCulture));
+                ValueNames.Add(format.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1));
                 sb.Append(format, formatDelimiterIndex, closeBraceIndex - formatDelimiterIndex + 1);
 
                 scanIndex = closeBraceIndex + 1;
@@ -57,15 +57,15 @@ internal class LogValuesFormatter
         _format = sb.ToString();
     }
 
-    public string OriginalFormat { get; private set; }
-    public List<string> ValueNames => _valueNames;
+    public string OriginalFormat { get; }
+    public List<string> ValueNames { get; } = new();
 
     private static int FindBraceIndex(string format, char brace, int startIndex, int endIndex)
     {
         // Example: {{prefix{{{Argument}}}suffix}}.
-        int braceIndex = endIndex;
-        int scanIndex = startIndex;
-        int braceOccurrenceCount = 0;
+        var braceIndex = endIndex;
+        var scanIndex = startIndex;
+        var braceOccurrenceCount = 0;
 
         while (scanIndex < endIndex)
         {
@@ -110,7 +110,8 @@ internal class LogValuesFormatter
 
     private static int FindIndexOfAny(string format, char[] chars, int startIndex, int endIndex)
     {
-        int findIndex = format.IndexOfAny(chars, startIndex, endIndex - startIndex);
+        var findIndex = format.IndexOfAny(chars, startIndex, endIndex - startIndex);
+
         return findIndex == -1 ? endIndex : findIndex;
     }
 
@@ -118,7 +119,7 @@ internal class LogValuesFormatter
     {
         if (values != null)
         {
-            for (int i = 0; i < values.Length; i++)
+            for (var i = 0; i < values.Length; i++)
             {
                 values[i] = FormatArgument(values[i]);
             }
@@ -144,19 +145,20 @@ internal class LogValuesFormatter
 
     internal string Format(object arg0, object arg1, object arg2)
     {
-        return string.Format(CultureInfo.InvariantCulture, _format, FormatArgument(arg0), FormatArgument(arg1), FormatArgument(arg2));
+        return string.Format(CultureInfo.InvariantCulture, _format, FormatArgument(arg0), FormatArgument(arg1),
+            FormatArgument(arg2));
     }
 
     public KeyValuePair<string, object> GetValue(object[] values, int index)
     {
-        if (index < 0 || index > _valueNames.Count)
+        if (index < 0 || index > ValueNames.Count)
         {
             throw new IndexOutOfRangeException(nameof(index));
         }
 
-        if (_valueNames.Count > index)
+        if (ValueNames.Count > index)
         {
-            return new KeyValuePair<string, object>(_valueNames[index], values[index]);
+            return new KeyValuePair<string, object>(ValueNames[index], values[index]);
         }
 
         return new KeyValuePair<string, object>("{OriginalFormat}", OriginalFormat);
@@ -165,12 +167,14 @@ internal class LogValuesFormatter
     public IEnumerable<KeyValuePair<string, object>> GetValues(object[] values)
     {
         var valueArray = new KeyValuePair<string, object>[values.Length + 1];
-        for (int index = 0; index != _valueNames.Count; ++index)
+
+        for (var index = 0; index != ValueNames.Count; ++index)
         {
-            valueArray[index] = new KeyValuePair<string, object>(_valueNames[index], values[index]);
+            valueArray[index] = new KeyValuePair<string, object>(ValueNames[index], values[index]);
         }
 
         valueArray[valueArray.Length - 1] = new KeyValuePair<string, object>("{OriginalFormat}", OriginalFormat);
+
         return valueArray;
     }
 
@@ -189,6 +193,7 @@ internal class LogValuesFormatter
 
         // if the value implements IEnumerable, build a comma separated string.
         var enumerable = value as IEnumerable;
+
         if (enumerable != null)
         {
             return string.Join(", ", enumerable.Cast<object>().Select(o => o ?? NullValue));
@@ -196,5 +201,4 @@ internal class LogValuesFormatter
 
         return value;
     }
-
 }

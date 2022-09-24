@@ -9,8 +9,10 @@ namespace Proto.Persistence.Sqlite;
 
 public class SqliteProvider : IProvider
 {
-    private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
-    private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+    private static readonly JsonSerializerSettings
+        AutoTypeSettings = new() { TypeNameHandling = TypeNameHandling.Auto };
+
+    private static readonly JsonSerializerSettings AllTypeSettings = new() { TypeNameHandling = TypeNameHandling.All };
     private readonly SqliteConnectionStringBuilder _connectionStringBuilder;
 
     public SqliteProvider(SqliteConnectionStringBuilder connectionStringBuilder)
@@ -23,13 +25,16 @@ public class SqliteProvider : IProvider
 
         using var initEventsCommand = connection.CreateCommand();
 
-        initEventsCommand.CommandText = "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
+        initEventsCommand.CommandText =
+            "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
+
         initEventsCommand.ExecuteNonQuery();
 
         using var initSnapshotsCommand = connection.CreateCommand();
 
         initSnapshotsCommand.CommandText =
             "CREATE TABLE IF NOT EXISTS Snapshots (Id TEXT, ActorName TEXT, SnapshotIndex REAL, SnapshotData TEXT)";
+
         initSnapshotsCommand.ExecuteNonQuery();
     }
 
@@ -167,11 +172,13 @@ public class SqliteProvider : IProvider
         await insertCommand.ExecuteNonQueryAsync();
     }
 
-    private static SqliteCommand CreateCommand(SqliteConnection connection, string command, params (string Name, object Value)[] parameters)
+    private static SqliteCommand CreateCommand(SqliteConnection connection, string command,
+        params (string Name, object Value)[] parameters)
     {
         var sqliteCommand = connection.CreateCommand();
         sqliteCommand.CommandText = command;
         sqliteCommand.Parameters.AddRange(parameters.Select(x => new SqliteParameter(x.Name, x.Value)));
+
         return sqliteCommand;
     }
 }

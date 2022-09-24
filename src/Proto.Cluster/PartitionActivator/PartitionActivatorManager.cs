@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,7 +14,6 @@ public class PartitionActivatorManager
 {
     private const string PartitionActivatorActorName = "$partition-activator";
     private readonly Cluster _cluster;
-
 
     private readonly IRootContext _context;
     private readonly bool _isClient;
@@ -26,7 +26,6 @@ public class PartitionActivatorManager
         _system = cluster.System;
         _context = _system.Root;
         _isClient = isClient;
- 
     }
 
     internal PartitionActivatorSelector Selector { get; } = new();
@@ -36,9 +35,14 @@ public class PartitionActivatorManager
         if (_isClient)
         {
             var topologyHash = 0ul;
+
             //make sure selector is updated first
-            _system.EventStream.Subscribe<ClusterTopology>(e => {
-                    if (e.TopologyHash == topologyHash) return;
+            _system.EventStream.Subscribe<ClusterTopology>(e =>
+                {
+                    if (e.TopologyHash == topologyHash)
+                    {
+                        return;
+                    }
 
                     topologyHash = e.TopologyHash;
                     Selector.Update(e.Members.ToArray());
@@ -49,14 +53,20 @@ public class PartitionActivatorManager
         {
             var partitionActivatorProps =
                 Props.FromProducer(() => new PartitionActivatorActor(_cluster, this));
+
             _partitionActivatorActor = _context.SpawnNamedSystem(partitionActivatorProps, PartitionActivatorActorName);
 
             //synchronous subscribe to keep accurate
 
             var topologyHash = 0ul;
+
             //make sure selector is updated first
-            _system.EventStream.Subscribe<ClusterTopology>(e => {
-                    if (e.TopologyHash == topologyHash) return;
+            _system.EventStream.Subscribe<ClusterTopology>(e =>
+                {
+                    if (e.TopologyHash == topologyHash)
+                    {
+                        return;
+                    }
 
                     topologyHash = e.TopologyHash;
 
@@ -78,6 +88,8 @@ public class PartitionActivatorManager
         }
     }
 
-    public static PID RemotePartitionActivatorActor(string address) =>
-        PID.FromAddress(address, PartitionActivatorActorName);
+    public static PID RemotePartitionActivatorActor(string address)
+    {
+        return PID.FromAddress(address, PartitionActivatorActorName);
+    }
 }

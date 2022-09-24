@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Linq;
 using Proto.Remote;
@@ -10,14 +11,21 @@ using Proto.Remote;
 namespace Proto.Cluster.PubSub;
 
 /// <summary>
-/// Message posted to subscriber's mailbox, that is then unrolled to single messages, and has ability to auto respond
+///     Message posted to subscriber's mailbox, that is then unrolled to single messages, and has ability to auto respond
 /// </summary>
 /// <param name="Envelopes"></param>
-public record PubSubAutoRespondBatch(IReadOnlyCollection<object> Envelopes) : IRootSerializable, IMessageBatch, IAutoRespond
+public record PubSubAutoRespondBatch(IReadOnlyCollection<object> Envelopes) : IRootSerializable, IMessageBatch,
+    IAutoRespond
 {
-    public object GetAutoResponse(IContext context) => new PublishResponse();
+    public object GetAutoResponse(IContext context)
+    {
+        return new PublishResponse();
+    }
 
-    public IReadOnlyCollection<object> GetMessages() => Envelopes;
+    public IReadOnlyCollection<object> GetMessages()
+    {
+        return Envelopes;
+    }
 
     public IRootSerialized Serialize(ActorSystem system)
     {
@@ -40,7 +48,7 @@ public record PubSubAutoRespondBatch(IReadOnlyCollection<object> Envelopes) : IR
             {
                 MessageData = messageData,
                 TypeId = typeIndex,
-                SerializerId = serializerId,
+                SerializerId = serializerId
             };
 
             batch.Envelopes.Add(envelope);
@@ -55,6 +63,7 @@ public partial class PubSubAutoRespondBatchTransport : IRootSerialized
     public IRootSerializable Deserialize(ActorSystem system)
     {
         var ser = system.Serialization();
+
         //deserialize messages in the envelope
         var messages = Envelopes
             .Select(e => ser

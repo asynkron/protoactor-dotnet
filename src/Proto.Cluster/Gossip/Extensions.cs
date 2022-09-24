@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -14,13 +15,20 @@ public static class Extensions
     internal static (bool, T?) HasConsensus<T>(this IEnumerable<T?> enumerable)
     {
         using var enumerator = enumerable.GetEnumerator();
-        if (!enumerator.MoveNext() || enumerator.Current is null) return default;
+
+        if (!enumerator.MoveNext() || enumerator.Current is null)
+        {
+            return default;
+        }
 
         var first = enumerator.Current;
 
         while (enumerator.MoveNext())
         {
-            if (enumerator.Current?.Equals(first) != true) return default;
+            if (enumerator.Current?.Equals(first) != true)
+            {
+                return default;
+            }
         }
 
         return (true, first);
@@ -33,11 +41,13 @@ public static class Extensions
         where T : notnull
     {
         var handle = new GossipConsensusHandle<T>(cancel);
+
         var check = CreateConsensusCheck(
             consensusDefinition,
             consensusValue => handle.TrySetConsensus(consensusValue),
             () => handle.TryResetConsensus()
         );
+
         return (handle, check);
     }
 
@@ -57,7 +67,10 @@ public static class Extensions
 
             if (consensus)
             {
-                if (hadConsensus) return;
+                if (hadConsensus)
+                {
+                    return;
+                }
 
                 onConsensus(value);
                 hadConsensus = true;

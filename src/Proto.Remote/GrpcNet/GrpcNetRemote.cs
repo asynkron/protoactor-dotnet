@@ -15,8 +15,8 @@ namespace Proto.Remote.GrpcNet;
 
 public class GrpcNetRemote : IRemote
 {
-    private readonly object _lock = new(); 
     private readonly GrpcNetRemoteConfig _config;
+    private readonly object _lock = new();
     private readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
     private EndpointManager _endpointManager = null!;
     private EndpointReader _endpointReader = null!;
@@ -33,9 +33,9 @@ public class GrpcNetRemote : IRemote
     }
 
     public bool Started { get; private set; }
-        
+
     public BlockList BlockList { get; }
-        
+
     public RemoteConfigBase Config => _config;
     public ActorSystem System { get; }
 
@@ -44,7 +44,9 @@ public class GrpcNetRemote : IRemote
         lock (_lock)
         {
             if (Started)
+            {
                 return Task.CompletedTask;
+            }
 
             var channelProvider = new GrpcNetChannelProvider(_config);
             _endpointManager = new EndpointManager(System, Config, channelProvider);
@@ -52,18 +54,20 @@ public class GrpcNetRemote : IRemote
             _healthCheck = new HealthServiceImpl();
 
             if (!IPAddress.TryParse(Config.Host, out var ipAddress))
+            {
                 ipAddress = IPAddress.Any;
+            }
+
             IServerAddressesFeature? serverAddressesFeature = null;
 
             _host = new WebHostBuilder()
                 .UseKestrel()
-                .ConfigureKestrel(serverOptions => {
+                .ConfigureKestrel(serverOptions =>
+                    {
                         if (_config.ConfigureKestrel == null)
                         {
                             serverOptions.Listen(ipAddress, Config.Port,
-                                listenOptions => {
-                                    listenOptions.Protocols = HttpProtocols.Http2;
-                                }
+                                listenOptions => { listenOptions.Protocols = HttpProtocols.Http2; }
                             );
                         }
                         else
@@ -74,20 +78,27 @@ public class GrpcNetRemote : IRemote
                         }
                     }
                 )
-                .ConfigureServices(serviceCollection => {
+                .ConfigureServices(serviceCollection =>
+                    {
                         serviceCollection.AddSingleton(Log.GetLoggerFactory());
-                        serviceCollection.AddGrpc(options => {
+
+                        serviceCollection.AddGrpc(options =>
+                            {
                                 options.MaxReceiveMessageSize = null;
                                 options.EnableDetailedErrors = true;
                             }
                         );
+
                         serviceCollection.AddSingleton<Remoting.RemotingBase>(_endpointReader);
                         serviceCollection.AddSingleton<Health.HealthBase>(_healthCheck);
                         serviceCollection.AddSingleton<IRemote>(this);
                     }
-                ).Configure(app => {
+                ).Configure(app =>
+                    {
                         app.UseRouting();
-                        app.UseEndpoints(endpoints => {
+
+                        app.UseEndpoints(endpoints =>
+                            {
                                 endpoints.MapGrpcService<Remoting.RemotingBase>();
                                 endpoints.MapGrpcService<Health.HealthBase>();
                             }
@@ -97,14 +108,21 @@ public class GrpcNetRemote : IRemote
                     }
                 )
                 .Start();
+
             var uri = serverAddressesFeature!.Addresses.Select(address => new Uri(address)).First();
             var boundPort = uri.Port;
+
             System.SetAddress(Config.AdvertisedHost ?? Config.Host,
                 Config.AdvertisedPort ?? boundPort
             );
+
             _endpointManager.Start();
-            _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, Config.Port, System.Address);
+
+            _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, Config.Port,
+                System.Address);
+
             Started = true;
+
             return Task.CompletedTask;
         }
     }
@@ -114,7 +132,9 @@ public class GrpcNetRemote : IRemote
         lock (_lock)
         {
             if (!Started)
+            {
                 return;
+            }
 
             Started = false;
         }
@@ -126,8 +146,11 @@ public class GrpcNetRemote : IRemote
                 if (graceful)
                 {
                     _endpointManager.Stop();
+
                     if (_host is not null)
+                    {
                         await _host.StopAsync();
+                    }
                 }
             }
 

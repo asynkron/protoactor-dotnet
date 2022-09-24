@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -12,45 +13,66 @@ using JetBrains.Annotations;
 namespace Proto;
 
 /// <summary>
-/// A collection of message headers
+///     A collection of message headers
 /// </summary>
 [PublicAPI]
 public record MessageHeader : IReadOnlyDictionary<string, string>
 {
     public static readonly MessageHeader Empty = new(ImmutableDictionary<string, string>.Empty);
 
-    public MessageHeader(IDictionary<string, string> headers) => Inner = headers.ToImmutableDictionary();
+    public MessageHeader(IDictionary<string, string> headers)
+    {
+        Inner = headers.ToImmutableDictionary();
+    }
 
     private ImmutableDictionary<string, string> Inner { get; init; }
 
-    public IEnumerator<KeyValuePair<string, string>> GetEnumerator() =>
-        Inner.GetEnumerator();
+    public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+    {
+        return Inner.GetEnumerator();
+    }
 
-    IEnumerator IEnumerable.GetEnumerator() =>
-        Inner.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return Inner.GetEnumerator();
+    }
 
     public int Count => Inner.Count;
 
-    public bool ContainsKey(string key) => Inner.ContainsKey(key);
+    public bool ContainsKey(string key)
+    {
+        return Inner.ContainsKey(key);
+    }
 
-    public bool TryGetValue(string key, out string value) =>
-        Inner.TryGetValue(key, out value!);
+    public bool TryGetValue(string key, out string value)
+    {
+        return Inner.TryGetValue(key, out value!);
+    }
 
     public string this[string key] => Inner[key];
 
     public IEnumerable<string> Keys => Inner.Keys;
     public IEnumerable<string> Values => Inner.Values;
 
-    public IDictionary<string, string> ToDictionary() => Inner;
+    public IDictionary<string, string> ToDictionary()
+    {
+        return Inner;
+    }
 
-    public string? GetOrDefault(string key, string? @default = null) =>
-        TryGetValue(key, out var value) ? value : @default;
+    public string? GetOrDefault(string key, string? @default = null)
+    {
+        return TryGetValue(key, out var value) ? value : @default;
+    }
 
-    public MessageHeader With(string key, string value) =>
-        this with {Inner = Inner.SetItem(key, value)};
+    public MessageHeader With(string key, string value)
+    {
+        return this with { Inner = Inner.SetItem(key, value) };
+    }
 
-    public MessageHeader With(IEnumerable<KeyValuePair<string, string>> items) =>
-        this with {Inner = Inner.SetItems(items)};
+    public MessageHeader With(IEnumerable<KeyValuePair<string, string>> items)
+    {
+        return this with { Inner = Inner.SetItems(items) };
+    }
 
     public MessageHeader With(MessageHeader header)
     {
@@ -59,8 +81,11 @@ public record MessageHeader : IReadOnlyDictionary<string, string>
             return this;
         }
 
-        if (Count == 0) return header;
+        if (Count == 0)
+        {
+            return header;
+        }
 
-        return this with {Inner = Inner.SetItems(header.Inner)};
+        return this with { Inner = Inner.SetItems(header.Inner) };
     }
 }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Reflection;
 using System.Text;
 
@@ -17,7 +18,6 @@ public static class DiagnosticsSerializer
 
         foreach (var field in fields)
         {
-                
             sb.Append(field.Name);
             sb.Append(" = ");
 
@@ -33,7 +33,7 @@ public static class DiagnosticsSerializer
 
             sb.AppendLine();
         }
-            
+
         return sb.ToString();
     }
 }

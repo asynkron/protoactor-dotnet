@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,7 +19,7 @@ using static Proto.Cluster.Kubernetes.ProtoLabels;
 
 namespace Proto.Cluster.Kubernetes;
 
-static class KubernetesExtensions
+internal static class KubernetesExtensions
 {
     private static string cachedNamespace;
 
@@ -43,7 +44,9 @@ static class KubernetesExtensions
         pod.Metadata.Labels = labels;
         var expected = JsonSerializer.SerializeToDocument(pod);
         var patch = old.CreatePatch(expected);
-        return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch, V1Patch.PatchType.JsonPatch), podName, podNamespace);
+
+        return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch, V1Patch.PatchType.JsonPatch), podName,
+            podNamespace);
     }
 
     /// <summary>
@@ -73,7 +76,7 @@ static class KubernetesExtensions
                 Id = mid,
                 Host = host,
                 Port = port,
-                Kinds = {kinds}
+                Kinds = { kinds }
             });
     }
 
@@ -104,5 +107,8 @@ static class KubernetesExtensions
     ///     A wrapper about getting the machine name. The pod name is always the "machine" name/
     /// </summary>
     /// <returns></returns>
-    internal static string GetPodName() => Environment.MachineName;
+    internal static string GetPodName()
+    {
+        return Environment.MachineName;
+    }
 }

@@ -3,10 +3,10 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,23 +20,22 @@ using Proto.Remote;
 namespace Proto.Cluster;
 
 /// <summary>
-/// Responsible for figuring out what members are currently active in the cluster.
-/// It will receive a list of Members from the IClusterProvider and from that, we calculate a delta, which members joined, or left.
-/// This also subscribes to gossip messages from the cluster, and updates the <see cref="BlockList"/> accordingly.
-/// If the member learns that it is blocked from gossip, it will initiate shutdown.
+///     Responsible for figuring out what members are currently active in the cluster.
+///     It will receive a list of Members from the IClusterProvider and from that, we calculate a delta, which members
+///     joined, or left.
+///     This also subscribes to gossip messages from the cluster, and updates the <see cref="BlockList" /> accordingly.
+///     If the member learns that it is blocked from gossip, it will initiate shutdown.
 /// </summary>
 [PublicAPI]
 public record MemberList
 {
+    private static readonly ILogger Logger = Log.CreateLogger<MemberList>();
     private readonly Cluster _cluster;
     private readonly EventStream _eventStream;
-    private static readonly ILogger Logger = Log.CreateLogger<MemberList>();
+    private readonly object _lock = new();
 
     private readonly IRootContext _root;
     private readonly ActorSystem _system;
-    private bool _stopping = false;
-    private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
-    private ImmutableDictionary<string, MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
 
     // private Member? _leader;
 
@@ -46,23 +45,20 @@ public record MemberList
     //come up with a good solution to keep all this in sync
     private ImmutableMemberSet _activeMembers = ImmutableMemberSet.Empty;
     private CancellationTokenSource? _currentTopologyTokenSource;
+    private ImmutableDictionary<string, int> _indexByAddress = ImmutableDictionary<string, int>.Empty;
 
     private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
-    private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind = ImmutableDictionary<string, IMemberStrategy>.Empty;
+    private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind =
+        ImmutableDictionary<string, IMemberStrategy>.Empty;
+
+    private ImmutableDictionary<string, MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
 
     private int _nextMemberIndex;
 
     private TaskCompletionSource<bool> _startedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private readonly object _lock = new();
+    private bool _stopping;
     private IConsensusHandle<ulong>? _topologyConsensus;
-    
-    /// <summary>
-    /// Gets the current member
-    /// </summary>
-    public Member Self { get; }
-
-    public Task Started => _startedTcs.Task;
 
     public MemberList(Cluster cluster)
     {
@@ -70,19 +66,24 @@ public record MemberList
         _system = _cluster.System;
         _root = _system.Root;
         var (host, port) = _cluster.System.GetAddress();
+
         Self = new Member
         {
             Id = _cluster.System.Id,
             Host = host,
             Port = port,
-            Kinds = {_cluster.GetClusterKinds()}
+            Kinds = { _cluster.GetClusterKinds() }
         };
 
         _eventStream = _system.EventStream;
-        
+
         //subscribe non synchronous to avoid recursive updates
-        _eventStream.Subscribe<GossipUpdate>(u => {
-                if (u.Key != GossipKeys.Topology) return;
+        _eventStream.Subscribe<GossipUpdate>(u =>
+            {
+                if (u.Key != GossipKeys.Topology)
+                {
+                    return;
+                }
 
                 //get blocked members from all other member states, and merge that with our own blocked set
                 var topology = u.Value.Unpack<ClusterTopology>();
@@ -91,44 +92,64 @@ public record MemberList
             }
         );
 
-        _eventStream.Subscribe<MemberBlocked>(b => {
-
+        _eventStream.Subscribe<MemberBlocked>(b =>
+            {
                 if (b.MemberId == _system.Id)
                 {
                     SelfBlocked();
                 }
-                
+
                 UpdateClusterTopology(_activeMembers.Members);
             }, Dispatchers.DefaultDispatcher
         );
     }
 
     /// <summary>
-    /// Gets a list of member ids (same as <see cref="ActorSystem.Id"/>) that are currently active in the cluster.
+    ///     Gets the current member
+    /// </summary>
+    public Member Self { get; }
+
+    public Task Started => _startedTcs.Task;
+
+    public string MemberId => _system.Id;
+
+    /// <summary>
+    ///     Gets a list of member ids (same as <see cref="ActorSystem.Id" />) that are currently active in the cluster.
     /// </summary>
     /// <returns></returns>
-    public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m => m.Id).ToImmutableHashSet();
+    public ImmutableHashSet<string> GetMembers()
+    {
+        return _activeMembers.Members.Select(m => m.Id).ToImmutableHashSet();
+    }
 
-    internal void InitializeTopologyConsensus() => _topologyConsensus =
-        _cluster.Gossip.RegisterConsensusCheck<ClusterTopology, ulong>(GossipKeys.Topology, topology => topology.TopologyHash);
+    internal void InitializeTopologyConsensus()
+    {
+        _topologyConsensus =
+            _cluster.Gossip.RegisterConsensusCheck<ClusterTopology, ulong>(GossipKeys.Topology,
+                topology => topology.TopologyHash);
+    }
 
     internal Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct)
-        => _topologyConsensus?.TryGetConsensus(ct) ?? Task.FromResult<(bool consensus, ulong topologyHash)>(default);
+    {
+        return _topologyConsensus?.TryGetConsensus(ct) ??
+               Task.FromResult<(bool consensus, ulong topologyHash)>(default);
+    }
 
     internal Member? GetActivator(string kind, string requestSourceAddress)
     {
         //immutable, don't lock
         if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
+        {
             return memberStrategy.GetActivator(requestSourceAddress);
+        }
 
         Logger.LogInformation("MemberList did not find any activator for kind '{Kind}'", kind);
+
         return null;
     }
 
-    public string MemberId => _system.Id;
-
     /// <summary>
-    /// Used by clustering providers to update the member list.
+    ///     Used by clustering providers to update the member list.
     /// </summary>
     /// <param name="members"></param>
     public void UpdateClusterTopology(IReadOnlyCollection<Member> members)
@@ -137,7 +158,10 @@ public record MemberList
 
         lock (_lock)
         {
-            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[MemberList] Updating Cluster Topology");
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("[MemberList] Updating Cluster Topology");
+            }
 
             if (blockList.IsBlocked(_system.Id))
             {
@@ -157,6 +181,7 @@ public record MemberList
             {
                 return;
             }
+
             // Cancel any work based on the previous topology
             _currentTopologyTokenSource?.Cancel();
             _currentTopologyTokenSource = new CancellationTokenSource();
@@ -182,18 +207,27 @@ public record MemberList
             var topology = new ClusterTopology
             {
                 TopologyHash = activeMembers.TopologyHash,
-                Members = {activeMembers.Members},
-                Left = {left.Members},
-                Joined = {joined.Members},
-                Blocked = {blockList.BlockedMembers},
+                Members = { activeMembers.Members },
+                Left = { left.Members },
+                Joined = { joined.Members },
+                Blocked = { blockList.BlockedMembers },
                 TopologyValidityToken = _currentTopologyTokenSource.Token
             };
 
-            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
+            }
 
-            if (topology.Joined.Any()) Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
+            if (topology.Joined.Any())
+            {
+                Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
+            }
 
-            if (topology.Left.Any()) Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
+            if (topology.Left.Any())
+            {
+                Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
+            }
 
             BroadcastTopologyChanges(topology);
 
@@ -211,7 +245,10 @@ public record MemberList
             //update MemberStrategy
             foreach (var k in memberThatLeft.Kinds)
             {
-                if (!_memberStrategyByKind.TryGetValue(k, out var ms)) continue;
+                if (!_memberStrategyByKind.TryGetValue(k, out var ms))
+                {
+                    continue;
+                }
 
                 ms.RemoveMember(memberThatLeft);
 
@@ -226,12 +263,11 @@ public record MemberList
                 _membersByIndex = _membersByIndex.Remove(meta.Index);
 
                 if (_indexByAddress.TryGetValue(memberThatLeft.Address, out _))
+                {
                     _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
+                }
             }
-            else
-            {
-                //Log?
-            }
+            //Log?
         }
 
         void MemberJoin(Member newMember)
@@ -268,6 +304,7 @@ public record MemberList
     internal MetaMember? GetMetaMember(string memberId)
     {
         _metaMembers.TryGetValue(memberId, out var meta);
+
         return meta;
     }
 
@@ -283,7 +320,12 @@ public record MemberList
     private void TerminateMember(Member memberThatLeft)
     {
         var endpointTerminated = new EndpointTerminatedEvent(false, memberThatLeft.Address, memberThatLeft.Id);
-        if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
+
+        if (Logger.IsEnabled(LogLevel.Information))
+        {
+            Logger.LogInformation("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
+        }
+
         _cluster.System.EventStream.Publish(endpointTerminated);
     }
 
@@ -304,15 +346,18 @@ public record MemberList
     }
 
     /// <summary>
-    /// Broadcast a message to all members' <see cref="EventStream"/>
+    ///     Broadcast a message to all members' <see cref="EventStream" />
     /// </summary>
     /// <param name="message">Message to broadcast</param>
-    /// <param name="includeSelf">If true, message will also be sent to this member's <see cref="EventStream"/></param>
+    /// <param name="includeSelf">If true, message will also be sent to this member's <see cref="EventStream" /></param>
     public void BroadcastEvent(object message, bool includeSelf = true)
     {
         foreach (var (id, member) in _activeMembers.Lookup)
         {
-            if (!includeSelf && id == _cluster.System.Id) continue;
+            if (!includeSelf && id == _cluster.System.Id)
+            {
+                continue;
+            }
 
             var pid = PID.FromAddress(member.Address, "$eventstream");
 
@@ -329,41 +374,61 @@ public record MemberList
     }
 
     /// <summary>
-    /// Returns true if the member is in the active member list, false otherwise.
+    ///     Returns true if the member is in the active member list, false otherwise.
     /// </summary>
     /// <param name="memberId">Member id</param>
     /// <returns></returns>
-    public bool ContainsMemberId(string memberId) => _activeMembers.Contains(memberId);
-        
+    public bool ContainsMemberId(string memberId)
+    {
+        return _activeMembers.Contains(memberId);
+    }
+
     /// <summary>
-    /// Tries to get the member by id and returns true if it was found, false otherwise.
+    ///     Tries to get the member by id and returns true if it was found, false otherwise.
     /// </summary>
     /// <param name="memberId">Member id</param>
     /// <param name="value">Used to return the member</param>
     /// <returns></returns>
-    public bool TryGetMember(string memberId, out Member? value) => _activeMembers.Lookup.TryGetValue(memberId, out value);
+    public bool TryGetMember(string memberId, out Member? value)
+    {
+        return _activeMembers.Lookup.TryGetValue(memberId, out value);
+    }
 
-    
-    internal bool TryGetMemberIndexByAddress(string address, out int value) => _indexByAddress.TryGetValue(address, out value);
+    internal bool TryGetMemberIndexByAddress(string address, out int value)
+    {
+        return _indexByAddress.TryGetValue(address, out value);
+    }
 
-    internal bool TryGetMemberByIndex(int memberIndex, out Member? value) => _membersByIndex.TryGetValue(memberIndex, out value);
+    internal bool TryGetMemberByIndex(int memberIndex, out Member? value)
+    {
+        return _membersByIndex.TryGetValue(memberIndex, out value);
+    }
 
     /// <summary>
-    /// Gets a list of active <see cref="Member"/>
+    ///     Gets a list of active <see cref="Member" />
     /// </summary>
     /// <returns></returns>
-    public Member[] GetAllMembers() => _activeMembers.Members.ToArray();
+    public Member[] GetAllMembers()
+    {
+        return _activeMembers.Members.ToArray();
+    }
 
     /// <summary>
-    /// Gets a list of active <see cref="Member"/> apart from the current one
+    ///     Gets a list of active <see cref="Member" /> apart from the current one
     /// </summary>
     /// <returns></returns>
-    public Member[] GetOtherMembers() => _activeMembers.Members.Where(m => m.Id != _system.Id).ToArray();
-        
+    public Member[] GetOtherMembers()
+    {
+        return _activeMembers.Members.Where(m => m.Id != _system.Id).ToArray();
+    }
+
     /// <summary>
-    /// Gets a list of <see cref="Member"/> that support spawning virtual actors of given cluster kind
+    ///     Gets a list of <see cref="Member" /> that support spawning virtual actors of given cluster kind
     /// </summary>
     /// <param name="kind"></param>
     /// <returns></returns>
-    public Member[] GetMembersByKind(string kind) => _activeMembers.Members.Where(m => m.Kinds.Contains(kind)).ToArray();
+    public Member[] GetMembersByKind(string kind)
+    {
+        return _activeMembers.Members.Where(m => m.Kinds.Contains(kind)).ToArray();
+    }
 }

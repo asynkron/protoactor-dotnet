@@ -252,7 +252,7 @@ public class PubSubBatchingProducerTests
         await sutAction.Should().ThrowAsync<TimeoutException>();
     }
 
-    private Task<PublishResponse?> Record(PubSubBatch batch)
+    private Task<PublishResponse> Record(PubSubBatch batch)
     {
         var copy = new PubSubBatch();
         copy.Envelopes.AddRange(batch.Envelopes);

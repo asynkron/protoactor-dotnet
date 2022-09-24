@@ -1,28 +1,28 @@
 <Project>
-  <PropertyGroup>
-    <Authors>Proto.Actor Team</Authors>
-    <Company>Proto.Actor Team</Company>
-    <Description>Ultra-fast distributed actors for .NET.</Description>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
-    <PackageIcon>logo.png</PackageIcon>
-    <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
-    <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
-    <LangVersion>10</LangVersion>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
-  </PropertyGroup>
+    <PropertyGroup>
+        <Authors>Proto.Actor Team</Authors>
+        <Company>Proto.Actor Team</Company>
+        <Description>Ultra-fast distributed actors for .NET.</Description>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageProjectUrl>http://proto.actor/</PackageProjectUrl>
+        <PackageIcon>logo.png</PackageIcon>
+        <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
+        <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
+        <LangVersion>10</LangVersion>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DefineConstants>TRACE;DEBUG</DefineConstants>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" PrivateAssets="All"/>
-    <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All"/>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" PrivateAssets="All"/>
+        <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Include="$(MSBuildStartupDirectory)\logo.png" Pack="true" PackagePath="\"/>
-  </ItemGroup>
+    <ItemGroup>
+        <None Include="$(MSBuildStartupDirectory)\logo.png" Pack="true" PackagePath="\"/>
+    </ItemGroup>
 </Project>

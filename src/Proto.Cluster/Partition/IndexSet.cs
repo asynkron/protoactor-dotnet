@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections;
 
 namespace Proto.Cluster.Partition;
@@ -10,11 +11,18 @@ namespace Proto.Cluster.Partition;
 internal class IndexSet
 {
     private readonly BitArray _received = new(64);
-    private int _receivedCount;
-    private int _receivedMax;
+
+    public int Count { get; private set; }
+
+    public int ReceivedMax { get; private set; }
 
     /// <summary>
-    /// Tries to add an index, returns true if it has not been added before, false otherwise
+    ///     Checks if the set is complete from 1 to the highest received index;
+    /// </summary>
+    public bool IsCompleteSet => ReceivedMax == Count;
+
+    /// <summary>
+    ///     Tries to add an index, returns true if it has not been added before, false otherwise
     /// </summary>
     /// <param name="index"></param>
     /// <returns></returns>
@@ -31,21 +39,13 @@ internal class IndexSet
         }
 
         _received.Set(index, true);
-        _receivedCount++;
+        Count++;
 
-        if (index > _receivedMax)
+        if (index > ReceivedMax)
         {
-            _receivedMax = index;
+            ReceivedMax = index;
         }
 
         return true;
     }
-
-    public int Count => _receivedCount;
-    public int ReceivedMax => _receivedMax;
-
-    /// <summary>
-    /// Checks if the set is complete from 1 to the highest received index; 
-    /// </summary>
-    public bool IsCompleteSet => _receivedMax == _receivedCount;
 }

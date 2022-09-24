@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Concurrent;
 
 namespace Proto.Mailbox;
@@ -13,9 +14,15 @@ public class UnboundedMailboxQueue : IMailboxQueue
 
     public int Length => _messages.Count;
 
-    public void Push(object message) => _messages.Enqueue(message);
+    public void Push(object message)
+    {
+        _messages.Enqueue(message);
+    }
 
-    public object? Pop() => _messages.TryDequeue(out var message) ? message : null;
+    public object? Pop()
+    {
+        return _messages.TryDequeue(out var message) ? message : null;
+    }
 
     public bool HasMessages => !_messages.IsEmpty;
 }

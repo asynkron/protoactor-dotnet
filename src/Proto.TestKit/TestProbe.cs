@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -28,17 +29,23 @@ public class TestProbe : IActor, ITestProbe
         {
             case Started _:
                 Context = context;
+
                 break;
             case RequestReference _:
-                if (context.Sender is not null) context.Respond(this);
+                if (context.Sender is not null)
+                {
+                    context.Respond(this);
+                }
 
                 break;
             case Terminated _:
                 _messageQueue.Add(new MessageAndSender(context));
+
                 break;
             case SystemMessage _: return Task.CompletedTask;
             default:
                 _messageQueue.Add(new MessageAndSender(context));
+
                 break;
         }
 
@@ -49,9 +56,14 @@ public class TestProbe : IActor, ITestProbe
     public PID? Sender { get; private set; }
 
     /// <inheritdoc />
-    public IContext Context {
-        get {
-            if (_context is null) throw new InvalidOperationException("Probe context is null");
+    public IContext Context
+    {
+        get
+        {
+            if (_context is null)
+            {
+                throw new InvalidOperationException("Probe context is null");
+            }
 
             return _context;
         }
@@ -73,10 +85,14 @@ public class TestProbe : IActor, ITestProbe
     public object? GetNextMessage(TimeSpan? timeAllowed = null)
     {
         var time = timeAllowed ?? TimeSpan.FromSeconds(1);
+
         if (!_messageQueue.TryTake(out var output, time))
+        {
             throw new TestKitException($"Waited {time.Seconds} seconds but failed to receive a message");
+        }
 
         Sender = output?.Sender;
+
         return output?.Message;
     }
 
@@ -86,16 +102,22 @@ public class TestProbe : IActor, ITestProbe
         var output = GetNextMessage(timeAllowed);
 
         if (!(output is T))
+        {
             throw new TestKitException($"Message expected type {typeof(T)}, actual type {output?.GetType()}");
+        }
 
-        return (T) output;
+        return (T)output;
     }
 
     /// <inheritdoc />
     public T GetNextMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null)
     {
         var output = GetNextMessage<T>(timeAllowed);
-        if (!when(output)) throw new TestKitException("Condition not met");
+
+        if (!when(output))
+        {
+            throw new TestKitException("Condition not met");
+        }
 
         return output;
     }
@@ -161,7 +183,10 @@ public class TestProbe : IActor, ITestProbe
     }
 
     /// <inheritdoc />
-    public T FishForMessage<T>(TimeSpan? timeAllowed = null) => FishForMessage<T>(x => true, timeAllowed);
+    public T FishForMessage<T>(TimeSpan? timeAllowed = null)
+    {
+        return FishForMessage<T>(x => true, timeAllowed);
+    }
 
     /// <inheritdoc />
     public T FishForMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null)
@@ -174,6 +199,7 @@ public class TestProbe : IActor, ITestProbe
                 item.Message is T typed && when(typed))
             {
                 Sender = item.Sender;
+
                 return typed;
             }
         }
@@ -182,31 +208,50 @@ public class TestProbe : IActor, ITestProbe
     }
 
     /// <inheritdoc />
-    public void Send(PID target, object message) => Context.Send(target, message);
+    public void Send(PID target, object message)
+    {
+        Context.Send(target, message);
+    }
 
     /// <inheritdoc />
-    public void Request(PID target, object message) => Context.Request(target, message);
+    public void Request(PID target, object message)
+    {
+        Context.Request(target, message);
+    }
 
     /// <inheritdoc />
     public void Respond(object message)
     {
-        if (Sender is null) return;
+        if (Sender is null)
+        {
+            return;
+        }
 
         Send(Sender, message);
     }
 
     /// <inheritdoc />
-    public Task<T> RequestAsync<T>(PID target, object message) => Context.RequestAsync<T>(target, message);
+    public Task<T> RequestAsync<T>(PID target, object message)
+    {
+        return Context.RequestAsync<T>(target, message);
+    }
 
     /// <inheritdoc />
     public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-        => Context.RequestAsync<T>(target, message, cancellationToken);
+    {
+        return Context.RequestAsync<T>(target, message, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeAllowed) =>
-        Context.RequestAsync<T>(target, message, timeAllowed);
+    public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeAllowed)
+    {
+        return Context.RequestAsync<T>(target, message, timeAllowed);
+    }
 
-    public static implicit operator PID?(TestProbe tp) => tp.Context.Self;
+    public static implicit operator PID?(TestProbe tp)
+    {
+        return tp.Context.Self;
+    }
 
     public static implicit operator TestProbe?(PID tpPid)
     {

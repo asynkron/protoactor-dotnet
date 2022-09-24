@@ -6,7 +6,8 @@ using JetBrains.Annotations;
 namespace Proto.Timers;
 
 /// <summary>
-/// Scheduler can be used to schedule a message to be sent in the future. It is useful e.g., when actor needs to do some work after a certain time.
+///     Scheduler can be used to schedule a message to be sent in the future. It is useful e.g., when actor needs to do
+///     some work after a certain time.
 /// </summary>
 [PublicAPI]
 public class Scheduler
@@ -14,23 +15,27 @@ public class Scheduler
     private readonly ISenderContext _context;
 
     /// <summary>
-    /// Creates a new scheduler.
+    ///     Creates a new scheduler.
     /// </summary>
     /// <param name="context">Context to send the scheduled message through</param>
-    public Scheduler(ISenderContext context) => _context = context;
+    public Scheduler(ISenderContext context)
+    {
+        _context = context;
+    }
 
     /// <summary>
-    /// Schedules a single message to be sent in the future.
+    ///     Schedules a single message to be sent in the future.
     /// </summary>
     /// <param name="delay">Delay before sending the message</param>
-    /// <param name="target"><see cref="PID"/> of the recipient.</param>
+    /// <param name="target"><see cref="PID" /> of the recipient.</param>
     /// <param name="message">Message to be sent</param>
-    /// <returns><see cref="CancellationTokenSource"/> that can be used to cancel the scheduled message</returns>
+    /// <returns><see cref="CancellationTokenSource" /> that can be used to cancel the scheduled message</returns>
     public CancellationTokenSource SendOnce(TimeSpan delay, PID target, object message)
     {
         var cts = new CancellationTokenSource();
 
-        _ = SafeTask.Run(async () => {
+        _ = SafeTask.Run(async () =>
+            {
                 await Task.Delay(delay, cts.Token);
 
                 _context.Send(target, message);
@@ -41,28 +46,31 @@ public class Scheduler
     }
 
     /// <summary>
-    /// Schedules message sending on a periodic basis.
+    ///     Schedules message sending on a periodic basis.
     /// </summary>
     /// <param name="interval">Interval between sends, and also the initial delay</param>
-    /// <param name="target"><see cref="PID"/> of the recipient.</param>
+    /// <param name="target"><see cref="PID" /> of the recipient.</param>
     /// <param name="message">Message to be sent</param>
-    /// <returns><see cref="CancellationTokenSource"/> that can be used to cancel the scheduled messages</returns>
-    public CancellationTokenSource SendRepeatedly(TimeSpan interval, PID target, object message) =>
-        SendRepeatedly(interval, interval, target, message);
+    /// <returns><see cref="CancellationTokenSource" /> that can be used to cancel the scheduled messages</returns>
+    public CancellationTokenSource SendRepeatedly(TimeSpan interval, PID target, object message)
+    {
+        return SendRepeatedly(interval, interval, target, message);
+    }
 
     /// <summary>
-    /// Schedules message sending on a periodic basis.
+    ///     Schedules message sending on a periodic basis.
     /// </summary>
     /// <param name="delay">Initial delay</param>
     /// <param name="interval">Interval between sends</param>
-    /// <param name="target"><see cref="PID"/> of the recipient.</param>
+    /// <param name="target"><see cref="PID" /> of the recipient.</param>
     /// <param name="message">Message to be sent</param>
-    /// <returns><see cref="CancellationTokenSource"/> that can be used to cancel the scheduled messages</returns>
+    /// <returns><see cref="CancellationTokenSource" /> that can be used to cancel the scheduled messages</returns>
     public CancellationTokenSource SendRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
     {
         var cts = new CancellationTokenSource();
 
-        _ = SafeTask.Run(async () => {
+        _ = SafeTask.Run(async () =>
+            {
                 await Task.Delay(delay, cts.Token);
 
                 async Task Trigger()
@@ -70,7 +78,9 @@ public class Scheduler
                     while (true)
                     {
                         if (cts.IsCancellationRequested)
+                        {
                             return;
+                        }
 
                         _context.Send(target, message);
 
@@ -86,18 +96,20 @@ public class Scheduler
     }
 
     /// <summary>
-    /// Schedules a request on a periodic basis. The response will arrive to the actor context for which the <see cref="Scheduler"/> was created.
+    ///     Schedules a request on a periodic basis. The response will arrive to the actor context for which the
+    ///     <see cref="Scheduler" /> was created.
     /// </summary>
     /// <param name="delay">Initial delay</param>
     /// <param name="interval">Interval between requests</param>
-    /// <param name="target"><see cref="PID"/> of the recipient.</param>
+    /// <param name="target"><see cref="PID" /> of the recipient.</param>
     /// <param name="message">Message to be sent</param>
-    /// <returns><see cref="CancellationTokenSource"/> that can be used to cancel the scheduled messages</returns>
+    /// <returns><see cref="CancellationTokenSource" /> that can be used to cancel the scheduled messages</returns>
     public CancellationTokenSource RequestRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
     {
         var cts = new CancellationTokenSource();
 
-        _ = SafeTask.Run(async () => {
+        _ = SafeTask.Run(async () =>
+            {
                 await Task.Delay(delay, cts.Token);
 
                 async Task Trigger()
@@ -105,7 +117,9 @@ public class Scheduler
                     while (true)
                     {
                         if (cts.IsCancellationRequested)
+                        {
                             return;
+                        }
 
                         _context.Request(target, message);
 

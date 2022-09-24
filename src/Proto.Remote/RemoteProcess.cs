@@ -13,38 +13,49 @@ public class RemoteProcess : Process
 {
     private readonly EndpointManager _endpointManager;
     private readonly string? _systemId;
-    private long _lastUsedTick;
     private IEndpoint? _endpoint;
 
     public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
     {
         _endpointManager = endpointManager;
         pid.TryGetSystemId(system, out _systemId);
-        _lastUsedTick = Stopwatch.GetTimestamp();
+        LastUsedTick = Stopwatch.GetTimestamp();
     }
 
-    protected internal override void SendUserMessage(PID pid, object message) => Send(pid, message);
+    internal long LastUsedTick { get; private set; }
 
-    protected internal override void SendSystemMessage(PID pid, SystemMessage message) => Send(pid, message);
+    protected internal override void SendUserMessage(PID pid, object message)
+    {
+        Send(pid, message);
+    }
+
+    protected internal override void SendSystemMessage(PID pid, SystemMessage message)
+    {
+        Send(pid, message);
+    }
 
     private void Send(PID pid, object msg)
     {
         var endpoint = GetEndpoint(pid);
+
         // If the target endpoint is down or blocked, we get a BlockedEndpoint instance
         switch (msg)
         {
             case Watch w:
                 endpoint.RemoteWatch(pid, w);
+
                 break;
             case Unwatch uw:
                 endpoint.RemoteUnwatch(pid, uw);
+
                 break;
             default:
                 endpoint.SendMessage(pid, msg);
+
                 break;
         }
-            
-        _lastUsedTick = Stopwatch.GetTimestamp();
+
+        LastUsedTick = Stopwatch.GetTimestamp();
     }
 
     private IEndpoint GetEndpoint(PID pid)
@@ -57,12 +68,12 @@ public class RemoteProcess : Process
         if (_systemId != null)
         {
             _endpoint = null;
+
             return _endpointManager.GetClientEndpoint(_systemId);
         }
 
         _endpoint = _endpointManager.GetOrAddServerEndpoint(pid.Address);
+
         return _endpoint;
     }
-
-    internal long LastUsedTick => _lastUsedTick;
 }

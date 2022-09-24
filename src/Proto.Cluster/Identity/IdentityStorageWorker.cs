@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -12,7 +13,7 @@ using Proto.Utils;
 
 namespace Proto.Cluster.Identity;
 
-class IdentityStorageWorker : IActor
+internal class IdentityStorageWorker : IActor
 {
     private const int MaxSpawnRetries = 3;
 
@@ -45,11 +46,15 @@ class IdentityStorageWorker : IActor
 
     public Task ReceiveAsync(IContext context)
     {
-        if (context.Message is not GetPid msg) return Task.CompletedTask;
+        if (context.Message is not GetPid msg)
+        {
+            return Task.CompletedTask;
+        }
 
         if (context.Sender == null)
         {
             _logger.LogCritical("No sender in GetPid request");
+
             return Task.CompletedTask;
         }
 
@@ -58,13 +63,16 @@ class IdentityStorageWorker : IActor
         if (_cluster.PidCache.TryGet(clusterIdentity, out var existing))
         {
             context.Respond(new PidResult(existing));
+
             return Task.CompletedTask;
         }
 
         if (!_inProgress.Contains(clusterIdentity))
         {
             _inProgress.Add(clusterIdentity);
-            context.ReenterAfter(GetWithGlobalLock(context.Sender!, clusterIdentity), task => {
+
+            context.ReenterAfter(GetWithGlobalLock(context.Sender!, clusterIdentity), task =>
+                {
                     try
                     {
                         var response = task.Result;
@@ -82,8 +90,14 @@ class IdentityStorageWorker : IActor
         }
         else
         {
-            if (_waitingRequests.TryGetValue(clusterIdentity, out var senders)) senders.Add(context.Sender);
-            else _waitingRequests[clusterIdentity] = new List<PID> {context.Sender};
+            if (_waitingRequests.TryGetValue(clusterIdentity, out var senders))
+            {
+                senders.Add(context.Sender);
+            }
+            else
+            {
+                _waitingRequests[clusterIdentity] = new List<PID> { context.Sender };
+            }
         }
 
         return Task.CompletedTask;
@@ -91,7 +105,10 @@ class IdentityStorageWorker : IActor
 
     private void RespondToWaitingRequests(IContext context, ClusterIdentity clusterIdentity, PidResult response)
     {
-        if (!_waitingRequests.Remove(clusterIdentity, out var senders)) return;
+        if (!_waitingRequests.Remove(clusterIdentity, out var senders))
+        {
+            return;
+        }
 
         foreach (var sender in senders)
         {
@@ -118,14 +135,22 @@ class IdentityStorageWorker : IActor
                     if (activation != null)
                     {
                         var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
-                        if (existingPid != null) return new PidResult(existingPid);
+
+                        if (existingPid != null)
+                        {
+                            return new PidResult(existingPid);
+                        }
                     }
 
                     //are there any members that can spawn this kind?
                     //if not, just bail out
 
                     var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
-                    if (activator == null) return null;
+
+                    if (activator == null)
+                    {
+                        return null;
+                    }
 
                     //try to acquire global lock
                     spawnLock ??= await TryAcquireLock(clusterIdentity);
@@ -151,19 +176,29 @@ class IdentityStorageWorker : IActor
                 }
                 catch (OperationCanceledException e)
                 {
-                    if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+                    if (_cluster.System.Shutdown.IsCancellationRequested)
+                    {
+                        return null;
+                    }
 
                     if (_shouldThrottle().IsOpen())
+                    {
                         _logger.LogWarning(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
+                    }
 
                     await Task.Delay(tries * 20);
                 }
                 catch (Exception e)
                 {
-                    if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+                    if (_cluster.System.Shutdown.IsCancellationRequested)
+                    {
+                        return null;
+                    }
 
                     if (_shouldThrottle().IsOpen())
+                    {
                         _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
+                    }
 
                     await Task.Delay(tries * 20);
                 }
@@ -173,24 +208,35 @@ class IdentityStorageWorker : IActor
         }
 
         if (!_cluster.System.Metrics.Enabled)
+        {
             return Inner();
+        }
 
         return IdentityMetrics.GetWithGlobalLockDuration.Observe(
             Inner,
-            new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+            new KeyValuePair<string, object?>("id", _cluster.System.Id),
+            new KeyValuePair<string, object?>("address", _cluster.System.Address),
+            new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind)
         );
     }
 
     private Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity)
     {
-        Task<SpawnLock?> Inner() => _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
+        Task<SpawnLock?> Inner()
+        {
+            return _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
+        }
 
         if (!_cluster.System.Metrics.Enabled)
+        {
             return Inner();
+        }
 
         return IdentityMetrics.TryAcquireLockDuration.Observe(
             Inner,
-            new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+            new KeyValuePair<string, object?>("id", _cluster.System.Id),
+            new KeyValuePair<string, object?>("address", _cluster.System.Address),
+            new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind)
         );
     }
 
@@ -199,31 +245,42 @@ class IdentityStorageWorker : IActor
         async Task<PID?> Inner()
         {
             var activation = await _storage.WaitForActivation(clusterIdentity, ct);
+
             var res = await ValidateAndMapToPid(
                 clusterIdentity,
                 activation
             );
+
             return res;
         }
 
         if (!_cluster.System.Metrics.Enabled)
+        {
             return Inner();
+        }
 
         return IdentityMetrics.WaitForActivationDuration
             .Observe(
                 Inner,
-                new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+                new KeyValuePair<string, object?>("id", _cluster.System.Id),
+                new KeyValuePair<string, object?>("address", _cluster.System.Address),
+                new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind)
             );
     }
 
-    private async Task<(PidResult?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
+    private async Task<(PidResult?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock,
+        CancellationToken ct)
     {
         //we own the lock
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", spawnLock.ClusterIdentity.Identity,
-            spawnLock.ClusterIdentity.Kind
-        );
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", spawnLock.ClusterIdentity.Identity,
+                spawnLock.ClusterIdentity.Kind
+            );
+        }
 
         var remotePid = _lookup.RemotePlacementActor(activator.Address);
+
         var req = new ActivationRequest
         {
             ClusterIdentity = spawnLock.ClusterIdentity,
@@ -237,6 +294,7 @@ class IdentityStorageWorker : IActor
             if (resp.Pid != null)
             {
                 _cluster.PidCache.TryAdd(spawnLock.ClusterIdentity, resp.Pid!);
+
                 return (new PidResult(resp.Pid), null);
             }
 
@@ -249,7 +307,10 @@ class IdentityStorageWorker : IActor
         catch (DeadLetterException)
         {
             if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen())
+            {
                 _logger.LogWarning("[SpawnActivationAsync] Member {Activator} unavailable", activator);
+            }
+
             return (null, spawnLock);
         }
         catch (TimeoutException)
@@ -258,21 +319,32 @@ class IdentityStorageWorker : IActor
         }
         catch (Exception e)
         {
-            if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen() && _memberList.ContainsMemberId(activator.Id))
+            if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen() &&
+                _memberList.ContainsMemberId(activator.Id))
+            {
                 _logger.LogError(e, "[SpawnActivationAsync] Error occured requesting remote PID {@Request}", req);
+            }
         }
 
         //Clean up our mess..
         await _storage.RemoveLock(spawnLock, ct);
+
         return (null, null);
     }
 
     private async Task<PID?> ValidateAndMapToPid(ClusterIdentity clusterIdentity, StoredActivation? activation)
     {
-        if (activation?.Pid == null) return null;
+        if (activation?.Pid == null)
+        {
+            return null;
+        }
 
         var memberExists = _memberList.ContainsMemberId(activation.MemberId);
-        if (memberExists) return activation.Pid;
+
+        if (memberExists)
+        {
+            return activation.Pid;
+        }
 
         if (StaleMembers.TryAdd(activation.MemberId))
         {
@@ -284,6 +356,7 @@ class IdentityStorageWorker : IActor
 
         //let all requests try to remove, but only log on the first occurrence
         await _storage.RemoveMember(activation.MemberId, CancellationToken.None);
+
         return null;
     }
 }

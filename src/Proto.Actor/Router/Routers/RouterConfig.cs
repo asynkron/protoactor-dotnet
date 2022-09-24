@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using Proto.Context;
@@ -15,9 +16,13 @@ public abstract record RouterConfig
 
     protected abstract RouterState CreateRouterState();
 
-    public Props Props() => new Props().WithSpawner(SpawnRouterProcess);
+    public Props Props()
+    {
+        return new Props().WithSpawner(SpawnRouterProcess);
+    }
 
-    private PID SpawnRouterProcess(ActorSystem system, string name, Props props, PID? parent, Action<IContext>? callback)
+    private PID SpawnRouterProcess(ActorSystem system, string name, Props props, PID? parent,
+        Action<IContext>? callback)
     {
         var routerState = CreateRouterState();
         var notifyStarted = new RouterStartNotification();
@@ -28,7 +33,10 @@ public abstract record RouterConfig
         var process = new RouterProcess(system, routerState, mailbox);
         var (self, absent) = system.ProcessRegistry.TryAdd(name, process);
 
-        if (!absent) throw new ProcessNameExistException(name, self);
+        if (!absent)
+        {
+            throw new ProcessNameExistException(name, self);
+        }
 
         var ctx = ActorContext.Setup(system, p, parent, self, mailbox);
         callback?.Invoke(ctx);
@@ -41,6 +49,7 @@ public abstract record RouterConfig
         if (!startSuccess)
         {
             system.Root.Stop(self);
+
             throw new RouterStartFailedException(startException!);
         }
 
@@ -53,7 +62,10 @@ public class RouterStartNotification
     private readonly ManualResetEvent _wg = new(false);
     private Exception? _exception;
 
-    public void NotifyStarted() => _wg.Set();
+    public void NotifyStarted()
+    {
+        _wg.Set();
+    }
 
     public void NotifyFailed(Exception exception)
     {
@@ -64,6 +76,7 @@ public class RouterStartNotification
     public (bool StartSuccess, Exception? Exception) Wait()
     {
         _wg.WaitOne();
+
         return (_exception is null, _exception);
     }
 }

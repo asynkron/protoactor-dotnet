@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -15,15 +16,15 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip;
 
-class Gossip
+internal class Gossip
     : IGossip
 {
     private static readonly ILogger Logger = Log.CreateLogger<Gossip>();
     private readonly ConsensusChecks _consensusChecks = new();
+    private readonly Func<ImmutableHashSet<string>> _getMembers;
     private readonly int _gossipFanout;
     private readonly int _gossipMaxSend;
     private readonly InstanceLogger? _logger;
-    private readonly  Func<ImmutableHashSet<string>> _getMembers;
     private readonly string _myId;
     private readonly Random _rnd = new();
     private ImmutableHashSet<string> _activeMemberIds = ImmutableHashSet<string>.Empty;
@@ -32,7 +33,8 @@ class Gossip
     private Member[] _otherMembers = Array.Empty<Member>();
     private GossipState _state = new();
 
-    public Gossip(string myId, int gossipFanout, int gossipMaxSend,  InstanceLogger? logger, Func<ImmutableHashSet<string>> getMembers)
+    public Gossip(string myId, int gossipFanout, int gossipMaxSend, InstanceLogger? logger,
+        Func<ImmutableHashSet<string>> getMembers)
     {
         _myId = myId;
         _logger = logger;
@@ -47,6 +49,7 @@ class Gossip
         _otherMembers = clusterTopology.Members.Where(m => m.Id != _myId).ToArray();
         _activeMemberIds = clusterTopology.Members.Select(m => m.Id).ToImmutableHashSet();
         SetState(GossipKeys.Topology, clusterTopology);
+
         return Task.CompletedTask;
     }
 
@@ -58,8 +61,10 @@ class Gossip
         check.Check(_state, _activeMemberIds);
     }
 
-    public void RemoveConsensusCheck(string id) =>
+    public void RemoveConsensusCheck(string id)
+    {
         _consensusChecks.Remove(id);
+    }
 
     public GossipState GetStateSnapshot()
     {
@@ -69,9 +74,13 @@ class Gossip
     public ImmutableDictionary<string, Any> GetState(string key)
     {
         var entries = ImmutableDictionary<string, Any>.Empty;
+
         foreach (var (memberId, memberState) in _state.Members)
         {
-            if (memberState.Values.TryGetValue(key, out var value)) entries = entries.SetItem(memberId, value.Value);
+            if (memberState.Values.TryGetValue(key, out var value))
+            {
+                entries = entries.SetItem(memberId, value.Value);
+            }
         }
 
         return entries;
@@ -81,13 +90,17 @@ class Gossip
     {
         var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState, out var updatedKeys);
 
-        if (updates.Count == 0) return ImmutableList<GossipUpdate>.Empty;
+        if (updates.Count == 0)
+        {
+            return ImmutableList<GossipUpdate>.Empty;
+        }
 
         _state = newState;
-        
+
         //TODO: Optimize
         Purge();
         CheckConsensus(updatedKeys);
+
         return updates.ToImmutableList();
     }
 
@@ -98,7 +111,10 @@ class Gossip
         logger?.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
         Logger.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
 
-        if (!_state.Members.ContainsKey(_myId)) logger?.LogCritical("State corrupt");
+        if (!_state.Members.ContainsKey(_myId))
+        {
+            logger?.LogCritical("State corrupt");
+        }
 
         CheckConsensus(key);
     }
@@ -122,14 +138,21 @@ class Gossip
             //TODO: we can chunk up sends here
             //instead of sending less state, we can send all of it, but in chunks
             var memberState = GetMemberStateDelta(member.Id);
-            if (!memberState.HasState) continue;
+
+            if (!memberState.HasState)
+            {
+                continue;
+            }
 
             //fire and forget, we handle results in ReenterAfter
             sendStateToMember(memberState, member, logger);
 
             fanoutCount++;
 
-            if (fanoutCount == _gossipFanout) break;
+            if (fanoutCount == _gossipFanout)
+            {
+                break;
+            }
         }
     }
 
@@ -160,10 +183,14 @@ class Gossip
             foreach (var (key, value) in memberState1.Values)
             {
                 if (value.SequenceNumber <= watermark)
+                {
                     continue;
+                }
 
                 if (value.SequenceNumber > newWatermark)
+                {
                     newWatermark = value.SequenceNumber;
+                }
 
                 newMemberState.Values.Add(key, value);
             }
@@ -176,23 +203,31 @@ class Gossip
                 pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
             }
 
-            if (count > _gossipMaxSend) break;
+            if (count > _gossipMaxSend)
+            {
+                break;
+            }
         }
 
         //make sure to clone to make it a separate copy, avoid race conditions on mutate
         var hasState = _committedOffsets != pendingOffsets;
-        var memberState = new MemberStateDelta(targetMemberId, hasState, newState, () => CommitPendingOffsets(pendingOffsets));
+
+        var memberState =
+            new MemberStateDelta(targetMemberId, hasState, newState, () => CommitPendingOffsets(pendingOffsets));
+
         return memberState;
     }
 
     public ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key)
     {
-
         var entries = ImmutableDictionary<string, GossipKeyValue>.Empty;
 
         foreach (var (memberId, memberState) in _state.Members)
         {
-            if (memberState.Values.TryGetValue(key, out var value)) entries = entries.SetItem(memberId, value);
+            if (memberState.Values.TryGetValue(key, out var value))
+            {
+                entries = entries.SetItem(memberId, value);
+            }
         }
 
         return entries;
@@ -202,6 +237,7 @@ class Gossip
     {
         //TODO: Optimize
         Purge();
+
         foreach (var consensusCheck in _consensusChecks.GetByUpdatedKey(updatedKey))
         {
             consensusCheck.Check(_state, _activeMemberIds);
@@ -212,6 +248,7 @@ class Gossip
     {
         //TODO: Optimize
         Purge();
+
         foreach (var consensusCheck in _consensusChecks.GetByUpdatedKeys(updatedKeys))
         {
             consensusCheck.Check(_state, _activeMemberIds);
@@ -222,9 +259,13 @@ class Gossip
     {
         //find all members that have sent topology
         var members = _getMembers();
+
         foreach (var memberId in _state.Members.Keys.ToArray())
         {
-            if (!members.Contains(memberId)) _state.Members.Remove(memberId);
+            if (!members.Contains(memberId))
+            {
+                _state.Members.Remove(memberId);
+            }
         }
     }
 
@@ -238,7 +279,9 @@ class Gossip
             //_state = newState;
 
             if (!_committedOffsets.ContainsKey(key) || _committedOffsets[key] < pendingOffsets[key])
+            {
                 _committedOffsets = _committedOffsets.SetItem(key, sequenceNumber);
+            }
         }
     }
 }

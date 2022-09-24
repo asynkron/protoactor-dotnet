@@ -3,9 +3,10 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Router.Routers;
 
-record BroadcastGroupRouterConfig : GroupRouterConfig
+internal record BroadcastGroupRouterConfig : GroupRouterConfig
 {
     public BroadcastGroupRouterConfig(ISenderContext senderContext, params PID[] routees) : base(senderContext,
         routees
@@ -13,5 +14,8 @@ record BroadcastGroupRouterConfig : GroupRouterConfig
     {
     }
 
-    protected override RouterState CreateRouterState() => new BroadcastRouterState(SenderContext);
+    protected override RouterState CreateRouterState()
+    {
+        return new BroadcastRouterState(SenderContext);
+    }
 }

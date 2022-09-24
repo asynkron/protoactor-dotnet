@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
@@ -12,39 +13,20 @@ using Proto.Extensions;
 namespace Proto.Logging;
 
 /// <summary>
-/// A logging abstraction that stores the log entries in the <see cref="LogStore"/> (in memory) and/or writes them a <see cref="Microsoft.Extensions.Logging.ILogger"/>.
-/// Mostly used for testing and debugging.
+///     A logging abstraction that stores the log entries in the <see cref="LogStore" /> (in memory) and/or writes them a
+///     <see cref="Microsoft.Extensions.Logging.ILogger" />.
+///     Mostly used for testing and debugging.
 /// </summary>
 [PublicAPI]
 public class InstanceLogger : IActorSystemExtension<InstanceLogger>
 {
-    private readonly LogLevel _logLevel;
-    private readonly ILogger? _logger;
-    private readonly LogStore? _logStore;
     private readonly string _category;
+    private readonly ILogger? _logger;
+    private readonly LogLevel _logLevel;
+    private readonly LogStore? _logStore;
 
-    /// <summary>
-    /// Get new InstanceLogger with the calling member name appended to the category hierarchy.
-    /// </summary>
-    /// <param name="caller">Auto filled</param>
-    /// <returns></returns>
-    public InstanceLogger BeginMethodScope([CallerMemberName] string caller = "") => new(_logLevel, _logStore, _logger, $"{_category}/{caller}");
-
-    /// <summary>
-    /// Get new InstanceLogger with the name of <see cref="T"/> appended to the category hierarchy.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public InstanceLogger BeginScope<T>() => new(_logLevel, _logStore, _logger, typeof(T).Name);
-
-    /// <summary>
-    /// Get new InstanceLogger with the postfix appended to the category hierarchy.
-    /// </summary>
-    /// <param name="category">Postfix</param>
-    /// <returns></returns>
-    public InstanceLogger BeginScope(string category) => new(_logLevel, _logStore, _logger, $"{_category}/{category}");
-
-    public InstanceLogger(LogLevel logLevel, LogStore? logStore = null, ILogger? logger = null, string category = "default")
+    public InstanceLogger(LogLevel logLevel, LogStore? logStore = null, ILogger? logger = null,
+        string category = "default")
     {
         _logLevel = logLevel;
         _logger = logger;
@@ -52,20 +34,53 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
         _category = category;
     }
 
+    /// <summary>
+    ///     Get new InstanceLogger with the calling member name appended to the category hierarchy.
+    /// </summary>
+    /// <param name="caller">Auto filled</param>
+    /// <returns></returns>
+    public InstanceLogger BeginMethodScope([CallerMemberName] string caller = "")
+    {
+        return new(_logLevel, _logStore, _logger, $"{_category}/{caller}");
+    }
+
+    /// <summary>
+    ///     Get new InstanceLogger with the name of <see cref="T" /> appended to the category hierarchy.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public InstanceLogger BeginScope<T>()
+    {
+        return new(_logLevel, _logStore, _logger, typeof(T).Name);
+    }
+
+    /// <summary>
+    ///     Get new InstanceLogger with the postfix appended to the category hierarchy.
+    /// </summary>
+    /// <param name="category">Postfix</param>
+    /// <returns></returns>
+    public InstanceLogger BeginScope(string category)
+    {
+        return new(_logLevel, _logStore, _logger, $"{_category}/{category}");
+    }
+
     public void LogDebug(string template)
     {
         if (_logLevel > LogLevel.Debug)
+        {
             return;
+        }
 
         _logger?.LogDebug(template);
         _logStore?.Append(_logLevel, _category, template, null, Array.Empty<object>());
-
     }
 
     public void LogDebug<T>(string template, T arg)
     {
         if (_logLevel > LogLevel.Debug)
+        {
             return;
+        }
 
         _logger?.LogDebug(template, arg);
         _logStore?.Append(_logLevel, _category, template, null, arg!);
@@ -74,17 +89,20 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogDebug<T, T2>(string template, T arg, T2 arg2)
     {
         if (_logLevel > LogLevel.Debug)
+        {
             return;
+        }
 
         _logger?.LogDebug(template, arg, arg2);
         _logStore?.Append(_logLevel, _category, template, null, arg!, arg2!);
-
     }
 
     public void LogDebug<T, T2, T3>(string template, T arg, T2 arg2, T3 arg3)
     {
         if (_logLevel > LogLevel.Debug)
+        {
             return;
+        }
 
         _logger?.LogDebug(template, arg, arg2, arg3);
         _logStore?.Append(_logLevel, _category, template, null, arg!, arg2!, arg3!);
@@ -93,7 +111,9 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogDebug(string template, params object[] args)
     {
         if (_logLevel > LogLevel.Debug)
+        {
             return;
+        }
 
         _logger?.LogDebug(template, args);
         _logStore?.Append(_logLevel, _category, template, null, args);
@@ -102,7 +122,9 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogDebug(Exception x, string template, params object[] args)
     {
         if (_logLevel > LogLevel.Debug)
+        {
             return;
+        }
 
         _logger?.LogDebug(x, template, args);
         _logStore?.Append(_logLevel, _category, template, x, args);
@@ -111,7 +133,9 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogInformation(string template, params object[] args)
     {
         if (_logLevel > LogLevel.Information)
+        {
             return;
+        }
 
         _logger?.LogInformation(template, args);
         _logStore?.Append(_logLevel, _category, template, null, args);
@@ -120,7 +144,9 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogInformation(Exception x, string template, params object[] args)
     {
         if (_logLevel > LogLevel.Information)
+        {
             return;
+        }
 
         _logger?.LogInformation(x, template, args);
         _logStore?.Append(_logLevel, _category, template, x, args);
@@ -129,7 +155,9 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogWarning(string template, params object[] args)
     {
         if (_logLevel > LogLevel.Warning)
+        {
             return;
+        }
 
         _logger?.LogWarning(template, args);
         _logStore?.Append(_logLevel, _category, template, null, args);
@@ -138,7 +166,9 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogWarning(Exception x, string template, params object[] args)
     {
         if (_logLevel > LogLevel.Warning)
+        {
             return;
+        }
 
         _logger?.LogWarning(x, template, args);
         _logStore?.Append(_logLevel, _category, template, x, args);
@@ -147,7 +177,9 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogError(string template, params object[] args)
     {
         if (_logLevel > LogLevel.Error)
+        {
             return;
+        }
 
         _logger?.LogError(template, args);
         _logStore?.Append(_logLevel, _category, template, null, args);
@@ -156,7 +188,9 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogError(Exception x, string template, params object[] args)
     {
         if (_logLevel > LogLevel.Error)
+        {
             return;
+        }
 
         _logger?.LogError(x, template, args);
         _logStore?.Append(_logLevel, _category, template, x, args);
@@ -165,7 +199,9 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogCritical(string template, params object[] args)
     {
         if (_logLevel > LogLevel.Critical)
+        {
             return;
+        }
 
         _logger?.LogCritical(template, args);
         _logStore?.Append(_logLevel, _category, template, null, args);
@@ -174,7 +210,9 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     public void LogCritical(Exception x, string template, params object[] args)
     {
         if (_logLevel > LogLevel.Critical)
+        {
             return;
+        }
 
         _logger?.LogCritical(x, template, args);
         _logStore?.Append(_logLevel, _category, template, x, args);

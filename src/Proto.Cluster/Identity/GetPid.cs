@@ -3,7 +3,7 @@ using Proto.Router;
 
 namespace Proto.Cluster.Identity;
 
-class GetPid : IHashable
+internal class GetPid : IHashable
 {
     public GetPid(ClusterIdentity clusterIdentity, CancellationToken cancellationToken)
     {
@@ -14,16 +14,25 @@ class GetPid : IHashable
     public ClusterIdentity ClusterIdentity { get; }
     public CancellationToken CancellationToken { get; }
 
-    public string HashBy() => ClusterIdentity.ToString();
+    public string HashBy()
+    {
+        return ClusterIdentity.ToString();
+    }
 }
 
-class PidResult
+internal class PidResult
 {
     public static readonly PidResult Blocked = new(true);
 
-    public PidResult(PID? pid) => Pid = pid;
+    public PidResult(PID? pid)
+    {
+        Pid = pid;
+    }
 
-    private PidResult(bool identityBlocked) => IdentityBlocked = identityBlocked;
+    private PidResult(bool identityBlocked)
+    {
+        IdentityBlocked = identityBlocked;
+    }
 
     public PID? Pid { get; }
     public bool IdentityBlocked { get; }

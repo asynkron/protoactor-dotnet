@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,14 +14,23 @@ using System.Threading;
 namespace Proto;
 
 /// <summary>
-/// Manages all processes in the actor system (actors, futures, event stream, etc.).
+///     Manages all processes in the actor system (actors, futures, event stream, etc.).
 /// </summary>
 public class ProcessRegistry
 {
     private readonly List<Func<PID, Process?>> _hostResolvers = new();
-    private readonly ConcurrentDictionary<string,Process> _localProcesses = new();
+    private readonly ConcurrentDictionary<string, Process> _localProcesses = new();
     private int _sequenceId;
-        
+
+    public ProcessRegistry(ActorSystem system)
+    {
+        System = system;
+    }
+
+    private ActorSystem System { get; }
+
+    public int ProcessCount => _localProcesses.Count;
+
     public IEnumerable<PID> Find(Func<string, bool> predicate)
     {
         var res = _localProcesses.Where(kvp => predicate(kvp.Key));
@@ -31,20 +41,20 @@ public class ProcessRegistry
         }
     }
 
-    public IEnumerable<PID> Find(string pattern) => 
-        Find(s => s.Contains(pattern, StringComparison.InvariantCultureIgnoreCase));
+    public IEnumerable<PID> Find(string pattern)
+    {
+        return Find(s => s.Contains(pattern, StringComparison.InvariantCultureIgnoreCase));
+    }
 
-    public ProcessRegistry(ActorSystem system) => System = system;
-
-    private ActorSystem System { get; }
-
-    public int ProcessCount => _localProcesses.Count;
-
-    public void RegisterHostResolver(Func<PID, Process> resolver) => _hostResolvers.Add(resolver);
+    public void RegisterHostResolver(Func<PID, Process> resolver)
+    {
+        _hostResolvers.Add(resolver);
+    }
 
     public Process Get(PID pid)
     {
-        if (pid.Address == ActorSystem.NoHost || (pid.Address == System.Address && !pid.Id.StartsWith(ActorSystem.Client, StringComparison.Ordinal)))
+        if (pid.Address == ActorSystem.NoHost || (pid.Address == System.Address &&
+                                                  !pid.Id.StartsWith(ActorSystem.Client, StringComparison.Ordinal)))
         {
             return (_localProcesses.TryGetValue(pid.Id, out var process) switch
             {
@@ -55,10 +65,15 @@ public class ProcessRegistry
         }
 
         Process? reff = null;
+
         foreach (var resolver in _hostResolvers)
         {
             reff = resolver(pid);
-            if (reff != null) return reff;
+
+            if (reff != null)
+            {
+                return reff;
+            }
         }
 
         return reff switch
@@ -73,14 +88,19 @@ public class ProcessRegistry
         var pid = new PID(System.Address, id, process);
 
         var ok = _localProcesses.TryAdd(pid.Id, process);
+
         return ok ? (pid, true) : (PID.FromAddress(System.Address, id), false);
     }
 
-    public void Remove(PID pid) => _localProcesses.TryRemove(pid.Id,out _);
+    public void Remove(PID pid)
+    {
+        _localProcesses.TryRemove(pid.Id, out _);
+    }
 
     public string NextId()
     {
         var counter = Interlocked.Increment(ref _sequenceId);
+
         return "$" + counter;
     }
 }

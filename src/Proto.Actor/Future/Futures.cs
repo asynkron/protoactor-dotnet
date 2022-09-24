@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -13,35 +14,35 @@ using Proto.Metrics;
 namespace Proto.Future;
 
 /// <summary>
-/// A future allows to asynchronously wait for a value to be available.
-/// The value is sent to the future by some other process using the future's <see cref="PID"/>.
-/// It is used e.g. to provide a request-response abstraction on top of asynchronous messaging.
+///     A future allows to asynchronously wait for a value to be available.
+///     The value is sent to the future by some other process using the future's <see cref="PID" />.
+///     It is used e.g. to provide a request-response abstraction on top of asynchronous messaging.
 /// </summary>
 public interface IFuture : IDisposable
 {
     /// <summary>
-    /// Future's PID.
+    ///     Future's PID.
     /// </summary>
     public PID Pid { get; }
-    
+
     /// <summary>
-    /// A task that will be completed when the future is receives the expected value. The expected value is then
-    /// available in <see cref="Task{T}.Result"/>.
+    ///     A task that will be completed when the future is receives the expected value. The expected value is then
+    ///     available in <see cref="Task{T}.Result" />.
     /// </summary>
     public Task<object> Task { get; }
 
     /// <summary>
-    /// A task that will be completed when the future is receives the expected value or provided cancellation token is cancelled.
-    /// The value is available in <see cref="Task{T}.Result"/> if the task was completed successfully.
+    ///     A task that will be completed when the future is receives the expected value or provided cancellation token is
+    ///     cancelled.
+    ///     The value is available in <see cref="Task{T}.Result" /> if the task was completed successfully.
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public Task<object> GetTask(CancellationToken cancellationToken);
 }
-    
+
 public sealed class FutureFactory
 {
-    private ActorSystem System { get; }
     private readonly SharedFutureProcess? _sharedFutureProcess;
 
     public FutureFactory(ActorSystem system, bool useSharedFutures, int sharedFutureSize)
@@ -51,21 +52,29 @@ public sealed class FutureFactory
         _sharedFutureProcess = useSharedFutures ? new SharedFutureProcess(system, sharedFutureSize) : null;
     }
 
-    public IFuture Get() => _sharedFutureProcess?.TryCreateHandle() ?? SingleProcessHandle();
+    private ActorSystem System { get; }
 
-    private IFuture SingleProcessHandle() => new FutureProcess(System);
+    public IFuture Get()
+    {
+        return _sharedFutureProcess?.TryCreateHandle() ?? SingleProcessHandle();
+    }
+
+    private IFuture SingleProcessHandle()
+    {
+        return new FutureProcess(System);
+    }
 }
 
 public sealed class FutureProcess : Process, IFuture
 {
-    private readonly TaskCompletionSource<object> _tcs;
     private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
+    private readonly TaskCompletionSource<object> _tcs;
 
     internal FutureProcess(ActorSystem system) : base(system)
     {
         if (system.Metrics.Enabled)
         {
-            _metricTags = new KeyValuePair<string, object?>[] {new("id", System.Id), new("address", System.Address)};
+            _metricTags = new KeyValuePair<string, object?>[] { new("id", System.Id), new("address", System.Address) };
             ActorMetrics.FuturesStartedCount.Add(1, _metricTags);
         }
 
@@ -74,7 +83,10 @@ public sealed class FutureProcess : Process, IFuture
         var name = System.ProcessRegistry.NextId();
         var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
 
-        if (!absent) throw new ProcessNameExistException(name, pid);
+        if (!absent)
+        {
+            throw new ProcessNameExistException(name, pid);
+        }
 
         pid.RequestId = 1;
         Pid = pid;
@@ -100,11 +112,19 @@ public sealed class FutureProcess : Process, IFuture
         catch
         {
             if (System.Metrics.Enabled)
+            {
                 ActorMetrics.FuturesTimedOutCount.Add(1, _metricTags);
+            }
 
             Stop(Pid);
+
             throw new TimeoutException("Request didn't receive any Response within the expected time.");
         }
+    }
+
+    public void Dispose()
+    {
+        System.ProcessRegistry.Remove(Pid);
     }
 
     protected internal override void SendUserMessage(PID pid, object message)
@@ -115,8 +135,10 @@ public sealed class FutureProcess : Process, IFuture
         }
         finally
         {
-            if(System.Metrics.Enabled)
+            if (System.Metrics.Enabled)
+            {
                 ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
+            }
 
             Stop(Pid);
         }
@@ -127,16 +149,17 @@ public sealed class FutureProcess : Process, IFuture
         if (message is Stop)
         {
             Dispose();
+
             return;
         }
 
         _tcs.TrySetResult(default!);
 
         if (System.Metrics.Enabled)
+        {
             ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
+        }
 
         Stop(pid);
     }
-
-    public void Dispose() => System.ProcessRegistry.Remove(Pid);
 }

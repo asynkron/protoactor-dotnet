@@ -15,21 +15,27 @@ namespace Proto.Cluster;
 
 public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
 {
-    public string ToDiagnosticString() => $"{Kind}/{Identity}";
+    internal PID? CachedPid { get; set; }
+
+    public string ToDiagnosticString()
+    {
+        return $"{Kind}/{Identity}";
+    }
 
     /// <summary>
-    /// Creates ClusterIdentity from identity and cluster kind
+    ///     Creates ClusterIdentity from identity and cluster kind
     /// </summary>
     /// <param name="identity"></param>
     /// <param name="kind"></param>
     /// <returns></returns>
-    public static ClusterIdentity Create(string identity, string kind) => new()
+    public static ClusterIdentity Create(string identity, string kind)
     {
-        Identity = identity,
-        Kind = kind
-    };
-
-    internal PID? CachedPid { get; set; }
+        return new()
+        {
+            Identity = identity,
+            Kind = kind
+        };
+    }
 }
 
 public sealed partial class ActivationRequest
@@ -52,8 +58,9 @@ public sealed partial class Activation
 
 public sealed partial class IdentityHandover : IRootSerializable
 {
-    public IRootSerialized Serialize(ActorSystem system) =>
-        new RemoteIdentityHandover
+    public IRootSerialized Serialize(ActorSystem system)
+    {
+        return new RemoteIdentityHandover
         {
             Actors = PackedActivations.Pack(system.Address, Actors),
             TopologyHash = TopologyHash,
@@ -62,47 +69,60 @@ public sealed partial class IdentityHandover : IRootSerializable
             ChunkId = ChunkId,
             Sent = Sent
         };
+    }
 }
 
 public sealed partial class RemoteIdentityHandover : IRootSerialized
 {
-    public IRootSerializable Deserialize(ActorSystem system) => new IdentityHandover
+    public IRootSerializable Deserialize(ActorSystem system)
     {
-        TopologyHash = TopologyHash,
-        Final = Final,
-        Skipped = Skipped,
-        Sent = Sent,
-        ChunkId = ChunkId,
-        Actors = {Actors.UnPack()}
-    };
+        return new IdentityHandover
+        {
+            TopologyHash = TopologyHash,
+            Final = Final,
+            Skipped = Skipped,
+            Sent = Sent,
+            ChunkId = ChunkId,
+            Actors = { Actors.UnPack() }
+        };
+    }
 }
 
 public sealed partial class PackedActivations
 {
-    public IEnumerable<Activation> UnPack() => Actors.SelectMany(UnpackKind);
+    public IEnumerable<Activation> UnPack()
+    {
+        return Actors.SelectMany(UnpackKind);
+    }
 
     private IEnumerable<Activation> UnpackKind(Types.Kind kind)
-        => kind.Activations.Select(packed => new Activation
+    {
+        return kind.Activations.Select(packed => new Activation
             {
                 ClusterIdentity = ClusterIdentity.Create(packed.Identity, kind.Name),
                 Pid = PID.FromAddress(Address, packed.ActivationId)
             }
         );
+    }
 
-    public static PackedActivations Pack(string address, IEnumerable<Activation> activations) => new()
+    public static PackedActivations Pack(string address, IEnumerable<Activation> activations)
     {
-        Address = address,
-        Actors = {PackActivations(activations)}
-    };
+        return new()
+        {
+            Address = address,
+            Actors = { PackActivations(activations) }
+        };
+    }
 
     private static IEnumerable<Types.Kind> PackActivations(IEnumerable<Activation> activations)
-        => activations.GroupBy(it => it.Kind)
+    {
+        return activations.GroupBy(it => it.Kind)
             .Select(grouping => new Types.Kind
                 {
                     Name = grouping.Key,
                     Activations =
                     {
-                        grouping.Select(activation => new PackedActivations.Types.Activation
+                        grouping.Select(activation => new Types.Activation
                             {
                                 Identity = activation.Identity,
                                 ActivationId = activation.Pid.Id
@@ -111,17 +131,22 @@ public sealed partial class PackedActivations
                     }
                 }
             );
+    }
 }
 
 public partial class ClusterTopology
 {
-    //this ignores joined and left members, only the actual members are relevant
-    public uint GetMembershipHashCode() => Member.TopologyHash(Members);
-
     /// <summary>
-    /// Topology based logic (IE partition based) can use this token to cancel any work when this topology is no longer valid
+    ///     Topology based logic (IE partition based) can use this token to cancel any work when this topology is no longer
+    ///     valid
     /// </summary>
     public CancellationToken? TopologyValidityToken { get; init; }
+
+    //this ignores joined and left members, only the actual members are relevant
+    public uint GetMembershipHashCode()
+    {
+        return Member.TopologyHash(Members);
+    }
 }
 
 public partial class Member
@@ -131,6 +156,7 @@ public partial class Member
         var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
         var key = string.Concat(x);
         var hash = MurmurHash2.Hash(key);
+
         return hash;
     }
 }

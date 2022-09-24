@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Proto.Router.Routers;
 
-class ConsistentHashRouterState : RouterState
+internal class ConsistentHashRouterState : RouterState
 {
     private readonly Func<string, uint> _hash;
     private readonly Func<object, string>? _messageHasher;
@@ -36,7 +37,10 @@ class ConsistentHashRouterState : RouterState
 
     public override void RouteMessage(object message)
     {
-        if (_hashRing is null) throw new InvalidOperationException("Routees not set");
+        if (_hashRing is null)
+        {
+            throw new InvalidOperationException("Routees not set");
+        }
 
         var env = MessageEnvelope.Unwrap(message);
 

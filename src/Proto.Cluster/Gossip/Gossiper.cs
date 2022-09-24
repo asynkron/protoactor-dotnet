@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -59,13 +60,16 @@ public class Gossiper
     }
 
     /// <summary>
-    /// Gets the current full gossip state as seen by current member
+    ///     Gets the current full gossip state as seen by current member
     /// </summary>
     /// <returns></returns>
-    public Task<GossipState> GetStateSnapshot() => _context.RequestAsync<GossipState>(_pid, new GetGossipStateSnapshot());
+    public Task<GossipState> GetStateSnapshot()
+    {
+        return _context.RequestAsync<GossipState>(_pid, new GetGossipStateSnapshot());
+    }
 
     /// <summary>
-    /// Gets gossip state entry by key, for each member represented in the gossip state, as seen by current member
+    ///     Gets gossip state entry by key, for each member represented in the gossip state, as seen by current member
     /// </summary>
     /// <param name="key"></param>
     /// <typeparam name="T">Dictionary where member id is the key and gossip state value is the value</typeparam>
@@ -77,7 +81,6 @@ public class Gossiper
         try
         {
             var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
-
 
             var dict = res.State;
             var typed = ImmutableDictionary<string, T>.Empty;
@@ -98,9 +101,12 @@ public class Gossiper
     }
 
     /// <summary>
-    /// Gets the gossip state entry by key, for each member represented in the gossip state, as seen by current member
+    ///     Gets the gossip state entry by key, for each member represented in the gossip state, as seen by current member
     /// </summary>
-    /// <param name="key">Dictionary where member id is the key and gossip state value is the value, wrapped in <see cref="GossipKeyValue"/></param>
+    /// <param name="key">
+    ///     Dictionary where member id is the key and gossip state value is the value, wrapped in
+    ///     <see cref="GossipKeyValue" />
+    /// </param>
     /// <returns></returns>
     public async Task<ImmutableDictionary<string, GossipKeyValue>> GetStateEntry(string key)
     {
@@ -108,7 +114,8 @@ public class Gossiper
 
         try
         {
-            var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid, new GetGossipStateEntryRequest(key));
+            var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid,
+                new GetGossipStateEntryRequest(key));
 
             return res.State;
         }
@@ -121,31 +128,46 @@ public class Gossiper
     }
 
     /// <summary>
-    /// Sets a gossip state key to provided value. This will not wait for the state to be actually updated in current member's gossip state.
+    ///     Sets a gossip state key to provided value. This will not wait for the state to be actually updated in current
+    ///     member's gossip state.
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
     public void SetState(string key, IMessage value)
     {
-        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
+        }
+
         _context.System.Logger()?.LogDebug("Gossiper setting state to {Pid}", _pid);
 
-        if (_pid == null) return;
+        if (_pid == null)
+        {
+            return;
+        }
 
         _context.Send(_pid, new SetGossipStateKey(key, value));
     }
 
     /// <summary>
-    /// Sets a gossip state key to provided value. Waits for the state to be updated in current member's gossip state.
+    ///     Sets a gossip state key to provided value. Waits for the state to be updated in current member's gossip state.
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
     public async Task SetStateAsync(string key, IMessage value)
     {
-        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.LogDebug("Gossiper setting state to {Pid}", _pid);
+        }
+
         _context.System.Logger()?.LogDebug("Gossiper setting state to {Pid}", _pid);
 
-        if (_pid == null) return;
+        if (_pid == null)
+        {
+            return;
+        }
 
         try
         {
@@ -153,14 +175,16 @@ public class Gossiper
         }
         catch (DeadLetterException)
         {
-          //ignore, we are shutting down  
+            //ignore, we are shutting down  
         }
     }
 
     internal Task StartAsync()
     {
-        var props = Props.FromProducer(() => new GossipActor(_cluster.System, _cluster.Config.GossipRequestTimeout, _context.System.Id, _cluster.System.Logger(), _cluster.Config.GossipFanout,
-                _cluster.Config.GossipMaxSend));
+        var props = Props.FromProducer(() => new GossipActor(_cluster.System, _cluster.Config.GossipRequestTimeout,
+            _context.System.Id, _cluster.System.Logger(), _cluster.Config.GossipFanout,
+            _cluster.Config.GossipMaxSend));
+
         _pid = _context.SpawnNamedSystem(props, GossipActorName);
         _cluster.System.EventStream.Subscribe<ClusterTopology>(topology => _context.Send(_pid, topology));
         Logger.LogInformation("Started Cluster Gossip");
@@ -217,10 +241,11 @@ public class Gossiper
 
         var blockList = _cluster.System.Remote().BlockList;
         var alreadyBlocked = blockList.BlockedMembers;
+
         //don't ban ourselves. our gossip state will never reach other members then...
         var gracefullyLeft = t2.Keys
-            .Where(k =>  !alreadyBlocked.Contains(k))
-            .Where(k => k != _cluster.System.Id )
+            .Where(k => !alreadyBlocked.Contains(k))
+            .Where(k => k != _cluster.System.Id)
             .ToArray();
 
         if (gracefullyLeft.Any())
@@ -236,22 +261,24 @@ public class Gossiper
         {
             return;
         }
-        
+
         var t = await GetStateEntry(GossipKeys.Heartbeat);
 
         var blockList = _cluster.System.Remote().BlockList;
         var alreadyBlocked = blockList.BlockedMembers;
-        
+
         //new blocked members
         var blocked = (from x in t
-                       where x.Value.Age > _cluster.Config.HeartbeatExpiration
-                       where !alreadyBlocked.Contains(x.Key)
-                       select x.Key)
+                where x.Value.Age > _cluster.Config.HeartbeatExpiration
+                where !alreadyBlocked.Contains(x.Key)
+                select x.Key)
             .ToArray();
 
         if (blocked.Any())
         {
-            Logger.LogInformation("Blocking members due to expired heartbeat {Members}", blocked.Cast<object>().ToArray());
+            Logger.LogInformation("Blocking members due to expired heartbeat {Members}",
+                blocked.Cast<object>().ToArray());
+
             blockList.Block(blocked);
         }
     }
@@ -291,22 +318,32 @@ public class Gossiper
         public IImmutableSet<string> AffectedKeys => _getConsensusValues.Select(it => it.Item1).ToImmutableHashSet();
 
         public static ConsensusCheckBuilder<T> Create<TE>(string key, Func<TE, T?> getValue) where TE : IMessage, new()
-            => new(key, MapFromAny(getValue));
+        {
+            return new(key, MapFromAny(getValue));
+        }
 
         private static Func<Any, T?> MapFromAny<TE>(Func<TE, T?> getValue) where TE : IMessage, new()
-            => any => any.TryUnpack<TE>(out var envelope) ? getValue(envelope) : default;
+        {
+            return any => any.TryUnpack<TE>(out var envelope) ? getValue(envelope) : default;
+        }
 
         public ConsensusCheckBuilder<T> InConsensusWith<TE>(string key, Func<TE, T> getValue) where TE : IMessage, new()
-            => new(_getConsensusValues.Add((key, MapFromAny(getValue))));
+        {
+            return new(_getConsensusValues.Add((key, MapFromAny(getValue))));
+        }
 
-        private static Func<KeyValuePair<string, GossipState.Types.GossipMemberState>, (string member, string key, T value)> MapToValue(
+        private static Func<KeyValuePair<string, GossipState.Types.GossipMemberState>, (string member, string key, T
+            value)> MapToValue(
             (string, Func<Any, T?>) valueTuple
         )
         {
             var (key, unpack) = valueTuple;
-            return kv => {
+
+            return kv =>
+            {
                 var (member, state) = kv;
                 var value = state.Values.TryGetValue(key, out var any) ? unpack(any.Value) : default;
+
                 return (member, key, value);
             };
         }
@@ -316,11 +353,16 @@ public class Gossiper
             if (_getConsensusValues.Count == 1)
             {
                 var mapToValue = MapToValue(_getConsensusValues.Single());
-                return (state, ids) => {
+
+                return (state, ids) =>
+                {
                     var memberStates = GetValidMemberStates(state, ids);
 
                     // Missing state, cannot have consensus
-                    if (memberStates.Length < ids.Count) return default;
+                    if (memberStates.Length < ids.Count)
+                    {
+                        return default;
+                    }
 
                     var valueTuples = memberStates.Select(mapToValue);
                     // ReSharper disable PossibleMultipleEnumeration
@@ -342,14 +384,18 @@ public class Gossiper
 
             var mappers = _getConsensusValues.Select(MapToValue).ToArray();
 
-            return (state, ids) => {
+            return (state, ids) =>
+            {
                 var memberStates = GetValidMemberStates(state, ids);
 
                 if (memberStates.Length < ids.Count) // Not all members have state..
+                {
                     return default;
+                }
 
                 var valueTuples = memberStates
                     .SelectMany(memberState => mappers.Select(mapper => mapper(memberState)));
+
                 var consensus = valueTuples.Select(it => it.value).HasConsensus();
 
                 if (Logger.IsEnabled(LogLevel.Debug))
@@ -366,17 +412,24 @@ public class Gossiper
                 return consensus;
             };
 
-            KeyValuePair<string, GossipState.Types.GossipMemberState>[] GetValidMemberStates(GossipState state, IImmutableSet<string> ids)
-                => state.Members
+            KeyValuePair<string, GossipState.Types.GossipMemberState>[] GetValidMemberStates(GossipState state,
+                IImmutableSet<string> ids)
+            {
+                return state.Members
                     .Where(member => ids.Contains(member.Key))
                     .Select(member => member).ToArray();
+            }
         }
     }
 
-    public IConsensusHandle<TV> RegisterConsensusCheck<T, TV>(string key, Func<T, TV?> getValue) where T : notnull, IMessage, new()
-        => RegisterConsensusCheck(ConsensusCheckBuilder<TV>.Create(key, getValue));
+    public IConsensusHandle<TV> RegisterConsensusCheck<T, TV>(string key, Func<T, TV?> getValue)
+        where T : notnull, IMessage, new()
+    {
+        return RegisterConsensusCheck(ConsensusCheckBuilder<TV>.Create(key, getValue));
+    }
 
-    public IConsensusHandle<T> RegisterConsensusCheck<T>(IConsensusCheckDefinition<T> consensusDefinition) where T : notnull
+    public IConsensusHandle<T> RegisterConsensusCheck<T>(IConsensusCheckDefinition<T> consensusDefinition)
+        where T : notnull
     {
         var cts = new CancellationTokenSource();
         var (consensusHandle, check) = consensusDefinition.Build(cts.Cancel);
@@ -396,7 +449,8 @@ public class Gossiper
 
         try
         {
-            await _context.RequestAsync<SendGossipStateResponse>(_pid, new SendGossipStateRequest(), CancellationTokens.FromSeconds(5));
+            await _context.RequestAsync<SendGossipStateResponse>(_pid, new SendGossipStateRequest(),
+                CancellationTokens.FromSeconds(5));
         }
         catch (DeadLetterException)
         {
@@ -415,6 +469,7 @@ public class Gossiper
         Logger.LogInformation("Shutting down heartbeat");
         _context.Stop(_pid);
         Logger.LogInformation("Shut down heartbeat");
+
         return Task.CompletedTask;
     }
 }

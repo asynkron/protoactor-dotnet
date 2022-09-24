@@ -3,12 +3,13 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.IO;
 
 namespace Proto.Cluster.CodeGen;
 
-static class PathPolyfill
+internal static class PathPolyfill
 {
     // this substitutes Path.GetRelativePath, which is not available in .NET Standard 2.0
     // code is based on Stack Overflow answer: https://stackoverflow.com/a/32113484
@@ -25,7 +26,9 @@ static class PathPolyfill
             throw new ArgumentException("value cannot be null or empty", nameof(path));
         }
 
-        var relativeToUri = GetUri(relativeTo.EndsWith(Path.DirectorySeparatorChar.ToString())? relativeTo : relativeTo+Path.DirectorySeparatorChar);
+        var relativeToUri = GetUri(relativeTo.EndsWith(Path.DirectorySeparatorChar.ToString())
+            ? relativeTo
+            : relativeTo + Path.DirectorySeparatorChar);
 
         var pathUri = GetUri(path);
 
@@ -55,7 +58,7 @@ static class PathPolyfill
 
     private static Uri GetUri(string path)
     {
-        var fullPath = Path.GetFullPath(path+Path.DirectorySeparatorChar);
+        var fullPath = Path.GetFullPath(path + Path.DirectorySeparatorChar);
         var pathWithDirectorySeparatorChar = AppendDirectorySeparatorChar(fullPath);
 
         return new Uri(pathWithDirectorySeparatorChar);

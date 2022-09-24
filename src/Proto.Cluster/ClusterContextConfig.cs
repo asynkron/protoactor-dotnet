@@ -26,10 +26,12 @@ public record ClusterContextConfig
 public static class ClusterConfigExtensions
 {
     public static ClusterContextConfig ToClusterContextConfig(this ClusterConfig clusterConfig)
-        => new()
+    {
+        return new()
         {
             ActorRequestTimeout = clusterConfig.ActorRequestTimeout,
             MaxNumberOfEventsInRequestLogThrottlePeriod = clusterConfig.MaxNumberOfEventsInRequestLogThrottlePeriod,
-            RequestLogThrottlePeriod = clusterConfig.RequestLogThrottlePeriod,
+            RequestLogThrottlePeriod = clusterConfig.RequestLogThrottlePeriod
         };
+    }
 }

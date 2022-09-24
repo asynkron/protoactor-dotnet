@@ -12,7 +12,10 @@ namespace Proto;
 
 public abstract class Process
 {
-    protected Process(ActorSystem system) => System = system;
+    protected Process(ActorSystem system)
+    {
+        System = system;
+    }
 
     protected ActorSystem System { get; }
 
@@ -20,5 +23,8 @@ public abstract class Process
 
     protected internal abstract void SendSystemMessage(PID pid, SystemMessage message);
 
-    public virtual void Stop(PID pid) => SendSystemMessage(pid, Proto.Stop.Instance);
+    public virtual void Stop(PID pid)
+    {
+        SendSystemMessage(pid, Proto.Stop.Instance);
+    }
 }

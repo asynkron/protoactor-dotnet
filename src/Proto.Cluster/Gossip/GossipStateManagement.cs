@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -13,13 +14,16 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip;
 
-static class GossipStateManagement
+internal static class GossipStateManagement
 {
     private static readonly ILogger Logger = Log.CreateLogger("GossipStateManagement");
 
     private static GossipKeyValue EnsureEntryExists(GossipState.Types.GossipMemberState memberState, string key)
     {
-        if (memberState.Values.TryGetValue(key, out var value)) return value;
+        if (memberState.Values.TryGetValue(key, out var value))
+        {
+            return value;
+        }
 
         value = new GossipKeyValue();
         memberState.Values.Add(key, value);
@@ -29,7 +33,10 @@ static class GossipStateManagement
 
     public static GossipState.Types.GossipMemberState EnsureMemberStateExists(GossipState state, string memberId)
     {
-        if (state.Members.TryGetValue(memberId, out var memberState)) return memberState;
+        if (state.Members.TryGetValue(memberId, out var memberState))
+        {
+            return memberState;
+        }
 
         memberState = new GossipState.Types.GossipMemberState();
         state.Members.Add(memberId, memberState);
@@ -77,13 +84,17 @@ static class GossipStateManagement
                     updates.Add(new GossipUpdate(memberId, key, remoteValue.Value, remoteValue.SequenceNumber));
                     remoteValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                     updatedKeys.Add(key);
+
                     continue;
                 }
 
                 var newValue = newMemberState.Values[key];
 
                 //remote value is older, ignore
-                if (remoteValue.SequenceNumber <= newValue.SequenceNumber) continue;
+                if (remoteValue.SequenceNumber <= newValue.SequenceNumber)
+                {
+                    continue;
+                }
 
                 //just replace the existing value
                 newMemberState.Values[key] = remoteValue;
@@ -107,6 +118,7 @@ static class GossipStateManagement
 
         entry.SequenceNumber = sequenceNo;
         entry.Value = Any.Pack(value);
+
         return sequenceNo;
     }
 
@@ -116,7 +128,10 @@ static class GossipStateManagement
         string myId,
         ImmutableHashSet<string> members,
         string valueKey
-    ) where T : IMessage, new() => CheckConsensus<T, T>(ctx, state, myId, members, valueKey, v => v);
+    ) where T : IMessage, new()
+    {
+        return CheckConsensus<T, T>(ctx, state, myId, members, valueKey, v => v);
+    }
 
     public static (bool Consensus, TV value) CheckConsensus<T, TV>(
         IContext? ctx,
@@ -132,6 +147,7 @@ static class GossipStateManagement
         if (state.Members.Count == 0)
         {
             logger?.LogDebug("No members found for consensus check");
+
             return (false, default);
         }
 
@@ -140,6 +156,7 @@ static class GossipStateManagement
         if (!state.Members.TryGetValue(myId, out var ownMemberState))
         {
             logger?.LogDebug("I can't find myself");
+
             return (false, default);
         }
 
@@ -148,6 +165,7 @@ static class GossipStateManagement
         if (ownValue is null)
         {
             logger?.LogDebug("I don't have any value for {Key}", valueKey);
+
             return (false, default);
         }
 
@@ -157,17 +175,24 @@ static class GossipStateManagement
             if (!members.Contains(memberId))
             {
                 logger?.LogDebug("Member is not part of cluster {MemberId}", memberId);
+
                 continue;
             }
 
             var consensusValue = GetConsensusValue(memberState);
 
-            if (consensusValue is null || !ownValue.Equals(consensusValue)) return (false, default);
+            if (consensusValue is null || !ownValue.Equals(consensusValue))
+            {
+                return (false, default);
+            }
         }
 
-        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Reached Consensus {Key}:{Value} - {State}", valueKey, ownValue, state);
-        return (true, ownValue);
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.LogDebug("Reached Consensus {Key}:{Value} - {State}", valueKey, ownValue, state);
+        }
 
+        return (true, ownValue);
 
         TV? GetConsensusValue(GossipState.Types.GossipMemberState memberState)
         {
@@ -177,12 +202,16 @@ static class GossipStateManagement
         }
     }
 
-    private static T? GetMemberStateByKey<T>(this GossipState.Types.GossipMemberState memberState, string key) where T : IMessage, new()
+    private static T? GetMemberStateByKey<T>(this GossipState.Types.GossipMemberState memberState, string key)
+        where T : IMessage, new()
     {
         if (!memberState.Values.TryGetValue(key, out var entry))
+        {
             return default;
+        }
 
         var topology = entry.Value.Unpack<T>();
+
         return topology;
     }
 }

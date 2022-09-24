@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 
@@ -10,13 +11,6 @@ namespace Proto.Utils;
 
 public static class Retry
 {
-    public class RetriesExhaustedException : Exception
-    {
-        public RetriesExhaustedException(string message): base(message){}
-
-        public RetriesExhaustedException(string message, Exception innerException) : base(message, innerException){}
-    }
-
     public const int Forever = 0;
 
     public static Task<T> TryUntilNotNull<T>(
@@ -26,9 +20,15 @@ public static class Retry
         int maxBackoffMilliseconds = 5000,
         Action<int, Exception>? onError = null,
         Action<Exception>? onFailed = null
-    ) where T : class => TryUntil(body, res => res != null, retryCount, backoffMilliSeconds, maxBackoffMilliseconds, onError, onFailed);
+    ) where T : class
+    {
+        return TryUntil(body, res => res != null, retryCount, backoffMilliSeconds, maxBackoffMilliseconds, onError,
+            onFailed);
+    }
 
-    public static async Task<T> TryUntil<T>(Func<Task<T>> body, Func<T?,bool> condition, int retryCount = 10, int backoffMilliSeconds = 100, int maxBackoffMilliseconds = 5000, Action<int,Exception>? onError=null, Action<Exception>? onFailed=null)
+    public static async Task<T> TryUntil<T>(Func<Task<T>> body, Func<T?, bool> condition, int retryCount = 10,
+        int backoffMilliSeconds = 100, int maxBackoffMilliseconds = 5000, Action<int, Exception>? onError = null,
+        Action<Exception>? onFailed = null)
     {
         for (var i = 0; retryCount == 0 || i < retryCount; i++)
         {
@@ -49,6 +49,7 @@ public static class Retry
                 if (i == retryCount - 1)
                 {
                     onFailed?.Invoke(x);
+
                     throw new RetriesExhaustedException("Retried but failed", x);
                 }
 
@@ -59,23 +60,26 @@ public static class Retry
 
         throw new RetriesExhaustedException("Retry condition was never met");
     }
-        
-    public static async Task<T> Try<T>(Func<Task<T>> body, int retryCount = 10, int backoffMilliSeconds = 100, int maxBackoffMilliseconds = 5000, Action<int,Exception>? onError=null, Action<Exception>? onFailed=null)
+
+    public static async Task<T> Try<T>(Func<Task<T>> body, int retryCount = 10, int backoffMilliSeconds = 100,
+        int maxBackoffMilliseconds = 5000, Action<int, Exception>? onError = null, Action<Exception>? onFailed = null)
     {
         for (var i = 0; retryCount == 0 || i < retryCount; i++)
         {
             try
             {
                 var res = await body();
+
                 return res;
             }
-            catch(Exception x)
+            catch (Exception x)
             {
-                onError?.Invoke(i,x);
-                    
+                onError?.Invoke(i, x);
+
                 if (i == retryCount - 1)
                 {
                     onFailed?.Invoke(x);
+
                     throw new RetriesExhaustedException("Retried but failed", x);
                 }
 
@@ -102,6 +106,7 @@ public static class Retry
             try
             {
                 await body();
+
                 return;
             }
             catch (Exception x)
@@ -114,7 +119,9 @@ public static class Retry
                     onFailed?.Invoke(x);
 
                     if (ignoreFailure)
+                    {
                         return;
+                    }
 
                     throw new RetriesExhaustedException("Retried but failed", x);
                 }
@@ -125,5 +132,16 @@ public static class Retry
         }
 
         throw new RetriesExhaustedException("This should never happen...");
+    }
+
+    public class RetriesExhaustedException : Exception
+    {
+        public RetriesExhaustedException(string message) : base(message)
+        {
+        }
+
+        public RetriesExhaustedException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
 }

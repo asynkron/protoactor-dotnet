@@ -13,8 +13,8 @@ using Microsoft.Extensions.Hosting;
 namespace Proto.Remote.GrpcNet;
 
 [UsedImplicitly]
-[SuppressMessage(category:"", checkId:"CA1812")]
-class RemoteHostedService : IHostedService
+[SuppressMessage("", "CA1812")]
+internal class RemoteHostedService : IHostedService
 {
     private readonly IHostApplicationLifetime _appLifetime;
     private readonly IRemote _remote;
@@ -32,12 +32,22 @@ class RemoteHostedService : IHostedService
     {
         _appLifetime.ApplicationStopping.Register(OnStopping);
         _appLifetime.ApplicationStarted.Register(OnStarted);
+
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
 
-    private void OnStarted() => _remote.StartAsync().GetAwaiter().GetResult();
+    private void OnStarted()
+    {
+        _remote.StartAsync().GetAwaiter().GetResult();
+    }
 
-    private void OnStopping() => _remote.ShutdownAsync().GetAwaiter().GetResult();
+    private void OnStopping()
+    {
+        _remote.ShutdownAsync().GetAwaiter().GetResult();
+    }
 }

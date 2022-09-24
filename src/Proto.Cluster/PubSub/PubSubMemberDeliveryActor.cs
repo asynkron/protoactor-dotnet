@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,26 +22,32 @@ public class PubSubMemberDeliveryActor : IActor
     private static readonly ILogger Logger = Log.CreateLogger<PubSubMemberDeliveryActor>();
     private readonly int _subscriberTimeoutSeconds;
 
-    public PubSubMemberDeliveryActor(TimeSpan subscriberTimeout) => _subscriberTimeoutSeconds = (int) subscriberTimeout.TotalSeconds;
+    public PubSubMemberDeliveryActor(TimeSpan subscriberTimeout)
+    {
+        _subscriberTimeoutSeconds = (int)subscriberTimeout.TotalSeconds;
+    }
 
     public Task ReceiveAsync(IContext context)
     {
         if (context.Message is DeliverBatchRequest deliveryBatch)
         {
             var topicBatch = new PubSubAutoRespondBatch(deliveryBatch.PubSubBatch.Envelopes);
+
             var tasks =
                 deliveryBatch
                     .Subscribers.Subscribers_
                     .Select(sub => DeliverBatch(context, topicBatch, sub))
                     .ToArray();
 
-            context.ReenterAfter(Task.WhenAll(tasks), () => NotifyAboutInvalidDeliveries(tasks, deliveryBatch.Topic, context));
+            context.ReenterAfter(Task.WhenAll(tasks),
+                () => NotifyAboutInvalidDeliveries(tasks, deliveryBatch.Topic, context));
         }
 
         return Task.CompletedTask;
     }
 
-    private void NotifyAboutInvalidDeliveries(IEnumerable<Task<SubscriberDeliveryReport>> tasks, string topic, IContext context)
+    private void NotifyAboutInvalidDeliveries(IEnumerable<Task<SubscriberDeliveryReport>> tasks, string topic,
+        IContext context)
     {
         var invalidDeliveries = tasks
             .Select(t => t.Result)
@@ -57,25 +64,28 @@ public class PubSubMemberDeliveryActor : IActor
                 TopicActor.Kind,
                 new NotifyAboutFailingSubscribersRequest
                 {
-                    InvalidDeliveries = {invalidDeliveries}
+                    InvalidDeliveries = { invalidDeliveries }
                 }, CancellationTokens.FromSeconds(15)
             );
         }
     }
 
-    private async Task<SubscriberDeliveryReport> DeliverBatch(IContext context, PubSubAutoRespondBatch pub, SubscriberIdentity s)
+    private async Task<SubscriberDeliveryReport> DeliverBatch(IContext context, PubSubAutoRespondBatch pub,
+        SubscriberIdentity s)
     {
         var status = await (s.IdentityCase switch
         {
-            SubscriberIdentity.IdentityOneofCase.Pid             => DeliverToPid(context, pub, s.Pid),
-            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub, s.ClusterIdentity),
-            _                                                    => Task.FromResult(DeliveryStatus.OtherError)
+            SubscriberIdentity.IdentityOneofCase.Pid => DeliverToPid(context, pub, s.Pid),
+            SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub,
+                s.ClusterIdentity),
+            _ => Task.FromResult(DeliveryStatus.OtherError)
         });
 
-        return new SubscriberDeliveryReport {Subscriber = s, Status = status};
+        return new SubscriberDeliveryReport { Subscriber = s, Status = status };
     }
 
-    private async Task<DeliveryStatus> DeliverToClusterIdentity(IContext context, PubSubAutoRespondBatch pub, ClusterIdentity ci)
+    private async Task<DeliveryStatus> DeliverToClusterIdentity(IContext context, PubSubAutoRespondBatch pub,
+        ClusterIdentity ci)
     {
         try
         {
@@ -88,7 +98,11 @@ public class PubSubMemberDeliveryActor : IActor
             if (response == null)
             {
                 if (LogThrottle().IsOpen())
-                    Logger.LogWarning("Pub-sub message delivered to {ClusterIdentity} timed out", ci.ToDiagnosticString());
+                {
+                    Logger.LogWarning("Pub-sub message delivered to {ClusterIdentity} timed out",
+                        ci.ToDiagnosticString());
+                }
+
                 return DeliveryStatus.Timeout;
             }
 
@@ -97,14 +111,21 @@ public class PubSubMemberDeliveryActor : IActor
         catch (TimeoutException)
         {
             if (LogThrottle().IsOpen())
+            {
                 Logger.LogWarning("Pub-sub message delivered to: {ClusterIdentity} timed out", ci.ToDiagnosticString());
+            }
+
             return DeliveryStatus.Timeout;
         }
         catch (Exception e)
         {
             e.CheckFailFast();
+
             if (LogThrottle().IsOpen())
-                Logger.LogError(e, "Error while delivering pub-sub message to {ClusterIdentity}", ci.ToDiagnosticString());
+            {
+                Logger.LogError(e, "Error while delivering pub-sub message to {ClusterIdentity}",
+                    ci.ToDiagnosticString());
+            }
 
             return DeliveryStatus.OtherError;
         }
@@ -115,26 +136,39 @@ public class PubSubMemberDeliveryActor : IActor
         try
         {
             // deliver to PID
-            await context.RequestAsync<PublishResponse>(pid, pub, CancellationTokens.FromSeconds(_subscriberTimeoutSeconds));
+            await context.RequestAsync<PublishResponse>(pid, pub,
+                CancellationTokens.FromSeconds(_subscriberTimeoutSeconds));
+
             return DeliveryStatus.Delivered;
         }
         catch (TimeoutException)
         {
             if (LogThrottle().IsOpen())
+            {
                 Logger.LogWarning("Pub-sub message delivered to {PID} timed out", pid.ToDiagnosticString());
+            }
+
             return DeliveryStatus.Timeout;
         }
         catch (DeadLetterException)
         {
             if (LogThrottle().IsOpen())
-                Logger.LogWarning("Pub-sub message cannot be delivered to {PID} as it is no longer available", pid.ToDiagnosticString());
+            {
+                Logger.LogWarning("Pub-sub message cannot be delivered to {PID} as it is no longer available",
+                    pid.ToDiagnosticString());
+            }
+
             return DeliveryStatus.SubscriberNoLongerReachable;
         }
         catch (Exception e)
         {
             e.CheckFailFast();
+
             if (LogThrottle().IsOpen())
+            {
                 Logger.LogError(e, "Error while delivering pub-sub message to {PID}", pid.ToDiagnosticString());
+            }
+
             return DeliveryStatus.OtherError;
         }
     }

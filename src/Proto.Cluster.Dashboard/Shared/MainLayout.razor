@@ -2,7 +2,7 @@
 @inherits LayoutComponentBase
 
 <PageTitle>Proto.Cluster.Dashboard</PageTitle>
-<MudThemeProvider Theme="@MyCustomTheme" IsDarkMode="@_dark" />
+<MudThemeProvider Theme="@MyCustomTheme" IsDarkMode="@_dark"/>
 <MudDialogProvider/>
 <MudSnackbarProvider/>
 <style>
@@ -31,13 +31,13 @@
 <MudLayout>
     <MudAppBar Elevation="0">
         <h3>Proto.Actor Cluster Dashboard</h3>
-        <MudSpacer />
+        <MudSpacer/>
         <MudToggleIconButton @bind-Toggled="@_dark" Edge="Edge.End"
                              Icon="@Icons.Material.Filled.DarkMode" Color="@Color.Info" Title="Dark"
                              ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@Color.Warning" ToggledTitle="Light"/>
     </MudAppBar>
-    <MudDrawer @bind-Open="@_open" ClipMode="DrawerClipMode.Never" Elevation="0" Variant="@DrawerVariant.Mini" OpenMiniOnHover="true" >
-         <NavMenu/>
+    <MudDrawer @bind-Open="@_open" ClipMode="DrawerClipMode.Never" Elevation="0" Variant="@DrawerVariant.Mini" OpenMiniOnHover="true">
+        <NavMenu/>
     </MudDrawer>
     <MudMainContent >
         @Body
@@ -46,10 +46,7 @@
 
 @code
 {
-    readonly MudTheme MyCustomTheme = new()
-    {
-        
-    };
+    readonly MudTheme MyCustomTheme = new();
 
     protected override void OnInitialized()
     {
@@ -58,12 +55,12 @@
         MyCustomTheme.PaletteDark.AppbarBackground = new MudColor("#0f1014");
         MyCustomTheme.PaletteDark.DrawerBackground = new MudColor("#181b1f");
         MyCustomTheme.PaletteDark.LinesDefault = new MudColor("#ccccdc26");
-        
+
         base.OnInitialized();
     }
 
     bool _dark = true;
-    bool _open = false;
+    bool _open;
 
     void ToggleDrawer()
     {
