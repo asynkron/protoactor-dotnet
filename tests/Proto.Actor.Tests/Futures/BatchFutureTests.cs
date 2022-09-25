@@ -116,7 +116,9 @@ public class BatchFutureTests : ActorTestBase
         }
 
         await futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }
-        ).Should().ThrowAsync<TimeoutException>();
+            )
+            .Should()
+            .ThrowAsync<TimeoutException>();
     }
 
     [Fact]

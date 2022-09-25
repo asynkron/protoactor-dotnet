@@ -114,7 +114,8 @@ public class ReenterTests : ActorTestBase
         await Context.Invoking(async ctx
                 => await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request,
                     TimeSpan.FromMilliseconds(500))
-            ).Should()
+            )
+            .Should()
             .ThrowExactlyAsync<TimeoutException>();
     }
 

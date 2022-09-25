@@ -17,10 +17,8 @@ public class ExtensionB : IActorSystemExtension<ExtensionB>
 public class ExtensionTests
 {
     [Fact]
-    public void ExtensionsGetOwnId()
-    {
+    public void ExtensionsGetOwnId() =>
         Assert.NotEqual(IActorSystemExtension<ExtensionA>.Id, IActorSystemExtension<ExtensionB>.Id);
-    }
 
     [Fact]
     public async Task CanGetExtension()

@@ -243,15 +243,9 @@ public class ConsistentHashGroupTests
             _value = value;
         }
 
-        public string HashBy()
-        {
-            return _value;
-        }
+        public string HashBy() => _value;
 
-        public override string ToString()
-        {
-            return _value;
-        }
+        public override string ToString() => _value;
     }
 
     internal class MyTestActor : IActor

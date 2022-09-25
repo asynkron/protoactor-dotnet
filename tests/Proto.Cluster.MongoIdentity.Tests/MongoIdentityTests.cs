@@ -93,8 +93,6 @@ public class MongoStorageTests : IdentityStorageTests
     {
     }
 
-    private static IIdentityStorage Init(string clusterName)
-    {
-        return new MongoIdentityStorage(clusterName, MongoFixture.Database.GetCollection<PidLookupEntity>("pids"));
-    }
+    private static IIdentityStorage Init(string clusterName) => new MongoIdentityStorage(clusterName,
+        MongoFixture.Database.GetCollection<PidLookupEntity>("pids"));
 }

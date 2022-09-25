@@ -15,15 +15,9 @@ internal class Message : IHashable
 {
     public string Text;
 
-    public string HashBy()
-    {
-        return Text;
-    }
+    public string HashBy() => Text;
 
-    public override string ToString()
-    {
-        return Text;
-    }
+    public override string ToString() => Text;
 }
 
 internal class MyActor : IActor

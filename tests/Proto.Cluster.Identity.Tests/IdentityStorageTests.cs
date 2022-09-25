@@ -143,8 +143,10 @@ public abstract class IdentityStorageTests : IDisposable
         var otherPid = Activate(activator, identity);
 
         await _storage.Invoking(storage =>
-            storage.StoreActivation(activator.Id, new SpawnLock("someLockId", identity), otherPid, timeout)
-        ).Should().ThrowAsync<LockNotFoundException>();
+                storage.StoreActivation(activator.Id, new SpawnLock("someLockId", identity), otherPid, timeout)
+            )
+            .Should()
+            .ThrowAsync<LockNotFoundException>();
     }
 
     [Fact]
@@ -157,8 +159,10 @@ public abstract class IdentityStorageTests : IDisposable
         var pid = Activate(activator, identity);
 
         await _storage.Invoking(storage =>
-            storage.StoreActivation(activator.Id, spawnLock, pid, timeout)
-        ).Should().ThrowAsync<LockNotFoundException>();
+                storage.StoreActivation(activator.Id, spawnLock, pid, timeout)
+            )
+            .Should()
+            .ThrowAsync<LockNotFoundException>();
     }
 
     [Fact]
@@ -311,16 +315,15 @@ public abstract class IdentityStorageTests : IDisposable
 
         activation.Should().BeNull("We did not activate it");
 
-        spawnLock.Should().NotBeNull(
-            "When an activation did not occur, the storage implementation should discard the lock"
-        );
+        spawnLock.Should()
+            .NotBeNull(
+                "When an activation did not occur, the storage implementation should discard the lock"
+            );
     }
 
     // ReSharper disable once SuggestBaseTypeForParameter
-    private PID Activate(Member activator, ClusterIdentity identity)
-    {
-        return PID.FromAddress(activator.Address, $"placement-activator/{identity}${NextId()}");
-    }
+    private PID Activate(Member activator, ClusterIdentity identity) =>
+        PID.FromAddress(activator.Address, $"placement-activator/{identity}${NextId()}");
 
     private Member GetFakeActivator()
     {
@@ -335,8 +338,5 @@ public abstract class IdentityStorageTests : IDisposable
         return activator;
     }
 
-    private int NextId()
-    {
-        return Interlocked.Increment(ref testId);
-    }
+    private int NextId() => Interlocked.Increment(ref testId);
 }

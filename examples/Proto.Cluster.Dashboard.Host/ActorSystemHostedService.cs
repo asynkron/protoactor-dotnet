@@ -9,13 +9,8 @@ public class ActorSystemHostedService : IHostedService
         _actorSystem = actorSystem;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
+    public async Task StartAsync(CancellationToken cancellationToken) =>
         await _actorSystem.Cluster().StartMemberAsync();
-    }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        await _actorSystem.Cluster().ShutdownAsync();
-    }
+    public async Task StopAsync(CancellationToken cancellationToken) => await _actorSystem.Cluster().ShutdownAsync();
 }

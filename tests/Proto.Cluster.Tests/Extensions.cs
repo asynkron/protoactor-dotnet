@@ -16,10 +16,8 @@ public static class Extensions
         string message,
         CancellationToken token,
         string kind = EchoActor.Kind
-    )
-    {
-        return cluster.RequestAsync<Pong>(id, kind, new Ping { Message = message }, token);
-    }
+    ) =>
+        cluster.RequestAsync<Pong>(id, kind, new Ping { Message = message }, token);
 
     public static async Task<string> DumpClusterState(this IEnumerable<Cluster> members)
     {

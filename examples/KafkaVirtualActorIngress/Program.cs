@@ -102,28 +102,23 @@ internal class Program
         return messages;
     }
 
-    private static ActorSystemConfig GetSystemConfig()
-    {
-        return ActorSystemConfig
+    private static ActorSystemConfig GetSystemConfig() =>
+        ActorSystemConfig
             .Setup()
             .WithDeadLetterThrottleCount(3)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
             .WithDeveloperSupervisionLogging(true);
-    }
     //TODO: Uncomment to enable metrics
     //  .WithMetricsProviders(new StatsdConfigurator(new[] { new Label("service", "my-system-name") }));
 
-    private static GrpcNetRemoteConfig GetRemoteConfig()
-    {
-        return GrpcNetRemoteConfig
+    private static GrpcNetRemoteConfig GetRemoteConfig() =>
+        GrpcNetRemoteConfig
             .BindTo("127.0.0.1")
             //   .WithAdvertisedHost("the hostname or ip of this pod")
             .WithProtoMessages(MyMessagesReflection.Descriptor);
-    }
 
-    private static ClusterConfig GetClusterConfig(string clusterName)
-    {
-        return ClusterConfig
+    private static ClusterConfig GetClusterConfig(string clusterName) =>
+        ClusterConfig
             .Setup(clusterName, GetClusterProvider(), new IdentityStorageLookup(GetIdentityLookup(clusterName)))
             .WithClusterKind("device", Props.FromProducer(() => new DeviceActor())
                 //TODO: Uncomment to enable tracing
@@ -133,7 +128,6 @@ internal class Program
                 // .WithPoisonOnRemoteTraffic(0.1f)
                 // .WithPidCacheInvalidation()
             );
-    }
 
     //TODO: Uncomment to enable local affinity
     // .WithMemberStrategyBuilder((cluster, kind) => {
@@ -146,15 +140,10 @@ internal class Program
     //     }
     // );
 
-    private static IClusterProvider GetClusterProvider()
-    {
-        return new ConsulProvider(new ConsulProviderConfig());
-    }
+    private static IClusterProvider GetClusterProvider() => new ConsulProvider(new ConsulProviderConfig());
 
-    private static IIdentityStorage GetIdentityLookup(string clusterName)
-    {
-        return new RedisIdentityStorage(clusterName, ConnectionMultiplexer
+    private static IIdentityStorage GetIdentityLookup(string clusterName) =>
+        new RedisIdentityStorage(clusterName, ConnectionMultiplexer
             .Connect("localhost:6379" /* use proper config */)
         );
-    }
 }

@@ -241,10 +241,7 @@ public class DisposableActorTests
             return Task.CompletedTask;
         }
 
-        public void Dispose()
-        {
-            _onDispose();
-        }
+        public void Dispose() => _onDispose();
     }
 
     private class ParentWithMultipleChildrenActor : IActor

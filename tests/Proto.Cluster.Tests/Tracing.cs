@@ -19,10 +19,8 @@ public static class Tracing
 
     public static readonly ActivitySource ActivitySource = new(ActivitySourceName);
 
-    public static Activity StartActivity([CallerMemberName] string callerName = "N/A")
-    {
-        return ActivitySource.StartActivity(callerName);
-    }
+    public static Activity StartActivity([CallerMemberName] string callerName = "N/A") =>
+        ActivitySource.StartActivity(callerName);
 
     public static async Task Trace(Func<Task> callBack, ITestOutputHelper testOutputHelper,
         [CallerMemberName] string callerName = "N/A")

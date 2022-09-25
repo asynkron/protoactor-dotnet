@@ -30,7 +30,8 @@ public class DeadLetterResponseTests
         response.Should().Be(message);
         await context.PoisonAsync(echoPid);
 
-        await context.Invoking(c => c.RequestAsync<string>(echoPid, message)).Should()
+        await context.Invoking(c => c.RequestAsync<string>(echoPid, message))
+            .Should()
             .ThrowExactlyAsync<DeadLetterException>();
     }
 

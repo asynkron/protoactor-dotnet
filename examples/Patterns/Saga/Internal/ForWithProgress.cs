@@ -42,14 +42,12 @@ public class ForWithProgress
             everyAction(i, must);
         }
 
-        bool MustRunNth(int current)
-        {
-            return current switch
+        bool MustRunNth(int current) =>
+            current switch
             {
                 0 when _runOnStart => true,
                 0                  => false,
                 _                  => current % _everyNth == 0
             };
-        }
     }
 }

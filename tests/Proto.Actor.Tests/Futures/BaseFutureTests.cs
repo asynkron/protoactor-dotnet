@@ -120,13 +120,15 @@ public abstract class BaseFutureTests : ActorTestBase
         }
 
         await futures.Invoking(async f =>
-            {
-                using var cts = new CancellationTokenSource(50);
-                // ReSharper disable once AccessToDisposedClosure
-                var tasks = f.Select(future => future.GetTask(cts.Token));
+                {
+                    using var cts = new CancellationTokenSource(50);
+                    // ReSharper disable once AccessToDisposedClosure
+                    var tasks = f.Select(future => future.GetTask(cts.Token));
 
-                return await Task.WhenAll(tasks);
-            }
-        ).Should().ThrowAsync<TimeoutException>();
+                    return await Task.WhenAll(tasks);
+                }
+            )
+            .Should()
+            .ThrowAsync<TimeoutException>();
     }
 }

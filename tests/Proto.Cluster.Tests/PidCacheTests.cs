@@ -21,25 +21,13 @@ public class DummyIdentityLookup : IIdentityLookup
         _pid = pid;
     }
 
-    public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
-    {
-        return Task.FromResult(_pid)!;
-    }
+    public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) => Task.FromResult(_pid)!;
 
-    public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
-    {
-        return Task.CompletedTask;
-    }
+    public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) => Task.CompletedTask;
 
-    public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
-    {
-        return Task.CompletedTask;
-    }
+    public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient) => Task.CompletedTask;
 
-    public Task ShutdownAsync()
-    {
-        return Task.CompletedTask;
-    }
+    public Task ShutdownAsync() => Task.CompletedTask;
 }
 
 public class PidCacheTests
@@ -94,14 +82,12 @@ public class PidCacheTests
         cluster.PidCache.TryGet(identity, out _).Should().BeFalse();
     }
 
-    private ClusterConfig GetClusterConfig()
-    {
-        return ClusterConfig
+    private ClusterConfig GetClusterConfig() =>
+        ClusterConfig
             .Setup(
                 "MyCluster",
                 new TestProvider(new TestProviderOptions(), new InMemAgent()),
                 new PartitionIdentityLookup()
             )
             .WithClusterKind("echo", Props.FromProducer(() => new EchoActor()));
-    }
 }

@@ -578,8 +578,9 @@ to the Behavior class:
 
 `RecoverStateAsync` will load all events from our storage and call the ApplyEvent method on them, thus rebuilding our
 behavior state transitions, and putting out actor back into the correct state. Note the default to the `Starting` state
+
 - if we do not have any events we need to begin in the `Starting` state. If we do have events, then the state will
-transition as normal.
+  transition as normal.
 
 ### The worried parent - where did our children go?
 

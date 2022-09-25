@@ -89,11 +89,9 @@ public class RedisStorageTests : IdentityStorageTests
     {
     }
 
-    private static IIdentityStorage Init(string clusterName)
-    {
-        return new RedisIdentityStorage(clusterName,
+    private static IIdentityStorage Init(string clusterName) =>
+        new RedisIdentityStorage(clusterName,
             RedisFixture.Multiplexer,
             TimeSpan.FromMilliseconds(1500)
         );
-    }
 }

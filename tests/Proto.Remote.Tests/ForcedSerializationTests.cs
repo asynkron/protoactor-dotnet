@@ -44,23 +44,24 @@ namespace Proto.Remote.Tests
             );
 
             _sendingActorProps = Props.FromFunc(ctx =>
-                {
-                    switch (ctx.Message)
                     {
-                        case RunRequestAsync msg:
-                            _ = ctx.RequestWithHeadersAsync<TestResponse>(msg.Target,
-                                new TestMessage("From another actor"), msg.Headers);
+                        switch (ctx.Message)
+                        {
+                            case RunRequestAsync msg:
+                                _ = ctx.RequestWithHeadersAsync<TestResponse>(msg.Target,
+                                    new TestMessage("From another actor"), msg.Headers);
 
-                            break;
-                        case RunRequest msg:
-                            ctx.Request(msg.Target, new TestMessage("From another actor"));
+                                break;
+                            case RunRequest msg:
+                                ctx.Request(msg.Target, new TestMessage("From another actor"));
 
-                            break;
+                                break;
+                        }
+
+                        return Task.CompletedTask;
                     }
-
-                    return Task.CompletedTask;
-                }
-            ).WithSenderMiddleware(ForcedSerializationSenderMiddleware.Create());
+                )
+                .WithSenderMiddleware(ForcedSerializationSenderMiddleware.Create());
         }
 
         [Fact]
@@ -194,18 +195,12 @@ namespace ForcedSerialization.TestMessages
 
     internal record TestRootSerializableMessage(string Value) : IRootSerializable
     {
-        public IRootSerialized Serialize(ActorSystem system)
-        {
-            return new TestRootSerializedMessage(Value);
-        }
+        public IRootSerialized Serialize(ActorSystem system) => new TestRootSerializedMessage(Value);
     }
 
     internal record TestRootSerializedMessage(string Value) : IRootSerialized
     {
-        public IRootSerializable Deserialize(ActorSystem system)
-        {
-            return new TestRootSerializableMessage(Value);
-        }
+        public IRootSerializable Deserialize(ActorSystem system) => new TestRootSerializableMessage(Value);
     }
 
     internal record TestResponse;

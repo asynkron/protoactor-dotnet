@@ -30,10 +30,7 @@ public class CaptureContextActor : IActor
         _results = results;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return _behavior.ReceiveAsync(context);
-    }
+    public Task ReceiveAsync(IContext context) => _behavior.ReceiveAsync(context);
 
     //this is the initial behavior
     //capture everything, except for Unstash message

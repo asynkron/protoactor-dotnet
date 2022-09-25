@@ -15,20 +15,21 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
     private static readonly Props ProxyTraceActorProps = Props.FromProducer(() => new TraceTestActor()).WithTracing();
 
     private static readonly Props InnerTraceActorProps = Props.FromFunc(context =>
-        {
-            if (context.Message is TraceMe)
             {
-                Activity.Current?.SetTag("inner", "true");
-
-                if (context.Sender is not null)
+                if (context.Message is TraceMe)
                 {
-                    context.Respond(new TraceResponse());
-                }
-            }
+                    Activity.Current?.SetTag("inner", "true");
 
-            return Task.CompletedTask;
-        }
-    ).WithTracing();
+                    if (context.Sender is not null)
+                    {
+                        context.Respond(new TraceResponse());
+                    }
+                }
+
+                return Task.CompletedTask;
+            }
+        )
+        .WithTracing();
 
     private static readonly ActivitySource TestSource = new("Proto.Actor.Tests");
 
@@ -40,51 +41,42 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
     }
 
     [Fact]
-    public async Task TracesPropagateCorrectlyForSend()
-    {
+    public async Task TracesPropagateCorrectlyForSend() =>
         await VerifyTrace(async (rootContext, target) =>
             {
                 rootContext.Send(target, new TraceMe(SendAs.Send));
                 await Task.Delay(100);
             }
         );
-    }
 
     [Fact]
-    public async Task TracesPropagateCorrectlyForRequestAsync()
-    {
+    public async Task TracesPropagateCorrectlyForRequestAsync() =>
         await VerifyTrace(async (rootContext, target) =>
             {
                 var response = await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.RequestAsync));
                 response.Should().Be(new TraceResponse());
             }
         );
-    }
 
     [Fact]
-    public async Task TracesPropagateCorrectlyForRequest()
-    {
+    public async Task TracesPropagateCorrectlyForRequest() =>
         await VerifyTrace(async (rootContext, target) =>
             {
                 rootContext.Request(target, new TraceMe(SendAs.Request));
                 await Task.Delay(100);
             }
         );
-    }
 
     [Fact]
-    public async Task TracesPropagateCorrectlyForRequestWithForward()
-    {
+    public async Task TracesPropagateCorrectlyForRequestWithForward() =>
         await VerifyTrace(async (rootContext, target) =>
             {
                 await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.Forward));
             }
         );
-    }
 
     [Fact]
-    public async Task TracesPropagateCorrectlyForRequestWithSender()
-    {
+    public async Task TracesPropagateCorrectlyForRequestWithSender() =>
         await VerifyTrace(async (rootContext, target) =>
             {
                 var future = new FutureProcess(rootContext.System);
@@ -93,7 +85,6 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
                 response.Message.Should().Be(new TraceResponse());
             }
         );
-    }
 
     /// <summary>
     ///     Checks that we have both the outer and innermost trace present, meaning that the trace has propagated
@@ -217,9 +208,6 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
             }
         }
 
-        private PID GetChild(IContext context)
-        {
-            return _child ??= context.Spawn(InnerTraceActorProps);
-        }
+        private PID GetChild(IContext context) => _child ??= context.Spawn(InnerTraceActorProps);
     }
 }

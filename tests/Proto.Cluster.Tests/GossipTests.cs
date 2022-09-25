@@ -172,28 +172,22 @@ public class GossipTests
         }
     }
 
-    private static Task SetTopologyGossipStateAsync(IList<Cluster> members, ulong value)
-    {
-        return Task.WhenAll(
+    private static Task SetTopologyGossipStateAsync(IList<Cluster> members, ulong value) =>
+        Task.WhenAll(
             members.Select(member =>
                 member.Gossip.SetStateAsync(TopologyStateKey, new SomeTopologyGossipState { TopologyHash = value }))
         );
-    }
 
-    private static IConsensusHandle<string> CreateConsensusCheck(Cluster member)
-    {
-        return member.Gossip.RegisterConsensusCheck<SomeGossipState, string>(
+    private static IConsensusHandle<string> CreateConsensusCheck(Cluster member) =>
+        member.Gossip.RegisterConsensusCheck<SomeGossipState, string>(
             GossipStateKey, rebalance => rebalance.Key
         );
-    }
 
-    private static IConsensusHandle<ulong> CreateCompositeConsensusCheck(Cluster member)
-    {
-        return member.Gossip.RegisterConsensusCheck(Gossiper.ConsensusCheckBuilder<ulong>
+    private static IConsensusHandle<ulong> CreateCompositeConsensusCheck(Cluster member) =>
+        member.Gossip.RegisterConsensusCheck(Gossiper.ConsensusCheckBuilder<ulong>
             .Create<SomeTopologyGossipState>(TopologyStateKey, state => state.TopologyHash)
             .InConsensusWith<ClusterTopology>(GossipKeys.Topology, topology => topology.TopologyHash)
         );
-    }
 
     private static async Task<(bool consensus, string value)> GetCurrentConsensus(Cluster member, TimeSpan timeout)
     {

@@ -181,8 +181,5 @@ public class Runner : IActor
         }
     }
 
-    private double AsPercentage(double numberOfIterations, double results)
-    {
-        return results / numberOfIterations * 100;
-    }
+    private double AsPercentage(double numberOfIterations, double results) => results / numberOfIterations * 100;
 }

@@ -56,9 +56,10 @@ public class EchoActor : IActor
                     sender = translatedPid;
                 }
 
-                var remoteActorResp = await context.System.Remote().SpawnNamedAsync(
-                    sender.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
-                );
+                var remoteActorResp = await context.System.Remote()
+                    .SpawnNamedAsync(
+                        sender.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
+                    );
 
                 var remoteActor = remoteActorResp.Pid;
 

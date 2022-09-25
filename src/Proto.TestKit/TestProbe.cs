@@ -183,10 +183,7 @@ public class TestProbe : IActor, ITestProbe
     }
 
     /// <inheritdoc />
-    public T FishForMessage<T>(TimeSpan? timeAllowed = null)
-    {
-        return FishForMessage<T>(x => true, timeAllowed);
-    }
+    public T FishForMessage<T>(TimeSpan? timeAllowed = null) => FishForMessage<T>(x => true, timeAllowed);
 
     /// <inheritdoc />
     public T FishForMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null)
@@ -208,16 +205,10 @@ public class TestProbe : IActor, ITestProbe
     }
 
     /// <inheritdoc />
-    public void Send(PID target, object message)
-    {
-        Context.Send(target, message);
-    }
+    public void Send(PID target, object message) => Context.Send(target, message);
 
     /// <inheritdoc />
-    public void Request(PID target, object message)
-    {
-        Context.Request(target, message);
-    }
+    public void Request(PID target, object message) => Context.Request(target, message);
 
     /// <inheritdoc />
     public void Respond(object message)
@@ -231,27 +222,17 @@ public class TestProbe : IActor, ITestProbe
     }
 
     /// <inheritdoc />
-    public Task<T> RequestAsync<T>(PID target, object message)
-    {
-        return Context.RequestAsync<T>(target, message);
-    }
+    public Task<T> RequestAsync<T>(PID target, object message) => Context.RequestAsync<T>(target, message);
 
     /// <inheritdoc />
-    public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-    {
-        return Context.RequestAsync<T>(target, message, cancellationToken);
-    }
+    public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
+        Context.RequestAsync<T>(target, message, cancellationToken);
 
     /// <inheritdoc />
-    public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeAllowed)
-    {
-        return Context.RequestAsync<T>(target, message, timeAllowed);
-    }
+    public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeAllowed) =>
+        Context.RequestAsync<T>(target, message, timeAllowed);
 
-    public static implicit operator PID?(TestProbe tp)
-    {
-        return tp.Context.Self;
-    }
+    public static implicit operator PID?(TestProbe tp) => tp.Context.Self;
 
     public static implicit operator TestProbe?(PID tpPid)
     {

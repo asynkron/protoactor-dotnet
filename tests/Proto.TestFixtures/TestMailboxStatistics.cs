@@ -23,10 +23,7 @@ public class TestMailboxStatistics : IMailboxStatistics
     public List<object> Posted { get; } = new();
     public List<object> Received { get; } = new();
 
-    public void MailboxStarted()
-    {
-        Stats.Add("Started");
-    }
+    public void MailboxStarted() => Stats.Add("Started");
 
     public void MessagePosted(object message)
     {
@@ -45,8 +42,5 @@ public class TestMailboxStatistics : IMailboxStatistics
         }
     }
 
-    public void MailboxEmpty()
-    {
-        Stats.Add("Empty");
-    }
+    public void MailboxEmpty() => Stats.Add("Empty");
 }

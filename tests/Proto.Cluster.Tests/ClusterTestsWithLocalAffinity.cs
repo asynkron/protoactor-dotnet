@@ -45,12 +45,10 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
 
         LogProcessCounts();
 
-        void LogProcessCounts()
-        {
+        void LogProcessCounts() =>
             _testOutputHelper.WriteLine(
                 $"Processes: {firstNode.System.Address}: {firstNode.System.ProcessRegistry.ProcessCount}, {secondNode.System.Address}: {secondNode.System.ProcessRegistry.ProcessCount}"
             );
-        }
     }
 
     private async Task PingAndVerifyLocality(
@@ -64,23 +62,24 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
         _testOutputHelper.WriteLine("Sending requests from " + cluster.System.Address);
 
         await Task.WhenAll(
-            Enumerable.Range(0, 100).Select(async i =>
-                {
-                    var response = await cluster.RequestAsync<HereIAm>(CreateIdentity(i.ToString()),
-                        EchoActor.LocalAffinityKind, new WhereAreYou
-                        {
-                            RequestId = requestId
-                        }, token
-                    );
-
-                    response.Should().NotBeNull();
-
-                    if (expectResponseFrom != null)
+            Enumerable.Range(0, 100)
+                .Select(async i =>
                     {
-                        response.Address.Should().Be(expectResponseFrom, because);
+                        var response = await cluster.RequestAsync<HereIAm>(CreateIdentity(i.ToString()),
+                            EchoActor.LocalAffinityKind, new WhereAreYou
+                            {
+                                RequestId = requestId
+                            }, token
+                        );
+
+                        response.Should().NotBeNull();
+
+                        if (expectResponseFrom != null)
+                        {
+                            response.Address.Should().Be(expectResponseFrom, because);
+                        }
                     }
-                }
-            )
+                )
         );
     }
 }

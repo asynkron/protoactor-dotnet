@@ -9,10 +9,7 @@ namespace Proto.Tests;
 
 internal class MyAutoRespondMessage : IAutoRespond
 {
-    public object GetAutoResponse(IContext context)
-    {
-        return "hey";
-    }
+    public object GetAutoResponse(IContext context) => "hey";
 }
 
 public class ActorTests
@@ -23,10 +20,7 @@ public class ActorTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        PID SpawnActorFromFunc(Receive receive)
-        {
-            return context.Spawn(Props.FromFunc(receive));
-        }
+        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
 
         var pid = SpawnActorFromFunc(ctx =>
             {
@@ -50,10 +44,7 @@ public class ActorTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        PID SpawnActorFromFunc(Receive receive)
-        {
-            return context.Spawn(Props.FromFunc(receive));
-        }
+        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
 
         //no code...
         var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
@@ -69,10 +60,7 @@ public class ActorTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        PID SpawnActorFromFunc(Receive receive)
-        {
-            return context.Spawn(Props.FromFunc(receive));
-        }
+        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
 
         //no code...
         var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
@@ -88,10 +76,7 @@ public class ActorTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        PID SpawnActorFromFunc(Receive receive)
-        {
-            return context.Spawn(Props.FromFunc(receive));
-        }
+        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
 
         var pid = SpawnActorFromFunc(EmptyReceive);
 
@@ -108,10 +93,7 @@ public class ActorTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        PID SpawnActorFromFunc(Receive receive)
-        {
-            return context.Spawn(Props.FromFunc(receive));
-        }
+        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
 
         var pid = SpawnActorFromFunc(ctx =>
             {
@@ -261,15 +243,9 @@ public class ActorTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        PID SpawnForwarderFromFunc(Receive forwarder)
-        {
-            return context.Spawn(Props.FromFunc(forwarder));
-        }
+        PID SpawnForwarderFromFunc(Receive forwarder) => context.Spawn(Props.FromFunc(forwarder));
 
-        PID SpawnActorFromFunc(Receive receive)
-        {
-            return context.Spawn(Props.FromFunc(receive));
-        }
+        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
 
         var pid = SpawnActorFromFunc(ctx =>
             {

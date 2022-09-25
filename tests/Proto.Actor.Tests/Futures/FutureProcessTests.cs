@@ -11,8 +11,5 @@ namespace Proto.Tests;
 // ReSharper disable once UnusedType.Global
 public class FutureProcessTests : BaseFutureTests
 {
-    protected override IFuture GetFuture()
-    {
-        return new FutureProcess(System);
-    }
+    protected override IFuture GetFuture() => new FutureProcess(System);
 }

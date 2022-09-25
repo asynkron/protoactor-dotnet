@@ -207,12 +207,10 @@ public class ReceiveTimeoutTests
         return tcs;
     }
 
-    private ConfiguredTaskAwaitable<Task<int>> GetSafeAwaitableTask(TaskCompletionSource<int> tcs)
-    {
-        return tcs.Task
+    private ConfiguredTaskAwaitable<Task<int>> GetSafeAwaitableTask(TaskCompletionSource<int> tcs) =>
+        tcs.Task
             .ContinueWith(t => t) // suppress any TaskCanceledException
             .ConfigureAwait(false);
-    }
 
     private record IgnoreMe : INotInfluenceReceiveTimeout;
 }

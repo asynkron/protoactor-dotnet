@@ -27,20 +27,12 @@ public class HostedGrpcNetWithCustomSerializerTests
             return System.Text.Json.JsonSerializer.Deserialize(bytes.ToStringUtf8(), type);
         }
 
-        public string GetTypeName(object message)
-        {
-            return message.GetType().AssemblyQualifiedName;
-        }
+        public string GetTypeName(object message) => message.GetType().AssemblyQualifiedName;
 
-        public ByteString Serialize(object obj)
-        {
-            return ByteString.CopyFromUtf8(System.Text.Json.JsonSerializer.Serialize(obj));
-        }
+        public ByteString Serialize(object obj) =>
+            ByteString.CopyFromUtf8(System.Text.Json.JsonSerializer.Serialize(obj));
 
-        public bool CanSerialize(object obj)
-        {
-            return true;
-        }
+        public bool CanSerialize(object obj) => true;
     }
 
     public class Fixture : RemoteFixture

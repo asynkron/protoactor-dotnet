@@ -53,7 +53,8 @@ public class PoisonTests
 
         completed.Should().BeTrue("Or we did not get a response when poisoning a live pid");
 
-        await system.Root.Invoking(ctx => ctx.RequestAsync<string>(pid, message)).Should()
+        await system.Root.Invoking(ctx => ctx.RequestAsync<string>(pid, message))
+            .Should()
             .ThrowExactlyAsync<DeadLetterException>();
     }
 }

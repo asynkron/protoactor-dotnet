@@ -20,15 +20,9 @@ public class PubSubMemberTests : IAsyncLifetime
         _fixture = new PubSubClusterFixture();
     }
 
-    public Task InitializeAsync()
-    {
-        return _fixture.InitializeAsync();
-    }
+    public Task InitializeAsync() => _fixture.InitializeAsync();
 
-    public Task DisposeAsync()
-    {
-        return _fixture.DisposeAsync();
-    }
+    public Task DisposeAsync() => _fixture.DisposeAsync();
 
     [Fact]
     public async Task When_member_leaves_PID_subscribers_get_removed_from_the_subscriber_list()
@@ -97,8 +91,6 @@ public class PubSubMemberTests : IAsyncLifetime
         );
     }
 
-    private string[] SubscriberIds(string prefix, int count)
-    {
-        return Enumerable.Range(1, count).Select(i => $"{prefix}-{i:D4}").ToArray();
-    }
+    private string[] SubscriberIds(string prefix, int count) =>
+        Enumerable.Range(1, count).Select(i => $"{prefix}-{i:D4}").ToArray();
 }

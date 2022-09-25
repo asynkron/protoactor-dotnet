@@ -19,15 +19,9 @@ public class PubSubDefaultTopicRegistrationTests : IAsyncLifetime
         _fixture = new PubSubClusterFixture(1, true);
     }
 
-    public Task InitializeAsync()
-    {
-        return _fixture.InitializeAsync();
-    }
+    public Task InitializeAsync() => _fixture.InitializeAsync();
 
-    public Task DisposeAsync()
-    {
-        return _fixture.DisposeAsync();
-    }
+    public Task DisposeAsync() => _fixture.DisposeAsync();
 
     [Fact]
     public async Task Pub_sub_works_with_default_topic_registration()

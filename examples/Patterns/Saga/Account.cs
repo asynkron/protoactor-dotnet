@@ -152,10 +152,7 @@ internal class Account : IActor
         return Behavior.ProcessSuccessfully;
     }
 
-    private bool AlreadyProcessed(PID replyTo)
-    {
-        return _processedMessages.ContainsKey(replyTo);
-    }
+    private bool AlreadyProcessed(PID replyTo) => _processedMessages.ContainsKey(replyTo);
 
     private enum Behavior
     {

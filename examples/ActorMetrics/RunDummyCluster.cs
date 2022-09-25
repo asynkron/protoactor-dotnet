@@ -93,9 +93,10 @@ public static class RunDummyCluster
 
                     var identity = $"someactor{r.Next(1, 100)}";
 
-                    await system.Cluster().RequestAsync<SomeResponse>(identity, "somekind", new SomeRequest(),
-                        CancellationTokens.FromSeconds(5)
-                    );
+                    await system.Cluster()
+                        .RequestAsync<SomeResponse>(identity, "somekind", new SomeRequest(),
+                            CancellationTokens.FromSeconds(5)
+                        );
                 }
             }
         );

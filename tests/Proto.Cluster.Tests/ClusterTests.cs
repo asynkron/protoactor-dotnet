@@ -40,7 +40,8 @@ public abstract class ClusterTests : ClusterTestBase
     {
         var consensus = await Task
             .WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
-            .WaitUpTo(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
+            .WaitUpTo(TimeSpan.FromSeconds(20))
+            .ConfigureAwait(false);
 
         _testOutputHelper.WriteLine(await Members.DumpClusterState());
 
@@ -55,9 +56,10 @@ public abstract class ClusterTests : ClusterTestBase
 
         const string msg = "Hello-slow-world";
 
-        var response = await Members.First().RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
-            new SlowPing { Message = msg, DelayMs = 5000 }, timeout
-        );
+        var response = await Members.First()
+            .RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
+                new SlowPing { Message = msg, DelayMs = 5000 }, timeout
+            );
 
         response.Should().NotBeNull();
         response.Message.Should().Be(msg);
@@ -70,10 +72,11 @@ public abstract class ClusterTests : ClusterTestBase
 
         const string msg = "Hello-message-envelope";
 
-        var response = await Members.First().RequestAsync<MessageEnvelope>(CreateIdentity("message-envelope"),
-            EchoActor.Kind,
-            new Ping { Message = msg }, timeout
-        );
+        var response = await Members.First()
+            .RequestAsync<MessageEnvelope>(CreateIdentity("message-envelope"),
+                EchoActor.Kind,
+                new Ping { Message = msg }, timeout
+            );
 
         response.Should().NotBeNull();
         response.Should().BeOfType<MessageEnvelope>();
@@ -354,8 +357,7 @@ public abstract class ClusterTests : ClusterTestBase
     [Theory]
     [InlineData(10000, EchoActor.FilteredKind)]
     [InlineData(10000, EchoActor.AsyncFilteredKind)]
-    public async Task CanFilterActivations(int timeoutMs, string filteredKind)
-    {
+    public async Task CanFilterActivations(int timeoutMs, string filteredKind) =>
         await Tracing.Trace(async () =>
             {
                 var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -372,7 +374,6 @@ public abstract class ClusterTests : ClusterTestBase
                     .ThrowExactlyAsync<IdentityIsBlocked>();
             }, _testOutputHelper
         );
-    }
 
     [Theory]
     [InlineData(10, 20000)]
@@ -432,13 +433,14 @@ public abstract class ClusterTests : ClusterTestBase
 
         response.Should().NotBeNull($"We expect a response before timeout on {kind}/{id}");
 
-        response.Should().BeEquivalentTo(new Pong
-            {
-                Identity = id,
-                Kind = kind,
-                Message = id
-            }, "Echo should come from the correct virtual actor"
-        );
+        response.Should()
+            .BeEquivalentTo(new Pong
+                {
+                    Identity = id,
+                    Kind = kind,
+                    Message = id
+                }, "Echo should come from the correct virtual actor"
+            );
     }
 }
 

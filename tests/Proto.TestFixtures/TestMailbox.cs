@@ -34,10 +34,7 @@ public class TestMailbox : IMailbox
         _invoker?.InvokeSystemMessageAsync((SystemMessage)msg).GetAwaiter().GetResult();
     }
 
-    public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher)
-    {
-        _invoker = invoker;
-    }
+    public void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher) => _invoker = invoker;
 
     public void Start()
     {

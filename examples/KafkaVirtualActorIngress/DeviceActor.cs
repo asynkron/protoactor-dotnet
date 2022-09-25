@@ -16,16 +16,14 @@ public class DeviceActor : IActor
     private string _deviceId;
     private DeviceState _state;
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             Started _           => OnStarted(context),
             SomeMessage sm      => OnSomeMessage(context, sm),
             SomeOtherMessage sm => OnSomeOtherMessage(context, sm),
             _                   => Task.CompletedTask
         };
-    }
 
     private async Task OnSomeOtherMessage(IContext context, SomeOtherMessage sm)
     {
@@ -58,12 +56,10 @@ public class DeviceActor : IActor
         return Task.CompletedTask;
     }
 
-    private Task SaveState()
-    {
+    private Task SaveState() =>
         //db.save(_deviceId, _state);
         //TODO: write _state to some db
-        return Task.CompletedTask;
-    }
+        Task.CompletedTask;
 
     private async Task OnStarted(IContext ctx)
     {

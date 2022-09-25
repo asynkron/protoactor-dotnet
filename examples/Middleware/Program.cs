@@ -89,7 +89,8 @@ internal class Program
                         await next(context, envelope);
                     }
                 }
-            ).WithSenderMiddleware(next => async (context, target, envelope) =>
+            )
+            .WithSenderMiddleware(next => async (context, target, envelope) =>
                 {
                     var newEnvelope = envelope
                         .WithHeader("TraceID", context.Headers.GetOrDefault("TraceID"))

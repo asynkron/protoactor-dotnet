@@ -74,9 +74,6 @@ public class DependencyInjectionTests
         public BarDep Bar { get; }
         public FooDep Foo { get; }
 
-        public Task ReceiveAsync(IContext context)
-        {
-            return Task.CompletedTask;
-        }
+        public Task ReceiveAsync(IContext context) => Task.CompletedTask;
     }
 }

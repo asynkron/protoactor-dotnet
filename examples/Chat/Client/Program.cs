@@ -55,8 +55,7 @@ internal static class Program
         context = system.Root;
     }
 
-    private static void SpawnClient()
-    {
+    private static void SpawnClient() =>
         client = context.Spawn(
             Props.FromFunc(
                 ctx =>
@@ -81,15 +80,10 @@ internal static class Program
                 }
             )
         );
-    }
 
-    private static void ObtainServerPid()
-    {
-        server = PID.FromAddress("127.0.0.1:8000", "chatserver");
-    }
+    private static void ObtainServerPid() => server = PID.FromAddress("127.0.0.1:8000", "chatserver");
 
-    private static void ConnectToServer()
-    {
+    private static void ConnectToServer() =>
         context.Send(
             server,
             new Connect
@@ -97,7 +91,6 @@ internal static class Program
                 Sender = client
             }
         );
-    }
 
     private static void EvaluateCommands()
     {

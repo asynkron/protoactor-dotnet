@@ -52,11 +52,10 @@ public class ForcedSerializationTests
 
     private class ForcedSerializationClusterFixture : InMemoryClusterFixture
     {
-        protected override ActorSystemConfig GetActorSystemConfig()
-        {
-            return base.GetActorSystemConfig().WithConfigureRootContext(
-                conf => conf.WithSenderMiddleware(ForcedSerializationSenderMiddleware.Create())
-            );
-        }
+        protected override ActorSystemConfig GetActorSystemConfig() =>
+            base.GetActorSystemConfig()
+                .WithConfigureRootContext(
+                    conf => conf.WithSenderMiddleware(ForcedSerializationSenderMiddleware.Create())
+                );
     }
 }

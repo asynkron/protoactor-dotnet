@@ -215,10 +215,7 @@ public class DynamoDBProvider : IProvider, IDisposable
     }
 
     // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-    void IDisposable.Dispose()
-    {
-        Dispose(true);
-    }
+    void IDisposable.Dispose() => Dispose(true);
 
     #endregion
 }

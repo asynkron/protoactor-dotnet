@@ -106,47 +106,23 @@ public class SerializationTests
 
     public class MockSerializer1 : ISerializer
     {
-        public bool CanSerialize(object obj)
-        {
-            return obj is TestType1;
-        }
+        public bool CanSerialize(object obj) => obj is TestType1;
 
-        public object Deserialize(ByteString bytes, string typeName)
-        {
-            return new TestType1();
-        }
+        public object Deserialize(ByteString bytes, string typeName) => new TestType1();
 
-        public string GetTypeName(object message)
-        {
-            return "MockSerializer1";
-        }
+        public string GetTypeName(object message) => "MockSerializer1";
 
-        public ByteString Serialize(object obj)
-        {
-            return ByteString.CopyFrom();
-        }
+        public ByteString Serialize(object obj) => ByteString.CopyFrom();
     }
 
     public class MockSerializer2 : ISerializer
     {
-        public bool CanSerialize(object obj)
-        {
-            return obj is TestType1 || obj is TestType2;
-        }
+        public bool CanSerialize(object obj) => obj is TestType1 || obj is TestType2;
 
-        public object Deserialize(ByteString bytes, string typeName)
-        {
-            return new TestType1();
-        }
+        public object Deserialize(ByteString bytes, string typeName) => new TestType1();
 
-        public string GetTypeName(object message)
-        {
-            return "MockSerializer2";
-        }
+        public string GetTypeName(object message) => "MockSerializer2";
 
-        public ByteString Serialize(object obj)
-        {
-            return ByteString.CopyFrom();
-        }
+        public ByteString Serialize(object obj) => ByteString.CopyFrom();
     }
 }

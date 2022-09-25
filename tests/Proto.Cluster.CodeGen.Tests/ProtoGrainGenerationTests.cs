@@ -54,7 +54,8 @@ public class ProtoGrainGenerationTests
         var c = new CodeGenerator(Template.DefaultTemplate);
 
         c.Invoking(it => it.Generate(set, NameNormalizer.Default, new Dictionary<string, string>()).ToArray())
-            .Should().Throw<Exception>()
+            .Should()
+            .Throw<Exception>()
             .WithMessage(expectedErrorMessage);
     }
 }

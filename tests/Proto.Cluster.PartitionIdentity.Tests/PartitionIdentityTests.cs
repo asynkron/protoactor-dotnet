@@ -104,8 +104,7 @@ public class PartitionIdentityTests
         List<string> identities,
         int batchSize,
         CancellationToken cancellationToken
-    )
-    {
+    ) =>
         _ = Task.Run(async () =>
             {
                 var rnd = new Random();
@@ -127,12 +126,8 @@ public class PartitionIdentityTests
                 }
             }
         );
-    }
 
-    private static Cluster RandomMember(IList<Cluster> members, Random rnd)
-    {
-        return members[rnd.Next(members.Count)];
-    }
+    private static Cluster RandomMember(IList<Cluster> members, Random rnd) => members[rnd.Next(members.Count)];
 
     private async Task Inc(Cluster member, string id, CancellationToken cancellationToken)
     {
@@ -161,8 +156,7 @@ public class PartitionIdentityTests
         IClusterFixture clusterFixture,
         List<string> identities,
         CancellationToken cancellationToken
-    )
-    {
+    ) =>
         _ = Task.Run(async () =>
             {
                 var rnd = new Random();
@@ -186,18 +180,13 @@ public class PartitionIdentityTests
                 }
             }
         );
-    }
 
-    private static string RandomIdentity(List<string> identities, Random rnd)
-    {
-        return identities[rnd.Next(identities.Count)];
-    }
+    private static string RandomIdentity(List<string> identities, Random rnd) => identities[rnd.Next(identities.Count)];
 
     private void StartSpawningAndStoppingMembers(
         IClusterFixture clusterFixture,
         CancellationToken cancellationToken
-    )
-    {
+    ) =>
         _ = Task.Run(async () =>
             {
                 const int maxMembers = 10;
@@ -219,14 +208,15 @@ public class PartitionIdentityTests
                                 {
                                     _output.WriteLine($"[{DateTimeOffset.Now:O}] Starting cluster member");
 
-                                    _ = clusterFixture.SpawnNode().ContinueWith(
-                                        t =>
-                                        {
-                                            _output.WriteLine(
-                                                $"[{DateTimeOffset.Now:O}] Spawned cluster member {t.Result.System.Id}");
-                                        },
-                                        TaskContinuationOptions.NotOnFaulted
-                                    );
+                                    _ = clusterFixture.SpawnNode()
+                                        .ContinueWith(
+                                            t =>
+                                            {
+                                                _output.WriteLine(
+                                                    $"[{DateTimeOffset.Now:O}] Spawned cluster member {t.Result.System.Id}");
+                                            },
+                                            TaskContinuationOptions.NotOnFaulted
+                                        );
                                 }
                             }
                             else
@@ -252,7 +242,6 @@ public class PartitionIdentityTests
                 }
             }, cancellationToken
         );
-    }
 
     private async Task StopRandomMember(IClusterFixture fixture, IList<Cluster> candidates, Random rnd, bool graceful)
     {
@@ -304,9 +293,8 @@ public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
                 Props.FromProducer(() => new ConcurrencyVerificationActor(Repository, this)))
         };
 
-    protected override IIdentityLookup GetIdentityLookup(string clusterName)
-    {
-        return new PartitionIdentityLookup(new PartitionConfig
+    protected override IIdentityLookup GetIdentityLookup(string clusterName) =>
+        new PartitionIdentityLookup(new PartitionConfig
         {
             GetPidTimeout = TimeSpan.FromSeconds(5),
             HandoverChunkSize = _chunkSize,
@@ -314,5 +302,4 @@ public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
             Mode = _mode,
             Send = _send
         });
-    }
 }

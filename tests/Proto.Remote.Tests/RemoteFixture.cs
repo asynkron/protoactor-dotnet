@@ -48,32 +48,26 @@ public abstract class RemoteFixture : IRemoteFixture
         ServerRemote2.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
     }
 
-    public virtual Task DisposeAsync()
-    {
-        return Task.WhenAll(Remote.ShutdownAsync(),
+    public virtual Task DisposeAsync() =>
+        Task.WhenAll(Remote.ShutdownAsync(),
             ServerRemote1.ShutdownAsync(),
             ServerRemote2.ShutdownAsync()
         );
-    }
 
     protected static TRemoteConfig ConfigureServerRemoteConfig<TRemoteConfig>(TRemoteConfig serverRemoteConfig)
-        where TRemoteConfig : RemoteConfigBase
-    {
-        return serverRemoteConfig
+        where TRemoteConfig : RemoteConfigBase =>
+        serverRemoteConfig
             .WithProtoMessages(Messages.ProtosReflection.Descriptor)
             .WithRemoteKinds(("EchoActor", EchoActorProps));
-    }
 
     protected static TRemoteConfig ConfigureClientRemoteConfig<TRemoteConfig>(TRemoteConfig clientRemoteConfig)
-        where TRemoteConfig : RemoteConfigBase
-    {
-        return clientRemoteConfig
+        where TRemoteConfig : RemoteConfigBase =>
+        clientRemoteConfig
             .WithEndpointWriterMaxRetries(2)
             .WithEndpointWriterRetryBackOff(TimeSpan.FromMilliseconds(10))
             .WithEndpointWriterRetryTimeSpan(TimeSpan.FromSeconds(120))
             .WithProtoMessages(Messages.ProtosReflection.Descriptor)
             .WithRemoteKinds(("EchoActor", EchoActorProps));
-    }
 
     protected static (IHost, HostedGrpcNetRemote) GetHostedGrpcNetRemote(GrpcNetRemoteConfig config)
     {

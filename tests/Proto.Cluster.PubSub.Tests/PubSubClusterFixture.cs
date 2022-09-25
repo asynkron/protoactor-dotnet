@@ -70,10 +70,8 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
         }
     }
 
-    public Task<Subscribers> GetSubscribersForTopic(string topic)
-    {
-        return _subscribersStore.GetAsync(topic, CancellationToken.None);
-    }
+    public Task<Subscribers> GetSubscribersForTopic(string topic) =>
+        _subscribersStore.GetAsync(topic, CancellationToken.None);
 
     private Props SubscriberProps()
     {
@@ -115,10 +113,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
         return Task.CompletedTask;
     }
 
-    public Cluster RandomMember()
-    {
-        return Members[_random.Next(Members.Count)];
-    }
+    public Cluster RandomMember() => Members[_random.Next(Members.Count)];
 
     public async Task VerifyAllSubscribersGotAllTheData(string[] subscriberIds, int numMessages)
     {
@@ -163,10 +158,8 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
         }
     }
 
-    public string[] SubscriberIds(string prefix, int count)
-    {
-        return Enumerable.Range(1, count).Select(i => $"{prefix}-{i:D4}").ToArray();
-    }
+    public string[] SubscriberIds(string prefix, int count) =>
+        Enumerable.Range(1, count).Select(i => $"{prefix}-{i:D4}").ToArray();
 
     public async Task SubscribeTo(string topic, string identity, string kind = SubscriberKind)
     {

@@ -21,10 +21,8 @@ public class SharedFutureTests : BaseFutureTests
         _sharedFutureProcess = new SharedFutureProcess(System, BatchSize);
     }
 
-    protected override IFuture GetFuture()
-    {
-        return _sharedFutureProcess.TryCreateHandle() ?? throw new Exception("No futures available");
-    }
+    protected override IFuture GetFuture() =>
+        _sharedFutureProcess.TryCreateHandle() ?? throw new Exception("No futures available");
 
     [Fact]
     public async Task Should_reuse_completed_futures()

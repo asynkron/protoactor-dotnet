@@ -43,9 +43,6 @@ public class MessageBatchTests
 
     private class MyMessageBatch : IMessageBatch
     {
-        public IReadOnlyCollection<object> GetMessages()
-        {
-            return new[] { "hello", "world", "batch" };
-        }
+        public IReadOnlyCollection<object> GetMessages() => new[] { "hello", "world", "batch" };
     }
 }

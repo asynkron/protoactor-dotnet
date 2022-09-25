@@ -56,7 +56,8 @@ public static class EcsUtils
 
             var kinds = metadata
                 .Where(kvp => kvp.Key.StartsWith(ProtoLabels.LabelKind))
-                .Select(kvp => kvp.Key[(ProtoLabels.LabelKind.Length + 1)..]).ToArray();
+                .Select(kvp => kvp.Key[(ProtoLabels.LabelKind.Length + 1)..])
+                .ToArray();
 
             var member = new Member
             {
@@ -72,20 +73,19 @@ public static class EcsUtils
         return members.ToArray();
     }
 
-    public static IDictionary<string, string> GetMetadata(this Task task)
-    {
-        return task.Tags.ToDictionary(t => t.Key, t => t.Value);
-    }
+    public static IDictionary<string, string> GetMetadata(this Task task) =>
+        task.Tags.ToDictionary(t => t.Key, t => t.Value);
 
     public static async System.Threading.Tasks.Task UpdateMetadata(this AmazonECSClient c, string resourceArn,
         IDictionary<string, string> metadata)
     {
         var tags = metadata.Select(kvp => new Tag
-            {
-                Key = kvp.Key,
-                Value = kvp.Value
-            }
-        ).ToList();
+                {
+                    Key = kvp.Key,
+                    Value = kvp.Value
+                }
+            )
+            .ToList();
 
         await c.TagResourceAsync(new TagResourceRequest
         {

@@ -67,10 +67,8 @@ public class PathPolyfillTests
             .Be(Path.GetRelativePath(path, path));
     }
 
-    private static string AdjustToCurrentOs(string path)
-    {
-        return path
+    private static string AdjustToCurrentOs(string path) =>
+        path
             .Split(@"\")
             .Aggregate(Path.Combine);
-    }
 }

@@ -9,10 +9,7 @@ public class ConsulClusterFixture : ClusterFixture
     {
     }
 
-    protected override IClusterProvider GetClusterProvider()
-    {
-        return new ConsulProvider(new ConsulProviderConfig());
-    }
+    protected override IClusterProvider GetClusterProvider() => new ConsulProvider(new ConsulProviderConfig());
 }
 
 // // ReSharper disable once UnusedType.Global

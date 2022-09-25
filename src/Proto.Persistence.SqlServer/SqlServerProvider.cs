@@ -68,23 +68,19 @@ public class SqlServerProvider : IProvider
             $@"INSERT INTO [{_tableSchema}].[{_tableSnapshots}] (Id, ActorName, SnapshotIndex, SnapshotData) VALUES (@Id, @ActorName, @SnapshotIndex, @SnapshotData)";
     }
 
-    public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
-    {
-        return ExecuteNonQueryAsync(
+    public Task DeleteEventsAsync(string actorName, long inclusiveToIndex) =>
+        ExecuteNonQueryAsync(
             _sqlDeleteEvents,
             CreateParameter("ActorName", NVarChar, actorName),
             CreateParameter("EventIndex", BigInt, inclusiveToIndex)
         );
-    }
 
-    public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-    {
-        return ExecuteNonQueryAsync(
+    public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex) =>
+        ExecuteNonQueryAsync(
             _sqlDeleteSnapshots,
             CreateParameter("ActorName", NVarChar, actorName),
             CreateParameter("SnapshotIndex", BigInt, inclusiveToIndex)
         );
-    }
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
@@ -228,13 +224,11 @@ public class SqlServerProvider : IProvider
         ExecuteNonQuery(sql);
     }
 
-    private static SqlParameter CreateParameter(string name, SqlDbType type, object value)
-    {
-        return new(name, type)
+    private static SqlParameter CreateParameter(string name, SqlDbType type, object value) =>
+        new SqlParameter(name, type)
         {
             SqlValue = value
         };
-    }
 
     private async Task ExecuteNonQueryAsync(string sql, params SqlParameter[] parameters)
     {

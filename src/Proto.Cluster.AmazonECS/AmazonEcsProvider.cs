@@ -74,24 +74,16 @@ public class AmazonEcsProvider : IClusterProvider
         return Task.CompletedTask;
     }
 
-    public async Task ShutdownAsync(bool graceful)
-    {
-        await DeregisterMemberAsync();
-    }
+    public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync();
 
     public async Task RegisterMemberAsync()
     {
         await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
 
-        static void OnError(int attempt, Exception exception)
-        {
+        static void OnError(int attempt, Exception exception) =>
             Logger.LogWarning(exception, "Failed to register service");
-        }
 
-        static void OnFailed(Exception exception)
-        {
-            Logger.LogError(exception, "Failed to register service");
-        }
+        static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to register service");
     }
 
     public async Task RegisterMemberInner()
@@ -122,8 +114,7 @@ public class AmazonEcsProvider : IClusterProvider
         }
     }
 
-    private void StartClusterMonitor()
-    {
+    private void StartClusterMonitor() =>
         _ = SafeTask.Run(async () =>
             {
                 while (!_cluster.System.Shutdown.IsCancellationRequested)
@@ -153,21 +144,15 @@ public class AmazonEcsProvider : IClusterProvider
                 }
             }
         );
-    }
 
     public async Task DeregisterMemberAsync()
     {
         await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed);
 
-        static void OnError(int attempt, Exception exception)
-        {
+        static void OnError(int attempt, Exception exception) =>
             Logger.LogWarning(exception, "Failed to deregister service");
-        }
 
-        static void OnFailed(Exception exception)
-        {
-            Logger.LogError(exception, "Failed to deregister service");
-        }
+        static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to deregister service");
     }
 
     private async Task DeregisterMemberInner()

@@ -22,17 +22,15 @@ public class LegacyTimeoutTests
         await using var fixture = new Fixture(1);
         await fixture.InitializeAsync();
 
-        var response = await fixture.Members.First().RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
-            new SlowPing { Message = "hi", DelayMs = 4000 }, new CancellationTokenSource(500).Token
-        );
+        var response = await fixture.Members.First()
+            .RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
+                new SlowPing { Message = "hi", DelayMs = 4000 }, new CancellationTokenSource(500).Token
+            );
 
         response.Should().BeNull();
     }
 
-    private string CreateIdentity(string baseId)
-    {
-        return $"{Guid.NewGuid().ToString("N").Substring(0, 6)}-{baseId}-";
-    }
+    private string CreateIdentity(string baseId) => $"{Guid.NewGuid().ToString("N").Substring(0, 6)}-{baseId}-";
 
     private class Fixture : BaseInMemoryClusterFixture
     {

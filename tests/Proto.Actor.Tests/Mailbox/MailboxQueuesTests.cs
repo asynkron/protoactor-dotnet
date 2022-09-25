@@ -13,15 +13,13 @@ public class MailboxQueuesTests
         Unbounded
     }
 
-    private IMailboxQueue GetMailboxQueue(MailboxQueueKind kind)
-    {
-        return kind switch
+    private IMailboxQueue GetMailboxQueue(MailboxQueueKind kind) =>
+        kind switch
         {
             MailboxQueueKind.Bounded   => new BoundedMailboxQueue(4),
             MailboxQueueKind.Unbounded => new UnboundedMailboxQueue(),
             _                          => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
         };
-    }
 
     [Theory]
     [InlineData(MailboxQueueKind.Unbounded)]

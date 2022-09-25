@@ -73,7 +73,9 @@ public class PoolRouterTests
         var failingProps = Props.FromProducer(() => throw new Exception("Failing props"));
 
         system.Invoking(s => s.Root.Spawn(s.Root.NewRandomPool(failingProps, 3, 0)))
-            .Should().Throw<RouterStartFailedException>()
-            .WithInnerException<Exception>().WithMessage("Failing props");
+            .Should()
+            .Throw<RouterStartFailedException>()
+            .WithInnerException<Exception>()
+            .WithMessage("Failing props");
     }
 }

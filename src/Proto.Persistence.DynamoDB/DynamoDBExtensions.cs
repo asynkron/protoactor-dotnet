@@ -31,13 +31,11 @@ public static class DynamoDBExtensions
         DynamoDBProviderOptions options,
         int initialReadCapacityUnits,
         int initialWriteCapacityUnits
-    )
-    {
-        return dynamoDB.CheckCreateTable(
+    ) =>
+        dynamoDB.CheckCreateTable(
             options.EventsTableName, options.EventsTableHashKey, options.EventsTableSortKey,
             initialReadCapacityUnits, initialWriteCapacityUnits
         );
-    }
 
     /// <summary>
     ///     Checks if table for snapshots with given names exists. If not it creates it.
@@ -55,13 +53,11 @@ public static class DynamoDBExtensions
         DynamoDBProviderOptions options,
         int initialReadCapacityUnits,
         int initialWriteCapacityUnits
-    )
-    {
-        return dynamoDB.CheckCreateTable(
+    ) =>
+        dynamoDB.CheckCreateTable(
             options.SnapshotsTableName, options.SnapshotsTableHashKey, options.SnapshotsTableSortKey,
             initialReadCapacityUnits, initialWriteCapacityUnits
         );
-    }
 
     private static async Task CheckCreateTable(
         this IAmazonDynamoDB dynamoDB,

@@ -13,15 +13,9 @@ namespace Proto.Tests.Diagnostics;
 
 public class MyDiagnosticsActor : IActor, IActorDiagnostics
 {
-    public Task ReceiveAsync(IContext context)
-    {
-        return Task.CompletedTask;
-    }
+    public Task ReceiveAsync(IContext context) => Task.CompletedTask;
 
-    public string GetDiagnosticsString()
-    {
-        return "Hello World";
-    }
+    public string GetDiagnosticsString() => "Hello World";
 }
 
 public class DiagnosticsTests

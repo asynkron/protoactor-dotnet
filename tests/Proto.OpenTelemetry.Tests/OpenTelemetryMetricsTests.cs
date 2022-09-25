@@ -85,15 +85,12 @@ public class OpenTelemetryMetricsTests : IAsyncLifetime
             id);
     }
 
-    private void ShouldReportMetric(string name, params string[] tagValues)
-    {
-        _testExporter!.AllExportedMetrics.Should().Contain(FormatMetricLogEntry(name, tagValues));
-    }
+    private void ShouldReportMetric(string name, params string[] tagValues) => _testExporter!.AllExportedMetrics
+        .Should()
+        .Contain(FormatMetricLogEntry(name, tagValues));
 
-    private void MetricShouldHaveValue(string name, double value, params string[] tagValues)
-    {
+    private void MetricShouldHaveValue(string name, double value, params string[] tagValues) =>
         _testExporter!.MetricValues[FormatMetricLogEntry(name, tagValues)].Should().Be(value);
-    }
 
     private async Task<Cluster.Cluster> StartCluster()
     {

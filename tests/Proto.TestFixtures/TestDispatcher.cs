@@ -8,8 +8,5 @@ public class TestDispatcher : IDispatcher
 {
     public int Throughput => 10;
 
-    public void Schedule(Func<Task> runner)
-    {
-        runner().Wait();
-    }
+    public void Schedule(Func<Task> runner) => runner().Wait();
 }

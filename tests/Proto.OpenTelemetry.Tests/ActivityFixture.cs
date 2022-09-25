@@ -35,10 +35,7 @@ public sealed class ActivityFixture : IAsyncLifetime
 
     public IReadOnlyCollection<Activity> Activities => _activities;
 
-    public Task InitializeAsync()
-    {
-        return Task.CompletedTask;
-    }
+    public Task InitializeAsync() => Task.CompletedTask;
 
     public Task DisposeAsync()
     {
@@ -47,13 +44,9 @@ public sealed class ActivityFixture : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    private static ActivitySamplingResult SampleAll(ref ActivityCreationOptions<ActivityContext> options)
-    {
-        return ActivitySamplingResult.AllDataAndRecorded;
-    }
+    private static ActivitySamplingResult SampleAll(ref ActivityCreationOptions<ActivityContext> options) =>
+        ActivitySamplingResult.AllDataAndRecorded;
 
-    public IEnumerable<Activity> GetActivitiesByTraceId(ActivityTraceId traceId)
-    {
-        return _activities.Where(it => it.TraceId == traceId);
-    }
+    public IEnumerable<Activity> GetActivitiesByTraceId(ActivityTraceId traceId) =>
+        _activities.Where(it => it.TraceId == traceId);
 }

@@ -37,19 +37,15 @@ internal static class Program
         await cluster.ShutdownAsync();
     }
 
-    private static ActorSystem GetSystem()
-    {
-        return new ActorSystem()
+    private static ActorSystem GetSystem() =>
+        new ActorSystem()
             .WithRemote(GetRemoteConfig())
             .WithCluster(GetClusterConfig());
-    }
 
-    private static GrpcNetRemoteConfig GetRemoteConfig()
-    {
-        return GrpcNetRemoteConfig
+    private static GrpcNetRemoteConfig GetRemoteConfig() =>
+        GrpcNetRemoteConfig
             .BindToLocalhost()
             .WithProtoMessages(ProtosReflection.Descriptor);
-    }
 
     private static ClusterConfig GetClusterConfig()
     {
@@ -84,10 +80,11 @@ public class User : UserActorBase
 
     public override Task Connect()
     {
-        _schedule = Context.Scheduler().SendRepeatedly(
-            TimeSpan.FromSeconds(new Random().Next(2, 5)),
-            Context.Self,
-            new Tick());
+        _schedule = Context.Scheduler()
+            .SendRepeatedly(
+                TimeSpan.FromSeconds(new Random().Next(2, 5)),
+                Context.Self,
+                new Tick());
 
         return Context.Cluster().Subscribe(ChatTopic, Context.ClusterIdentity()!);
     }
@@ -107,11 +104,13 @@ public class User : UserActorBase
                 var message = _messages[new Random().Next(0, _messages.Length)];
                 Console.WriteLine($"{Context.ClusterIdentity()!.Identity} publishes '{message}'");
 
-                _ = Context.Cluster().Publisher().Publish(ChatTopic, new ChatMessage
-                {
-                    Sender = Context.ClusterIdentity()!.Identity,
-                    Message = message
-                });
+                _ = Context.Cluster()
+                    .Publisher()
+                    .Publish(ChatTopic, new ChatMessage
+                    {
+                        Sender = Context.ClusterIdentity()!.Identity,
+                        Message = message
+                    });
 
                 break;
 

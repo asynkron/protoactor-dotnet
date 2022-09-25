@@ -65,19 +65,15 @@ Console.Read();
 await producer.DisposeAsync();
 await cluster.ShutdownAsync();
 
-static ActorSystem GetSystem()
-{
-    return new ActorSystem()
+static ActorSystem GetSystem() =>
+    new ActorSystem()
         .WithRemote(GetRemoteConfig())
         .WithCluster(GetClusterConfig());
-}
 
-static GrpcNetRemoteConfig GetRemoteConfig()
-{
-    return GrpcNetRemoteConfig
+static GrpcNetRemoteConfig GetRemoteConfig() =>
+    GrpcNetRemoteConfig
         .BindToLocalhost()
         .WithProtoMessages(ProtosReflection.Descriptor);
-}
 
 static ClusterConfig GetClusterConfig()
 {

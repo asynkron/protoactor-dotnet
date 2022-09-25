@@ -18,10 +18,8 @@ public class InMemoryProvider : IProvider
     public readonly ConcurrentDictionary<string, Dictionary<long, object>> Events =
         new();
 
-    public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
-    {
-        return Task.FromResult(((object)default(Snapshot), 0L));
-    }
+    public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName) =>
+        Task.FromResult(((object)default(Snapshot), 0L));
 
     public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
@@ -36,10 +34,7 @@ public class InMemoryProvider : IProvider
         return Task.FromResult(0L);
     }
 
-    public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
-    {
-        return Task.FromResult(0);
-    }
+    public Task PersistSnapshotAsync(string actorName, long index, object snapshot) => Task.FromResult(0);
 
     public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
     {
@@ -57,15 +52,9 @@ public class InMemoryProvider : IProvider
         return Task.FromResult(0);
     }
 
-    public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-    {
-        return Task.FromResult(0L);
-    }
+    public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex) => Task.FromResult(0L);
 
-    Task<long> IEventStore.PersistEventAsync(string actorName, long index, object @event)
-    {
-        return Task.FromResult(0L);
-    }
+    Task<long> IEventStore.PersistEventAsync(string actorName, long index, object @event) => Task.FromResult(0L);
 
     public Task PersistEventAsync(string actorName, long index, object @event)
     {

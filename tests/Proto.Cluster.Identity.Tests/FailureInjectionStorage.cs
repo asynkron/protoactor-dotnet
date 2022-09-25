@@ -16,10 +16,7 @@ public sealed class FailureInjectionStorage : IIdentityStorage
         _identityStorageImplementation = identityStorageImplementation;
     }
 
-    public void Dispose()
-    {
-        _identityStorageImplementation.Dispose();
-    }
+    public void Dispose() => _identityStorageImplementation.Dispose();
 
     public Task<StoredActivation?> TryGetExistingActivation(ClusterIdentity clusterIdentity, CancellationToken ct)
     {
@@ -63,21 +60,14 @@ public sealed class FailureInjectionStorage : IIdentityStorage
         return _identityStorageImplementation.StoreActivation(memberId, spawnLock, pid, ct);
     }
 
-    public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
-    {
+    public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) =>
         // MaybeFail();
-        return _identityStorageImplementation.RemoveActivation(clusterIdentity, pid, ct);
-    }
+        _identityStorageImplementation.RemoveActivation(clusterIdentity, pid, ct);
 
-    public Task RemoveMember(string memberId, CancellationToken ct)
-    {
-        return _identityStorageImplementation.RemoveMember(memberId, ct);
-    }
+    public Task RemoveMember(string memberId, CancellationToken ct) =>
+        _identityStorageImplementation.RemoveMember(memberId, ct);
 
-    public Task Init()
-    {
-        return _identityStorageImplementation.Init();
-    }
+    public Task Init() => _identityStorageImplementation.Init();
 
     private static void MaybeFail()
     {

@@ -34,9 +34,8 @@ public class ConcurrencyVerificationActor : IActor
 
     private Guid SessionId { get; set; }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             Started  => OnStarted(context),
             Stopping => OnStopping(context),
@@ -44,7 +43,6 @@ public class ConcurrencyVerificationActor : IActor
             IncCount => OnInc(context),
             _        => Task.CompletedTask
         };
-    }
 
     private Task OnInc(IContext context)
     {
@@ -179,10 +177,8 @@ public class ActorState
     // do not verify consistency if any of the current members is blocked (which means they are shutting down)
     // in this case we may see duplicated activation, but this is by design and we don't want to report it
     // activation count should go back to expected value once the duplicated activation shuts down together with the member
-    private bool AnyOfCurrentMembersIsStopping()
-    {
-        return _currentlyOnMembers.Any(cm => _clusterFixture.Members.Any(m => m.Remote.BlockList.IsBlocked(cm)));
-    }
+    private bool AnyOfCurrentMembersIsStopping() =>
+        _currentlyOnMembers.Any(cm => _clusterFixture.Members.Any(m => m.Remote.BlockList.IsBlocked(cm)));
 
     public void RecordInconsistency(int expected, int actual, PID activation)
     {
@@ -190,20 +186,14 @@ public class ActorState
         Inconsistent = true;
     }
 
-    public (int local, long total) Inc(int actorLocalCount)
-    {
-        return (actorLocalCount + 1, Interlocked.Increment(ref _totalCount));
-    }
+    public (int local, long total) Inc(int actorLocalCount) =>
+        (actorLocalCount + 1, Interlocked.Increment(ref _totalCount));
 
-    public override string ToString()
-    {
-        return
-            $"Id: {_id}, {nameof(StoredCount)}: {StoredCount}, {nameof(TotalCount)}: {TotalCount}, {nameof(Events)}:\n{EventsToString()}";
-    }
+    public override string ToString() =>
+        $"Id: {_id}, {nameof(StoredCount)}: {StoredCount}, {nameof(TotalCount)}: {TotalCount}, {nameof(Events)}:\n{EventsToString()}";
 
-    private string EventsToString()
-    {
-        return Events
+    private string EventsToString() =>
+        Events
             .OrderBy(e => e.When)
             .Aggregate("", (agg, e)
                 => agg + e switch
@@ -216,7 +206,6 @@ public class ActorState
                     _ => ""
                 }
             );
-    }
 }
 
 public class ActorStateRepo
@@ -225,13 +214,8 @@ public class ActorStateRepo
 
     public ICollection<ActorState> Contents => _db.Values;
 
-    public ActorState Get(string id, IClusterFixture fixture)
-    {
-        return _db.GetOrAdd(id, identity => new ActorState(identity, fixture));
-    }
+    public ActorState Get(string id, IClusterFixture fixture) =>
+        _db.GetOrAdd(id, identity => new ActorState(identity, fixture));
 
-    public void Reset()
-    {
-        _db.Clear();
-    }
+    public void Reset() => _db.Clear();
 }

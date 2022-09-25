@@ -47,10 +47,7 @@ public class BehaviorTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        PID SpawnActorFromFunc(Receive receive)
-        {
-            return context.Spawn(Props.FromFunc(receive));
-        }
+        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
 
         var behavior = new Behavior();
 

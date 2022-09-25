@@ -43,15 +43,13 @@ internal class Program
 
     private static class Decider
     {
-        public static SupervisorDirective Decide(PID pid, Exception reason)
-        {
-            return reason switch
+        public static SupervisorDirective Decide(PID pid, Exception reason) =>
+            reason switch
             {
                 RecoverableException _ => SupervisorDirective.Restart,
                 FatalException _       => SupervisorDirective.Stop,
                 _                      => SupervisorDirective.Escalate
             };
-        }
     }
 
     private class ParentActor : IActor

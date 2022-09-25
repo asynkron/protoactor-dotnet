@@ -25,11 +25,9 @@ public class MessageHeaderTests
     [Fact]
     public async Task HeadersArePropagatedBackInReply()
     {
-        Sender PropagateHeaders(Sender next)
-        {
-            return (context, target, envelope) =>
+        Sender PropagateHeaders(Sender next) =>
+            (context, target, envelope) =>
                 next(context, target, envelope.WithHeader(context.Headers));
-        }
 
         var headers = MessageHeader.Empty.With("foo", "bar");
 
@@ -39,18 +37,19 @@ public class MessageHeaderTests
         });
 
         var props1 = Props.FromFunc(ctx =>
-            {
-                switch (ctx.Message)
                 {
-                    case SomeRequest:
-                        ctx.Respond(new SomeResponse());
+                    switch (ctx.Message)
+                    {
+                        case SomeRequest:
+                            ctx.Respond(new SomeResponse());
 
-                        return Task.CompletedTask;
-                    default:
-                        return Task.CompletedTask;
+                            return Task.CompletedTask;
+                        default:
+                            return Task.CompletedTask;
+                    }
                 }
-            }
-        ).WithSenderMiddleware(PropagateHeaders);
+            )
+            .WithSenderMiddleware(PropagateHeaders);
 
         var pid1 = system.Root.Spawn(props1);
 
@@ -58,23 +57,24 @@ public class MessageHeaderTests
         var tcs2 = new TaskCompletionSource<MessageHeader>();
 
         var props2 = Props.FromFunc(ctx =>
-            {
-                switch (ctx.Message)
                 {
-                    case StartMessage:
-                        tcs1.SetResult(ctx.Headers);
-                        ctx.Request(pid1, new SomeRequest());
+                    switch (ctx.Message)
+                    {
+                        case StartMessage:
+                            tcs1.SetResult(ctx.Headers);
+                            ctx.Request(pid1, new SomeRequest());
 
-                        break;
-                    case SomeResponse:
-                        tcs2.SetResult(ctx.Headers);
+                            break;
+                        case SomeResponse:
+                            tcs2.SetResult(ctx.Headers);
 
-                        break;
+                            break;
+                    }
+
+                    return Task.CompletedTask;
                 }
-
-                return Task.CompletedTask;
-            }
-        ).WithSenderMiddleware(PropagateHeaders);
+            )
+            .WithSenderMiddleware(PropagateHeaders);
 
         var pid2 = system.Root.Spawn(props2);
 

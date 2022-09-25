@@ -99,17 +99,13 @@ internal class TransferProcess : IActor
         await _behavior.ReceiveAsync(context);
     }
 
-    private static Props TryCredit(PID targetActor, decimal amount)
-    {
-        return Props
+    private static Props TryCredit(PID targetActor, decimal amount) =>
+        Props
             .FromProducer(() => new AccountProxy(targetActor, sender => new ChangeBalance.Credit(amount, sender)));
-    }
 
-    private static Props TryDebit(PID targetActor, decimal amount)
-    {
-        return Props
+    private static Props TryDebit(PID targetActor, decimal amount) =>
+        Props
             .FromProducer(() => new AccountProxy(targetActor, sender => new ChangeBalance.Debit(amount, sender)));
-    }
 
     private void ApplyEvent(Event @event)
     {

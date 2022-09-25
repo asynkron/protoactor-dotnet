@@ -40,10 +40,7 @@ public class PropsTests
     [Fact]
     public void Given_Props_When_WithMailbox_Then_mutate_MailboxProducer()
     {
-        IMailbox MailboxProducer()
-        {
-            return new TestMailbox();
-        }
+        IMailbox MailboxProducer() => new TestMailbox();
 
         var props = new Props();
         var props2 = props.WithMailbox(MailboxProducer);
@@ -87,10 +84,7 @@ public class PropsTests
     [Fact]
     public void Given_Props_When_WithProducer_Then_mutate_Producer()
     {
-        static IActor Producer(ActorSystem _, IContext __)
-        {
-            return new DummyActor();
-        }
+        static IActor Producer(ActorSystem _, IContext __) => new DummyActor();
 
         var props = new Props();
         var props2 = props.WithProducer(Producer);
@@ -110,10 +104,7 @@ public class PropsTests
     [Fact]
     public void Given_Props_When_WithSpawner_Then_mutate_Spawner()
     {
-        PID Spawner(ActorSystem s, string id, Props p, PID? parent, Action<IContext> callback)
-        {
-            return new();
-        }
+        PID Spawner(ActorSystem s, string id, Props p, PID? parent, Action<IContext> callback) => new PID();
 
         var props = new Props();
         var props2 = props.WithSpawner(Spawner);
@@ -152,10 +143,7 @@ public class PropsTests
 
     public class DummyActor : IActor
     {
-        public Task ReceiveAsync(IContext context)
-        {
-            throw new NotImplementedException();
-        }
+        public Task ReceiveAsync(IContext context) => throw new NotImplementedException();
     }
 
     public class ActorWithSystem : IActor
@@ -167,9 +155,6 @@ public class PropsTests
 
         public ActorSystem System { get; }
 
-        public Task ReceiveAsync(IContext context)
-        {
-            throw new NotImplementedException();
-        }
+        public Task ReceiveAsync(IContext context) => throw new NotImplementedException();
     }
 }

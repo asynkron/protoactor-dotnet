@@ -22,14 +22,12 @@ public class DependencyInjectedActor : IActor
         _logger = logger;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             HelloRequest msg => OnHelloMessage(msg, context),
             _                => Task.CompletedTask
         };
-    }
 
     private Task OnHelloMessage(HelloRequest msg, IContext context)
     {

@@ -281,8 +281,5 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
 
-    private void Log(string message)
-    {
-        _output.WriteLine($"[{DateTime.Now:hh:mm:ss.fff}] {message}");
-    }
+    private void Log(string message) => _output.WriteLine($"[{DateTime.Now:hh:mm:ss.fff}] {message}");
 }

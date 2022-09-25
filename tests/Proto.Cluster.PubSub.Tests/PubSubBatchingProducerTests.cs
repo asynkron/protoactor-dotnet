@@ -261,10 +261,7 @@ public class PubSubBatchingProducerTests
         return Task.FromResult(new PublishResponse());
     }
 
-    private Task<PublishResponse?> Fail(PubSubBatch _)
-    {
-        throw new TestException();
-    }
+    private Task<PublishResponse?> Fail(PubSubBatch _) => throw new TestException();
 
     private async Task<PublishResponse?> Wait(PubSubBatch _)
     {
@@ -273,15 +270,13 @@ public class PubSubBatchingProducerTests
         return new PublishResponse();
     }
 
-    private Func<PubSubBatch, Task<PublishResponse?>> Wait(int ms = 1000)
-    {
-        return async _ =>
+    private Func<PubSubBatch, Task<PublishResponse?>> Wait(int ms = 1000) =>
+        async _ =>
         {
             await Task.Delay(ms);
 
             return new PublishResponse();
         };
-    }
 
     private async Task<PublishResponse?> WaitThenFail(PubSubBatch _)
     {
@@ -290,9 +285,8 @@ public class PubSubBatchingProducerTests
         throw new TestException();
     }
 
-    private Func<PubSubBatch, Task<PublishResponse?>> WaitThenRecord(int ms = 500)
-    {
-        return async batch =>
+    private Func<PubSubBatch, Task<PublishResponse?>> WaitThenRecord(int ms = 500) =>
+        async batch =>
         {
             await Task.Delay(ms);
 
@@ -302,7 +296,6 @@ public class PubSubBatchingProducerTests
 
             return new PublishResponse();
         };
-    }
 
     private Func<PubSubBatch, Task<PublishResponse?>> FailTimesThenSucceed(int numFails)
     {
@@ -313,20 +306,15 @@ public class PubSubBatchingProducerTests
             : Task.FromResult(new PublishResponse());
     }
 
-    private Task<PublishResponse?> Timeout(PubSubBatch _)
-    {
-        return Task.FromResult<PublishResponse?>(null);
-    }
+    private Task<PublishResponse?> Timeout(PubSubBatch _) => Task.FromResult<PublishResponse?>(null);
 
-    private int[] AllSentNumbers(IEnumerable<PubSubBatch> batches)
-    {
-        return batches
+    private int[] AllSentNumbers(IEnumerable<PubSubBatch> batches) =>
+        batches
             .SelectMany(b => b.Envelopes)
             .Cast<TestMessage>()
             .Select(m => m.Number)
             .OrderBy(n => n)
             .ToArray();
-    }
 
     private class MockPublisher : IPublisher
     {
@@ -337,10 +325,8 @@ public class PubSubBatchingProducerTests
             _publish = publish;
         }
 
-        public Task<PublishResponse> PublishBatch(string topic, PubSubBatch batch, CancellationToken ct = default)
-        {
-            return _publish(batch);
-        }
+        public Task<PublishResponse> PublishBatch(string topic, PubSubBatch batch, CancellationToken ct = default) =>
+            _publish(batch);
     }
 
     private class OptionalFailureMockPublisher : IPublisher

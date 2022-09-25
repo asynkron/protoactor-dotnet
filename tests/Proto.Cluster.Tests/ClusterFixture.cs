@@ -82,10 +82,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         )
     };
 
-    async ValueTask IAsyncDisposable.DisposeAsync()
-    {
-        await DisposeAsync();
-    }
+    async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
 
     public async Task InitializeAsync()
     {
@@ -142,9 +139,8 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     public IList<Cluster> Members => _members;
 
-    private static TracerProvider InitOpenTelemetryTracing()
-    {
-        return Sdk.CreateTracerProviderBuilder()
+    private static TracerProvider InitOpenTelemetryTracing() =>
+        Sdk.CreateTracerProviderBuilder()
             .SetResourceBuilder(ResourceBuilder.CreateDefault()
                 .AddService("Proto.Cluster.Tests")
             )
@@ -152,23 +148,17 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             .AddSource(Tracing.ActivitySourceName)
             .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317"))
             .Build();
-    }
 
-    public virtual Task OnDisposing()
-    {
-        return Task.CompletedTask;
-    }
+    public virtual Task OnDisposing() => Task.CompletedTask;
 
     private async Task<IList<Cluster>> SpawnClusterNodes(
         int count,
         Func<ClusterConfig, ClusterConfig>? configure = null
-    )
-    {
-        return (await Task.WhenAll(
+    ) =>
+        (await Task.WhenAll(
             Enumerable.Range(0, count)
                 .Select(_ => SpawnClusterMember(configure))
         )).ToList();
-    }
 
     protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig>? configure)
     {
@@ -217,9 +207,8 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     protected abstract IClusterProvider GetClusterProvider();
 
-    protected virtual IIdentityLookup GetIdentityLookup(string clusterName)
-    {
-        return new PartitionIdentityLookup(
+    protected virtual IIdentityLookup GetIdentityLookup(string clusterName) =>
+        new PartitionIdentityLookup(
             new PartitionConfig
             {
                 RebalanceActivationsCompletionTimeout = TimeSpan.FromSeconds(3),
@@ -229,7 +218,6 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 Mode = PartitionIdentityLookup.Mode.Pull
             }
         );
-    }
 }
 
 public abstract class BaseInMemoryClusterFixture : ClusterFixture
@@ -246,10 +234,7 @@ public abstract class BaseInMemoryClusterFixture : ClusterFixture
 
     private InMemAgent InMemAgent => _inMemAgent.Value;
 
-    protected override IClusterProvider GetClusterProvider()
-    {
-        return new TestProvider(new TestProviderOptions(), InMemAgent);
-    }
+    protected override IClusterProvider GetClusterProvider() => new TestProvider(new TestProviderOptions(), InMemAgent);
 }
 
 public class InMemoryClusterFixture : BaseInMemoryClusterFixture
@@ -266,10 +251,7 @@ public class InMemoryClusterFixtureWithPartitionActivator : BaseInMemoryClusterF
     {
     }
 
-    protected override IIdentityLookup GetIdentityLookup(string clusterName)
-    {
-        return new PartitionActivatorLookup();
-    }
+    protected override IIdentityLookup GetIdentityLookup(string clusterName) => new PartitionActivatorLookup();
 }
 
 public class InMemoryClusterFixtureAlternativeClusterContext : BaseInMemoryClusterFixture
@@ -291,10 +273,7 @@ public class InMemoryClusterFixtureSharedFutures : BaseInMemoryClusterFixture
     {
     }
 
-    protected override ActorSystemConfig GetActorSystemConfig()
-    {
-        return base.GetActorSystemConfig().WithSharedFutures();
-    }
+    protected override ActorSystemConfig GetActorSystemConfig() => base.GetActorSystemConfig().WithSharedFutures();
 }
 
 public class InMemoryPidCacheInvalidationClusterFixture : BaseInMemoryClusterFixture
@@ -322,13 +301,7 @@ public class SingleNodeProviderFixture : ClusterFixture
     {
     }
 
-    protected override IClusterProvider GetClusterProvider()
-    {
-        return new SingleNodeProvider();
-    }
+    protected override IClusterProvider GetClusterProvider() => new SingleNodeProvider();
 
-    protected override IIdentityLookup GetIdentityLookup(string clusterName)
-    {
-        return new SingleNodeLookup();
-    }
+    protected override IIdentityLookup GetIdentityLookup(string clusterName) => new SingleNodeLookup();
 }

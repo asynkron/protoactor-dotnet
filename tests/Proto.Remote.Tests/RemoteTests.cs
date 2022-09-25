@@ -51,11 +51,12 @@ public abstract class RemoteTests
             TimeSpan.FromSeconds(10)
         );
 
-        response.Should().BeEquivalentTo(new ForwardResponse
-            {
-                Message = "Hi", Sender = remoteActor2
-            }
-        );
+        response.Should()
+            .BeEquivalentTo(new ForwardResponse
+                {
+                    Message = "Hi", Sender = remoteActor2
+                }
+            );
     }
 
     [Fact]
@@ -69,7 +70,8 @@ public abstract class RemoteTests
         var requestIds = Enumerable.Range(1, messageCount).ToList();
 
         List<(IFuture future, Ping message)> requests = requestIds
-            .Select(i => (batchContext.GetFuture(), new Ping { Message = i.ToString() })).ToList();
+            .Select(i => (batchContext.GetFuture(), new Ping { Message = i.ToString() }))
+            .ToList();
 
         var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
 
@@ -438,10 +440,7 @@ public abstract class RemoteTests
         return remoteActorResp.Pid;
     }
 
-    private PID SpawnLocalActor()
-    {
-        return System.Root.Spawn(RemoteFixture.EchoActorProps);
-    }
+    private PID SpawnLocalActor() => System.Root.Spawn(RemoteFixture.EchoActorProps);
 
     private async Task<PID> SpawnLocalActorAndWatch(params PID[] remoteActors)
     {
@@ -457,10 +456,8 @@ public abstract class RemoteTests
         return actor;
     }
 
-    private Task<bool> PollUntilTrue(Func<Task<bool>> predicate)
-    {
-        return PollUntilTrue(predicate, 100, TimeSpan.FromMilliseconds(50));
-    }
+    private Task<bool> PollUntilTrue(Func<Task<bool>> predicate) =>
+        PollUntilTrue(predicate, 100, TimeSpan.FromMilliseconds(50));
 
     private async Task<bool> PollUntilTrue(Func<Task<bool>> predicate, int attempts, TimeSpan interval)
     {
@@ -542,10 +539,7 @@ public class LocalActor : IActor
         return Task.CompletedTask;
     }
 
-    private void HandleCountOfMessagesReceived(IContext context)
-    {
-        context.Respond(_terminatedMessages.Count);
-    }
+    private void HandleCountOfMessagesReceived(IContext context) => context.Respond(_terminatedMessages.Count);
 
     private void HandleTerminatedMessageReceived(IContext context, TerminatedMessageReceived msg)
     {

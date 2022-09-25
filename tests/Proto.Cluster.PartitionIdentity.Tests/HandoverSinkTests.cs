@@ -206,10 +206,8 @@ public class HandoverSinkTests
         };
     }
 
-    private IdentityHandover CreateHandover(ClusterTopology topology, Member member, int activations)
-    {
-        return CreateHandovers(topology, member, activations, activations).Single();
-    }
+    private IdentityHandover CreateHandover(ClusterTopology topology, Member member, int activations) =>
+        CreateHandovers(topology, member, activations, activations).Single();
 
     private IEnumerable<IdentityHandover> CreateHandovers(ClusterTopology topology, Member member, int activations,
         int chunkSize = 10)
@@ -240,28 +238,25 @@ public class HandoverSinkTests
         };
     }
 
-    private IEnumerable<Activation> CreateActivations(string address, int count)
-    {
-        return Enumerable.Range(0, count).Select(i =>
-            {
-                var identity = Guid.NewGuid().ToString("N");
-
-                return new Activation
+    private IEnumerable<Activation> CreateActivations(string address, int count) =>
+        Enumerable.Range(0, count)
+            .Select(i =>
                 {
-                    ClusterIdentity = ClusterIdentity.Create(identity, TestKind),
-                    Pid = PID.FromAddress(address, $"partition-activator$99/{identity}${++_counter}")
-                };
-            }
-        );
-    }
+                    var identity = Guid.NewGuid().ToString("N");
 
-    private static IdentityHandover EmptyFinalHandover(ClusterTopology topology)
-    {
-        return new IdentityHandover
+                    return new Activation
+                    {
+                        ClusterIdentity = ClusterIdentity.Create(identity, TestKind),
+                        Pid = PID.FromAddress(address, $"partition-activator$99/{identity}${++_counter}")
+                    };
+                }
+            );
+
+    private static IdentityHandover EmptyFinalHandover(ClusterTopology topology) =>
+        new()
         {
             Final = true,
             TopologyHash = topology.TopologyHash,
             ChunkId = 1
         };
-    }
 }

@@ -101,8 +101,5 @@ public class InMemoryProvider : IProvider
         return Task.CompletedTask;
     }
 
-    public Dictionary<long, object> GetSnapshots(string actorId)
-    {
-        return _snapshots[actorId];
-    }
+    public Dictionary<long, object> GetSnapshots(string actorId) => _snapshots[actorId];
 }
