@@ -115,8 +115,6 @@ public class KubernetesProvider : IClusterProvider
 
         Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: {Port}", _port);
 
-        var existingLabels = pod.Metadata.Labels;
-
         var labels = new Dictionary<string, string>
         {
             [LabelCluster] = _clusterName,
@@ -124,23 +122,27 @@ public class KubernetesProvider : IClusterProvider
             [LabelMemberId] = _cluster.System.Id
         };
 
-        var i = 0;
-
-        foreach (var kind in _kinds)
-        {
-            var labelKey = $"{LabelKind}-{i++}";
-            labels.TryAdd(labelKey, kind);
-        }
-
-        //add existing labels back
-        foreach (var existing in existingLabels)
+        foreach (var existing in pod.Metadata.Labels)
         {
             labels.TryAdd(existing.Key, existing.Value);
         }
 
+        var annotations = new Dictionary<string, string>
+        {
+            [LabelKinds] = string.Join(';', _kinds),
+        };
+
+        if (pod.Metadata.Annotations is not null)
+        {
+            foreach (var existing in pod.Metadata.Annotations)
+            {
+                annotations.TryAdd(existing.Key, existing.Value);
+            }
+        }
+
         try
         {
-            await kubernetes.ReplacePodLabels(_podName, KubernetesExtensions.GetKubeNamespace(), pod, labels);
+            await kubernetes.ReplacePodLabelsAndAnnotations(_podName, KubernetesExtensions.GetKubeNamespace(), pod, labels, annotations);
         }
         catch (Exception e)
         {
@@ -193,7 +195,11 @@ public class KubernetesProvider : IClusterProvider
             .Where(label => !label.Key.StartsWith(LabelPrefix, StringComparison.Ordinal))
             .ToDictionary(label => label.Key, label => label.Value);
 
-        await kubernetes.ReplacePodLabels(_podName, kubeNamespace, pod, labels);
+        var annotations = pod.Metadata.Annotations
+            .Where(label => !label.Key.StartsWith(LabelPrefix, StringComparison.Ordinal))
+            .ToDictionary(label => label.Key, label => label.Value);
+
+        await kubernetes.ReplacePodLabelsAndAnnotations(_podName, kubeNamespace, pod, labels, annotations);
 
         cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
     }

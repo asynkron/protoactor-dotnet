@@ -30,17 +30,20 @@ static class KubernetesExtensions
     /// <param name="podNamespace">Namespace of the pod</param>
     /// <param name="pod">the pod that should be patched</param>
     /// <param name="labels">Labels collection. All labels will be replaced by the new labels.</param>
+    /// <param name="annotations">annotations collection. All annotations will be replaced by the new annotations.</param>
     /// <returns></returns>
-    internal static Task<V1Pod> ReplacePodLabels(
+    internal static Task<V1Pod> ReplacePodLabelsAndAnnotations(
         this IKubernetes kubernetes,
         string podName,
         string podNamespace,
         V1Pod pod,
-        IDictionary<string, string> labels
+        IDictionary<string, string> labels,
+        IDictionary<string, string> annotations
     )
     {
         var old = JsonSerializer.SerializeToDocument(pod);
         pod.Metadata.Labels = labels;
+        pod.Metadata.Annotations = annotations;
         var expected = JsonSerializer.SerializeToDocument(pod);
         var patch = old.CreatePatch(expected);
         return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch, V1Patch.PatchType.JsonPatch), podName, podNamespace);
@@ -57,9 +60,9 @@ static class KubernetesExtensions
 
         var kinds = pod
             .Metadata
-            .Labels
-            .Where(l => l.Key.StartsWith(LabelKind))
-            .Select(l => l.Value)
+            .Annotations
+            .Where(l => l.Key.StartsWith(LabelKinds))
+            .SelectMany(l => l.Value.Split(';'))
             .ToArray();
 
         var host = pod.Status.PodIP ?? "";
