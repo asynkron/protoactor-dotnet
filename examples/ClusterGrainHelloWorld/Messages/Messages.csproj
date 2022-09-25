@@ -4,18 +4,18 @@
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.21.1"/>
-        <PackageReference Include="Grpc.Tools" Version="2.46.3" PrivateAssets="All"/>
-        <PackageReference Include="Proto.Cluster.CodeGen" Version="0.30.0"/>
+        <PackageReference Include="Google.Protobuf" Version="3.21.1" />
+        <PackageReference Include="Grpc.Tools" Version="2.46.3" PrivateAssets="All" />
+        <PackageReference Include="Proto.Cluster.CodeGen" Version="0.30.0" />
     </ItemGroup>
     <ItemGroup>
-        <Protobuf Include="Protos.proto"/>
+        <Protobuf Include="Protos.proto" />
     </ItemGroup>
     <ItemGroup>
-        <ProtoGrain Include="Protos.proto"/>
+        <ProtoGrain Include="Protos.proto" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj"/>
+        <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
     </ItemGroup>
 
 </Project>

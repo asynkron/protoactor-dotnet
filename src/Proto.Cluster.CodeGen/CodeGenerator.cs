@@ -130,7 +130,7 @@ public class CodeGenerator : CommonCodeGenerator
         }
 
         static string GetKind(string? packageName, string serviceName) =>
-            string.IsNullOrEmpty(packageName) ? serviceName : $"{packageName}/{serviceName}";
+            string.IsNullOrEmpty(packageName) ? serviceName : $"{packageName}.{serviceName}";
     }
 
     #region UnusedMethods

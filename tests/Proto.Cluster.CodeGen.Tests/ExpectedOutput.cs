@@ -265,7 +265,7 @@ namespace Acme.OtherSystem.Foo
 
     public class TestGrainActor : IActor
     {
-        public const string Kind = "Foo/TestGrain";
+        public const string Kind = "Foo.TestGrain";
 
         private TestGrainBase? _inner;
         private IContext? _context;
