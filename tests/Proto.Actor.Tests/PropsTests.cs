@@ -107,10 +107,10 @@ public class PropsTests
         PID Spawner(ActorSystem s, string id, Props p, PID? parent, Action<IContext> callback) => new PID();
 
         var props = new Props();
-        var props2 = props.WithSpawner(Spawner);
+        var props2 = props.WithSpawner(Spawner!);
 
         Assert.NotEqual(props, props2);
-        Assert.Equal(Spawner, props2.Spawner);
+        Assert.Equal(Spawner!, props2.Spawner);
 
         Assert.Equal(props.Dispatcher, props2.Dispatcher);
         Assert.Equal(props.MailboxProducer, props2.MailboxProducer);

@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
     <PropertyGroup>
+        <NoWarn>8981</NoWarn>
         <IsPackable>true</IsPackable>
         <Nullable>enable</Nullable>
         <LangVersion>10</LangVersion>
