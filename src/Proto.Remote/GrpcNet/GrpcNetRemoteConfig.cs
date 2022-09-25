@@ -62,7 +62,7 @@ public record GrpcNetRemoteConfig : RemoteConfigBase
     /// </summary>
     /// <param name="port">Port to bind on, 0 (default) means random port</param>
     /// <returns></returns>
-    public static GrpcNetRemoteConfig BindToLocalhost(int port = 0) => new GrpcNetRemoteConfig(Localhost, port);
+    public static GrpcNetRemoteConfig BindToLocalhost(int port = 0) => new(Localhost, port);
 
     /// <summary>
     ///     Creates new <see cref="GrpcNetRemoteConfig" /> instance that binds to a specific network interface.
@@ -70,5 +70,5 @@ public record GrpcNetRemoteConfig : RemoteConfigBase
     /// <param name="host">Host to bind to</param>
     /// <param name="port">Port to bind on, 0 (default) means random port</param>
     /// <returns></returns>
-    public static GrpcNetRemoteConfig BindTo(string host, int port = 0) => new GrpcNetRemoteConfig(host, port);
+    public static GrpcNetRemoteConfig BindTo(string host, int port = 0) => new(host, port);
 }

@@ -53,8 +53,9 @@ public class ProtobufSerializer : ISerializer
                 return true;
             }
 
-            Log.CreateLogger<Serialization>().LogWarning("Descriptor for message type {descriptor} not registered",
-                message.Descriptor.Name);
+            Log.CreateLogger<Serialization>()
+                .LogWarning("Descriptor for message type {descriptor} not registered",
+                    message.Descriptor.Name);
         }
 
         return false;

@@ -26,7 +26,7 @@ public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
     /// <param name="kind"></param>
     /// <returns></returns>
     public static ClusterIdentity Create(string identity, string kind) =>
-        new ClusterIdentity
+        new()
         {
             Identity = identity,
             Kind = kind
@@ -92,7 +92,7 @@ public sealed partial class PackedActivations
         );
 
     public static PackedActivations Pack(string address, IEnumerable<Activation> activations) =>
-        new PackedActivations
+        new()
         {
             Address = address,
             Actors = { PackActivations(activations) }

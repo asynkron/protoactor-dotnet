@@ -258,10 +258,11 @@ internal class PartitionPlacementActor : IActor, IDisposable
         {
             if (cancelRebalance.IsCancellationRequested)
             {
-                context.Logger()?.LogInformation(
-                    "[PartitionIdentity] Cancelled rebalance handover for topology: {TopologyHash}",
-                    msg.CurrentTopology.TopologyHash
-                );
+                context.Logger()
+                    ?.LogInformation(
+                        "[PartitionIdentity] Cancelled rebalance handover for topology: {TopologyHash}",
+                        msg.CurrentTopology.TopologyHash
+                    );
 
                 if (_config.DeveloperLogging)
                 {

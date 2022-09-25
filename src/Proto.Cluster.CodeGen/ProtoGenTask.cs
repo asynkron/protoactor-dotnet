@@ -112,7 +112,8 @@ public class ProtoGenTask : Task
                 .Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(p => p.Trim())
                 .Select(p => PathPolyfill.GetRelativePath(projectDirectory, p))
-                .Select(p => new DirectoryInfo(p)).ToArray();
+                .Select(p => new DirectoryInfo(p))
+                .ToArray();
 
         foreach (var importPath in importPaths)
         {

@@ -210,7 +210,7 @@ public sealed class ActorSystem : IAsyncDisposable
     }
 
     public RootContext NewRoot(MessageHeader? headers = null, params Func<Sender, Sender>[] middleware) =>
-        new RootContext(this, headers, middleware);
+        new(this, headers, middleware);
 
     /// <summary>
     ///     Gets the network address of the actor system. Used by Proto.Remote.

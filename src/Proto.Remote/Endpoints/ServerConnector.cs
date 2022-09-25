@@ -95,30 +95,32 @@ public sealed class ServerConnector
                 {
                     case Type.ServerSide:
                         await call.RequestStream.WriteAsync(new RemoteMessage
-                        {
-                            ConnectRequest = new ConnectRequest
                             {
-                                ServerConnection = new ServerConnection
+                                ConnectRequest = new ConnectRequest
                                 {
-                                    Address = _system.Address,
-                                    MemberId = _system.Id,
-                                    BlockList = { _system.Remote().BlockList.BlockedMembers }
+                                    ServerConnection = new ServerConnection
+                                    {
+                                        Address = _system.Address,
+                                        MemberId = _system.Id,
+                                        BlockList = { _system.Remote().BlockList.BlockedMembers }
+                                    }
                                 }
-                            }
-                        }).ConfigureAwait(false);
+                            })
+                            .ConfigureAwait(false);
 
                         break;
                     case Type.ClientSide:
                         await call.RequestStream.WriteAsync(new RemoteMessage
-                        {
-                            ConnectRequest = new ConnectRequest
                             {
-                                ClientConnection = new ClientConnection
+                                ConnectRequest = new ConnectRequest
                                 {
-                                    MemberId = _system.Id
+                                    ClientConnection = new ClientConnection
+                                    {
+                                        MemberId = _system.Id
+                                    }
                                 }
-                            }
-                        }).ConfigureAwait(false);
+                            })
+                            .ConfigureAwait(false);
 
                         break;
                     default:
@@ -167,7 +169,8 @@ public sealed class ServerConnector
                 var cancellationTokenSource = new CancellationTokenSource();
 
                 var combinedToken = CancellationTokenSource
-                    .CreateLinkedTokenSource(_cts.Token, cancellationTokenSource.Token).Token;
+                    .CreateLinkedTokenSource(_cts.Token, cancellationTokenSource.Token)
+                    .Token;
 
                 var writer = Task.Run(async () =>
                 {

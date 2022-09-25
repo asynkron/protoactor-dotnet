@@ -136,18 +136,19 @@ public sealed class RedisIdentityStorage : IIdentityStorage
         };
 
         var executed = await _asyncSemaphore.WaitAsync(() =>
-            {
-                var db = GetDb();
+                {
+                    var db = GetDb();
 
-                var transaction = db.CreateTransaction();
-                transaction.AddCondition(Condition.HashEqual(key, LockId, spawnLock.LockId));
-                _ = transaction.HashSetAsync(key, values, CommandFlags.DemandMaster);
-                _ = transaction.SetAddAsync(MemberKey(memberId), key.ToString());
-                _ = transaction.KeyPersistAsync(key);
+                    var transaction = db.CreateTransaction();
+                    transaction.AddCondition(Condition.HashEqual(key, LockId, spawnLock.LockId));
+                    _ = transaction.HashSetAsync(key, values, CommandFlags.DemandMaster);
+                    _ = transaction.SetAddAsync(MemberKey(memberId), key.ToString());
+                    _ = transaction.KeyPersistAsync(key);
 
-                return transaction.ExecuteAsync();
-            }
-        ).ConfigureAwait(false);
+                    return transaction.ExecuteAsync();
+                }
+            )
+            .ConfigureAwait(false);
 
         if (!executed)
         {
@@ -170,9 +171,10 @@ public sealed class RedisIdentityStorage : IIdentityStorage
         return _asyncSemaphore.WaitAsync(()
                 =>
             {
-                return GetDb().ScriptEvaluateAsync(removePid, new[] { key },
-                    new RedisValue[] { pid.Id, pid.Address, _memberKey.ToString() }
-                );
+                return GetDb()
+                    .ScriptEvaluateAsync(removePid, new[] { key },
+                        new RedisValue[] { pid.Id, pid.Address, _memberKey.ToString() }
+                    );
             }
         );
     }

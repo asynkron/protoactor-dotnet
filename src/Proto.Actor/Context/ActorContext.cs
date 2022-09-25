@@ -300,7 +300,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     public IFuture GetFuture() => System.Future.Get();
 
-    public CapturedContext Capture() => new CapturedContext(MessageEnvelope.Wrap(_messageOrEnvelope!), this);
+    public CapturedContext Capture() => new(MessageEnvelope.Wrap(_messageOrEnvelope!), this);
 
     public void Apply(CapturedContext capturedContext) => _messageOrEnvelope = capturedContext.MessageEnvelope;
 
@@ -530,7 +530,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     }
 
     public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox) =>
-        new ActorContext(system, props, parent, self, mailbox);
+        new(system, props, parent, self, mailbox);
 
     //Note to self, the message must be sent no-matter if the task failed or not.
     //do not mess this up by first awaiting and then sending on success only

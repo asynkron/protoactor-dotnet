@@ -119,7 +119,7 @@ public record ActorSystemConfig
     ///     Creates a new default ActorSystemConfig
     /// </summary>
     /// <returns>The new ActorSystemConfig</returns>
-    public static ActorSystemConfig Setup() => new ActorSystemConfig();
+    public static ActorSystemConfig Setup() => new();
 
     /// <summary>
     ///     The interval used to trigger throttling of deadletter message logs

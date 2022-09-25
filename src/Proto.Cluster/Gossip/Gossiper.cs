@@ -316,14 +316,13 @@ public class Gossiper
         public IImmutableSet<string> AffectedKeys => _getConsensusValues.Select(it => it.Item1).ToImmutableHashSet();
 
         public static ConsensusCheckBuilder<T> Create<TE>(string key, Func<TE, T?> getValue)
-            where TE : IMessage, new() => new ConsensusCheckBuilder<T>(key, MapFromAny(getValue));
+            where TE : IMessage, new() => new(key, MapFromAny(getValue));
 
         private static Func<Any, T?> MapFromAny<TE>(Func<TE, T?> getValue) where TE : IMessage, new() =>
             any => any.TryUnpack<TE>(out var envelope) ? getValue(envelope) : default;
 
         public ConsensusCheckBuilder<T> InConsensusWith<TE>(string key, Func<TE, T> getValue)
-            where TE : IMessage, new() =>
-            new ConsensusCheckBuilder<T>(_getConsensusValues.Add((key, MapFromAny(getValue))));
+            where TE : IMessage, new() => new(_getConsensusValues.Add((key, MapFromAny(getValue))));
 
         private static Func<KeyValuePair<string, GossipState.Types.GossipMemberState>, (string member, string key, T
             value)> MapToValue(
@@ -364,7 +363,8 @@ public class Gossiper
                     if (Logger.IsEnabled(LogLevel.Debug))
                     {
                         Logger.LogDebug("consensus {Consensus}: {Values}", result.Item1, valueTuples
-                            .GroupBy(it => (it.key, it.value), tuple => tuple.member).Select(
+                            .GroupBy(it => (it.key, it.value), tuple => tuple.member)
+                            .Select(
                                 grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
                                             (grouping.Count() > 1 ? grouping.Count() + " nodes" : grouping.First())
                             )
@@ -394,7 +394,8 @@ public class Gossiper
                 if (Logger.IsEnabled(LogLevel.Debug))
                 {
                     Logger.LogDebug("consensus {Consensus}: {Values}", consensus.Item1, valueTuples
-                        .GroupBy(it => (it.key, it.value), tuple => tuple.member).Select(
+                        .GroupBy(it => (it.key, it.value), tuple => tuple.member)
+                        .Select(
                             grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
                                         (grouping.Count() > 1 ? grouping.Count() + " nodes" : grouping.First())
                         )
@@ -409,7 +410,8 @@ public class Gossiper
                 IImmutableSet<string> ids) =>
                 state.Members
                     .Where(member => ids.Contains(member.Key))
-                    .Select(member => member).ToArray();
+                    .Select(member => member)
+                    .ToArray();
         }
     }
 

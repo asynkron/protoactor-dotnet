@@ -25,7 +25,7 @@ public class Guardians
 
     internal PID GetGuardianPid(ISupervisorStrategy strategy)
     {
-        GuardianProcess ValueFactory(ISupervisorStrategy s) => new GuardianProcess(System, s);
+        GuardianProcess ValueFactory(ISupervisorStrategy s) => new(System, s);
 
         var guardian = _guardianStrategies.GetOrAdd(strategy, ValueFactory);
 

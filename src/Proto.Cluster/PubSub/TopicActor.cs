@@ -118,7 +118,7 @@ public sealed class TopicActor : IActor
 
     private static Subscribers GetSubscribersForAddress(
         IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member) =>
-        new Subscribers
+        new()
         {
             Subscribers_ =
             {

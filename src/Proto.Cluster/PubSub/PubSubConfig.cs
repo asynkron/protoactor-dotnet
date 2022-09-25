@@ -38,5 +38,5 @@ public record PubSubConfig
     ///     Creates a new instance of <see cref="PubSubConfig" />
     /// </summary>
     /// <returns></returns>
-    public static PubSubConfig Setup() => new PubSubConfig();
+    public static PubSubConfig Setup() => new();
 }

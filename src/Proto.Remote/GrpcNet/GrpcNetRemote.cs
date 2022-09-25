@@ -93,7 +93,8 @@ public class GrpcNetRemote : IRemote
                         serviceCollection.AddSingleton<Health.HealthBase>(_healthCheck);
                         serviceCollection.AddSingleton<IRemote>(this);
                     }
-                ).Configure(app =>
+                )
+                .Configure(app =>
                     {
                         app.UseRouting();
 

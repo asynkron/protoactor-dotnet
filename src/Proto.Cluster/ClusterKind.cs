@@ -57,5 +57,5 @@ public record ClusterKind(string Name, Props Props)
         this with { CanSpawnIdentity = spawnPredicate };
 
     internal ActivatedClusterKind Build(Cluster cluster) =>
-        new ActivatedClusterKind(Name, Props, StrategyBuilder?.Invoke(cluster), CanSpawnIdentity);
+        new(Name, Props, StrategyBuilder?.Invoke(cluster), CanSpawnIdentity);
 }

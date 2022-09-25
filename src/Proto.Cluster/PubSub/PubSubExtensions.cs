@@ -33,7 +33,7 @@ public static class PubSubExtensions
     /// <returns></returns>
     public static BatchingProducer BatchingProducer(this Cluster cluster, string topic,
         BatchingProducerConfig? config = null) =>
-        new BatchingProducer(cluster.Publisher(), topic, config);
+        new(cluster.Publisher(), topic, config);
 
     /// <summary>
     ///     Subscribes to a PubSub topic by cluster identity

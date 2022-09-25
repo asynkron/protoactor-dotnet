@@ -180,7 +180,8 @@ public sealed record Props
         return this with
         {
             ReceiverMiddleware = x,
-            ReceiverMiddlewareChain = x.AsEnumerable().Reverse()
+            ReceiverMiddlewareChain = x.AsEnumerable()
+                .Reverse()
                 .Aggregate((Receiver)Middleware.Receive, (inner, outer) => outer(inner))
         };
     }
@@ -195,7 +196,8 @@ public sealed record Props
         return this with
         {
             SenderMiddleware = x,
-            SenderMiddlewareChain = x.AsEnumerable().Reverse()
+            SenderMiddlewareChain = x.AsEnumerable()
+                .Reverse()
                 .Aggregate((Sender)Middleware.Sender, (inner, outer) => outer(inner))
         };
     }

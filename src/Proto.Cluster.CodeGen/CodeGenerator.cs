@@ -44,16 +44,17 @@ public class CodeGenerator : CommonCodeGenerator
                     {
                         Name = mt.Name,
                         Fields = mt.Fields.Select(f => new ProtoField
-                            {
-                                TypeName = f.TypeName,
-                                Name = f.Name,
-                                Number = f.Number,
-                                IsRepeated = f.label == FieldDescriptorProto.Label.LabelRepeated,
-                                OneOfIndex = f.OneofIndex,
-                                Type = f.type,
-                                Object = ctx.TryFind<DescriptorProto>(f.TypeName)
-                            }
-                        ).ToArray()
+                                {
+                                    TypeName = f.TypeName,
+                                    Name = f.Name,
+                                    Number = f.Number,
+                                    IsRepeated = f.label == FieldDescriptorProto.Label.LabelRepeated,
+                                    OneOfIndex = f.OneofIndex,
+                                    Type = f.type,
+                                    Object = ctx.TryFind<DescriptorProto>(f.TypeName)
+                                }
+                            )
+                            .ToArray()
                     }
                 )
                 .ToArray(),

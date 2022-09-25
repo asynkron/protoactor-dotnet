@@ -125,5 +125,5 @@ public class HashRing<T>
             .OrderBy(t => t.Item1)
             .ToArray();
 
-    public HashRing<T> Clone() => new HashRing<T>(_getKey, _hash, _replicaCount, _ring, _hashes);
+    public HashRing<T> Clone() => new(_getKey, _hash, _replicaCount, _ring, _hashes);
 }

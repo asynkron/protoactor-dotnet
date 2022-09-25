@@ -40,7 +40,7 @@ public partial class PID : ICustomDiagnosticMessage
     /// </summary>
     /// <param name="address">Actor system address</param>
     /// <param name="id">Actor identifier</param>
-    public static PID FromAddress(string address, string id) => new PID(address, id);
+    public static PID FromAddress(string address, string id) => new(address, id);
 
     internal Process? Ref(ActorSystem system)
     {
@@ -92,7 +92,7 @@ public partial class PID : ICustomDiagnosticMessage
     /// <param name="requestId"></param>
     /// <returns></returns>
     public PID WithRequestId(uint requestId) =>
-        new PID
+        new()
         {
             Id = Id,
             Address = Address,

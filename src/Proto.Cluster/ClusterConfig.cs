@@ -262,7 +262,8 @@ public record ClusterConfig
     public ClusterConfig WithClusterKinds(
         params (string kind, Props prop, Func<Cluster, IMemberStrategy> strategyBuilder)[] knownKinds) =>
         WithClusterKinds(knownKinds
-            .Select(k => new ClusterKind(k.kind, k.prop) { StrategyBuilder = k.strategyBuilder }).ToArray());
+            .Select(k => new ClusterKind(k.kind, k.prop) { StrategyBuilder = k.strategyBuilder })
+            .ToArray());
 
     /// <summary>
     ///     Adds a <see cref="ClusterKind" /> to this member
@@ -369,5 +370,5 @@ public record ClusterConfig
         IClusterProvider clusterProvider,
         IIdentityLookup identityLookup
     ) =>
-        new ClusterConfig(clusterName, clusterProvider, identityLookup);
+        new(clusterName, clusterProvider, identityLookup);
 }

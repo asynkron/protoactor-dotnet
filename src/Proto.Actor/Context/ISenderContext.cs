@@ -75,7 +75,7 @@ public static class SenderContextExtensions
     /// <param name="ct"></param>
     /// <returns></returns>
     public static BatchContext CreateBatchContext(this ISenderContext context, int size, CancellationToken ct) =>
-        new BatchContext(context, size, ct);
+        new(context, size, ct);
 
     /// <summary>
     ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.

@@ -96,26 +96,28 @@ public sealed class EndpointReader : Remoting.RemotingBase
                             _system.Address);
 
                         await responseStream.WriteAsync(new RemoteMessage
-                            {
-                                ConnectResponse = new ConnectResponse
                                 {
-                                    Blocked = true,
-                                    MemberId = _system.Id
+                                    ConnectResponse = new ConnectResponse
+                                    {
+                                        Blocked = true,
+                                        MemberId = _system.Id
+                                    }
                                 }
-                            }
-                        ).ConfigureAwait(false);
+                            )
+                            .ConfigureAwait(false);
 
                         return;
                     }
 
                     await responseStream.WriteAsync(new RemoteMessage
-                        {
-                            ConnectResponse = new ConnectResponse
                             {
-                                MemberId = _system.Id
+                                ConnectResponse = new ConnectResponse
+                                {
+                                    MemberId = _system.Id
+                                }
                             }
-                        }
-                    ).ConfigureAwait(false);
+                        )
+                        .ConfigureAwait(false);
 
                     systemId = clientConnection.MemberId;
                     endpoint = _endpointManager.GetOrAddClientEndpoint(systemId);
@@ -141,14 +143,15 @@ public sealed class EndpointReader : Remoting.RemotingBase
                             connectRequest.ServerConnection.Address);
 
                         await responseStream.WriteAsync(new RemoteMessage
-                            {
-                                ConnectResponse = new ConnectResponse
                                 {
-                                    Blocked = true,
-                                    MemberId = _system.Id
+                                    ConnectResponse = new ConnectResponse
+                                    {
+                                        Blocked = true,
+                                        MemberId = _system.Id
+                                    }
                                 }
-                            }
-                        ).ConfigureAwait(false);
+                            )
+                            .ConfigureAwait(false);
 
                         shouldExit = true;
                     }
@@ -174,13 +177,14 @@ public sealed class EndpointReader : Remoting.RemotingBase
                     }
 
                     await responseStream.WriteAsync(new RemoteMessage
-                        {
-                            ConnectResponse = new ConnectResponse
                             {
-                                MemberId = _system.Id
+                                ConnectResponse = new ConnectResponse
+                                {
+                                    MemberId = _system.Id
+                                }
                             }
-                        }
-                    ).ConfigureAwait(false);
+                        )
+                        .ConfigureAwait(false);
 
                     address = serverConnection.Address;
                     systemId = serverConnection.MemberId;

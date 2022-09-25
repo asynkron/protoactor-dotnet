@@ -64,9 +64,10 @@ public class LogStore
     {
         lock (_lock)
         {
-            var entry = GetEntries().FirstOrDefault(e =>
-                e.Category.Contains(partialCategory, StringComparison.InvariantCulture) &&
-                e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+            var entry = GetEntries()
+                .FirstOrDefault(e =>
+                    e.Category.Contains(partialCategory, StringComparison.InvariantCulture) &&
+                    e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
 
             return entry;
         }
@@ -76,9 +77,10 @@ public class LogStore
     {
         lock (_lock)
         {
-            var entry = GetEntries().LastOrDefault(e =>
-                e.Category.Contains(partialCategory, StringComparison.InvariantCulture) &&
-                e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
+            var entry = GetEntries()
+                .LastOrDefault(e =>
+                    e.Category.Contains(partialCategory, StringComparison.InvariantCulture) &&
+                    e.Template.Contains(partialTemplate, StringComparison.InvariantCulture));
 
             return entry;
         }
