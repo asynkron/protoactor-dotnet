@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
     <PropertyGroup>
+        <NoWarn>8981</NoWarn>
         <LangVersion>10</LangVersion>
         <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
     </PropertyGroup>

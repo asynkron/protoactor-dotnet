@@ -8,7 +8,9 @@ using System;
 
 namespace Proto.Cluster.PubSub;
 
+#pragma warning disable RCS1194
 public class PubSubDeliveryException : Exception
+#pragma warning restore RCS1194
 {
     public PubSubDeliveryException(string? message) : base(message)
     {

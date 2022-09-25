@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <NoWarn>8981</NoWarn>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <OutputType>Exe</OutputType>
         <LangVersion>10</LangVersion>

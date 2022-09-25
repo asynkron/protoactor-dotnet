@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
     <PropertyGroup Label="Configuration">
+        <NoWarn>8981</NoWarn>
         <RootNamespace>Proto.Tests</RootNamespace>
         <LangVersion>10</LangVersion>
         <OutputType>Library</OutputType>
