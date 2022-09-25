@@ -1,4 +1,3 @@
 kubectl delete --filename service.yaml
-docker build . -t rogeralsing/kubdiagg:default2 -f Dockerfile
-#docker push docker.io/rogeralsing/kubdiagg:default
+dotnet publish --os linux -c Release --arch x64 -p:PublishProfile=DefaultContainer
 kubectl apply --filename service.yaml
