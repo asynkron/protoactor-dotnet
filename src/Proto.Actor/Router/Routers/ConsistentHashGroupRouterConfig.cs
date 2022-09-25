@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Proto.Router.Routers;
 
-record ConsistentHashGroupRouterConfig : GroupRouterConfig
+internal record ConsistentHashGroupRouterConfig : GroupRouterConfig
 {
     private readonly Func<string, uint> _hash;
     private readonly Func<object, string>? _messageHasher;
@@ -22,7 +23,10 @@ record ConsistentHashGroupRouterConfig : GroupRouterConfig
     )
         : base(senderContext, routees)
     {
-        if (replicaCount <= 0) throw new ArgumentException("ReplicaCount must be greater than 0");
+        if (replicaCount <= 0)
+        {
+            throw new ArgumentException("ReplicaCount must be greater than 0");
+        }
 
         _hash = hash;
         _replicaCount = replicaCount;

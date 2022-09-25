@@ -3,9 +3,10 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Router.Routers;
 
-record RandomPoolRouterConfig : PoolRouterConfig
+internal record RandomPoolRouterConfig : PoolRouterConfig
 {
     private readonly int? _seed;
     private readonly ISenderContext _senderContext;

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,19 +15,19 @@ using Proto.Utils;
 
 namespace Proto.Cluster.Partition;
 
-class PartitionPlacementActor : IActor, IDisposable
+internal class PartitionPlacementActor : IActor, IDisposable
 {
-    private readonly Cluster _cluster;
     private static readonly ILogger Logger = Log.CreateLogger<PartitionPlacementActor>();
 
     //pid -> the actor that we have created here
     //kind -> the actor kind
     private readonly Dictionary<ClusterIdentity, PID> _actors = new();
-    private readonly HashSet<ClusterIdentity> _inFlightIdentityChecks = new();
+    private readonly Cluster _cluster;
     private readonly PartitionConfig _config;
-    private EventStreamSubscription<object>? _subscription;
+    private readonly HashSet<ClusterIdentity> _inFlightIdentityChecks = new();
 
     private ClusterTopology? _lastRebalancedTopology;
+    private EventStreamSubscription<object>? _subscription;
 
     public PartitionPlacementActor(Cluster cluster, PartitionConfig config)
     {
@@ -45,32 +46,48 @@ class PartitionPlacementActor : IActor, IDisposable
             _                           => Task.CompletedTask
         };
 
+    public void Dispose() => _subscription?.Unsubscribe();
+
     private Task OnClusterTopology(IContext context, ClusterTopology msg)
     {
-        if (_config.Mode != PartitionIdentityLookup.Mode.Push) return Task.CompletedTask;
+        if (_config.Mode != PartitionIdentityLookup.Mode.Push)
+        {
+            return Task.CompletedTask;
+        }
 
         if (Logger.IsEnabled(LogLevel.Debug))
-            Logger.LogDebug("[PartitionIdentity] Got topology {TopologyHash}, waiting for current activations to complete", msg.TopologyHash);
+        {
+            Logger.LogDebug(
+                "[PartitionIdentity] Got topology {TopologyHash}, waiting for current activations to complete",
+                msg.TopologyHash);
+        }
 
         var cancellationToken = msg.TopologyValidityToken!.Value;
+
         // TODO: Configurable timeout
-        var activationsCompleted = _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(TimeSpan.FromSeconds(10), cancellationToken);
+        var activationsCompleted =
+            _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(TimeSpan.FromSeconds(10), cancellationToken);
 
         // Waits until all members agree on a cluster topology and have no more in-flight activation requests
-        context.ReenterAfter(activationsCompleted, async _ => {
+        context.ReenterAfter(activationsCompleted, async _ =>
+            {
                 if (!cancellationToken.IsCancellationRequested)
                 {
                     await Rebalance(context, msg);
                 }
             }
         );
+
         return Task.CompletedTask;
     }
 
     private async Task Rebalance(IContext context, ClusterTopology msg)
     {
         if (Logger.IsEnabled(LogLevel.Debug))
-            Logger.LogDebug("[PartitionIdentity] Initiating rebalance publish for topology {TopologyHash}", msg.TopologyHash);
+        {
+            Logger.LogDebug("[PartitionIdentity] Initiating rebalance publish for topology {TopologyHash}",
+                msg.TopologyHash);
+        }
 
         try
         {
@@ -91,10 +108,12 @@ class PartitionPlacementActor : IActor, IDisposable
 
             // Ensure that we only update last rebalanced topology when all members have received the current activations
             if (waitingRequests.All(task
-                    => task.IsCompletedSuccessfully && task.Result?.ProcessingState == IdentityHandoverAck.Types.State.Processed
+                    => task.IsCompletedSuccessfully &&
+                       task.Result?.ProcessingState == IdentityHandoverAck.Types.State.Processed
                 ))
             {
-                Logger.LogInformation("[PartitionIdentity] Completed rebalance publish for topology {TopologyHash}", msg.TopologyHash);
+                Logger.LogInformation("[PartitionIdentity] Completed rebalance publish for topology {TopologyHash}",
+                    msg.TopologyHash);
 
                 // All members should now be up-to-date with the current set of activations.
                 // With delta sends, it will use this to determine which activations to skip sending
@@ -102,12 +121,15 @@ class PartitionPlacementActor : IActor, IDisposable
             }
             else
             {
-                Logger.LogInformation("[PartitionIdentity] Cancelled rebalance after publish for topology {TopologyHash}", msg.TopologyHash);
+                Logger.LogInformation(
+                    "[PartitionIdentity] Cancelled rebalance after publish for topology {TopologyHash}",
+                    msg.TopologyHash);
             }
         }
         catch (OperationCanceledException)
         {
-            Logger.LogInformation("[PartitionIdentity] Cancelled rebalance publish for topology {TopologyHash}", msg.TopologyHash);
+            Logger.LogInformation("[PartitionIdentity] Cancelled rebalance publish for topology {TopologyHash}",
+                msg.TopologyHash);
         }
     }
 
@@ -120,7 +142,9 @@ class PartitionPlacementActor : IActor, IDisposable
         switch (_config.Send)
         {
             case PartitionIdentityLookup.Send.Delta:
-                var previousHashRing = _lastRebalancedTopology is null ? null : new MemberHashRing(_lastRebalancedTopology.Members);
+                var previousHashRing = _lastRebalancedTopology is null
+                    ? null
+                    : new MemberHashRing(_lastRebalancedTopology.Members);
 
                 return HandoverSource.CreateHandovers(msg, _config.HandoverChunkSize, _actors, GetCurrentOwner,
                     previousHashRing is null ? null : identity => previousHashRing.GetOwnerMemberByIdentity(identity)
@@ -139,72 +163,24 @@ class PartitionPlacementActor : IActor, IDisposable
 
         if (request.DeltaTopology is null)
         {
-            return HandoverSource.CreateHandovers(request.CurrentTopology.TopologyHash, _config.HandoverChunkSize, _actors,
+            return HandoverSource.CreateHandovers(request.CurrentTopology.TopologyHash, _config.HandoverChunkSize,
+                _actors,
                 identity => currentHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal)
             );
         }
 
         var previousHashRing = new MemberHashRing(request.DeltaTopology.Members);
+
         return HandoverSource.CreateHandovers(request.CurrentTopology.TopologyHash, _config.HandoverChunkSize, _actors,
             identity => currentHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal),
             identity => previousHashRing.GetOwnerMemberByIdentity(identity).Equals(address, StringComparison.Ordinal)
         );
     }
 
-    private class MemberHandover
-    {
-        private readonly List<Task<IdentityHandoverAck?>> _responseTasks = new();
-        private readonly PID _target;
-        private readonly IContext _context;
-        private readonly ClusterTopology _topology;
-        private readonly TimeSpan _requestTimeout;
-        public IEnumerable<Task<IdentityHandoverAck?>> WaitingMessages => _responseTasks;
-
-        public MemberHandover(IContext context, Member member, ClusterTopology msg, PartitionConfig config)
-        {
-            _context = context;
-            _topology = msg;
-            _requestTimeout = config.RebalanceRequestTimeout;
-            _target = PartitionManager.RemotePartitionIdentityActor(member.Address);
-        }
-
-        public void Send(IdentityHandover identityHandover) => SendWithRetries(identityHandover, _topology.TopologyValidityToken!.Value);
-
-        private void SendWithRetries(IdentityHandover identityHandover, CancellationToken cancellationToken)
-        {
-            var task = Retry.TryUntil(async () => {
-                    try
-                    {
-                        using var timeout = new CancellationTokenSource(_requestTimeout);
-                        using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
-                        return await _context.RequestAsync<IdentityHandoverAck>(_target, identityHandover, linked.Token);
-                    }
-                    catch (TimeoutException) when (!cancellationToken.IsCancellationRequested)
-                    {
-                        if (Logger.IsEnabled(LogLevel.Warning))
-                        {
-                            Logger.LogWarning("[PartitionIdentity] Identity handover request timeout for topology {TopologyHash}, address {Address}",
-                                _topology.TopologyHash, _target.Address
-                            );
-                        }
-
-                        return null;
-                    }
-                    catch (TimeoutException) // Cancelled, new topology active
-                    {
-                        return null;
-                    }
-                },
-                ack => cancellationToken.IsCancellationRequested || ack is not null,
-                int.MaxValue // Continue until complete or cancelled,
-            );
-            _responseTasks.Add(task);
-        }
-    }
-
     private Task OnStarted(IContext context)
     {
-        _subscription = context.System.EventStream.Subscribe<ActivationTerminating>(e => context.Send(context.Self, e));
+        _subscription = context.System.EventStream.Subscribe<ActivationTerminating>(e => context.Send(context.Self!, e));
+
         return Task.CompletedTask;
     }
 
@@ -213,12 +189,15 @@ class PartitionPlacementActor : IActor, IDisposable
         if (!_actors.TryGetValue(msg.ClusterIdentity, out var pid))
         {
             Logger.LogWarning("[PartitionIdentity] Activation not found: {ActivationTerminating}", msg);
+
             return Task.CompletedTask;
         }
 
         if (!pid.Equals(msg.Pid))
         {
-            Logger.LogWarning("[PartitionIdentity] Activation did not match pid: {ActivationTerminating}, {Pid}", msg, pid);
+            Logger.LogWarning("[PartitionIdentity] Activation did not match pid: {ActivationTerminating}, {Pid}", msg,
+                pid);
+
             return Task.CompletedTask;
         }
 
@@ -227,7 +206,7 @@ class PartitionPlacementActor : IActor, IDisposable
         var activationTerminated = new ActivationTerminated
         {
             Pid = pid,
-            ClusterIdentity = msg.ClusterIdentity,
+            ClusterIdentity = msg.ClusterIdentity
         };
 
         _cluster.MemberList.BroadcastEvent(activationTerminated);
@@ -247,6 +226,7 @@ class PartitionPlacementActor : IActor, IDisposable
         if (context.Sender is null)
         {
             Logger.LogError("[PartitionIdentity] IdentityHandoverRequest {Request} missing sender", msg);
+
             return Task.CompletedTask;
         }
 
@@ -278,9 +258,11 @@ class PartitionPlacementActor : IActor, IDisposable
         {
             if (cancelRebalance.IsCancellationRequested)
             {
-                context.Logger()?.LogInformation("[PartitionIdentity] Cancelled rebalance handover for topology: {TopologyHash}",
-                    msg.CurrentTopology.TopologyHash
-                );
+                context.Logger()
+                    ?.LogInformation(
+                        "[PartitionIdentity] Cancelled rebalance handover for topology: {TopologyHash}",
+                        msg.CurrentTopology.TopologyHash
+                    );
 
                 if (_config.DeveloperLogging)
                 {
@@ -288,7 +270,9 @@ class PartitionPlacementActor : IActor, IDisposable
                 }
 
                 if (Logger.IsEnabled(LogLevel.Information))
+                {
                     Logger.LogInformation("[PartitionIdentity] Cancelled rebalance: {@IdentityHandoverRequest}", msg);
+                }
             }
 
             context.Stop(outOfBandResponseHandler);
@@ -297,30 +281,37 @@ class PartitionPlacementActor : IActor, IDisposable
         return Task.CompletedTask;
     }
 
-    private Props AbortOnDeadLetter(CancellationTokenSource cts) => Props.FromFunc(responseContext => {
-            // Node lost or rebalance cancelled because of topology changes
-            if (responseContext.Message is DeadLetterResponse)
+    private Props AbortOnDeadLetter(CancellationTokenSource cts) =>
+        Props.FromFunc(responseContext =>
             {
-                cts.Cancel();
-            }
+                // Node lost or rebalance cancelled because of topology changes
+                if (responseContext.Message is DeadLetterResponse)
+                {
+                    cts.Cancel();
+                }
 
-            return Task.CompletedTask;
-        }
-    );
+                return Task.CompletedTask;
+            }
+        );
 
     private Task OnActivationRequest(IContext context, ActivationRequest msg)
     {
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
         {
             if (_config.DeveloperLogging)
+            {
                 Console.WriteLine($"Activator got request for existing activation {msg.RequestId}");
+            }
+
             //this identity already exists
             var response = new ActivationResponse
             {
                 Pid = existing,
                 TopologyHash = msg.TopologyHash
             };
+
             context.Respond(response);
+
             return Task.CompletedTask;
         }
 
@@ -329,7 +320,8 @@ class PartitionPlacementActor : IActor, IDisposable
         if (clusterKind is null)
         {
             Logger.LogError("Failed to spawn {Kind}/{Identity}, kind not found for member", msg.Kind, msg.Identity);
-            context.Respond(new ActivationResponse{Failed = true});
+            context.Respond(new ActivationResponse { Failed = true });
+
             return Task.CompletedTask;
         }
 
@@ -353,24 +345,30 @@ class PartitionPlacementActor : IActor, IDisposable
         if (_inFlightIdentityChecks.Contains(clusterIdentity))
         {
             Logger.LogError("[PartitionIdentity] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
+
             context.Respond(new ActivationResponse
                 {
-                    Failed = true,
+                    Failed = true
                 }
             );
         }
 
-        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity, CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnVerificationTimeout));
+        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity,
+            CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnVerificationTimeout));
 
         if (canSpawn.IsCompleted)
         {
             OnSpawnDecided(msg, context, clusterKind, canSpawn.Result);
+
             return;
         }
 
         _inFlightIdentityChecks.Add(clusterIdentity);
-        context.ReenterAfter(canSpawn.AsTask(), task => {
+
+        context.ReenterAfter(canSpawn.AsTask(), task =>
+            {
                 _inFlightIdentityChecks.Remove(clusterIdentity);
+
                 if (task.IsCompletedSuccessfully)
                 {
                     OnSpawnDecided(msg, context, clusterKind, task.Result);
@@ -378,9 +376,10 @@ class PartitionPlacementActor : IActor, IDisposable
                 else
                 {
                     Logger.LogError("[PartitionIdentity] Error when checking {ClusterIdentity}", clusterIdentity);
+
                     context.Respond(new ActivationResponse
                         {
-                            Failed = true,
+                            Failed = true
                         }
                     );
                 }
@@ -396,9 +395,10 @@ class PartitionPlacementActor : IActor, IDisposable
         {
             var pid = context.Spawn(clusterKind.Props, ctx => ctx.Set(msg.ClusterIdentity));
             _actors.Add(msg.ClusterIdentity, pid);
+
             context.Respond(new ActivationResponse
                 {
-                    Pid = pid,
+                    Pid = pid
                 }
             );
         }
@@ -406,12 +406,12 @@ class PartitionPlacementActor : IActor, IDisposable
         {
             e.CheckFailFast();
             Logger.LogError(e, "[PartitionIdentity] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
-            context.Respond(new ActivationResponse {Failed = true});
+            context.Respond(new ActivationResponse { Failed = true });
         }
     }
 
-
-    private void OnSpawnDecided(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind, bool canSpawnIdentity)
+    private void OnSpawnDecided(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind,
+        bool canSpawnIdentity)
     {
         if (canSpawnIdentity)
         {
@@ -428,5 +428,63 @@ class PartitionPlacementActor : IActor, IDisposable
         }
     }
 
-    public void Dispose() => _subscription?.Unsubscribe();
+    private class MemberHandover
+    {
+        private readonly IContext _context;
+        private readonly TimeSpan _requestTimeout;
+        private readonly List<Task<IdentityHandoverAck?>> _responseTasks = new();
+        private readonly PID _target;
+        private readonly ClusterTopology _topology;
+
+        public MemberHandover(IContext context, Member member, ClusterTopology msg, PartitionConfig config)
+        {
+            _context = context;
+            _topology = msg;
+            _requestTimeout = config.RebalanceRequestTimeout;
+            _target = PartitionManager.RemotePartitionIdentityActor(member.Address);
+        }
+
+        public IEnumerable<Task<IdentityHandoverAck?>> WaitingMessages => _responseTasks;
+
+        public void Send(IdentityHandover identityHandover) =>
+            SendWithRetries(identityHandover, _topology.TopologyValidityToken!.Value);
+
+        private void SendWithRetries(IdentityHandover identityHandover, CancellationToken cancellationToken)
+        {
+            var task = Retry.TryUntil(async () =>
+                {
+                    try
+                    {
+                        using var timeout = new CancellationTokenSource(_requestTimeout);
+
+                        using var linked =
+                            CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
+
+                        return await _context.RequestAsync<IdentityHandoverAck>(_target, identityHandover,
+                            linked.Token);
+                    }
+                    catch (TimeoutException) when (!cancellationToken.IsCancellationRequested)
+                    {
+                        if (Logger.IsEnabled(LogLevel.Warning))
+                        {
+                            Logger.LogWarning(
+                                "[PartitionIdentity] Identity handover request timeout for topology {TopologyHash}, address {Address}",
+                                _topology.TopologyHash, _target.Address
+                            );
+                        }
+
+                        return null;
+                    }
+                    catch (TimeoutException) // Cancelled, new topology active
+                    {
+                        return null;
+                    }
+                },
+                ack => cancellationToken.IsCancellationRequested || ack is not null,
+                int.MaxValue // Continue until complete or cancelled,
+            );
+
+            _responseTasks.Add(task);
+        }
+    }
 }

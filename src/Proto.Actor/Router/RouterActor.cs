@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -37,28 +38,39 @@ public class RouterActor : IActor
             {
                 _startNotification.NotifyFailed(e);
             }
+
             return Task.CompletedTask;
         }
 
         if (context.Message is RouterAddRoutee addRoutee)
         {
             var r = _routerState.GetRoutees();
-            if (r.Contains(addRoutee.Pid)) return Task.CompletedTask;
+
+            if (r.Contains(addRoutee.Pid))
+            {
+                return Task.CompletedTask;
+            }
 
             context.Watch(addRoutee.Pid);
             r.Add(addRoutee.Pid);
             _routerState.SetRoutees(r.ToArray());
+
             return Task.CompletedTask;
         }
 
         if (context.Message is RouterRemoveRoutee removeRoutee)
         {
             var r = _routerState.GetRoutees();
-            if (!r.Contains(removeRoutee.Pid)) return Task.CompletedTask;
+
+            if (!r.Contains(removeRoutee.Pid))
+            {
+                return Task.CompletedTask;
+            }
 
             context.Unwatch(removeRoutee.Pid);
             r.Remove(removeRoutee.Pid);
             _routerState.SetRoutees(r.ToArray());
+
             return Task.CompletedTask;
         }
 

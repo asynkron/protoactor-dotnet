@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,23 +13,26 @@ using Proto.Cluster.Identity;
 namespace Proto.Cluster.SingleNode;
 
 /// <summary>
-/// Provides a lookup optimized for single node 'clusters'
-/// Only usable with SingleNodeProvider
+///     Provides a lookup optimized for single node 'clusters'
+///     Only usable with SingleNodeProvider
 /// </summary>
 public class SingleNodeLookup : IIdentityLookup
 {
     private const string ActivatorActorName = "$sn-activator";
-    private PID _activatorActor = null!;
 
     private static readonly ILogger Logger = Log.CreateLogger<SingleNodeLookup>();
     private readonly TimeSpan _getPidTimeout;
+    private PID _activatorActor = null!;
     private Cluster _cluster = null!;
 
     public SingleNodeLookup() : this(TimeSpan.FromSeconds(1))
     {
     }
 
-    public SingleNodeLookup(TimeSpan getPidTimeout) => _getPidTimeout = getPidTimeout;
+    public SingleNodeLookup(TimeSpan getPidTimeout)
+    {
+        _getPidTimeout = getPidTimeout;
+    }
 
     public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken notUsed)
     {
@@ -54,17 +58,20 @@ public class SingleNodeLookup : IIdentityLookup
         catch (DeadLetterException)
         {
             Logger.LogInformation("[SingleNode] Remote PID request deadletter {@Request}", req);
+
             return null;
         }
         catch (TimeoutException)
         {
             Logger.LogInformation("[SingleNode] Remote PID request timeout {@Request}", req);
+
             return null;
         }
         catch (Exception e) when (e is not IdentityIsBlocked)
         {
             e.CheckFailFast();
             Logger.LogError(e, "[SingleNode] Error occured requesting remote PID {@Request}", req);
+
             return null;
         }
     }
@@ -92,6 +99,7 @@ public class SingleNodeLookup : IIdentityLookup
         _cluster = cluster;
         var props = Props.FromProducer(() => new SingleNodeActivatorActor(_cluster));
         _activatorActor = cluster.System.Root.SpawnNamedSystem(props, ActivatorActorName);
+
         return Task.CompletedTask;
     }
 

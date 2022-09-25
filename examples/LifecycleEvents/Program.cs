@@ -3,13 +3,14 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
 
 namespace LifecycleEvents;
 
-static class Program
+internal static class Program
 {
     private static async Task Main()
     {
@@ -47,18 +48,23 @@ static class Program
             {
                 case Hello r:
                     Console.WriteLine($"Hello {r.Who}");
+
                     break;
                 case Started _:
                     Console.WriteLine("Started, initialize actor here");
+
                     break;
                 case Stopping _:
                     Console.WriteLine("Stopping, actor is about shut down");
+
                     break;
                 case Stopped _:
                     Console.WriteLine("Stopped, actor and it's children are stopped");
+
                     break;
                 case Restarting _:
                     Console.WriteLine("Restarting, actor is about restart");
+
                     break;
             }
 

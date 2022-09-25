@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using Google.Protobuf.Reflection;
 
@@ -20,7 +21,7 @@ public class ProtoField
     public int OneOfIndex { get; set; }
     public FieldDescriptorProto.Type Type { get; set; }
     public DescriptorProto Object { get; set; } = null!;
-        
+
     public string CsharpTypeName => Type switch
     {
         FieldDescriptorProto.Type.TypeDouble   => nameof(Double),
@@ -43,7 +44,7 @@ public class ProtoField
         FieldDescriptorProto.Type.TypeSint64   => nameof(Int64),
         _                                      => throw new ArgumentOutOfRangeException()
     };
-        
+
     public string TypeKind => Type switch
     {
         FieldDescriptorProto.Type.TypeDouble   => "scalar",

@@ -9,10 +9,11 @@ namespace Proto.TestFixtures;
 
 public class TestMailboxHandler : IMessageInvoker, IDispatcher
 {
+    private readonly TaskCompletionSource<bool> _hasFailures = new();
+
     private readonly ConcurrentQueue<TaskCompletionSource<int>> _taskCompletionQueue =
         new();
 
-    private TaskCompletionSource<bool> _hasFailures = new();
     public Task HasFailures => _hasFailures.Task;
 
     public List<Exception> EscalatedFailures { get; } = new();
@@ -23,13 +24,19 @@ public class TestMailboxHandler : IMessageInvoker, IDispatcher
     {
         var waitingTaskExists = _taskCompletionQueue.TryDequeue(out var onScheduleCompleted);
         await runner();
-        if (waitingTaskExists) onScheduleCompleted.SetResult(0);
+
+        if (waitingTaskExists)
+        {
+            onScheduleCompleted.SetResult(0);
+        }
     }
 
     // ReSharper disable once SuspiciousTypeConversion.Global
-    public async ValueTask InvokeSystemMessageAsync(SystemMessage msg) => await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
+    public async ValueTask InvokeSystemMessageAsync(SystemMessage msg) =>
+        await ((TestMessageWithTaskCompletionSource)msg).TaskCompletionSource.Task;
 
-    public async ValueTask InvokeUserMessageAsync(object msg) => await ((TestMessageWithTaskCompletionSource) msg).TaskCompletionSource.Task;
+    public async ValueTask InvokeUserMessageAsync(object msg) =>
+        await ((TestMessageWithTaskCompletionSource)msg).TaskCompletionSource.Task;
 
     public void EscalateFailure(Exception reason, object message)
     {
@@ -38,5 +45,4 @@ public class TestMailboxHandler : IMessageInvoker, IDispatcher
     }
 
     public CancellationTokenSource CancellationTokenSource { get; } = new();
-        
 }

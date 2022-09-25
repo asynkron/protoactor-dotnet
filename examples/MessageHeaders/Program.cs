@@ -6,9 +6,9 @@ namespace MessageHeaders;
 
 public record MyMessage(string SomeProperty);
 
-class Program
+internal class Program
 {
-    static void Main()
+    private static void Main()
     {
         var headers = MessageHeader
             .Empty
@@ -19,8 +19,9 @@ class Program
         {
             ConfigureRootContext = context => context.WithHeaders(headers)
         });
-        
-        var props = Props.FromFunc(ctx => {
+
+        var props = Props.FromFunc(ctx =>
+            {
                 if (ctx.Message is MyMessage msg)
                 {
                     Console.WriteLine($"Got message {msg.SomeProperty}");

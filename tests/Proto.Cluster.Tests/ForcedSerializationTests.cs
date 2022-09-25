@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Linq;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
@@ -52,8 +53,9 @@ public class ForcedSerializationTests
     private class ForcedSerializationClusterFixture : InMemoryClusterFixture
     {
         protected override ActorSystemConfig GetActorSystemConfig() =>
-            base.GetActorSystemConfig().WithConfigureRootContext(
-                conf => conf.WithSenderMiddleware(ForcedSerializationSenderMiddleware.Create())
-            );
+            base.GetActorSystemConfig()
+                .WithConfigureRootContext(
+                    conf => conf.WithSenderMiddleware(ForcedSerializationSenderMiddleware.Create())
+                );
     }
 }

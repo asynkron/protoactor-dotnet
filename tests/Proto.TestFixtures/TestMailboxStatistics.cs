@@ -13,7 +13,10 @@ public class TestMailboxStatistics : IMailboxStatistics
     {
     }
 
-    public TestMailboxStatistics(Func<object, bool> waitForReceived) => _waitForReceived = waitForReceived;
+    public TestMailboxStatistics(Func<object, bool> waitForReceived)
+    {
+        _waitForReceived = waitForReceived;
+    }
 
     public ManualResetEventSlim Reset { get; } = new();
     public List<object> Stats { get; } = new();
@@ -32,8 +35,11 @@ public class TestMailboxStatistics : IMailboxStatistics
     {
         Stats.Add(message);
         Received.Add(message);
+
         if (_waitForReceived is not null && _waitForReceived(message))
+        {
             Reset.Set();
+        }
     }
 
     public void MailboxEmpty() => Stats.Add("Empty");

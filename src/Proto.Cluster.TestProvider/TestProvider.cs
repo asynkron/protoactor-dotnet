@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -67,6 +68,7 @@ public class TestProvider : IClusterProvider
 
         _ttlReportTimer?.Stop();
         _agent.DeregisterService(_id);
+
         return Task.CompletedTask;
     }
 
@@ -76,18 +78,21 @@ public class TestProvider : IClusterProvider
     {
         var statuses = _agent.GetServicesHealth();
 
-        Logger.LogDebug("TestAgent response: {@Response}", (object) statuses);
+        Logger.LogDebug("TestAgent response: {@Response}", (object)statuses);
 
         var memberStatuses =
             statuses.Select(
-                    x => {
+                    x =>
+                    {
                         var member = new Member
                         {
                             Id = x.ID,
                             Host = x.Host,
                             Port = x.Port
                         };
+
                         member.Kinds.AddRange(x.Kinds);
+
                         return member;
                     }
                 )

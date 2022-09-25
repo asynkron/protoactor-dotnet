@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -22,7 +23,10 @@ public class ConsensusChecks
 
     public IEnumerable<ConsensusCheck> GetByUpdatedKey(string key)
     {
-        if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds)) return affectedIds.Select(id => _consensusChecks[id]);
+        if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds))
+        {
+            return affectedIds.Select(id => _consensusChecks[id]);
+        }
 
         return ImmutableList<ConsensusCheck>.Empty;
     }
@@ -33,7 +37,10 @@ public class ConsensusChecks
 
         foreach (var key in keys)
         {
-            if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds)) ids.UnionWith(affectedIds);
+            if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds))
+            {
+                ids.UnionWith(affectedIds);
+            }
         }
 
         return ids.Select(id => _consensusChecks[id]);
@@ -47,15 +54,24 @@ public class ConsensusChecks
 
     public void Remove(string id)
     {
-        if (_consensusChecks.Remove(id)) UnRegisterAffectedKeys(id);
+        if (_consensusChecks.Remove(id))
+        {
+            UnRegisterAffectedKeys(id);
+        }
     }
 
     private void RegisterAffectedKeys(string id, IEnumerable<string> keys)
     {
         foreach (var key in keys)
         {
-            if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds)) affectedIds.Add(id);
-            else _affectedChecksByStateKey[key] = new HashSet<string> {id};
+            if (_affectedChecksByStateKey.TryGetValue(key, out var affectedIds))
+            {
+                affectedIds.Add(id);
+            }
+            else
+            {
+                _affectedChecksByStateKey[key] = new HashSet<string> { id };
+            }
         }
     }
 
@@ -65,7 +81,10 @@ public class ConsensusChecks
 
         foreach (var (key, ids) in _affectedChecksByStateKey)
         {
-            if (ids.Remove(id) && ids.Count == 0) empty.Add(key);
+            if (ids.Remove(id) && ids.Count == 0)
+            {
+                empty.Add(key);
+            }
         }
 
         foreach (var key in empty)

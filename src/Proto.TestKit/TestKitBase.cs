@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -23,9 +24,14 @@ public class TestKitBase : ITestProbe, ISpawnerContext
     /// <summary>
     ///     the underlying test probe
     /// </summary>
-    public TestProbe Probe {
-        get {
-            if (_probe is null) throw new TestKitException("Probe hasn't been set up");
+    public TestProbe Probe
+    {
+        get
+        {
+            if (_probe is null)
+            {
+                throw new TestKitException("Probe hasn't been set up");
+            }
 
             return _probe;
         }
@@ -33,13 +39,11 @@ public class TestKitBase : ITestProbe, ISpawnerContext
     }
 
     /// <inheritdoc />
-    public PID Spawn(Props props) => Context.Spawn(props);
+    public PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) =>
+        Context.SpawnNamed(props, name, callback);
 
     /// <inheritdoc />
-    public PID SpawnNamed(Props props, string name, Action<IContext>? callback=null) => Context.SpawnNamed(props, name, callback);
-
-    /// <inheritdoc />
-    public PID SpawnPrefix(Props props, string prefix) => Context.SpawnPrefix(props, prefix);
+    public ActorSystem System => Context.System;
 
     /// <inheritdoc />
     public PID? Sender => Probe?.Sender;
@@ -97,6 +101,12 @@ public class TestKitBase : ITestProbe, ISpawnerContext
     public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeAllowed) =>
         Probe.RequestAsync<T>(target, message, timeAllowed);
 
+    /// <inheritdoc />
+    public PID Spawn(Props props) => Context.Spawn(props);
+
+    /// <inheritdoc />
+    public PID SpawnPrefix(Props props, string prefix) => Context.SpawnPrefix(props, prefix);
+
     /// <summary>
     ///     sets up the test environment
     /// </summary>
@@ -107,7 +117,10 @@ public class TestKitBase : ITestProbe, ISpawnerContext
     /// </summary>
     public virtual void TearDown()
     {
-        if (Context?.Self is not null) Context.Stop(Context.Self);
+        if (Context?.Self is not null)
+        {
+            Context.Stop(Context.Self);
+        }
 
         _probe = null;
     }
@@ -138,8 +151,7 @@ public class TestKitBase : ITestProbe, ISpawnerContext
     /// <param name="producer"></param>
     /// <param name="name"></param>
     /// <returns></returns>
-    public PID SpawnNamed(Producer producer, string name) =>
-        Context.SpawnNamed(Props.FromProducer(producer), name);
+    public PID SpawnNamed(Producer producer, string name) => Context.SpawnNamed(Props.FromProducer(producer), name);
 
     /// <summary>
     ///     Spawns a new child actor based on props and named using the specified name.
@@ -167,7 +179,4 @@ public class TestKitBase : ITestProbe, ISpawnerContext
     /// <returns></returns>
     public PID SpawnPrefix<T>(string prefix) where T : IActor, new() =>
         Context.SpawnPrefix(Props.FromProducer(() => new T()), prefix);
-
-    /// <inheritdoc />
-    public ActorSystem System => Context.System;
 }

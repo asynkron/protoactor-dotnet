@@ -5,9 +5,10 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+
 namespace Proto;
 
-public interface IInfoContext: IContextStore, ISystemContext
+public interface IInfoContext : IContextStore, ISystemContext
 {
     /// <summary>
     ///     Gets the PID for the parent of the current actor.

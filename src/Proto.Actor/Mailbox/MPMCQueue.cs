@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -23,10 +24,15 @@ public class MPMCQueue
 
     public MPMCQueue(int bufferSize)
     {
-        if (bufferSize < 2) throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
+        if (bufferSize < 2)
+        {
+            throw new ArgumentException($"{nameof(bufferSize)} should be greater than 2");
+        }
 
         if ((bufferSize & (bufferSize - 1)) != 0)
+        {
             throw new ArgumentException($"{nameof(bufferSize)} should be a power of 2");
+        }
 
         _bufferMask = bufferSize - 1;
         _buffer = new Cell[bufferSize];
@@ -55,10 +61,14 @@ public class MPMCQueue
             {
                 buffer[index].Element = item;
                 Volatile.Write(ref buffer[index].Sequence, pos + 1);
+
                 return true;
             }
 
-            if (cell.Sequence < pos) return false;
+            if (cell.Sequence < pos)
+            {
+                return false;
+            }
         } while (true);
     }
 
@@ -66,7 +76,10 @@ public class MPMCQueue
     {
         while (true)
         {
-            if (TryEnqueue(item)) break;
+            if (TryEnqueue(item))
+            {
+                break;
+            }
 
             Task.Delay(1)
                 .Wait(); // Could be Thread.Sleep(1) or Thread.SpinWait() if the assembly is not portable lib.
@@ -88,12 +101,14 @@ public class MPMCQueue
                 result = cell.Element;
                 buffer[index].Element = null;
                 Volatile.Write(ref buffer[index].Sequence, pos + bufferMask + 1);
+
                 return true;
             }
 
             if (cell.Sequence < pos + 1)
             {
                 result = default;
+
                 return false;
             }
         } while (true);

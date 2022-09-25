@@ -3,27 +3,27 @@
   when it targets a single framework, or in classic (pre 2017) csproj projects.
 -->
 <Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
-  <PropertyGroup>
-    <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Proto.Cluster.CodeGen.dll</TaskAssembly>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Proto.Cluster.CodeGen.dll</TaskAssembly>
+    </PropertyGroup>
 
-  <UsingTask TaskName="Proto.Cluster.CodeGen.ProtoGenTask" AssemblyFile="$(TaskAssembly)" />
-  
-  <ItemDefinitionGroup>
-    <ProtoGrain/>
-  </ItemDefinitionGroup>
+    <UsingTask TaskName="Proto.Cluster.CodeGen.ProtoGenTask" AssemblyFile="$(TaskAssembly)"/>
 
-  <Target Name="ProtoGenerate" BeforeTargets="PrepareForBuild">
-    <ProtoGenTask 
-            IntermediateOutputPath="$(IntermediateOutputPath)"
-            MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
-            ProtoFile="@(ProtoGrain)"
-    />
+    <ItemDefinitionGroup>
+        <ProtoGrain/>
+    </ItemDefinitionGroup>
 
-    <ItemGroup>
-      <!--This one is needed to not confuse Rider -->
-      <Compile Include="$(IntermediateOutputPath)protopotato/**/*.cs" />
-      <!--Yes, there probably is a better way to do this... -->
-    </ItemGroup>
-  </Target>
+    <Target Name="ProtoGenerate" BeforeTargets="PrepareForBuild">
+        <ProtoGenTask
+                IntermediateOutputPath="$(IntermediateOutputPath)"
+                MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
+                ProtoFile="@(ProtoGrain)"
+        />
+
+        <ItemGroup>
+            <!--This one is needed to not confuse Rider -->
+            <Compile Include="$(IntermediateOutputPath)protopotato/**/*.cs"/>
+            <!--Yes, there probably is a better way to do this... -->
+        </ItemGroup>
+    </Target>
 </Project>

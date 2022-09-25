@@ -8,7 +8,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Proto.Persistence.MongoDB;
 
-class Event
+internal class Event
 {
     public Event(string actorName, long eventIndex, object data)
     {
@@ -18,15 +18,11 @@ class Event
         Id = $"{actorName}-event-{eventIndex}";
     }
 
-    [BsonElement]
-    public string ActorName { get; set; }
+    [BsonElement] public string ActorName { get; set; }
 
-    [BsonElement]
-    public long EventIndex { get; set; }
+    [BsonElement] public long EventIndex { get; set; }
 
-    [BsonElement]
-    public object Data { get; set; }
+    [BsonElement] public object Data { get; set; }
 
-    [BsonId]
-    public string Id { get; set; }
+    [BsonId] public string Id { get; set; }
 }

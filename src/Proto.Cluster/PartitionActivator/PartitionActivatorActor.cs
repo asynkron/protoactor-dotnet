@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,36 +16,30 @@ namespace Proto.Cluster.PartitionActivator;
 public class PartitionActivatorActor : IActor
 {
     private static readonly ILogger Logger = Log.CreateLogger<PartitionActivatorActor>();
+    private readonly Dictionary<ClusterIdentity, PID> _actors = new();
+    private readonly Cluster _cluster;
+    private readonly HashSet<ClusterIdentity> _inFlightIdentityChecks = new();
+    private readonly PartitionActivatorManager _manager;
+    private readonly string _myAddress;
 
-    private readonly ShouldThrottle _wrongPartitionLogThrottle = Throttle.Create(1, TimeSpan.FromSeconds(1), wrongNodeCount => {
+    private readonly ShouldThrottle _wrongPartitionLogThrottle = Throttle.Create(1, TimeSpan.FromSeconds(1),
+        wrongNodeCount =>
+        {
             if (wrongNodeCount > 1)
             {
-                Logger.LogWarning("[PartitionActivator] Forwarded {SpawnCount} attempts to spawn on wrong node", wrongNodeCount);
+                Logger.LogWarning("[PartitionActivator] Forwarded {SpawnCount} attempts to spawn on wrong node",
+                    wrongNodeCount);
             }
         }
     );
 
     private ulong _topologyHash;
-    private readonly Cluster _cluster;
-    private readonly PartitionActivatorManager _manager;
-    private readonly Dictionary<ClusterIdentity, PID> _actors = new();
-    private readonly HashSet<ClusterIdentity> _inFlightIdentityChecks = new();
-    private readonly string _myAddress;
 
     public PartitionActivatorActor(Cluster cluster, PartitionActivatorManager manager)
     {
         _cluster = cluster;
         _manager = manager;
         _myAddress = cluster.System.Address;
-    }
-
-    private Task OnStarted(IContext context)
-    {
-        var self = context.Self;
-        _cluster.System.EventStream.Subscribe<ActivationTerminated>(context.System.Root, context.Self);
-        _cluster.System.EventStream.Subscribe<ActivationTerminating>(context.System.Root, context.Self);
-
-        return Task.CompletedTask;
     }
 
     public Task ReceiveAsync(IContext context) =>
@@ -58,10 +53,21 @@ public class PartitionActivatorActor : IActor
             _                         => Task.CompletedTask
         };
 
+    private Task OnStarted(IContext context)
+    {
+        var self = context.Self;
+        _cluster.System.EventStream.Subscribe<ActivationTerminated>(context.System.Root, context.Self);
+        _cluster.System.EventStream.Subscribe<ActivationTerminating>(context.System.Root, context.Self);
+
+        return Task.CompletedTask;
+    }
+
     private async Task OnClusterTopology(ClusterTopology msg, IContext context)
     {
         if (msg.TopologyHash == _topologyHash)
+        {
             return;
+        }
 
         _topologyHash = msg.TopologyHash;
 
@@ -99,7 +105,9 @@ public class PartitionActivatorActor : IActor
 
         // we get this via broadcast to all nodes, remove if we have it, or ignore
         if (Logger.IsEnabled(LogLevel.Trace))
+        {
             Logger.LogTrace("[PartitionActivator] Terminated {Pid}", msg.Pid);
+        }
 
         return Task.CompletedTask;
     }
@@ -110,10 +118,14 @@ public class PartitionActivatorActor : IActor
         // local cluster actor stops.
 
         if (!_actors.ContainsKey(msg.ClusterIdentity))
+        {
             return Task.CompletedTask;
+        }
 
         if (Logger.IsEnabled(LogLevel.Trace))
+        {
             Logger.LogTrace("[PartitionActivator] Terminating {Pid}", msg.Pid);
+        }
 
         _actors.Remove(msg.ClusterIdentity);
 
@@ -122,8 +134,9 @@ public class PartitionActivatorActor : IActor
         var activationTerminated = new ActivationTerminated
         {
             Pid = msg.Pid,
-            ClusterIdentity = msg.ClusterIdentity,
+            ClusterIdentity = msg.ClusterIdentity
         };
+
         _cluster.MemberList.BroadcastEvent(activationTerminated);
 
         return Task.CompletedTask;
@@ -154,7 +167,7 @@ public class PartitionActivatorActor : IActor
         {
             context.Respond(new ActivationResponse
                 {
-                    Pid = existing,
+                    Pid = existing
                 }
             );
         }
@@ -182,24 +195,30 @@ public class PartitionActivatorActor : IActor
 
         if (_inFlightIdentityChecks.Contains(clusterIdentity))
         {
-            Logger.LogError("[PartitionActivator] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
+            Logger.LogError("[PartitionActivator] Duplicate activation requests for {ClusterIdentity}",
+                clusterIdentity);
+
             context.Respond(new ActivationResponse
                 {
-                    Failed = true,
+                    Failed = true
                 }
             );
         }
 
-        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity, CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnVerificationTimeout));
+        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity,
+            CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnVerificationTimeout));
 
         if (canSpawn.IsCompleted)
         {
             OnSpawnDecided(msg, context, clusterKind, canSpawn.Result);
+
             return;
         }
 
         _inFlightIdentityChecks.Add(clusterIdentity);
-        context.ReenterAfter(canSpawn.AsTask(), task => {
+
+        context.ReenterAfter(canSpawn.AsTask(), task =>
+            {
                 _inFlightIdentityChecks.Remove(clusterIdentity);
 
                 if (task.IsCompletedSuccessfully)
@@ -209,9 +228,10 @@ public class PartitionActivatorActor : IActor
                 else
                 {
                     Logger.LogError("[PartitionActivator] Error when checking {ClusterIdentity}", clusterIdentity);
+
                     context.Respond(new ActivationResponse
                         {
-                            Failed = true,
+                            Failed = true
                         }
                     );
                 }
@@ -227,9 +247,10 @@ public class PartitionActivatorActor : IActor
         {
             var pid = context.Spawn(clusterKind.Props, ctx => ctx.Set(msg.ClusterIdentity));
             _actors.Add(msg.ClusterIdentity, pid);
+
             context.Respond(new ActivationResponse
                 {
-                    Pid = pid,
+                    Pid = pid
                 }
             );
         }
@@ -237,11 +258,12 @@ public class PartitionActivatorActor : IActor
         {
             e.CheckFailFast();
             Logger.LogError(e, "[PartitionActivator] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
-            context.Respond(new ActivationResponse {Failed = true});
+            context.Respond(new ActivationResponse { Failed = true });
         }
     }
 
-    private void OnSpawnDecided(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind, bool canSpawnIdentity)
+    private void OnSpawnDecided(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind,
+        bool canSpawnIdentity)
     {
         if (canSpawnIdentity)
         {

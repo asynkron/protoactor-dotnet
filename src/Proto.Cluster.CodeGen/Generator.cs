@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,17 +15,18 @@ namespace Proto.Cluster.CodeGen;
 
 public static class Generator
 {
-    internal static void Generate(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath, TaskLoggingHelper log, string rootPath, string template)
+    internal static void Generate(FileInfo input, FileInfo output, IEnumerable<DirectoryInfo> importPath,
+        TaskLoggingHelper log, string rootPath, string template)
     {
         var set = GetSet(importPath);
-            
+
         var inputReader = input.OpenText();
         var defaultOutputName = output?.FullName ?? Path.GetFileNameWithoutExtension(input.Name);
         var relativePath = PathPolyfill.GetRelativePath(rootPath, defaultOutputName);
-            
+
         set.Add(relativePath, true, inputReader);
         set.Process();
-            
+
         var gen = new CodeGenerator(template);
         var codeFiles = gen.Generate(set).ToList();
 

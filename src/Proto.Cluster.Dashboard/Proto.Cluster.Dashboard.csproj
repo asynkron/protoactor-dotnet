@@ -8,17 +8,17 @@
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
-        <PackageReference Update="MinVer" Version="3.0.0" />
+        <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1"/>
+        <PackageReference Update="MinVer" Version="3.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="MudBlazor" Version="6.0.10" />
+        <PackageReference Include="MudBlazor" Version="6.0.10"/>
 
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
+        <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj"/>
     </ItemGroup>
 
 </Project>

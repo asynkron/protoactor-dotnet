@@ -1,20 +1,22 @@
 using Google.Protobuf.WellKnownTypes;
+using MudBlazor.Services;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Partition;
-using Proto.Remote.GrpcNet;
-using MudBlazor.Services;
 using Proto.Cluster.Dashboard;
+using Proto.Cluster.Partition;
 using Proto.Cluster.Seed;
 using Proto.Remote;
+using Proto.Remote.GrpcNet;
 
 var builder = WebApplication.CreateBuilder(args);
 var system = GetSystem();
-builder.Services.AddProtoActorDashboard(system, new DashboardSettings()
+
+builder.Services.AddProtoActorDashboard(system, new DashboardSettings
 {
     LogSearchPattern = "",
     TraceSearchPattern = ""
 });
+
 builder.Services.AddHostedService<ActorSystemHostedService>();
 // Add services to the container.
 builder.Services.AddRazorPages();
@@ -42,17 +44,19 @@ ActorSystem GetSystem()
 {
     Log.SetLoggerFactory(
         LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
+
     var port = 0;
     var advertisedHost = "localhost";
     var provider = new SeedNodeClusterProvider();
-    var actorSystem = 
+
+    var actorSystem =
         new ActorSystem(ActorSystemConfig.Setup().WithDeveloperSupervisionLogging(true))
-        .WithRemote(GrpcNetRemoteConfig
-            .BindToAllInterfaces(advertisedHost, port)
-            .WithProtoMessages(SeedContractsReflection.Descriptor)
-            .WithProtoMessages(Empty.Descriptor.File)
-            .WithRemoteDiagnostics(true))
-        .WithCluster(ClusterConfig.Setup("MyCluster", provider, new PartitionIdentityLookup()));
+            .WithRemote(GrpcNetRemoteConfig
+                .BindToAllInterfaces(advertisedHost, port)
+                .WithProtoMessages(SeedContractsReflection.Descriptor)
+                .WithProtoMessages(Empty.Descriptor.File)
+                .WithRemoteDiagnostics(true))
+            .WithCluster(ClusterConfig.Setup("MyCluster", provider, new PartitionIdentityLookup()));
 
     return actorSystem;
 }

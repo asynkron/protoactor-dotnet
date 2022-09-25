@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -10,7 +11,7 @@ namespace Proto.Cluster.PartitionActivator;
 
 //this class is responsible for translating between Identity->activator member
 //this is the key algorithm for the distribution of actors within the cluster.
-class PartitionActivatorSelector
+internal class PartitionActivatorSelector
 {
     private volatile ImmutableDictionary<string, RendezvousFast> _hasherByKind =
         ImmutableDictionary<string, RendezvousFast>.Empty;
@@ -32,7 +33,10 @@ class PartitionActivatorSelector
     public string GetOwnerAddress(ClusterIdentity key)
     {
         if (_hasherByKind.TryGetValue(key.Kind, out var hasher))
+        {
             return hasher.GetOwnerMemberByIdentity(key.Identity);
+        }
+
         return "";
     }
 }

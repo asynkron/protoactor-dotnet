@@ -3,43 +3,49 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Proto.Utils;
 using Microsoft.Extensions.Logging;
+using Proto.Utils;
 
 namespace Proto.Cluster.PubSub;
 
 public sealed class TopicActor : IActor
 {
+    public const string
+        Kind = "prototopic"; // only alphanum in the name, to maximize chances it works on all clustering providers
+
     private static readonly ShouldThrottle LogThrottle = Throttle.Create(10, TimeSpan.FromSeconds(1),
         droppedLogs => Logger?.LogInformation("[TopicActor] Throttled {LogCount} logs", droppedLogs));
 
-    public const string Kind = "prototopic"; // only alphanum in the name, to maximize chances it works on all clustering providers
-
     private static readonly ILogger Logger = Log.CreateLogger<TopicActor>();
+    private readonly IKeyValueStore<Subscribers> _subscriptionStore;
     private ImmutableHashSet<SubscriberIdentity> _subscribers = ImmutableHashSet<SubscriberIdentity>.Empty;
     private string _topic = string.Empty;
-    private readonly IKeyValueStore<Subscribers> _subscriptionStore;
     private EventStreamSubscription<object>? _topologySubscription;
 
-    public TopicActor(IKeyValueStore<Subscribers> subscriptionStore) => _subscriptionStore = subscriptionStore;
-
-    public Task ReceiveAsync(IContext context) => context.Message switch
+    public TopicActor(IKeyValueStore<Subscribers> subscriptionStore)
     {
-        Started                                  => OnStarted(context),
-        Stopping                                 => OnStopping(context),
-        SubscribeRequest sub                     => OnSubscribe(context, sub),
-        UnsubscribeRequest unsub                 => OnUnsubscribe(context, unsub),
-        PubSubBatch batch                        => OnPubSubBatch(context, batch),
-        NotifyAboutFailingSubscribersRequest msg => OnNotifyAboutFailingSubscribers(context, msg),
-        ClusterTopology msg                      => OnClusterTopologyChanged(context, msg),
-        _                                        => Task.CompletedTask,
-    };
+        _subscriptionStore = subscriptionStore;
+    }
+
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
+        {
+            Started                                  => OnStarted(context),
+            Stopping                                 => OnStopping(context),
+            SubscribeRequest sub                     => OnSubscribe(context, sub),
+            UnsubscribeRequest unsub                 => OnUnsubscribe(context, unsub),
+            PubSubBatch batch                        => OnPubSubBatch(context, batch),
+            NotifyAboutFailingSubscribersRequest msg => OnNotifyAboutFailingSubscribers(context, msg),
+            ClusterTopology msg                      => OnClusterTopologyChanged(context, msg),
+            _                                        => Task.CompletedTask
+        };
 
     private async Task OnStarted(IContext context)
     {
@@ -62,6 +68,7 @@ public sealed class TopicActor : IActor
     {
         _topologySubscription?.Unsubscribe();
         _topologySubscription = null;
+
         return Task.CompletedTask;
     }
 
@@ -79,12 +86,12 @@ public sealed class TopicActor : IActor
             var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
 
             var memberDeliveries =
-                (from member in members
-                 let address = member.Key
-                 let subscribersOnMember = GetSubscribersForAddress(member)
-                 let deliveryMessage = new DeliverBatchRequest(subscribersOnMember, batch, _topic)
-                 let deliveryPid = PID.FromAddress(address, PubSubExtension.PubSubDeliveryName)
-                 select (Pid: deliveryPid, Message: deliveryMessage));
+                from member in members
+                let address = member.Key
+                let subscribersOnMember = GetSubscribersForAddress(member)
+                let deliveryMessage = new DeliverBatchRequest(subscribersOnMember, batch, _topic)
+                let deliveryPid = PID.FromAddress(address, PubSubExtension.PubSubDeliveryName)
+                select (Pid: deliveryPid, Message: deliveryMessage);
 
             foreach (var md in memberDeliveries)
             {
@@ -109,8 +116,9 @@ public sealed class TopicActor : IActor
         }
     }
 
-    private static Subscribers GetSubscribersForAddress(IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member)
-        => new()
+    private static Subscribers GetSubscribersForAddress(
+        IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member) =>
+        new()
         {
             Subscribers_ =
             {
@@ -118,8 +126,8 @@ public sealed class TopicActor : IActor
             }
         };
 
-    private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s)
-        => s.IdentityCase switch
+    private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s) =>
+        s.IdentityCase switch
         {
             SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult((s, s.Pid)),
             SubscriberIdentity.IdentityOneofCase.ClusterIdentity => GetClusterIdentityPid(context, s),
@@ -129,8 +137,10 @@ public sealed class TopicActor : IActor
     private static async Task<(SubscriberIdentity, PID)> GetClusterIdentityPid(IContext context, SubscriberIdentity s)
     {
         // TODO: optimize with caching
-        var pid = await context.Cluster().GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None);
-        return (s, pid);
+        var pid = await context.Cluster()
+            .GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None);
+
+        return (s, pid!);
     }
 
     private async Task OnNotifyAboutFailingSubscribers(IContext context, NotifyAboutFailingSubscribersRequest msg)
@@ -146,12 +156,15 @@ public sealed class TopicActor : IActor
         if (allInvalidDeliveryReports.Count > 0 && LogThrottle().IsOpen())
         {
             var diagnosticMessage = allInvalidDeliveryReports
-                .Aggregate($"Topic = {_topic} following subscribers could not process the batch: ", (acc, report) => acc + report.Subscriber + ", ");
+                .Aggregate($"Topic = {_topic} following subscribers could not process the batch: ",
+                    (acc, report) => acc + report.Subscriber + ", ");
+
             Logger.LogWarning(diagnosticMessage);
         }
     }
 
-    private async Task UnsubscribeUnreachablePidSubscribers(IReadOnlyCollection<SubscriberDeliveryReport> allInvalidDeliveryReports)
+    private async Task UnsubscribeUnreachablePidSubscribers(
+        IReadOnlyCollection<SubscriberDeliveryReport> allInvalidDeliveryReports)
     {
         var allUnreachable = allInvalidDeliveryReports
             .Where(r => r is
@@ -173,7 +186,8 @@ public sealed class TopicActor : IActor
             var addressesThatLeft = topology.Left.Select(m => m.Address).ToList();
 
             var subscribersThatLeft = _subscribers
-                .Where(s => s.IdentityCase == SubscriberIdentity.IdentityOneofCase.Pid && addressesThatLeft.Contains(s.Pid.Address))
+                .Where(s => s.IdentityCase == SubscriberIdentity.IdentityOneofCase.Pid &&
+                            addressesThatLeft.Contains(s.Pid.Address))
                 .ToList();
 
             await RemoveSubscribers(subscribersThatLeft);
@@ -185,7 +199,8 @@ public sealed class TopicActor : IActor
         var activeMemberAddresses = ctx.Cluster().MemberList.GetAllMembers().Select(m => m.Address).ToList();
 
         var subscribersThatLeft = _subscribers
-            .Where(s => s.IdentityCase == SubscriberIdentity.IdentityOneofCase.Pid && !activeMemberAddresses.Contains(s.Pid.Address))
+            .Where(s => s.IdentityCase == SubscriberIdentity.IdentityOneofCase.Pid &&
+                        !activeMemberAddresses.Contains(s.Pid.Address))
             .ToList();
 
         await RemoveSubscribers(subscribersThatLeft);
@@ -207,10 +222,11 @@ public sealed class TopicActor : IActor
                         $"Topic = {_topic} removed subscribers, removed subscribers, because they are dead or they are on members that left the cluster: ",
                         (acc, subscriber) => acc + subscriber + ", "
                     );
+
                 Logger.LogWarning(diagnosticMessage);
             }
 
-            await SaveSubscriptions(_topic, new Subscribers {Subscribers_ = {_subscribers}});
+            await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } });
         }
     }
 
@@ -221,12 +237,16 @@ public sealed class TopicActor : IActor
             //TODO: cancellation token config?
             var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None);
             Logger.LogDebug("Topic {Topic} loaded subscriptions {Subscriptions}", _topic, state);
+
             return state ?? new Subscribers();
         }
         catch (Exception e)
         {
             if (LogThrottle().IsOpen())
+            {
                 Logger.LogError(e, "Error when loading subscriptions");
+            }
+
             return new Subscribers();
         }
     }
@@ -242,7 +262,9 @@ public sealed class TopicActor : IActor
         catch (Exception e)
         {
             if (LogThrottle().IsOpen())
+            {
                 Logger.LogError(e, "Error when saving subscriptions");
+            }
         }
     }
 
@@ -250,7 +272,7 @@ public sealed class TopicActor : IActor
     {
         _subscribers = _subscribers.Remove(unsub.Subscriber);
         Logger.LogDebug("Topic {Topic} - {Subscriber} unsubscribed", _topic, unsub);
-        await SaveSubscriptions(_topic, new Subscribers {Subscribers_ = {_subscribers}});
+        await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } });
         context.Respond(new UnsubscribeResponse());
     }
 
@@ -258,7 +280,7 @@ public sealed class TopicActor : IActor
     {
         _subscribers = _subscribers.Add(sub.Subscriber);
         Logger.LogDebug("Topic {Topic} - {Subscriber} subscribed", _topic, sub);
-        await SaveSubscriptions(_topic, new Subscribers {Subscribers_ = {_subscribers}});
+        await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } });
         context.Respond(new SubscribeResponse());
     }
 }

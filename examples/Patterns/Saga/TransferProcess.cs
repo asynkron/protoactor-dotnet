@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
@@ -11,7 +12,7 @@ using Saga.Messages;
 
 namespace Saga;
 
-class TransferProcess : IActor
+internal class TransferProcess : IActor
 {
     private readonly decimal _amount;
     private readonly double _availability;
@@ -58,19 +59,25 @@ class TransferProcess : IActor
                 // recover state from persistence - if there are any events, the current behavior 
                 // should change
                 await _persistence.RecoverStateAsync();
+
                 break;
             case Stopping:
                 _stopping = true;
+
                 break;
             case Restarting:
                 _restarting = true;
+
                 break;
             case Stopped _ when !_processCompleted:
                 await _persistence.PersistEventAsync(new TransferFailed("Unknown. Transfer Process crashed"));
+
                 await _persistence.PersistEventAsync(
                     new EscalateTransfer("Unknown failure. Transfer Process crashed")
                 );
+
                 context.Send(context.Parent!, new UnknownResult(context.Self));
+
                 return;
             case Terminated _ when _restarting || _stopping:
                 // if the TransferProcess itself is restarting or stopping due to failure, we will receive a
@@ -79,7 +86,10 @@ class TransferProcess : IActor
                 return;
             default:
                 // simulate failures of the transfer process itself
-                if (Fail()) throw new Exception();
+                if (Fail())
+                {
+                    throw new Exception();
+                }
 
                 break;
         }
@@ -89,11 +99,13 @@ class TransferProcess : IActor
         await _behavior.ReceiveAsync(context);
     }
 
-    private static Props TryCredit(PID targetActor, decimal amount) => Props
-        .FromProducer(() => new AccountProxy(targetActor, sender => new ChangeBalance.Credit(amount, sender)));
+    private static Props TryCredit(PID targetActor, decimal amount) =>
+        Props
+            .FromProducer(() => new AccountProxy(targetActor, sender => new ChangeBalance.Credit(amount, sender)));
 
-    private static Props TryDebit(PID targetActor, decimal amount) => Props
-        .FromProducer(() => new AccountProxy(targetActor, sender => new ChangeBalance.Debit(amount, sender)));
+    private static Props TryDebit(PID targetActor, decimal amount) =>
+        Props
+            .FromProducer(() => new AccountProxy(targetActor, sender => new ChangeBalance.Debit(amount, sender)));
 
     private void ApplyEvent(Event @event)
     {
@@ -103,17 +115,21 @@ class TransferProcess : IActor
         {
             case TransferStarted:
                 _behavior.Become(AwaitingDebitConfirmation);
+
                 break;
             case AccountDebited:
                 _behavior.Become(AwaitingCreditConfirmation);
+
                 break;
             case CreditRefused:
                 _behavior.Become(RollingBackDebit);
+
                 break;
             case AccountCredited:
             case DebitRolledBack:
             case TransferFailed:
                 _processCompleted = true;
+
                 break;
         }
     }
@@ -121,6 +137,7 @@ class TransferProcess : IActor
     private bool Fail()
     {
         var comparison = _random.NextDouble() * 100;
+
         return comparison > _availability;
     }
 
@@ -140,23 +157,27 @@ class TransferProcess : IActor
             case Started _:
                 // if we are in this state when restarted then we need to recreate the TryDebit actor
                 context.SpawnNamed(TryDebit(_from, -_amount), "DebitAttempt");
+
                 break;
             case OK _:
                 // good to proceed to the credit
                 await _persistence.PersistEventAsync(new AccountDebited());
                 context.SpawnNamed(TryCredit(_to, +_amount), "CreditAttempt");
+
                 break;
             case Refused _:
                 // the debit has been refused, and should not be retried 
                 await _persistence.PersistEventAsync(new TransferFailed("Debit refused"));
                 context.Send(context.Parent!, new Result.FailedButConsistentResult(context.Self));
                 StopAll(context);
+
                 break;
             case Terminated _:
                 // the actor that is trying to make the debit has failed to respond with success
                 // we dont know why
                 await _persistence.PersistEventAsync(new StatusUnknown());
                 StopAll(context);
+
                 break;
         }
     }
@@ -168,10 +189,12 @@ class TransferProcess : IActor
             case Started:
                 // if we are in this state when started then we need to recreate the TryCredit actor
                 context.SpawnNamed(TryCredit(_to, +_amount), "CreditAttempt");
+
                 break;
             case OK:
                 var fromBalance =
                     await context.RequestAsync<decimal>(_from, new GetBalance(), TimeSpan.FromMilliseconds(2000));
+
                 var toBalance =
                     await context.RequestAsync<decimal>(_to, new GetBalance(), TimeSpan.FromMilliseconds(2000));
 
@@ -179,6 +202,7 @@ class TransferProcess : IActor
                 await _persistence.PersistEventAsync(new TransferCompleted(_from, fromBalance, _to, toBalance));
                 context.Send(context.Parent!, new Result.SuccessResult(context.Self));
                 StopAll(context);
+
                 break;
             case Refused:
 
@@ -197,6 +221,7 @@ class TransferProcess : IActor
                 // Given that we don't know, just fail + escalate
                 await _persistence.PersistEventAsync(new StatusUnknown());
                 StopAll(context);
+
                 break;
         }
     }
@@ -208,21 +233,25 @@ class TransferProcess : IActor
             case Started:
                 // if we are in this state when started then we need to recreate the TryCredit actor
                 context.SpawnNamed(TryCredit(_from, +_amount), "RollbackDebit");
+
                 break;
             case OK:
                 await _persistence.PersistEventAsync(new DebitRolledBack());
                 await _persistence.PersistEventAsync(new TransferFailed($"Unable to rollback debit to {_to.Id}"));
                 context.Send(context.Parent!, new Result.FailedAndInconsistent(context.Self));
                 StopAll(context);
+
                 break;
             case Refused: // in between making the credit and debit, the _from account has started refusing!! :O
             case Terminated:
                 await _persistence.PersistEventAsync(
                     new TransferFailed($"Unable to rollback process. {_from.Id} is owed {_amount}")
                 );
+
                 await _persistence.PersistEventAsync(new EscalateTransfer($"{_from.Id} is owed {_amount}"));
                 context.Send(context.Parent!, new Result.FailedAndInconsistent(context.Self));
                 StopAll(context);
+
                 break;
         }
     }

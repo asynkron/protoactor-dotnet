@@ -7,14 +7,19 @@ public class GrpcNetChannelProvider : IChannelProvider
 {
     private readonly GrpcNetRemoteConfig _remoteConfig;
 
-    public GrpcNetChannelProvider(GrpcNetRemoteConfig remoteConfig) => _remoteConfig = remoteConfig;
+    public GrpcNetChannelProvider(GrpcNetRemoteConfig remoteConfig)
+    {
+        _remoteConfig = remoteConfig;
+    }
 
     public ChannelBase GetChannel(string address)
     {
         var addressWithProtocol =
             $"{(_remoteConfig.UseHttps ? "https://" : "http://")}{address}";
 
-        var channel = GrpcChannel.ForAddress(addressWithProtocol, _remoteConfig?.ChannelOptions ?? new GrpcChannelOptions());
+        var channel = GrpcChannel.ForAddress(addressWithProtocol,
+            _remoteConfig?.ChannelOptions ?? new GrpcChannelOptions());
+
         return channel;
     }
 }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,18 +11,17 @@ using System.Text;
 namespace Proto.Cluster.PartitionActivator;
 
 /// <summary>
-/// Optimized version of the Rendezvous algorithm.
-/// Instead of calculating Hash each time for Key+Node combination,
-/// it simply precalculates Node hash, then calculates Key hash and
-/// does a basic hash combination to determine a combined hash. Uses
-/// combined hash to determine the owner.
-/// Identity distribution over nodes is just as good as Rendezvous,
-/// while being 50x faster at 1000 nodes, 25x faster at 100 nodes, and 6x faster at 10 nodes.
-/// Also, it does minimal allocations in comparison to Rendezvous, identical to MemberRing.
-///
-/// WARNING: Any modifications in this class could cause old version cluster
-/// members to be incompatible with the new version cluster members, and it
-/// would result in duplicate parallel activations.
+///     Optimized version of the Rendezvous algorithm.
+///     Instead of calculating Hash each time for Key+Node combination,
+///     it simply precalculates Node hash, then calculates Key hash and
+///     does a basic hash combination to determine a combined hash. Uses
+///     combined hash to determine the owner.
+///     Identity distribution over nodes is just as good as Rendezvous,
+///     while being 50x faster at 1000 nodes, 25x faster at 100 nodes, and 6x faster at 10 nodes.
+///     Also, it does minimal allocations in comparison to Rendezvous, identical to MemberRing.
+///     WARNING: Any modifications in this class could cause old version cluster
+///     members to be incompatible with the new version cluster members, and it
+///     would result in duplicate parallel activations.
 /// </summary>
 public class RendezvousFast
 {
@@ -55,7 +55,10 @@ public class RendezvousFast
         {
             var score = CombineHashes(member.Hash, keyHash);
 
-            if (score <= maxScore) continue;
+            if (score <= maxScore)
+            {
+                continue;
+            }
 
             maxScore = score;
             maxNode = member.Info;
@@ -63,6 +66,12 @@ public class RendezvousFast
 
         return maxNode?.Address ?? "";
     }
+
+    /// <summary>
+    ///     Combines 2 hashes, with a basic XOR.
+    ///     Any more complicated hash combination is simply pointless here.
+    /// </summary>
+    private uint CombineHashes(uint hash1, uint hash2) => hash1 ^ hash2;
 
     private readonly struct MemberData
     {
@@ -75,10 +84,4 @@ public class RendezvousFast
         public Member Info { get; }
         public uint Hash { get; }
     }
-
-    /// <summary>
-    /// Combines 2 hashes, with a basic XOR.
-    /// Any more complicated hash combination is simply pointless here.
-    /// </summary>
-    uint CombineHashes(uint hash1, uint hash2) => hash1 ^ hash2;
 }

@@ -18,42 +18,49 @@ public abstract class RemoteTests
 {
     private readonly IRemoteFixture _fixture;
 
-    protected RemoteTests(IRemoteFixture fixture) => _fixture = fixture;
+    protected RemoteTests(IRemoteFixture fixture)
+    {
+        _fixture = fixture;
+    }
 
     private ActorSystem System => _fixture.ActorSystem;
     private IRemote Remote => _fixture.Remote;
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task CanSendAndReceiveToExistingRemote()
     {
         var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
 
-        var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
+        var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" },
             TimeSpan.FromSeconds(10)
         );
 
         Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task CanForwardBetweenRemotes()
     {
         var remoteActor1 = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
         var remoteActor2 = PID.FromAddress(_fixture.RemoteAddress2, "EchoActorInstance");
 
         var response = await System.Root.RequestAsync<ForwardResponse>(remoteActor1, new Forward
-                {Message = "Hi", Target = remoteActor2},
+                { Message = "Hi", Target = remoteActor2 },
             TimeSpan.FromSeconds(10)
         );
 
-        response.Should().BeEquivalentTo(new ForwardResponse
-            {
-                Message = "Hi", Sender = remoteActor2
-            }
-        );
+        response.Should()
+            .BeEquivalentTo(new ForwardResponse
+                {
+                    Message = "Hi", Sender = remoteActor2
+                }
+            );
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task RemoteHandlesRequestIdsCorrectly()
     {
         const int messageCount = 200;
@@ -61,8 +68,10 @@ public abstract class RemoteTests
         var batchContext = _fixture.ActorSystem.Root.CreateBatchContext(messageCount, timeout.Token);
         // Batch futures are using the same process, but differentiate responses based on the request id
         var requestIds = Enumerable.Range(1, messageCount).ToList();
+
         List<(IFuture future, Ping message)> requests = requestIds
-            .Select(i => (batchContext.GetFuture(), new Ping {Message = i.ToString()})).ToList();
+            .Select(i => (batchContext.GetFuture(), new Ping { Message = i.ToString() }))
+            .ToList();
 
         var remoteActor = PID.FromAddress(_fixture.RemoteAddress, "EchoActorInstance");
 
@@ -88,28 +97,31 @@ public abstract class RemoteTests
 
             return response switch
             {
-                Proto.MessageEnvelope envelope => (Pong) envelope.Message,
+                Proto.MessageEnvelope envelope => (Pong)envelope.Message,
                 Pong pong                      => pong,
                 _                              => throw new ArgumentException(response?.ToString(), nameof(response))
             };
         }
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task WhenRemoteActorNotFound_DeadLetterException()
     {
         var unknownRemoteActor = PID.FromAddress(_fixture.RemoteAddress, "doesn't exist");
 
         await Assert.ThrowsAsync<DeadLetterException>(
-            async () => {
-                await System.Root.RequestAsync<Pong>(unknownRemoteActor, new Ping {Message = "Hello"},
+            async () =>
+            {
+                await System.Root.RequestAsync<Pong>(unknownRemoteActor, new Ping { Message = "Hello" },
                     TimeSpan.FromSeconds(10)
                 );
             }
         );
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task CanSpawnRemoteActor()
     {
         var remoteActorName = Guid.NewGuid().ToString();
@@ -117,14 +129,18 @@ public abstract class RemoteTests
         var remoteActorResp = await Remote.SpawnNamedAsync(
             _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
         );
+
         var remoteActor = remoteActorResp.Pid;
-        var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping {Message = "Hello"},
+
+        var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" },
             TimeSpan.FromSeconds(10)
         );
+
         Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task CanSpawnActorOnClientRemote()
     {
         var remoteActorName = Guid.NewGuid().ToString();
@@ -132,14 +148,18 @@ public abstract class RemoteTests
         var remoteActorResp = await Remote.SpawnNamedAsync(
             _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
         );
+
         var remoteActor = remoteActorResp.Pid;
+
         var pong = await System.Root.RequestAsync<SpawnOnMeAndPingResponse>(remoteActor, new SpawnOnMeAndPing(),
             TimeSpan.FromSeconds(10)
         );
+
         Assert.Equal($"{_fixture.ActorSystem.Address} Hello", pong.Message);
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task CanWatchRemoteActor()
     {
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
@@ -159,7 +179,8 @@ public abstract class RemoteTests
         );
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task CanWatchMultipleRemoteActors()
     {
         var remoteActor1 = await SpawnRemoteActor(_fixture.RemoteAddress);
@@ -192,7 +213,8 @@ public abstract class RemoteTests
         );
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task MultipleLocalActorsCanWatchRemoteActor()
     {
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
@@ -224,7 +246,8 @@ public abstract class RemoteTests
         );
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task CanUnwatchRemoteActor()
     {
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
@@ -256,13 +279,15 @@ public abstract class RemoteTests
         );
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task WhenRemoteTerminated_LocalWatcherReceivesNotification()
     {
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
         var localActor = await SpawnLocalActorAndWatch(remoteActor);
 
         System.Root.Send(remoteActor, new Die());
+
         Assert.True(
             await PollUntilTrue(
                 () =>
@@ -273,6 +298,7 @@ public abstract class RemoteTests
             ),
             "Watching actor did not receive Termination message"
         );
+
         Assert.Equal(1,
             await System.Root.RequestAsync<int>(localActor, new GetTerminatedMessagesCount(),
                 TimeSpan.FromSeconds(10)
@@ -280,7 +306,8 @@ public abstract class RemoteTests
         );
     }
 
-    [Fact, DisplayTestMethodName]
+    [Fact]
+    [DisplayTestMethodName]
     public async Task CanMakeRequestToRemoteActor()
     {
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
@@ -289,7 +316,8 @@ public abstract class RemoteTests
         res.Who.Should().BeEquivalentTo(remoteActor);
     }
 
-    [Theory, DisplayTestMethodName]
+    [Theory]
+    [DisplayTestMethodName]
     [InlineData(true, 1, 1, 5)]
     [InlineData(true, 2, 1, 5)]
     [InlineData(true, 10, 100, 5)]
@@ -307,7 +335,9 @@ public abstract class RemoteTests
         var rnd = new Random();
         var tcs = new TaskCompletionSource<bool>();
         long responseCount = 0;
-        var responseHandler = _fixture.ActorSystem.Root.Spawn(Props.FromFunc(ctx => {
+
+        var responseHandler = _fixture.ActorSystem.Root.Spawn(Props.FromFunc(ctx =>
+                {
                     if (ctx.Message is Ack)
                     {
                         if (Interlocked.Increment(ref responseCount) == messageCount)
@@ -345,6 +375,7 @@ public abstract class RemoteTests
         {
             var bytes = new byte[messageSize];
             rnd.NextBytes(bytes);
+
             return new BinaryMessage
             {
                 Id = Guid.NewGuid().ToString("N"),
@@ -382,8 +413,10 @@ public abstract class RemoteTests
         var remoteActorResp = await Remote.SpawnNamedAsync(
             _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
         );
+
         var remoteActor = remoteActorResp.Pid;
-        var msg = new BinaryMessage()
+
+        var msg = new BinaryMessage
         {
             Id = "hello"
         };
@@ -391,6 +424,7 @@ public abstract class RemoteTests
         var res = await System.Root.RequestAsync<Ack>(remoteActor, msg,
             CancellationTokens.FromSeconds(5)
         );
+
         res.Should().BeOfType<Ack>();
 
         var log = _fixture.LogStore.ToFormattedString();
@@ -399,7 +433,10 @@ public abstract class RemoteTests
     private async Task<PID> SpawnRemoteActor(string address)
     {
         var remoteActorName = Guid.NewGuid().ToString();
-        var remoteActorResp = await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10));
+
+        var remoteActorResp =
+            await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10));
+
         return remoteActorResp.Pid;
     }
 
@@ -415,6 +452,7 @@ public abstract class RemoteTests
         var logger = Log.CreateLogger(nameof(SpawnLocalActorAndWatch));
         logger.LogInformation("Waiting for RemoteWatch to propagate...");
         await Task.Delay(20);
+
         return actor;
     }
 
@@ -433,6 +471,7 @@ public abstract class RemoteTests
             if (await predicate())
             {
                 logger.LogInformation("Passed!");
+
                 return true;
             }
 
@@ -466,7 +505,10 @@ public class LocalActor : IActor
     private readonly List<PID> _remoteActors = new();
     private readonly List<Terminated> _terminatedMessages = new();
 
-    public LocalActor(params PID[] remoteActors) => _remoteActors.AddRange(remoteActors);
+    public LocalActor(params PID[] remoteActors)
+    {
+        _remoteActors.AddRange(remoteActors);
+    }
 
     public Task ReceiveAsync(IContext context)
     {
@@ -474,18 +516,23 @@ public class LocalActor : IActor
         {
             case Started _:
                 HandleStarted(context);
+
                 break;
             case Unwatch msg:
                 HandleUnwatch(context, msg);
+
                 break;
             case TerminatedMessageReceived msg:
                 HandleTerminatedMessageReceived(context, msg);
+
                 break;
             case GetTerminatedMessagesCount _:
                 HandleCountOfMessagesReceived(context);
+
                 break;
             case Terminated msg:
                 HandleTerminated(msg);
+
                 break;
         }
 
@@ -500,6 +547,7 @@ public class LocalActor : IActor
             tm => tm.Who.Address == msg.Address &&
                   tm.Who.Id == msg.ActorId
         );
+
         context.Respond(messageReceived);
     }
 
@@ -508,6 +556,7 @@ public class LocalActor : IActor
         _logger.LogInformation(
             $"Received Terminated message for {msg.Who.Address}: {msg.Who.Id}. Reason? {msg.Why}"
         );
+
         _terminatedMessages.Add(msg);
     }
 

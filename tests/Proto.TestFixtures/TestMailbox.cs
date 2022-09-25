@@ -26,7 +26,10 @@ public class TestMailbox : IMailbox
     public void PostSystemMessage(object msg)
     {
         if (msg is Stop)
+        {
             _invoker?.CancellationTokenSource?.Cancel();
+        }
+
         SystemMessages.Add(msg);
         _invoker?.InvokeSystemMessageAsync((SystemMessage)msg).GetAwaiter().GetResult();
     }

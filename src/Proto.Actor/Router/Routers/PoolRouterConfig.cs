@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Linq;
 
 namespace Proto.Router.Routers;
 
-abstract record PoolRouterConfig(int PoolSize, Props RouteeProps) : RouterConfig
+internal abstract record PoolRouterConfig(int PoolSize, Props RouteeProps) : RouterConfig
 {
     public override void OnStarted(IContext context, RouterState router) =>
         router.SetRoutees(Enumerable

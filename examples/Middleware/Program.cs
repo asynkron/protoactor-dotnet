@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ using Proto;
 
 namespace Middleware;
 
-class Program
+internal class Program
 {
     private static void Main(string[] args)
     {
@@ -18,15 +19,18 @@ class Program
         var headers = new MessageHeader(
             new Dictionary<string, string>
             {
-                {"TraceID", Guid.NewGuid().ToString()},
-                {"SpanID", Guid.NewGuid().ToString()}
+                { "TraceID", Guid.NewGuid().ToString() },
+                { "SpanID", Guid.NewGuid().ToString() }
             }
         );
+
         var system = new ActorSystem();
+
         var root = new RootContext(
             system,
             headers,
-            next => async (c, target, envelope) => {
+            next => async (c, target, envelope) =>
+            {
                 var newEnvelope = envelope
                     .WithHeader("TraceID", c.Headers.GetOrDefault("TraceID"))
                     .WithHeader("SpanID", Guid.NewGuid().ToString())
@@ -37,6 +41,7 @@ class Program
                 Console.WriteLine(" 1 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
                 Console.WriteLine(" 1 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
                 await next(c, target, newEnvelope);
+
                 //this line might look confusing at first when reading the console output
                 //it looks like this finishes before the actor receive middleware kicks in
                 //which is exactly what it does, due to the actor mailbox.
@@ -47,7 +52,8 @@ class Program
         );
 
         var actor = Props.FromFunc(
-                c => {
+                c =>
+                {
                     if (c.Message is string)
                     {
                         Console.WriteLine("   3 Enter Actor");
@@ -62,7 +68,8 @@ class Program
                     return Task.CompletedTask;
                 }
             )
-            .WithReceiverMiddleware(next => async (context, envelope) => {
+            .WithReceiverMiddleware(next => async (context, envelope) =>
+                {
                     if (envelope.Message is string)
                     {
                         var newEnvelope = envelope
@@ -78,9 +85,13 @@ class Program
                         Console.WriteLine("  2 Exit Actor ReceiverMiddleware");
                     }
                     else
+                    {
                         await next(context, envelope);
+                    }
                 }
-            ).WithSenderMiddleware(next => async (context, target, envelope) => {
+            )
+            .WithSenderMiddleware(next => async (context, target, envelope) =>
+                {
                     var newEnvelope = envelope
                         .WithHeader("TraceID", context.Headers.GetOrDefault("TraceID"))
                         .WithHeader("SpanID", Guid.NewGuid().ToString())
@@ -94,6 +105,7 @@ class Program
                     Console.WriteLine("    4 Exit Actor SenderMiddleware");
                 }
             );
+
         var pid = root.Spawn(actor);
 
         Task.Delay(500).Wait();

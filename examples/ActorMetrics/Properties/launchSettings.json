@@ -1,7 +1,7 @@
 ﻿{
   "$schema": "http://json.schemastore.org/launchsettings.json",
   "profiles": {
-      "WebApplication1": {
+    "WebApplication1": {
       "commandName": "Project",
       "dotnetRunMessages": "true",
       "launchUrl": "swagger",

@@ -12,14 +12,15 @@ public interface ITopicMessage
     string Topic { get; }
 }
 
-class Program
+internal class Program
 {
     private static void Main()
     {
         var system = new ActorSystem();
 
         //subscribe to the eventstream via type
-        system.EventStream.SubscribeToTopic<SomeMessage>("MyTopic.*", x => Console.WriteLine($"Got message for {x.Name}"));
+        system.EventStream.SubscribeToTopic<SomeMessage>("MyTopic.*",
+            x => Console.WriteLine($"Got message for {x.Name}"));
 
         //publish messages onto the eventstream on Subtopic1 on MyTopic root
         system.EventStream.Publish(new SomeMessage("ProtoActor", "MyTopic.Subtopic1"));
@@ -41,10 +42,14 @@ public static class Extensions
 {
     //use regex or whatever fits your needs for subscription to topic matching
     //here we use the built in Like operator from VB.NET for this. just as an example
-    public static EventStreamSubscription<object> SubscribeToTopic<T>(this EventStream self, string topic, Action<T> body) where T : ITopicMessage
-        => self.Subscribe<T>(x => {
+    public static EventStreamSubscription<object> SubscribeToTopic<T>(this EventStream self, string topic,
+        Action<T> body) where T : ITopicMessage =>
+        self.Subscribe<T>(x =>
+            {
                 if (!LikeOperator.LikeString(x.Topic, topic, CompareMethod.Binary))
+                {
                     return;
+                }
 
                 body(x);
             }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -15,9 +16,13 @@ public class SharedFutureTests : BaseFutureTests
 {
     private readonly SharedFutureProcess _sharedFutureProcess;
 
-    public SharedFutureTests() => _sharedFutureProcess = new SharedFutureProcess(System, BatchSize);
+    public SharedFutureTests()
+    {
+        _sharedFutureProcess = new SharedFutureProcess(System, BatchSize);
+    }
 
-    protected override IFuture GetFuture() => _sharedFutureProcess.TryCreateHandle() ?? throw new Exception("No futures available");
+    protected override IFuture GetFuture() =>
+        _sharedFutureProcess.TryCreateHandle() ?? throw new Exception("No futures available");
 
     [Fact]
     public async Task Should_reuse_completed_futures()

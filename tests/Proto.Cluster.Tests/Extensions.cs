@@ -16,13 +16,13 @@ public static class Extensions
         string message,
         CancellationToken token,
         string kind = EchoActor.Kind
-    )
-        => cluster.RequestAsync<Pong>(id, kind, new Ping {Message = message}, token);
+    ) =>
+        cluster.RequestAsync<Pong>(id, kind, new Ping { Message = message }, token);
 
     public static async Task<string> DumpClusterState(this IEnumerable<Cluster> members)
     {
         var sb = new StringBuilder();
-        
+
         foreach (var c in members)
         {
             sb.AppendLine($"{Environment.NewLine}Member {c.System.Id}");
@@ -30,12 +30,14 @@ public static class Extensions
             if (c.System.Shutdown.IsCancellationRequested)
             {
                 sb.AppendLine("\tStopped, reason: " + c.System.StoppedReason);
+
                 continue;
             }
 
             var topology = await c.Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
 
             sb.AppendLine("\tGossip topology:");
+
             foreach (var kvp in topology)
             {
                 sb.AppendLine($"\t\tData {kvp.Key} - {kvp.Value.TopologyHash}");
@@ -45,7 +47,7 @@ public static class Extensions
 
             foreach (var member in c.MemberList.GetMembers())
             {
-                sb.AppendLine(($"\t\t{member}"));
+                sb.AppendLine($"\t\t{member}");
             }
 
             sb.AppendLine("\tBlock list:");

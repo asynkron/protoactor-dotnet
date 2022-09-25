@@ -9,7 +9,10 @@ public class MartenProvider : IProvider
 {
     private readonly IDocumentStore _store;
 
-    public MartenProvider(IDocumentStore store) => _store = store;
+    public MartenProvider(IDocumentStore store)
+    {
+        _store = store;
+    }
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {

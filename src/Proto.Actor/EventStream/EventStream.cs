@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Channels;
@@ -17,7 +18,7 @@ using Proto.Utils;
 namespace Proto;
 
 /// <summary>
-/// Event stream global to an actor system.
+///     Event stream global to an actor system.
 /// </summary>
 [PublicAPI]
 public class EventStream : EventStream<object>
@@ -26,21 +27,26 @@ public class EventStream : EventStream<object>
 
     internal EventStream(ActorSystem system)
     {
-        if (!_logger.IsEnabled(LogLevel.Information)) return;
+        if (!_logger.IsEnabled(LogLevel.Information))
+        {
+            return;
+        }
 
-        var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount, system.Config.DeadLetterThrottleInterval,
+        var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount,
+            system.Config.DeadLetterThrottleInterval,
             droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs", droppedLogs)
         );
 
         Subscribe<DeadLetterEvent>(
-            dl => {
-
+            dl =>
+            {
                 if (system.Config.DeadLetterRequestLogging is false && dl.Sender is not null)
                 {
                     return;
                 }
-                    
-                if (!system.Shutdown.IsCancellationRequested && shouldThrottle().IsOpen() && dl.Message is not IIgnoreDeadLetterLogging)
+
+                if (!system.Shutdown.IsCancellationRequested && shouldThrottle().IsOpen() &&
+                    dl.Message is not IIgnoreDeadLetterLogging)
                 {
                     _logger.LogInformation(
                         "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
@@ -56,7 +62,7 @@ public class EventStream : EventStream<object>
 }
 
 /// <summary>
-/// Event stream of a specific message type global to an actor system.
+///     Event stream of a specific message type global to an actor system.
 /// </summary>
 /// <typeparam name="T">Message type</typeparam>
 [PublicAPI]
@@ -71,7 +77,7 @@ public class EventStream<T>
     }
 
     /// <summary>
-    /// Subscribe to messages
+    ///     Subscribe to messages
     /// </summary>
     /// <param name="action">Synchronous message handler</param>
     /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
@@ -81,17 +87,21 @@ public class EventStream<T>
         var sub = new EventStreamSubscription<T>(
             this,
             dispatcher ?? Dispatchers.SynchronousDispatcher,
-            x => {
+            x =>
+            {
                 action(x);
+
                 return Task.CompletedTask;
             }
         );
+
         _subscriptions.TryAdd(sub.Id, sub);
+
         return sub;
     }
-        
+
     /// <summary>
-    /// Subscribe to messages and yields the result onto a Channel
+    ///     Subscribe to messages and yields the result onto a Channel
     /// </summary>
     /// <param name="channel">a Channel which receives the event</param>
     /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
@@ -101,16 +111,16 @@ public class EventStream<T>
         var sub = new EventStreamSubscription<T>(
             this,
             dispatcher ?? Dispatchers.SynchronousDispatcher,
-            async x => {
-                await channel.Writer.WriteAsync(x);
-            }
+            async x => { await channel.Writer.WriteAsync(x); }
         );
+
         _subscriptions.TryAdd(sub.Id, sub);
+
         return sub;
     }
 
     /// <summary>
-    /// Subscribe to messages with an asynchronous handler
+    ///     Subscribe to messages with an asynchronous handler
     /// </summary>
     /// <param name="action">Asynchronous message handler</param>
     /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
@@ -119,11 +129,12 @@ public class EventStream<T>
     {
         var sub = new EventStreamSubscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
         _subscriptions.TryAdd(sub.Id, sub);
+
         return sub;
     }
 
     /// <summary>
-    /// Subscribe to a message type, which is a derived type from <see cref="T" />
+    ///     Subscribe to a message type, which is a derived type from <see cref="T" />
     /// </summary>
     /// <param name="action">Synchronous message handler</param>
     /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
@@ -134,19 +145,24 @@ public class EventStream<T>
         var sub = new EventStreamSubscription<T>(
             this,
             dispatcher ?? Dispatchers.SynchronousDispatcher,
-            msg => {
-                if (msg is TMsg typed) action(typed);
+            msg =>
+            {
+                if (msg is TMsg typed)
+                {
+                    action(typed);
+                }
 
                 return Task.CompletedTask;
             }
         );
 
         _subscriptions.TryAdd(sub.Id, sub);
+
         return sub;
     }
 
     /// <summary>
-    ///  Subscribe to a message type, which is a derived type from <see cref="T" />
+    ///     Subscribe to a message type, which is a derived type from <see cref="T" />
     /// </summary>
     /// <param name="predicate">Additional filter upon the typed message</param>
     /// <param name="action">Synchronous message handler</param>
@@ -161,14 +177,19 @@ public class EventStream<T>
         var sub = new EventStreamSubscription<T>(
             this,
             dispatcher ?? Dispatchers.SynchronousDispatcher,
-            msg => {
-                if (msg is TMsg typed && predicate(typed)) action(typed);
+            msg =>
+            {
+                if (msg is TMsg typed && predicate(typed))
+                {
+                    action(typed);
+                }
 
                 return Task.CompletedTask;
             }
         );
 
         _subscriptions.TryAdd(sub.Id, sub);
+
         return sub;
     }
 
@@ -183,7 +204,8 @@ public class EventStream<T>
         var sub = new EventStreamSubscription<T>(
             this,
             Dispatchers.SynchronousDispatcher,
-            msg => {
+            msg =>
+            {
                 if (msg is TMsg)
                 {
                     foreach (var pid in pids)
@@ -197,6 +219,7 @@ public class EventStream<T>
         );
 
         _subscriptions.TryAdd(sub.Id, sub);
+
         return sub;
     }
 
@@ -216,11 +239,12 @@ public class EventStream<T>
         );
 
         _subscriptions.TryAdd(sub.Id, sub);
+
         return sub;
     }
 
     /// <summary>
-    /// Publish a message to the event stream
+    ///     Publish a message to the event stream
     /// </summary>
     /// <param name="msg">A message to publish</param>
     public void Publish(T msg)
@@ -228,7 +252,8 @@ public class EventStream<T>
         foreach (var sub in _subscriptions.Values)
         {
             sub.Dispatcher.Schedule(
-                () => {
+                () =>
+                {
                     try
                     {
                         sub.Action(msg);
@@ -246,18 +271,21 @@ public class EventStream<T>
     }
 
     /// <summary>
-    /// Remove a subscription by id
+    ///     Remove a subscription by id
     /// </summary>
     /// <param name="id">Subscription id</param>
     public void Unsubscribe(Guid id) => _subscriptions.TryRemove(id, out _);
 
     /// <summary>
-    /// Remove a subscription
+    ///     Remove a subscription
     /// </summary>
     /// <param name="subscription"> A subscription to remove</param>
     public void Unsubscribe(EventStreamSubscription<T>? subscription)
     {
-        if (subscription is not null) Unsubscribe(subscription.Id);
+        if (subscription is not null)
+        {
+            Unsubscribe(subscription.Id);
+        }
     }
 }
 

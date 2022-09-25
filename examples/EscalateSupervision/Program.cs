@@ -3,17 +3,19 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
 
 namespace EscalateSupervision;
 
-class Program
+internal class Program
 {
     private static void Main(string[] args)
     {
-        var childProps = Props.FromFunc(context => {
+        var childProps = Props.FromFunc(context =>
+            {
                 Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
 
                 switch (context.Message)
@@ -26,16 +28,19 @@ class Program
             }
         );
 
-        var rootProps = Props.FromFunc(context => {
+        var rootProps = Props.FromFunc(context =>
+                {
                     Console.WriteLine($"{context.Self.Id}: MSG: {context.Message.GetType()}");
 
                     switch (context.Message)
                     {
                         case Started _:
                             context.SpawnNamed(childProps, "child");
+
                             break;
                         case Terminated terminated:
                             Console.WriteLine($"Terminated {terminated.Who}");
+
                             break;
                     }
 

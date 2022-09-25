@@ -3,20 +3,15 @@ namespace Proto.Cluster.Dashboard;
 public class TreeNodeComparer : IEqualityComparer<TreeNode>
 {
     public static readonly TreeNodeComparer Instance = new();
-    public bool Equals(TreeNode? one, TreeNode? two)
-    {
+
+    public bool Equals(TreeNode? one, TreeNode? two) =>
         // Adjust according to requirements.
-        return StringComparer.InvariantCultureIgnoreCase
+        StringComparer.InvariantCultureIgnoreCase
             .Equals(one?.Name, two?.Name);
 
-    }
-
-    public int GetHashCode(TreeNode item)
-    {
-        return StringComparer.InvariantCultureIgnoreCase
+    public int GetHashCode(TreeNode item) =>
+        StringComparer.InvariantCultureIgnoreCase
             .GetHashCode(item.Name!);
-
-    }
 }
 
 public record TreeNode
@@ -28,12 +23,14 @@ public record TreeNode
     public TreeNode GetChild(string name)
     {
         var child = Children.FirstOrDefault(c => c.Name == name);
+
         if (child == null)
         {
             child = new TreeNode
             {
-                Name = name,
+                Name = name
             };
+
             Children.Add(child);
         }
 
@@ -46,6 +43,7 @@ public record TreeNode
         var parts = id.Split("/");
         var node = parts.Aggregate(this, (current, part) => current.GetChild(part));
         node.Pid = pid;
+
         return node;
     }
 }

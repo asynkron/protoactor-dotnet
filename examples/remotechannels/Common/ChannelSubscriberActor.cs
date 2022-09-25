@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Proto;
@@ -12,8 +13,8 @@ namespace Common;
 public static class ChannelSubscriber
 {
     /// <summary>
-    ///  Starts a new subscriber actor, that subscribes to messages from <see cref="ChannelPublisherActor{T}"/>.
-    /// Received messages will be sent to the specified channel.
+    ///     Starts a new subscriber actor, that subscribes to messages from <see cref="ChannelPublisherActor{T}" />.
+    ///     Received messages will be sent to the specified channel.
     /// </summary>
     /// <param name="context">The parent context used to spawn</param>
     /// <param name="publisher">The PID of the publisher actor to subscribe to</param>
@@ -27,6 +28,7 @@ public static class ChannelSubscriber
         var pid = context.Spawn(props);
 
         await tcs.Task;
+
         return pid;
     }
 }
@@ -34,8 +36,8 @@ public static class ChannelSubscriber
 public class ChannelSubscriberActor<T> : IActor
 {
     private readonly Channel<T> _channel;
-    private readonly TaskCompletionSource _subscribed;
     private readonly PID _publisher;
+    private readonly TaskCompletionSource _subscribed;
 
     public ChannelSubscriberActor(PID publisher, Channel<T> channel, TaskCompletionSource subscribed)
 
@@ -52,22 +54,27 @@ public class ChannelSubscriberActor<T> : IActor
             case Started:
                 context.Watch(_publisher);
                 context.Request(_publisher, context.Self);
+
                 break;
-            
+
             case Subscribed:
                 _subscribed.SetResult();
+
                 break;
-            
+
             case Stopping:
                 _channel.Writer.Complete();
+
                 break;
-            
+
             case Terminated t when t.Who.Equals(_publisher):
                 _channel.Writer.Complete();
+
                 break;
-            
+
             case T typed:
                 await _channel.Writer.WriteAsync(typed);
+
                 break;
         }
     }

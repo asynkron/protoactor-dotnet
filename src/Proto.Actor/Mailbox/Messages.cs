@@ -3,9 +3,10 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Mailbox;
 
-public interface SystemMessage: InfrastructureMessage
+public interface SystemMessage : InfrastructureMessage
 {
 }
 

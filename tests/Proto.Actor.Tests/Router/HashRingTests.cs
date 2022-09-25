@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,10 @@ namespace Proto.Router.Tests;
 
 public class HashRingTests
 {
-    [Theory, InlineData(2, 1), InlineData(10, 5), InlineData(100, 10)]
+    [Theory]
+    [InlineData(2, 1)]
+    [InlineData(10, 5)]
+    [InlineData(100, 10)]
     public void Can_provide_consistent_results_when_removing_values(int nodeCount, int removeCount)
     {
         var values = Enumerable.Range(0, nodeCount).Select(_ => Guid.NewGuid().ToString("N")).ToArray();
@@ -36,13 +40,22 @@ public class HashRingTests
         {
             var currentResult = hashRing.GetNode(key);
 
-            if (removed.Contains(prevResult)) currentResult.Should().NotBe(prevResult);
-            else currentResult.Should().Be(prevResult);
+            if (removed.Contains(prevResult))
+            {
+                currentResult.Should().NotBe(prevResult);
+            }
+            else
+            {
+                currentResult.Should().Be(prevResult);
+            }
         }
     }
 
-    [Theory, InlineData(10, 1, .8), InlineData(100, 5, .9)]
-    public void Can_provide_relatively_consistent_results_when_adding_values(int nodeCount, int addedCount, double expectedRetainedRatio)
+    [Theory]
+    [InlineData(10, 1, .8)]
+    [InlineData(100, 5, .9)]
+    public void Can_provide_relatively_consistent_results_when_adding_values(int nodeCount, int addedCount,
+        double expectedRetainedRatio)
     {
         var values = Enumerable.Range(0, nodeCount).Select(_ => Guid.NewGuid().ToString("N")).ToArray();
         var hashRing = new HashRing<string>(values, value => value, MurmurHash2.Hash, 20);
@@ -57,9 +70,11 @@ public class HashRingTests
 
         hashRing.Add(Enumerable.Range(0, addedCount).Select(_ => Guid.NewGuid().ToString("N")).ToArray());
 
-        double retained = results.Count(tuple => {
+        double retained = results.Count(tuple =>
+            {
                 var (key, previousResult) = tuple;
                 var currentResult = hashRing.GetNode(key);
+
                 return previousResult.Equals(currentResult, StringComparison.Ordinal);
             }
         );
@@ -69,7 +84,10 @@ public class HashRingTests
         retainedRatio.Should().BeGreaterOrEqualTo(expectedRetainedRatio);
     }
 
-    [Theory, InlineData(2, 1), InlineData(10, 10), InlineData(100, 10)]
+    [Theory]
+    [InlineData(2, 1)]
+    [InlineData(10, 10)]
+    [InlineData(100, 10)]
     public void Adding_values_is_equivalent_to_ctor_values(int nodeCount, int addedCount)
     {
         var values = Enumerable.Range(0, nodeCount).Select(_ => Guid.NewGuid().ToString("N")).ToArray();
@@ -88,7 +106,10 @@ public class HashRingTests
         }
     }
 
-    [Theory, InlineData(2, 1), InlineData(10, 10), InlineData(100, 10)]
+    [Theory]
+    [InlineData(2, 1)]
+    [InlineData(10, 10)]
+    [InlineData(100, 10)]
     public void Removing_values_is_equivalent_to_ctor_values(int nodeCount, int removedCount)
     {
         var values = Enumerable.Range(0, nodeCount).Select(_ => Guid.NewGuid().ToString("N")).ToArray();

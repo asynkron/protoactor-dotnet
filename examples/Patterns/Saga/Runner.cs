@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -56,39 +57,51 @@ public class Runner : IActor
             case Result.SuccessResult msg:
                 _successResults++;
                 CheckForCompletion(msg.Pid);
+
                 break;
             case UnknownResult msg:
                 _unknownResults++;
                 CheckForCompletion(msg.Pid);
+
                 break;
             case Result.FailedAndInconsistent msg:
                 _failedAndInconsistentResults++;
                 CheckForCompletion(msg.Pid);
+
                 break;
             case Result.FailedButConsistentResult msg:
                 _failedButConsistentResults++;
                 CheckForCompletion(msg.Pid);
+
                 break;
             case Started _:
                 var random = new Random();
                 _inMemoryProvider = new InMemoryProvider();
+
                 new ForWithProgress(_numberOfIterations, _intervalBetweenConsoleUpdates, true, false).EveryNth(
                     i => Console.WriteLine($"Started {i}/{_numberOfIterations} processes"),
-                    (i, nth) => {
+                    (i, nth) =>
+                    {
                         var j = i;
                         var fromAccount = CreateAccount(context, $"FromAccount{j}", random);
                         var toAccount = CreateAccount(context, $"ToAccount{j}", random);
                         var actorName = $"Transfer Process {j}";
                         var persistenceId = $"Transfer Process {j}";
+
                         var factory = new TransferFactory(context, _inMemoryProvider, random, _uptime,
                             _retryAttempts
                         );
+
                         var transfer = factory.CreateTransfer(actorName, fromAccount, toAccount, 10, persistenceId);
                         _transfers.Add(transfer);
+
                         if (i == _numberOfIterations && !nth)
+                        {
                             Console.WriteLine($"Started {j}/{_numberOfIterations} processes");
+                        }
                     }
                 );
+
                 break;
         }
 
@@ -100,6 +113,7 @@ public class Runner : IActor
         var accountProps = Props.FromProducer(() =>
             new Account(name, _uptime, _refusalProbability, _busyProbability, random)
         );
+
         return context.SpawnNamed(accountProps, name);
     }
 
@@ -120,29 +134,39 @@ public class Runner : IActor
             }
         }
         else
+        {
             Console.WriteLine($"{remaining} processes remaining");
+        }
 
         if (remaining == 0)
         {
             Thread.Sleep(250);
             Console.WriteLine();
+
             Console.WriteLine(
                 $"RESULTS for {_uptime}% uptime, {_refusalProbability}% chance of refusal, {_busyProbability}% of being busy and {_retryAttempts} retry attempts:"
             );
+
             Console.WriteLine(
                 $"{AsPercentage(_numberOfIterations, _successResults)}% ({_successResults}/{_numberOfIterations}) successful transfers"
             );
+
             Console.WriteLine(
                 $"{AsPercentage(_numberOfIterations, _failedButConsistentResults)}% ({_failedButConsistentResults}/{_numberOfIterations}) failures leaving a consistent system"
             );
+
             Console.WriteLine(
                 $"{AsPercentage(_numberOfIterations, _failedAndInconsistentResults)}% ({_failedAndInconsistentResults}/{_numberOfIterations}) failures leaving an inconsistent system"
             );
+
             Console.WriteLine(
                 $"{AsPercentage(_numberOfIterations, _unknownResults)}% ({_unknownResults}/{_numberOfIterations}) unknown results"
             );
 
-            if (!_verbose) return;
+            if (!_verbose)
+            {
+                return;
+            }
 
             foreach (var (id, events) in _inMemoryProvider.Events)
             {

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +38,10 @@ public class Rendezvous
             var hashBytes = member.Hash;
             var score = RdvHash(hashBytes, keyBytes);
 
-            if (score <= maxScore) continue;
+            if (score <= maxScore)
+            {
+                continue;
+            }
 
             maxScore = score;
             maxNode = member.Info;
@@ -47,14 +51,16 @@ public class Rendezvous
     }
 
     // ReSharper disable once ParameterTypeCanBeEnumerable.Global
-    public void UpdateMembers(IEnumerable<Member> members) => _members = members
-        .OrderBy(m => m.Address)
-        .Select(x => new MemberData(x))
-        .ToArray();
+    public void UpdateMembers(IEnumerable<Member> members) =>
+        _members = members
+            .OrderBy(m => m.Address)
+            .Select(x => new MemberData(x))
+            .ToArray();
 
     private static uint RdvHash(byte[] node, byte[] key)
     {
         var hashBytes = MergeBytes(key, node);
+
         return MurmurHash2.Hash(hashBytes);
     }
 
@@ -63,19 +69,8 @@ public class Rendezvous
         var combined = new byte[front.Length + back.Length];
         Array.Copy(front, combined, front.Length);
         Array.Copy(back, 0, combined, front.Length, back.Length);
+
         return combined;
-    }
-
-    private readonly struct MemberData
-    {
-        public MemberData(Member member)
-        {
-            Info = member;
-            Hash = Encoding.UTF8.GetBytes(member.Address);
-        }
-
-        public Member Info { get; }
-        public byte[] Hash { get; }
     }
 
     public void Debug()
@@ -85,7 +80,7 @@ public class Rendezvous
             Console.WriteLine(m.Info);
         }
     }
-        
+
     public string GetOwnerMemberByIdentity(ClusterIdentity ci)
     {
         //TODO: memoize
@@ -101,12 +96,27 @@ public class Rendezvous
             var hashBytes = member.Hash;
             var score = RdvHash(hashBytes, keyBytes);
 
-            if (score <= maxScore) continue;
+            if (score <= maxScore)
+            {
+                continue;
+            }
 
             maxScore = score;
             maxNode = member.Info;
         }
 
         return maxNode?.Address ?? "";
+    }
+
+    private readonly struct MemberData
+    {
+        public MemberData(Member member)
+        {
+            Info = member;
+            Hash = Encoding.UTF8.GetBytes(member.Address);
+        }
+
+        public Member Info { get; }
+        public byte[] Hash { get; }
     }
 }

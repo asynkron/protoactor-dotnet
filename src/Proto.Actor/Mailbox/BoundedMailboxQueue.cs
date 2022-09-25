@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading;
 using System.Threading.Channels;
 
@@ -14,7 +15,10 @@ public class BoundedMailboxQueue : IMailboxQueue
     private volatile bool _hasMessages;
     private long _length;
 
-    public BoundedMailboxQueue(int size) => _messages = Channel.CreateBounded<object>(size);
+    public BoundedMailboxQueue(int size)
+    {
+        _messages = Channel.CreateBounded<object>(size);
+    }
 
     public int Length => (int)Interlocked.Read(ref _length);
 
@@ -35,7 +39,10 @@ public class BoundedMailboxQueue : IMailboxQueue
             Interlocked.Decrement(ref _length);
             _hasMessages = true;
         }
-        else _hasMessages = false;
+        else
+        {
+            _hasMessages = false;
+        }
 
         return message;
     }

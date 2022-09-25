@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -15,24 +16,25 @@ using Proto.Utils;
 namespace Proto.Cluster.PubSub;
 
 /// <summary>
-/// The Pub-Sub batching producer has an internal queue collecting messages to be published to a topic. Internal loop creates and sends the batches
-/// with the configured <see cref="IPublisher"/>.
+///     The Pub-Sub batching producer has an internal queue collecting messages to be published to a topic. Internal loop
+///     creates and sends the batches
+///     with the configured <see cref="IPublisher" />.
 /// </summary>
 [PublicAPI]
 public class BatchingProducer : IAsyncDisposable
 {
     private static readonly ILogger Logger = Log.CreateLogger<BatchingProducer>();
+    private readonly BatchingProducerConfig _config;
+    private readonly CancellationTokenSource _cts = new();
+    private readonly IPublisher _publisher;
+
+    private readonly Channel<ProduceMessage> _publisherChannel;
+    private readonly Task _publisherLoop;
 
     private readonly string _topic;
 
-    private readonly Channel<ProduceMessage> _publisherChannel;
-    private readonly CancellationTokenSource _cts = new();
-    private readonly Task _publisherLoop;
-    private readonly IPublisher _publisher;
-    private readonly BatchingProducerConfig _config;
-
     /// <summary>
-    /// Create a new batching producer for specified topic
+    ///     Create a new batching producer for specified topic
     /// </summary>
     /// <param name="publisher">Publish batches through this publisher</param>
     /// <param name="topic">Topic to produce to</param>
@@ -49,6 +51,13 @@ public class BatchingProducer : IAsyncDisposable
             : Channel.CreateUnbounded<ProduceMessage>();
 
         _publisherLoop = Task.Run(() => PublisherLoop(_cts.Token));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        await _publisherLoop;
+        _cts.Dispose();
     }
 
     private async Task PublisherLoop(CancellationToken cancel)
@@ -76,7 +85,10 @@ public class BatchingProducer : IAsyncDisposable
                             _ = produceMessage.TaskCompletionSource.TrySetCanceled(CancellationToken.None);
                         }
 
-                        if (batchWrapper.Batch.Envelopes.Count < _config.BatchSize) continue;
+                        if (batchWrapper.Batch.Envelopes.Count < _config.BatchSize)
+                        {
+                            continue;
+                        }
 
                         await PublishBatch(batchWrapper);
                         batchWrapper = new PubSubBatchWithReceipts();
@@ -105,8 +117,11 @@ public class BatchingProducer : IAsyncDisposable
         catch (Exception e)
         {
             e.CheckFailFast();
+
             if (_config.LogThrottle().IsOpen())
+            {
                 Logger.LogError(e, "Error in the publisher loop of Producer for topic {Topic}", _topic);
+            }
 
             FailBatch(batchWrapper, e);
             await FailPendingMessages(e);
@@ -196,7 +211,9 @@ public class BatchingProducer : IAsyncDisposable
     private void StopAcceptingNewMessages()
     {
         if (!_publisherChannel.Reader.Completion.IsCompleted)
+        {
             _publisherChannel.Writer.Complete();
+        }
     }
 
     private async Task PublishBatch(PubSubBatchWithReceipts batchWrapper)
@@ -210,9 +227,13 @@ public class BatchingProducer : IAsyncDisposable
             {
                 retries++;
 
-                var response = await _publisher.PublishBatch(_topic, batchWrapper.Batch, CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
+                var response = await _publisher.PublishBatch(_topic, batchWrapper.Batch,
+                    CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
+
                 if (response == null)
+                {
                     throw new TimeoutException("Timeout when publishing message batch");
+                }
 
                 retry = false;
                 CompleteBatch(batchWrapper);
@@ -225,38 +246,52 @@ public class BatchingProducer : IAsyncDisposable
                 {
                     StopAcceptingNewMessages();
                     FailBatch(batchWrapper, e);
+
                     throw; // let the main producer loop exit
                 }
 
                 if (_config.LogThrottle().IsOpen())
+                {
                     Logger.LogWarning(e, "Error while publishing batch");
+                }
 
                 if (decision == PublishingErrorDecision.FailBatchAndContinue)
                 {
                     FailBatch(batchWrapper, e);
+
                     return;
                 }
 
                 // the decision is to retry
                 // if any of the messages have been canceled in the meantime, remove them and cancel the delivery report
                 RemoveCancelledFromBatch(batchWrapper);
+
                 if (batchWrapper.IsEmpty())
+                {
                     retry = false; // no messages left in the batch, so stop retrying
+                }
                 else if (decision.Delay != null)
+                {
                     await Task.Delay(decision.Delay.Value);
+                }
             }
         }
 
         if (_cts.Token.IsCancellationRequested)
+        {
             CancelBatch(batchWrapper);
+        }
     }
 
     /// <summary>
-    /// Adds a message to producer queue. The returned Task will complete when the message is actually published.
+    ///     Adds a message to producer queue. The returned Task will complete when the message is actually published.
     /// </summary>
     /// <param name="message"></param>
-    /// <param name="ct">If cancellation is requested before the message is published (while waiting in the queue), it will not be published,
-    /// and the task returned from ProduceAsync will be cancelled</param>
+    /// <param name="ct">
+    ///     If cancellation is requested before the message is published (while waiting in the queue), it will not be
+    ///     published,
+    ///     and the task returned from ProduceAsync will be cancelled
+    /// </param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">Thrown when the producer is already stopped or failed.</exception>
     /// <exception cref="ProducerQueueFullException">Thrown when producer max queue size is reached.</exception>
@@ -267,7 +302,10 @@ public class BatchingProducer : IAsyncDisposable
         if (!_publisherChannel.Writer.TryWrite(new ProduceMessage(message, tcs, ct)))
         {
             if (_publisherChannel.Reader.Completion.IsCompleted)
-                throw new InvalidOperationException($"This producer for topic {_topic} is stopped, cannot produce more messages.");
+            {
+                throw new InvalidOperationException(
+                    $"This producer for topic {_topic} is stopped, cannot produce more messages.");
+            }
 
             throw new ProducerQueueFullException(_topic);
         }
@@ -275,14 +313,8 @@ public class BatchingProducer : IAsyncDisposable
         return tcs.Task;
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        _cts.Cancel();
-        await _publisherLoop;
-        _cts.Dispose();
-    }
-
-    private record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource, CancellationToken Cancel);
+    private record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource,
+        CancellationToken Cancel);
 
     private class PubSubBatchWithReceipts
     {
@@ -291,7 +323,7 @@ public class BatchingProducer : IAsyncDisposable
         public List<TaskCompletionSource<bool>> DeliveryReports { get; } = new();
 
         public List<CancellationToken> CancelTokens { get; } = new();
-        
+
         public bool IsEmpty() => Batch.Envelopes.Count == 0;
     }
 }

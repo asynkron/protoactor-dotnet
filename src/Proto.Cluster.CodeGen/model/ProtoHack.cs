@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Reflection;
 using Google.Protobuf.Reflection;
@@ -17,9 +18,10 @@ public static class ProtoHack
         {
             throw new ArgumentNullException(nameof(self));
         }
+
         var parentProp = typeof(DescriptorProto).GetProperty("Parent", BindingFlags.NonPublic | BindingFlags.Instance);
-        var parent = (FileDescriptorProto) parentProp!.GetValue(self);
+        var parent = (FileDescriptorProto)parentProp!.GetValue(self);
+
         return parent;
     }
-
 }

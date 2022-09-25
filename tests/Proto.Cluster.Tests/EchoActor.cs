@@ -32,29 +32,35 @@ public class EchoActor : IActor
                     _identity = id!.Identity;
                     _initKind = id.Kind;
                 }
+
                 break;
             case Ping ping:
-                var pong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
+                var pong = new Pong { Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? "" };
                 Logger.LogDebug("Received Ping, replying Pong: {@Pong}", pong);
                 context.Respond(pong);
+
                 break;
             case SlowPing ping:
                 await Task.Delay(ping.DelayMs);
-                var slowPong = new Pong {Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? ""};
+                var slowPong = new Pong { Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? "" };
                 Logger.LogDebug("Received SlowPing, replying Pong after {Delay} ms: {@Pong}", ping.DelayMs, slowPong);
                 context.Respond(slowPong);
+
                 break;
             case WhereAreYou hi:
                 Logger.LogDebug("Responding to location request");
-                context.Respond(new HereIAm {Address = context.Self!.Address, RequestId = hi.RequestId});
+                context.Respond(new HereIAm { Address = context.Self!.Address, RequestId = hi.RequestId });
+
                 break;
             case Die _:
                 Logger.LogDebug("Received termination request, stopping");
                 context.Respond(new Ack());
                 context.Stop(context.Self!);
+
                 break;
             default:
                 Logger.LogDebug(context.Message?.GetType().Name);
+
                 break;
         }
     }

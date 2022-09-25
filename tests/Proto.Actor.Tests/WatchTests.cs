@@ -15,12 +15,15 @@ public class WatchTests
         var context = system.Root;
 
         long counter = 0;
-        var childProps = Props.FromFunc(ctx => {
+
+        var childProps = Props.FromFunc(ctx =>
+            {
                 switch (ctx.Message)
                 {
                     case Started _:
                         ctx.Stop(ctx.Self);
                         ctx.Stop(ctx.Self);
+
                         break;
                 }
 
@@ -28,14 +31,17 @@ public class WatchTests
             }
         );
 
-        context.Spawn(Props.FromFunc(ctx => {
+        context.Spawn(Props.FromFunc(ctx =>
+                {
                     switch (ctx.Message)
                     {
                         case Started _:
                             ctx.Spawn(childProps);
+
                             break;
                         case Terminated _:
                             Interlocked.Increment(ref counter);
+
                             break;
                     }
 
@@ -57,6 +63,7 @@ public class WatchTests
         var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor())
             .WithMailbox(() => new TestMailbox())
         );
+
         var watcher = context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
             .WithMailbox(() => new TestMailbox())
         );
@@ -71,7 +78,10 @@ public class WatchTests
         private readonly PID _watchee;
         private bool _terminateReceived;
 
-        public LocalActor(PID watchee) => _watchee = watchee;
+        public LocalActor(PID watchee)
+        {
+            _watchee = watchee;
+        }
 
         public Task ReceiveAsync(IContext ctx)
         {
@@ -79,12 +89,15 @@ public class WatchTests
             {
                 case Started _:
                     ctx.Watch(_watchee);
+
                     break;
                 case string msg when msg == "?":
                     ctx.Respond(_terminateReceived);
+
                     break;
                 case Terminated _:
                     _terminateReceived = true;
+
                     break;
             }
 

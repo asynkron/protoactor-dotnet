@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using Google.Protobuf.Reflection;
@@ -42,17 +43,18 @@ public class CodeGenerator : CommonCodeGenerator
                 .Select(mt => new ProtoMessage
                     {
                         Name = mt.Name,
-                        Fields = mt.Fields.Select(f => new ProtoField()
-                            {
-                                TypeName = f.TypeName,
-                                Name = f.Name,
-                                Number = f.Number,
-                                IsRepeated = f.label == FieldDescriptorProto.Label.LabelRepeated,
-                                OneOfIndex = f.OneofIndex,
-                                Type = f.type,
-                                Object = ctx.TryFind<DescriptorProto>(f.TypeName),
-                            }
-                        ).ToArray()
+                        Fields = mt.Fields.Select(f => new ProtoField
+                                {
+                                    TypeName = f.TypeName,
+                                    Name = f.Name,
+                                    Number = f.Number,
+                                    IsRepeated = f.label == FieldDescriptorProto.Label.LabelRepeated,
+                                    OneOfIndex = f.OneofIndex,
+                                    Type = f.type,
+                                    Object = ctx.TryFind<DescriptorProto>(f.TypeName)
+                                }
+                            )
+                            .ToArray()
                     }
                 )
                 .ToArray(),
@@ -73,9 +75,11 @@ public class CodeGenerator : CommonCodeGenerator
                                     InputNameRaw = RemovePackageName(m.InputType),
                                     OutputNameRaw = RemovePackageName(m.OutputType),
                                     InputObject = ctx.TryFind<DescriptorProto>(m.InputType)
-                                               ?? throw new Exception($"Unable to resolve input parameter type for {s.Name}.{m}"),
+                                                  ?? throw new Exception(
+                                                      $"Unable to resolve input parameter type for {s.Name}.{m}"),
                                     OutputObject = ctx.TryFind<DescriptorProto>(m.OutputType)
-                                                ?? throw new Exception($"Unable to resolve return type for {s.Name}.{m}"),
+                                                   ?? throw new Exception(
+                                                       $"Unable to resolve return type for {s.Name}.{m}"),
                                     EmptyReturn = m.OutputType.Equals(".google.protobuf.Empty"),
                                     EmptyParameter = m.InputType.Equals(".google.protobuf.Empty")
                                 }
@@ -86,7 +90,8 @@ public class CodeGenerator : CommonCodeGenerator
                 .ToArray()
         };
 
-        Handlebars.RegisterHelper("StringEquality", (output, options, context, arguments) => {
+        Handlebars.RegisterHelper("StringEquality", (output, options, context, arguments) =>
+            {
                 if (arguments.Length != 2)
                 {
                     throw new HandlebarsException("{{#StringEquality}} helper must have exactly two arguments");
@@ -94,8 +99,15 @@ public class CodeGenerator : CommonCodeGenerator
 
                 var left = arguments.At<string>(0);
                 var right = arguments[1] as string;
-                if (left == right) options.Template(output, context);
-                else options.Inverse(output, context);
+
+                if (left == right)
+                {
+                    options.Template(output, context);
+                }
+                else
+                {
+                    options.Inverse(output, context);
+                }
             }
         );
 
@@ -117,39 +129,40 @@ public class CodeGenerator : CommonCodeGenerator
             return res;
         }
 
-        static string GetKind(string? packageName, string serviceName)
-        {
-            return string.IsNullOrEmpty(packageName) ? serviceName : $"{packageName}/{serviceName}";
-        }
+        static string GetKind(string? packageName, string serviceName) =>
+            string.IsNullOrEmpty(packageName) ? serviceName : $"{packageName}/{serviceName}";
     }
 
     #region UnusedMethods
 
-    protected override void WriteNamespaceHeader(GeneratorContext ctx, string @namespace) => throw new NotImplementedException();
+    protected override void WriteNamespaceHeader(GeneratorContext ctx, string @namespace) =>
+        throw new NotImplementedException();
 
-    protected override void WriteNamespaceFooter(GeneratorContext ctx, string @namespace) => throw new NotImplementedException();
+    protected override void WriteNamespaceFooter(GeneratorContext ctx, string @namespace) =>
+        throw new NotImplementedException();
 
     protected override void WriteField(
         GeneratorContext ctx,
         FieldDescriptorProto obj,
         ref object state,
         OneOfStub[] oneOfs
-    ) => throw new NotImplementedException();
+    ) =>
+        throw new NotImplementedException();
 
-    protected override void WriteMessageFooter(GeneratorContext ctx, DescriptorProto obj, ref object state)
-        => throw new NotImplementedException();
+    protected override void WriteMessageFooter(GeneratorContext ctx, DescriptorProto obj, ref object state) =>
+        throw new NotImplementedException();
 
-    protected override void WriteMessageHeader(GeneratorContext ctx, DescriptorProto obj, ref object state)
-        => throw new NotImplementedException();
+    protected override void WriteMessageHeader(GeneratorContext ctx, DescriptorProto obj, ref object state) =>
+        throw new NotImplementedException();
 
-    protected override void WriteEnumHeader(GeneratorContext ctx, EnumDescriptorProto obj, ref object state)
-        => throw new NotImplementedException();
+    protected override void WriteEnumHeader(GeneratorContext ctx, EnumDescriptorProto obj, ref object state) =>
+        throw new NotImplementedException();
 
-    protected override void WriteEnumValue(GeneratorContext ctx, EnumValueDescriptorProto obj, ref object state)
-        => throw new NotImplementedException();
+    protected override void WriteEnumValue(GeneratorContext ctx, EnumValueDescriptorProto obj, ref object state) =>
+        throw new NotImplementedException();
 
-    protected override void WriteEnumFooter(GeneratorContext ctx, EnumDescriptorProto obj, ref object state)
-        => throw new NotImplementedException();
+    protected override void WriteEnumFooter(GeneratorContext ctx, EnumDescriptorProto obj, ref object state) =>
+        throw new NotImplementedException();
 
     #endregion
 }

@@ -3,16 +3,20 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Proto.Cluster.Identity;
 
 /// <summary>
-/// Lets the caller know that the identity is not available to spawn.
+///     Lets the caller know that the identity is not available to spawn.
 /// </summary>
 public class IdentityIsBlocked : Exception
 {
-    public IdentityIsBlocked(ClusterIdentity blockedIdentity) => BlockedIdentity = blockedIdentity;
+    public IdentityIsBlocked(ClusterIdentity blockedIdentity)
+    {
+        BlockedIdentity = blockedIdentity;
+    }
 
     public ClusterIdentity BlockedIdentity { get; }
 }

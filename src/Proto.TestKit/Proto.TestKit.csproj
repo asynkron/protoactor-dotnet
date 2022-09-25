@@ -1,16 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;net6.0;net7.0</TargetFrameworks>
-    <IsPackable>true</IsPackable>
-    <Nullable>enable</Nullable>
-    <LangVersion>10</LangVersion>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.1;net6.0;net7.0</TargetFrameworks>
+        <IsPackable>true</IsPackable>
+        <Nullable>enable</Nullable>
+        <LangVersion>10</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1"/>
+    </ItemGroup>
 </Project>

@@ -22,6 +22,7 @@ public class MailboxSchedulingTests
         mailbox.PostUserMessage(msg2);
 
         await Task.Delay(1000);
+
         Assert.True(userMailbox.HasMessages,
             "Mailbox should not have processed msg2 because processing of msg1 is not completed."
         );
@@ -77,6 +78,7 @@ public class MailboxSchedulingTests
         Assert.True(systemMessages.HasMessages,
             "Mailbox should not have processed msg2 because processing of msg1 is not completed."
         );
+
         msg2.TaskCompletionSource.SetResult(0);
         msg1.TaskCompletionSource.SetResult(0);
         await Task.Delay(1000);

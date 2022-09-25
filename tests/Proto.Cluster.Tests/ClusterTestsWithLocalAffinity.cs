@@ -12,7 +12,9 @@ namespace Proto.Cluster.Tests;
 public abstract class ClusterTestsWithLocalAffinity : ClusterTests
 {
     protected ClusterTestsWithLocalAffinity(ITestOutputHelper testOutputHelper, IClusterFixture clusterFixture)
-        : base(testOutputHelper, clusterFixture) {}
+        : base(testOutputHelper, clusterFixture)
+    {
+    }
 
     [Fact]
     public async Task LocalAffinityMovesActivationsOnRemoteSender()
@@ -24,10 +26,13 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
         await PingAndVerifyLocality(firstNode, timeout, "1:1", firstNode.System.Address,
             "Local affinity to sending node means that actors should spawn there"
         );
+
         LogProcessCounts();
+
         await PingAndVerifyLocality(secondNode, timeout, "2:1", firstNode.System.Address,
             "As the current instances exist on the 'wrong' node, these should respond before being moved"
         );
+
         LogProcessCounts();
 
         _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
@@ -37,11 +42,13 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
         await PingAndVerifyLocality(secondNode, timeout, "2.2", secondNode.System.Address,
             "Relocation should be triggered, and the actors should be respawned on the local node"
         );
+
         LogProcessCounts();
 
-        void LogProcessCounts() => _testOutputHelper.WriteLine(
-            $"Processes: {firstNode.System.Address}: {firstNode.System.ProcessRegistry.ProcessCount}, {secondNode.System.Address}: {secondNode.System.ProcessRegistry.ProcessCount}"
-        );
+        void LogProcessCounts() =>
+            _testOutputHelper.WriteLine(
+                $"Processes: {firstNode.System.Address}: {firstNode.System.ProcessRegistry.ProcessCount}, {secondNode.System.Address}: {secondNode.System.ProcessRegistry.ProcessCount}"
+            );
     }
 
     private async Task PingAndVerifyLocality(
@@ -55,24 +62,26 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
         _testOutputHelper.WriteLine("Sending requests from " + cluster.System.Address);
 
         await Task.WhenAll(
-            Enumerable.Range(0, 100).Select(async i => {
-                    var response = await cluster.RequestAsync<HereIAm>(CreateIdentity(i.ToString()), EchoActor.LocalAffinityKind, new WhereAreYou
-                        {
-                            RequestId = requestId
-                        }, token
-                    );
-
-                    response.Should().NotBeNull();
-
-                    if (expectResponseFrom != null)
+            Enumerable.Range(0, 100)
+                .Select(async i =>
                     {
-                        response.Address.Should().Be(expectResponseFrom, because);
+                        var response = await cluster.RequestAsync<HereIAm>(CreateIdentity(i.ToString()),
+                            EchoActor.LocalAffinityKind, new WhereAreYou
+                            {
+                                RequestId = requestId
+                            }, token
+                        );
+
+                        response.Should().NotBeNull();
+
+                        if (expectResponseFrom != null)
+                        {
+                            response.Address.Should().Be(expectResponseFrom, because);
+                        }
                     }
-                }
-            )
+                )
         );
     }
-
 }
 
 // ReSharper disable once UnusedType.Global
@@ -87,7 +96,8 @@ public class InMemoryClusterTests : ClusterTestsWithLocalAffinity, IClassFixture
 }
 
 // ReSharper disable once UnusedType.Global
-public class InMemoryClusterTestsAlternativeClusterContext : ClusterTestsWithLocalAffinity, IClassFixture<InMemoryClusterFixtureAlternativeClusterContext>
+public class InMemoryClusterTestsAlternativeClusterContext : ClusterTestsWithLocalAffinity,
+    IClassFixture<InMemoryClusterFixtureAlternativeClusterContext>
 {
     // ReSharper disable once SuggestBaseTypeForParameter
     public InMemoryClusterTestsAlternativeClusterContext(
@@ -101,10 +111,12 @@ public class InMemoryClusterTestsAlternativeClusterContext : ClusterTestsWithLoc
 }
 
 // ReSharper disable once UnusedType.Global
-public class InMemoryClusterTestsSharedFutures : ClusterTestsWithLocalAffinity, IClassFixture<InMemoryClusterFixtureSharedFutures>
+public class InMemoryClusterTestsSharedFutures : ClusterTestsWithLocalAffinity,
+    IClassFixture<InMemoryClusterFixtureSharedFutures>
 {
     // ReSharper disable once SuggestBaseTypeForParameter
-    public InMemoryClusterTestsSharedFutures(ITestOutputHelper testOutputHelper, InMemoryClusterFixtureSharedFutures clusterFixture) : base(
+    public InMemoryClusterTestsSharedFutures(ITestOutputHelper testOutputHelper,
+        InMemoryClusterFixtureSharedFutures clusterFixture) : base(
         testOutputHelper, clusterFixture
     )
     {
@@ -112,7 +124,8 @@ public class InMemoryClusterTestsSharedFutures : ClusterTestsWithLocalAffinity, 
 }
 
 // ReSharper disable once UnusedType.Global
-public class InMemoryClusterTestsPidCacheInvalidation : ClusterTestsWithLocalAffinity, IClassFixture<InMemoryPidCacheInvalidationClusterFixture>
+public class InMemoryClusterTestsPidCacheInvalidation : ClusterTestsWithLocalAffinity,
+    IClassFixture<InMemoryPidCacheInvalidationClusterFixture>
 {
     // ReSharper disable once SuggestBaseTypeForParameter
     public InMemoryClusterTestsPidCacheInvalidation(

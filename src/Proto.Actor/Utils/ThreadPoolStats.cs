@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,8 @@ namespace Proto.Utils;
 [PublicAPI]
 public static class ThreadPoolStats
 {
-    public static async Task Run(TimeSpan interval, Action<TimeSpan> callback, CancellationToken cancellationToken = default)
+    public static async Task Run(TimeSpan interval, Action<TimeSpan> callback,
+        CancellationToken cancellationToken = default)
     {
         await Task.Yield();
 
@@ -21,8 +23,11 @@ public static class ThreadPoolStats
         {
             await Task.Delay(interval, cancellationToken);
             var t1 = DateTime.UtcNow;
-            var t2 = await Task.Run(async () => {
+
+            var t2 = await Task.Run(async () =>
+                {
                     await Task.Yield();
+
                     return DateTime.UtcNow;
                 }, cancellationToken
             );

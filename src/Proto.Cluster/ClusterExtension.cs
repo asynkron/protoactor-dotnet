@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +16,7 @@ namespace Proto.Cluster;
 public static class Extensions
 {
     /// <summary>
-    /// Adds the <see cref="Proto.Cluster.Cluster"/> extension to the given <see cref="ActorSystem"/>
+    ///     Adds the <see cref="Proto.Cluster.Cluster" /> extension to the given <see cref="ActorSystem" />
     /// </summary>
     /// <param name="system"></param>
     /// <param name="config"></param>
@@ -23,27 +24,28 @@ public static class Extensions
     public static ActorSystem WithCluster(this ActorSystem system, ClusterConfig config)
     {
         _ = new Cluster(system, config);
+
         return system;
     }
 
     /// <summary>
-    /// Gets the <see cref="Proto.Cluster.Cluster"/> from the <see cref="ActorSystem"/>
+    ///     Gets the <see cref="Proto.Cluster.Cluster" /> from the <see cref="ActorSystem" />
     /// </summary>
     /// <param name="system"></param>
     /// <returns></returns>
-    public static Cluster Cluster(this ActorSystem system)
-        => system.Extensions.GetRequired<Cluster>("Cluster has not been configured");
+    public static Cluster Cluster(this ActorSystem system) =>
+        system.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
     /// <summary>
-    /// Gets the <see cref="Proto.Cluster.Cluster"/> from the <see cref="IContext"/>
+    ///     Gets the <see cref="Proto.Cluster.Cluster" /> from the <see cref="IContext" />
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
-    public static Cluster Cluster(this IContext context)
-        => context.System.Extensions.GetRequired<Cluster>("Cluster has not been configured");
+    public static Cluster Cluster(this IContext context) =>
+        context.System.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
     /// <summary>
-    /// Sends a request to a cluster identity
+    ///     Sends a request to a cluster identity
     /// </summary>
     /// <param name="context"></param>
     /// <param name="identity">Identity to send to</param>
@@ -63,14 +65,18 @@ public static class Extensions
         context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
 
     /// <summary>
-    /// Sends a request to a cluster identity and calls the provided callback when the response is received. The callback is executed within the
-    /// actor's concurrency constraint.
+    ///     Sends a request to a cluster identity and calls the provided callback when the response is received. The callback
+    ///     is executed within the
+    ///     actor's concurrency constraint.
     /// </summary>
     /// <param name="context"></param>
     /// <param name="identity">Identity to send to</param>
     /// <param name="kind">Cluster kind to sent to</param>
     /// <param name="message">Message to send</param>
-    /// <param name="callback">Callback that will be called after request is finished. It receives the request task as a parameter.</param>
+    /// <param name="callback">
+    ///     Callback that will be called after request is finished. It receives the request task as a
+    ///     parameter.
+    /// </param>
     /// <param name="ct">Token to cancel the request</param>
     /// <typeparam name="T">Type of the expected response</typeparam>
     public static void ClusterRequestReenter<T>(
@@ -88,13 +94,17 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Sends a request to a cluster identity and calls the provided callback when the response is received. The callback is executed within the
-    /// actor's concurrency constraint.
+    ///     Sends a request to a cluster identity and calls the provided callback when the response is received. The callback
+    ///     is executed within the
+    ///     actor's concurrency constraint.
     /// </summary>
     /// <param name="context"></param>
-    /// <param name="clusterIdentity"><see cref="ClusterIdentity"/> to send to</param>
+    /// <param name="clusterIdentity"><see cref="ClusterIdentity" /> to send to</param>
     /// <param name="message">Message to send</param>
-    /// <param name="callback">Callback that will be called after request is finished. It receives the request task as a parameter.</param>
+    /// <param name="callback">
+    ///     Callback that will be called after request is finished. It receives the request task as a
+    ///     parameter.
+    /// </param>
     /// <param name="ct">Token to cancel the request</param>
     /// <typeparam name="T">Type of the expected response</typeparam>
     public static void ClusterRequestReenter<T>(
@@ -118,7 +128,8 @@ public static class Extensions
         return props
             .WithReceiverMiddleware(
                 baseReceive =>
-                    (ctx, env) => {
+                    (ctx, env) =>
+                    {
                         return env.Message switch
                         {
                             Started    => HandleStarted(baseReceive, ctx, env),
@@ -169,9 +180,10 @@ public static class Extensions
                 ctx.System.EventStream.Publish(new ActivationTerminating
                     {
                         Pid = ctx.Self,
-                        ClusterIdentity = identity,
+                        ClusterIdentity = identity
                     }
                 );
+
                 cluster.PidCache.RemoveByVal(identity, ctx.Self);
             }
 
@@ -188,12 +200,14 @@ public static class Extensions
     /// <param name="props"></param>
     /// <param name="deduplicationWindow"></param>
     /// <returns></returns>
-    public static Props WithClusterRequestDeduplication(this Props props, TimeSpan? deduplicationWindow = null)
-        => props.WithContextDecorator(context => {
+    public static Props WithClusterRequestDeduplication(this Props props, TimeSpan? deduplicationWindow = null) =>
+        props.WithContextDecorator(context =>
+            {
                 var cluster = context.System.Cluster();
                 var memberList = cluster.MemberList;
 
-                return new DeduplicationContext<PidRef>(context, deduplicationWindow ?? cluster.Config.ClusterRequestDeDuplicationWindow,
+                return new DeduplicationContext<PidRef>(context,
+                    deduplicationWindow ?? cluster.Config.ClusterRequestDeDuplicationWindow,
                     TryGetRef
                 );
 
@@ -205,10 +219,12 @@ public static class Extensions
                         memberList.TryGetMemberIndexByAddress(pid.Address, out var memberId))
                     {
                         pidRef = new PidRef(memberId, id, pid.RequestId);
+
                         return true;
                     }
 
                     pidRef = default;
+
                     return false;
                 }
             }
@@ -227,7 +243,8 @@ public static class Extensions
             RequestId = requestId;
         }
 
-        public bool Equals(PidRef other) => MemberId == other.MemberId && Id == other.Id && RequestId == other.RequestId;
+        public bool Equals(PidRef other) =>
+            MemberId == other.MemberId && Id == other.Id && RequestId == other.RequestId;
 
         public override bool Equals(object? obj) => obj is PidRef other && Equals(other);
 

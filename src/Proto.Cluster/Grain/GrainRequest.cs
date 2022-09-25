@@ -3,13 +3,14 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using Google.Protobuf;
 using Proto.Remote;
 
 namespace Proto.Cluster;
 
 /// <summary>
-/// Transport-level representation of <see cref="GrainRequestMessage"/>
+///     Transport-level representation of <see cref="GrainRequestMessage" />
 /// </summary>
 public partial class GrainRequest : IRootSerialized
 {
@@ -24,7 +25,7 @@ public partial class GrainRequest : IRootSerialized
 
         var ser = system.Serialization();
         var message = ser.Deserialize(MessageTypeName, MessageData, Serialization.SERIALIZER_ID_PROTOBUF);
-            
-        return new GrainRequestMessage(MethodIndex, (IMessage) message);
+
+        return new GrainRequestMessage(MethodIndex, (IMessage)message);
     }
 }

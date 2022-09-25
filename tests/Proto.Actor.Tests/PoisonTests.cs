@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -13,8 +14,12 @@ namespace Proto.Tests;
 
 public class PoisonTests
 {
-    private static readonly Props EchoProps = Props.FromFunc(ctx => {
-            if (ctx.Sender != null) ctx.Respond(ctx.Message!);
+    private static readonly Props EchoProps = Props.FromFunc(ctx =>
+        {
+            if (ctx.Sender != null)
+            {
+                ctx.Respond(ctx.Message!);
+            }
 
             return Task.CompletedTask;
         }
@@ -48,6 +53,8 @@ public class PoisonTests
 
         completed.Should().BeTrue("Or we did not get a response when poisoning a live pid");
 
-        await system.Root.Invoking(ctx => ctx.RequestAsync<string>(pid, message)).Should().ThrowExactlyAsync<DeadLetterException>();
+        await system.Root.Invoking(ctx => ctx.RequestAsync<string>(pid, message))
+            .Should()
+            .ThrowExactlyAsync<DeadLetterException>();
     }
 }

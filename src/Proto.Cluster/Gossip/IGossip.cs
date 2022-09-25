@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Google.Protobuf;
@@ -18,11 +19,11 @@ namespace Proto.Cluster.Gossip;
 /// </summary>
 public delegate void SendStateAction(MemberStateDelta memberStateDelta, Member member, InstanceLogger? logger);
 
-interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
+internal interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
 {
 }
 
-interface IGossipCore
+internal interface IGossipCore
 {
     Task UpdateClusterTopology(ClusterTopology clusterTopology);
 
@@ -42,14 +43,14 @@ interface IGossipCore
     MemberStateDelta GetMemberStateDelta(string targetMemberId);
 }
 
-interface IGossipConsensusChecker
+internal interface IGossipConsensusChecker
 {
     void AddConsensusCheck(string id, ConsensusCheck check);
 
     void RemoveConsensusCheck(string id);
 }
 
-interface IGossipStateStore
+internal interface IGossipStateStore
 {
     GossipState GetStateSnapshot();
 

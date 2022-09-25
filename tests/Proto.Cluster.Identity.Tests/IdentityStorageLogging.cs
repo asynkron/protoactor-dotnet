@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -16,14 +17,18 @@ public sealed class IdentityStorageLogging : IIdentityStorage
     private readonly ILogger _logger = Log.CreateLogger<IdentityStorageLogging>();
     private readonly IIdentityStorage _storage;
 
-    public IdentityStorageLogging(IIdentityStorage storage) => _storage = storage;
+    public IdentityStorageLogging(IIdentityStorage storage)
+    {
+        _storage = storage;
+    }
 
     public Task<StoredActivation?> TryGetExistingActivation(
         ClusterIdentity clusterIdentity,
         CancellationToken ct
-    ) => LogCall(() => _storage.TryGetExistingActivation(clusterIdentity, ct),
-        nameof(TryGetExistingActivation), clusterIdentity.ToString()
-    );
+    ) =>
+        LogCall(() => _storage.TryGetExistingActivation(clusterIdentity, ct),
+            nameof(TryGetExistingActivation), clusterIdentity.ToString()
+        );
 
     public Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity, CancellationToken ct) =>
         LogCall(() => _storage.TryAcquireLock(clusterIdentity, ct),
@@ -45,18 +50,21 @@ public sealed class IdentityStorageLogging : IIdentityStorage
             nameof(StoreActivation), spawnLock.ClusterIdentity.ToString()
         );
 
-    public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) => LogCall(
-        () => _storage.RemoveActivation(clusterIdentity, pid, ct),
-        nameof(RemoveActivation), pid.ToString()
-    );
+    public Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct) =>
+        LogCall(
+            () => _storage.RemoveActivation(clusterIdentity, pid, ct),
+            nameof(RemoveActivation), pid.ToString()
+        );
 
-    public Task RemoveMember(string memberId, CancellationToken ct) => LogCall(() => _storage.RemoveMember(memberId, ct),
-        nameof(RemoveMember), memberId
-    );
+    public Task RemoveMember(string memberId, CancellationToken ct) =>
+        LogCall(() => _storage.RemoveMember(memberId, ct),
+            nameof(RemoveMember), memberId
+        );
 
-    public Task Init() => LogCall(() => _storage.Init(),
-        nameof(Init), ""
-    );
+    public Task Init() =>
+        LogCall(() => _storage.Init(),
+            nameof(Init), ""
+        );
 
     public void Dispose() => _storage.Dispose();
 
@@ -69,8 +77,10 @@ public sealed class IdentityStorageLogging : IIdentityStorage
             _logger.LogInformation("{Method}: {Subject} before {Elapsed}",
                 method, subject, timer.Elapsed
             );
+
             await call();
             timer.Stop();
+
             _logger.LogInformation("{Method}: {Subject} after {Elapsed}",
                 method, subject, timer.Elapsed
             );
@@ -78,9 +88,11 @@ public sealed class IdentityStorageLogging : IIdentityStorage
         catch (Exception e)
         {
             timer.Stop();
+
             _logger.LogError(e, "{Method}: {Subject} failed after {Elapsed}",
                 method, subject, timer.Elapsed
             );
+
             throw;
         }
     }
@@ -94,19 +106,24 @@ public sealed class IdentityStorageLogging : IIdentityStorage
             _logger.LogInformation("{Method}: {Subject} before",
                 method, subject
             );
+
             var result = await call();
             timer.Stop();
+
             _logger.LogInformation("{Method}: {Subject} after {Elapsed} returned {Result}",
                 method, subject, timer.Elapsed, result
             );
+
             return result;
         }
         catch (Exception e)
         {
             timer.Stop();
+
             _logger.LogError(e, "{Method}: {Subject} failed after {Elapsed}: {Error}",
                 method, subject, timer.Elapsed, e.ToString()
             );
+
             throw;
         }
     }

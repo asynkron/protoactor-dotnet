@@ -11,6 +11,7 @@ public class RemoteKindsRegistrationTests
     {
         var props = new Props();
         var kind = Guid.NewGuid().ToString();
+
         var remote = new GrpcNetRemote(new ActorSystem(),
             GrpcNetRemoteConfig.BindToLocalhost()
                 .WithRemoteKinds((kind, props))
@@ -25,6 +26,7 @@ public class RemoteKindsRegistrationTests
         var props = new Props();
         var kind1 = Guid.NewGuid().ToString();
         var kind2 = Guid.NewGuid().ToString();
+
         var remote = new GrpcNetRemote(new ActorSystem(),
             GrpcNetRemoteConfig
                 .BindToLocalhost()

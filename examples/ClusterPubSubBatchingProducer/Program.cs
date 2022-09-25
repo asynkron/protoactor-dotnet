@@ -1,5 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
+
 using System.Diagnostics;
+using ClusterPubSubBatchingProducer;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
@@ -8,6 +10,7 @@ using Proto.Cluster.PubSub;
 using Proto.Cluster.Testing;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using ProtosReflection = ClusterPubSubBatchingProducer.ProtosReflection;
 
 Log.SetLoggerFactory(LoggerFactory.Create(l =>
         l.AddConsole().SetMinimumLevel(LogLevel.Information)
@@ -24,10 +27,11 @@ long deliveredCount = 0;
 Console.WriteLine("Subscribing...");
 
 // subscribe 3 times
-for (int i = 0; i < 3; i++)
+for (var i = 0; i < 3; i++)
 {
-    await cluster.Subscribe("my-topic", context => {
-            if (context.Message is ClusterPubSubBatchingProducer.PingMessage)
+    await cluster.Subscribe("my-topic", context =>
+        {
+            if (context.Message is PingMessage)
             {
                 Interlocked.Increment(ref deliveredCount);
             }
@@ -45,13 +49,15 @@ var stopwatch = new Stopwatch();
 stopwatch.Start();
 
 var producer = cluster.BatchingProducer("my-topic");
-var produceTasks = 
-    Enumerable.Range(1, count).Select(i => producer.ProduceAsync(new ClusterPubSubBatchingProducer.PingMessage {Data = i}));
+
+var produceTasks =
+    Enumerable.Range(1, count).Select(i => producer.ProduceAsync(new PingMessage { Data = i }));
 
 await Task.WhenAll(produceTasks);
 stopwatch.Stop();
 
-Console.WriteLine($"Sent: {count}, delivered: {deliveredCount}, msg/s: {deliveredCount / (stopwatch.ElapsedTicks / (double)Stopwatch.Frequency):F1}");
+Console.WriteLine(
+    $"Sent: {count}, delivered: {deliveredCount}, msg/s: {deliveredCount / (stopwatch.ElapsedTicks / (double)Stopwatch.Frequency):F1}");
 
 Console.WriteLine("Press any key to shut down...");
 Console.Read();
@@ -59,19 +65,22 @@ Console.Read();
 await producer.DisposeAsync();
 await cluster.ShutdownAsync();
 
+static ActorSystem GetSystem() =>
+    new ActorSystem()
+        .WithRemote(GetRemoteConfig())
+        .WithCluster(GetClusterConfig());
 
-static ActorSystem GetSystem() => new ActorSystem()
-    .WithRemote(GetRemoteConfig())
-    .WithCluster(GetClusterConfig());
-
-static GrpcNetRemoteConfig GetRemoteConfig() => GrpcNetRemoteConfig
-    .BindToLocalhost()
-    .WithProtoMessages(ClusterPubSubBatchingProducer.ProtosReflection.Descriptor);
+static GrpcNetRemoteConfig GetRemoteConfig() =>
+    GrpcNetRemoteConfig
+        .BindToLocalhost()
+        .WithProtoMessages(ProtosReflection.Descriptor);
 
 static ClusterConfig GetClusterConfig()
 {
     var clusterConfig =
         ClusterConfig
-            .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()), new PartitionIdentityLookup());
+            .Setup("MyCluster", new TestProvider(new TestProviderOptions(), new InMemAgent()),
+                new PartitionIdentityLookup());
+
     return clusterConfig;
 }
