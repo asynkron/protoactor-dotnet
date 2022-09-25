@@ -20,11 +20,9 @@ public class JsonSerializer : ISerializer
         _serialization = serialization;
     }
 
-    public ByteString Serialize(object obj)
-    {
-        return ByteString.CopyFromUtf8(
+    public ByteString Serialize(object obj) =>
+        ByteString.CopyFromUtf8(
             System.Text.Json.JsonSerializer.Serialize(obj, _serialization.JsonSerializerOptions));
-    }
 
     public object Deserialize(ByteString bytes, string typeName)
     {
@@ -40,17 +38,13 @@ public class JsonSerializer : ISerializer
         return message;
     }
 
-    public string GetTypeName(object obj)
-    {
-        return obj.GetType().AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(obj));
-    }
+    public string GetTypeName(object obj) =>
+        obj.GetType().AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(obj));
 
-    public bool CanSerialize(object obj)
-    {
-        return obj switch
+    public bool CanSerialize(object obj) =>
+        obj switch
         {
             IMessage => false,
             _        => true
         };
-    }
 }

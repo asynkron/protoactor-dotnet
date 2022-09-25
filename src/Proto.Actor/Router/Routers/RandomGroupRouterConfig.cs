@@ -22,8 +22,5 @@ internal record RandomGroupRouterConfig : GroupRouterConfig
     {
     }
 
-    protected override RouterState CreateRouterState()
-    {
-        return new RandomRouterState(SenderContext, _seed);
-    }
+    protected override RouterState CreateRouterState() => new RandomRouterState(SenderContext, _seed);
 }

@@ -33,20 +33,14 @@ public partial class PID : ICustomDiagnosticMessage
 
     internal Process? CurrentRef { get; private set; }
 
-    public string ToDiagnosticString()
-    {
-        return $"{Address}/{Id}";
-    }
+    public string ToDiagnosticString() => $"{Address}/{Id}";
 
     /// <summary>
     ///     Creates a new PID instance from address and identifier.
     /// </summary>
     /// <param name="address">Actor system address</param>
     /// <param name="id">Actor identifier</param>
-    public static PID FromAddress(string address, string id)
-    {
-        return new(address, id);
-    }
+    public static PID FromAddress(string address, string id) => new PID(address, id);
 
     internal Process? Ref(ActorSystem system)
     {
@@ -97,14 +91,12 @@ public partial class PID : ICustomDiagnosticMessage
     /// </summary>
     /// <param name="requestId"></param>
     /// <returns></returns>
-    public PID WithRequestId(uint requestId)
-    {
-        return new()
+    public PID WithRequestId(uint requestId) =>
+        new PID
         {
             Id = Id,
             Address = Address,
             CurrentRef = CurrentRef,
             RequestId = requestId
         };
-    }
 }

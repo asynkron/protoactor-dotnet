@@ -21,11 +21,9 @@ public static class ActorLoggingContextExtensions
         LogLevel logLevel = LogLevel.Debug,
         LogLevel infrastructureLogLevel = LogLevel.None,
         LogLevel exceptionLogLevel = LogLevel.Error
-    )
-    {
-        return props.WithContextDecorator(ctx =>
+    ) =>
+        props.WithContextDecorator(ctx =>
             new ActorLoggingContext(ctx, logger, logLevel, infrastructureLogLevel, exceptionLogLevel));
-    }
 }
 
 /// <summary>
@@ -163,10 +161,7 @@ public class ActorLoggingContext : ActorContextDecorator
         }
     }
 
-    private static string SenderOrNone(MessageEnvelope envelope)
-    {
-        return envelope.Sender?.ToString() ?? "[No Sender]";
-    }
+    private static string SenderOrNone(MessageEnvelope envelope) => envelope.Sender?.ToString() ?? "[No Sender]";
 
     private LogLevel GetLogLevel(object message)
     {

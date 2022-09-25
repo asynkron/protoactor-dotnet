@@ -42,9 +42,8 @@ public class PartitionActivatorActor : IActor
         _myAddress = cluster.System.Address;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             Started                   => OnStarted(context),
             ActivationRequest msg     => OnActivationRequest(msg, context),
@@ -53,7 +52,6 @@ public class PartitionActivatorActor : IActor
             ClusterTopology msg       => OnClusterTopology(msg, context),
             _                         => Task.CompletedTask
         };
-    }
 
     private Task OnStarted(IContext context)
     {

@@ -12,17 +12,14 @@ namespace Proto.Cluster.Gossip;
 
 public static class RandomOrderExtensions
 {
-    public static IEnumerable<T> OrderByRandom<T>(this IEnumerable<T> items, Random rnd)
-    {
-        return items
+    public static IEnumerable<T> OrderByRandom<T>(this IEnumerable<T> items, Random rnd) =>
+        items
             .Select(m => (item: m, index: rnd.Next()))
             .OrderBy(m => m.index)
             .Select(m => m.item);
-    }
 
-    public static IEnumerable<T> OrderByRandom<T>(this IEnumerable<T> items, Random rnd, Func<T, bool> shouldBeFirst)
-    {
-        return items
+    public static IEnumerable<T> OrderByRandom<T>(this IEnumerable<T> items, Random rnd, Func<T, bool> shouldBeFirst) =>
+        items
             .Select(m => (item: m, index: rnd.Next()))
             .OrderBy(m =>
                 {
@@ -35,5 +32,4 @@ public static class RandomOrderExtensions
                 }
             )
             .Select(m => m.item);
-    }
 }

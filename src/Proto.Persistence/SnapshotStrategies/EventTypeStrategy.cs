@@ -21,8 +21,5 @@ public class EventTypeStrategy : ISnapshotStrategy
         _eventType = eventType;
     }
 
-    public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
-    {
-        return persistedEvent.Data.GetType() == _eventType;
-    }
+    public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => persistedEvent.Data.GetType() == _eventType;
 }

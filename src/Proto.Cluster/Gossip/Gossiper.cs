@@ -63,10 +63,8 @@ public class Gossiper
     ///     Gets the current full gossip state as seen by current member
     /// </summary>
     /// <returns></returns>
-    public Task<GossipState> GetStateSnapshot()
-    {
-        return _context.RequestAsync<GossipState>(_pid, new GetGossipStateSnapshot());
-    }
+    public Task<GossipState> GetStateSnapshot() =>
+        _context.RequestAsync<GossipState>(_pid, new GetGossipStateSnapshot());
 
     /// <summary>
     ///     Gets gossip state entry by key, for each member represented in the gossip state, as seen by current member
@@ -317,20 +315,15 @@ public class Gossiper
 
         public IImmutableSet<string> AffectedKeys => _getConsensusValues.Select(it => it.Item1).ToImmutableHashSet();
 
-        public static ConsensusCheckBuilder<T> Create<TE>(string key, Func<TE, T?> getValue) where TE : IMessage, new()
-        {
-            return new(key, MapFromAny(getValue));
-        }
+        public static ConsensusCheckBuilder<T> Create<TE>(string key, Func<TE, T?> getValue)
+            where TE : IMessage, new() => new ConsensusCheckBuilder<T>(key, MapFromAny(getValue));
 
-        private static Func<Any, T?> MapFromAny<TE>(Func<TE, T?> getValue) where TE : IMessage, new()
-        {
-            return any => any.TryUnpack<TE>(out var envelope) ? getValue(envelope) : default;
-        }
+        private static Func<Any, T?> MapFromAny<TE>(Func<TE, T?> getValue) where TE : IMessage, new() =>
+            any => any.TryUnpack<TE>(out var envelope) ? getValue(envelope) : default;
 
-        public ConsensusCheckBuilder<T> InConsensusWith<TE>(string key, Func<TE, T> getValue) where TE : IMessage, new()
-        {
-            return new(_getConsensusValues.Add((key, MapFromAny(getValue))));
-        }
+        public ConsensusCheckBuilder<T> InConsensusWith<TE>(string key, Func<TE, T> getValue)
+            where TE : IMessage, new() =>
+            new ConsensusCheckBuilder<T>(_getConsensusValues.Add((key, MapFromAny(getValue))));
 
         private static Func<KeyValuePair<string, GossipState.Types.GossipMemberState>, (string member, string key, T
             value)> MapToValue(
@@ -413,20 +406,16 @@ public class Gossiper
             };
 
             KeyValuePair<string, GossipState.Types.GossipMemberState>[] GetValidMemberStates(GossipState state,
-                IImmutableSet<string> ids)
-            {
-                return state.Members
+                IImmutableSet<string> ids) =>
+                state.Members
                     .Where(member => ids.Contains(member.Key))
                     .Select(member => member).ToArray();
-            }
         }
     }
 
     public IConsensusHandle<TV> RegisterConsensusCheck<T, TV>(string key, Func<T, TV?> getValue)
-        where T : notnull, IMessage, new()
-    {
-        return RegisterConsensusCheck(ConsensusCheckBuilder<TV>.Create(key, getValue));
-    }
+        where T : notnull, IMessage, new() =>
+        RegisterConsensusCheck(ConsensusCheckBuilder<TV>.Create(key, getValue));
 
     public IConsensusHandle<T> RegisterConsensusCheck<T>(IConsensusCheckDefinition<T> consensusDefinition)
         where T : notnull

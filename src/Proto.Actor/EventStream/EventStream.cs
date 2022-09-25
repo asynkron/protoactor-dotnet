@@ -274,10 +274,7 @@ public class EventStream<T>
     ///     Remove a subscription by id
     /// </summary>
     /// <param name="id">Subscription id</param>
-    public void Unsubscribe(Guid id)
-    {
-        _subscriptions.TryRemove(id, out _);
-    }
+    public void Unsubscribe(Guid id) => _subscriptions.TryRemove(id, out _);
 
     /// <summary>
     ///     Remove a subscription
@@ -308,8 +305,5 @@ public class EventStreamSubscription<T>
     public IDispatcher Dispatcher { get; }
     public Func<T, Task> Action { get; }
 
-    public void Unsubscribe()
-    {
-        _eventStream.Unsubscribe(Id);
-    }
+    public void Unsubscribe() => _eventStream.Unsubscribe(Id);
 }

@@ -15,15 +15,9 @@ public abstract class RouterState
     protected HashSet<PID> Routees = new();
     protected ImmutableList<PID> Values = ImmutableList<PID>.Empty;
 
-    public virtual HashSet<PID> GetRoutees()
-    {
-        return Routees;
-    }
+    public virtual HashSet<PID> GetRoutees() => Routees;
 
-    protected ImmutableList<PID> GetValues()
-    {
-        return Values;
-    }
+    protected ImmutableList<PID> GetValues() => Values;
 
     public virtual void SetRoutees(PID[] routees)
     {

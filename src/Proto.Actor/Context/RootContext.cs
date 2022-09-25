@@ -54,20 +54,11 @@ public sealed record RootContext : IRootContext
     private TypeDictionary<object, RootContext> Store { get; } = new(0, 1);
     public ActorSystem System { get; }
 
-    public T? Get<T>()
-    {
-        return (T?)Store.Get<T>();
-    }
+    public T? Get<T>() => (T?)Store.Get<T>();
 
-    public void Set<T, TI>(TI obj) where TI : T
-    {
-        Store.Add<T>(obj!);
-    }
+    public void Set<T, TI>(TI obj) where TI : T => Store.Add<T>(obj!);
 
-    public void Remove<T>()
-    {
-        Store.Remove<T>();
-    }
+    public void Remove<T>() => Store.Remove<T>();
 
     public MessageHeader Headers { get; init; }
 
@@ -101,10 +92,7 @@ public sealed record RootContext : IRootContext
 
     public object? Message => null;
 
-    public void Send(PID target, object message)
-    {
-        SendUserMessage(target, message);
-    }
+    public void Send(PID target, object message) => SendUserMessage(target, message);
 
     public void Request(PID target, object message, PID? sender)
     {
@@ -114,24 +102,17 @@ public sealed record RootContext : IRootContext
 
     //why does this method exist here and not as an extension?
     //because DecoratorContexts needs to go this way if we want to intercept this method for the context
-    public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-    {
-        return SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
-    }
+    public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
+        SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
 
-    public IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware)
-    {
-        return this with
+    public IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) =>
+        this with
         {
             SenderMiddleware = middleware.Reverse()
                 .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner))
         };
-    }
 
-    public IFuture GetFuture()
-    {
-        return System.Future.Get();
-    }
+    public IFuture GetFuture() => System.Future.Get();
 
     public void Stop(PID? pid)
     {
@@ -153,10 +134,7 @@ public sealed record RootContext : IRootContext
         return future.Task;
     }
 
-    public void Poison(PID pid)
-    {
-        pid.SendUserMessage(System, PoisonPill.Instance);
-    }
+    public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
 
     public Task PoisonAsync(PID pid)
     {
@@ -167,10 +145,7 @@ public sealed record RootContext : IRootContext
         return future.Task;
     }
 
-    public IRootContext WithHeaders(MessageHeader headers)
-    {
-        return this with { Headers = headers };
-    }
+    public IRootContext WithHeaders(MessageHeader headers) => this with { Headers = headers };
 
     private Task DefaultSender(ISenderContext context, PID target, MessageEnvelope message)
     {

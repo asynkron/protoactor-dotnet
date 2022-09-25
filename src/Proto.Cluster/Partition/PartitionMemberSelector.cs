@@ -15,10 +15,8 @@ internal class PartitionMemberSelector
 {
     private State _state = new(new MemberHashRing(ImmutableList<Member>.Empty), 0);
 
-    public void Update(Member[] members, ulong topologyHash)
-    {
+    public void Update(Member[] members, ulong topologyHash) =>
         Interlocked.Exchange(ref _state, new State(new MemberHashRing(members), topologyHash));
-    }
 
     public (string owner, ulong topologyHash) GetIdentityOwner(string key)
     {

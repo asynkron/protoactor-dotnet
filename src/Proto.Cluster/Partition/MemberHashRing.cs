@@ -17,13 +17,8 @@ public class MemberHashRing : HashRing<Member>
     {
     }
 
-    public string GetOwnerMemberByIdentity(ClusterIdentity clusterIdentity)
-    {
-        return GetNode(clusterIdentity.Identity)?.Address ?? "";
-    }
+    public string GetOwnerMemberByIdentity(ClusterIdentity clusterIdentity) =>
+        GetNode(clusterIdentity.Identity)?.Address ?? "";
 
-    public string GetOwnerMemberByIdentity(string identity)
-    {
-        return GetNode(identity)?.Address ?? "";
-    }
+    public string GetOwnerMemberByIdentity(string identity) => GetNode(identity)?.Address ?? "";
 }

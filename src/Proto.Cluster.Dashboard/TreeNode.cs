@@ -4,18 +4,14 @@ public class TreeNodeComparer : IEqualityComparer<TreeNode>
 {
     public static readonly TreeNodeComparer Instance = new();
 
-    public bool Equals(TreeNode? one, TreeNode? two)
-    {
+    public bool Equals(TreeNode? one, TreeNode? two) =>
         // Adjust according to requirements.
-        return StringComparer.InvariantCultureIgnoreCase
+        StringComparer.InvariantCultureIgnoreCase
             .Equals(one?.Name, two?.Name);
-    }
 
-    public int GetHashCode(TreeNode item)
-    {
-        return StringComparer.InvariantCultureIgnoreCase
+    public int GetHashCode(TreeNode item) =>
+        StringComparer.InvariantCultureIgnoreCase
             .GetHashCode(item.Name!);
-    }
 }
 
 public record TreeNode

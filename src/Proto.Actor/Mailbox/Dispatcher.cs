@@ -65,10 +65,7 @@ public sealed class SynchronousDispatcher : IDispatcher
 
     public int Throughput { get; }
 
-    public void Schedule(Func<Task> runner)
-    {
-        runner().Wait();
-    }
+    public void Schedule(Func<Task> runner) => runner().Wait();
 }
 
 /// <summary>
@@ -83,10 +80,7 @@ public sealed class ThreadPoolDispatcher : IDispatcher
         Throughput = throughput;
     }
 
-    public void Schedule(Func<Task> runner)
-    {
-        Task.Factory.StartNew(runner, TaskCreationOptions.None);
-    }
+    public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.None);
 
     public int Throughput { get; set; }
 }
@@ -106,10 +100,8 @@ public sealed class CurrentSynchronizationContextDispatcher : IDispatcher
         Throughput = throughput;
     }
 
-    public void Schedule(Func<Task> runner)
-    {
+    public void Schedule(Func<Task> runner) =>
         Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler);
-    }
 
     public int Throughput { get; }
 }
@@ -122,10 +114,7 @@ internal class NoopDispatcher : IDispatcher
     internal static readonly IDispatcher Instance = new NoopDispatcher();
     public int Throughput => 0;
 
-    public void Schedule(Func<Task> runner)
-    {
-        throw new NotImplementedException();
-    }
+    public void Schedule(Func<Task> runner) => throw new NotImplementedException();
 }
 
 internal class NoopInvoker : IMessageInvoker
@@ -134,18 +123,9 @@ internal class NoopInvoker : IMessageInvoker
 
     public CancellationTokenSource CancellationTokenSource => throw new NotImplementedException();
 
-    public ValueTask InvokeSystemMessageAsync(SystemMessage msg)
-    {
-        throw new NotImplementedException();
-    }
+    public ValueTask InvokeSystemMessageAsync(SystemMessage msg) => throw new NotImplementedException();
 
-    public ValueTask InvokeUserMessageAsync(object msg)
-    {
-        throw new NotImplementedException();
-    }
+    public ValueTask InvokeUserMessageAsync(object msg) => throw new NotImplementedException();
 
-    public void EscalateFailure(Exception reason, object? message)
-    {
-        throw new NotImplementedException();
-    }
+    public void EscalateFailure(Exception reason, object? message) => throw new NotImplementedException();
 }

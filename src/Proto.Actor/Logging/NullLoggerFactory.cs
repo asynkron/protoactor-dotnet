@@ -13,10 +13,7 @@ namespace Proto.Logging;
 [PublicAPI]
 public sealed class NullLoggerFactory : ILoggerFactory
 {
-    public ILogger CreateLogger(string name)
-    {
-        return NullLogger.Instance;
-    }
+    public ILogger CreateLogger(string name) => NullLogger.Instance;
 
     public void AddProvider(ILoggerProvider provider)
     {

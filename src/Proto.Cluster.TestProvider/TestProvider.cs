@@ -72,10 +72,7 @@ public class TestProvider : IClusterProvider
         return Task.CompletedTask;
     }
 
-    private void AgentOnStatusUpdate(object sender, EventArgs e)
-    {
-        NotifyStatuses();
-    }
+    private void AgentOnStatusUpdate(object sender, EventArgs e) => NotifyStatuses();
 
     private void NotifyStatuses()
     {
@@ -113,8 +110,5 @@ public class TestProvider : IClusterProvider
         _ttlReportTimer.Start();
     }
 
-    private void RefreshTTL()
-    {
-        _agent.RefreshServiceTTL(_id);
-    }
+    private void RefreshTTL() => _agent.RefreshServiceTTL(_id);
 }

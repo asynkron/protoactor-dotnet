@@ -36,10 +36,8 @@ public class SingleNodeProvider : IClusterProvider
         return Task.CompletedTask;
     }
 
-    public Task StartClientAsync(Cluster cluster)
-    {
+    public Task StartClientAsync(Cluster cluster) =>
         throw new NotSupportedException("Single node provider does not support client mode");
-    }
 
     public Task ShutdownAsync(bool graceful)
     {

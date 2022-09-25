@@ -17,10 +17,7 @@ public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
 {
     internal PID? CachedPid { get; set; }
 
-    public string ToDiagnosticString()
-    {
-        return $"{Kind}/{Identity}";
-    }
+    public string ToDiagnosticString() => $"{Kind}/{Identity}";
 
     /// <summary>
     ///     Creates ClusterIdentity from identity and cluster kind
@@ -28,14 +25,12 @@ public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
     /// <param name="identity"></param>
     /// <param name="kind"></param>
     /// <returns></returns>
-    public static ClusterIdentity Create(string identity, string kind)
-    {
-        return new()
+    public static ClusterIdentity Create(string identity, string kind) =>
+        new ClusterIdentity
         {
             Identity = identity,
             Kind = kind
         };
-    }
 }
 
 public sealed partial class ActivationRequest
@@ -58,9 +53,8 @@ public sealed partial class Activation
 
 public sealed partial class IdentityHandover : IRootSerializable
 {
-    public IRootSerialized Serialize(ActorSystem system)
-    {
-        return new RemoteIdentityHandover
+    public IRootSerialized Serialize(ActorSystem system) =>
+        new RemoteIdentityHandover
         {
             Actors = PackedActivations.Pack(system.Address, Actors),
             TopologyHash = TopologyHash,
@@ -69,14 +63,12 @@ public sealed partial class IdentityHandover : IRootSerializable
             ChunkId = ChunkId,
             Sent = Sent
         };
-    }
 }
 
 public sealed partial class RemoteIdentityHandover : IRootSerialized
 {
-    public IRootSerializable Deserialize(ActorSystem system)
-    {
-        return new IdentityHandover
+    public IRootSerializable Deserialize(ActorSystem system) =>
+        new IdentityHandover
         {
             TopologyHash = TopologyHash,
             Final = Final,
@@ -85,38 +77,29 @@ public sealed partial class RemoteIdentityHandover : IRootSerialized
             ChunkId = ChunkId,
             Actors = { Actors.UnPack() }
         };
-    }
 }
 
 public sealed partial class PackedActivations
 {
-    public IEnumerable<Activation> UnPack()
-    {
-        return Actors.SelectMany(UnpackKind);
-    }
+    public IEnumerable<Activation> UnPack() => Actors.SelectMany(UnpackKind);
 
-    private IEnumerable<Activation> UnpackKind(Types.Kind kind)
-    {
-        return kind.Activations.Select(packed => new Activation
+    private IEnumerable<Activation> UnpackKind(Types.Kind kind) =>
+        kind.Activations.Select(packed => new Activation
             {
                 ClusterIdentity = ClusterIdentity.Create(packed.Identity, kind.Name),
                 Pid = PID.FromAddress(Address, packed.ActivationId)
             }
         );
-    }
 
-    public static PackedActivations Pack(string address, IEnumerable<Activation> activations)
-    {
-        return new()
+    public static PackedActivations Pack(string address, IEnumerable<Activation> activations) =>
+        new PackedActivations
         {
             Address = address,
             Actors = { PackActivations(activations) }
         };
-    }
 
-    private static IEnumerable<Types.Kind> PackActivations(IEnumerable<Activation> activations)
-    {
-        return activations.GroupBy(it => it.Kind)
+    private static IEnumerable<Types.Kind> PackActivations(IEnumerable<Activation> activations) =>
+        activations.GroupBy(it => it.Kind)
             .Select(grouping => new Types.Kind
                 {
                     Name = grouping.Key,
@@ -131,7 +114,6 @@ public sealed partial class PackedActivations
                     }
                 }
             );
-    }
 }
 
 public partial class ClusterTopology
@@ -143,10 +125,7 @@ public partial class ClusterTopology
     public CancellationToken? TopologyValidityToken { get; init; }
 
     //this ignores joined and left members, only the actual members are relevant
-    public uint GetMembershipHashCode()
-    {
-        return Member.TopologyHash(Members);
-    }
+    public uint GetMembershipHashCode() => Member.TopologyHash(Members);
 }
 
 public partial class Member

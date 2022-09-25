@@ -25,21 +25,17 @@ public class SeedClientNodeActor : IActor
         _options = options;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             Started                         => OnStarted(),
             Connect _                       => OnConnect(context),
             ClusterTopology clusterTopology => OnClusterTopology(context, clusterTopology),
             _                               => Task.CompletedTask
         };
-    }
 
-    public static Props Props(SeedNodeClusterProviderOptions options)
-    {
-        return Proto.Props.FromProducer(() => new SeedClientNodeActor(options));
-    }
+    public static Props Props(SeedNodeClusterProviderOptions options) =>
+        Proto.Props.FromProducer(() => new SeedClientNodeActor(options));
 
     private async Task OnConnect(IContext context)
     {

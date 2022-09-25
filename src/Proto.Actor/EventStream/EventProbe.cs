@@ -16,10 +16,7 @@ namespace Proto;
 [PublicAPI]
 public static class EventStreamExtensions
 {
-    public static EventProbe<T> GetProbe<T>(this EventStream<T> eventStream)
-    {
-        return new(eventStream);
-    }
+    public static EventProbe<T> GetProbe<T>(this EventStream<T> eventStream) => new EventProbe<T>(eventStream);
 }
 
 [PublicAPI]

@@ -53,9 +53,8 @@ internal class PartitionIdentityActor : IActor
 
     private ulong TopologyHash => _currentTopology?.TopologyHash ?? 0;
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             Started                  => OnStarted(context),
             ActivationRequest msg    => OnActivationRequest(msg, context),
@@ -65,7 +64,6 @@ internal class PartitionIdentityActor : IActor
             PartitionCompleted msg   => OnPartitionCompleted(msg, context),
             _                        => Task.CompletedTask
         };
-    }
 
     /// <summary>
     ///     Used by pull mode, the partition identity actor will spawn workers to rebalance against each member.
@@ -138,8 +136,7 @@ internal class PartitionIdentityActor : IActor
 
         return Task.CompletedTask;
 
-        void Acknowledge(IdentityHandoverAck.Types.State state)
-        {
+        void Acknowledge(IdentityHandoverAck.Types.State state) =>
             context.Respond(new IdentityHandoverAck
                 {
                     ChunkId = msg.ChunkId,
@@ -147,7 +144,6 @@ internal class PartitionIdentityActor : IActor
                     ProcessingState = state
                 }
             );
-        }
     }
 
     private void ReceiveIdentityHandover(HandoverSink sink, IdentityHandover msg, string address, IContext context)
@@ -316,16 +312,14 @@ internal class PartitionIdentityActor : IActor
         return Task.CompletedTask;
     }
 
-    private Action<IdentityHandover> TakeOverIdentities(IContext context)
-    {
-        return handover =>
+    private Action<IdentityHandover> TakeOverIdentities(IContext context) =>
+        handover =>
         {
             foreach (var activation in handover.Actors)
             {
                 TakeOverIdentity(activation.ClusterIdentity, activation.Pid, context);
             }
         };
-    }
 
     private void DiscardInvalidatedActivations()
     {
@@ -460,15 +454,13 @@ internal class PartitionIdentityActor : IActor
     }
 
     private PID SpawnRebalanceWorker(IEnumerable<string> rebalanceTargetAddresses, IContext context,
-        CancellationToken cancellationToken)
-    {
-        return context.Spawn(
+        CancellationToken cancellationToken) =>
+        context.Spawn(
             Props.FromProducer(()
                 => new PartitionIdentityRebalanceWorker(rebalanceTargetAddresses, _config.RebalanceRequestTimeout,
                     cancellationToken)
             )
         );
-    }
 
     private void TakeOverIdentity(ClusterIdentity clusterIdentity, PID activation, IContext context)
     {
@@ -616,9 +608,8 @@ internal class PartitionIdentityActor : IActor
         ActivationRequest msg,
         IContext context,
         TaskCompletionSource<ActivationResponse> setResponse
-    )
-    {
-        return async rst =>
+    ) =>
+        async rst =>
         {
             try
             {
@@ -698,12 +689,9 @@ internal class PartitionIdentityActor : IActor
                 setResponse.TrySetResult(response);
             }
         };
-    }
 
-    private static void RespondWithFailure(IContext context)
-    {
+    private static void RespondWithFailure(IContext context) =>
         context.Respond(new ActivationResponse { Failed = true });
-    }
 
     private async Task<ActivationResponse> SpawnRemoteActor(ActivationRequest req, string activatorAddress)
     {
@@ -737,10 +725,7 @@ internal class PartitionIdentityActor : IActor
 
         public IReadOnlyDictionary<string, MemberDetails> Members => _stats;
 
-        public void Clear()
-        {
-            _stats.Clear();
-        }
+        public void Clear() => _stats.Clear();
 
         public void Inc(string memberAddress)
         {
@@ -765,15 +750,10 @@ internal class PartitionIdentityActor : IActor
             }
         }
 
-        public int GetActivationCount(string memberAddress)
-        {
-            return _stats.TryGetValue(memberAddress, out var item) ? item.Activations : 0;
-        }
+        public int GetActivationCount(string memberAddress) =>
+            _stats.TryGetValue(memberAddress, out var item) ? item.Activations : 0;
 
-        public void Remove(string memberAddress)
-        {
-            _stats.Remove(memberAddress);
-        }
+        public void Remove(string memberAddress) => _stats.Remove(memberAddress);
 
         public class MemberDetails
         {

@@ -26,10 +26,7 @@ public sealed class ImmutableMemberSet
     public IReadOnlyCollection<Member> Members { get; }
     public ImmutableDictionary<string, Member> Lookup { get; }
 
-    private bool Equals(ImmutableMemberSet other)
-    {
-        return TopologyHash == other.TopologyHash;
-    }
+    private bool Equals(ImmutableMemberSet other) => TopologyHash == other.TopologyHash;
 
     public override bool Equals(object? obj)
     {
@@ -51,15 +48,9 @@ public sealed class ImmutableMemberSet
         return Equals((ImmutableMemberSet)obj);
     }
 
-    public override int GetHashCode()
-    {
-        return (int)TopologyHash;
-    }
+    public override int GetHashCode() => (int)TopologyHash;
 
-    public bool Contains(string id)
-    {
-        return Lookup.ContainsKey(id);
-    }
+    public bool Contains(string id) => Lookup.ContainsKey(id);
 
     public ImmutableMemberSet Except(ImmutableMemberSet other)
     {

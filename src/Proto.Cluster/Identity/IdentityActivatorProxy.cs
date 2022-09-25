@@ -31,23 +31,19 @@ internal class IdentityActivatorProxy : IActor
     private IIdentityLookup IdentityLookup { get; }
     private PidCache PidCache { get; }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             ProxyActivationRequest activationRequest => Activate(activationRequest, context),
             _                                        => Task.CompletedTask
         };
-    }
 
-    private Task Activate(ProxyActivationRequest activationRequest, IContext context)
-    {
-        return activationRequest.ReplacedActivation switch
+    private Task Activate(ProxyActivationRequest activationRequest, IContext context) =>
+        activationRequest.ReplacedActivation switch
         {
             { } existing => ReplaceActivation(activationRequest.ClusterIdentity, existing, context),
             _            => Activate(activationRequest.ClusterIdentity, context)
         };
-    }
 
     private Task Activate(ClusterIdentity identity, IContext context)
     {
@@ -139,8 +135,5 @@ internal class IdentityActivatorProxy : IActor
         return Task.CompletedTask;
     }
 
-    private Task<PID?> GetPid(ClusterIdentity identity, CancellationToken ct)
-    {
-        return IdentityLookup.GetAsync(identity, ct);
-    }
+    private Task<PID?> GetPid(ClusterIdentity identity, CancellationToken ct) => IdentityLookup.GetAsync(identity, ct);
 }

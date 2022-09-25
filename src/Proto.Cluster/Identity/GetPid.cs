@@ -14,10 +14,7 @@ internal class GetPid : IHashable
     public ClusterIdentity ClusterIdentity { get; }
     public CancellationToken CancellationToken { get; }
 
-    public string HashBy()
-    {
-        return ClusterIdentity.ToString();
-    }
+    public string HashBy() => ClusterIdentity.ToString();
 }
 
 internal class PidResult

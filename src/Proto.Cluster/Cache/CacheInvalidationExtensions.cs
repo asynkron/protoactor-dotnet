@@ -22,10 +22,8 @@ public static class CacheInvalidationExtensions
     /// </summary>
     /// <param name="clusterKind"></param>
     /// <returns></returns>
-    public static ClusterKind WithPidCacheInvalidation(this ClusterKind clusterKind)
-    {
-        return clusterKind with { Props = clusterKind.Props.WithPidCacheInvalidation() };
-    }
+    public static ClusterKind WithPidCacheInvalidation(this ClusterKind clusterKind) =>
+        clusterKind with { Props = clusterKind.Props.WithPidCacheInvalidation() };
 
     /// <summary>
     ///     Enable PidCache invalidation for the Cluster. If invalidation is enabled, other members in the cluster will learn
@@ -45,9 +43,8 @@ public static class CacheInvalidationExtensions
         return cluster;
     }
 
-    private static Props WithPidCacheInvalidation(this Props props)
-    {
-        return props.WithReceiverMiddleware(receiver =>
+    private static Props WithPidCacheInvalidation(this Props props) =>
+        props.WithReceiverMiddleware(receiver =>
             {
                 return (context, envelope) =>
                 {
@@ -66,7 +63,6 @@ public static class CacheInvalidationExtensions
                 };
             }
         );
-    }
 
     private static void Initialize(IInfoContext context)
     {

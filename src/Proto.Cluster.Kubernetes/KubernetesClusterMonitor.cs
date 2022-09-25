@@ -42,9 +42,8 @@ internal class KubernetesClusterMonitor : IActor
         _config = config;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             RegisterMember cmd       => Register(cmd),
             StartWatchingCluster cmd => StartWatchingCluster(cmd.ClusterName, context),
@@ -52,7 +51,6 @@ internal class KubernetesClusterMonitor : IActor
             Stopping                 => StopWatchingCluster(),
             _                        => Task.CompletedTask
         };
-    }
 
     private Task Register(RegisterMember cmd)
     {

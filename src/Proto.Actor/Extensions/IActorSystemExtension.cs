@@ -15,10 +15,7 @@ public interface IActorSystemExtension
 {
     private static int _nextId;
 
-    internal static int GetNextId()
-    {
-        return Interlocked.Increment(ref _nextId);
-    }
+    internal static int GetNextId() => Interlocked.Increment(ref _nextId);
 }
 
 /// <summary>

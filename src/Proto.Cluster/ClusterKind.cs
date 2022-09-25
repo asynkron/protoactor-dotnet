@@ -42,10 +42,8 @@ public record ClusterKind(string Name, Props Props)
     /// </summary>
     /// <param name="strategyBuilder"></param>
     /// <returns></returns>
-    public ClusterKind WithMemberStrategy(Func<Cluster, IMemberStrategy> strategyBuilder)
-    {
-        return this with { StrategyBuilder = strategyBuilder };
-    }
+    public ClusterKind WithMemberStrategy(Func<Cluster, IMemberStrategy> strategyBuilder) =>
+        this with { StrategyBuilder = strategyBuilder };
 
     /// <summary>
     ///     Sets the optional filter that can prevent spawning identities outside of a certain set of allowed identities.
@@ -55,13 +53,9 @@ public record ClusterKind(string Name, Props Props)
     /// </summary>
     /// <param name="spawnPredicate"></param>
     /// <returns></returns>
-    public ClusterKind WithSpawnPredicate(CanSpawnIdentity spawnPredicate)
-    {
-        return this with { CanSpawnIdentity = spawnPredicate };
-    }
+    public ClusterKind WithSpawnPredicate(CanSpawnIdentity spawnPredicate) =>
+        this with { CanSpawnIdentity = spawnPredicate };
 
-    internal ActivatedClusterKind Build(Cluster cluster)
-    {
-        return new(Name, Props, StrategyBuilder?.Invoke(cluster), CanSpawnIdentity);
-    }
+    internal ActivatedClusterKind Build(Cluster cluster) =>
+        new ActivatedClusterKind(Name, Props, StrategyBuilder?.Invoke(cluster), CanSpawnIdentity);
 }

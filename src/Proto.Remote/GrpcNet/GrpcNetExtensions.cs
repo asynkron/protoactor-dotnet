@@ -17,10 +17,8 @@ public static class Extensions
     /// <summary>
     ///     Channel options for the gRPC channel
     /// </summary>
-    public static GrpcNetRemoteConfig WithChannelOptions(this GrpcNetRemoteConfig config, GrpcChannelOptions options)
-    {
-        return config with { ChannelOptions = options };
-    }
+    public static GrpcNetRemoteConfig WithChannelOptions(this GrpcNetRemoteConfig config, GrpcChannelOptions options) =>
+        config with { ChannelOptions = options };
 
     /// <summary>
     ///     A delegate that allows to choose the address for the <see cref="ActorSystem" /> from the list of addresses Kestrel
@@ -28,10 +26,8 @@ public static class Extensions
     ///     By default, the first address is used.
     /// </summary>
     public static GrpcNetRemoteConfig WithUriChooser(this GrpcNetRemoteConfig config,
-        Func<IEnumerable<Uri>?, Uri?> uriChooser)
-    {
-        return config with { UriChooser = uriChooser };
-    }
+        Func<IEnumerable<Uri>?, Uri?> uriChooser) =>
+        config with { UriChooser = uriChooser };
 
     /// <summary>
     ///     Registers the Remote extension in the <see cref="ActorSystem" />. This mode opens connections both ways between the

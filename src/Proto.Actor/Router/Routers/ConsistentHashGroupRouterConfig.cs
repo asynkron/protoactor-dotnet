@@ -33,8 +33,6 @@ internal record ConsistentHashGroupRouterConfig : GroupRouterConfig
         _messageHasher = messageHasher;
     }
 
-    protected override RouterState CreateRouterState()
-    {
-        return new ConsistentHashRouterState(SenderContext, _hash, _replicaCount, _messageHasher);
-    }
+    protected override RouterState CreateRouterState() =>
+        new ConsistentHashRouterState(SenderContext, _hash, _replicaCount, _messageHasher);
 }

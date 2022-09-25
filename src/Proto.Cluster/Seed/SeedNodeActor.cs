@@ -28,9 +28,8 @@ public class SeedNodeActor : IActor
         _options = options;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             Started                                          => OnStarted(context),
             Connect                                          => OnConnect(context),
@@ -41,7 +40,6 @@ public class SeedNodeActor : IActor
             Terminated pid                                   => OnClientTerminated(pid),
             _                                                => Task.CompletedTask
         };
-    }
 
     private async Task OnConnect(IContext context)
     {
@@ -198,8 +196,6 @@ public class SeedNodeActor : IActor
         context.Cluster().MemberList.UpdateClusterTopology(members);
     }
 
-    public static Props Props(SeedNodeClusterProviderOptions options)
-    {
-        return Proto.Props.FromProducer(() => new SeedNodeActor(options));
-    }
+    public static Props Props(SeedNodeClusterProviderOptions options) =>
+        Proto.Props.FromProducer(() => new SeedNodeActor(options));
 }

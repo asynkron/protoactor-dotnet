@@ -36,18 +36,9 @@ internal class RemoteHostedService : IHostedService
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
-    }
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    private void OnStarted()
-    {
-        _remote.StartAsync().GetAwaiter().GetResult();
-    }
+    private void OnStarted() => _remote.StartAsync().GetAwaiter().GetResult();
 
-    private void OnStopping()
-    {
-        _remote.ShutdownAsync().GetAwaiter().GetResult();
-    }
+    private void OnStopping() => _remote.ShutdownAsync().GetAwaiter().GetResult();
 }

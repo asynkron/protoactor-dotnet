@@ -37,11 +37,9 @@ public sealed class PublishingErrorDecision
     /// </summary>
     /// <param name="delay"></param>
     /// <returns></returns>
-    public static PublishingErrorDecision RetryBatchAfter(TimeSpan delay)
-    {
-        return new()
+    public static PublishingErrorDecision RetryBatchAfter(TimeSpan delay) =>
+        new PublishingErrorDecision
         {
             Delay = delay
         };
-    }
 }

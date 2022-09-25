@@ -12,10 +12,8 @@ public delegate void ActivitySetup(Activity activity, object message);
 
 public static class OpenTelemetryTracingExtensions
 {
-    public static TracerProviderBuilder AddProtoActorInstrumentation(this TracerProviderBuilder builder)
-    {
-        return builder.AddSource(ProtoTags.ActivitySourceName);
-    }
+    public static TracerProviderBuilder AddProtoActorInstrumentation(this TracerProviderBuilder builder) =>
+        builder.AddSource(ProtoTags.ActivitySourceName);
 
     /// <summary>
     ///     Adds OpenTelemetry tracing to actors spawned with given <see cref="Props" />. Incoming and outgoing messages will
@@ -46,9 +44,8 @@ public static class OpenTelemetryTracingExtensions
     /// <summary>
     ///     Adds trace headers to the message envelope, to propagate trace context.
     /// </summary>
-    public static Sender OpenTelemetrySenderMiddleware(Sender next)
-    {
-        return async (context, target, envelope) =>
+    public static Sender OpenTelemetrySenderMiddleware(Sender next) =>
+        async (context, target, envelope) =>
         {
             var activity = Activity.Current;
 
@@ -59,7 +56,6 @@ public static class OpenTelemetryTracingExtensions
 
             await next(context, target, envelope);
         };
-    }
 
     /// <summary>
     ///     Adds OpenTelemetry tracing to messages sent through <see cref="IRootContext" />. Sent messages will create new

@@ -11,13 +11,7 @@ namespace Proto.Logging;
 [PublicAPI]
 public static class Extensions
 {
-    public static InstanceLogger? Logger(this IContext context)
-    {
-        return context.System.Logger();
-    }
+    public static InstanceLogger? Logger(this IContext context) => context.System.Logger();
 
-    public static InstanceLogger? Logger(this ActorSystem system)
-    {
-        return system.Extensions.Get<InstanceLogger>();
-    }
+    public static InstanceLogger? Logger(this ActorSystem system) => system.Extensions.Get<InstanceLogger>();
 }

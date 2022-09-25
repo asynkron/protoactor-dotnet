@@ -29,15 +29,9 @@ public sealed class InMemAgent
 
     public event EventHandler StatusUpdate;
 
-    private void OnStatusUpdate(EventArgs e)
-    {
-        StatusUpdate?.Invoke(this, e);
-    }
+    private void OnStatusUpdate(EventArgs e) => StatusUpdate?.Invoke(this, e);
 
-    public AgentServiceStatus[] GetServicesHealth()
-    {
-        return _services.Values.ToArray();
-    }
+    public AgentServiceStatus[] GetServicesHealth() => _services.Values.ToArray();
 
     public void RegisterService(AgentServiceRegistration registration)
     {
@@ -69,8 +63,5 @@ public sealed class InMemAgent
         }
     }
 
-    public void ForceUpdate()
-    {
-        OnStatusUpdate(EventArgs.Empty);
-    }
+    public void ForceUpdate() => OnStatusUpdate(EventArgs.Empty);
 }

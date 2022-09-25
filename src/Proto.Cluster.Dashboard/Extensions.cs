@@ -16,8 +16,6 @@ public static class Extensions
         services.AddSingleton(settings);
     }
 
-    public static void AddProtoActorDashboard(this IServiceCollection services, DashboardSettings settings)
-    {
+    public static void AddProtoActorDashboard(this IServiceCollection services, DashboardSettings settings) =>
         services.AddSingleton(settings);
-    }
 }

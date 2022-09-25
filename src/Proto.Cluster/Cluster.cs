@@ -101,8 +101,7 @@ public class Cluster : IActorSystemExtension<Cluster>
 
     internal PidCache PidCache { get; }
 
-    private void SubscribeToTopologyEvents()
-    {
+    private void SubscribeToTopologyEvents() =>
         System.EventStream.Subscribe<ClusterTopology>(e =>
             {
                 foreach (var member in e.Left)
@@ -111,16 +110,12 @@ public class Cluster : IActorSystemExtension<Cluster>
                 }
             }
         );
-    }
 
     /// <summary>
     ///     Gets cluster kinds registered on this cluster member
     /// </summary>
     /// <returns></returns>
-    public string[] GetClusterKinds()
-    {
-        return _clusterKinds.Keys.ToArray();
-    }
+    public string[] GetClusterKinds() => _clusterKinds.Keys.ToArray();
 
     /// <summary>
     ///     Starts the cluster member
@@ -226,11 +221,9 @@ public class Cluster : IActorSystemExtension<Cluster>
         }
     }
 
-    private void InitIdentityProxy()
-    {
+    private void InitIdentityProxy() =>
         System.Root.SpawnNamedSystem(Props.FromProducer(() => new IdentityActivatorProxy(this)),
             IdentityActivatorProxy.ActorName);
-    }
 
     /// <summary>
     ///     Shuts down the cluster member, <see cref="Proto.Remote.IRemote" /> extensions and the <see cref="ActorSystem" />
@@ -284,10 +277,8 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// <param name="clusterIdentity">Cluster identity</param>
     /// <param name="ct">Token to cancel the operation</param>
     /// <returns></returns>
-    public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct)
-    {
-        return IdentityLookup.GetAsync(clusterIdentity, ct);
-    }
+    public Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken ct) =>
+        IdentityLookup.GetAsync(clusterIdentity, ct);
 
     /// <summary>
     ///     Sends a request to a virtual actor.
@@ -299,10 +290,8 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// <typeparam name="T">Expected response type</typeparam>
     /// <returns>Response of null if timed out</returns>
     public Task<T> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context,
-        CancellationToken ct)
-    {
-        return ClusterContext.RequestAsync<T>(clusterIdentity, message, context, ct)!;
-    }
+        CancellationToken ct) =>
+        ClusterContext.RequestAsync<T>(clusterIdentity, message, context, ct)!;
 
     public ActivatedClusterKind GetClusterKind(string kind)
     {

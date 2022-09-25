@@ -117,23 +117,16 @@ public record MemberList
     ///     Gets a list of member ids (same as <see cref="ActorSystem.Id" />) that are currently active in the cluster.
     /// </summary>
     /// <returns></returns>
-    public ImmutableHashSet<string> GetMembers()
-    {
-        return _activeMembers.Members.Select(m => m.Id).ToImmutableHashSet();
-    }
+    public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m => m.Id).ToImmutableHashSet();
 
-    internal void InitializeTopologyConsensus()
-    {
+    internal void InitializeTopologyConsensus() =>
         _topologyConsensus =
             _cluster.Gossip.RegisterConsensusCheck<ClusterTopology, ulong>(GossipKeys.Topology,
                 topology => topology.TopologyHash);
-    }
 
-    internal Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct)
-    {
-        return _topologyConsensus?.TryGetConsensus(ct) ??
-               Task.FromResult<(bool consensus, ulong topologyHash)>(default);
-    }
+    internal Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct) =>
+        _topologyConsensus?.TryGetConsensus(ct) ??
+        Task.FromResult<(bool consensus, ulong topologyHash)>(default);
 
     internal Member? GetActivator(string kind, string requestSourceAddress)
     {
@@ -378,10 +371,7 @@ public record MemberList
     /// </summary>
     /// <param name="memberId">Member id</param>
     /// <returns></returns>
-    public bool ContainsMemberId(string memberId)
-    {
-        return _activeMembers.Contains(memberId);
-    }
+    public bool ContainsMemberId(string memberId) => _activeMembers.Contains(memberId);
 
     /// <summary>
     ///     Tries to get the member by id and returns true if it was found, false otherwise.
@@ -389,46 +379,32 @@ public record MemberList
     /// <param name="memberId">Member id</param>
     /// <param name="value">Used to return the member</param>
     /// <returns></returns>
-    public bool TryGetMember(string memberId, out Member? value)
-    {
-        return _activeMembers.Lookup.TryGetValue(memberId, out value);
-    }
+    public bool TryGetMember(string memberId, out Member? value) =>
+        _activeMembers.Lookup.TryGetValue(memberId, out value);
 
-    internal bool TryGetMemberIndexByAddress(string address, out int value)
-    {
-        return _indexByAddress.TryGetValue(address, out value);
-    }
+    internal bool TryGetMemberIndexByAddress(string address, out int value) =>
+        _indexByAddress.TryGetValue(address, out value);
 
-    internal bool TryGetMemberByIndex(int memberIndex, out Member? value)
-    {
-        return _membersByIndex.TryGetValue(memberIndex, out value);
-    }
+    internal bool TryGetMemberByIndex(int memberIndex, out Member? value) =>
+        _membersByIndex.TryGetValue(memberIndex, out value);
 
     /// <summary>
     ///     Gets a list of active <see cref="Member" />
     /// </summary>
     /// <returns></returns>
-    public Member[] GetAllMembers()
-    {
-        return _activeMembers.Members.ToArray();
-    }
+    public Member[] GetAllMembers() => _activeMembers.Members.ToArray();
 
     /// <summary>
     ///     Gets a list of active <see cref="Member" /> apart from the current one
     /// </summary>
     /// <returns></returns>
-    public Member[] GetOtherMembers()
-    {
-        return _activeMembers.Members.Where(m => m.Id != _system.Id).ToArray();
-    }
+    public Member[] GetOtherMembers() => _activeMembers.Members.Where(m => m.Id != _system.Id).ToArray();
 
     /// <summary>
     ///     Gets a list of <see cref="Member" /> that support spawning virtual actors of given cluster kind
     /// </summary>
     /// <param name="kind"></param>
     /// <returns></returns>
-    public Member[] GetMembersByKind(string kind)
-    {
-        return _activeMembers.Members.Where(m => m.Kinds.Contains(kind)).ToArray();
-    }
+    public Member[] GetMembersByKind(string kind) =>
+        _activeMembers.Members.Where(m => m.Kinds.Contains(kind)).ToArray();
 }

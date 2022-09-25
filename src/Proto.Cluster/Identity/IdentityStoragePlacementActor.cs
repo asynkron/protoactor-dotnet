@@ -35,9 +35,8 @@ internal class IdentityStoragePlacementActor : IActor
         _identityLookup = identityLookup;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             Started                   => OnStarted(context),
             Stopping _                => Stopping(),
@@ -46,7 +45,6 @@ internal class IdentityStoragePlacementActor : IActor
             ActivationRequest msg     => OnActivationRequest(context, msg),
             _                         => Task.CompletedTask
         };
-    }
 
     private Task OnStarted(IContext context)
     {

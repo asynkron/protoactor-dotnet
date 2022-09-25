@@ -32,17 +32,11 @@ public record PubSubConfig
     /// <summary>
     ///     A timeout used when delivering a message batch to a subscriber. Default is 5s.
     /// </summary>
-    public PubSubConfig WithSubscriberTimeout(TimeSpan timeout)
-    {
-        return this with { SubscriberTimeout = timeout };
-    }
+    public PubSubConfig WithSubscriberTimeout(TimeSpan timeout) => this with { SubscriberTimeout = timeout };
 
     /// <summary>
     ///     Creates a new instance of <see cref="PubSubConfig" />
     /// </summary>
     /// <returns></returns>
-    public static PubSubConfig Setup()
-    {
-        return new();
-    }
+    public static PubSubConfig Setup() => new PubSubConfig();
 }

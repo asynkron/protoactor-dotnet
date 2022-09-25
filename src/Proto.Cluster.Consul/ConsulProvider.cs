@@ -193,8 +193,7 @@ public class ConsulProvider : IClusterProvider
         }
     }
 
-    private void StartUpdateTtlLoop()
-    {
+    private void StartUpdateTtlLoop() =>
         _ = SafeTask.Run(async () =>
             {
                 while (!_shutdown)
@@ -216,7 +215,6 @@ public class ConsulProvider : IClusterProvider
                 _logger.LogInformation("Consul Exiting TTL loop");
             }
         );
-    }
 
     //register this cluster in consul.
     private async Task RegisterMemberAsync()
@@ -253,8 +251,6 @@ public class ConsulProvider : IClusterProvider
         _logger.LogInformation("Deregistered service");
     }
 
-    private static bool IsAlive(HealthCheck[] serviceChecks)
-    {
-        return serviceChecks.All(c => c.Status == HealthStatus.Passing);
-    }
+    private static bool IsAlive(HealthCheck[] serviceChecks) =>
+        serviceChecks.All(c => c.Status == HealthStatus.Passing);
 }

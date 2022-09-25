@@ -317,20 +317,15 @@ public class Persistence
     ///     snapshot to be deleted
     /// </param>
     /// <returns></returns>
-    public Task DeleteSnapshotsAsync(long inclusiveToIndex)
-    {
-        return _snapshotStore.DeleteSnapshotsAsync(_actorId, inclusiveToIndex);
-    }
+    public Task DeleteSnapshotsAsync(long inclusiveToIndex) =>
+        _snapshotStore.DeleteSnapshotsAsync(_actorId, inclusiveToIndex);
 
     /// <summary>
     ///     Deletes events from actor's event stream starting with the oldest available, ending at provided index
     /// </summary>
     /// <param name="inclusiveToIndex">Inclusive index of the last event to delete</param>
     /// <returns></returns>
-    public Task DeleteEventsAsync(long inclusiveToIndex)
-    {
-        return _eventStore.DeleteEventsAsync(_actorId, inclusiveToIndex);
-    }
+    public Task DeleteEventsAsync(long inclusiveToIndex) => _eventStore.DeleteEventsAsync(_actorId, inclusiveToIndex);
 
     /// <summary>
     ///     A <see cref="ISnapshotStrategy" /> that will not cause any snapshots to be stored. User should manually store
@@ -338,46 +333,27 @@ public class Persistence
     /// </summary>
     private class ManualSnapshots : ISnapshotStrategy
     {
-        public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
-        {
-            return false;
-        }
+        public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => false;
     }
 
     private class NoEventStore : IEventStore
     {
         public Task<long>
-            GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
-        {
-            return Task.FromResult(-1L);
-        }
+            GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback) =>
+            Task.FromResult(-1L);
 
-        public Task<long> PersistEventAsync(string actorName, long index, object @event)
-        {
-            return Task.FromResult(0L);
-        }
+        public Task<long> PersistEventAsync(string actorName, long index, object @event) => Task.FromResult(0L);
 
-        public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
-        {
-            return Task.CompletedTask;
-        }
+        public Task DeleteEventsAsync(string actorName, long inclusiveToIndex) => Task.CompletedTask;
     }
 
     private class NoSnapshotStore : ISnapshotStore
     {
-        public Task<(object? Snapshot, long Index)> GetSnapshotAsync(string actorName)
-        {
-            return Task.FromResult<(object? Snapshot, long Index)>((null, 0));
-        }
+        public Task<(object? Snapshot, long Index)> GetSnapshotAsync(string actorName) =>
+            Task.FromResult<(object? Snapshot, long Index)>((null, 0));
 
-        public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
-        {
-            return Task.FromResult(0);
-        }
+        public Task PersistSnapshotAsync(string actorName, long index, object snapshot) => Task.FromResult(0);
 
-        public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-        {
-            return Task.FromResult(0);
-        }
+        public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex) => Task.FromResult(0);
     }
 }

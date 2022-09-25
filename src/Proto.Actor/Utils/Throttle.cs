@@ -87,8 +87,7 @@ public static class Throttle
             return tries > maxEventsInPeriod ? Valve.Closed : Valve.Open;
         };
 
-        void StartTimer(Action<int>? callBack)
-        {
+        void StartTimer(Action<int>? callBack) =>
             _ = SafeTask.Run(async () =>
                 {
                     await Task.Delay(period);
@@ -100,21 +99,15 @@ public static class Throttle
                     }
                 }
             );
-        }
     }
 
     public static ShouldThrottle Create(
         this ThrottleOptions options,
         Action<int>? throttledCallBack = null
-    )
-    {
-        return Create(options.MaxEventsInPeriod, options.Period, throttledCallBack);
-    }
+    ) =>
+        Create(options.MaxEventsInPeriod, options.Period, throttledCallBack);
 
-    public static bool IsOpen(this Valve valve)
-    {
-        return valve != Valve.Closed;
-    }
+    public static bool IsOpen(this Valve valve) => valve != Valve.Closed;
 }
 
 /// <summary>

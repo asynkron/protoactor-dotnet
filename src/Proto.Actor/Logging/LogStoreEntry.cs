@@ -21,15 +21,9 @@ public record LogStoreEntry(
     object[] Args
 )
 {
-    public bool IsBefore(LogStoreEntry other)
-    {
-        return Index < other.Index;
-    }
+    public bool IsBefore(LogStoreEntry other) => Index < other.Index;
 
-    public bool IsAfter(LogStoreEntry other)
-    {
-        return Index > other.Index;
-    }
+    public bool IsAfter(LogStoreEntry other) => Index > other.Index;
 
     public string ToFormattedString()
     {

@@ -33,20 +33,16 @@ public static class Extensions
     /// </summary>
     /// <param name="system"></param>
     /// <returns></returns>
-    public static Cluster Cluster(this ActorSystem system)
-    {
-        return system.Extensions.GetRequired<Cluster>("Cluster has not been configured");
-    }
+    public static Cluster Cluster(this ActorSystem system) =>
+        system.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
     /// <summary>
     ///     Gets the <see cref="Proto.Cluster.Cluster" /> from the <see cref="IContext" />
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
-    public static Cluster Cluster(this IContext context)
-    {
-        return context.System.Extensions.GetRequired<Cluster>("Cluster has not been configured");
-    }
+    public static Cluster Cluster(this IContext context) =>
+        context.System.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
     /// <summary>
     ///     Sends a request to a cluster identity
@@ -64,11 +60,9 @@ public static class Extensions
         string kind,
         object message,
         CancellationToken ct
-    )
-    {
+    ) =>
         //call cluster RequestAsync using actor context
-        return context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
-    }
+        context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
 
     /// <summary>
     ///     Sends a request to a cluster identity and calls the provided callback when the response is received. The callback
@@ -206,9 +200,8 @@ public static class Extensions
     /// <param name="props"></param>
     /// <param name="deduplicationWindow"></param>
     /// <returns></returns>
-    public static Props WithClusterRequestDeduplication(this Props props, TimeSpan? deduplicationWindow = null)
-    {
-        return props.WithContextDecorator(context =>
+    public static Props WithClusterRequestDeduplication(this Props props, TimeSpan? deduplicationWindow = null) =>
+        props.WithContextDecorator(context =>
             {
                 var cluster = context.System.Cluster();
                 var memberList = cluster.MemberList;
@@ -236,7 +229,6 @@ public static class Extensions
                 }
             }
         );
-    }
 
     private readonly struct PidRef : IEquatable<PidRef>
     {
@@ -251,19 +243,11 @@ public static class Extensions
             RequestId = requestId;
         }
 
-        public bool Equals(PidRef other)
-        {
-            return MemberId == other.MemberId && Id == other.Id && RequestId == other.RequestId;
-        }
+        public bool Equals(PidRef other) =>
+            MemberId == other.MemberId && Id == other.Id && RequestId == other.RequestId;
 
-        public override bool Equals(object? obj)
-        {
-            return obj is PidRef other && Equals(other);
-        }
+        public override bool Equals(object? obj) => obj is PidRef other && Equals(other);
 
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(MemberId, Id, RequestId);
-        }
+        public override int GetHashCode() => HashCode.Combine(MemberId, Id, RequestId);
     }
 }

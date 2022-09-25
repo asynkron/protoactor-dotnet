@@ -16,8 +16,5 @@ internal record RoundRobinPoolRouterConfig : PoolRouterConfig
         _senderContext = senderContext;
     }
 
-    protected override RouterState CreateRouterState()
-    {
-        return new RoundRobinRouterState(_senderContext);
-    }
+    protected override RouterState CreateRouterState() => new RoundRobinRouterState(_senderContext);
 }

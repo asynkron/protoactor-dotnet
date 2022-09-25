@@ -50,13 +50,11 @@ public sealed class Restarting : InfrastructureMessage
 /// </summary>
 public sealed partial class Touch : IAutoRespond, InfrastructureMessage
 {
-    public object GetAutoResponse(IContext context)
-    {
-        return new Touched
+    public object GetAutoResponse(IContext context) =>
+        new Touched
         {
             Who = context.Self
         };
-    }
 }
 
 /// <summary>

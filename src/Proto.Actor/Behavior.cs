@@ -47,18 +47,12 @@ public class Behavior
     ///     Switches to a new behavior. Previous behavior is stored on a stack.
     /// </summary>
     /// <param name="receive"></param>
-    public void BecomeStacked(Receive receive)
-    {
-        _behaviors.Push(receive);
-    }
+    public void BecomeStacked(Receive receive) => _behaviors.Push(receive);
 
     /// <summary>
     ///     Restores previous behavior from the stack.
     /// </summary>
-    public void UnbecomeStacked()
-    {
-        _behaviors.Pop();
-    }
+    public void UnbecomeStacked() => _behaviors.Pop();
 
     /// <summary>
     ///     Handle the message with currently active message handler (behavior).

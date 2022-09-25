@@ -21,8 +21,6 @@ public class AlwaysRestartStrategy : ISupervisorStrategy
         RestartStatistics rs,
         Exception reason,
         object? message
-    )
-    {
+    ) =>
         supervisor.RestartChildren(reason, child);
-    }
 }

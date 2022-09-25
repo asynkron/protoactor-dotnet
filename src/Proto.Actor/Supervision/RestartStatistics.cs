@@ -24,15 +24,9 @@ public class RestartStatistics
 
     public int FailureCount => _failureTimes.Count;
 
-    public void Fail()
-    {
-        _failureTimes.Add(DateTimeOffset.UtcNow);
-    }
+    public void Fail() => _failureTimes.Add(DateTimeOffset.UtcNow);
 
-    public void Reset()
-    {
-        _failureTimes.Clear();
-    }
+    public void Reset() => _failureTimes.Clear();
 
     public int NumberOfFailures(TimeSpan? within)
     {

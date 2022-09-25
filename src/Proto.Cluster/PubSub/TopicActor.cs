@@ -34,9 +34,8 @@ public sealed class TopicActor : IActor
         _subscriptionStore = subscriptionStore;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             Started                                  => OnStarted(context),
             Stopping                                 => OnStopping(context),
@@ -47,7 +46,6 @@ public sealed class TopicActor : IActor
             ClusterTopology msg                      => OnClusterTopologyChanged(context, msg),
             _                                        => Task.CompletedTask
         };
-    }
 
     private async Task OnStarted(IContext context)
     {
@@ -119,26 +117,22 @@ public sealed class TopicActor : IActor
     }
 
     private static Subscribers GetSubscribersForAddress(
-        IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member)
-    {
-        return new()
+        IGrouping<string, (SubscriberIdentity subscriber, PID pid)> member) =>
+        new Subscribers
         {
             Subscribers_ =
             {
                 member.Select(s => s.subscriber).ToArray()
             }
         };
-    }
 
-    private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s)
-    {
-        return s.IdentityCase switch
+    private static Task<(SubscriberIdentity subscriber, PID pid)> GetPid(IContext context, SubscriberIdentity s) =>
+        s.IdentityCase switch
         {
             SubscriberIdentity.IdentityOneofCase.Pid             => Task.FromResult((s, s.Pid)),
             SubscriberIdentity.IdentityOneofCase.ClusterIdentity => GetClusterIdentityPid(context, s),
             _                                                    => throw new ArgumentOutOfRangeException()
         };
-    }
 
     private static async Task<(SubscriberIdentity, PID)> GetClusterIdentityPid(IContext context, SubscriberIdentity s)
     {

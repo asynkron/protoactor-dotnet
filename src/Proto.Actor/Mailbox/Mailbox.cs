@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,23 +31,19 @@ public interface IMailbox
 
 public static class BoundedMailbox
 {
-    public static IMailbox Create(int size, params IMailboxStatistics[] stats)
-    {
-        return new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new BoundedMailboxQueue(size), stats);
-    }
+    public static IMailbox Create(int size, params IMailboxStatistics[] stats) =>
+        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new BoundedMailboxQueue(size), stats);
 }
 
 public static class UnboundedMailbox
 {
-    public static IMailbox Create(params IMailboxStatistics[] stats)
-    {
-        return new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new UnboundedMailboxQueue(), stats);
-    }
+    public static IMailbox Create(params IMailboxStatistics[] stats) =>
+        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new UnboundedMailboxQueue(), stats);
 }
 
 public sealed class DefaultMailbox : IMailbox
 #if NET5_0_OR_GREATER
-, IThreadPoolWorkItem
+    , IThreadPoolWorkItem
 #endif
 {
     private readonly IMailboxStatistics[] _stats;
@@ -314,10 +309,7 @@ public sealed class DefaultMailbox : IMailbox
     }
 
 #if NET5_0_OR_GREATER
-    public void Execute()
-    {
-        _ = RunAsync(this);
-    }
+    public void Execute() => _ = RunAsync(this);
 #else
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void RunWrapper(object state)

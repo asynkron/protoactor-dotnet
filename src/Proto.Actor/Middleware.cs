@@ -10,10 +10,7 @@ namespace Proto;
 
 public static class Middleware
 {
-    internal static Task Receive(IReceiverContext context, MessageEnvelope envelope)
-    {
-        return context.Receive(envelope);
-    }
+    internal static Task Receive(IReceiverContext context, MessageEnvelope envelope) => context.Receive(envelope);
 
     internal static Task Sender(ISenderContext context, PID target, MessageEnvelope envelope)
     {

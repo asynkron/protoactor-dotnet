@@ -53,11 +53,8 @@ public class DeadLetterEvent
     /// </summary>
     public MessageHeader Header { get; }
 
-    public override string ToString()
-    {
-        return
-            $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
-    }
+    public override string ToString() =>
+        $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
 }
 
 /// <summary>

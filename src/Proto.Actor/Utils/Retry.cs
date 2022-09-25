@@ -20,11 +20,9 @@ public static class Retry
         int maxBackoffMilliseconds = 5000,
         Action<int, Exception>? onError = null,
         Action<Exception>? onFailed = null
-    ) where T : class
-    {
-        return TryUntil(body, res => res != null, retryCount, backoffMilliSeconds, maxBackoffMilliseconds, onError,
+    ) where T : class =>
+        TryUntil(body, res => res != null, retryCount, backoffMilliSeconds, maxBackoffMilliseconds, onError,
             onFailed);
-    }
 
     public static async Task<T> TryUntil<T>(Func<Task<T>> body, Func<T?, bool> condition, int retryCount = 10,
         int backoffMilliSeconds = 100, int maxBackoffMilliseconds = 5000, Action<int, Exception>? onError = null,

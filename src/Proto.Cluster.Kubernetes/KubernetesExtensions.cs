@@ -107,8 +107,5 @@ internal static class KubernetesExtensions
     ///     A wrapper about getting the machine name. The pod name is always the "machine" name/
     /// </summary>
     /// <returns></returns>
-    internal static string GetPodName()
-    {
-        return Environment.MachineName;
-    }
+    internal static string GetPodName() => Environment.MachineName;
 }

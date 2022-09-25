@@ -41,27 +41,19 @@ internal static class Extensions
         this Gossiper gossip,
         TimeSpan maxWait,
         CancellationToken cancellationToken
-    )
-    {
-        return WaitFor(gossip, ReadyForRebalance, maxWait, cancellationToken);
-    }
+    ) =>
+        WaitFor(gossip, ReadyForRebalance, maxWait, cancellationToken);
 
     public static Task<(bool consensus, ulong topologyHash)> WaitUntilAllMembersCompletedRebalance(
         this Gossiper gossip,
         TimeSpan maxWait,
         CancellationToken cancellationToken
-    )
-    {
-        return WaitFor(gossip, RebalanceCompleted, maxWait, cancellationToken);
-    }
+    ) =>
+        WaitFor(gossip, RebalanceCompleted, maxWait, cancellationToken);
 
-    public static void SetInFlightActivationsCompleted(this Gossiper gossip, ulong topologyHash)
-    {
+    public static void SetInFlightActivationsCompleted(this Gossiper gossip, ulong topologyHash) =>
         gossip.SetState(ReadyForRebalanceKey, new ReadyForRebalance { TopologyHash = topologyHash });
-    }
 
-    public static void SetRebalanceCompleted(this Gossiper gossip, ulong topologyHash)
-    {
+    public static void SetRebalanceCompleted(this Gossiper gossip, ulong topologyHash) =>
         gossip.SetState(RebalanceCompletedKey, new RebalanceCompleted { TopologyHash = topologyHash });
-    }
 }

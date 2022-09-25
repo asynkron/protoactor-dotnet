@@ -128,10 +128,8 @@ internal static class GossipStateManagement
         string myId,
         ImmutableHashSet<string> members,
         string valueKey
-    ) where T : IMessage, new()
-    {
-        return CheckConsensus<T, T>(ctx, state, myId, members, valueKey, v => v);
-    }
+    ) where T : IMessage, new() =>
+        CheckConsensus<T, T>(ctx, state, myId, members, valueKey, v => v);
 
     public static (bool Consensus, TV value) CheckConsensus<T, TV>(
         IContext? ctx,

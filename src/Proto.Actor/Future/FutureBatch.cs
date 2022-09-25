@@ -152,10 +152,7 @@ public sealed class FutureBatchProcess : Process, IDisposable
         return index >= 0 && index < _completionSources.Length;
     }
 
-    private static uint ToRequestId(int index)
-    {
-        return (uint)(index + 1);
-    }
+    private static uint ToRequestId(int index) => (uint)(index + 1);
 
     private bool TryGetTaskCompletionSource(uint requestId, out int index, out TaskCompletionSource<object> tcs)
     {

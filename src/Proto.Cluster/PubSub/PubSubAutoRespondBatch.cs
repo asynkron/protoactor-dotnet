@@ -17,15 +17,9 @@ namespace Proto.Cluster.PubSub;
 public record PubSubAutoRespondBatch(IReadOnlyCollection<object> Envelopes) : IRootSerializable, IMessageBatch,
     IAutoRespond
 {
-    public object GetAutoResponse(IContext context)
-    {
-        return new PublishResponse();
-    }
+    public object GetAutoResponse(IContext context) => new PublishResponse();
 
-    public IReadOnlyCollection<object> GetMessages()
-    {
-        return Envelopes;
-    }
+    public IReadOnlyCollection<object> GetMessages() => Envelopes;
 
     public IRootSerialized Serialize(ActorSystem system)
     {

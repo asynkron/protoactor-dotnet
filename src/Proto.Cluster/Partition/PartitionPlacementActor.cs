@@ -35,9 +35,8 @@ internal class PartitionPlacementActor : IActor, IDisposable
         _config = config;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             Started                     => OnStarted(context),
             ActivationTerminating msg   => OnActivationTerminating(msg),
@@ -46,12 +45,8 @@ internal class PartitionPlacementActor : IActor, IDisposable
             ActivationRequest msg       => OnActivationRequest(context, msg),
             _                           => Task.CompletedTask
         };
-    }
 
-    public void Dispose()
-    {
-        _subscription?.Unsubscribe();
-    }
+    public void Dispose() => _subscription?.Unsubscribe();
 
     private Task OnClusterTopology(IContext context, ClusterTopology msg)
     {
@@ -142,10 +137,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
     {
         var currentHashRing = new MemberHashRing(msg.Members);
 
-        string GetCurrentOwner(ClusterIdentity identity)
-        {
-            return currentHashRing.GetOwnerMemberByIdentity(identity);
-        }
+        string GetCurrentOwner(ClusterIdentity identity) => currentHashRing.GetOwnerMemberByIdentity(identity);
 
         switch (_config.Send)
         {
@@ -288,9 +280,8 @@ internal class PartitionPlacementActor : IActor, IDisposable
         return Task.CompletedTask;
     }
 
-    private Props AbortOnDeadLetter(CancellationTokenSource cts)
-    {
-        return Props.FromFunc(responseContext =>
+    private Props AbortOnDeadLetter(CancellationTokenSource cts) =>
+        Props.FromFunc(responseContext =>
             {
                 // Node lost or rebalance cancelled because of topology changes
                 if (responseContext.Message is DeadLetterResponse)
@@ -301,7 +292,6 @@ internal class PartitionPlacementActor : IActor, IDisposable
                 return Task.CompletedTask;
             }
         );
-    }
 
     private Task OnActivationRequest(IContext context, ActivationRequest msg)
     {
@@ -455,10 +445,8 @@ internal class PartitionPlacementActor : IActor, IDisposable
 
         public IEnumerable<Task<IdentityHandoverAck?>> WaitingMessages => _responseTasks;
 
-        public void Send(IdentityHandover identityHandover)
-        {
+        public void Send(IdentityHandover identityHandover) =>
             SendWithRetries(identityHandover, _topology.TopologyValidityToken!.Value);
-        }
 
         private void SendWithRetries(IdentityHandover identityHandover, CancellationToken cancellationToken)
         {

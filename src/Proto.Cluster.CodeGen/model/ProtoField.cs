@@ -68,8 +68,5 @@ public class ProtoField
         _                                      => throw new ArgumentOutOfRangeException()
     };
 
-    private string GetUserTypeName()
-    {
-        return $"{Object.File().Options.CsharpNamespace}.{TypeName}";
-    }
+    private string GetUserTypeName() => $"{Object.File().Options.CsharpNamespace}.{TypeName}";
 }

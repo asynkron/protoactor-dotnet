@@ -10,12 +10,10 @@ namespace Proto.Router.Routers;
 
 internal abstract record PoolRouterConfig(int PoolSize, Props RouteeProps) : RouterConfig
 {
-    public override void OnStarted(IContext context, RouterState router)
-    {
+    public override void OnStarted(IContext context, RouterState router) =>
         router.SetRoutees(Enumerable
             .Range(0, PoolSize)
             .Select(_ => context.Spawn(RouteeProps))
             .ToArray()
         );
-    }
 }

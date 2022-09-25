@@ -98,13 +98,9 @@ internal class PartitionManager
         }
     }
 
-    public static PID RemotePartitionIdentityActor(string address)
-    {
-        return PID.FromAddress(address, PartitionIdentityActorName);
-    }
+    public static PID RemotePartitionIdentityActor(string address) =>
+        PID.FromAddress(address, PartitionIdentityActorName);
 
-    public static PID RemotePartitionPlacementActor(string address)
-    {
-        return PID.FromAddress(address, PartitionPlacementActorName);
-    }
+    public static PID RemotePartitionPlacementActor(string address) =>
+        PID.FromAddress(address, PartitionPlacementActorName);
 }

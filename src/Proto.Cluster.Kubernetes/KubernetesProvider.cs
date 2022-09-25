@@ -102,15 +102,10 @@ public class KubernetesProvider : IClusterProvider
     {
         await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
 
-        static void OnError(int attempt, Exception exception)
-        {
+        static void OnError(int attempt, Exception exception) =>
             Logger.LogWarning(exception, "Failed to register service");
-        }
 
-        static void OnFailed(Exception exception)
-        {
-            Logger.LogError(exception, "Failed to register service");
-        }
+        static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to register service");
     }
 
     public async Task RegisterMemberInner()
@@ -192,15 +187,10 @@ public class KubernetesProvider : IClusterProvider
     {
         await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed);
 
-        static void OnError(int attempt, Exception exception)
-        {
+        static void OnError(int attempt, Exception exception) =>
             Logger.LogWarning(exception, "Failed to deregister service");
-        }
 
-        static void OnFailed(Exception exception)
-        {
-            Logger.LogError(exception, "Failed to deregister service");
-        }
+        static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to deregister service");
     }
 
     private async Task DeregisterMemberInner(Cluster cluster)
@@ -236,8 +226,6 @@ public class KubernetesProvider : IClusterProvider
         cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
     }
 
-    public void MonitorMemberStatusChanges()
-    {
+    public void MonitorMemberStatusChanges() =>
         _cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
-    }
 }

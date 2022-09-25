@@ -26,10 +26,7 @@ internal class LocalAffinityStrategy : IMemberStrategy
         _rr = new RoundRobinMemberSelector(this);
     }
 
-    public ImmutableList<Member> GetAllMembers()
-    {
-        return _members;
-    }
+    public ImmutableList<Member> GetAllMembers() => _members;
 
     public void AddMember(Member member)
     {
@@ -47,10 +44,7 @@ internal class LocalAffinityStrategy : IMemberStrategy
         _members = _members.Add(member);
     }
 
-    public void RemoveMember(Member member)
-    {
-        _members = _members.RemoveAll(x => x.Address == member.Address);
-    }
+    public void RemoveMember(Member member) => _members = _members.RemoveAll(x => x.Address == member.Address);
 
     public Member? GetActivator(string senderAddress)
     {

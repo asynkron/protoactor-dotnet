@@ -53,10 +53,8 @@ public record GrpcNetRemoteConfig : RemoteConfigBase
     /// </param>
     /// <param name="port">Port to bind on, 0 (default) means random port</param>
     /// <returns></returns>
-    public static GrpcNetRemoteConfig BindToAllInterfaces(string? advertisedHost = null, int port = 0)
-    {
-        return new GrpcNetRemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
-    }
+    public static GrpcNetRemoteConfig BindToAllInterfaces(string? advertisedHost = null, int port = 0) =>
+        new GrpcNetRemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
 
     /// <summary>
     ///     Creates new <see cref="GrpcNetRemoteConfig" /> instance that binds to a loopback interface. Useful for local
@@ -64,10 +62,7 @@ public record GrpcNetRemoteConfig : RemoteConfigBase
     /// </summary>
     /// <param name="port">Port to bind on, 0 (default) means random port</param>
     /// <returns></returns>
-    public static GrpcNetRemoteConfig BindToLocalhost(int port = 0)
-    {
-        return new(Localhost, port);
-    }
+    public static GrpcNetRemoteConfig BindToLocalhost(int port = 0) => new GrpcNetRemoteConfig(Localhost, port);
 
     /// <summary>
     ///     Creates new <see cref="GrpcNetRemoteConfig" /> instance that binds to a specific network interface.
@@ -75,8 +70,5 @@ public record GrpcNetRemoteConfig : RemoteConfigBase
     /// <param name="host">Host to bind to</param>
     /// <param name="port">Port to bind on, 0 (default) means random port</param>
     /// <returns></returns>
-    public static GrpcNetRemoteConfig BindTo(string host, int port = 0)
-    {
-        return new(host, port);
-    }
+    public static GrpcNetRemoteConfig BindTo(string host, int port = 0) => new GrpcNetRemoteConfig(host, port);
 }

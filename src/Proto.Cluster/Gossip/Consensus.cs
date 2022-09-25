@@ -45,15 +45,10 @@ internal class GossipConsensusHandle<T> : IConsensusHandle<T>
         return (false, default);
     }
 
-    public Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken)
-    {
-        return Volatile.Read(ref _consensusTcs).Task.WaitUpTo(maxWait, cancellationToken);
-    }
+    public Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken) =>
+        Volatile.Read(ref _consensusTcs).Task.WaitUpTo(maxWait, cancellationToken);
 
-    public void Dispose()
-    {
-        _deregister();
-    }
+    public void Dispose() => _deregister();
 
     internal void TrySetConsensus(object consensus)
     {

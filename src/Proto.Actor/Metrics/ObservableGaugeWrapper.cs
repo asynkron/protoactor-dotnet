@@ -17,18 +17,9 @@ public class ObservableGaugeWrapper<T> where T : struct
     private ImmutableList<Func<IEnumerable<Measurement<T>>>> _observers =
         ImmutableList<Func<IEnumerable<Measurement<T>>>>.Empty;
 
-    public void AddObserver(Func<IEnumerable<Measurement<T>>> observer)
-    {
-        _observers = _observers.Add(observer);
-    }
+    public void AddObserver(Func<IEnumerable<Measurement<T>>> observer) => _observers = _observers.Add(observer);
 
-    public void RemoveObserver(Func<IEnumerable<Measurement<T>>> observer)
-    {
-        _observers = _observers.Remove(observer);
-    }
+    public void RemoveObserver(Func<IEnumerable<Measurement<T>>> observer) => _observers = _observers.Remove(observer);
 
-    public IEnumerable<Measurement<T>> Observe()
-    {
-        return _observers.SelectMany(o => o());
-    }
+    public IEnumerable<Measurement<T>> Observe() => _observers.SelectMany(o => o());
 }

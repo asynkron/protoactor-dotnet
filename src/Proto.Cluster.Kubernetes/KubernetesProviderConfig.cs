@@ -37,8 +37,5 @@ public record KubernetesProviderConfig
 
     internal LogLevel DebugLogLevel => DeveloperLogging ? LogLevel.Information : LogLevel.Debug;
 
-    private static IKubernetes DefaultFactory()
-    {
-        return new k8s.Kubernetes(KubernetesClientConfiguration.InClusterConfig());
-    }
+    private static IKubernetes DefaultFactory() => new k8s.Kubernetes(KubernetesClientConfiguration.InClusterConfig());
 }

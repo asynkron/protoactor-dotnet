@@ -59,8 +59,5 @@ public class BlockList
     /// </summary>
     /// <param name="memberId">Member id - same as member's <see cref="ActorSystem.Id" /></param>
     /// <returns></returns>
-    public bool IsBlocked(string memberId)
-    {
-        return _blockedMembers.ContainsKey(memberId);
-    }
+    public bool IsBlocked(string memberId) => _blockedMembers.ContainsKey(memberId);
 }

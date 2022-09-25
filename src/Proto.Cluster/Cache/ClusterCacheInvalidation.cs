@@ -40,11 +40,9 @@ public class ClusterCacheInvalidation : IActorSystemExtension<ClusterCacheInvali
 
     public Cluster Cluster { get; }
 
-    private bool IsRemote(PID? sender)
-    {
-        return sender?.Address != null &&
-               !sender.Address.Equals(Cluster.System.Address, StringComparison.InvariantCulture);
-    }
+    private bool IsRemote(PID? sender) =>
+        sender?.Address != null &&
+        !sender.Address.Equals(Cluster.System.Address, StringComparison.InvariantCulture);
 
     private void Invalidate(ClusterIdentity identity, PID activation, BitArray activeRemotes)
     {

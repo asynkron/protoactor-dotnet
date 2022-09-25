@@ -61,15 +61,9 @@ internal class Gossip
         check.Check(_state, _activeMemberIds);
     }
 
-    public void RemoveConsensusCheck(string id)
-    {
-        _consensusChecks.Remove(id);
-    }
+    public void RemoveConsensusCheck(string id) => _consensusChecks.Remove(id);
 
-    public GossipState GetStateSnapshot()
-    {
-        return _state.Clone();
-    }
+    public GossipState GetStateSnapshot() => _state.Clone();
 
     public ImmutableDictionary<string, Any> GetState(string key)
     {

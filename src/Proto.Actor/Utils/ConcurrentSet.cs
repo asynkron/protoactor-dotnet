@@ -19,28 +19,13 @@ public class ConcurrentSet<T>
 {
     private readonly ConcurrentDictionary<T, byte> _inner = new();
 
-    public bool Contains(T key)
-    {
-        return _inner.ContainsKey(key);
-    }
+    public bool Contains(T key) => _inner.ContainsKey(key);
 
-    public void Add(T key)
-    {
-        _inner.TryAdd(key, 1);
-    }
+    public void Add(T key) => _inner.TryAdd(key, 1);
 
-    public bool TryAdd(T key)
-    {
-        return _inner.TryAdd(key, 1);
-    }
+    public bool TryAdd(T key) => _inner.TryAdd(key, 1);
 
-    public void Remove(T key)
-    {
-        _inner.TryRemove(key, out _);
-    }
+    public void Remove(T key) => _inner.TryRemove(key, out _);
 
-    public T[] ToArray()
-    {
-        return _inner.Keys.ToArray();
-    }
+    public T[] ToArray() => _inner.Keys.ToArray();
 }

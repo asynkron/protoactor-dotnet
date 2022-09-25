@@ -185,10 +185,7 @@ public sealed class SharedFutureProcess : Process, IDisposable
         }
     }
 
-    private int GetIndex(uint requestId)
-    {
-        return (int)(requestId - 1) % _slots.Length;
-    }
+    private int GetIndex(uint requestId) => (int)(requestId - 1) % _slots.Length;
 
     private bool TryGetRequestSlot(uint requestId, out FutureHandle slot)
     {
@@ -204,10 +201,7 @@ public sealed class SharedFutureProcess : Process, IDisposable
         return slot.RequestId == requestId;
     }
 
-    private static uint ToRequestId(int index)
-    {
-        return (uint)(index + 1);
-    }
+    private static uint ToRequestId(int index) => (uint)(index + 1);
 
     private sealed class SharedFutureHandle : IFuture
     {
@@ -248,10 +242,7 @@ public sealed class SharedFutureProcess : Process, IDisposable
             }
         }
 
-        public void Dispose()
-        {
-            _parent.Cancel(Pid.RequestId);
-        }
+        public void Dispose() => _parent.Cancel(Pid.RequestId);
     }
 
     private class FutureHandle

@@ -150,10 +150,7 @@ internal static class HandoverSource
         /// <summary>
         ///     When sending delta only, includes the number of skipped messages (already present on the owner from last rebalance)
         /// </summary>
-        public void AddSkipped()
-        {
-            _skipped++;
-        }
+        public void AddSkipped() => _skipped++;
 
         public IdentityHandover GetFinal()
         {

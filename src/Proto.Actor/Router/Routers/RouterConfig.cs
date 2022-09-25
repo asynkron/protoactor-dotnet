@@ -16,10 +16,7 @@ public abstract record RouterConfig
 
     protected abstract RouterState CreateRouterState();
 
-    public Props Props()
-    {
-        return new Props().WithSpawner(SpawnRouterProcess);
-    }
+    public Props Props() => new Props().WithSpawner(SpawnRouterProcess);
 
     private PID SpawnRouterProcess(ActorSystem system, string name, Props props, PID? parent,
         Action<IContext>? callback)
@@ -62,10 +59,7 @@ public class RouterStartNotification
     private readonly ManualResetEvent _wg = new(false);
     private Exception? _exception;
 
-    public void NotifyStarted()
-    {
-        _wg.Set();
-    }
+    public void NotifyStarted() => _wg.Set();
 
     public void NotifyFailed(Exception exception)
     {

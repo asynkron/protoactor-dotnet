@@ -41,15 +41,10 @@ public class ProcessRegistry
         }
     }
 
-    public IEnumerable<PID> Find(string pattern)
-    {
-        return Find(s => s.Contains(pattern, StringComparison.InvariantCultureIgnoreCase));
-    }
+    public IEnumerable<PID> Find(string pattern) =>
+        Find(s => s.Contains(pattern, StringComparison.InvariantCultureIgnoreCase));
 
-    public void RegisterHostResolver(Func<PID, Process> resolver)
-    {
-        _hostResolvers.Add(resolver);
-    }
+    public void RegisterHostResolver(Func<PID, Process> resolver) => _hostResolvers.Add(resolver);
 
     public Process Get(PID pid)
     {
@@ -92,10 +87,7 @@ public class ProcessRegistry
         return ok ? (pid, true) : (PID.FromAddress(System.Address, id), false);
     }
 
-    public void Remove(PID pid)
-    {
-        _localProcesses.TryRemove(pid.Id, out _);
-    }
+    public void Remove(PID pid) => _localProcesses.TryRemove(pid.Id, out _);
 
     public string NextId()
     {

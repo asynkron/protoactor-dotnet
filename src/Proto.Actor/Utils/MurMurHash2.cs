@@ -13,15 +13,9 @@ public static class MurmurHash2
     private const uint m = 0x5bd1e995;
     private const int r = 24;
 
-    public static uint Hash(string data)
-    {
-        return Hash(Encoding.UTF8.GetBytes(data));
-    }
+    public static uint Hash(string data) => Hash(Encoding.UTF8.GetBytes(data));
 
-    public static uint Hash(byte[] data)
-    {
-        return Hash(data, 0xc58f1a7a);
-    }
+    public static uint Hash(byte[] data) => Hash(data, 0xc58f1a7a);
 
     private static uint Hash(byte[] data, uint seed)
     {

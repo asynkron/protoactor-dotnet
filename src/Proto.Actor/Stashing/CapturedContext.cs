@@ -29,8 +29,5 @@ public record CapturedContext(MessageEnvelope MessageEnvelope, IContext Context)
     /// <summary>
     ///     Restores the stored message to the actor context so that it can be re-processed by the actor
     /// </summary>
-    public void Apply()
-    {
-        Context.Apply(this);
-    }
+    public void Apply() => Context.Apply(this);
 }

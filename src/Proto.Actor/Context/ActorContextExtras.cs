@@ -40,20 +40,11 @@ public sealed class ActorContextExtras : IDisposable
         CancellationTokenSource.Dispose();
     }
 
-    public void InitReceiveTimeoutTimer(Timer timer)
-    {
-        ReceiveTimeoutTimer = timer;
-    }
+    public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
 
-    public void ResetReceiveTimeoutTimer(TimeSpan timeout)
-    {
-        ReceiveTimeoutTimer?.Change(timeout, timeout);
-    }
+    public void ResetReceiveTimeoutTimer(TimeSpan timeout) => ReceiveTimeoutTimer?.Change(timeout, timeout);
 
-    public void StopReceiveTimeoutTimer()
-    {
-        ReceiveTimeoutTimer?.Change(-1, -1);
-    }
+    public void StopReceiveTimeoutTimer() => ReceiveTimeoutTimer?.Change(-1, -1);
 
     public void KillReceiveTimeoutTimer()
     {
@@ -61,23 +52,11 @@ public sealed class ActorContextExtras : IDisposable
         ReceiveTimeoutTimer = null;
     }
 
-    public void AddChild(PID pid)
-    {
-        Children = Children.Add(pid);
-    }
+    public void AddChild(PID pid) => Children = Children.Add(pid);
 
-    public void RemoveChild(PID msgWho)
-    {
-        Children = Children.Remove(msgWho);
-    }
+    public void RemoveChild(PID msgWho) => Children = Children.Remove(msgWho);
 
-    public void Watch(PID watcher)
-    {
-        Watchers = Watchers.Add(watcher);
-    }
+    public void Watch(PID watcher) => Watchers = Watchers.Add(watcher);
 
-    public void Unwatch(PID watcher)
-    {
-        Watchers = Watchers.Remove(watcher);
-    }
+    public void Unwatch(PID watcher) => Watchers = Watchers.Remove(watcher);
 }

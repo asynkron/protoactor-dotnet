@@ -20,9 +20,8 @@ public class DependencyResolver : IDependencyResolver
         _services = services;
     }
 
-    public Props PropsFor<TActor>(params object[] args) where TActor : IActor
-    {
-        return Props.FromProducer(() =>
+    public Props PropsFor<TActor>(params object[] args) where TActor : IActor =>
+        Props.FromProducer(() =>
             {
                 var actorType = typeof(TActor);
 
@@ -39,16 +38,11 @@ public class DependencyResolver : IDependencyResolver
                 }
             }
         );
-    }
 
-    public Props PropsFor<TActor>() where TActor : IActor
-    {
-        return PropsFor(typeof(TActor));
-    }
+    public Props PropsFor<TActor>() where TActor : IActor => PropsFor(typeof(TActor));
 
-    public Props PropsFor(Type actorType)
-    {
-        return Props.FromProducer(() =>
+    public Props PropsFor(Type actorType) =>
+        Props.FromProducer(() =>
             {
                 try
                 {
@@ -63,5 +57,4 @@ public class DependencyResolver : IDependencyResolver
                 }
             }
         );
-    }
 }

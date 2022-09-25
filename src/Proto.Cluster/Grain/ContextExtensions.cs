@@ -18,8 +18,5 @@ public static class ContextExtensions
     /// </summary>
     /// <param name="context">The actor context</param>
     /// <returns>The actor ClusterIdentity for virtual actors. Null when called from plain Actors</returns>
-    public static ClusterIdentity? ClusterIdentity(this IContext context)
-    {
-        return context.Get<ClusterIdentity>();
-    }
+    public static ClusterIdentity? ClusterIdentity(this IContext context) => context.Get<ClusterIdentity>();
 }

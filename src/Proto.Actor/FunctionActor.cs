@@ -20,8 +20,5 @@ internal class FunctionActor : IActor
         _receive = receive;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return _receive(context);
-    }
+    public Task ReceiveAsync(IContext context) => _receive(context);
 }

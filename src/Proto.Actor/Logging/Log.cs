@@ -24,37 +24,25 @@ public static class Log
     ///     Configure the global logger factory.
     /// </summary>
     /// <param name="loggerFactory"></param>
-    public static void SetLoggerFactory(ILoggerFactory loggerFactory)
-    {
-        _loggerFactory = loggerFactory;
-    }
+    public static void SetLoggerFactory(ILoggerFactory loggerFactory) => _loggerFactory = loggerFactory;
 
     /// <summary>
     ///     Get the global logger factory.
     /// </summary>
     /// <returns></returns>
-    public static ILoggerFactory GetLoggerFactory()
-    {
-        return _loggerFactory;
-    }
+    public static ILoggerFactory GetLoggerFactory() => _loggerFactory;
 
     /// <summary>
     ///     Create a logger for the given category name.
     /// </summary>
     /// <param name="categoryName"></param>
     /// <returns></returns>
-    public static ILogger CreateLogger(string categoryName)
-    {
-        return _loggerFactory.CreateLogger(categoryName);
-    }
+    public static ILogger CreateLogger(string categoryName) => _loggerFactory.CreateLogger(categoryName);
 
     /// <summary>
     ///     Create a logger for the given type.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static ILogger CreateLogger<T>()
-    {
-        return _loggerFactory.CreateLogger<T>();
-    }
+    public static ILogger CreateLogger<T>() => _loggerFactory.CreateLogger<T>();
 }

@@ -119,37 +119,28 @@ public record ActorSystemConfig
     ///     Creates a new default ActorSystemConfig
     /// </summary>
     /// <returns>The new ActorSystemConfig</returns>
-    public static ActorSystemConfig Setup()
-    {
-        return new();
-    }
+    public static ActorSystemConfig Setup() => new ActorSystemConfig();
 
     /// <summary>
     ///     The interval used to trigger throttling of deadletter message logs
     /// </summary>
-    public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval)
-    {
-        return this with { DeadLetterThrottleInterval = deadLetterThrottleInterval };
-    }
+    public ActorSystemConfig WithDeadLetterThrottleInterval(TimeSpan deadLetterThrottleInterval) =>
+        this with { DeadLetterThrottleInterval = deadLetterThrottleInterval };
 
     /// <summary>
     ///     The counter used to trigger throttling of deadletter message logs
     ///     DeadLetter throttling triggers when there are DeadLetterThrottleCount deadletters in DeadLetterThrottleInterval
     ///     time
     /// </summary>
-    public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount)
-    {
-        return this with { DeadLetterThrottleCount = deadLetterThrottleCount };
-    }
+    public ActorSystemConfig WithDeadLetterThrottleCount(int deadLetterThrottleCount) =>
+        this with { DeadLetterThrottleCount = deadLetterThrottleCount };
 
     /// <summary>
     ///     Enables logging for DeadLetter responses in Request/RequestAsync
     ///     When disabled, the requesting code is responsible for logging manually
     /// </summary>
-    public ActorSystemConfig WithDeadLetterRequestLogging(bool enabled)
-    {
-        return this with { DeadLetterRequestLogging = enabled };
-    }
+    public ActorSystemConfig WithDeadLetterRequestLogging(bool enabled) =>
+        this with { DeadLetterRequestLogging = enabled };
 
     /// <summary>
     ///     Enables SharedFutures
@@ -157,54 +148,41 @@ public record ActorSystemConfig
     ///     Instead registering a SharedFuture that can handle multiple requests internally
     /// </summary>
     /// <param name="size">The number of requests that can be handled by a SharedFuture</param>
-    public ActorSystemConfig WithSharedFutures(int size = 5000)
-    {
-        return this with { SharedFutures = true, SharedFutureSize = size };
-    }
+    public ActorSystemConfig WithSharedFutures(int size = 5000) =>
+        this with { SharedFutures = true, SharedFutureSize = size };
 
     /// <summary>
     ///     Developer debugging feature, enables extended logging for actor supervision failures
     /// </summary>
-    public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled)
-    {
-        return this with { DeveloperSupervisionLogging = enabled };
-    }
+    public ActorSystemConfig WithDeveloperSupervisionLogging(bool enabled) =>
+        this with { DeveloperSupervisionLogging = enabled };
 
     /// <summary>
     ///     Enables actor metrics. Set to true if you want to export the metrics with OpenTelemetry exporters.
     /// </summary>
-    public ActorSystemConfig WithMetrics(bool enabled = true)
-    {
-        return this with { MetricsEnabled = enabled };
-    }
+    public ActorSystemConfig WithMetrics(bool enabled = true) => this with { MetricsEnabled = enabled };
 
     /// <summary>
     ///     Function used to serialize actor state to a diagnostics string
     ///     Can be used together with RemoteDiagnostics to view the state of remote actors
     /// </summary>
-    public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer)
-    {
-        return this with { DiagnosticsSerializer = serializer };
-    }
+    public ActorSystemConfig WithDiagnosticsSerializer(Func<IActor, string> serializer) =>
+        this with { DiagnosticsSerializer = serializer };
 
     /// <summary>
     ///     Allows adding middleware to the root context exposed by the ActorSystem.
     ///     The result from this will be used as the default sender for all requests,
     ///     except requests overriding the sender context by parameter
     /// </summary>
-    public ActorSystemConfig WithConfigureRootContext(Func<RootContext, IRootContext> configureContext)
-    {
-        return this with { ConfigureRootContext = configureContext };
-    }
+    public ActorSystemConfig WithConfigureRootContext(Func<RootContext, IRootContext> configureContext) =>
+        this with { ConfigureRootContext = configureContext };
 
     /// <summary>
     ///     Allows ActorSystem-wide augmentation of any Props
     ///     All props are translated via this function
     /// </summary>
-    public ActorSystemConfig WithConfigureProps(Func<Props, Props> configureProps)
-    {
-        return this with { ConfigureProps = configureProps };
-    }
+    public ActorSystemConfig WithConfigureProps(Func<Props, Props> configureProps) =>
+        this with { ConfigureProps = configureProps };
 
     /// <summary>
     ///     Allows ActorSystem-wide augmentation of system Props
@@ -212,44 +190,33 @@ public record ActorSystemConfig
     ///     By default, DeadlineDecorator, LoggingContextDecorator are used. Additionally, the supervision strategy is set to
     ///     AlwaysRestart.
     /// </summary>
-    public ActorSystemConfig WithConfigureSystemProps(Func<string, Props, Props> configureSystemProps)
-    {
-        return this with { ConfigureSystemProps = configureSystemProps };
-    }
+    public ActorSystemConfig WithConfigureSystemProps(Func<string, Props, Props> configureSystemProps) =>
+        this with { ConfigureSystemProps = configureSystemProps };
 
     /// <summary>
     ///     Measures the time it takes from scheduling a Task, until the task starts to execute
     ///     If this deadline expires, the ActorSystem logs that the threadpool is running hot
     /// </summary>
-    public ActorSystemConfig WithThreadPoolStatsTimeout(TimeSpan threadPoolStatsTimeout)
-    {
-        return this with { ThreadPoolStatsTimeout = threadPoolStatsTimeout };
-    }
+    public ActorSystemConfig WithThreadPoolStatsTimeout(TimeSpan threadPoolStatsTimeout) =>
+        this with { ThreadPoolStatsTimeout = threadPoolStatsTimeout };
 
     /// <summary>
     ///     Enables more extensive threadpool stats logging
     /// </summary>
-    public ActorSystemConfig WithDeveloperThreadPoolStatsLogging(bool enabled)
-    {
-        return this with { DeveloperThreadPoolStatsLogging = enabled };
-    }
+    public ActorSystemConfig WithDeveloperThreadPoolStatsLogging(bool enabled) =>
+        this with { DeveloperThreadPoolStatsLogging = enabled };
 
     /// <summary>
     ///     The default timeout for RequestAsync calls
     /// </summary>
-    public ActorSystemConfig WithActorRequestTimeout(TimeSpan timeout)
-    {
-        return this with { ActorRequestTimeout = timeout };
-    }
+    public ActorSystemConfig WithActorRequestTimeout(TimeSpan timeout) => this with { ActorRequestTimeout = timeout };
 
     /// <summary>
     ///     Enables logging for DeadLetter responses in Request/RequestAsync (responses returned from DeadLetter to original
     ///     sender)
     /// </summary>
-    public ActorSystemConfig WithDeadLetterResponseLogging(bool enabled)
-    {
-        return this with { DeadLetterResponseLogging = enabled };
-    }
+    public ActorSystemConfig WithDeadLetterResponseLogging(bool enabled) =>
+        this with { DeadLetterResponseLogging = enabled };
 }
 
 //Not part of the contract, but still shipped out of the box
@@ -272,9 +239,8 @@ public static class ActorSystemConfigExtensions
         var inner = self.ConfigureProps;
         var logger = Log.CreateLogger("DeveloperReceive");
 
-        Receiver DeveloperReceiveLogging(Receiver next)
-        {
-            return (context, envelope) =>
+        Receiver DeveloperReceiveLogging(Receiver next) =>
+            (context, envelope) =>
             {
                 var sw = Stopwatch.StartNew();
                 var res = next(context, envelope);
@@ -293,7 +259,6 @@ public static class ActorSystemConfigExtensions
 
                 return res;
             };
-        }
 
         Props Outer(Props props)
         {

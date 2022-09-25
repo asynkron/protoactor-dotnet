@@ -70,20 +70,14 @@ public static class CancellationTokens
     }
 
     [Obsolete("Use and dispose CancellationTokenSource, or use CancellationTokens.FromSeconds", true)]
-    public static CancellationToken WithTimeout(int ms)
-    {
-        return new CancellationTokenSource(ms).Token;
-    }
+    public static CancellationToken WithTimeout(int ms) => new CancellationTokenSource(ms).Token;
 
     /// <summary>
     ///     Creates a new CancellationTokenSource that will be cancelled after the specified time.
     /// </summary>
     /// <param name="timeSpan"></param>
     /// <returns></returns>
-    public static CancellationToken WithTimeout(TimeSpan timeSpan)
-    {
-        return new CancellationTokenSource(timeSpan).Token;
-    }
+    public static CancellationToken WithTimeout(TimeSpan timeSpan) => new CancellationTokenSource(timeSpan).Token;
 
     private record TokenEntry(DateTimeOffset Timestamp, CancellationToken Token);
 }

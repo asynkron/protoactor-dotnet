@@ -14,8 +14,5 @@ internal record RoundRobinGroupRouterConfig : GroupRouterConfig
     {
     }
 
-    protected override RouterState CreateRouterState()
-    {
-        return new RoundRobinRouterState(SenderContext);
-    }
+    protected override RouterState CreateRouterState() => new RoundRobinRouterState(SenderContext);
 }

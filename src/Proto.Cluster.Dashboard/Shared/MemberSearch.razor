@@ -77,10 +77,7 @@
         }
     }
 
-    public void Dispose()
-    {
-        Dispose(true);
-    }
+    public void Dispose() => Dispose(true);
 
     public void Dispose(bool disposing)
     {
@@ -95,14 +92,8 @@
         _disposed = true;
     }
 
-    private IEnumerable<Member> SearchMembers()
-    {
-        return _members!.Where(m => m.Id.Contains(_search) || m.Address.Contains(_search));
-    }
+    private IEnumerable<Member> SearchMembers() => _members!.Where(m => m.Id.Contains(_search) || m.Address.Contains(_search));
 
-    private async Task UpdateSearch()
-    {
-        await InvokeAsync(StateHasChanged);
-    }
+    private async Task UpdateSearch() => await InvokeAsync(StateHasChanged);
 
 }

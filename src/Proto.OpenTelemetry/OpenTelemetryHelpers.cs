@@ -49,15 +49,11 @@ internal static class OpenTelemetryHelpers
         return context;
     }
 
-    public static PropagationContext ExtractPropagationContext(this MessageHeader headers)
-    {
-        return Propagators.DefaultTextMapPropagator.Extract(default, headers.ToDictionary(),
+    public static PropagationContext ExtractPropagationContext(this MessageHeader headers) =>
+        Propagators.DefaultTextMapPropagator.Extract(default, headers.ToDictionary(),
             (dictionary, key) => dictionary.TryGetValue(key, out var value) ? new[] { value } : Array.Empty<string>()
         );
-    }
 
-    private static void AddHeader(List<KeyValuePair<string, string>> list, string key, string value)
-    {
+    private static void AddHeader(List<KeyValuePair<string, string>> list, string key, string value) =>
         list.Add(new KeyValuePair<string, string>(key, value));
-    }
 }

@@ -18,8 +18,5 @@ internal record RandomPoolRouterConfig : PoolRouterConfig
         _seed = seed;
     }
 
-    protected override RouterState CreateRouterState()
-    {
-        return new RandomRouterState(_senderContext, _seed);
-    }
+    protected override RouterState CreateRouterState() => new RandomRouterState(_senderContext, _seed);
 }

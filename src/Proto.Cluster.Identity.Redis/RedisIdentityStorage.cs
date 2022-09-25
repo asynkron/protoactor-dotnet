@@ -209,15 +209,9 @@ public sealed class RedisIdentityStorage : IIdentityStorage
     {
     }
 
-    public Task Init()
-    {
-        return Task.CompletedTask;
-    }
+    public Task Init() => Task.CompletedTask;
 
-    private IDatabase GetDb()
-    {
-        return _connections.GetDatabase();
-    }
+    private IDatabase GetDb() => _connections.GetDatabase();
 
     private Task<bool> TryAcquireLockAsync(
         ClusterIdentity clusterIdentity,
@@ -257,15 +251,9 @@ public sealed class RedisIdentityStorage : IIdentityStorage
         }
     }
 
-    private RedisKey IdKey(ClusterIdentity clusterIdentity)
-    {
-        return _clusterIdentityKey.Append(clusterIdentity.ToString());
-    }
+    private RedisKey IdKey(ClusterIdentity clusterIdentity) => _clusterIdentityKey.Append(clusterIdentity.ToString());
 
-    private RedisKey MemberKey(string memberId)
-    {
-        return _memberKey.Append(memberId);
-    }
+    private RedisKey MemberKey(string memberId) => _memberKey.Append(memberId);
 
     private class ActivationStatus
     {

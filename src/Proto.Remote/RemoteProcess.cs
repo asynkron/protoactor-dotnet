@@ -24,15 +24,9 @@ public class RemoteProcess : Process
 
     internal long LastUsedTick { get; private set; }
 
-    protected internal override void SendUserMessage(PID pid, object message)
-    {
-        Send(pid, message);
-    }
+    protected internal override void SendUserMessage(PID pid, object message) => Send(pid, message);
 
-    protected internal override void SendSystemMessage(PID pid, SystemMessage message)
-    {
-        Send(pid, message);
-    }
+    protected internal override void SendSystemMessage(PID pid, SystemMessage message) => Send(pid, message);
 
     private void Send(PID pid, object msg)
     {

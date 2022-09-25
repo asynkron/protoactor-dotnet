@@ -87,12 +87,10 @@ public class AllForOneStrategy : ISupervisorStrategy
                 throw new ArgumentOutOfRangeException();
         }
 
-        void LogInfo(string action)
-        {
+        void LogInfo(string action) =>
             Logger.LogInformation("{Action} {Actor} because of {Reason}", action,
                 child, reason
             );
-        }
     }
 
     private bool ShouldStop(RestartStatistics rs)

@@ -17,10 +17,8 @@ public static class RouterExtensions
     /// <param name="senderContext">Context to send the messages through</param>
     /// <param name="routees">List of routee <see cref="PID" /></param>
     /// <returns></returns>
-    public static Props NewBroadcastGroup(this ISenderContext senderContext, params PID[] routees)
-    {
-        return new BroadcastGroupRouterConfig(senderContext, routees).Props();
-    }
+    public static Props NewBroadcastGroup(this ISenderContext senderContext, params PID[] routees) =>
+        new BroadcastGroupRouterConfig(senderContext, routees).Props();
 
     /// <summary>
     ///     Creates props for a router, that routes the messages to the routees by calculating the hash of the message key and
@@ -30,10 +28,8 @@ public static class RouterExtensions
     /// <param name="senderContext">Context to send the messages through</param>
     /// <param name="routees">List of routee <see cref="PID" /></param>
     /// <returns></returns>
-    public static Props NewConsistentHashGroup(this ISenderContext senderContext, params PID[] routees)
-    {
-        return new ConsistentHashGroupRouterConfig(senderContext, MurmurHash2.Hash, 100, null, routees).Props();
-    }
+    public static Props NewConsistentHashGroup(this ISenderContext senderContext, params PID[] routees) =>
+        new ConsistentHashGroupRouterConfig(senderContext, MurmurHash2.Hash, 100, null, routees).Props();
 
     /// <summary>
     ///     Creates props for a router, that routes the messages to the routees by calculating the hash of the message key and
@@ -51,11 +47,9 @@ public static class RouterExtensions
         this ISenderContext senderContext,
         Func<object, string> messageHasher,
         params PID[] routees
-    )
-    {
-        return new ConsistentHashGroupRouterConfig(senderContext, MurmurHash2.Hash, 100, messageHasher, routees)
+    ) =>
+        new ConsistentHashGroupRouterConfig(senderContext, MurmurHash2.Hash, 100, messageHasher, routees)
             .Props();
-    }
 
     /// <summary>
     ///     Creates props for a router, that routes the messages to the routees by calculating the hash of the message key and
@@ -72,10 +66,8 @@ public static class RouterExtensions
         Func<string, uint> hash,
         int replicaCount,
         params PID[] routees
-    )
-    {
-        return new ConsistentHashGroupRouterConfig(senderContext, hash, replicaCount, null, routees).Props();
-    }
+    ) =>
+        new ConsistentHashGroupRouterConfig(senderContext, hash, replicaCount, null, routees).Props();
 
     /// <summary>
     ///     Creates props for a router, that routes the messages to the routees by calculating the hash of the message key and
@@ -96,10 +88,8 @@ public static class RouterExtensions
         int replicaCount,
         Func<object, string>? messageHasher,
         params PID[] routees
-    )
-    {
-        return new ConsistentHashGroupRouterConfig(senderContext, hash, replicaCount, messageHasher, routees).Props();
-    }
+    ) =>
+        new ConsistentHashGroupRouterConfig(senderContext, hash, replicaCount, messageHasher, routees).Props();
 
     /// <summary>
     ///     Creates props for a router, that routes messages to a random routee.
@@ -107,10 +97,8 @@ public static class RouterExtensions
     /// <param name="senderContext">Context to send the messages through</param>
     /// <param name="routees">List of routee <see cref="PID" /></param>
     /// <returns></returns>
-    public static Props NewRandomGroup(this ISenderContext senderContext, params PID[] routees)
-    {
-        return new RandomGroupRouterConfig(senderContext, routees).Props();
-    }
+    public static Props NewRandomGroup(this ISenderContext senderContext, params PID[] routees) =>
+        new RandomGroupRouterConfig(senderContext, routees).Props();
 
     /// <summary>
     ///     Creates props for a router, that routes messages to a random routee.
@@ -119,10 +107,8 @@ public static class RouterExtensions
     /// <param name="seed">Random seed</param>
     /// <param name="routees">List of routee <see cref="PID" /></param>
     /// <returns></returns>
-    public static Props NewRandomGroup(this ISenderContext senderContext, int seed, params PID[] routees)
-    {
-        return new RandomGroupRouterConfig(senderContext, seed, routees).Props();
-    }
+    public static Props NewRandomGroup(this ISenderContext senderContext, int seed, params PID[] routees) =>
+        new RandomGroupRouterConfig(senderContext, seed, routees).Props();
 
     /// <summary>
     ///     Creates props for a router, that routes messages to its routees in a round robin fashion.
@@ -130,10 +116,8 @@ public static class RouterExtensions
     /// <param name="senderContext">Context to send the messages through</param>
     /// <param name="routees">List of routee <see cref="PID" /></param>
     /// <returns></returns>
-    public static Props NewRoundRobinGroup(this ISenderContext senderContext, params PID[] routees)
-    {
-        return new RoundRobinGroupRouterConfig(senderContext, routees).Props();
-    }
+    public static Props NewRoundRobinGroup(this ISenderContext senderContext, params PID[] routees) =>
+        new RoundRobinGroupRouterConfig(senderContext, routees).Props();
 
     /// <summary>
     ///     Creates props for a router that broadcasts the message to all the actors in the pool it maintains.
@@ -142,10 +126,8 @@ public static class RouterExtensions
     /// <param name="props">Props to spawn actors - members of the pool</param>
     /// <param name="poolSize">Size of the pool</param>
     /// <returns></returns>
-    public static Props NewBroadcastPool(this ISenderContext senderContext, Props props, int poolSize)
-    {
-        return new BroadcastPoolRouterConfig(senderContext, poolSize, props).Props();
-    }
+    public static Props NewBroadcastPool(this ISenderContext senderContext, Props props, int poolSize) =>
+        new BroadcastPoolRouterConfig(senderContext, poolSize, props).Props();
 
     /// <summary>
     ///     Creates props for a router, that routes the messages to the pool of actors it maintains by calculating the hash of
@@ -168,13 +150,11 @@ public static class RouterExtensions
         Func<string, uint>? hash = null,
         int replicaCount = 100,
         Func<object, string>? messageHasher = null
-    )
-    {
-        return new ConsistentHashPoolRouterConfig(senderContext, poolSize, props, hash ?? MurmurHash2.Hash,
+    ) =>
+        new ConsistentHashPoolRouterConfig(senderContext, poolSize, props, hash ?? MurmurHash2.Hash,
                 replicaCount, messageHasher
             )
             .Props();
-    }
 
     /// <summary>
     ///     Creates props for a router, that routes messages to a random member of the pool it maintains.
@@ -189,10 +169,8 @@ public static class RouterExtensions
         Props props,
         int poolSize,
         int? seed = null
-    )
-    {
-        return new RandomPoolRouterConfig(senderContext, poolSize, props, seed).Props();
-    }
+    ) =>
+        new RandomPoolRouterConfig(senderContext, poolSize, props, seed).Props();
 
     /// <summary>
     ///     Creates props for a router, that routes messages to member of the pool it maintains in a round robin fashion.
@@ -201,8 +179,6 @@ public static class RouterExtensions
     /// <param name="props">Props to spawn actors - members of the pool</param>
     /// <param name="poolSize">Size of the pool</param>
     /// <returns></returns>
-    public static Props NewRoundRobinPool(this ISenderContext senderContext, Props props, int poolSize)
-    {
-        return new RoundRobinPoolRouterConfig(senderContext, poolSize, props).Props();
-    }
+    public static Props NewRoundRobinPool(this ISenderContext senderContext, Props props, int poolSize) =>
+        new RoundRobinPoolRouterConfig(senderContext, poolSize, props).Props();
 }

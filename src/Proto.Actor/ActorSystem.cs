@@ -128,17 +128,13 @@ public sealed class ActorSystem : IAsyncDisposable
     /// <summary>
     ///     Stops the actor system with reason = "Disposed"
     /// </summary>
-    public async ValueTask DisposeAsync()
-    {
-        await ShutdownAsync("Disposed");
+    public async ValueTask DisposeAsync() => await ShutdownAsync("Disposed");
 
-        // NOTE: We don't dispose _cts here on purpose, as doing so causes
-        // ObjectDisposedException to be thrown from certain background task
-        // loops, such as the Gossip loop. Given our usage of the Shutdown token
-        // this is not a memory leak.
-        //_cts.Dispose();
-    }
-
+    // NOTE: We don't dispose _cts here on purpose, as doing so causes
+    // ObjectDisposedException to be thrown from certain background task
+    // loops, such as the Gossip loop. Given our usage of the Shutdown token
+    // this is not a memory leak.
+    //_cts.Dispose();
     private void RunThreadPoolStats()
     {
         var metricTags = new KeyValuePair<string, object?>[] { new("id", Id), new("address", Address) };
@@ -213,29 +209,21 @@ public sealed class ActorSystem : IAsyncDisposable
         _port = 0;
     }
 
-    public RootContext NewRoot(MessageHeader? headers = null, params Func<Sender, Sender>[] middleware)
-    {
-        return new(this, headers, middleware);
-    }
+    public RootContext NewRoot(MessageHeader? headers = null, params Func<Sender, Sender>[] middleware) =>
+        new RootContext(this, headers, middleware);
 
     /// <summary>
     ///     Gets the network address of the actor system. Used by Proto.Remote.
     /// </summary>
     /// <returns></returns>
-    public (string Host, int Port) GetAddress()
-    {
-        return (_host, _port);
-    }
+    public (string Host, int Port) GetAddress() => (_host, _port);
 
     /// <summary>
     ///     Applies props configuration delegate from actor system configuration.
     /// </summary>
     /// <param name="props"></param>
     /// <returns></returns>
-    internal Props ConfigureProps(Props props)
-    {
-        return Config.ConfigureProps(props);
-    }
+    internal Props ConfigureProps(Props props) => Config.ConfigureProps(props);
 
     /// <summary>
     ///     Applies props configuration delegate for system actors.
@@ -243,8 +231,5 @@ public sealed class ActorSystem : IAsyncDisposable
     /// <param name="name"></param>
     /// <param name="props"></param>
     /// <returns></returns>
-    internal Props ConfigureSystemProps(string name, Props props)
-    {
-        return Config.ConfigureSystemProps(name, props);
-    }
+    internal Props ConfigureSystemProps(string name, Props props) => Config.ConfigureSystemProps(name, props);
 }

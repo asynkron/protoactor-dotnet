@@ -88,8 +88,6 @@ public class PartitionActivatorManager
         }
     }
 
-    public static PID RemotePartitionActivatorActor(string address)
-    {
-        return PID.FromAddress(address, PartitionActivatorActorName);
-    }
+    public static PID RemotePartitionActivatorActor(string address) =>
+        PID.FromAddress(address, PartitionActivatorActorName);
 }

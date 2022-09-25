@@ -26,10 +26,7 @@ public class CodeGenerator : CommonCodeGenerator
 
     protected override string DefaultFileExtension => ".cs";
 
-    protected override string Escape(string identifier)
-    {
-        return identifier;
-    }
+    protected override string Escape(string identifier) => identifier;
 
     protected override void WriteFile(GeneratorContext ctx, FileDescriptorProto obj)
     {
@@ -131,58 +128,40 @@ public class CodeGenerator : CommonCodeGenerator
             return res;
         }
 
-        static string GetKind(string? packageName, string serviceName)
-        {
-            return string.IsNullOrEmpty(packageName) ? serviceName : $"{packageName}/{serviceName}";
-        }
+        static string GetKind(string? packageName, string serviceName) =>
+            string.IsNullOrEmpty(packageName) ? serviceName : $"{packageName}/{serviceName}";
     }
 
     #region UnusedMethods
 
-    protected override void WriteNamespaceHeader(GeneratorContext ctx, string @namespace)
-    {
+    protected override void WriteNamespaceHeader(GeneratorContext ctx, string @namespace) =>
         throw new NotImplementedException();
-    }
 
-    protected override void WriteNamespaceFooter(GeneratorContext ctx, string @namespace)
-    {
+    protected override void WriteNamespaceFooter(GeneratorContext ctx, string @namespace) =>
         throw new NotImplementedException();
-    }
 
     protected override void WriteField(
         GeneratorContext ctx,
         FieldDescriptorProto obj,
         ref object state,
         OneOfStub[] oneOfs
-    )
-    {
+    ) =>
         throw new NotImplementedException();
-    }
 
-    protected override void WriteMessageFooter(GeneratorContext ctx, DescriptorProto obj, ref object state)
-    {
+    protected override void WriteMessageFooter(GeneratorContext ctx, DescriptorProto obj, ref object state) =>
         throw new NotImplementedException();
-    }
 
-    protected override void WriteMessageHeader(GeneratorContext ctx, DescriptorProto obj, ref object state)
-    {
+    protected override void WriteMessageHeader(GeneratorContext ctx, DescriptorProto obj, ref object state) =>
         throw new NotImplementedException();
-    }
 
-    protected override void WriteEnumHeader(GeneratorContext ctx, EnumDescriptorProto obj, ref object state)
-    {
+    protected override void WriteEnumHeader(GeneratorContext ctx, EnumDescriptorProto obj, ref object state) =>
         throw new NotImplementedException();
-    }
 
-    protected override void WriteEnumValue(GeneratorContext ctx, EnumValueDescriptorProto obj, ref object state)
-    {
+    protected override void WriteEnumValue(GeneratorContext ctx, EnumValueDescriptorProto obj, ref object state) =>
         throw new NotImplementedException();
-    }
 
-    protected override void WriteEnumFooter(GeneratorContext ctx, EnumDescriptorProto obj, ref object state)
-    {
+    protected override void WriteEnumFooter(GeneratorContext ctx, EnumDescriptorProto obj, ref object state) =>
         throw new NotImplementedException();
-    }
 
     #endregion
 }

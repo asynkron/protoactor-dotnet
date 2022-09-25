@@ -10,8 +10,6 @@ public static class ActorSystemExtensions
     /// </summary>
     /// <param name="system"></param>
     /// <returns></returns>
-    public static Serialization Serialization(this ActorSystem system)
-    {
-        return system.Extensions.GetRequired<Serialization>();
-    }
+    public static Serialization Serialization(this ActorSystem system) =>
+        system.Extensions.GetRequired<Serialization>();
 }

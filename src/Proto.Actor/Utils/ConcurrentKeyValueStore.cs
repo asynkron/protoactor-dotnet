@@ -28,20 +28,12 @@ public abstract class ConcurrentKeyValueStore<T> : IKeyValueStore<T>
         _semaphore = semaphore;
     }
 
-    public Task<T> GetAsync(string id, CancellationToken ct)
-    {
-        return _semaphore.WaitAsync(() => InnerGetStateAsync(id, ct));
-    }
+    public Task<T> GetAsync(string id, CancellationToken ct) => _semaphore.WaitAsync(() => InnerGetStateAsync(id, ct));
 
-    public Task SetAsync(string id, T state, CancellationToken ct)
-    {
-        return _semaphore.WaitAsync(() => InnerSetStateAsync(id, state, ct));
-    }
+    public Task SetAsync(string id, T state, CancellationToken ct) =>
+        _semaphore.WaitAsync(() => InnerSetStateAsync(id, state, ct));
 
-    public Task ClearAsync(string id, CancellationToken ct)
-    {
-        return _semaphore.WaitAsync(() => InnerClearStateAsync(id, ct));
-    }
+    public Task ClearAsync(string id, CancellationToken ct) => _semaphore.WaitAsync(() => InnerClearStateAsync(id, ct));
 
     protected abstract Task<T> InnerGetStateAsync(string id, CancellationToken ct);
 

@@ -36,9 +36,8 @@ public class GossipActor : IActor
             () => _system.Cluster().MemberList.GetMembers());
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             SetGossipStateKey setState          => OnSetGossipStateKey(context, setState),
             GetGossipStateRequest getState      => OnGetGossipStateKey(context, getState),
@@ -50,7 +49,6 @@ public class GossipActor : IActor
             ClusterTopology clusterTopology     => OnClusterTopology(clusterTopology),
             _                                   => Task.CompletedTask
         };
-    }
 
     private Task OnGetGossipStateEntryKey(IContext context, GetGossipStateEntryRequest getState)
     {
@@ -69,10 +67,7 @@ public class GossipActor : IActor
         return Task.CompletedTask;
     }
 
-    private Task OnClusterTopology(ClusterTopology clusterTopology)
-    {
-        return _internal.UpdateClusterTopology(clusterTopology);
-    }
+    private Task OnClusterTopology(ClusterTopology clusterTopology) => _internal.UpdateClusterTopology(clusterTopology);
 
     private Task OnAddConsensusCheck(IContext context, AddConsensusCheck msg)
     {

@@ -80,10 +80,8 @@ public sealed class MongoIdentityStorage : IIdentityStorage
         return null;
     }
 
-    public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct)
-    {
-        return _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.LockedBy == spawnLock.LockId, ct));
-    }
+    public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct) =>
+        _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.LockedBy == spawnLock.LockId, ct));
 
     public async Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken ct)
     {
@@ -118,10 +116,8 @@ public sealed class MongoIdentityStorage : IIdentityStorage
             () => _pids.DeleteManyAsync(p => p.Key == key && p.UniqueIdentity == pid.Id, ct));
     }
 
-    public Task RemoveMember(string memberId, CancellationToken ct)
-    {
-        return _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.MemberId == memberId, ct));
-    }
+    public Task RemoveMember(string memberId, CancellationToken ct) =>
+        _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.MemberId == memberId, ct));
 
     public async Task<StoredActivation?> TryGetExistingActivation(
         ClusterIdentity clusterIdentity,
@@ -141,10 +137,7 @@ public sealed class MongoIdentityStorage : IIdentityStorage
     {
     }
 
-    public Task Init()
-    {
-        return _pids.Indexes.CreateOneAsync(new CreateIndexModel<PidLookupEntity>("{ MemberId: 1 }"));
-    }
+    public Task Init() => _pids.Indexes.CreateOneAsync(new CreateIndexModel<PidLookupEntity>("{ MemberId: 1 }"));
 
     private async Task<bool> TryAcquireLockAsync(
         ClusterIdentity clusterIdentity,
@@ -212,8 +205,5 @@ public sealed class MongoIdentityStorage : IIdentityStorage
         throw new StorageFailure($"Failed to connect to MongoDB while looking up key {key}");
     }
 
-    private string GetKey(ClusterIdentity clusterIdentity)
-    {
-        return $"{_clusterName}/{clusterIdentity}";
-    }
+    private string GetKey(ClusterIdentity clusterIdentity) => $"{_clusterName}/{clusterIdentity}";
 }

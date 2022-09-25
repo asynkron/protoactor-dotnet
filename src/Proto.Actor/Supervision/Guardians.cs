@@ -25,10 +25,7 @@ public class Guardians
 
     internal PID GetGuardianPid(ISupervisorStrategy strategy)
     {
-        GuardianProcess ValueFactory(ISupervisorStrategy s)
-        {
-            return new(System, s);
-        }
+        GuardianProcess ValueFactory(ISupervisorStrategy s) => new GuardianProcess(System, s);
 
         var guardian = _guardianStrategies.GetOrAdd(strategy, ValueFactory);
 
@@ -60,15 +57,11 @@ internal class GuardianProcess : Process, ISupervisor
     public IImmutableSet<PID> Children =>
         throw new MemberAccessException("Guardian does not hold its children PIDs.");
 
-    public void EscalateFailure(Exception reason, object? message)
-    {
+    public void EscalateFailure(Exception reason, object? message) =>
         throw new InvalidOperationException("Guardian cannot escalate failure.");
-    }
 
-    public void RestartChildren(Exception reason, params PID[] pids)
-    {
+    public void RestartChildren(Exception reason, params PID[] pids) =>
         pids.SendSystemMessage(new Restart(reason), System);
-    }
 
     public void StopChildren(params PID[] pids)
     {
@@ -78,15 +71,10 @@ internal class GuardianProcess : Process, ISupervisor
         }
     }
 
-    public void ResumeChildren(params PID[] pids)
-    {
-        pids.SendSystemMessage(ResumeMailbox.Instance, System);
-    }
+    public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
 
-    protected internal override void SendUserMessage(PID pid, object message)
-    {
+    protected internal override void SendUserMessage(PID pid, object message) =>
         throw new InvalidOperationException("Guardian actor cannot receive any user messages.");
-    }
 
     protected internal override void SendSystemMessage(PID pid, SystemMessage message)
     {

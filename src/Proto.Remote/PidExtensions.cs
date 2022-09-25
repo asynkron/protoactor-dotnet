@@ -6,15 +6,10 @@ namespace Proto.Remote;
 
 public static class PidExtensions
 {
-    public static bool IsClientAddress(this PID pid)
-    {
-        return pid.Address.StartsWith(ActorSystem.Client, StringComparison.Ordinal);
-    }
+    public static bool IsClientAddress(this PID pid) =>
+        pid.Address.StartsWith(ActorSystem.Client, StringComparison.Ordinal);
 
-    public static bool IsClientId(this PID pid)
-    {
-        return pid.Id.StartsWith(ActorSystem.Client, StringComparison.Ordinal);
-    }
+    public static bool IsClientId(this PID pid) => pid.Id.StartsWith(ActorSystem.Client, StringComparison.Ordinal);
 
     public static bool TryTranslateToLocalClientPID(this PID pid, [NotNullWhen(true)] out PID? clientPid)
     {

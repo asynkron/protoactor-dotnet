@@ -85,20 +85,11 @@ public sealed class BatchContext : ISenderContext, IDisposable
         return new FutureProcess(System);
     }
 
-    public T? Get<T>()
-    {
-        return _context.Get<T>();
-    }
+    public T? Get<T>() => _context.Get<T>();
 
-    public void Set<T, TI>(TI obj) where TI : T
-    {
-        _context.Set<T, TI>(obj);
-    }
+    public void Set<T, TI>(TI obj) where TI : T => _context.Set<T, TI>(obj);
 
-    public void Remove<T>()
-    {
-        _context.Remove<T>();
-    }
+    public void Remove<T>() => _context.Remove<T>();
 
     public ActorSystem System => _context.System;
     public PID? Parent => _context.Parent;
@@ -108,13 +99,7 @@ public sealed class BatchContext : ISenderContext, IDisposable
     public MessageHeader Headers => _context.Headers;
     public object? Message => _context.Message;
 
-    public void Send(PID target, object message)
-    {
-        _context.Send(target, message);
-    }
+    public void Send(PID target, object message) => _context.Send(target, message);
 
-    public void Request(PID target, object message, PID? sender)
-    {
-        _context.Request(target, message, sender);
-    }
+    public void Request(PID target, object message, PID? sender) => _context.Request(target, message, sender);
 }

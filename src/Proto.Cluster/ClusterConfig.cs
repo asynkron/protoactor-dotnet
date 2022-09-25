@@ -180,10 +180,7 @@ public record ClusterConfig
     /// <param name="timeout"></param>
     /// <returns></returns>
     [Obsolete("Use ActorActivationTimeout instead")]
-    public ClusterConfig WithTimeout(TimeSpan timeout)
-    {
-        return WithActorActivationTimeout(timeout);
-    }
+    public ClusterConfig WithTimeout(TimeSpan timeout) => WithActorActivationTimeout(timeout);
 
     /// <summary>
     ///     Timeout for single retry of actor request. Default is 5s.
@@ -192,30 +189,23 @@ public record ClusterConfig
     /// </summary>
     /// <param name="timeSpan"></param>
     /// <returns></returns>
-    public ClusterConfig WithActorRequestTimeout(TimeSpan timeSpan)
-    {
-        return this with { ActorRequestTimeout = timeSpan };
-    }
+    public ClusterConfig WithActorRequestTimeout(TimeSpan timeSpan) => this with { ActorRequestTimeout = timeSpan };
 
     /// <summary>
     ///     Timeout for running the <see cref="ClusterKind.CanSpawnIdentity" /> check. Default is 5s.
     /// </summary>
     /// <param name="timeSpan"></param>
     /// <returns></returns>
-    public ClusterConfig WithActorSpawnVerificationTimeout(TimeSpan timeSpan)
-    {
-        return this with { ActorSpawnVerificationTimeout = timeSpan };
-    }
+    public ClusterConfig WithActorSpawnVerificationTimeout(TimeSpan timeSpan) =>
+        this with { ActorSpawnVerificationTimeout = timeSpan };
 
     /// <summary>
     ///     Timeout for DB Identity Lookup operations. Default is 5s.
     /// </summary>
     /// <param name="timeSpan"></param>
     /// <returns></returns>
-    public ClusterConfig WithActorActivationTimeout(TimeSpan timeSpan)
-    {
-        return this with { ActorActivationTimeout = timeSpan };
-    }
+    public ClusterConfig WithActorActivationTimeout(TimeSpan timeSpan) =>
+        this with { ActorActivationTimeout = timeSpan };
 
     /// <summary>
     ///     Throttle maximum events logged from cluster requests in a period of time. Specify period in this property. The
@@ -223,10 +213,8 @@ public record ClusterConfig
     /// </summary>
     /// <param name="timeSpan"></param>
     /// <returns></returns>
-    public ClusterConfig WithRequestLogThrottlePeriod(TimeSpan timeSpan)
-    {
-        return this with { RequestLogThrottlePeriod = timeSpan };
-    }
+    public ClusterConfig WithRequestLogThrottlePeriod(TimeSpan timeSpan) =>
+        this with { RequestLogThrottlePeriod = timeSpan };
 
     /// <summary>
     ///     Throttle maximum events logged from cluster requests in a period of time. Specify number of events in this
@@ -234,10 +222,8 @@ public record ClusterConfig
     /// </summary>
     /// <param name="max"></param>
     /// <returns></returns>
-    public ClusterConfig WithMaxNumberOfEventsInRequestLogThrottlePeriod(int max)
-    {
-        return this with { MaxNumberOfEventsInRequestLogThrottlePeriod = max };
-    }
+    public ClusterConfig WithMaxNumberOfEventsInRequestLogThrottlePeriod(int max) =>
+        this with { MaxNumberOfEventsInRequestLogThrottlePeriod = max };
 
     /// <summary>
     ///     Adds a <see cref="ClusterKind" /> to this member
@@ -245,10 +231,7 @@ public record ClusterConfig
     /// <param name="kind">Kind name</param>
     /// <param name="prop">Props to spawn an actor of this kind</param>
     /// <returns></returns>
-    public ClusterConfig WithClusterKind(string kind, Props prop)
-    {
-        return WithClusterKind(new ClusterKind(kind, prop));
-    }
+    public ClusterConfig WithClusterKind(string kind, Props prop) => WithClusterKind(new ClusterKind(kind, prop));
 
     /// <summary>
     ///     Adds a <see cref="ClusterKind" /> to this member
@@ -257,20 +240,16 @@ public record ClusterConfig
     /// <param name="prop">Props to spawn an actor of this kind</param>
     /// <param name="strategyBuilder">Specifies <see cref="IMemberStrategy" /> for this cluster kind</param>
     /// <returns></returns>
-    public ClusterConfig WithClusterKind(string kind, Props prop, Func<Cluster, IMemberStrategy> strategyBuilder)
-    {
-        return WithClusterKind(new ClusterKind(kind, prop) { StrategyBuilder = strategyBuilder });
-    }
+    public ClusterConfig WithClusterKind(string kind, Props prop, Func<Cluster, IMemberStrategy> strategyBuilder) =>
+        WithClusterKind(new ClusterKind(kind, prop) { StrategyBuilder = strategyBuilder });
 
     /// <summary>
     ///     Adds <see cref="ClusterKind" /> list to this member
     /// </summary>
     /// <param name="knownKinds">List of tuples of (kind name, props to spawn an actor of this kind)</param>
     /// <returns></returns>
-    public ClusterConfig WithClusterKinds(params (string kind, Props prop)[] knownKinds)
-    {
-        return WithClusterKinds(knownKinds.Select(k => new ClusterKind(k.kind, k.prop)).ToArray());
-    }
+    public ClusterConfig WithClusterKinds(params (string kind, Props prop)[] knownKinds) =>
+        WithClusterKinds(knownKinds.Select(k => new ClusterKind(k.kind, k.prop)).ToArray());
 
     /// <summary>
     ///     Adds <see cref="ClusterKind" /> list to this member
@@ -281,41 +260,32 @@ public record ClusterConfig
     /// </param>
     /// <returns></returns>
     public ClusterConfig WithClusterKinds(
-        params (string kind, Props prop, Func<Cluster, IMemberStrategy> strategyBuilder)[] knownKinds)
-    {
-        return WithClusterKinds(knownKinds
+        params (string kind, Props prop, Func<Cluster, IMemberStrategy> strategyBuilder)[] knownKinds) =>
+        WithClusterKinds(knownKinds
             .Select(k => new ClusterKind(k.kind, k.prop) { StrategyBuilder = k.strategyBuilder }).ToArray());
-    }
 
     /// <summary>
     ///     Adds a <see cref="ClusterKind" /> to this member
     /// </summary>
     /// <param name="clusterKind"></param>
     /// <returns></returns>
-    public ClusterConfig WithClusterKind(ClusterKind clusterKind)
-    {
-        return WithClusterKinds(clusterKind);
-    }
+    public ClusterConfig WithClusterKind(ClusterKind clusterKind) => WithClusterKinds(clusterKind);
 
     /// <summary>
     ///     Adds <see cref="ClusterKind" /> list to this member
     /// </summary>
     /// <param name="clusterKinds"></param>
     /// <returns></returns>
-    public ClusterConfig WithClusterKinds(params ClusterKind[] clusterKinds)
-    {
-        return this with { ClusterKinds = ClusterKinds.AddRange(clusterKinds) };
-    }
+    public ClusterConfig WithClusterKinds(params ClusterKind[] clusterKinds) =>
+        this with { ClusterKinds = ClusterKinds.AddRange(clusterKinds) };
 
     /// <summary>
     ///     Sets the default <see cref="IMemberStrategy" /> for this cluster kinds
     /// </summary>
     /// <param name="builder"></param>
     /// <returns></returns>
-    public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder)
-    {
-        return this with { MemberStrategyBuilder = builder };
-    }
+    public ClusterConfig WithMemberStrategyBuilder(Func<Cluster, string, IMemberStrategy> builder) =>
+        this with { MemberStrategyBuilder = builder };
 
     /// <summary>
     ///     Sets the delegate that creates the <see cref="IClusterContext" />. The default implementation creates an instance
@@ -323,60 +293,44 @@ public record ClusterConfig
     /// </summary>
     /// <param name="producer"></param>
     /// <returns></returns>
-    public ClusterConfig WithClusterContextProducer(Func<Cluster, IClusterContext> producer)
-    {
-        return this with { ClusterContextProducer = producer };
-    }
+    public ClusterConfig WithClusterContextProducer(Func<Cluster, IClusterContext> producer) =>
+        this with { ClusterContextProducer = producer };
 
     /// <summary>
     ///     Interval between gossip updates. Default is 300ms.
     /// </summary>
     /// <param name="interval"></param>
     /// <returns></returns>
-    public ClusterConfig WithGossipInterval(TimeSpan interval)
-    {
-        return this with { GossipInterval = interval };
-    }
+    public ClusterConfig WithGossipInterval(TimeSpan interval) => this with { GossipInterval = interval };
 
     /// <summary>
     ///     The number of random members the gossip will be sent to during each gossip update. Default is 3.
     /// </summary>
     /// <param name="fanout"></param>
     /// <returns></returns>
-    public ClusterConfig WithGossipFanOut(int fanout)
-    {
-        return this with { GossipFanout = fanout };
-    }
+    public ClusterConfig WithGossipFanOut(int fanout) => this with { GossipFanout = fanout };
 
     /// <summary>
     ///     Maximum number of member states to be sent to each member receiving gossip. Default is 50.
     /// </summary>
     /// <param name="maxSend"></param>
     /// <returns></returns>
-    public ClusterConfig WithGossipMaxSend(int maxSend)
-    {
-        return this with { GossipMaxSend = maxSend };
-    }
+    public ClusterConfig WithGossipMaxSend(int maxSend) => this with { GossipMaxSend = maxSend };
 
     /// <summary>
     ///     The timeout for sending the gossip state to another member. Default is 1500ms.
     /// </summary>
     /// <param name="timeout"></param>
     /// <returns></returns>
-    public ClusterConfig WithGossipRequestTimeout(TimeSpan timeout)
-    {
-        return this with { GossipRequestTimeout = timeout };
-    }
+    public ClusterConfig WithGossipRequestTimeout(TimeSpan timeout) => this with { GossipRequestTimeout = timeout };
 
     /// <summary>
     ///     TTL for remote PID cache. Default is 15min. Set to <see cref="TimeSpan.Zero" /> to disable.
     /// </summary>
     /// <param name="timeout"></param>
     /// <returns></returns>
-    public ClusterConfig WithRemotePidCacheTimeToLive(TimeSpan timeout)
-    {
-        return this with { RemotePidCacheTimeToLive = timeout };
-    }
+    public ClusterConfig WithRemotePidCacheTimeToLive(TimeSpan timeout) =>
+        this with { RemotePidCacheTimeToLive = timeout };
 
     /// <summary>
     ///     Gossip heartbeat timeout. If the member does not update its heartbeat within this period, it will be added to the
@@ -385,28 +339,20 @@ public record ClusterConfig
     /// </summary>
     /// <param name="expiration"></param>
     /// <returns></returns>
-    public ClusterConfig WithHeartbeatExpiration(TimeSpan expiration)
-    {
-        return this with { HeartbeatExpiration = expiration };
-    }
+    public ClusterConfig WithHeartbeatExpiration(TimeSpan expiration) => this with { HeartbeatExpiration = expiration };
 
     /// <summary>
     ///     Configuration for the PubSub extension.
     /// </summary>
-    public ClusterConfig WithPubSubConfig(PubSubConfig config)
-    {
-        return this with { PubSubConfig = config };
-    }
+    public ClusterConfig WithPubSubConfig(PubSubConfig config) => this with { PubSubConfig = config };
 
     /// <summary>
     ///     Backwards compatibility. Set to true to have timed out requests return default(TResponse) instead of throwing
     ///     <see cref="TimeoutException" />
     ///     Default is false.
     /// </summary>
-    public ClusterConfig WithLegacyRequestTimeoutBehavior(bool enabled = true)
-    {
-        return this with { LegacyRequestTimeoutBehavior = enabled };
-    }
+    public ClusterConfig WithLegacyRequestTimeoutBehavior(bool enabled = true) =>
+        this with { LegacyRequestTimeoutBehavior = enabled };
 
     /// <summary>
     ///     Creates a new <see cref="ClusterConfig" />
@@ -422,8 +368,6 @@ public record ClusterConfig
         string clusterName,
         IClusterProvider clusterProvider,
         IIdentityLookup identityLookup
-    )
-    {
-        return new(clusterName, clusterProvider, identityLookup);
-    }
+    ) =>
+        new ClusterConfig(clusterName, clusterProvider, identityLookup);
 }

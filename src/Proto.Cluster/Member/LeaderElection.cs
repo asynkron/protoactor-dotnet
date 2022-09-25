@@ -11,9 +11,8 @@ namespace Proto.Cluster;
 
 public static class LeaderElection
 {
-    public static string Elect(ImmutableDictionary<string, ClusterTopologyNotification> memberState)
-    {
-        return memberState
+    public static string Elect(ImmutableDictionary<string, ClusterTopologyNotification> memberState) =>
+        memberState
             .Values
             .Where(m => memberState.ContainsKey(m.LeaderId))
             .GroupBy(m => m.LeaderId)
@@ -22,7 +21,6 @@ public static class LeaderElection
             .ThenBy(t => t.Id)
             .Select(t => t.Id)
             .FirstOrDefault() ?? memberState.Values.OrderBy(m => m.MemberId).First().MemberId;
-    }
 }
 
 public record LeaderElected(Member Leader);

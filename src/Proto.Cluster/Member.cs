@@ -20,8 +20,5 @@ public partial class Member
     ///     Gets a representation of this member for logging
     /// </summary>
     /// <returns></returns>
-    public string ToLogString()
-    {
-        return $"Member Address:{Address} ID:{Id}";
-    }
+    public string ToLogString() => $"Member Address:{Address} ID:{Id}";
 }

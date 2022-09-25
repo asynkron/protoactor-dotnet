@@ -45,10 +45,7 @@ public interface IContext : ISenderContext, IReceiverContext, ISpawnerContext, I
     /// </summary>
     /// <param name="message">The message to send</param>
     /// <param name="header"></param>
-    void Respond(object message, MessageHeader header)
-    {
-        Respond(new MessageEnvelope(message, null, header));
-    }
+    void Respond(object message, MessageHeader header) => Respond(new MessageEnvelope(message, null, header));
 
     /// <summary>
     ///     Registers the actor as a watcher for the specified PID. When the PID terminates the watcher is notified with

@@ -13,25 +13,16 @@ namespace Proto.Cluster.PubSub;
 [PublicAPI]
 public static class PubSubExtensions
 {
-    public static PubSubExtension PubSub(this Cluster cluster)
-    {
-        return cluster.System.Extensions.Get<PubSubExtension>()!;
-    }
+    public static PubSubExtension PubSub(this Cluster cluster) => cluster.System.Extensions.Get<PubSubExtension>()!;
 
-    public static PubSubExtension? PubSub(this ActorSystem system)
-    {
-        return system.Extensions.Get<PubSubExtension>();
-    }
+    public static PubSubExtension? PubSub(this ActorSystem system) => system.Extensions.Get<PubSubExtension>();
 
     /// <summary>
     ///     Creates a new PubSub publisher that publishes messages directly to the TopicActor
     /// </summary>
     /// <param name="cluster"></param>
     /// <returns></returns>
-    public static IPublisher Publisher(this Cluster cluster)
-    {
-        return new Publisher(cluster);
-    }
+    public static IPublisher Publisher(this Cluster cluster) => new Publisher(cluster);
 
     /// <summary>
     ///     Create a new PubSub batching producer for specified topic, that publishes directly to the topic actor
@@ -41,10 +32,8 @@ public static class PubSubExtensions
     /// <param name="config">Configuration</param>
     /// <returns></returns>
     public static BatchingProducer BatchingProducer(this Cluster cluster, string topic,
-        BatchingProducerConfig? config = null)
-    {
-        return new(cluster.Publisher(), topic, config);
-    }
+        BatchingProducerConfig? config = null) =>
+        new BatchingProducer(cluster.Publisher(), topic, config);
 
     /// <summary>
     ///     Subscribes to a PubSub topic by cluster identity
@@ -61,9 +50,8 @@ public static class PubSubExtensions
         string subscriberIdentity,
         string subscriberKind,
         CancellationToken ct = default
-    )
-    {
-        return cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
+    ) =>
+        cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -71,7 +59,6 @@ public static class PubSubExtensions
                 }
             }, ct
         );
-    }
 
     /// <summary>
     ///     Subscribes to a PubSub topic by cluster identity
@@ -82,9 +69,8 @@ public static class PubSubExtensions
     /// <param name="ct"></param>
     /// <returns></returns>
     public static Task<SubscribeResponse?> Subscribe(this Cluster cluster, string topic, ClusterIdentity ci,
-        CancellationToken ct = default)
-    {
-        return cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
+        CancellationToken ct = default) =>
+        cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -92,7 +78,6 @@ public static class PubSubExtensions
                 }
             }, ct
         );
-    }
 
     /// <summary>
     ///     Subscribes to a PubSub topic by subscriber PID
@@ -103,9 +88,8 @@ public static class PubSubExtensions
     /// <param name="ct"></param>
     /// <returns></returns>
     public static Task<SubscribeResponse?> Subscribe(this Cluster cluster, string topic, PID subscriber,
-        CancellationToken ct = default)
-    {
-        return cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
+        CancellationToken ct = default) =>
+        cluster.RequestAsync<SubscribeResponse>(topic, TopicActor.Kind, new SubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -113,7 +97,6 @@ public static class PubSubExtensions
                 }
             }, ct
         );
-    }
 
     /// <summary>
     ///     Subscribe to a PubSub topic by providing a Receive function, that will be used to spawn a subscriber actor
@@ -140,9 +123,8 @@ public static class PubSubExtensions
     /// <param name="ct"></param>
     /// <returns></returns>
     public static Task<UnsubscribeResponse?> Unsubscribe(this Cluster cluster, string topic, PID subscriber,
-        CancellationToken ct = default)
-    {
-        return cluster.RequestAsync<UnsubscribeResponse>(topic, TopicActor.Kind, new UnsubscribeRequest
+        CancellationToken ct = default) =>
+        cluster.RequestAsync<UnsubscribeResponse>(topic, TopicActor.Kind, new UnsubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -150,7 +132,6 @@ public static class PubSubExtensions
                 }
             }, ct
         );
-    }
 
     /// <summary>
     ///     Unsubscribe a PubSub topic by subscriber cluster identity
@@ -161,9 +142,8 @@ public static class PubSubExtensions
     /// <param name="ct"></param>
     /// <returns></returns>
     public static Task<UnsubscribeResponse?> Unsubscribe(this Cluster cluster, string topic, ClusterIdentity subscriber,
-        CancellationToken ct = default)
-    {
-        return cluster.RequestAsync<UnsubscribeResponse>(topic, TopicActor.Kind, new UnsubscribeRequest
+        CancellationToken ct = default) =>
+        cluster.RequestAsync<UnsubscribeResponse>(topic, TopicActor.Kind, new UnsubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -171,7 +151,6 @@ public static class PubSubExtensions
                 }
             }, ct
         );
-    }
 
     /// <summary>
     ///     Unsubscribe a PubSub topic by subscriber cluster identity
@@ -188,9 +167,8 @@ public static class PubSubExtensions
         string subscriberIdentity,
         string subscriberKind,
         CancellationToken ct = default
-    )
-    {
-        return cluster.RequestAsync<UnsubscribeResponse>(topic, TopicActor.Kind, new UnsubscribeRequest
+    ) =>
+        cluster.RequestAsync<UnsubscribeResponse>(topic, TopicActor.Kind, new UnsubscribeRequest
             {
                 Subscriber = new SubscriberIdentity
                 {
@@ -198,5 +176,4 @@ public static class PubSubExtensions
                 }
             }, ct
         );
-    }
 }

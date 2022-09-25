@@ -119,10 +119,7 @@
         StateHasChanged();
     }
 
-    private Task<HashSet<TreeNode>> LoadServerData(TreeNode parentNode)
-    {
-        return Task.FromResult(parentNode.Children);
-    }
+    private Task<HashSet<TreeNode>> LoadServerData(TreeNode parentNode) => Task.FromResult(parentNode.Children);
 
     private async Task OpenLogs()
     {

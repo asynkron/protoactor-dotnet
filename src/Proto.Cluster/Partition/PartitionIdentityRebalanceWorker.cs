@@ -51,21 +51,16 @@ internal class PartitionIdentityRebalanceWorker : IActor, IDisposable
         _cancellationToken = cancellationToken;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             IdentityHandoverRequest request => OnIdentityHandoverRequest(request, context),
             PartitionCompleted response     => OnPartitionCompleted(response, context),
             PartitionFailed response        => OnPartitionFailed(response, context),
             _                               => Task.CompletedTask
         };
-    }
 
-    public void Dispose()
-    {
-        _tokenRegistration?.Dispose();
-    }
+    public void Dispose() => _tokenRegistration?.Dispose();
 
     private Task OnIdentityHandoverRequest(IdentityHandoverRequest request, IContext context)
     {
@@ -238,9 +233,7 @@ internal class PartitionIdentityRebalanceWorker : IActor, IDisposable
             }
         }
 
-        private void FailPartition(string reason)
-        {
+        private void FailPartition(string reason) =>
             _completionSource.TrySetResult(new PartitionFailed(_memberAddress, reason));
-        }
     }
 }

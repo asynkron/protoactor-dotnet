@@ -37,8 +37,6 @@ internal record ConsistentHashPoolRouterConfig : PoolRouterConfig
         _messageHasher = messageHasher;
     }
 
-    protected override RouterState CreateRouterState()
-    {
-        return new ConsistentHashRouterState(_senderContext, _hash, _replicaCount, _messageHasher);
-    }
+    protected override RouterState CreateRouterState() =>
+        new ConsistentHashRouterState(_senderContext, _hash, _replicaCount, _messageHasher);
 }

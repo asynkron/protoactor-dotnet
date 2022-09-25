@@ -28,13 +28,7 @@ public record ActivatedClusterKind
 
     internal long Count => Interlocked.Read(ref _count);
 
-    internal long Inc()
-    {
-        return Interlocked.Increment(ref _count);
-    }
+    internal long Inc() => Interlocked.Increment(ref _count);
 
-    internal long Dec()
-    {
-        return Interlocked.Decrement(ref _count);
-    }
+    internal long Dec() => Interlocked.Decrement(ref _count);
 }

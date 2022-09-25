@@ -74,10 +74,8 @@ public static class SenderContextExtensions
     /// <param name="size">The number of requests to send. The batch context will pre-allocate resources for this</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static BatchContext CreateBatchContext(this ISenderContext context, int size, CancellationToken ct)
-    {
-        return new(context, size, ct);
-    }
+    public static BatchContext CreateBatchContext(this ISenderContext context, int size, CancellationToken ct) =>
+        new BatchContext(context, size, ct);
 
     /// <summary>
     ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
@@ -85,10 +83,8 @@ public static class SenderContextExtensions
     /// <param name="self">The context used to issue the request. Response will be sent back to self.Self.</param>
     /// <param name="target">The target PID</param>
     /// <param name="message">The message to send</param>
-    public static void Request(this ISenderContext self, PID target, object message)
-    {
+    public static void Request(this ISenderContext self, PID target, object message) =>
         self.Request(target, message, self.Self);
-    }
 
     /// <summary>
     ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
@@ -99,10 +95,8 @@ public static class SenderContextExtensions
     /// <param name="message">The message to send</param>
     /// <typeparam name="T">Expected return message type</typeparam>
     /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
-    public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message)
-    {
-        return self.RequestAsync<T>(target, message, self.System.Config.ActorRequestTimeout);
-    }
+    public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message) =>
+        self.RequestAsync<T>(target, message, self.System.Config.ActorRequestTimeout);
 
     /// <summary>
     ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.

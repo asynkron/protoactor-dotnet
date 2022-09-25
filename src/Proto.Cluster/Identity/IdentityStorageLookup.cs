@@ -95,13 +95,7 @@ public class IdentityStorageLookup : IIdentityLookup
         return Storage.RemoveActivation(clusterIdentity, pid, ct);
     }
 
-    internal Task RemoveMemberAsync(string memberId)
-    {
-        return Storage.RemoveMember(memberId, CancellationToken.None);
-    }
+    internal Task RemoveMemberAsync(string memberId) => Storage.RemoveMember(memberId, CancellationToken.None);
 
-    internal PID RemotePlacementActor(string address)
-    {
-        return PID.FromAddress(address, PlacementActorName);
-    }
+    internal PID RemotePlacementActor(string address) => PID.FromAddress(address, PlacementActorName);
 }

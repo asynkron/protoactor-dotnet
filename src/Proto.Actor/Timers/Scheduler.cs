@@ -52,10 +52,8 @@ public class Scheduler
     /// <param name="target"><see cref="PID" /> of the recipient.</param>
     /// <param name="message">Message to be sent</param>
     /// <returns><see cref="CancellationTokenSource" /> that can be used to cancel the scheduled messages</returns>
-    public CancellationTokenSource SendRepeatedly(TimeSpan interval, PID target, object message)
-    {
-        return SendRepeatedly(interval, interval, target, message);
-    }
+    public CancellationTokenSource SendRepeatedly(TimeSpan interval, PID target, object message) =>
+        SendRepeatedly(interval, interval, target, message);
 
     /// <summary>
     ///     Schedules message sending on a periodic basis.

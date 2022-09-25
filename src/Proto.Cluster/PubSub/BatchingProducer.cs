@@ -324,10 +324,7 @@ public class BatchingProducer : IAsyncDisposable
 
         public List<CancellationToken> CancelTokens { get; } = new();
 
-        public bool IsEmpty()
-        {
-            return Batch.Envelopes.Count == 0;
-        }
+        public bool IsEmpty() => Batch.Envelopes.Count == 0;
     }
 }
 

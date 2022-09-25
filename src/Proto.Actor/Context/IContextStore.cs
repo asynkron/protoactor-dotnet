@@ -22,10 +22,7 @@ public interface IContextStore
     /// </summary>
     /// <param name="obj">The value to set</param>
     /// <typeparam name="T">The Type key of the value</typeparam>
-    void Set<T>(T obj)
-    {
-        Set<T, T>(obj);
-    }
+    void Set<T>(T obj) => Set<T, T>(obj);
 
     /// <summary>
     ///     Sets a value on the actor context

@@ -36,133 +36,59 @@ public abstract class ActorContextDecorator : IContext
     public virtual IReadOnlyCollection<PID> Children => _context.Children;
     public CancellationToken CancellationToken => _context.CancellationToken;
 
-    public virtual void Send(PID target, object message)
-    {
-        _context.Send(target, message);
-    }
+    public virtual void Send(PID target, object message) => _context.Send(target, message);
 
-    public virtual void Request(PID target, object message, PID? sender)
-    {
-        _context.Request(target, message, sender);
-    }
+    public virtual void Request(PID target, object message, PID? sender) => _context.Request(target, message, sender);
 
-    public virtual Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-    {
-        return _context.RequestAsync<T>(target, message, cancellationToken);
-    }
+    public virtual Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
+        _context.RequestAsync<T>(target, message, cancellationToken);
 
-    public virtual Task Receive(MessageEnvelope envelope)
-    {
-        return _context.Receive(envelope);
-    }
+    public virtual Task Receive(MessageEnvelope envelope) => _context.Receive(envelope);
 
-    public virtual void Respond(object message)
-    {
-        _context.Respond(message);
-    }
+    public virtual void Respond(object message) => _context.Respond(message);
 
-    public virtual PID SpawnNamed(Props props, string name, Action<IContext>? callback = null)
-    {
-        return _context.SpawnNamed(props, name, callback);
-    }
+    public virtual PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) =>
+        _context.SpawnNamed(props, name, callback);
 
-    public virtual void Watch(PID pid)
-    {
-        _context.Watch(pid);
-    }
+    public virtual void Watch(PID pid) => _context.Watch(pid);
 
-    public virtual void Unwatch(PID pid)
-    {
-        _context.Unwatch(pid);
-    }
+    public virtual void Unwatch(PID pid) => _context.Unwatch(pid);
 
-    public virtual void SetReceiveTimeout(TimeSpan duration)
-    {
-        _context.SetReceiveTimeout(duration);
-    }
+    public virtual void SetReceiveTimeout(TimeSpan duration) => _context.SetReceiveTimeout(duration);
 
-    public virtual void CancelReceiveTimeout()
-    {
-        _context.CancelReceiveTimeout();
-    }
+    public virtual void CancelReceiveTimeout() => _context.CancelReceiveTimeout();
 
-    public virtual void Forward(PID target)
-    {
-        _context.Forward(target);
-    }
+    public virtual void Forward(PID target) => _context.Forward(target);
 
-    public virtual void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
-    {
+    public virtual void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action) =>
         _context.ReenterAfter(target, action);
-    }
 
-    public virtual void ReenterAfter(Task target, Action action)
-    {
-        _context.ReenterAfter(target, action);
-    }
+    public virtual void ReenterAfter(Task target, Action action) => _context.ReenterAfter(target, action);
 
-    public void ReenterAfter(Task target, Action<Task> action)
-    {
-        _context.ReenterAfter(target, action);
-    }
+    public void ReenterAfter(Task target, Action<Task> action) => _context.ReenterAfter(target, action);
 
-    public void ReenterAfter(Task target, Func<Task, Task> action)
-    {
-        _context.ReenterAfter(target, action);
-    }
+    public void ReenterAfter(Task target, Func<Task, Task> action) => _context.ReenterAfter(target, action);
 
-    public CapturedContext Capture()
-    {
-        return _context.Capture();
-    }
+    public CapturedContext Capture() => _context.Capture();
 
-    public void Apply(CapturedContext capturedContext)
-    {
-        _context.Apply(capturedContext);
-    }
+    public void Apply(CapturedContext capturedContext) => _context.Apply(capturedContext);
 
-    public void ReenterAfterCancellation(CancellationToken cancellationToken, Action onCancelled)
-    {
+    public void ReenterAfterCancellation(CancellationToken cancellationToken, Action onCancelled) =>
         _context.ReenterAfterCancellation(cancellationToken, onCancelled);
-    }
 
-    public void Stop(PID pid)
-    {
-        _context.Stop(pid);
-    }
+    public void Stop(PID pid) => _context.Stop(pid);
 
-    public Task StopAsync(PID pid)
-    {
-        return _context.StopAsync(pid);
-    }
+    public Task StopAsync(PID pid) => _context.StopAsync(pid);
 
-    public void Poison(PID pid)
-    {
-        _context.Poison(pid);
-    }
+    public void Poison(PID pid) => _context.Poison(pid);
 
-    public Task PoisonAsync(PID pid)
-    {
-        return _context.PoisonAsync(pid);
-    }
+    public Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
 
-    public T? Get<T>()
-    {
-        return _context.Get<T>();
-    }
+    public T? Get<T>() => _context.Get<T>();
 
-    public void Set<T, TI>(TI obj) where TI : T
-    {
-        _context.Set<T, TI>(obj);
-    }
+    public void Set<T, TI>(TI obj) where TI : T => _context.Set<T, TI>(obj);
 
-    public void Remove<T>()
-    {
-        _context.Remove<T>();
-    }
+    public void Remove<T>() => _context.Remove<T>();
 
-    public IFuture GetFuture()
-    {
-        return _context.GetFuture();
-    }
+    public IFuture GetFuture() => _context.GetFuture();
 }

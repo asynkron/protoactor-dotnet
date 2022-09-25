@@ -70,20 +70,11 @@ public class HashRing<T>
         return _ring[nextIndex % _ring.Length].value;
     }
 
-    public void Add(params T[] added)
-    {
-        SetRing(Merge(ToHashTuples(added), _ring));
-    }
+    public void Add(params T[] added) => SetRing(Merge(ToHashTuples(added), _ring));
 
-    public void Remove(ISet<T> nodes)
-    {
-        SetRing(_ring.Where(it => !nodes.Contains(it.value)).ToArray());
-    }
+    public void Remove(ISet<T> nodes) => SetRing(_ring.Where(it => !nodes.Contains(it.value)).ToArray());
 
-    public void Remove(T node)
-    {
-        SetRing(_ring.Where(it => !node!.Equals(it.value)).ToArray());
-    }
+    public void Remove(T node) => SetRing(_ring.Where(it => !node!.Equals(it.value)).ToArray());
 
     private void SetRing((uint hash, T value)[] ring)
     {
@@ -116,9 +107,8 @@ public class HashRing<T>
         return result;
     }
 
-    private (uint hash, T value)[] ToHashTuples(IEnumerable<T> nodes)
-    {
-        return nodes
+    private (uint hash, T value)[] ToHashTuples(IEnumerable<T> nodes) =>
+        nodes
             .SelectMany(
                 n =>
                     Enumerable
@@ -134,10 +124,6 @@ public class HashRing<T>
             .Select(a => (_hash(a.hashKey), a.node))
             .OrderBy(t => t.Item1)
             .ToArray();
-    }
 
-    public HashRing<T> Clone()
-    {
-        return new(_getKey, _hash, _replicaCount, _ring, _hashes);
-    }
+    public HashRing<T> Clone() => new HashRing<T>(_getKey, _hash, _replicaCount, _ring, _hashes);
 }

@@ -113,15 +113,9 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
     }
 
-    public void Watch(PID pid)
-    {
-        pid.SendSystemMessage(System, new Watch(Self));
-    }
+    public void Watch(PID pid) => pid.SendSystemMessage(System, new Watch(Self));
 
-    public void Unwatch(PID pid)
-    {
-        pid.SendSystemMessage(System, new Unwatch(Self));
-    }
+    public void Unwatch(PID pid) => pid.SendSystemMessage(System, new Unwatch(Self));
 
     public void Set<T, TI>(TI obj) where TI : T
     {
@@ -133,15 +127,9 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         EnsureExtras().Store.Add<T>(obj);
     }
 
-    public void Remove<T>()
-    {
-        _extras?.Store.Remove<T>();
-    }
+    public void Remove<T>() => _extras?.Store.Remove<T>();
 
-    public T? Get<T>()
-    {
-        return (T?)_extras?.Store.Get<T>();
-    }
+    public T? Get<T>() => (T?)_extras?.Store.Get<T>();
 
     public void SetReceiveTimeout(TimeSpan duration)
     {
@@ -185,10 +173,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         ReceiveTimeout = TimeSpan.Zero;
     }
 
-    public void Send(PID target, object message)
-    {
-        SendUserMessage(target, message);
-    }
+    public void Send(PID target, object message) => SendUserMessage(target, message);
 
     public void Forward(PID target)
     {
@@ -217,10 +202,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     //why does this method exist here and not as an extension?
     //because DecoratorContexts needs to go this way if we want to intercept this method for the context
-    public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-    {
-        return SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
-    }
+    public Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
+        SenderContextExtensions.RequestAsync<T>(this, target, message, cancellationToken);
 
     /// <summary>
     ///     Calls the callback on token cancellation. If CancellationToken is non-cancellable, this is a noop.
@@ -315,20 +298,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         return DefaultReceive();
     }
 
-    public IFuture GetFuture()
-    {
-        return System.Future.Get();
-    }
+    public IFuture GetFuture() => System.Future.Get();
 
-    public CapturedContext Capture()
-    {
-        return new(MessageEnvelope.Wrap(_messageOrEnvelope!), this);
-    }
+    public CapturedContext Capture() => new CapturedContext(MessageEnvelope.Wrap(_messageOrEnvelope!), this);
 
-    public void Apply(CapturedContext capturedContext)
-    {
-        _messageOrEnvelope = capturedContext.MessageEnvelope;
-    }
+    public void Apply(CapturedContext capturedContext) => _messageOrEnvelope = capturedContext.MessageEnvelope;
 
     public void Stop(PID pid)
     {
@@ -350,10 +324,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         return future.Task;
     }
 
-    public void Poison(PID pid)
-    {
-        pid.SendUserMessage(System, PoisonPill.Instance);
-    }
+    public void Poison(PID pid) => pid.SendUserMessage(System, PoisonPill.Instance);
 
     public Task PoisonAsync(PID pid)
     {
@@ -461,20 +432,12 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     public IImmutableSet<PID> Children => _extras?.Children ?? EmptyChildren;
 
-    public void RestartChildren(Exception reason, params PID[] pids)
-    {
+    public void RestartChildren(Exception reason, params PID[] pids) =>
         pids.SendSystemMessage(new Restart(reason), System);
-    }
 
-    public void StopChildren(params PID[] pids)
-    {
-        pids.SendSystemMessage(Proto.Stop.Instance, System);
-    }
+    public void StopChildren(params PID[] pids) => pids.SendSystemMessage(Proto.Stop.Instance, System);
 
-    public void ResumeChildren(params PID[] pids)
-    {
-        pids.SendSystemMessage(ResumeMailbox.Instance, System);
-    }
+    public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
 
     private async ValueTask HandleReceiveTimeout()
     {
@@ -566,10 +529,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
     }
 
-    public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)
-    {
-        return new(system, props, parent, self, mailbox);
-    }
+    public static ActorContext Setup(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox) =>
+        new ActorContext(system, props, parent, self, mailbox);
 
     //Note to self, the message must be sent no-matter if the task failed or not.
     //do not mess this up by first awaiting and then sending on success only
@@ -643,15 +604,13 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Task DefaultReceive()
-    {
-        return Message switch
+    private Task DefaultReceive() =>
+        Message switch
         {
             PoisonPill => HandlePoisonPill(),
             IAutoRespond autoRespond => HandleAutoRespond(autoRespond),
             _ => Actor.ReceiveAsync(_props.ContextDecoratorChain != null ? EnsureExtras().Context : this)
         };
-    }
 
     private Task HandleAutoRespond(IAutoRespond autoRespond)
     {
@@ -763,13 +722,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
     }
 
-    private void HandleRootFailure(Failure failure)
-    {
+    private void HandleRootFailure(Failure failure) =>
         Supervision.DefaultStrategy.HandleFailure(
             this, failure.Who, failure.RestartStatistics, failure.Reason,
             failure.Message
         );
-    }
 
     //Initiate stopping, not final
     private ValueTask HandleStopAsync()

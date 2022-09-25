@@ -52,10 +52,7 @@ internal class SimpleMemberStrategy : IMemberStrategy
         _selector = new RoundRobinMemberSelector(this);
     }
 
-    public ImmutableList<Member> GetAllMembers()
-    {
-        return _members;
-    }
+    public ImmutableList<Member> GetAllMembers() => _members;
 
     //TODO: account for Member.MemberId
     public void AddMember(Member member)
@@ -70,13 +67,7 @@ internal class SimpleMemberStrategy : IMemberStrategy
     }
 
     //TODO: account for Member.MemberId
-    public void RemoveMember(Member member)
-    {
-        _members = _members.RemoveAll(x => x.Address == member.Address);
-    }
+    public void RemoveMember(Member member) => _members = _members.RemoveAll(x => x.Address == member.Address);
 
-    public Member? GetActivator(string senderAddress)
-    {
-        return _selector.GetMember();
-    }
+    public Member? GetActivator(string senderAddress) => _selector.GetMember();
 }

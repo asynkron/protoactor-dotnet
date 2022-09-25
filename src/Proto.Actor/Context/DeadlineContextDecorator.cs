@@ -27,10 +27,8 @@ public static class DeadlineContextExtensions
         this Props props,
         TimeSpan deadline,
         ILogger logger
-    )
-    {
-        return props.WithContextDecorator(ctx => new DeadlineContextDecorator(ctx, deadline, logger));
-    }
+    ) =>
+        props.WithContextDecorator(ctx => new DeadlineContextDecorator(ctx, deadline, logger));
 }
 
 /// <summary>

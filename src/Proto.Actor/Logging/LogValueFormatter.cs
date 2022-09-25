@@ -128,26 +128,16 @@ internal class LogValuesFormatter
         return string.Format(CultureInfo.InvariantCulture, _format, values ?? Array.Empty<object>());
     }
 
-    internal string Format()
-    {
-        return _format;
-    }
+    internal string Format() => _format;
 
-    internal string Format(object arg0)
-    {
-        return string.Format(CultureInfo.InvariantCulture, _format, FormatArgument(arg0));
-    }
+    internal string Format(object arg0) => string.Format(CultureInfo.InvariantCulture, _format, FormatArgument(arg0));
 
-    internal string Format(object arg0, object arg1)
-    {
-        return string.Format(CultureInfo.InvariantCulture, _format, FormatArgument(arg0), FormatArgument(arg1));
-    }
+    internal string Format(object arg0, object arg1) => string.Format(CultureInfo.InvariantCulture, _format,
+        FormatArgument(arg0), FormatArgument(arg1));
 
-    internal string Format(object arg0, object arg1, object arg2)
-    {
-        return string.Format(CultureInfo.InvariantCulture, _format, FormatArgument(arg0), FormatArgument(arg1),
+    internal string Format(object arg0, object arg1, object arg2) =>
+        string.Format(CultureInfo.InvariantCulture, _format, FormatArgument(arg0), FormatArgument(arg1),
             FormatArgument(arg2));
-    }
 
     public KeyValuePair<string, object> GetValue(object[] values, int index)
     {

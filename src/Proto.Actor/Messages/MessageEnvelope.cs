@@ -49,10 +49,8 @@ public record MessageEnvelope
     /// </summary>
     /// <param name="message">Message to wrap</param>
     /// <returns></returns>
-    public static MessageEnvelope Wrap(object message)
-    {
-        return message is MessageEnvelope env ? env : new MessageEnvelope(message, null);
-    }
+    public static MessageEnvelope Wrap(object message) =>
+        message is MessageEnvelope env ? env : new MessageEnvelope(message, null);
 
     /// <summary>
     ///     Creates a new message envelope.
@@ -60,40 +58,30 @@ public record MessageEnvelope
     /// <param name="message">Message to wrap</param>
     /// <param name="header">Message headers</param>
     /// <returns></returns>
-    public static MessageEnvelope Wrap(object message, MessageHeader header)
-    {
-        return message is MessageEnvelope env ? env.MergeHeader(header) : new MessageEnvelope(message, null, header);
-    }
+    public static MessageEnvelope Wrap(object message, MessageHeader header) => message is MessageEnvelope env
+        ? env.MergeHeader(header)
+        : new MessageEnvelope(message, null, header);
 
     /// <summary>
     ///     Adds a sender <see cref="PID" /> to the message envelope.
     /// </summary>
     /// <param name="sender"></param>
     /// <returns>New envelope</returns>
-    public MessageEnvelope WithSender(PID sender)
-    {
-        return this with { Sender = sender };
-    }
+    public MessageEnvelope WithSender(PID sender) => this with { Sender = sender };
 
     /// <summary>
     ///     Adds the wrapped message to the message envelope.
     /// </summary>
     /// <param name="message"></param>
     /// <returns>New envelope</returns>
-    public MessageEnvelope WithMessage(object message)
-    {
-        return this with { Message = message };
-    }
+    public MessageEnvelope WithMessage(object message) => this with { Message = message };
 
     /// <summary>
     ///     Adds the headers to the message envelope.
     /// </summary>
     /// <param name="header"></param>
     /// <returns>New envelope</returns>
-    public MessageEnvelope WithHeader(MessageHeader header)
-    {
-        return this with { Header = header };
-    }
+    public MessageEnvelope WithHeader(MessageHeader header) => this with { Header = header };
 
     /// <summary>
     ///     Extends the message envelope with additional headers.
@@ -141,12 +129,10 @@ public record MessageEnvelope
     /// </summary>
     /// <param name="message"><see cref="MessageEnvelope" /> or any other message object</param>
     /// <returns></returns>
-    public static (object message, PID? sender, MessageHeader headers) Unwrap(object message)
-    {
-        return message is MessageEnvelope envelope
+    public static (object message, PID? sender, MessageHeader headers) Unwrap(object message) =>
+        message is MessageEnvelope envelope
             ? (envelope.Message, envelope.Sender, envelope.Header)
             : (message, null, MessageHeader.Empty);
-    }
 
     /// <summary>
     ///     Returns the message headers if provided message is a <see cref="MessageEnvelope" />.
@@ -154,10 +140,8 @@ public record MessageEnvelope
     /// <param name="message"><see cref="MessageEnvelope" /> or any other message object</param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static MessageHeader UnwrapHeader(object? message)
-    {
-        return (message as MessageEnvelope)?.Header ?? MessageHeader.Empty;
-    }
+    public static MessageHeader UnwrapHeader(object? message) =>
+        (message as MessageEnvelope)?.Header ?? MessageHeader.Empty;
 
     /// <summary>
     ///     Returns the wrapped message if provided message is a <see cref="MessageEnvelope" />.
@@ -165,10 +149,7 @@ public record MessageEnvelope
     /// <param name="message"><see cref="MessageEnvelope" /> or any other message object</param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static object? UnwrapMessage(object? message)
-    {
-        return message is MessageEnvelope r ? r.Message : message;
-    }
+    public static object? UnwrapMessage(object? message) => message is MessageEnvelope r ? r.Message : message;
 
     /// <summary>
     ///     Returns the message sender if provided message is a <see cref="MessageEnvelope" />.
@@ -176,8 +157,5 @@ public record MessageEnvelope
     /// <param name="message"><see cref="MessageEnvelope" /> or any other message object</param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PID? UnwrapSender(object? message)
-    {
-        return (message as MessageEnvelope)?.Sender;
-    }
+    public static PID? UnwrapSender(object? message) => (message as MessageEnvelope)?.Sender;
 }

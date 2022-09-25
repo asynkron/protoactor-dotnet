@@ -8,12 +8,10 @@ namespace Proto;
 
 public partial class Terminated
 {
-    public static Terminated From(PID who, TerminatedReason why)
-    {
-        return new()
+    public static Terminated From(PID who, TerminatedReason why) =>
+        new Terminated
         {
             Who = who,
             why_ = why
         };
-    }
 }

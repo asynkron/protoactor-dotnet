@@ -14,15 +14,9 @@ public class UnboundedMailboxQueue : IMailboxQueue
 
     public int Length => _messages.Count;
 
-    public void Push(object message)
-    {
-        _messages.Enqueue(message);
-    }
+    public void Push(object message) => _messages.Enqueue(message);
 
-    public object? Pop()
-    {
-        return _messages.TryDequeue(out var message) ? message : null;
-    }
+    public object? Pop() => _messages.TryDequeue(out var message) ? message : null;
 
     public bool HasMessages => !_messages.IsEmpty;
 }

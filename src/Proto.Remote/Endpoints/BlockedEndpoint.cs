@@ -31,19 +31,14 @@ public sealed class BlockedEndpoint : IEndpoint
         return default;
     }
 
-    public void RemoteTerminate(PID watcher, Terminated terminated)
-    {
-        watcher.SendSystemMessage(_system, terminated);
-    }
+    public void RemoteTerminate(PID watcher, Terminated terminated) => watcher.SendSystemMessage(_system, terminated);
 
     public void RemoteUnwatch(PID pid, Unwatch unwatch)
     {
     }
 
-    public void RemoteWatch(PID pid, Watch watch)
-    {
-        _system.Root.Send(watch.Watcher, new Terminated { Who = pid, Why = TerminatedReason.AddressTerminated });
-    }
+    public void RemoteWatch(PID pid, Watch watch) => _system.Root.Send(watch.Watcher,
+        new Terminated { Who = pid, Why = TerminatedReason.AddressTerminated });
 
     public void SendMessage(PID pid, object msg)
     {

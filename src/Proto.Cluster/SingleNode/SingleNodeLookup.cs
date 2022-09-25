@@ -103,8 +103,5 @@ public class SingleNodeLookup : IIdentityLookup
         return Task.CompletedTask;
     }
 
-    public Task ShutdownAsync()
-    {
-        return _cluster.System.Root.StopAsync(_activatorActor);
-    }
+    public Task ShutdownAsync() => _cluster.System.Root.StopAsync(_activatorActor);
 }

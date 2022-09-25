@@ -25,15 +25,13 @@ public static class LocalAffinityExtensions
     /// <param name="options"></param>
     /// <returns></returns>
     public static ClusterKind WithLocalAffinityRelocationStrategy(this ClusterKind clusterKind,
-        LocalAffinityOptions? options = null)
-    {
-        return clusterKind with
+        LocalAffinityOptions? options = null) =>
+        clusterKind with
         {
             Props = clusterKind.Props.WithRelocateOnRemoteSender(options?.RelocationThroughput?.Create(),
                 options?.TriggersLocalAffinity),
             StrategyBuilder = cluster => new LocalAffinityStrategy(cluster)
         };
-    }
 
     /// <summary>
     ///     Adds middleware which relocates the virtual actor on remote traffic
@@ -87,15 +85,9 @@ public static class LocalAffinityExtensions
         );
     }
 
-    private static bool IsMarkedForRelocation(this IContextStore context)
-    {
-        return context.Get<Tombstone>() is not null;
-    }
+    private static bool IsMarkedForRelocation(this IContextStore context) => context.Get<Tombstone>() is not null;
 
-    private static void MarkForRelocation(this IContextStore context)
-    {
-        context.Set(Tombstone.Instance);
-    }
+    private static void MarkForRelocation(this IContextStore context) => context.Set(Tombstone.Instance);
 
     private static Task ActivateByProxy(IReceiverContext context, string address, ClusterIdentity id, PID activation)
     {
@@ -122,10 +114,10 @@ public static class LocalAffinityExtensions
         return () => random.NextDouble() < relocationFactor;
     }
 
-    private static bool IsRemote(this PID? sender, IInfoContext context)
-    {
-        return sender is not null && !sender.Address.Equals(context.System.Address, StringComparison.OrdinalIgnoreCase);
-    }
+    private static bool IsRemote(this PID? sender, IInfoContext context) => sender is not null &&
+                                                                            !sender.Address.Equals(
+                                                                                context.System.Address,
+                                                                                StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     ///     Marks the actor, to avoid poisoning twice

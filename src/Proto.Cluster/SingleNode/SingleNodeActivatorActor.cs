@@ -25,9 +25,8 @@ internal class SingleNodeActivatorActor : IActor
         _cluster = cluster;
     }
 
-    public Task ReceiveAsync(IContext context)
-    {
-        return context.Message switch
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
         {
             Started                   => OnStarted(context),
             Stopping                  => OnStopping(context),
@@ -36,7 +35,6 @@ internal class SingleNodeActivatorActor : IActor
             ActivationTerminating msg => OnActivationTerminating(msg),
             _                         => Task.CompletedTask
         };
-    }
 
     private Task OnStarted(IContext context)
     {

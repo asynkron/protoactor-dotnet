@@ -142,10 +142,8 @@ internal class PidCache
             pair.Value.CurrentRef is RemoteProcess remoteProcess && remoteProcess.LastUsedTick < cutoff);
     }
 
-    public int RemoveByMember(Member member)
-    {
-        return RemoveByPredicate(pair => member.Address.Equals(pair.Value.Address, StringComparison.InvariantCulture));
-    }
+    public int RemoveByMember(Member member) => RemoveByPredicate(pair =>
+        member.Address.Equals(pair.Value.Address, StringComparison.InvariantCulture));
 
     internal int RemoveByPredicate(Func<KeyValuePair<ClusterIdentity, PID>, bool> predicate)
     {

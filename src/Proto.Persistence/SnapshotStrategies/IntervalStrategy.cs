@@ -18,8 +18,5 @@ public class IntervalStrategy : ISnapshotStrategy
         _eventsPerSnapshot = eventsPerSnapshot;
     }
 
-    public bool ShouldTakeSnapshot(PersistedEvent persistedEvent)
-    {
-        return persistedEvent.Index % _eventsPerSnapshot == 0;
-    }
+    public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => persistedEvent.Index % _eventsPerSnapshot == 0;
 }

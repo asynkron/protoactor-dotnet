@@ -46,8 +46,6 @@ public static class Extensions
     /// <param name="system"></param>
     /// <returns></returns>
     // ReSharper disable once InconsistentNaming
-    public static IDependencyResolver DI(this ActorSystem system)
-    {
-        return system.Extensions.GetRequired<DIExtension>().Resolver;
-    }
+    public static IDependencyResolver DI(this ActorSystem system) =>
+        system.Extensions.GetRequired<DIExtension>().Resolver;
 }

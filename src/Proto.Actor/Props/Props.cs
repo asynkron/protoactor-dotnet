@@ -76,15 +76,9 @@ public sealed record Props
     /// </summary>
     public Spawner Spawner { get; init; } = DefaultSpawner;
 
-    private static IActor NullProducer(ActorSystem _, IContext __)
-    {
-        return null!;
-    }
+    private static IActor NullProducer(ActorSystem _, IContext __) => null!;
 
-    private static IContext DefaultContextDecorator(IContext context)
-    {
-        return context;
-    }
+    private static IContext DefaultContextDecorator(IContext context) => context;
 
     public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent,
         Action<IContext>? callback)
@@ -120,42 +114,27 @@ public sealed record Props
     /// <summary>
     ///     Delegate used to create the actor.
     /// </summary>
-    public Props WithProducer(Producer producer)
-    {
-        return this with { Producer = (_, _) => producer() };
-    }
+    public Props WithProducer(Producer producer) => this with { Producer = (_, _) => producer() };
 
     /// <summary>
     ///     Delegate used to create the actor.
     /// </summary>
-    public Props WithProducer(ProducerWithSystem producer)
-    {
-        return this with { Producer = (system, _) => producer(system) };
-    }
+    public Props WithProducer(ProducerWithSystem producer) => this with { Producer = (system, _) => producer(system) };
 
     /// <summary>
     ///     Delegate used to create the actor.
     /// </summary>
-    public Props WithProducer(ProducerWithSystemAndContext producer)
-    {
-        return this with { Producer = producer };
-    }
+    public Props WithProducer(ProducerWithSystemAndContext producer) => this with { Producer = producer };
 
     /// <summary>
     ///     Dispatcher to be used by the actor's mailbox.
     /// </summary>
-    public Props WithDispatcher(IDispatcher dispatcher)
-    {
-        return this with { Dispatcher = dispatcher };
-    }
+    public Props WithDispatcher(IDispatcher dispatcher) => this with { Dispatcher = dispatcher };
 
     /// <summary>
     ///     Delegate used to create the mailbox.
     /// </summary>
-    public Props WithMailbox(MailboxProducer mailboxProducer)
-    {
-        return this with { MailboxProducer = mailboxProducer };
-    }
+    public Props WithMailbox(MailboxProducer mailboxProducer) => this with { MailboxProducer = mailboxProducer };
 
     /// <summary>
     ///     Adds a decorator for the actor context
@@ -182,18 +161,14 @@ public sealed record Props
     ///     actor,
     ///     according to the supervision strategy specified here.
     /// </summary>
-    public Props WithGuardianSupervisorStrategy(ISupervisorStrategy guardianStrategy)
-    {
-        return this with { GuardianStrategy = guardianStrategy };
-    }
+    public Props WithGuardianSupervisorStrategy(ISupervisorStrategy guardianStrategy) =>
+        this with { GuardianStrategy = guardianStrategy };
 
     /// <summary>
     ///     Supervision strategy for handling failures in actor's children.
     /// </summary>
-    public Props WithChildSupervisorStrategy(ISupervisorStrategy supervisorStrategy)
-    {
-        return this with { SupervisorStrategy = supervisorStrategy };
-    }
+    public Props WithChildSupervisorStrategy(ISupervisorStrategy supervisorStrategy) =>
+        this with { SupervisorStrategy = supervisorStrategy };
 
     /// <summary>
     ///     Adds a middleware used when receiving a message. The middleware is applied in the order it is added.
@@ -228,15 +203,10 @@ public sealed record Props
     /// <summary>
     ///     Delegate that creates the actor and wires it with context and mailbox.
     /// </summary>
-    public Props WithSpawner(Spawner spawner)
-    {
-        return this with { Spawner = spawner };
-    }
+    public Props WithSpawner(Spawner spawner) => this with { Spawner = spawner };
 
-    internal PID Spawn(ActorSystem system, string name, PID? parent, Action<IContext>? callback = null)
-    {
-        return Spawner(system, name, this, parent, callback);
-    }
+    internal PID Spawn(ActorSystem system, string name, PID? parent, Action<IContext>? callback = null) =>
+        Spawner(system, name, this, parent, callback);
 
     /// <summary>
     ///     Props that spawn actors by calling the provided producer delegate.
@@ -248,20 +218,14 @@ public sealed record Props
     /// var props = Props.FromProducer(() => new MyActor());
     /// </code>
     /// </example>
-    public static Props FromProducer(Producer producer)
-    {
-        return Empty.WithProducer(_ => producer());
-    }
+    public static Props FromProducer(Producer producer) => Empty.WithProducer(_ => producer());
 
     /// <summary>
     ///     Props that spawn actors by calling the provided producer delegate.
     /// </summary>
     /// <param name="producer">Returns a new instance of the actor. Gets <see cref="ActorSystem" /> as a parameter</param>
     /// <returns></returns>
-    public static Props FromProducer(ProducerWithSystem producer)
-    {
-        return Empty.WithProducer(producer);
-    }
+    public static Props FromProducer(ProducerWithSystem producer) => Empty.WithProducer(producer);
 
     /// <summary>
     ///     Props that spawn actors based on provided
@@ -280,8 +244,5 @@ public sealed record Props
     /// });
     /// </code>
     /// </example>
-    public static Props FromFunc(Receive receive)
-    {
-        return FromProducer(() => new FunctionActor(receive));
-    }
+    public static Props FromFunc(Receive receive) => FromProducer(() => new FunctionActor(receive));
 }

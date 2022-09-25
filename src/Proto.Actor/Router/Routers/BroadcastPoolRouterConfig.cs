@@ -16,8 +16,5 @@ internal record BroadcastPoolRouterConfig : PoolRouterConfig
         _senderContext = senderContext;
     }
 
-    protected override RouterState CreateRouterState()
-    {
-        return new BroadcastRouterState(_senderContext);
-    }
+    protected override RouterState CreateRouterState() => new BroadcastRouterState(_senderContext);
 }

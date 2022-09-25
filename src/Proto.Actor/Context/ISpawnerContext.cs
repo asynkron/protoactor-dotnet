@@ -30,10 +30,7 @@ public static class SpawnerContextExtensions
     /// <param name="self"></param>
     /// <param name="props">The Props used to spawn the actor</param>
     /// <returns>The PID of the child actor</returns>
-    public static PID Spawn(this ISpawnerContext self, Props props)
-    {
-        return self.SpawnNamed(props, "");
-    }
+    public static PID Spawn(this ISpawnerContext self, Props props) => self.SpawnNamed(props, "");
 
     /// <summary>
     ///     Spawns a new child actor based on props and named with a unique ID.
@@ -42,10 +39,8 @@ public static class SpawnerContextExtensions
     /// <param name="props">The Props used to spawn the actor</param>
     /// <param name="callback"></param>
     /// <returns>The PID of the child actor</returns>
-    public static PID Spawn(this ISpawnerContext self, Props props, Action<IContext> callback)
-    {
-        return self.SpawnNamed(props, "", callback);
-    }
+    public static PID Spawn(this ISpawnerContext self, Props props, Action<IContext> callback) =>
+        self.SpawnNamed(props, "", callback);
 
     /// <summary>
     ///     Spawns a new child actor based on props and named using a prefix followed by a unique ID.

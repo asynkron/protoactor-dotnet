@@ -39,30 +39,23 @@ public class InstanceLogger : IActorSystemExtension<InstanceLogger>
     /// </summary>
     /// <param name="caller">Auto filled</param>
     /// <returns></returns>
-    public InstanceLogger BeginMethodScope([CallerMemberName] string caller = "")
-    {
-        return new(_logLevel, _logStore, _logger, $"{_category}/{caller}");
-    }
+    public InstanceLogger BeginMethodScope([CallerMemberName] string caller = "") =>
+        new InstanceLogger(_logLevel, _logStore, _logger, $"{_category}/{caller}");
 
     /// <summary>
     ///     Get new InstanceLogger with the name of <see cref="T" /> appended to the category hierarchy.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public InstanceLogger BeginScope<T>()
-    {
-        return new(_logLevel, _logStore, _logger, typeof(T).Name);
-    }
+    public InstanceLogger BeginScope<T>() => new InstanceLogger(_logLevel, _logStore, _logger, typeof(T).Name);
 
     /// <summary>
     ///     Get new InstanceLogger with the postfix appended to the category hierarchy.
     /// </summary>
     /// <param name="category">Postfix</param>
     /// <returns></returns>
-    public InstanceLogger BeginScope(string category)
-    {
-        return new(_logLevel, _logStore, _logger, $"{_category}/{category}");
-    }
+    public InstanceLogger BeginScope(string category) =>
+        new InstanceLogger(_logLevel, _logStore, _logger, $"{_category}/{category}");
 
     public void LogDebug(string template)
     {

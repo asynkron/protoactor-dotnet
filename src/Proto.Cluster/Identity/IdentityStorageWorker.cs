@@ -222,10 +222,7 @@ internal class IdentityStorageWorker : IActor
 
     private Task<SpawnLock?> TryAcquireLock(ClusterIdentity clusterIdentity)
     {
-        Task<SpawnLock?> Inner()
-        {
-            return _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
-        }
+        Task<SpawnLock?> Inner() => _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
 
         if (!_cluster.System.Metrics.Enabled)
         {

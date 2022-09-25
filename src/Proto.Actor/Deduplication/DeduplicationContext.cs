@@ -37,10 +37,8 @@ public class DeduplicationContext<T> : ActorContextDecorator where T : IEquatabl
         _deDuplicator = new DeDuplicator<T>(deDuplicationWindow, deduplicateBy);
     }
 
-    public override Task Receive(MessageEnvelope envelope)
-    {
-        return _deDuplicator.DeDuplicate(envelope, () => base.Receive(envelope));
-    }
+    public override Task Receive(MessageEnvelope envelope) =>
+        _deDuplicator.DeDuplicate(envelope, () => base.Receive(envelope));
 }
 
 /// <summary>
@@ -89,10 +87,8 @@ internal class DeDuplicator<T> where T : IEquatable<T>
         await continuation();
     }
 
-    private bool IsDuplicate(T key, long cutoff)
-    {
-        return _lastCheck > cutoff && _processed.TryGetValue(key, out var ticks) && ticks >= cutoff;
-    }
+    private bool IsDuplicate(T key, long cutoff) =>
+        _lastCheck > cutoff && _processed.TryGetValue(key, out var ticks) && ticks >= cutoff;
 
     private void Add(T key, long now)
     {

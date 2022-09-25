@@ -14,8 +14,5 @@ internal record BroadcastGroupRouterConfig : GroupRouterConfig
     {
     }
 
-    protected override RouterState CreateRouterState()
-    {
-        return new BroadcastRouterState(SenderContext);
-    }
+    protected override RouterState CreateRouterState() => new BroadcastRouterState(SenderContext);
 }

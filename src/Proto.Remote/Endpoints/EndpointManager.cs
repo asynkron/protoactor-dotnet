@@ -49,10 +49,7 @@ public sealed class EndpointManager
     public CancellationToken CancellationToken => _cancellationTokenSource.Token;
     private PID? ActivatorPid { get; set; }
 
-    public void Start()
-    {
-        SpawnActivator();
-    }
+    public void Start() => SpawnActivator();
 
     public void Stop()
     {

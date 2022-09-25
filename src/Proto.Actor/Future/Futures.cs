@@ -54,15 +54,9 @@ public sealed class FutureFactory
 
     private ActorSystem System { get; }
 
-    public IFuture Get()
-    {
-        return _sharedFutureProcess?.TryCreateHandle() ?? SingleProcessHandle();
-    }
+    public IFuture Get() => _sharedFutureProcess?.TryCreateHandle() ?? SingleProcessHandle();
 
-    private IFuture SingleProcessHandle()
-    {
-        return new FutureProcess(System);
-    }
+    private IFuture SingleProcessHandle() => new FutureProcess(System);
 }
 
 public sealed class FutureProcess : Process, IFuture
@@ -122,10 +116,7 @@ public sealed class FutureProcess : Process, IFuture
         }
     }
 
-    public void Dispose()
-    {
-        System.ProcessRegistry.Remove(Pid);
-    }
+    public void Dispose() => System.ProcessRegistry.Remove(Pid);
 
     protected internal override void SendUserMessage(PID pid, object message)
     {

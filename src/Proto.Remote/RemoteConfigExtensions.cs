@@ -23,10 +23,8 @@ public static class RemoteConfigExtensions
     /// </summary>
     /// <param name="remoteConfig"></param>
     /// <returns></returns>
-    public static string[] GetRemoteKinds(this RemoteConfigBase remoteConfig)
-    {
-        return remoteConfig.RemoteKinds.Keys.ToArray();
-    }
+    public static string[] GetRemoteKinds(this RemoteConfigBase remoteConfig) =>
+        remoteConfig.RemoteKinds.Keys.ToArray();
 
     /// <summary>
     ///     Gets a specific actor kind that can be spawned remotely
@@ -49,10 +47,8 @@ public static class RemoteConfigExtensions
     ///     Sets the CallOptions for the gRPC channel.
     /// </summary>
     public static TRemoteConfig WithCallOptions<TRemoteConfig>(this TRemoteConfig remoteConfig, CallOptions options)
-        where TRemoteConfig : RemoteConfigBase
-    {
-        return remoteConfig with { CallOptions = options };
-    }
+        where TRemoteConfig : RemoteConfigBase =>
+        remoteConfig with { CallOptions = options };
 
     /// <summary>
     ///     Sets the advertised hostname for the remote system.
@@ -65,10 +61,8 @@ public static class RemoteConfigExtensions
     /// <returns></returns>
     public static TRemoteConfig WithAdvertisedHost<TRemoteConfig>(this TRemoteConfig remoteConfig,
         string? advertisedHostname)
-        where TRemoteConfig : RemoteConfigBase
-    {
-        return remoteConfig with { AdvertisedHost = advertisedHostname };
-    }
+        where TRemoteConfig : RemoteConfigBase =>
+        remoteConfig with { AdvertisedHost = advertisedHostname };
 
     /// <summary>
     ///     Sets the advertised port for the remote system.
@@ -80,10 +74,8 @@ public static class RemoteConfigExtensions
     /// <param name="advertisedPort"></param>
     /// <returns></returns>
     public static TRemoteConfig WithAdvertisedPort<TRemoteConfig>(this TRemoteConfig remoteConfig, int? advertisedPort)
-        where TRemoteConfig : RemoteConfigBase
-    {
-        return remoteConfig with { AdvertisedPort = advertisedPort };
-    }
+        where TRemoteConfig : RemoteConfigBase =>
+        remoteConfig with { AdvertisedPort = advertisedPort };
 
     /// <summary>
     ///     Sets the batch size for the endpoint writer. The default value is 1000.
@@ -177,10 +169,8 @@ public static class RemoteConfigExtensions
     /// <typeparam name="TRemoteConfig"></typeparam>
     /// <returns></returns>
     public static TRemoteConfig WithRemoteKind<TRemoteConfig>(this TRemoteConfig remoteConfig, string kind, Props prop)
-        where TRemoteConfig : RemoteConfigBase
-    {
-        return remoteConfig with { RemoteKinds = remoteConfig.RemoteKinds.Add(kind, prop) };
-    }
+        where TRemoteConfig : RemoteConfigBase =>
+        remoteConfig with { RemoteKinds = remoteConfig.RemoteKinds.Add(kind, prop) };
 
     /// <summary>
     ///     Registers actor kinds that can be spawned remotely
@@ -191,15 +181,13 @@ public static class RemoteConfigExtensions
     /// <returns></returns>
     public static TRemoteConfig WithRemoteKinds<TRemoteConfig>(this TRemoteConfig remoteConfig,
         params (string kind, Props prop)[] knownKinds)
-        where TRemoteConfig : RemoteConfigBase
-    {
-        return remoteConfig with
+        where TRemoteConfig : RemoteConfigBase =>
+        remoteConfig with
         {
             RemoteKinds =
             remoteConfig.RemoteKinds.AddRange(
                 knownKinds.Select(kk => new KeyValuePair<string, Props>(kk.kind, kk.prop)))
         };
-    }
 
     /// <summary>
     ///     Adds a serializer to the serialization subsystem.
@@ -251,17 +239,13 @@ public static class RemoteConfigExtensions
     /// <returns></returns>
     public static TRemoteConfig WithLogLevelForDeserializationErrors<TRemoteConfig>(this TRemoteConfig remoteConfig,
         LogLevel level)
-        where TRemoteConfig : RemoteConfigBase
-    {
-        return remoteConfig with { DeserializationErrorLogLevel = level };
-    }
+        where TRemoteConfig : RemoteConfigBase =>
+        remoteConfig with { DeserializationErrorLogLevel = level };
 
     /// <summary>
     ///     Enables remote retrieval of process information and statistics from this node
     /// </summary>
     public static TRemoteConfig WithRemoteDiagnostics<TRemoteConfig>(this TRemoteConfig remoteConfig, bool enabled)
-        where TRemoteConfig : RemoteConfigBase
-    {
-        return remoteConfig with { RemoteDiagnostics = enabled };
-    }
+        where TRemoteConfig : RemoteConfigBase =>
+        remoteConfig with { RemoteDiagnostics = enabled };
 }
