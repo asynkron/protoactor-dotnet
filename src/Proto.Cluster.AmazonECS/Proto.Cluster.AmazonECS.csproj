@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.ECS" Version="3.7.4.26" />
+        <PackageReference Include="AWSSDK.ECS" Version="3.7.5.83" />
         <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="6.0.1" />
         <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
         <PackageReference Update="JetBrains.Annotations" Version="2022.1.0" />
