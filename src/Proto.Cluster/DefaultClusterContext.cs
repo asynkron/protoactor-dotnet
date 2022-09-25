@@ -311,7 +311,7 @@ public class DefaultClusterContext : IClusterContext
                 return pid;
             }
         }
-        catch (Exception e) when (e is not IdentityIsBlocked)
+        catch (Exception e) when (e is not IdentityIsBlockedException)
         {
             e.CheckFailFast();
 

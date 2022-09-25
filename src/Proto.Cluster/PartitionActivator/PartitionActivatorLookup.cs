@@ -69,7 +69,7 @@ public class PartitionActivatorLookup : IIdentityLookup
 
             if (resp.InvalidIdentity)
             {
-                throw new IdentityIsBlocked(clusterIdentity);
+                throw new IdentityIsBlockedException(clusterIdentity);
             }
 
             return resp?.Pid;
@@ -89,7 +89,7 @@ public class PartitionActivatorLookup : IIdentityLookup
 
             return null;
         }
-        catch (Exception e) when (e is not IdentityIsBlocked)
+        catch (Exception e) when (e is not IdentityIsBlockedException)
         {
             e.CheckFailFast();
 

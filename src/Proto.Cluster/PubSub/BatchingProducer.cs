@@ -328,7 +328,9 @@ public class BatchingProducer : IAsyncDisposable
     }
 }
 
+#pragma warning disable RCS1194
 public class ProducerQueueFullException : Exception
+#pragma warning restore RCS1194
 {
     public ProducerQueueFullException(string topic) : base($"Producer for topic {topic} has full queue")
     {

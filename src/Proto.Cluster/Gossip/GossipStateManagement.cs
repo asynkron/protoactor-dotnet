@@ -146,7 +146,7 @@ internal static class GossipStateManagement
         {
             logger?.LogDebug("No members found for consensus check");
 
-            return (false, default);
+            return (false, default!);
         }
 
         logger?.LogDebug("Checking consensus");
@@ -155,7 +155,7 @@ internal static class GossipStateManagement
         {
             logger?.LogDebug("I can't find myself");
 
-            return (false, default);
+            return (false, default!);
         }
 
         var ownValue = GetConsensusValue(ownMemberState);
@@ -164,7 +164,7 @@ internal static class GossipStateManagement
         {
             logger?.LogDebug("I don't have any value for {Key}", valueKey);
 
-            return (false, default);
+            return (false, default!);
         }
 
         foreach (var (memberId, memberState) in state.Members)
@@ -181,7 +181,7 @@ internal static class GossipStateManagement
 
             if (consensusValue is null || !ownValue.Equals(consensusValue))
             {
-                return (false, default);
+                return (false, default!);
             }
         }
 

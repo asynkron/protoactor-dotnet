@@ -336,7 +336,7 @@ public class Gossiper
                 var (member, state) = kv;
                 var value = state.Values.TryGetValue(key, out var any) ? unpack(any.Value) : default;
 
-                return (member, key, value);
+                return (member, key, value!);
             };
         }
 
@@ -371,7 +371,7 @@ public class Gossiper
                         );
                     }
 
-                    return result;
+                    return result!;
                 };
             }
 
@@ -403,7 +403,7 @@ public class Gossiper
                 }
 
                 // ReSharper enable PossibleMultipleEnumeration
-                return consensus;
+                return consensus!;
             };
 
             KeyValuePair<string, GossipState.Types.GossipMemberState>[] GetValidMemberStates(GossipState state,

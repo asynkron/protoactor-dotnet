@@ -34,7 +34,7 @@ public class IdentityStorageLookup : IIdentityLookup
 
         if (res?.IdentityBlocked == true)
         {
-            throw new IdentityIsBlocked(clusterIdentity);
+            throw new IdentityIsBlockedException(clusterIdentity);
         }
 
         return res?.Pid;

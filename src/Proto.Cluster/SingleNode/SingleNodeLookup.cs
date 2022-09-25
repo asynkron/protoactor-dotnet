@@ -50,7 +50,7 @@ public class SingleNodeLookup : IIdentityLookup
 
             if (resp.InvalidIdentity)
             {
-                throw new IdentityIsBlocked(clusterIdentity);
+                throw new IdentityIsBlockedException(clusterIdentity);
             }
 
             return resp?.Pid;
@@ -67,7 +67,7 @@ public class SingleNodeLookup : IIdentityLookup
 
             return null;
         }
-        catch (Exception e) when (e is not IdentityIsBlocked)
+        catch (Exception e) when (e is not IdentityIsBlockedException)
         {
             e.CheckFailFast();
             Logger.LogError(e, "[SingleNode] Error occured requesting remote PID {@Request}", req);
