@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Concurrent;
 using System.Linq;
 using JetBrains.Annotations;
@@ -10,11 +11,11 @@ using JetBrains.Annotations;
 namespace Proto.Utils;
 
 /// <summary>
-/// A collection with set semantics built on top of <see cref="ConcurrentDictionary{TKey,TValue}"/>.
+///     A collection with set semantics built on top of <see cref="ConcurrentDictionary{TKey,TValue}" />.
 /// </summary>
 /// <typeparam name="T"></typeparam>
 [PublicAPI]
-public class ConcurrentSet<T>
+public class ConcurrentSet<T> where T : notnull
 {
     private readonly ConcurrentDictionary<T, byte> _inner = new();
 

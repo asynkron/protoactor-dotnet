@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using Proto.Mailbox;
 using Proto.Router.Messages;
 using Proto.Router.Routers;
@@ -13,7 +14,10 @@ public class RouterProcess : ActorProcess
 {
     private readonly RouterState _state;
 
-    public RouterProcess(ActorSystem system, RouterState state, IMailbox mailbox) : base(system, mailbox) => _state = state;
+    public RouterProcess(ActorSystem system, RouterState state, IMailbox mailbox) : base(system, mailbox)
+    {
+        _state = state;
+    }
 
     protected internal override void SendUserMessage(PID pid, object message)
     {
@@ -23,9 +27,11 @@ public class RouterProcess : ActorProcess
         {
             case RouterManagementMessage _:
                 base.SendUserMessage(pid, message);
+
                 break;
             default:
                 _state.RouteMessage(message);
+
                 break;
         }
     }

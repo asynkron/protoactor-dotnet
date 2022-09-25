@@ -8,17 +8,12 @@ namespace Proto.Tests;
 
 public class PropsTests
 {
-    public class DummyActor : IActor
-    {
-        public Task ReceiveAsync(IContext context) => throw new NotImplementedException();
-    }
-        
     [Fact]
     public async Task Can_pass_ActorSystem_via_Props()
     {
         await using var system = new ActorSystem();
         var props = Props.FromProducer(s => new ActorWithSystem(s));
-        var actor = (ActorWithSystem) props.Producer(system, null!);
+        var actor = (ActorWithSystem)props.Producer(system, null!);
         Assert.Same(system, actor.System);
     }
 
@@ -109,13 +104,13 @@ public class PropsTests
     [Fact]
     public void Given_Props_When_WithSpawner_Then_mutate_Spawner()
     {
-        PID Spawner(ActorSystem s, string id, Props p, PID? parent, Action<IContext> callback) => new();
+        PID Spawner(ActorSystem s, string id, Props p, PID? parent, Action<IContext> callback) => new PID();
 
         var props = new Props();
-        var props2 = props.WithSpawner(Spawner);
+        var props2 = props.WithSpawner(Spawner!);
 
         Assert.NotEqual(props, props2);
-        Assert.Equal(Spawner, props2.Spawner);
+        Assert.Equal(Spawner!, props2.Spawner);
 
         Assert.Equal(props.Dispatcher, props2.Dispatcher);
         Assert.Equal(props.MailboxProducer, props2.MailboxProducer);
@@ -146,9 +141,17 @@ public class PropsTests
         Assert.NotEqual(props.SupervisorStrategy, props2.SupervisorStrategy);
     }
 
+    public class DummyActor : IActor
+    {
+        public Task ReceiveAsync(IContext context) => throw new NotImplementedException();
+    }
+
     public class ActorWithSystem : IActor
     {
-        public ActorWithSystem(ActorSystem system) => System = system;
+        public ActorWithSystem(ActorSystem system)
+        {
+            System = system;
+        }
 
         public ActorSystem System { get; }
 

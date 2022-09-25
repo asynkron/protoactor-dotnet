@@ -16,7 +16,10 @@ public class CouchbaseProvider : IProvider
 {
     private readonly IBucket _bucket;
 
-    public CouchbaseProvider(IBucket bucket) => _bucket = bucket;
+    public CouchbaseProvider(IBucket bucket)
+    {
+        _bucket = bucket;
+    }
 
     public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
@@ -95,12 +98,12 @@ public class CouchbaseProvider : IProvider
         await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key)));
     }
 
-    private string GenerateGetEventsQuery(string actorName, long indexStart, long indexEnd)
-        => $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' " +
-           "AND b.type = 'event' " +
-           $"AND b.eventIndex >= {indexStart} " +
-           $"AND b.eventIndex <= {indexEnd} " +
-           "ORDER BY b.eventIndex ASC";
+    private string GenerateGetEventsQuery(string actorName, long indexStart, long indexEnd) =>
+        $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' " +
+        "AND b.type = 'event' " +
+        $"AND b.eventIndex >= {indexStart} " +
+        $"AND b.eventIndex <= {indexEnd} " +
+        "ORDER BY b.eventIndex ASC";
 
     private async Task<long> ExecuteGetEventsQueryAsync(string query, Action<object> callback)
     {
@@ -124,6 +127,9 @@ public class CouchbaseProvider : IProvider
 
     private static void ThrowOnError<T>(IQueryResult<T> res)
     {
-        if (!res.Success) throw new Exception($"Couchbase query failed: {res}");
+        if (!res.Success)
+        {
+            throw new Exception($"Couchbase query failed: {res}");
+        }
     }
 }

@@ -14,7 +14,10 @@ public class ProtoGrainGenerationTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
 
-    public ProtoGrainGenerationTests(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
+    public ProtoGrainGenerationTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
 
     [Theory]
     [InlineData("foo.proto", "ExpectedOutput.cs")]
@@ -39,8 +42,8 @@ public class ProtoGrainGenerationTests
     }
 
     [Theory]
-    [InlineData("invalid.proto","Unable to resolve return type for InvalidTestGrain.GetState")]
-    [InlineData("invalid2.proto","Unable to resolve input parameter type for InvalidTestGrain2.SomeCommand")]
+    [InlineData("invalid.proto", "Unable to resolve return type for InvalidTestGrain.GetState")]
+    [InlineData("invalid2.proto", "Unable to resolve input parameter type for InvalidTestGrain2.SomeCommand")]
     public void FailsGracefully(string protoDefinitionFile, string expectedErrorMessage)
     {
         var r = new FileInfo(protoDefinitionFile).OpenText();
@@ -51,7 +54,8 @@ public class ProtoGrainGenerationTests
         var c = new CodeGenerator(Template.DefaultTemplate);
 
         c.Invoking(it => it.Generate(set, NameNormalizer.Default, new Dictionary<string, string>()).ToArray())
-            .Should().Throw<Exception>()
+            .Should()
+            .Throw<Exception>()
             .WithMessage(expectedErrorMessage);
     }
 }

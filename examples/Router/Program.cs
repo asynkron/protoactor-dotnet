@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto;
@@ -10,7 +11,7 @@ using Proto.Router;
 
 namespace RouterExample;
 
-class Message : IHashable
+internal class Message : IHashable
 {
     public string Text;
 
@@ -19,7 +20,7 @@ class Message : IHashable
     public override string ToString() => Text;
 }
 
-class MyActor : IActor
+internal class MyActor : IActor
 {
     public async Task ReceiveAsync(IContext context)
     {
@@ -31,7 +32,7 @@ class MyActor : IActor
     }
 }
 
-class Program
+internal class Program
 {
     private static readonly Props MyActorProps = Props.FromProducer(() => new MyActor());
 
@@ -39,13 +40,13 @@ class Program
     {
         TestBroadcastPool();
         TestBroadcastGroup();
-        
+
         TestRandomPool();
         TestRandomGroup();
-        
+
         TestRoundRobinPool();
         TestRoundRobinGroup();
-        
+
         TestConsistentHashPool();
         TestConsistentHashGroup();
 
@@ -56,6 +57,7 @@ class Program
     {
         var system = new ActorSystem();
         var context = new RootContext(system);
+
         var props = context.NewBroadcastGroup(
             context.Spawn(MyActorProps),
             context.Spawn(MyActorProps),
@@ -66,7 +68,7 @@ class Program
         for (var i = 0; i < 10; i++)
         {
             var pid = context.Spawn(props);
-            context.Send(pid, new Message {Text = $"{i}"});
+            context.Send(pid, new Message { Text = $"{i}" });
         }
     }
 
@@ -79,7 +81,7 @@ class Program
 
         for (var i = 0; i < 10; i++)
         {
-            context.Send(pid, new Message {Text = $"{i % 4}"});
+            context.Send(pid, new Message { Text = $"{i % 4}" });
         }
     }
 
@@ -87,17 +89,19 @@ class Program
     {
         var system = new ActorSystem();
         var context = new RootContext(system);
+
         var props = context.NewConsistentHashGroup(
             context.Spawn(MyActorProps),
             context.Spawn(MyActorProps),
             context.Spawn(MyActorProps),
             context.Spawn(MyActorProps)
         );
+
         var pid = context.Spawn(props);
 
         for (var i = 0; i < 10; i++)
         {
-            context.Send(pid, new Message {Text = $"{i % 4}"});
+            context.Send(pid, new Message { Text = $"{i % 4}" });
         }
     }
 
@@ -110,7 +114,7 @@ class Program
 
         for (var i = 0; i < 10; i++)
         {
-            context.Send(pid, new Message {Text = $"{i % 4}"});
+            context.Send(pid, new Message { Text = $"{i % 4}" });
         }
     }
 
@@ -118,17 +122,19 @@ class Program
     {
         var system = new ActorSystem();
         var context = new RootContext(system);
+
         var props = context.NewRoundRobinGroup(
             context.Spawn(MyActorProps),
             context.Spawn(MyActorProps),
             context.Spawn(MyActorProps),
             context.Spawn(MyActorProps)
         );
+
         var pid = context.Spawn(props);
 
         for (var i = 0; i < 10; i++)
         {
-            context.Send(pid, new Message {Text = $"{i % 4}"});
+            context.Send(pid, new Message { Text = $"{i % 4}" });
         }
     }
 
@@ -141,7 +147,7 @@ class Program
 
         for (var i = 0; i < 10; i++)
         {
-            context.Send(pid, new Message {Text = $"{i % 4}"});
+            context.Send(pid, new Message { Text = $"{i % 4}" });
         }
     }
 
@@ -149,17 +155,19 @@ class Program
     {
         var system = new ActorSystem();
         var context = new RootContext(system);
+
         var props = context.NewRandomGroup(
             context.Spawn(MyActorProps),
             context.Spawn(MyActorProps),
             context.Spawn(MyActorProps),
             context.Spawn(MyActorProps)
         );
+
         var pid = context.Spawn(props);
 
         for (var i = 0; i < 10; i++)
         {
-            context.Send(pid, new Message {Text = $"{i % 4}"});
+            context.Send(pid, new Message { Text = $"{i % 4}" });
         }
     }
 
@@ -172,7 +180,7 @@ class Program
 
         for (var i = 0; i < 10; i++)
         {
-            context.Send(pid, new Message {Text = $"{i % 4}"});
+            context.Send(pid, new Message { Text = $"{i % 4}" });
         }
     }
 }

@@ -16,7 +16,10 @@ public static class Extensions
     {
         var success = doc.TryGetValue(attribute, out var entry);
 
-        if (!success) throw new InvalidOperationException("Attribute does NOT exists: " + attribute);
+        if (!success)
+        {
+            throw new InvalidOperationException("Attribute does NOT exists: " + attribute);
+        }
 
         return entry;
     }
@@ -24,11 +27,14 @@ public static class Extensions
     public static object FromDocumentDynamic(this DynamoDBContext ctx, Document doc, Type type)
     {
         if (fromDocumentMi == null)
-            fromDocumentMi = typeof(DynamoDBContext).GetMethods().First(m => m.Name == "FromDocument" && m.GetParameters().Length == 1);
+        {
+            fromDocumentMi = typeof(DynamoDBContext).GetMethods()
+                .First(m => m.Name == "FromDocument" && m.GetParameters().Length == 1);
+        }
 
         var obj = fromDocumentMi
             .MakeGenericMethod(type)
-            .Invoke(ctx, new object[] {doc});
+            .Invoke(ctx, new object[] { doc });
 
         return obj;
     }
@@ -36,11 +42,14 @@ public static class Extensions
     public static Document ToDocumentDynamic(this DynamoDBContext ctx, object obj, Type objType)
     {
         if (toDocumentMi == null)
-            toDocumentMi = typeof(DynamoDBContext).GetMethods().First(m => m.Name == "ToDocument" && m.GetParameters().Count() == 1);
+        {
+            toDocumentMi = typeof(DynamoDBContext).GetMethods()
+                .First(m => m.Name == "ToDocument" && m.GetParameters().Count() == 1);
+        }
 
         var doc = toDocumentMi
             .MakeGenericMethod(objType)
-            .Invoke(ctx, new[] {obj}) as Document;
+            .Invoke(ctx, new[] { obj }) as Document;
 
         return doc;
     }
@@ -49,10 +58,18 @@ public static class Extensions
     {
         var name = type.AssemblyQualifiedName;
         var index1St = name.IndexOf(",");
-        if (index1St < 0) return name;
+
+        if (index1St < 0)
+        {
+            return name;
+        }
 
         var index2nd = name.IndexOf(",", index1St + 1);
-        if (index2nd < 0) return name;
+
+        if (index2nd < 0)
+        {
+            return name;
+        }
 
         return name.Substring(0, index2nd);
     }

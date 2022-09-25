@@ -21,33 +21,35 @@ public record GrpcNetRemoteConfig : RemoteConfigBase
     }
 
     /// <summary>
-    /// Set to true to enable SSL on the channel
+    ///     Set to true to enable SSL on the channel
     /// </summary>
     public bool UseHttps { get; init; }
-    
+
     /// <summary>
-    /// Channel options for the gRPC channel
+    ///     Channel options for the gRPC channel
     /// </summary>
     public GrpcChannelOptions ChannelOptions { get; init; } = new();
-    
+
     /// <summary>
-    /// A delegate that performs additional configuration on Kestrel <see cref="ListenOptions"/>.
-    /// If not supplied, the default implementation sets the protocol to HTTP2
+    ///     A delegate that performs additional configuration on Kestrel <see cref="ListenOptions" />.
+    ///     If not supplied, the default implementation sets the protocol to HTTP2
     /// </summary>
     public Action<ListenOptions>? ConfigureKestrel { get; init; }
 
     /// <summary>
-    /// A delegate that allows to choose the address for the <see cref="ActorSystem"/> from the list of addresses Kestrel listens on. 
-    /// By default, the first address is used.
+    ///     A delegate that allows to choose the address for the <see cref="ActorSystem" /> from the list of addresses Kestrel
+    ///     listens on.
+    ///     By default, the first address is used.
     /// </summary>
     public Func<IEnumerable<Uri>?, Uri?> UriChooser { get; init; } = uris => uris?.FirstOrDefault();
 
     /// <summary>
-    /// Creates new <see cref="GrpcNetRemoteConfig"/> instance that binds to all network interfaces
+    ///     Creates new <see cref="GrpcNetRemoteConfig" /> instance that binds to all network interfaces
     /// </summary>
-    /// <param name="advertisedHost">The advertised hostname for the remote system.
-    /// If the remote system is behind e.g. a NAT or reverse proxy, this needs to be set to
-    /// the external hostname in order for other systems to be able to connect to it.
+    /// <param name="advertisedHost">
+    ///     The advertised hostname for the remote system.
+    ///     If the remote system is behind e.g. a NAT or reverse proxy, this needs to be set to
+    ///     the external hostname in order for other systems to be able to connect to it.
     /// </param>
     /// <param name="port">Port to bind on, 0 (default) means random port</param>
     /// <returns></returns>
@@ -55,14 +57,15 @@ public record GrpcNetRemoteConfig : RemoteConfigBase
         new GrpcNetRemoteConfig(AllInterfaces, port).WithAdvertisedHost(advertisedHost);
 
     /// <summary>
-    /// Creates new <see cref="GrpcNetRemoteConfig"/> instance that binds to a loopback interface. Useful for local development.
+    ///     Creates new <see cref="GrpcNetRemoteConfig" /> instance that binds to a loopback interface. Useful for local
+    ///     development.
     /// </summary>
     /// <param name="port">Port to bind on, 0 (default) means random port</param>
     /// <returns></returns>
     public static GrpcNetRemoteConfig BindToLocalhost(int port = 0) => new(Localhost, port);
 
     /// <summary>
-    /// Creates new <see cref="GrpcNetRemoteConfig"/> instance that binds to a specific network interface.
+    ///     Creates new <see cref="GrpcNetRemoteConfig" /> instance that binds to a specific network interface.
     /// </summary>
     /// <param name="host">Host to bind to</param>
     /// <param name="port">Port to bind on, 0 (default) means random port</param>

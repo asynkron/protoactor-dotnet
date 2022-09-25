@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading;
@@ -22,8 +23,13 @@ public abstract class BaseFutureTests : ActorTestBase
     [Fact]
     public async Task Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()
     {
-        var pid = Context.Spawn(Props.FromFunc(ctx => {
-                    if (ctx.Message is string) ctx.Respond("hey");
+        var pid = Context.Spawn(Props.FromFunc(ctx =>
+                {
+                    if (ctx.Message is string)
+                    {
+                        ctx.Respond("hey");
+                    }
+
                     return Task.CompletedTask;
                 }
             )
@@ -40,8 +46,13 @@ public abstract class BaseFutureTests : ActorTestBase
     [Fact]
     public async Task Given_Actor_When_ReplyIsNull_Should_Return()
     {
-        var pid = Context.Spawn(Props.FromFunc(ctx => {
-                    if (ctx.Message is string) ctx.Respond(null!);
+        var pid = Context.Spawn(Props.FromFunc(ctx =>
+                {
+                    if (ctx.Message is string)
+                    {
+                        ctx.Respond(null!);
+                    }
+
                     return Task.CompletedTask;
                 }
             )
@@ -58,8 +69,13 @@ public abstract class BaseFutureTests : ActorTestBase
     [Fact]
     public async Task Futures_should_map_to_correct_response()
     {
-        var pid = Context.Spawn(Props.FromFunc(ctx => {
-                    if (ctx.Sender is not null) ctx.Respond(ctx.Message!);
+        var pid = Context.Spawn(Props.FromFunc(ctx =>
+                {
+                    if (ctx.Sender is not null)
+                    {
+                        ctx.Respond(ctx.Message!);
+                    }
+
                     return Task.CompletedTask;
                 }
             )
@@ -82,7 +98,8 @@ public abstract class BaseFutureTests : ActorTestBase
     [Fact]
     public async Task Timeouts_should_give_timeout_exception()
     {
-        var pid = Context.Spawn(Props.FromFunc(async ctx => {
+        var pid = Context.Spawn(Props.FromFunc(async ctx =>
+                {
                     if (ctx.Sender is not null)
                     {
                         await Task.Delay(1);
@@ -102,12 +119,16 @@ public abstract class BaseFutureTests : ActorTestBase
             Context.Request(pid, i, future.Pid);
         }
 
-        await futures.Invoking(async f => {
-                using var cts = new CancellationTokenSource(50);
-                // ReSharper disable once AccessToDisposedClosure
-                var tasks = f.Select(future => future.GetTask(cts.Token));
-                return await Task.WhenAll(tasks);
-            }
-        ).Should().ThrowAsync<TimeoutException>();
+        await futures.Invoking(async f =>
+                {
+                    using var cts = new CancellationTokenSource(50);
+                    // ReSharper disable once AccessToDisposedClosure
+                    var tasks = f.Select(future => future.GetTask(cts.Token));
+
+                    return await Task.WhenAll(tasks);
+                }
+            )
+            .Should()
+            .ThrowAsync<TimeoutException>();
     }
 }

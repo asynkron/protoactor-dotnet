@@ -10,12 +10,17 @@ using System.Threading.Tasks;
 namespace Proto.Remote;
 
 /// <summary>
-/// Handles a connection to a remote endpoint.
+///     Handles a connection to a remote endpoint.
 /// </summary>
 public sealed class ServerEndpoint : Endpoint
 {
-    public ServerEndpoint(ActorSystem system, RemoteConfigBase remoteConfig, string remoteAddress, IChannelProvider channelProvider, ServerConnector.Type type, RemoteMessageHandler remoteMessageHandler) : base(remoteAddress, system, remoteConfig)
-        => Connector = new ServerConnector(RemoteAddress, type, this, channelProvider, System, RemoteConfig, remoteMessageHandler);
+    public ServerEndpoint(ActorSystem system, RemoteConfigBase remoteConfig, string remoteAddress,
+        IChannelProvider channelProvider, ServerConnector.Type type, RemoteMessageHandler remoteMessageHandler) : base(
+        remoteAddress, system, remoteConfig)
+    {
+        Connector = new ServerConnector(RemoteAddress, type, this, channelProvider, System, RemoteConfig,
+            remoteMessageHandler);
+    }
 
     public ServerConnector Connector { get; }
 

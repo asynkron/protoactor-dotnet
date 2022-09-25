@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ public class InMemoryProvider : IProvider
         new();
 
     public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName) =>
-        Task.FromResult(((object) default(Snapshot), 0L));
+        Task.FromResult(((object)default(Snapshot), 0L));
 
     public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
@@ -38,7 +39,9 @@ public class InMemoryProvider : IProvider
     public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
     {
         if (!Events.TryGetValue(actorName, out var events))
+        {
             return Task.FromResult<(object, long)>((null, 0));
+        }
 
         var eventsToRemove = events.Where(s => s.Key <= inclusiveToIndex)
             .Select(e => e.Key)
@@ -57,7 +60,12 @@ public class InMemoryProvider : IProvider
     {
         var events = Events.GetOrAdd(actorName, new Dictionary<long, object>());
         long nextEventIndex = 1;
-        if (events.Any()) nextEventIndex = events.Last().Key + 1;
+
+        if (events.Any())
+        {
+            nextEventIndex = events.Last().Key + 1;
+        }
+
         events.Add(nextEventIndex, @event);
 
         return Task.FromResult(0);

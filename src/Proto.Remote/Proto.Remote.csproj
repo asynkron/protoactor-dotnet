@@ -1,29 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-  <PropertyGroup>
-    <IsPackable>true</IsPackable>
-    <Nullable>enable</Nullable>
-    <LangVersion>10</LangVersion>
-    <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore" Version="2.46.0" />
-    <PackageReference Include="Grpc.Core.Api" Version="2.46.3" />
-    <PackageReference Include="Grpc.HealthCheck" Version="2.46.3" />
-    <PackageReference Include="Grpc.Net.Common" Version="2.46.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.46.3" PrivateAssets="All" />
-    <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="System.Text.Json" Version="6.0.1" />
-    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Protobuf Include="Protos.proto" GrpcServices="Client;Server" AdditionalImportDirs=".; ..\..\src" />
-    <None Remove="HealthCheck.proto" />
-  </ItemGroup>
+    <PropertyGroup>
+        <NoWarn>8981</NoWarn>
+        <IsPackable>true</IsPackable>
+        <Nullable>enable</Nullable>
+        <LangVersion>10</LangVersion>
+        <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Grpc.AspNetCore" Version="2.46.0" />
+        <PackageReference Include="Grpc.Core.Api" Version="2.48.0" />
+        <PackageReference Include="Grpc.HealthCheck" Version="2.46.3" />
+        <PackageReference Include="Grpc.Net.Common" Version="2.48.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.48.1" PrivateAssets="All" />
+        <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="System.Text.Json" Version="6.0.6" />
+        <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
+        <PackageReference Update="JetBrains.Annotations" Version="2022.1.0" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Protobuf Include="Protos.proto" GrpcServices="Client;Server" AdditionalImportDirs=".; ..\..\src" />
+        <None Remove="HealthCheck.proto" />
+    </ItemGroup>
 </Project>

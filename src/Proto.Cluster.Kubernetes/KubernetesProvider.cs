@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,13 +19,14 @@ using static Proto.Cluster.Kubernetes.ProtoLabels;
 namespace Proto.Cluster.Kubernetes;
 
 /// <summary>
-/// Clustering provider that uses Kubernetes API to publish and discover members. Preferred provider
-/// for Kubernetes deployments.
+///     Clustering provider that uses Kubernetes API to publish and discover members. Preferred provider
+///     for Kubernetes deployments.
 /// </summary>
 [PublicAPI]
 public class KubernetesProvider : IClusterProvider
 {
     private static readonly ILogger Logger = Log.CreateLogger<KubernetesProvider>();
+    private readonly KubernetesProviderConfig _config;
     private string _address;
     private Cluster _cluster;
 
@@ -35,7 +37,6 @@ public class KubernetesProvider : IClusterProvider
     private MemberList _memberList;
     private string _podName;
     private int _port;
-    private readonly KubernetesProviderConfig _config;
 
     public KubernetesProvider() : this(new KubernetesProviderConfig())
     {
@@ -44,12 +45,15 @@ public class KubernetesProvider : IClusterProvider
     public KubernetesProvider(KubernetesProviderConfig config)
     {
         if (KubernetesExtensions.GetKubeNamespace() is null)
+        {
             throw new InvalidOperationException("The application doesn't seem to be running in Kubernetes");
+        }
 
         _config = config;
     }
 
-    [Obsolete("Do not pass a Kubernetes client directly, pass Client factory as part of Config, or use Config defaults", true)]
+    [Obsolete("Do not pass a Kubernetes client directly, pass Client factory as part of Config, or use Config defaults",
+        true)]
     public KubernetesProvider(IKubernetes kubernetes, KubernetesProviderConfig config)
     {
     }
@@ -85,6 +89,7 @@ public class KubernetesProvider : IClusterProvider
         _kinds = Array.Empty<string>();
         StartClusterMonitor();
         MonitorMemberStatusChanges();
+
         return Task.CompletedTask;
     }
 
@@ -98,7 +103,8 @@ public class KubernetesProvider : IClusterProvider
     {
         await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
 
-        static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
+        static void OnError(int attempt, Exception exception) =>
+            Logger.LogWarning(exception, "Failed to register service");
 
         static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to register service");
     }
@@ -106,10 +112,16 @@ public class KubernetesProvider : IClusterProvider
     public async Task RegisterMemberInner()
     {
         var kubernetes = _config.ClientFactory();
-        Logger.LogInformation("[Cluster][KubernetesProvider] Registering service {PodName} on {PodIp}", _podName, _address);
+
+        Logger.LogInformation("[Cluster][KubernetesProvider] Registering service {PodName} on {PodIp}", _podName,
+            _address);
 
         var pod = await kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
-        if (pod is null) throw new ApplicationException($"Unable to get own pod information for {_podName}");
+
+        if (pod is null)
+        {
+            throw new ApplicationException($"Unable to get own pod information for {_podName}");
+        }
 
         Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: {Namespace}", pod.Namespace());
 
@@ -146,7 +158,10 @@ public class KubernetesProvider : IClusterProvider
         }
         catch (Exception e)
         {
-            Logger.LogError(e, "[Cluster][KubernetesProvider] Unable to update pod labels, registration failed. Labels : {Labels}", labels);
+            Logger.LogError(e,
+                "[Cluster][KubernetesProvider] Unable to update pod labels, registration failed. Labels : {Labels}",
+                labels);
+
             throw;
         }
     }
@@ -177,7 +192,8 @@ public class KubernetesProvider : IClusterProvider
     {
         await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed);
 
-        static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to deregister service");
+        static void OnError(int attempt, Exception exception) =>
+            Logger.LogWarning(exception, "Failed to deregister service");
 
         static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to deregister service");
     }
@@ -185,7 +201,9 @@ public class KubernetesProvider : IClusterProvider
     private async Task DeregisterMemberInner(Cluster cluster)
     {
         var kubernetes = _config.ClientFactory();
-        Logger.LogInformation("[Cluster][KubernetesProvider] Unregistering service {PodName} on {PodIp}", _podName, _address);
+
+        Logger.LogInformation("[Cluster][KubernetesProvider] Unregistering service {PodName} on {PodIp}", _podName,
+            _address);
 
         var kubeNamespace = KubernetesExtensions.GetKubeNamespace();
 
@@ -204,5 +222,6 @@ public class KubernetesProvider : IClusterProvider
         cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
     }
 
-    public void MonitorMemberStatusChanges() => _cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
+    public void MonitorMemberStatusChanges() =>
+        _cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
 }

@@ -15,21 +15,22 @@ namespace Proto.Cluster;
 
 public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
 {
+    internal PID? CachedPid { get; set; }
+
     public string ToDiagnosticString() => $"{Kind}/{Identity}";
 
     /// <summary>
-    /// Creates ClusterIdentity from identity and cluster kind
+    ///     Creates ClusterIdentity from identity and cluster kind
     /// </summary>
     /// <param name="identity"></param>
     /// <param name="kind"></param>
     /// <returns></returns>
-    public static ClusterIdentity Create(string identity, string kind) => new()
-    {
-        Identity = identity,
-        Kind = kind
-    };
-
-    internal PID? CachedPid { get; set; }
+    public static ClusterIdentity Create(string identity, string kind) =>
+        new()
+        {
+            Identity = identity,
+            Kind = kind
+        };
 }
 
 public sealed partial class ActivationRequest
@@ -66,43 +67,45 @@ public sealed partial class IdentityHandover : IRootSerializable
 
 public sealed partial class RemoteIdentityHandover : IRootSerialized
 {
-    public IRootSerializable Deserialize(ActorSystem system) => new IdentityHandover
-    {
-        TopologyHash = TopologyHash,
-        Final = Final,
-        Skipped = Skipped,
-        Sent = Sent,
-        ChunkId = ChunkId,
-        Actors = {Actors.UnPack()}
-    };
+    public IRootSerializable Deserialize(ActorSystem system) =>
+        new IdentityHandover
+        {
+            TopologyHash = TopologyHash,
+            Final = Final,
+            Skipped = Skipped,
+            Sent = Sent,
+            ChunkId = ChunkId,
+            Actors = { Actors.UnPack() }
+        };
 }
 
 public sealed partial class PackedActivations
 {
     public IEnumerable<Activation> UnPack() => Actors.SelectMany(UnpackKind);
 
-    private IEnumerable<Activation> UnpackKind(Types.Kind kind)
-        => kind.Activations.Select(packed => new Activation
+    private IEnumerable<Activation> UnpackKind(Types.Kind kind) =>
+        kind.Activations.Select(packed => new Activation
             {
                 ClusterIdentity = ClusterIdentity.Create(packed.Identity, kind.Name),
                 Pid = PID.FromAddress(Address, packed.ActivationId)
             }
         );
 
-    public static PackedActivations Pack(string address, IEnumerable<Activation> activations) => new()
-    {
-        Address = address,
-        Actors = {PackActivations(activations)}
-    };
+    public static PackedActivations Pack(string address, IEnumerable<Activation> activations) =>
+        new()
+        {
+            Address = address,
+            Actors = { PackActivations(activations) }
+        };
 
-    private static IEnumerable<Types.Kind> PackActivations(IEnumerable<Activation> activations)
-        => activations.GroupBy(it => it.Kind)
+    private static IEnumerable<Types.Kind> PackActivations(IEnumerable<Activation> activations) =>
+        activations.GroupBy(it => it.Kind)
             .Select(grouping => new Types.Kind
                 {
                     Name = grouping.Key,
                     Activations =
                     {
-                        grouping.Select(activation => new PackedActivations.Types.Activation
+                        grouping.Select(activation => new Types.Activation
                             {
                                 Identity = activation.Identity,
                                 ActivationId = activation.Pid.Id
@@ -115,13 +118,14 @@ public sealed partial class PackedActivations
 
 public partial class ClusterTopology
 {
-    //this ignores joined and left members, only the actual members are relevant
-    public uint GetMembershipHashCode() => Member.TopologyHash(Members);
-
     /// <summary>
-    /// Topology based logic (IE partition based) can use this token to cancel any work when this topology is no longer valid
+    ///     Topology based logic (IE partition based) can use this token to cancel any work when this topology is no longer
+    ///     valid
     /// </summary>
     public CancellationToken? TopologyValidityToken { get; init; }
+
+    //this ignores joined and left members, only the actual members are relevant
+    public uint GetMembershipHashCode() => Member.TopologyHash(Members);
 }
 
 public partial class Member
@@ -131,6 +135,7 @@ public partial class Member
         var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
         var key = string.Concat(x);
         var hash = MurmurHash2.Hash(key);
+
         return hash;
     }
 }

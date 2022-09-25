@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using JetBrains.Annotations;
 
 namespace Proto.Logging;
@@ -11,6 +12,6 @@ namespace Proto.Logging;
 public static class Extensions
 {
     public static InstanceLogger? Logger(this IContext context) => context.System.Logger();
+
     public static InstanceLogger? Logger(this ActorSystem system) => system.Extensions.Get<InstanceLogger>();
-        
 }

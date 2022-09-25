@@ -3,18 +3,18 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 
 namespace Proto.Utils;
 
 // ReSharper disable once UnusedTypeParameter
-class TypeDictionary<TValue, TNamespace>
+internal class TypeDictionary<TValue, TNamespace>
 {
-    private readonly double _growthFactor;
-
     // ReSharper disable once StaticMemberInGenericType
     private static int typeIndex = -1;
+    private readonly double _growthFactor;
     private readonly object _lockObject = new();
 
     private TValue[] _values;
@@ -32,7 +32,11 @@ class TypeDictionary<TValue, TNamespace>
         lock (_lockObject)
         {
             var id = TypeKey<TKey>.Id;
-            if (id >= _values.Length) Array.Resize(ref _values, (int) (id * _growthFactor));
+
+            if (id >= _values.Length)
+            {
+                Array.Resize(ref _values, (int)(id * _growthFactor));
+            }
 
             _values[id] = value;
         }
@@ -41,13 +45,18 @@ class TypeDictionary<TValue, TNamespace>
     public TValue? Get<TKey>()
     {
         var id = TypeKey<TKey>.Id;
+
         return id >= _values.Length ? default : _values[id];
     }
 
     public void Remove<TKey>()
     {
         var id = TypeKey<TKey>.Id;
-        if (id >= _values.Length) return;
+
+        if (id >= _values.Length)
+        {
+            return;
+        }
 
         _values[id] = default!;
     }

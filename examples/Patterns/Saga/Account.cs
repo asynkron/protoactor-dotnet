@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -12,7 +13,7 @@ using Saga.Messages;
 
 namespace Saga;
 
-class Account : IActor
+internal class Account : IActor
 {
     private readonly double _busyProbability;
     private readonly string _name;
@@ -51,9 +52,11 @@ class Account : IActor
                 return AdjustBalance(context, replyTo, amount);
             case ChangeBalance.Debit msg:
                 context.Send(msg.ReplyTo, new InsufficientFunds());
+
                 break;
             case GetBalance:
                 context.Respond(_balance);
+
                 break;
         }
 
@@ -62,6 +65,7 @@ class Account : IActor
         Task Reply(PID replyTo)
         {
             context.Send(replyTo, _processedMessages[replyTo]);
+
             return Task.CompletedTask;
         }
     }
@@ -84,13 +88,17 @@ class Account : IActor
         }
 
         if (Busy())
+        {
             context.Send(replyTo, new ServiceUnavailable());
+        }
 
         // generate the behavior to be used whilst processing this message
         var behaviour = DetermineProcessingBehavior();
 
         if (behaviour == Behavior.FailBeforeProcessing)
+        {
             return Failure();
+        }
 
         // simulate potential long-running process
         Thread.Sleep(_random.Next(0, 150));
@@ -102,14 +110,18 @@ class Account : IActor
         // force a retry of the operation which will test the operation
         // is idempotent
         if (behaviour == Behavior.FailAfterProcessing)
+        {
             return Failure();
+        }
 
         context.Send(replyTo, new OK());
+
         return Task.CompletedTask;
 
         Task Failure()
         {
             context.Send(replyTo, new InternalServerError());
+
             return Task.CompletedTask;
         }
     }
@@ -117,12 +129,14 @@ class Account : IActor
     private bool Busy()
     {
         var comparison = _random.NextDouble() * 100;
+
         return comparison <= _busyProbability;
     }
 
     private bool RefusePermanently()
     {
         var comparison = _random.NextDouble() * 100;
+
         return comparison <= _refusalProbability;
     }
 
@@ -131,7 +145,9 @@ class Account : IActor
         var comparision = _random.NextDouble() * 100;
 
         if (comparision > _serviceUptime)
+        {
             return _random.NextDouble() * 100 > 50 ? Behavior.FailBeforeProcessing : Behavior.FailAfterProcessing;
+        }
 
         return Behavior.ProcessSuccessfully;
     }

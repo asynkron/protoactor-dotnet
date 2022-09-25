@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Proto.Router.Routers;
 
-record ConsistentHashPoolRouterConfig : PoolRouterConfig
+internal record ConsistentHashPoolRouterConfig : PoolRouterConfig
 {
     private readonly Func<string, uint> _hash;
     private readonly Func<object, string>? _messageHasher;
@@ -25,7 +26,11 @@ record ConsistentHashPoolRouterConfig : PoolRouterConfig
         : base(poolSize, routeeProps)
     {
         _senderContext = senderContext;
-        if (replicaCount <= 0) throw new ArgumentException("ReplicaCount must be greater than 0");
+
+        if (replicaCount <= 0)
+        {
+            throw new ArgumentException("ReplicaCount must be greater than 0");
+        }
 
         _hash = hash;
         _replicaCount = replicaCount;

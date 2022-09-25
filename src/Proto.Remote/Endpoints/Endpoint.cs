@@ -19,6 +19,17 @@ namespace Proto.Remote;
 
 public abstract class Endpoint : IEndpoint
 {
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly LogLevel _deserializationErrorLogLevel;
+    private readonly ILogger _logger = Log.CreateLogger<Endpoint>();
+    private readonly Channel<RemoteDeliver> _remoteDelivers = Channel.CreateUnbounded<RemoteDeliver>();
+    private readonly Task _sender;
+    private readonly object _synLock = new();
+    private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
+    protected readonly string RemoteAddress;
+    protected readonly RemoteConfigBase RemoteConfig;
+    protected readonly ActorSystem System;
+
     internal Endpoint(string remoteAddress, ActorSystem system, RemoteConfigBase remoteConfig)
     {
         RemoteAddress = remoteAddress;
@@ -28,19 +39,10 @@ public abstract class Endpoint : IEndpoint
         _deserializationErrorLogLevel = system.Remote().Config.DeserializationErrorLogLevel;
     }
 
+    private CancellationToken CancellationToken => _cancellationTokenSource.Token;
+
     public Channel<RemoteMessage> Outgoing { get; } = Channel.CreateBounded<RemoteMessage>(3);
     public ConcurrentStack<RemoteMessage> OutgoingStash { get; } = new();
-    protected readonly ActorSystem System;
-    protected readonly string RemoteAddress;
-    protected readonly RemoteConfigBase RemoteConfig;
-    private readonly ILogger _logger = Log.CreateLogger<Endpoint>();
-    private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
-    private readonly Channel<RemoteDeliver> _remoteDelivers = Channel.CreateUnbounded<RemoteDeliver>();
-    private readonly object _synLock = new();
-    private readonly Task _sender;
-    private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private CancellationToken CancellationToken => _cancellationTokenSource.Token;
-    private readonly LogLevel _deserializationErrorLogLevel;
 
     public virtual async ValueTask DisposeAsync()
     {
@@ -56,6 +58,86 @@ public abstract class Endpoint : IEndpoint
     }
 
     public bool IsActive { get; private set; } = true;
+
+    public void RemoteUnwatch(PID target, Unwatch unwatch)
+    {
+        lock (_synLock)
+        {
+            if (_watchedActors.TryGetValue(target.Id, out var pidSet))
+            {
+                if (pidSet.Remove(unwatch.Watcher) && pidSet.Count == 0)
+                {
+                    _watchedActors.Remove(target.Id);
+                }
+            }
+
+            var w = unwatch.Watcher;
+            SendMessage(target, unwatch);
+        }
+    }
+
+    public void RemoteWatch(PID target, Watch watch)
+    {
+        lock (_synLock)
+        {
+            if (_watchedActors.TryGetValue(target.Id, out var pidSet))
+            {
+                pidSet.Add(watch.Watcher);
+            }
+            else
+            {
+                _watchedActors[target.Id] = new HashSet<PID> { watch.Watcher };
+            }
+
+            SendMessage(target, watch);
+        }
+    }
+
+    public void SendMessage(PID target, object msg)
+    {
+        var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
+
+        if (_logger.IsEnabled(LogLevel.Trace))
+        {
+            _logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {Message} to {Target} from {Sender}",
+                System.Address,
+                message.GetType().Name, message, target, sender
+            );
+        }
+
+        if (sender is not null && sender.TryTranslateToProxyPID(System, RemoteAddress, out var clientPID))
+        {
+            sender = clientPID;
+        }
+
+        var env = new RemoteDeliver(header, message, target, sender);
+
+        if (CancellationToken.IsCancellationRequested || !_remoteDelivers.Writer.TryWrite(env))
+        {
+            _logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {Message} to {Target} from {Sender}",
+                System.Address,
+                message.GetType().Name, message, target, sender
+            );
+
+            RejectRemoteDeliver(env);
+        }
+    }
+
+    public void RemoteTerminate(PID watcher, Terminated terminated)
+    {
+        lock (_synLock)
+        {
+            if (_watchedActors.TryGetValue(terminated.Who.Id, out var pidSet))
+            {
+                if (pidSet.Remove(watcher) && pidSet.Count == 0)
+                {
+                    _watchedActors.Remove(terminated.Who.Id);
+                }
+            }
+
+            watcher.SendSystemMessage(System, terminated);
+        }
+    }
 
     private void TerminateEndpoint()
     {
@@ -80,23 +162,29 @@ public abstract class Endpoint : IEndpoint
         }
 
         if (droppedMessageCount > 0)
-            _logger.LogInformation("[{SystemAddress}] Dropped {Count} messages for {Address}", System.Address, droppedMessageCount, RemoteAddress);
+        {
+            _logger.LogInformation("[{SystemAddress}] Dropped {Count} messages for {Address}", System.Address,
+                droppedMessageCount, RemoteAddress);
+        }
     }
 
     private int DropMessagesInBatch(RemoteMessage remoteMessage)
     {
         var droppedMessageCount = 0;
 
-        
         switch (remoteMessage.MessageTypeCase)
         {
             case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
-                _logger.LogWarning("[{SystemAddress}] Dropping disconnect request for {Address}", System.Address, RemoteAddress);
+                _logger.LogWarning("[{SystemAddress}] Dropping disconnect request for {Address}", System.Address,
+                    RemoteAddress);
+
                 break;
-            case RemoteMessage.MessageTypeOneofCase.MessageBatch: {
+            case RemoteMessage.MessageTypeOneofCase.MessageBatch:
+            {
                 var batch = remoteMessage.MessageBatch;
 
                 var targets = new PID[batch.Targets.Count];
+
                 for (var i = 0; i < batch.Targets.Count; i++)
                 {
                     var target = new PID(System.Address, batch.Targets[i]);
@@ -111,7 +199,7 @@ public abstract class Endpoint : IEndpoint
                         target.Ref(System);
                     }
                 }
-                
+
                 for (var i = 0; i < batch.Senders.Count; i++)
                 {
                     var s = batch.Senders[i];
@@ -120,7 +208,7 @@ public abstract class Endpoint : IEndpoint
                     {
                         s.Address = RemoteAddress;
                     }
-                    
+
                     s.Ref(System);
                 }
 
@@ -145,28 +233,36 @@ public abstract class Endpoint : IEndpoint
                     var typeName = typeNames[envelope.TypeId];
 
                     if (System.Metrics.Enabled)
+                    {
                         RemoteMetrics.RemoteDeserializedMessageCount.Add(1,
-                            new("id", System.Id),
-                            new("address", System.Address),
-                            new("messagetype", typeName)
+                            new KeyValuePair<string, object?>("id", System.Id),
+                            new KeyValuePair<string, object?>("address", System.Address),
+                            new KeyValuePair<string, object?>("messagetype", typeName)
                         );
+                    }
 
                     object message;
 
                     try
                     {
-                        message = RemoteConfig.Serialization.Deserialize(typeName, envelope.MessageData, envelope.SerializerId);
+                        message = RemoteConfig.Serialization.Deserialize(typeName, envelope.MessageData,
+                            envelope.SerializerId);
 
                         // _logger.LogDebug("Received (Type) {Message}", message.GetType(), message);
 
                         //translate from on-the-wire representation to in-process representation
                         //this only applies to root level messages, and never on nested child messages
-                        if (message is IRootSerialized serialized) message = serialized.Deserialize(System);
+                        if (message is IRootSerialized serialized)
+                        {
+                            message = serialized.Deserialize(System);
+                        }
                     }
                     catch (Exception ex)
                     {
                         ex.CheckFailFast();
+
                         if (_logger.IsEnabled(_deserializationErrorLogLevel))
+                        {
                             _logger.Log(
                                 _deserializationErrorLogLevel,
                                 ex,
@@ -174,6 +270,8 @@ public abstract class Endpoint : IEndpoint
                                 System.Address,
                                 typeName
                             );
+                        }
+
                         continue;
                     }
 
@@ -181,20 +279,26 @@ public abstract class Endpoint : IEndpoint
 
                     if (message is PoisonPill or Stop && sender is not null)
                     {
-                        System.Root.Send(sender, new Terminated {Who = target, Why = TerminatedReason.AddressTerminated});
+                        System.Root.Send(sender,
+                            new Terminated { Who = target, Why = TerminatedReason.AddressTerminated });
                     }
                     else if (message is Watch watch)
                     {
-                        watch.Watcher.SendSystemMessage(System, new Terminated {Who = target, Why = TerminatedReason.AddressTerminated});
+                        watch.Watcher.SendSystemMessage(System,
+                            new Terminated { Who = target, Why = TerminatedReason.AddressTerminated });
                     }
                     else
                     {
                         System.EventStream.Publish(new DeadLetterEvent(target, message, sender));
+
                         if (sender is not null)
-                            System.Root.Send(sender, new DeadLetterResponse {Target = target});
+                        {
+                            System.Root.Send(sender, new DeadLetterResponse { Target = target });
+                        }
                     }
                 }
             }
+
                 break;
         }
 
@@ -232,84 +336,30 @@ public abstract class Endpoint : IEndpoint
         }
     }
 
-    public void RemoteUnwatch(PID target, Unwatch unwatch)
-    {
-        lock (_synLock)
-        {
-            if (_watchedActors.TryGetValue(target.Id, out var pidSet))
-            {
-                if (pidSet.Remove(unwatch.Watcher) && pidSet.Count == 0)
-                    _watchedActors.Remove(target.Id);
-            }
-
-            var w = unwatch.Watcher;
-            SendMessage(target, unwatch);
-        }
-    }
-
-    public void RemoteWatch(PID target, Watch watch)
-    {
-        lock (_synLock)
-        {
-            if (_watchedActors.TryGetValue(target.Id, out var pidSet)) pidSet.Add(watch.Watcher);
-            else _watchedActors[target.Id] = new HashSet<PID> {watch.Watcher};
-            SendMessage(target, watch);
-        }
-    }
-
-    public void SendMessage(PID target, object msg)
-    {
-        var (message, sender, header) = Proto.MessageEnvelope.Unwrap(msg);
-
-        if (_logger.IsEnabled(LogLevel.Trace))
-        {
-            _logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {Message} to {Target} from {Sender}", System.Address,
-                message.GetType().Name, message, target, sender
-            );
-        }
-
-        if (sender is not null && sender.TryTranslateToProxyPID(System, RemoteAddress, out var clientPID))
-            sender = clientPID;
-        var env = new RemoteDeliver(header, message, target, sender);
-
-        if (CancellationToken.IsCancellationRequested || !_remoteDelivers.Writer.TryWrite(env))
-        {
-            _logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {Message} to {Target} from {Sender}", System.Address,
-                message.GetType().Name, message, target, sender
-            );
-            RejectRemoteDeliver(env);
-        }
-    }
-
-    public void RemoteTerminate(PID watcher, Terminated terminated)
-    {
-        lock (_synLock)
-        {
-            if (_watchedActors.TryGetValue(terminated.Who.Id, out var pidSet))
-            {
-                if (pidSet.Remove(watcher) && pidSet.Count == 0)
-                    _watchedActors.Remove(terminated.Who.Id);
-            }
-
-            watcher.SendSystemMessage(System, terminated);
-        }
-    }
-
     private void RejectRemoteDeliver(RemoteDeliver env)
     {
         switch (env.Message)
         {
             case PoisonPill or Stop when env.Sender is not null:
-                System.Root.Send(env.Sender, new Terminated {Who = env.Target, Why = TerminatedReason.AddressTerminated});
+                System.Root.Send(env.Sender,
+                    new Terminated { Who = env.Target, Why = TerminatedReason.AddressTerminated });
+
                 break;
             case Watch watch:
-                watch.Watcher.SendSystemMessage(System, new Terminated {Who = env.Target, Why = TerminatedReason.AddressTerminated});
+                watch.Watcher.SendSystemMessage(System,
+                    new Terminated { Who = env.Target, Why = TerminatedReason.AddressTerminated });
+
                 break;
             default:
                 if (env.Sender is not null)
-                    System.Root.Send(env.Sender, new DeadLetterResponse {Target = env.Target});
+                {
+                    System.Root.Send(env.Sender, new DeadLetterResponse { Target = env.Target });
+                }
                 else
+                {
                     System.EventStream.Publish(new DeadLetterEvent(env.Target, env.Message, env.Sender));
+                }
+
                 break;
         }
     }
@@ -327,11 +377,15 @@ public abstract class Endpoint : IEndpoint
                     while (_remoteDelivers.Reader.TryRead(out var remoteDeliver))
                     {
                         messages.Add(remoteDeliver);
-                        if (messages.Count >= RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize) break;
+
+                        if (messages.Count >= RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize)
+                        {
+                            break;
+                        }
                     }
 
                     var batch = CreateBatch(messages);
-                    await Outgoing.Writer.WriteAsync(new RemoteMessage {MessageBatch = batch}, CancellationToken);
+                    await Outgoing.Writer.WriteAsync(new RemoteMessage { MessageBatch = batch }, CancellationToken);
                     messages.Clear();
                 }
             }
@@ -380,20 +434,25 @@ public abstract class Endpoint : IEndpoint
                 {
                     senderId = senders[senderKey] = senders.Count + 1;
 
-                    senderList.Add(sender.Address == System.Address ? 
-                        PID.FromAddress("", sender.Id) : 
-                        PID.FromAddress(sender.Address, sender.Id));
+                    senderList.Add(sender.Address == System.Address
+                        ? PID.FromAddress("", sender.Id)
+                        : PID.FromAddress(sender.Address, sender.Id));
                 }
             }
 
             var message = rd.Message;
+
             //if the message can be translated to a serialization representation, we do this here
             //this only apply to root level messages and never to nested child objects inside the message
-            if (message is IRootSerializable deserialized) message = deserialized.Serialize(System);
+            if (message is IRootSerializable deserialized)
+            {
+                message = deserialized.Serialize(System);
+            }
 
             if (message is null)
             {
                 _logger.LogError("Null message passed to EndpointActor, ignoring message");
+
                 continue;
             }
 
@@ -408,20 +467,24 @@ public abstract class Endpoint : IEndpoint
             catch (CodedOutputStream.OutOfSpaceException oom)
             {
                 _logger.LogError(oom, "Message is too large {Message}", message.GetType().Name);
+
                 throw;
             }
             catch (Exception x)
             {
                 _logger.LogError(x, "Serialization failed for message {Message}", message.GetType().Name);
+
                 throw;
             }
 
             if (System.Metrics.Enabled)
+            {
                 RemoteMetrics.RemoteSerializedMessageCount.Add(1,
-                    new("id", System.Id),
-                    new("address", System.Address),
-                    new("messagetype", typeName)
+                    new KeyValuePair<string, object?>("id", System.Id),
+                    new KeyValuePair<string, object?>("address", System.Address),
+                    new KeyValuePair<string, object?>("messagetype", typeName)
                 );
+            }
 
             if (!typeNames.TryGetValue(typeName, out var typeId))
             {
@@ -448,6 +511,7 @@ public abstract class Endpoint : IEndpoint
                 TargetRequestId = rd.Target.RequestId,
                 SenderRequestId = sender?.RequestId ?? default
             };
+
             // if (Logger.IsEnabled(LogLevel.Trace))
             //     Logger.LogTrace("[{SystemAddress}] Endpoint adding Envelope {Envelope}", System.Address, envelope);
             envelopes.Add(envelope);
@@ -455,10 +519,10 @@ public abstract class Endpoint : IEndpoint
 
         var batch = new MessageBatch
         {
-            Targets = {targetList},
-            TypeNames = {typeNameList},
-            Envelopes = {envelopes},
-            Senders = {senderList}
+            Targets = { targetList },
+            TypeNames = { typeNameList },
+            Envelopes = { envelopes },
+            Senders = { senderList }
         };
 
         // if (Logger.IsEnabled(LogLevel.Trace))

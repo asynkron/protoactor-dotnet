@@ -3,12 +3,13 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using Proto;
 
 namespace Saga;
 
-class Program
+internal class Program
 {
     private static readonly IRootContext Context = new ActorSystem().Root;
 
@@ -25,7 +26,8 @@ class Program
         var verbose = false;
 
         var props = Props.FromProducer(() =>
-                new Runner(numberOfTransfers, intervalBetweenConsoleUpdates, uptime, refusalProbability, busyProbability, retryAttempts, verbose)
+                new Runner(numberOfTransfers, intervalBetweenConsoleUpdates, uptime, refusalProbability,
+                    busyProbability, retryAttempts, verbose)
             )
             .WithChildSupervisorStrategy(new OneForOneStrategy((_, _) => SupervisorDirective.Restart,
                     retryAttempts, null

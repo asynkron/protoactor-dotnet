@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 using Proto.Extensions;
 
@@ -21,7 +22,8 @@ public class PubSubExtension : IActorSystemExtension<PubSubExtension>
 
     public Task StartAsync()
     {
-        var props = Props.FromProducer(() => new PubSubMemberDeliveryActor(_cluster.Config.PubSubConfig.SubscriberTimeout));
+        var props = Props.FromProducer(() =>
+            new PubSubMemberDeliveryActor(_cluster.Config.PubSubConfig.SubscriberTimeout));
 
         _cluster.System.Root.SpawnNamed(props, PubSubDeliveryName);
 

@@ -1,32 +1,33 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-  <PropertyGroup>
-    <LangVersion>10</LangVersion>
-    <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerComposeProjectPath>..\docker-compose\docker-compose.dcproj</DockerComposeProjectPath>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
-    <ProjectReference Include="..\Proto.Cluster.Identity.Tests\Proto.Cluster.Identity.Tests.csproj" />
-    <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj" />
-    <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
-    <PackageReference Include="GitHubActionsTestLogger" Version="2.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Update="FluentAssertions" Version="6.6.0" />
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.1.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
-  </ItemGroup>
+    <PropertyGroup>
+        <LangVersion>10</LangVersion>
+        <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <DockerComposeProjectPath>..\docker-compose\docker-compose.dcproj</DockerComposeProjectPath>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
+        <ProjectReference Include="..\Proto.Cluster.Identity.Tests\Proto.Cluster.Identity.Tests.csproj" />
+        <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj" />
+        <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
+        <PackageReference Include="GitHubActionsTestLogger" Version="2.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Update="FluentAssertions" Version="6.7.0" />
+        <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+        <PackageReference Update="xunit" Version="2.4.2" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Update="*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+    </ItemGroup>
 </Project>

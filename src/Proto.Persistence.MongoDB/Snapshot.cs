@@ -8,7 +8,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Proto.Persistence.MongoDB;
 
-class Snapshot
+internal class Snapshot
 {
     public Snapshot(string actorName, long snapshotIndex, object data)
     {
@@ -18,15 +18,11 @@ class Snapshot
         Id = $"{actorName}-snapshot-{snapshotIndex}";
     }
 
-    [BsonElement]
-    public string ActorName { get; set; }
+    [BsonElement] public string ActorName { get; set; }
 
-    [BsonElement]
-    public long SnapshotIndex { get; set; }
+    [BsonElement] public long SnapshotIndex { get; set; }
 
-    [BsonElement]
-    public object Data { get; set; }
+    [BsonElement] public object Data { get; set; }
 
-    [BsonId]
-    public string Id { get; set; }
+    [BsonId] public string Id { get; set; }
 }

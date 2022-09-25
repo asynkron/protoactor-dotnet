@@ -65,11 +65,14 @@ public class EventStreamTests
         var eventStream = system.EventStream;
 
         string received;
-        eventStream.Subscribe<string>(theString => {
+
+        eventStream.Subscribe<string>(theString =>
+            {
                 received = theString;
                 Assert.Equal("hello", received);
             }, Dispatchers.DefaultDispatcher
         );
+
         eventStream.Publish("hello");
     }
 }

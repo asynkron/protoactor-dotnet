@@ -7,7 +7,7 @@ using static Proto.TestFixtures.Receivers;
 
 namespace Proto.Tests;
 
-class MyAutoRespondMessage : IAutoRespond
+internal class MyAutoRespondMessage : IAutoRespond
 {
     public object GetAutoResponse(IContext context) => "hey";
 }
@@ -22,8 +22,13 @@ public class ActorTests
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
 
-        var pid = SpawnActorFromFunc(ctx => {
-                if (ctx.Message is string) ctx.Respond("hey");
+        var pid = SpawnActorFromFunc(ctx =>
+            {
+                if (ctx.Message is string)
+                {
+                    ctx.Respond("hey");
+                }
+
                 return Task.CompletedTask;
             }
         );
@@ -78,6 +83,7 @@ public class ActorTests
         var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(
             () => { return context.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20)); }
         );
+
         Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);
     }
 
@@ -89,8 +95,13 @@ public class ActorTests
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
 
-        var pid = SpawnActorFromFunc(ctx => {
-                if (ctx.Message is string) ctx.Respond("hey");
+        var pid = SpawnActorFromFunc(ctx =>
+            {
+                if (ctx.Message is string)
+                {
+                    ctx.Respond("hey");
+                }
+
                 return Task.CompletedTask;
             }
         );
@@ -109,8 +120,10 @@ public class ActorTests
         var messages = new Queue<object>();
 
         var pid = context.Spawn(
-            Props.FromFunc(ctx => {
+            Props.FromFunc(ctx =>
+                    {
                         messages.Enqueue(ctx.Message!);
+
                         return Task.CompletedTask;
                     }
                 )
@@ -139,15 +152,16 @@ public class ActorTests
         var i = 0;
 
         CapturedContext? capturedContext = null;
-        
+
         async Task HandleMessage(IContext ctx)
         {
             if (ctx.Message is string && i++ == 0)
             {
                 capturedContext = ctx.Capture();
+
                 throw new Exception("Test");
             }
-            
+
             messages.Enqueue(ctx.Message!);
 
             if (ctx.Message is Started && capturedContext != null)
@@ -189,31 +203,31 @@ public class ActorTests
         await using var system = new ActorSystem();
         var context = system.Root;
         var messages = new Queue<object>();
-    
+
         var pid = context.Spawn(
             Props.FromFunc(async ctx =>
+            {
+                if (ctx.Message is string)
                 {
-                    if (ctx.Message is string)
+                    try
                     {
-                        try
-                        {
-                            await Task.Delay(5000, ctx.CancellationToken);
-                        }
-                        catch (Exception e)
-                        {
-                            messages.Enqueue(e);
-                        }
+                        await Task.Delay(5000, ctx.CancellationToken);
                     }
-    
-                    messages.Enqueue(ctx.Message!);
-                })
-            );
-    
+                    catch (Exception e)
+                    {
+                        messages.Enqueue(e);
+                    }
+                }
+
+                messages.Enqueue(ctx.Message!);
+            })
+        );
+
         context.Send(pid, "hello");
         // Wait a little while the actor starts to process the message//
         await Task.Delay(15);
         await context.StopAsync(pid);
-    
+
         Assert.Equal(5, messages.Count);
         var msgs = messages.ToArray();
         Assert.IsType<Started>(msgs[0]);
@@ -233,14 +247,24 @@ public class ActorTests
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
 
-        var pid = SpawnActorFromFunc(ctx => {
-                if (ctx.Message is string) ctx.Respond("hey");
+        var pid = SpawnActorFromFunc(ctx =>
+            {
+                if (ctx.Message is string)
+                {
+                    ctx.Respond("hey");
+                }
+
                 return Task.CompletedTask;
             }
         );
 
-        var forwarder = SpawnForwarderFromFunc(ctx => {
-                if (ctx.Message is string) ctx.Forward(pid);
+        var forwarder = SpawnForwarderFromFunc(ctx =>
+            {
+                if (ctx.Message is string)
+                {
+                    ctx.Forward(pid);
+                }
+
                 return Task.CompletedTask;
             }
         );

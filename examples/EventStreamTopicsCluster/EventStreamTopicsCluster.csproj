@@ -7,22 +7,22 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Grpc.Tools" Version="2.46.3">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.48.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <Protobuf Include="messages.proto" />
+        <Protobuf Include="messages.proto" />
     </ItemGroup>
 
 </Project>

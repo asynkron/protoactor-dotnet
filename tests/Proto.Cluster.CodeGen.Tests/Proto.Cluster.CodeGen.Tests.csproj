@@ -8,16 +8,17 @@
 
     <ItemGroup>
         <PackageReference Include="GitHubActionsTestLogger" Version="2.0.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Handlebars.Net" Version="2.0.9" />
         <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
         <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Update="FluentAssertions" Version="6.6.0" />
+        <PackageReference Update="FluentAssertions" Version="6.7.0" />
+        <PackageReference Update="xunit" Version="2.4.2" />
     </ItemGroup>
 
     <ItemGroup>

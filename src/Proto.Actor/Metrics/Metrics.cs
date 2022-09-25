@@ -12,5 +12,8 @@ public class ProtoMetrics
 
     public readonly bool Enabled;
 
-    public ProtoMetrics(bool enabled) => Enabled = enabled;
+    public ProtoMetrics(bool enabled)
+    {
+        Enabled = enabled;
+    }
 }

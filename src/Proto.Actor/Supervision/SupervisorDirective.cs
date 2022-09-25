@@ -5,30 +5,31 @@
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+
 namespace Proto;
 
 /// <summary>
-/// Tells the supervisor what to do in case of failure.
+///     Tells the supervisor what to do in case of failure.
 /// </summary>
 public enum SupervisorDirective
 {
     /// <summary>
-    /// Subject continues processing after failure, starting with the next message in the mailbox.
+    ///     Subject continues processing after failure, starting with the next message in the mailbox.
     /// </summary>
     Resume,
 
     /// <summary>
-    /// Restarts the subject
+    ///     Restarts the subject
     /// </summary>
     Restart,
 
     /// <summary>
-    /// Permanently stops the subject
+    ///     Permanently stops the subject
     /// </summary>
     Stop,
 
     /// <summary>
-    /// Escalates the failure to the parent supervisor
+    ///     Escalates the failure to the parent supervisor
     /// </summary>
     Escalate
 }

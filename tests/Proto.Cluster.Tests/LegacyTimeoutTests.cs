@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading;
@@ -21,9 +22,10 @@ public class LegacyTimeoutTests
         await using var fixture = new Fixture(1);
         await fixture.InitializeAsync();
 
-        var response = await fixture.Members.First().RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
-            new SlowPing {Message = "hi", DelayMs = 4000}, new CancellationTokenSource(500).Token
-        );
+        var response = await fixture.Members.First()
+            .RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
+                new SlowPing { Message = "hi", DelayMs = 4000 }, new CancellationTokenSource(500).Token
+            );
 
         response.Should().BeNull();
     }

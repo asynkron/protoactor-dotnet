@@ -27,6 +27,7 @@ public class RedisIdentityClusterFixture : BaseInMemoryClusterFixture
     protected override IIdentityLookup GetIdentityLookup(string clusterName)
     {
         var identity = new IdentityStorageLookup(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer));
+
         return identity;
     }
 
@@ -49,8 +50,10 @@ public class ChaosMonkeyRedisIdentityClusterFixture : BaseInMemoryClusterFixture
     protected override IIdentityLookup GetIdentityLookup(string clusterName)
     {
         var identity = new IdentityStorageLookup(
-            new FailureInjectionStorage(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer, TimeSpan.FromSeconds(10)))
+            new FailureInjectionStorage(new RedisIdentityStorage(clusterName, RedisFixture.Multiplexer,
+                TimeSpan.FromSeconds(10)))
         );
+
         return identity;
     }
 
@@ -67,12 +70,15 @@ public class ChaosMonkeyRedisIdentityClusterFixture : BaseInMemoryClusterFixture
     }
 }
 
-static class RedisFixture
+internal static class RedisFixture
 {
     private static readonly Lazy<ConnectionMultiplexer> LazyConnection = new(()
-        => ConnectionMultiplexer.Connect(TestConfig.Configuration.GetConnectionString("Redis")));
+        => ConnectionMultiplexer.Connect(TestConfig.Configuration.GetConnectionString("Redis")!));
 
-    static RedisFixture() => ThreadPool.SetMinThreads(250, 250);
+    static RedisFixture()
+    {
+        ThreadPool.SetMinThreads(250, 250);
+    }
 
     public static ConnectionMultiplexer Multiplexer => LazyConnection.Value;
 }
@@ -83,10 +89,9 @@ public class RedisStorageTests : IdentityStorageTests
     {
     }
 
-    private static IIdentityStorage Init(string clusterName)
-        =>
-            new RedisIdentityStorage(clusterName,
-                RedisFixture.Multiplexer,
-                TimeSpan.FromMilliseconds(1500)
-            );
+    private static IIdentityStorage Init(string clusterName) =>
+        new RedisIdentityStorage(clusterName,
+            RedisFixture.Multiplexer,
+            TimeSpan.FromMilliseconds(1500)
+        );
 }

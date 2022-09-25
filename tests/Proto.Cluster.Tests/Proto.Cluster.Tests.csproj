@@ -1,35 +1,37 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-  <PropertyGroup>
-    <LangVersion>10</LangVersion>
-    <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
-    <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="GitHubActionsTestLogger" Version="2.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Grpc.Tools" Version="2.46.3" PrivateAssets="All" />
-    <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.3.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.3.0" />
-    <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="System.Interactive.Async" Version="6.0.1" />
-    <PackageReference Update="FluentAssertions" Version="6.6.0" />
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.1.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <Protobuf Include="*.proto" />
-  </ItemGroup>
-  
+    <PropertyGroup>
+        <NoWarn>8981</NoWarn>
+        <LangVersion>10</LangVersion>
+        <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+        <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="GitHubActionsTestLogger" Version="2.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Grpc.Tools" Version="2.48.1" PrivateAssets="All" />
+        <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.3.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.3.0" />
+        <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="System.Interactive.Async" Version="6.0.1" />
+        <PackageReference Update="FluentAssertions" Version="6.7.0" />
+        <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+        <PackageReference Update="xunit" Version="2.4.2" />
+    </ItemGroup>
+    <ItemGroup>
+        <Protobuf Include="*.proto" />
+    </ItemGroup>
+
 </Project>

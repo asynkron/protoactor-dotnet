@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <NoWarn>8981</NoWarn>
         <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
@@ -9,19 +10,17 @@
 
     <ItemGroup>
         <PackageReference Include="GitHubActionsTestLogger" Version="2.0.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+
         <PackageReference Include="coverlet.collector" Version="3.1.2">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Update="FluentAssertions" Version="6.6.0" />
+        <PackageReference Update="FluentAssertions" Version="6.7.0" />
         <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+        <PackageReference Update="xunit" Version="2.4.2" />
     </ItemGroup>
 
     <ItemGroup>

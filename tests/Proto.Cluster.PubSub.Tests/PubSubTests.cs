@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // ----------------------------------------------------------------------- 
+
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Proto.Cluster.Tests;
@@ -12,7 +13,7 @@ using static Proto.Cluster.PubSub.Tests.WaitHelper;
 
 namespace Proto.Cluster.PubSub.Tests;
 
-[Collection("PubSub")]  // The CI is just to slow to run cluster fixture based tests in parallel
+[Collection("PubSub")] // The CI is just to slow to run cluster fixture based tests in parallel
 public class PubSubTests : IClassFixture<PubSubClusterFixture>
 {
     private readonly PubSubClusterFixture _fixture;
@@ -38,8 +39,12 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         for (var i = 0; i < numMessages; i++)
         {
             var response = await _fixture.PublishData(topic, i);
+
             if (response == null)
+            {
                 _output.WriteLine(await _fixture.Members.DumpClusterState());
+            }
+
             response.Should().NotBeNull("publishing should not time out");
             response!.Status.Should().Be(PublishStatus.Ok);
         }
@@ -60,8 +65,12 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         {
             var data = Enumerable.Range(i * 10, 10).ToArray();
             var response = await _fixture.PublishDataBatch(topic, data);
+
             if (response == null)
+            {
                 _output.WriteLine(await _fixture.Members.DumpClusterState());
+            }
+
             response.Should().NotBeNull("publishing should not time out");
         }
 
@@ -83,8 +92,12 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         await _fixture.PublishData(topic, 1);
         await Task.Delay(1000); // give time for the message "not to be delivered" to second subscriber
 
-        await WaitUntil(() => _fixture.Deliveries.Count == 1, "only one delivery should happen because the other actor is unsubscribed");
-        _fixture.Deliveries.Should().HaveCount(1, "only one delivery should happen because the other actor is unsubscribed");
+        await WaitUntil(() => _fixture.Deliveries.Count == 1,
+            "only one delivery should happen because the other actor is unsubscribed");
+
+        _fixture.Deliveries.Should()
+            .HaveCount(1, "only one delivery should happen because the other actor is unsubscribed");
+
         _fixture.Deliveries.First().Identity.Should().Be(sub1, "the other actor should be unsubscribed");
     }
 
@@ -95,8 +108,13 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
 
         DataPublished? deliveredMessage = null;
 
-        var props = Props.FromFunc(ctx => {
-                if (ctx.Message is DataPublished d) deliveredMessage = d;
+        var props = Props.FromFunc(ctx =>
+            {
+                if (ctx.Message is DataPublished d)
+                {
+                    deliveredMessage = d;
+                }
+
                 return Task.CompletedTask;
             }
         );
@@ -118,8 +136,13 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
 
         var deliveryCount = 0;
 
-        var props = Props.FromFunc(ctx => {
-                if (ctx.Message is DataPublished) Interlocked.Increment(ref deliveryCount);
+        var props = Props.FromFunc(ctx =>
+            {
+                if (ctx.Message is DataPublished)
+                {
+                    Interlocked.Increment(ref deliveryCount);
+                }
+
                 return Task.CompletedTask;
             }
         );
@@ -145,8 +168,13 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
 
         // this scenario is only relevant for regular actors,
         // virtual actors always exist, so the msgs should never be deadlettered 
-        var props = Props.FromFunc(ctx => {
-                if (ctx.Message is DataPublished) Interlocked.Increment(ref deliveryCount);
+        var props = Props.FromFunc(ctx =>
+            {
+                if (ctx.Message is DataPublished)
+                {
+                    Interlocked.Increment(ref deliveryCount);
+                }
+
                 return Task.CompletedTask;
             }
         );
@@ -172,9 +200,11 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         response.Should().NotBeNull("the publish operation shouldn't have timed out");
         await WaitUntil(() => deliveryCount == 3, "second publish should be delivered only to one of the actors");
 
-        await WaitUntil(async () => {
+        await WaitUntil(async () =>
+            {
                 var subscribers = await _fixture.GetSubscribersForTopic(topic);
-                return !subscribers.Subscribers_!.Contains(new SubscriberIdentity {Pid = pid2});
+
+                return !subscribers.Subscribers_!.Contains(new SubscriberIdentity { Pid = pid2 });
             }
         );
     }
@@ -187,8 +217,12 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         var deliveryCount = 0;
 
         // a slow subscriber that times out
-        var props = Props.FromFunc(async ctx => {
-                await Task.Delay(4000, _fixture.CancelWhenDisposing); // 4 seconds is longer than the subscriber timeout configured in the test fixture
+        var props = Props.FromFunc(async ctx =>
+            {
+                await Task.Delay(4000,
+                    _fixture
+                        .CancelWhenDisposing); // 4 seconds is longer than the subscriber timeout configured in the test fixture
+
                 Interlocked.Increment(ref deliveryCount);
             }
         );
@@ -204,7 +238,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         // next published message should also be delivered
         await _fixture.PublishData(topic, 1);
 
-        await WaitUntil(() => deliveryCount == 2, 
+        await WaitUntil(() => deliveryCount == 2,
             "A timing out subscriber should not prevent subsequent publishes", TimeSpan.FromSeconds(10)
         );
     }
@@ -238,7 +272,8 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
 
         await _fixture.SubscribeAllTo(topic, subscriberIds);
 
-        await using var producer = _fixture.Members.First().BatchingProducer(topic, new BatchingProducerConfig {BatchSize = 10});
+        await using var producer = _fixture.Members.First()
+            .BatchingProducer(topic, new BatchingProducerConfig { BatchSize = 10 });
 
         var tasks = Enumerable.Range(0, numMessages).Select(i => producer.ProduceAsync(new DataPublished(i)));
         await Task.WhenAll(tasks);

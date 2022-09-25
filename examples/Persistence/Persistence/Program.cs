@@ -18,7 +18,7 @@ using Proto.Persistence.Sqlite;
 using Event = Proto.Persistence.Event;
 using Snapshot = Proto.Persistence.Snapshot;
 
-class Program
+internal class Program
 {
     private static void Main(string[] args)
     {
@@ -33,24 +33,30 @@ class Program
 
         switch (res)
         {
-            case "1": provider = new SqliteProvider(new SqliteConnectionStringBuilder {DataSource = "states.db"});
+            case "1":
+                provider = new SqliteProvider(new SqliteConnectionStringBuilder { DataSource = "states.db" });
+
                 break;
-            case "2": {
-                var settings = MongoClientSettings.FromUrl(MongoUrl.Create("mongodb://127.0.0.1:27017/ProtoPersistence"));
+            case "2":
+            {
+                var settings =
+                    MongoClientSettings.FromUrl(MongoUrl.Create("mongodb://127.0.0.1:27017/ProtoPersistence"));
+
                 var client = new MongoClient(settings);
                 var database = client.GetDatabase("ProtoPersistence");
                 provider = new MongoDBProvider(database);
+
                 break;
             }
         }
-        
+
         Console.WriteLine("Select Persistence strategy:");
         Console.WriteLine("1) EventSourcing and Snapshotting:");
         Console.WriteLine("2) Snapshotting:");
 
         var res2 = Console.ReadLine();
-        bool snapshotting = res2 == "1";
-        
+        var snapshotting = res2 == "1";
+
         var props = Props.FromProducer(() => new MyPersistenceActor(provider, snapshotting));
 
         var pid = context.Spawn(props);
@@ -61,9 +67,9 @@ class Program
     private class MyPersistenceActor : IActor
     {
         private readonly Persistence _persistence;
-        private State _state = new State();
-        private bool _timerStarted;
         private int _snapshot;
+        private State _state = new();
+        private bool _timerStarted;
 
         public MyPersistenceActor(IProvider provider, bool useEventSourcing)
         {
@@ -84,7 +90,6 @@ class Program
             }
         }
 
-        
         public async Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
@@ -95,20 +100,23 @@ class Program
                     Console.WriteLine("MyPersistenceActor - Current State: {0}", _state);
                     await _persistence.RecoverStateAsync();
                     context.Send(context.Self, new StartLoopActor());
+
                     break;
 
                 case StartLoopActor msg:
                     await Handle(context, msg);
+
                     break;
 
                 case RenameCommand msg:
 
-                    if ((_snapshot++ % 10) == 0)
+                    if (_snapshot++ % 10 == 0)
                     {
                         await _persistence.PersistSnapshotAsync(_state);
                     }
 
                     await Handle(msg);
+
                     break;
             }
         }
@@ -121,7 +129,9 @@ class Program
                     if (msg.Data is RenameEvent re)
                     {
                         _state.Name = re.Name;
-                        Console.WriteLine("MyPersistenceActor - RecoverEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+
+                        Console.WriteLine("MyPersistenceActor - RecoverEvent = Event.Index = {0}, Event.Data = {1}",
+                            msg.Index, msg.Data);
                     }
 
                     break;
@@ -129,12 +139,16 @@ class Program
                     if (msg.Data is RenameEvent rp)
                     {
                         _state.Name = rp.Name;
-                        Console.WriteLine("MyPersistenceActor - ReplayEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+
+                        Console.WriteLine("MyPersistenceActor - ReplayEvent = Event.Index = {0}, Event.Data = {1}",
+                            msg.Index, msg.Data);
                     }
 
                     break;
                 case PersistedEvent msg:
-                    Console.WriteLine("MyPersistenceActor - PersistedEvent = Event.Index = {0}, Event.Data = {1}", msg.Index, msg.Data);
+                    Console.WriteLine("MyPersistenceActor - PersistedEvent = Event.Index = {0}, Event.Data = {1}",
+                        msg.Index, msg.Data);
+
                     break;
             }
         }
@@ -147,7 +161,10 @@ class Program
                     if (msg.State is State ss)
                     {
                         _state = ss;
-                        Console.WriteLine("MyPersistenceActor - RecoverSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}", _persistence.Index,
+
+                        Console.WriteLine(
+                            "MyPersistenceActor - RecoverSnapshot = Snapshot.Index = {0}, Snapshot.State = {1}",
+                            _persistence.Index,
                             ss.Name
                         );
                     }
@@ -158,7 +175,10 @@ class Program
 
         private Task Handle(IContext context, StartLoopActor message)
         {
-            if (_timerStarted) return Task.CompletedTask;
+            if (_timerStarted)
+            {
+                return Task.CompletedTask;
+            }
 
             _timerStarted = true;
 
@@ -177,7 +197,7 @@ class Program
 
             _state.Name = message.Name;
 
-            await _persistence.PersistEventAsync(new RenameEvent {Name = message.Name});
+            await _persistence.PersistEventAsync(new RenameEvent { Name = message.Name });
         }
 
         private class StartLoopActor
@@ -200,8 +220,9 @@ class Program
                     break;
                 case LoopParentMessage _:
 
-                    _ = SafeTask.Run(async () => {
-                            context.Send(context.Parent, new RenameCommand {Name = GeneratePronounceableName(5)});
+                    _ = SafeTask.Run(async () =>
+                        {
+                            context.Send(context.Parent, new RenameCommand { Name = GeneratePronounceableName(5) });
 
                             await Task.Delay(TimeSpan.FromMilliseconds(500));
 

@@ -15,13 +15,15 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, _, actorId, providerState) = CreateTestActor(context);
-        context.Send(pid, new Multiply {Amount = 2});
+        context.Send(pid, new Multiply { Amount = 2 });
+
         await providerState
-            .GetEventsAsync(actorId, 0, long.MaxValue, o => {
+            .GetEventsAsync(actorId, 0, long.MaxValue, o =>
+                {
                     Assert.IsType<Multiplied>(o);
-                    Assert.Equal(2, ((Multiplied) o).Amount);
+                    Assert.Equal(2, ((Multiplied)o).Amount);
                 }
             );
     }
@@ -31,9 +33,9 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, _, actorId, providerState) = CreateTestActor(context);
-        context.Send(pid, new Multiply {Amount = 10});
+        context.Send(pid, new Multiply { Amount = 10 });
         context.Send(pid, new RequestSnapshot());
         var (snapshot, _) = await providerState.GetSnapshotAsync(actorId);
         var snapshotState = snapshot as State;
@@ -45,9 +47,9 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, _, actorId, providerState) = CreateTestActor(context);
-        context.Send(pid, new Multiply {Amount = 10});
+        context.Send(pid, new Multiply { Amount = 10 });
         await providerState.DeleteEventsAsync(actorId, 1);
         var events = new List<object>();
         await providerState.GetEventsAsync(actorId, 0, long.MaxValue, v => events.Add(v));
@@ -60,9 +62,9 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, _, actorId, providerState) = CreateTestActor(context);
-        context.Send(pid, new Multiply {Amount = 10});
+        context.Send(pid, new Multiply { Amount = 10 });
         context.Send(pid, new RequestSnapshot());
         await providerState.DeleteSnapshotsAsync(actorId, 1);
         var (snapshot, _) = await providerState.GetSnapshotAsync(actorId);
@@ -74,10 +76,10 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, props, _, _) = CreateTestActor(context);
-        context.Send(pid, new Multiply {Amount = 2});
-        context.Send(pid, new Multiply {Amount = 2});
+        context.Send(pid, new Multiply { Amount = 2 });
+        context.Send(pid, new Multiply { Amount = 2 });
         var state = await RestartActorAndGetState(pid, props, context);
         Assert.Equal(InitialState * 2 * 2, state);
     }
@@ -87,9 +89,9 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, props, actorId, providerState) = CreateTestActor(context);
-        await providerState.PersistSnapshotAsync(actorId, 0, new State {Value = 10});
+        await providerState.PersistSnapshotAsync(actorId, 0, new State { Value = 10 });
         var state = await RestartActorAndGetState(pid, props, context);
         Assert.Equal(10, state);
     }
@@ -99,10 +101,10 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, props, _, _) = CreateTestActor(context);
-        context.Send(pid, new Multiply {Amount = 2});
-        context.Send(pid, new Multiply {Amount = 2});
+        context.Send(pid, new Multiply { Amount = 2 });
+        context.Send(pid, new Multiply { Amount = 2 });
         context.Send(pid, new RequestSnapshot());
         var state = await RestartActorAndGetState(pid, props, context);
         var expectedState = InitialState * 2 * 2;
@@ -114,13 +116,13 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, props, _, _) = CreateTestActor(context);
-        context.Send(pid, new Multiply {Amount = 2});
-        context.Send(pid, new Multiply {Amount = 2});
+        context.Send(pid, new Multiply { Amount = 2 });
+        context.Send(pid, new Multiply { Amount = 2 });
         context.Send(pid, new RequestSnapshot());
-        context.Send(pid, new Multiply {Amount = 4});
-        context.Send(pid, new Multiply {Amount = 8});
+        context.Send(pid, new Multiply { Amount = 4 });
+        context.Send(pid, new Multiply { Amount = 8 });
         var state = await RestartActorAndGetState(pid, props, context);
         var expectedState = InitialState * 2 * 2 * 4 * 8;
         Assert.Equal(expectedState, state);
@@ -131,12 +133,12 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, props, actorId, providerState) = CreateTestActor(context);
 
-        context.Send(pid, new Multiply {Amount = 2});
+        context.Send(pid, new Multiply { Amount = 2 });
         context.Send(pid, new RequestSnapshot());
-        context.Send(pid, new Multiply {Amount = 4});
+        context.Send(pid, new Multiply { Amount = 4 });
         context.Send(pid, new RequestSnapshot());
         await providerState.DeleteEventsAsync(actorId, 2); // just to be sure state isn't recovered from events
         var state = await RestartActorAndGetState(pid, props, context);
@@ -148,12 +150,12 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, props, actorId, providerState) = CreateTestActor(context);
 
-        context.Send(pid, new Multiply {Amount = 2});
+        context.Send(pid, new Multiply { Amount = 2 });
         context.Send(pid, new RequestSnapshot());
-        context.Send(pid, new Multiply {Amount = 4});
+        context.Send(pid, new Multiply { Amount = 4 });
         context.Send(pid, new RequestSnapshot());
         await providerState.DeleteSnapshotsAsync(actorId, 0);
         await providerState.DeleteEventsAsync(actorId, 1);
@@ -167,14 +169,14 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, props, actorId, providerState) = CreateTestActor(context);
 
-        context.Send(pid, new Multiply {Amount = 2});
-        context.Send(pid, new Multiply {Amount = 2});
+        context.Send(pid, new Multiply { Amount = 2 });
+        context.Send(pid, new Multiply { Amount = 2 });
         context.Send(pid, new RequestSnapshot());
-        context.Send(pid, new Multiply {Amount = 4});
-        context.Send(pid, new Multiply {Amount = 8});
+        context.Send(pid, new Multiply { Amount = 4 });
+        context.Send(pid, new Multiply { Amount = 8 });
         await providerState.DeleteSnapshotsAsync(actorId, 3);
 
         var state = await RestartActorAndGetState(pid, props, context);
@@ -186,13 +188,13 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, _, _, _) = CreateTestActor(context);
 
-        context.Send(pid, new Multiply {Amount = 2});
+        context.Send(pid, new Multiply { Amount = 2 });
         var index = await context.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
         Assert.Equal(0, index);
-        context.Send(pid, new Multiply {Amount = 4});
+        context.Send(pid, new Multiply { Amount = 4 });
         index = await context.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
         Assert.Equal(1, index);
     }
@@ -202,12 +204,12 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, _, _, _) = CreateTestActor(context);
 
-        context.Send(pid, new Multiply {Amount = 2});
+        context.Send(pid, new Multiply { Amount = 2 });
         context.Send(pid, new RequestSnapshot());
-        context.Send(pid, new Multiply {Amount = 4});
+        context.Send(pid, new Multiply { Amount = 4 });
         var index = await context.RequestAsync<long>(pid, new GetIndex(), TimeSpan.FromSeconds(1));
         Assert.Equal(2, index);
     }
@@ -217,11 +219,11 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, props, _, _) = CreateTestActor(context);
 
-        context.Send(pid, new Multiply {Amount = 2});
-        context.Send(pid, new Multiply {Amount = 4});
+        context.Send(pid, new Multiply { Amount = 2 });
+        context.Send(pid, new Multiply { Amount = 4 });
 
         await context.StopAsync(pid);
         pid = context.Spawn(props);
@@ -236,18 +238,18 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var (pid, _, actorId, providerState) = CreateTestActor(context);
 
-        context.Send(pid, new Multiply {Amount = 2});
-        context.Send(pid, new Multiply {Amount = 2});
-        context.Send(pid, new Multiply {Amount = 4});
-        context.Send(pid, new Multiply {Amount = 8});
+        context.Send(pid, new Multiply { Amount = 2 });
+        context.Send(pid, new Multiply { Amount = 2 });
+        context.Send(pid, new Multiply { Amount = 4 });
+        context.Send(pid, new Multiply { Amount = 8 });
         var messages = new List<object>();
         await providerState.GetEventsAsync(actorId, 1, 2, msg => messages.Add(msg));
         Assert.Equal(2, messages.Count);
-        Assert.Equal(2, ((Multiplied) messages[0]).Amount);
-        Assert.Equal(4, ((Multiplied) messages[1]).Amount);
+        Assert.Equal(2, ((Multiplied)messages[0]).Amount);
+        Assert.Equal(4, ((Multiplied)messages[1]).Amount);
     }
 
     [Fact]
@@ -255,15 +257,17 @@ public class ExamplePersistentActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-            
+
         var actorId = Guid.NewGuid().ToString();
         var eventStore = new InMemoryProvider();
         var snapshotStore = new InMemoryProvider();
+
         var props = Props.FromProducer(() => new ExamplePersistentActor(eventStore, snapshotStore, actorId))
             .WithMailbox(() => new TestMailbox());
+
         var pid = context.Spawn(props);
 
-        context.Send(pid, new Multiply {Amount = 2});
+        context.Send(pid, new Multiply { Amount = 2 });
         var eventStoreMessages = new List<object>();
         var snapshotStoreMessages = new List<object>();
         await eventStore.GetEventsAsync(actorId, 0, 1, msg => eventStoreMessages.Add(msg));
@@ -276,10 +280,13 @@ public class ExamplePersistentActorTests
     {
         var actorId = Guid.NewGuid().ToString();
         var inMemoryProvider = new InMemoryProvider();
+
         var props = Props
             .FromProducer(() => new ExamplePersistentActor(inMemoryProvider, inMemoryProvider, actorId))
             .WithMailbox(() => new TestMailbox());
+
         var pid = context.Spawn(props);
+
         return (pid, props, actorId, inMemoryProvider);
     }
 
@@ -287,46 +294,50 @@ public class ExamplePersistentActorTests
     {
         await context.StopAsync(pid);
         pid = context.Spawn(props);
+
         return await context.RequestAsync<int>(pid, new GetState(), TimeSpan.FromMilliseconds(500));
     }
 }
 
-class State
+internal class State
 {
     public int Value { get; set; }
 }
 
-class GetState
+internal class GetState
 {
 }
 
-class GetIndex
+internal class GetIndex
 {
 }
 
-class Multiply
-{
-    public int Amount { get; set; }
-}
-
-class Multiplied
+internal class Multiply
 {
     public int Amount { get; set; }
 }
 
-class RequestSnapshot
+internal class Multiplied
+{
+    public int Amount { get; set; }
+}
+
+internal class RequestSnapshot
 {
 }
 
-class ExamplePersistentActor : IActor
+internal class ExamplePersistentActor : IActor
 {
     private readonly Persistence _persistence;
-    private State _state = new() {Value = 1};
+    private State _state = new() { Value = 1 };
 
-    public ExamplePersistentActor(IEventStore eventStore, ISnapshotStore snapshotStore, string persistenceId) => _persistence =
-        Persistence.WithEventSourcingAndSnapshotting(eventStore, snapshotStore, persistenceId,
-            ApplyEvent, ApplySnapshot
-        );
+    public ExamplePersistentActor(IEventStore eventStore, ISnapshotStore snapshotStore, string persistenceId)
+    {
+        _persistence =
+            Persistence.WithEventSourcingAndSnapshotting(eventStore, snapshotStore, persistenceId,
+                ApplyEvent, ApplySnapshot
+            );
+    }
 
     public async Task ReceiveAsync(IContext context)
     {
@@ -334,18 +345,23 @@ class ExamplePersistentActor : IActor
         {
             case Started _:
                 await _persistence.RecoverStateAsync();
+
                 break;
             case GetState _:
                 context.Respond(_state.Value);
+
                 break;
             case GetIndex _:
                 context.Respond(_persistence.Index);
+
                 break;
             case RequestSnapshot _:
-                await _persistence.PersistSnapshotAsync(new State {Value = _state.Value});
+                await _persistence.PersistSnapshotAsync(new State { Value = _state.Value });
+
                 break;
             case Multiply msg:
-                await _persistence.PersistEventAsync(new Multiplied {Amount = msg.Amount});
+                await _persistence.PersistEventAsync(new Multiplied { Amount = msg.Amount });
+
                 break;
         }
     }
@@ -356,12 +372,16 @@ class ExamplePersistentActor : IActor
         {
             case Multiplied msg:
                 _state.Value = _state.Value * msg.Amount;
+
                 break;
         }
     }
 
     private void ApplySnapshot(Snapshot snapshot)
     {
-        if (snapshot.State is State ss) _state = ss;
+        if (snapshot.State is State ss)
+        {
+            _state = ss;
+        }
     }
 }

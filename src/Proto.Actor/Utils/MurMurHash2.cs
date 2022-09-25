@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Text;
 
 namespace Proto;
@@ -19,16 +20,20 @@ public static class MurmurHash2
     private static uint Hash(byte[] data, uint seed)
     {
         var length = data.Length;
-        if (length == 0)
-            return 0;
 
-        var h = seed ^ (uint) length;
+        if (length == 0)
+        {
+            return 0;
+        }
+
+        var h = seed ^ (uint)length;
         var currentIndex = 0;
 
         while (length >= 4)
         {
-            var k = (uint) (data[currentIndex++] | (data[currentIndex++] << 8) | (data[currentIndex++] << 16) |
-                            (data[currentIndex++] << 24));
+            var k = (uint)(data[currentIndex++] | (data[currentIndex++] << 8) | (data[currentIndex++] << 16) |
+                           (data[currentIndex++] << 24));
+
             k *= m;
             k ^= k >> r;
             k *= m;
@@ -41,17 +46,20 @@ public static class MurmurHash2
         switch (length)
         {
             case 3:
-                h ^= (ushort) (data[currentIndex++] | (data[currentIndex++] << 8));
-                h ^= (uint) (data[currentIndex] << 16);
+                h ^= (ushort)(data[currentIndex++] | (data[currentIndex++] << 8));
+                h ^= (uint)(data[currentIndex] << 16);
                 h *= m;
+
                 break;
             case 2:
-                h ^= (ushort) (data[currentIndex++] | (data[currentIndex] << 8));
+                h ^= (ushort)(data[currentIndex++] | (data[currentIndex] << 8));
                 h *= m;
+
                 break;
             case 1:
                 h ^= data[currentIndex];
                 h *= m;
+
                 break;
         }
 

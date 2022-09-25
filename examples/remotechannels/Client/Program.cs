@@ -14,6 +14,7 @@ var channel = CreateUnbounded<MyMessage>();
 _ = ChannelSubscriber.StartNew(system.Root, publisher, channel);
 
 Console.WriteLine("Waiting for messages");
+
 await foreach (var msg in channel.Reader.ReadAllAsync())
 {
     Console.WriteLine($"Got message {msg.Value}");

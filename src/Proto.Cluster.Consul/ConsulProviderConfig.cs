@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Proto.Cluster.Consul;
@@ -29,15 +30,13 @@ public sealed record ConsulProviderConfig
     /// </summary>
     public TimeSpan BlockingWaitTime { get; init; } = TimeSpan.FromSeconds(20);
 
-    public ConsulProviderConfig WithServiceTtl(TimeSpan serviceTtl) =>
-        this with {ServiceTtl = serviceTtl};
+    public ConsulProviderConfig WithServiceTtl(TimeSpan serviceTtl) => this with { ServiceTtl = serviceTtl };
 
-    public ConsulProviderConfig WithRefreshTtl(TimeSpan refreshTtl) =>
-        this with {RefreshTtl = refreshTtl};
+    public ConsulProviderConfig WithRefreshTtl(TimeSpan refreshTtl) => this with { RefreshTtl = refreshTtl };
 
     public ConsulProviderConfig WithDeregisterCritical(TimeSpan deregisterCritical) =>
-        this with {DeregisterCritical = deregisterCritical};
+        this with { DeregisterCritical = deregisterCritical };
 
     public ConsulProviderConfig WithBlockingWaitTime(TimeSpan blockingWaitTime) =>
-        this with {BlockingWaitTime = blockingWaitTime};
+        this with { BlockingWaitTime = blockingWaitTime };
 }

@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
-    <LangVersion>10</LangVersion>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Proto.Remote\Proto.Remote.csproj" />
-    <ProjectReference Include="..\Messages\Chat.Messages.csproj" />
-  </ItemGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <LangVersion>10</LangVersion>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\Proto.Remote\Proto.Remote.csproj"/>
+        <ProjectReference Include="..\Messages\Chat.Messages.csproj"/>
+    </ItemGroup>
 </Project>

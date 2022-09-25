@@ -12,8 +12,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.21.1" />
-        <PackageReference Include="Grpc.Tools" Version="2.46.3">
+        <PackageReference Include="Google.Protobuf" Version="3.21.6" />
+        <PackageReference Include="Grpc.Tools" Version="2.48.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
@@ -23,5 +23,5 @@
     <ItemGroup>
         <Protobuf Include="protos.proto" GrpcServices="none" />
     </ItemGroup>
-    
+
 </Project>

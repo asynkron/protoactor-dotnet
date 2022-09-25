@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -15,13 +16,14 @@ namespace Proto.Remote;
 
 public sealed class RemoteMessageHandler
 {
-    private readonly ILogger _logger = Log.CreateLogger<RemoteMessageHandler>();
-    private readonly EndpointManager _endpointManager;
-    private readonly ActorSystem _system;
-    private readonly Serialization _serialization;
     private readonly LogLevel _deserializationErrorLogLevel;
+    private readonly EndpointManager _endpointManager;
+    private readonly ILogger _logger = Log.CreateLogger<RemoteMessageHandler>();
+    private readonly Serialization _serialization;
+    private readonly ActorSystem _system;
 
-    public RemoteMessageHandler(EndpointManager endpointManager, ActorSystem system, Serialization serialization, RemoteConfigBase remoteConfig)
+    public RemoteMessageHandler(EndpointManager endpointManager, ActorSystem system, Serialization serialization,
+        RemoteConfigBase remoteConfig)
     {
         _endpointManager = endpointManager;
         _system = system;
@@ -33,9 +35,11 @@ public sealed class RemoteMessageHandler
     {
         switch (currentMessage.MessageTypeCase)
         {
-            case RemoteMessage.MessageTypeOneofCase.MessageBatch: {
+            case RemoteMessage.MessageTypeOneofCase.MessageBatch:
+            {
                 var batch = currentMessage.MessageBatch;
                 var targets = new PID[batch.Targets.Count];
+
                 for (var i = 0; i < batch.Targets.Count; i++)
                 {
                     var target = new PID(_system.Address, batch.Targets[i]);
@@ -50,7 +54,7 @@ public sealed class RemoteMessageHandler
                         target.Ref(_system);
                     }
                 }
-                
+
                 for (var i = 0; i < batch.Senders.Count; i++)
                 {
                     var s = batch.Senders[i];
@@ -59,14 +63,14 @@ public sealed class RemoteMessageHandler
                     {
                         s.Address = remoteAddress;
                     }
-                    
+
                     s.Ref(_system);
                 }
 
                 var typeNames = batch.TypeNames.ToArray();
 
-                
                 Counter<long>? m = null;
+
                 if (_system.Metrics.Enabled)
                 {
                     m = RemoteMetrics.RemoteDeserializedMessageCount;
@@ -92,7 +96,9 @@ public sealed class RemoteMessageHandler
 
                     if (_system.Metrics.Enabled)
                     {
-                        m!.Add(1, new("id", _system.Id), new("address", _system.Address), new("messagetype", typeName));
+                        m!.Add(1, new KeyValuePair<string, object?>("id", _system.Id),
+                            new KeyValuePair<string, object?>("address", _system.Address),
+                            new KeyValuePair<string, object?>("messagetype", typeName));
                     }
 
                     object message;
@@ -103,18 +109,25 @@ public sealed class RemoteMessageHandler
 
                         //translate from on-the-wire representation to in-process representation
                         //this only applies to root level messages, and never on nested child messages
-                        if (message is IRootSerialized serialized) message = serialized.Deserialize(_system);
+                        if (message is IRootSerialized serialized)
+                        {
+                            message = serialized.Deserialize(_system);
+                        }
                     }
                     catch (Exception ex)
                     {
                         ex.CheckFailFast();
+
                         if (_logger.IsEnabled(_deserializationErrorLogLevel))
+                        {
                             _logger.Log(
                                 _deserializationErrorLogLevel,
                                 ex,
                                 "[{SystemAddress}] Unable to deserialize message with {Type}",
                                 _system.Address,
                                 typeName);
+                        }
+
                         continue;
                     }
 
@@ -122,24 +135,41 @@ public sealed class RemoteMessageHandler
                     {
                         case Terminated msg:
                             if (_logger.IsEnabled(LogLevel.Trace))
-                                _logger.LogTrace("[{SystemAddress}] Received message {MessageType} {Message} for {Target}", _system.Address,
+                            {
+                                _logger.LogTrace(
+                                    "[{SystemAddress}] Received message {MessageType} {Message} for {Target}",
+                                    _system.Address,
                                     msg.GetType().Name, msg, target
                                 );
+                            }
+
                             var endpoint = msg.Who.TryGetSystemId(_system, out var systemId)
                                 ? _endpointManager.GetClientEndpoint(systemId)
                                 : _endpointManager.GetServerEndpoint(msg.Who.Address);
+
                             endpoint.RemoteTerminate(target, msg);
+
                             break;
                         case SystemMessage sys:
                             if (_logger.IsEnabled(LogLevel.Trace))
-                                _logger.LogTrace("[{SystemAddress}] Received system message {MessageType} {Message} for {Target}", _system.Address,
+                            {
+                                _logger.LogTrace(
+                                    "[{SystemAddress}] Received system message {MessageType} {Message} for {Target}",
+                                    _system.Address,
                                     sys.GetType().Name, sys, target
                                 );
+                            }
+
                             target.SendSystemMessage(_system, sys);
+
                             break;
                         default:
                             Proto.MessageHeader? header = null;
-                            if (envelope.MessageHeader is not null) header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
+
+                            if (envelope.MessageHeader is not null)
+                            {
+                                header = new Proto.MessageHeader(envelope.MessageHeader.HeaderData);
+                            }
 
                             object? messageOrEnvelope = null;
 
@@ -153,14 +183,20 @@ public sealed class RemoteMessageHandler
                             }
 
                             if (_logger.IsEnabled(LogLevel.Trace))
-                                _logger.LogTrace("[{SystemAddress}] Received user message {MessageType} {Message} for {Target} from {Sender}",
+                            {
+                                _logger.LogTrace(
+                                    "[{SystemAddress}] Received user message {MessageType} {Message} for {Target} from {Sender}",
                                     _system.Address, message.GetType().Name, message, target, sender
                                 );
+                            }
+
                             _system.Root.Send(target, messageOrEnvelope);
+
                             break;
                     }
                 }
             }
+
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(currentMessage));

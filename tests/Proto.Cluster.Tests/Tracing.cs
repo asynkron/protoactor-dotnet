@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -18,9 +19,11 @@ public static class Tracing
 
     public static readonly ActivitySource ActivitySource = new(ActivitySourceName);
 
-    public static Activity StartActivity([CallerMemberName] string callerName = "N/A") => ActivitySource.StartActivity(callerName);
+    public static Activity StartActivity([CallerMemberName] string callerName = "N/A") =>
+        ActivitySource.StartActivity(callerName);
 
-    public static async Task Trace(Func<Task> callBack, ITestOutputHelper testOutputHelper, [CallerMemberName] string callerName = "N/A")
+    public static async Task Trace(Func<Task> callBack, ITestOutputHelper testOutputHelper,
+        [CallerMemberName] string callerName = "N/A")
     {
         using var activity = StartActivity(callerName);
 
@@ -37,6 +40,7 @@ public static class Tracing
         {
             activity?.SetStatus(ActivityStatusCode.Error);
             activity?.RecordException(e);
+
             throw;
         }
     }

@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using chat.messages;
@@ -14,7 +15,7 @@ using static Proto.Remote.GrpcNet.GrpcNetRemoteConfig;
 
 namespace Client;
 
-static class Program
+internal static class Program
 {
     private static IRootContext context;
 
@@ -28,6 +29,7 @@ static class Program
             .SetMinimumLevel(LogLevel.Information)
             .AddConsole()
         ));
+
         InitializeActorSystem();
         SpawnClient();
         ObtainServerPid();
@@ -56,17 +58,21 @@ static class Program
     private static void SpawnClient() =>
         client = context.Spawn(
             Props.FromFunc(
-                ctx => {
+                ctx =>
+                {
                     switch (ctx.Message)
                     {
                         case Connected connected:
                             Console.WriteLine(connected.Message);
+
                             break;
                         case SayResponse sayResponse:
                             Console.WriteLine($"{sayResponse.UserName} {sayResponse.Message}");
+
                             break;
                         case NickResponse nickResponse:
                             Console.WriteLine($"{nickResponse.OldUserName} is now {nickResponse.NewUserName}");
+
                             break;
                     }
 
@@ -75,8 +81,7 @@ static class Program
             )
         );
 
-    private static void ObtainServerPid() =>
-        server = PID.FromAddress("127.0.0.1:8000", "chatserver");
+    private static void ObtainServerPid() => server = PID.FromAddress("127.0.0.1:8000", "chatserver");
 
     private static void ConnectToServer() =>
         context.Send(
@@ -96,10 +101,14 @@ static class Program
             var text = Console.ReadLine();
 
             if (string.IsNullOrWhiteSpace(text))
+            {
                 continue;
+            }
 
             if (text.Equals("/exit"))
+            {
                 return;
+            }
 
             if (text.StartsWith("/nick "))
             {

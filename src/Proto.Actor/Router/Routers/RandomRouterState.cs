@@ -3,11 +3,12 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Proto.Router.Routers;
 
-class RandomRouterState : RouterState
+internal class RandomRouterState : RouterState
 {
     private readonly Random _random;
     private readonly ISenderContext _senderContext;

@@ -12,7 +12,10 @@ namespace Proto;
 
 public abstract class Process
 {
-    protected Process(ActorSystem system) => System = system;
+    protected Process(ActorSystem system)
+    {
+        System = system;
+    }
 
     protected ActorSystem System { get; }
 

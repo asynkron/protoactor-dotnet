@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -38,6 +39,7 @@ public class CaptureContextActor : IActor
         if (context.Message is Unstash unStash)
         {
             await ProcessStash(context, unStash);
+
             return;
         }
 
@@ -64,6 +66,7 @@ public class CaptureContextActor : IActor
     public Task RunningBehavior(IContext context)
     {
         _results.Enqueue(new UnstashResult(context.Message!, context.Sender!));
+
         return Task.CompletedTask;
     }
 }

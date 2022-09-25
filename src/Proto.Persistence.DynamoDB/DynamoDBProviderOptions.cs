@@ -12,8 +12,15 @@ public class DynamoDBProviderOptions
 {
     public DynamoDBProviderOptions(string eventsTableName, string snapshotsTableName)
     {
-        if (string.IsNullOrEmpty(eventsTableName)) throw new ArgumentNullException(nameof(eventsTableName));
-        if (string.IsNullOrEmpty(snapshotsTableName)) throw new ArgumentNullException(nameof(snapshotsTableName));
+        if (string.IsNullOrEmpty(eventsTableName))
+        {
+            throw new ArgumentNullException(nameof(eventsTableName));
+        }
+
+        if (string.IsNullOrEmpty(snapshotsTableName))
+        {
+            throw new ArgumentNullException(nameof(snapshotsTableName));
+        }
 
         EventsTableName = eventsTableName;
         EventsTableHashKey = "ActorName";

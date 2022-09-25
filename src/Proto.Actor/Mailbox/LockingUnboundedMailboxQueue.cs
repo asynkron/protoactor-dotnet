@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Threading;
 
@@ -20,9 +21,13 @@ public class LockingUnboundedMailboxQueue : IMailboxQueue
     }
 
     public bool HasMessages => Length > 0;
-    public int Length {
-        get {
+
+    public int Length
+    {
+        get
+        {
             Interlocked.Read(ref _count);
+
             return (int)_count;
         }
     }
@@ -42,13 +47,14 @@ public class LockingUnboundedMailboxQueue : IMailboxQueue
         {
             return null;
         }
-        
+
         lock (_lock)
         {
             if (_queue.TryDequeue(out var msg))
             {
                 Interlocked.Decrement(ref _count);
             }
+
             return msg;
         }
     }

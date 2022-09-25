@@ -11,16 +11,16 @@ using Microsoft.Extensions.Logging;
 namespace Proto.Cluster.Identity;
 
 /// <summary>
-/// Allows cluster nodes to ask other nodes to instantiate virtual actors on their behalf
-/// This is relevant when the calling node does not have the correct kind, or in combination with
-/// local affinity strategies, to relocate virtual actor activations to the correct partition
+///     Allows cluster nodes to ask other nodes to instantiate virtual actors on their behalf
+///     This is relevant when the calling node does not have the correct kind, or in combination with
+///     local affinity strategies, to relocate virtual actor activations to the correct partition
 /// </summary>
-class IdentityActivatorProxy : IActor
+internal class IdentityActivatorProxy : IActor
 {
     public const string ActorName = "$proxy-activator";
+    private const int MaxReplaceAttempts = 5;
 
     private static readonly ILogger Logger = Log.CreateLogger<IdentityActivatorProxy>();
-    private const int MaxReplaceAttempts = 5;
 
     public IdentityActivatorProxy(Cluster cluster)
     {
@@ -31,14 +31,15 @@ class IdentityActivatorProxy : IActor
     private IIdentityLookup IdentityLookup { get; }
     private PidCache PidCache { get; }
 
-    public Task ReceiveAsync(IContext context) => context.Message switch
-    {
-        ProxyActivationRequest activationRequest => Activate(activationRequest, context),
-        _                                        => Task.CompletedTask
-    };
+    public Task ReceiveAsync(IContext context) =>
+        context.Message switch
+        {
+            ProxyActivationRequest activationRequest => Activate(activationRequest, context),
+            _                                        => Task.CompletedTask
+        };
 
-    private Task Activate(ProxyActivationRequest activationRequest, IContext context)
-        => activationRequest.ReplacedActivation switch
+    private Task Activate(ProxyActivationRequest activationRequest, IContext context) =>
+        activationRequest.ReplacedActivation switch
         {
             { } existing => ReplaceActivation(activationRequest.ClusterIdentity, existing, context),
             _            => Activate(activationRequest.ClusterIdentity, context)
@@ -51,9 +52,11 @@ class IdentityActivatorProxy : IActor
         if (context.Sender is not null)
         {
             context.ReenterAfter(target,
-                task => {
+                task =>
+                {
                     var pid = task.IsCompletedSuccessfully ? task.Result : null;
                     Respond(context, pid);
+
                     return Task.CompletedTask;
                 }
             );
@@ -64,7 +67,10 @@ class IdentityActivatorProxy : IActor
 
     private static void Respond(IContext context, PID? result)
     {
-        if (context.Sender is null) return;
+        if (context.Sender is null)
+        {
+            return;
+        }
 
         context.Respond(new ActivationResponse
             {
@@ -83,6 +89,7 @@ class IdentityActivatorProxy : IActor
                 // Could also be stale, but we can assume it is not to give a fast happy path.
                 // If it is stale, the caller will fix it when attempting to call it. 
                 Respond(context, current);
+
                 return Task.CompletedTask;
             }
 
@@ -91,7 +98,8 @@ class IdentityActivatorProxy : IActor
         }
 
         context.ReenterAfter(GetPid(identity, context.CancellationToken),
-            task => {
+            task =>
+            {
                 var activation = task.IsCompletedSuccessfully ? task.Result : null;
 
                 // Check if retrieved PID is stale. Replace should be called after the original activation has been stopped,
@@ -100,18 +108,30 @@ class IdentityActivatorProxy : IActor
                 {
                     if (attempt <= MaxReplaceAttempts)
                     {
-                        if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Stale PID {Pid} from IdentityLookup when replacing {ClusterIdentity}. Will retry, attempt {Attempt} ", replacedPid, identity, attempt);
-                        context.ReenterAfter(Task.Delay(50 * attempt), () => ReplaceActivation(identity, replacedPid, context, attempt + 1));
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                        {
+                            Logger.LogDebug(
+                                "Stale PID {Pid} from IdentityLookup when replacing {ClusterIdentity}. Will retry, attempt {Attempt} ",
+                                replacedPid, identity, attempt);
+                        }
+
+                        context.ReenterAfter(Task.Delay(50 * attempt),
+                            () => ReplaceActivation(identity, replacedPid, context, attempt + 1));
+
                         return Task.CompletedTask;
                     }
 
-                    Logger.LogWarning("Stale PID {Pid} from IdentityLookup when replacing {ClusterIdentity}. Retries exhausted", replacedPid, identity);
+                    Logger.LogWarning(
+                        "Stale PID {Pid} from IdentityLookup when replacing {ClusterIdentity}. Retries exhausted",
+                        replacedPid, identity);
                 }
 
                 Respond(context, activation);
+
                 return Task.CompletedTask;
             }
         );
+
         return Task.CompletedTask;
     }
 

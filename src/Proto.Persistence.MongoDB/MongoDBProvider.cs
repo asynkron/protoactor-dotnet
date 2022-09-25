@@ -57,17 +57,18 @@ public class MongoDBProvider : IProvider
     public async Task<long> PersistEventAsync(string actorName, long index, object @event)
     {
         await EventCollection.InsertOneAsync(new Event(actorName, index, @event));
+
         return index++;
     }
 
-    public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
-        => SnapshotCollection.InsertOneAsync(new Snapshot(actorName, index, snapshot));
+    public Task PersistSnapshotAsync(string actorName, long index, object snapshot) =>
+        SnapshotCollection.InsertOneAsync(new Snapshot(actorName, index, snapshot));
 
-    public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
-        => EventCollection.DeleteManyAsync(e => e.ActorName == actorName && e.EventIndex <= inclusiveToIndex);
+    public Task DeleteEventsAsync(string actorName, long inclusiveToIndex) =>
+        EventCollection.DeleteManyAsync(e => e.ActorName == actorName && e.EventIndex <= inclusiveToIndex);
 
-    public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-        => SnapshotCollection.DeleteManyAsync(s => s.ActorName == actorName && s.SnapshotIndex <= inclusiveToIndex);
+    public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex) =>
+        SnapshotCollection.DeleteManyAsync(s => s.ActorName == actorName && s.SnapshotIndex <= inclusiveToIndex);
 
     private void SetupIndexes()
     {

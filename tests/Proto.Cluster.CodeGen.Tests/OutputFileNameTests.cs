@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.IO;
 using FluentAssertions;
 using Xunit;
@@ -20,7 +21,7 @@ public class OutputFileNameTests
 
         outputFileName.Should().MatchRegex(@"Actors-[0-9A-F]+\.cs");
     }
-        
+
     [Fact]
     public void CanGetOutputFileNameWithTemplate()
     {
@@ -40,12 +41,12 @@ public class OutputFileNameTests
 
         firstFileName.Should().NotBe(secondFileName);
     }
-        
+
     [Fact]
     public void CanGetDifferentFileNamesForDifferentTemplates()
     {
         var inputFile = new FileInfo(@"First\Namespace\Actors.proto");
-            
+
         var firstFileName = OutputFileName.GetOutputFileName(inputFile, new FileInfo(@"Some\Namespace\Template-1.cs"));
         var secondFileName = OutputFileName.GetOutputFileName(inputFile, new FileInfo(@"Some\Namespace\Template-2.cs"));
 

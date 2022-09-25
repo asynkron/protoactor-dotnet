@@ -119,7 +119,9 @@ public class RandomGroupRouterTests
 
         var props = system.Root.NewRandomGroup(10000, routee1, routee2, routee3)
             .WithMailbox(() => new TestMailbox());
+
         var router = system.Root.Spawn(props);
+
         return (router, routee1, routee2, routee3);
     }
 
@@ -133,9 +135,11 @@ public class RandomGroupRouterTests
             {
                 case "received?":
                     context.Respond(_received!);
+
                     break;
                 case string msg:
                     _received = msg;
+
                     break;
             }
 

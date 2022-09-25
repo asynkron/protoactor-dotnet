@@ -22,15 +22,19 @@ public class InMemoryProvider : IProvider
     public Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
     {
         if (!_snapshots.TryGetValue(actorName, out var snapshots))
+        {
             return Task.FromResult<(object, long)>((null, 0));
+        }
 
         var snapshot = snapshots.OrderBy(ss => ss.Key).LastOrDefault();
+
         return Task.FromResult((snapshot.Value, snapshot.Key));
     }
 
     public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
         var lastIndex = 0L;
+
         if (_events.TryGetValue(actorName, out var events))
         {
             foreach (var e in events.Where(e => e.Key >= indexStart && e.Key <= indexEnd))
@@ -49,7 +53,7 @@ public class InMemoryProvider : IProvider
 
         events.Add(index, @event);
 
-        long max = events.Max(x => x.Key);
+        var max = events.Max(x => x.Key);
 
         return Task.FromResult(max);
     }
@@ -68,7 +72,9 @@ public class InMemoryProvider : IProvider
     public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
     {
         if (!_events.TryGetValue(actorName, out var events))
+        {
             return Task.FromResult<(object, long)>((null, 0));
+        }
 
         var eventsToRemove = events.Where(s => s.Key <= inclusiveToIndex)
             .Select(e => e.Key)
@@ -82,7 +88,9 @@ public class InMemoryProvider : IProvider
     public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
     {
         if (!_snapshots.TryGetValue(actorName, out var snapshots))
+        {
             return Task.FromResult<(object, long)>((null, 0));
+        }
 
         var snapshotsToRemove = snapshots.Where(s => s.Key <= inclusiveToIndex)
             .Select(snapshot => snapshot.Key)

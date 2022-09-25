@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Immutable;
 using System.Threading;
@@ -17,9 +18,12 @@ namespace Proto;
 //because most actors do not need any of this, it is extra state that comes at a cost
 //most actors are short lived, no children. no stash, no timers
 //therefore we only use this extra state when needed, to keep actors as lightweight as possible
-public sealed class ActorContextExtras: IDisposable
+public sealed class ActorContextExtras : IDisposable
 {
-    public ActorContextExtras(IContext context) => Context = context;
+    public ActorContextExtras(IContext context)
+    {
+        Context = context;
+    }
 
     public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
     public Timer? ReceiveTimeoutTimer { get; private set; }
@@ -29,6 +33,12 @@ public sealed class ActorContextExtras: IDisposable
     public CancellationTokenSource CancellationTokenSource { get; } = new();
 
     internal TypeDictionary<object, ActorContextExtras> Store { get; } = new(5, 1);
+
+    public void Dispose()
+    {
+        ReceiveTimeoutTimer?.Dispose();
+        CancellationTokenSource.Dispose();
+    }
 
     public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
 
@@ -49,10 +59,4 @@ public sealed class ActorContextExtras: IDisposable
     public void Watch(PID watcher) => Watchers = Watchers.Add(watcher);
 
     public void Unwatch(PID watcher) => Watchers = Watchers.Remove(watcher);
-
-    public void Dispose()
-    {
-        ReceiveTimeoutTimer?.Dispose();
-        CancellationTokenSource.Dispose();
-    }
 }

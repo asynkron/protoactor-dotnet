@@ -13,8 +13,13 @@ public class BatchFutureTests : ActorTestBase
     [Fact]
     public async Task Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()
     {
-        var pid = Context.Spawn(Props.FromFunc(ctx => {
-                    if (ctx.Message is string) ctx.Respond("hey");
+        var pid = Context.Spawn(Props.FromFunc(ctx =>
+                {
+                    if (ctx.Message is string)
+                    {
+                        ctx.Respond("hey");
+                    }
+
                     return Task.CompletedTask;
                 }
             )
@@ -32,8 +37,13 @@ public class BatchFutureTests : ActorTestBase
     [Fact]
     public async Task Given_Actor_When_ReplyIsNull_Should_Return()
     {
-        var pid = Context.Spawn(Props.FromFunc(ctx => {
-                    if (ctx.Message is string) ctx.Respond(null!);
+        var pid = Context.Spawn(Props.FromFunc(ctx =>
+                {
+                    if (ctx.Message is string)
+                    {
+                        ctx.Respond(null!);
+                    }
+
                     return Task.CompletedTask;
                 }
             )
@@ -51,8 +61,13 @@ public class BatchFutureTests : ActorTestBase
     [Fact]
     public async Task Futures_should_map_to_correct_response()
     {
-        var pid = Context.Spawn(Props.FromFunc(ctx => {
-                    if (ctx.Sender is not null) ctx.Respond(ctx.Message!);
+        var pid = Context.Spawn(Props.FromFunc(ctx =>
+                {
+                    if (ctx.Sender is not null)
+                    {
+                        ctx.Respond(ctx.Message!);
+                    }
+
                     return Task.CompletedTask;
                 }
             )
@@ -77,7 +92,8 @@ public class BatchFutureTests : ActorTestBase
     [Fact]
     public async Task Timeouts_should_give_timeout_exception()
     {
-        var pid = Context.Spawn(Props.FromFunc(async ctx => {
+        var pid = Context.Spawn(Props.FromFunc(async ctx =>
+                {
                     if (ctx.Sender is not null)
                     {
                         await Task.Delay(1);
@@ -100,18 +116,26 @@ public class BatchFutureTests : ActorTestBase
         }
 
         await futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }
-        ).Should().ThrowAsync<TimeoutException>();
+            )
+            .Should()
+            .ThrowAsync<TimeoutException>();
     }
 
     [Fact]
     public async Task Batch_contexts_handles_batch_correctly()
     {
-        var pid = Context.Spawn(Props.FromFunc(ctx => {
-                    if (ctx.Sender is not null) ctx.Respond(ctx.Message!);
+        var pid = Context.Spawn(Props.FromFunc(ctx =>
+                {
+                    if (ctx.Sender is not null)
+                    {
+                        ctx.Respond(ctx.Message!);
+                    }
+
                     return Task.CompletedTask;
                 }
             )
         );
+
         const int size = 100;
 
         var cancellationToken = CancellationTokens.FromSeconds(5);

@@ -3,6 +3,7 @@
 //       Copyright (C) 2015-2022 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Immutable;
 using Grpc.Core;
@@ -67,23 +68,24 @@ public abstract record RemoteConfigBase
     public LogLevel DeserializationErrorLogLevel { get; init; } = LogLevel.Error;
 
     /// <summary>
-    /// Endpoint writer options
+    ///     Endpoint writer options
     /// </summary>
     public EndpointWriterOptions EndpointWriterOptions { get; init; } = new();
 
     /// <summary>
-    /// Serializations system that manages serializers for remote messages.
+    ///     Serializations system that manages serializers for remote messages.
     /// </summary>
     public Serialization Serialization { get; init; } = new();
 
     /// <summary>
-    /// After the remote connection is terminated, this is the time period the enpoint manager will monitor messages arriving to this connection
-    /// and generate deadletter events for them. Default value is 3 seconds.
+    ///     After the remote connection is terminated, this is the time period the enpoint manager will monitor messages
+    ///     arriving to this connection
+    ///     and generate deadletter events for them. Default value is 3 seconds.
     /// </summary>
     public TimeSpan? WaitAfterEndpointTerminationTimeSpan { get; init; } = TimeSpan.FromSeconds(3);
 
     /// <summary>
-    /// Enables remote retrieval of process information and statistics from this node
+    ///     Enables remote retrieval of process information and statistics from this node
     /// </summary>
     public bool RemoteDiagnostics { get; set; }
 }

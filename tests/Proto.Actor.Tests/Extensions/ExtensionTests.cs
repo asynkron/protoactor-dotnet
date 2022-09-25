@@ -17,17 +17,20 @@ public class ExtensionB : IActorSystemExtension<ExtensionB>
 public class ExtensionTests
 {
     [Fact]
-    public void ExtensionsGetOwnId() => Assert.NotEqual(IActorSystemExtension<ExtensionA>.Id, IActorSystemExtension<ExtensionB>.Id);
+    public void ExtensionsGetOwnId() =>
+        Assert.NotEqual(IActorSystemExtension<ExtensionA>.Id, IActorSystemExtension<ExtensionB>.Id);
 
     [Fact]
     public async Task CanGetExtension()
     {
         await using var system = new ActorSystem();
+
         system.Extensions.Register(new ExtensionA
             {
                 A = 123
             }
         );
+
         system.Extensions.Register(new ExtensionB
             {
                 B = "Hello"

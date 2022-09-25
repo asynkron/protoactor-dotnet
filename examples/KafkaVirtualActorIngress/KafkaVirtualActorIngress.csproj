@@ -7,24 +7,24 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Google.Protobuf" Version="3.21.1" />
-      <PackageReference Include="Grpc.Tools" Version="2.46.3">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-      <PackageReference Include="StackExchange.Redis" Version="2.5.61" />
+        <PackageReference Include="Google.Protobuf" Version="3.21.6" />
+        <PackageReference Include="Grpc.Tools" Version="2.48.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="StackExchange.Redis" Version="2.6.66" />
     </ItemGroup>
 
     <ItemGroup>
-      <Protobuf Include="MyMessages.proto" />
+        <Protobuf Include="MyMessages.proto" />
     </ItemGroup>
 
 </Project>

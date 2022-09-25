@@ -17,12 +17,15 @@ public class DisposableActorTests
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var disposeCalled = false;
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
+
         var childProps = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
             .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
             .WithChildSupervisorStrategy(strategy);
+
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
             .WithMailbox(() => new TestMailbox())
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
         childMailboxStats.Reset.Wait(1000);
@@ -38,12 +41,15 @@ public class DisposableActorTests
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var disposeCalled = false;
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
+
         var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
             .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
             .WithChildSupervisorStrategy(strategy);
+
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
             .WithMailbox(() => new TestMailbox())
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
         childMailboxStats.Reset.Wait(1000);
@@ -59,12 +65,15 @@ public class DisposableActorTests
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var disposeCalled = false;
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
+
         var childProps = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
             .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
             .WithChildSupervisorStrategy(strategy);
+
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
             .WithMailbox(() => new TestMailbox())
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
         childMailboxStats.Reset.Wait(1000);
@@ -80,12 +89,15 @@ public class DisposableActorTests
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var disposeCalled = false;
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
+
         var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
             .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
             .WithChildSupervisorStrategy(strategy);
+
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
             .WithMailbox(() => new TestMailbox())
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
         childMailboxStats.Reset.Wait(1000);
@@ -99,8 +111,10 @@ public class DisposableActorTests
         var context = system.Root;
 
         var disposeCalled = false;
+
         var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
             .WithMailbox(() => new TestMailbox());
+
         var pid = context.Spawn(props);
         await context.StopAsync(pid);
         Assert.True(disposeCalled);
@@ -113,8 +127,10 @@ public class DisposableActorTests
         var context = system.Root;
 
         var disposeCalled = false;
+
         var props = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
             .WithMailbox(() => new TestMailbox());
+
         var pid = context.Spawn(props);
         await context.StopAsync(pid);
         Assert.True(disposeCalled);
@@ -131,12 +147,16 @@ public class DisposableActorTests
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
+
         var child1Props = Props.FromProducer(() => new DisposableActor(() => child1Disposed = true))
             .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+
         var child2Props = Props.FromProducer(() => new DisposableActor(() => child2Disposed = true))
             .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+
         var parentProps = Props.FromProducer(() => new ParentWithMultipleChildrenActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "crash");
@@ -152,14 +172,23 @@ public class DisposableActorTests
         private readonly Props _childProps;
         private PID? _childPid;
 
-        public SupervisingActor(Props childProps) => _childProps = childProps;
+        public SupervisingActor(Props childProps)
+        {
+            _childProps = childProps;
+        }
 
         public Task ReceiveAsync(IContext context)
         {
             if (context.Message is Started)
+            {
                 _childPid = context.Spawn(_childProps);
+            }
+
             if (context.Message is string)
+            {
                 context.Send(_childPid!, context.Message);
+            }
+
             return Task.CompletedTask;
         }
     }
@@ -168,7 +197,10 @@ public class DisposableActorTests
     {
         private readonly Action _onDispose;
 
-        public AsyncDisposableActor(Action onDispose) => _onDispose = onDispose;
+        public AsyncDisposableActor(Action onDispose)
+        {
+            _onDispose = onDispose;
+        }
 
         public Task ReceiveAsync(IContext context)
         {
@@ -184,6 +216,7 @@ public class DisposableActorTests
         public ValueTask DisposeAsync()
         {
             _onDispose();
+
             return default;
         }
     }
@@ -192,7 +225,10 @@ public class DisposableActorTests
     {
         private readonly Action _onDispose;
 
-        public DisposableActor(Action onDispose) => _onDispose = onDispose;
+        public DisposableActor(Action onDispose)
+        {
+            _onDispose = onDispose;
+        }
 
         public Task ReceiveAsync(IContext context)
         {
@@ -229,9 +265,11 @@ public class DisposableActorTests
                 case Started _:
                     Child1 = context.Spawn(_child1Props);
                     Child2 = context.Spawn(_child2Props);
+
                     break;
                 case string _:
                     context.Send(Child1!, context.Message);
+
                     break;
             }
 

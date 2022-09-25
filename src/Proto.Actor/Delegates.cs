@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Proto.Mailbox;
@@ -21,7 +22,7 @@ public delegate PID Spawner(ActorSystem system, string id, Props props, PID? par
 public delegate IActor Producer();
 
 public delegate IActor ProducerWithSystem(ActorSystem system);
-    
+
 public delegate IActor ProducerWithSystemAndContext(ActorSystem system, IContext context);
 
 public delegate IMailbox MailboxProducer();

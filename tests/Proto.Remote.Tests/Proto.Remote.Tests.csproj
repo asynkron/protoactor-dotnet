@@ -1,26 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <LangVersion>10</LangVersion>
-    <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
-    <PackageReference Include="GitHubActionsTestLogger" Version="2.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Update="FluentAssertions" Version="6.6.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
-    <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
-    <ProjectReference Include="..\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj" />
-  </ItemGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' != 'net5.0'">
-    <DefineConstants>NETCORE</DefineConstants>
-  </PropertyGroup>
+    <PropertyGroup>
+        <LangVersion>10</LangVersion>
+        <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
+        <PackageReference Include="GitHubActionsTestLogger" Version="2.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Update="FluentAssertions" Version="6.7.0" />
+        <PackageReference Update="xunit" Version="2.4.2" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
+        <ProjectReference Include="..\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj" />
+    </ItemGroup>
+    <PropertyGroup Condition="'$(TargetFramework)' != 'net5.0'">
+        <DefineConstants>NETCORE</DefineConstants>
+    </PropertyGroup>
 </Project>

@@ -29,25 +29,28 @@ public abstract class IdentityStorageTests : IDisposable
         _storageInstance2 = storageFactory(clusterName);
     }
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!disposing) return;
-
-        _storage?.Dispose();
-        _storageInstance2?.Dispose();
-    }
-
     public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposing)
+        {
+            return;
+        }
+
+        _storage?.Dispose();
+        _storageInstance2?.Dispose();
+    }
+
     [Fact]
     public async Task GlobalLockActivatesOnceOnly()
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
-        var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
+        var identity = new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
         const int attempts = 10;
 
         var locks = await Task.WhenAll(Enumerable.Range(1, attempts)
@@ -63,7 +66,7 @@ public abstract class IdentityStorageTests : IDisposable
     public async Task GlobalLockActivatesOnceOnlyAcrossMultipleClients()
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
-        var identity = new ClusterIdentity {Kind = "thing", Identity = "1234"};
+        var identity = new ClusterIdentity { Kind = "thing", Identity = "1234" };
         const int attempts = 10;
 
         var locks = await Task.WhenAll(Enumerable.Range(1, attempts)
@@ -85,7 +88,7 @@ public abstract class IdentityStorageTests : IDisposable
     {
         var activator = GetFakeActivator();
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
-        var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
+        var identity = new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
         var spawnLock = await _storage.TryAcquireLock(identity, timeout);
         var pid = Activate(activator, identity);
         await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout);
@@ -105,7 +108,7 @@ public abstract class IdentityStorageTests : IDisposable
     public async Task CanDeleteSpawnLocks()
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
-        var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
+        var identity = new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
 
         var spawnLock = await _storage.TryAcquireLock(identity, timeout);
 
@@ -140,8 +143,10 @@ public abstract class IdentityStorageTests : IDisposable
         var otherPid = Activate(activator, identity);
 
         await _storage.Invoking(storage =>
-            storage.StoreActivation(activator.Id, new SpawnLock("someLockId", identity), otherPid, timeout)
-        ).Should().ThrowAsync<LockNotFoundException>();
+                storage.StoreActivation(activator.Id, new SpawnLock("someLockId", identity), otherPid, timeout)
+            )
+            .Should()
+            .ThrowAsync<LockNotFoundException>();
     }
 
     [Fact]
@@ -149,13 +154,15 @@ public abstract class IdentityStorageTests : IDisposable
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
         var activator = GetFakeActivator();
-        var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
+        var identity = new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
         var spawnLock = new SpawnLock("not-a-lock", identity);
         var pid = Activate(activator, identity);
 
         await _storage.Invoking(storage =>
-            storage.StoreActivation(activator.Id, spawnLock, pid, timeout)
-        ).Should().ThrowAsync<LockNotFoundException>();
+                storage.StoreActivation(activator.Id, spawnLock, pid, timeout)
+            )
+            .Should()
+            .ThrowAsync<LockNotFoundException>();
     }
 
     [Fact]
@@ -230,7 +237,8 @@ public abstract class IdentityStorageTests : IDisposable
         activation?.Pid.Should().BeEquivalentTo(newPid);
     }
 
-    [Theory, InlineData(200, 10000)]
+    [Theory]
+    [InlineData(200, 10000)]
     public async Task CanRemoveMemberWithManyActivations(int activations, int msTimeout)
     {
         var identities = new List<ClusterIdentity>();
@@ -262,7 +270,7 @@ public abstract class IdentityStorageTests : IDisposable
     )
     {
         activator ??= GetFakeActivator();
-        identity ??= new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
+        identity ??= new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
         var spawnLock = await _storage.TryAcquireLock(identity, timeout);
         var pid = Activate(activator, identity);
         await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout);
@@ -277,15 +285,17 @@ public abstract class IdentityStorageTests : IDisposable
     {
         var activator = GetFakeActivator();
         var timeout = CancellationTokens.FromSeconds(15);
-        var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
+        var identity = new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
         var spawnLock = await _storage.TryAcquireLock(identity, timeout);
         var pid = Activate(activator, identity);
 
-        _ = SafeTask.Run(async () => {
+        _ = SafeTask.Run(async () =>
+            {
                 await Task.Delay(500, timeout);
                 await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout);
             }, timeout
         );
+
         var activation = await _storage.WaitForActivation(identity, timeout);
 
         activation.Should().NotBeNull();
@@ -297,16 +307,18 @@ public abstract class IdentityStorageTests : IDisposable
     public async Task RemovesLockIfStale()
     {
         var timeout = new CancellationTokenSource(10000).Token;
-        var identity = new ClusterIdentity {Kind = "thing", Identity = NextId().ToString()};
+        var identity = new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
         await _storage.TryAcquireLock(identity, timeout);
 
         var activation = await _storage.WaitForActivation(identity, timeout);
         var spawnLock = await _storage.TryAcquireLock(identity, timeout);
 
         activation.Should().BeNull("We did not activate it");
-        spawnLock.Should().NotBeNull(
-            "When an activation did not occur, the storage implementation should discard the lock"
-        );
+
+        spawnLock.Should()
+            .NotBeNull(
+                "When an activation did not occur, the storage implementation should discard the lock"
+            );
     }
 
     // ReSharper disable once SuggestBaseTypeForParameter
@@ -320,8 +332,9 @@ public abstract class IdentityStorageTests : IDisposable
             Host = "127.0.0.1",
             Port = NextId(),
             Id = Guid.NewGuid().ToString(),
-            Kinds = {"thing"}
+            Kinds = { "thing" }
         };
+
         return activator;
     }
 

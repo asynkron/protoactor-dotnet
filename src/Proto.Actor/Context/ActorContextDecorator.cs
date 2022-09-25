@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -13,76 +14,67 @@ using Proto.Future;
 namespace Proto;
 
 /// <summary>
-/// Base class for decorators that decorate (extend) an <see cref="Proto.Context.ActorContext"/>.
+///     Base class for decorators that decorate (extend) an <see cref="Proto.Context.ActorContext" />.
 /// </summary>
 public abstract class ActorContextDecorator : IContext
 {
     private readonly IContext _context;
 
-    protected ActorContextDecorator(IContext context) =>
+    protected ActorContextDecorator(IContext context)
+    {
         _context = context;
+    }
 
     public virtual MessageHeader Headers => _context.Headers;
     public virtual object? Message => _context.Message;
     public virtual PID? Parent => _context.Parent;
-    public virtual PID? Self => _context.Self;
+    public virtual PID Self => _context.Self;
     public virtual PID? Sender => _context.Sender;
-    public virtual IActor? Actor => _context.Actor;
+    public virtual IActor Actor => _context.Actor;
     public virtual ActorSystem System => _context.System;
     public virtual TimeSpan ReceiveTimeout => _context.ReceiveTimeout;
     public virtual IReadOnlyCollection<PID> Children => _context.Children;
     public CancellationToken CancellationToken => _context.CancellationToken;
 
-    public virtual void Send(PID target, object message) =>
-        _context.Send(target, message);
+    public virtual void Send(PID target, object message) => _context.Send(target, message);
 
-    public virtual void Request(PID target, object message, PID? sender) =>
-        _context.Request(target, message, sender);
+    public virtual void Request(PID target, object message, PID? sender) => _context.Request(target, message, sender);
 
-    public virtual Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
-        => _context.RequestAsync<T>(target, message, cancellationToken);
+    public virtual Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
+        _context.RequestAsync<T>(target, message, cancellationToken);
 
-    public virtual Task Receive(MessageEnvelope envelope) =>
-        _context.Receive(envelope);
+    public virtual Task Receive(MessageEnvelope envelope) => _context.Receive(envelope);
 
-    public virtual void Respond(object message) =>
-        _context.Respond(message);
+    public virtual void Respond(object message) => _context.Respond(message);
 
-    public virtual PID SpawnNamed(Props props, string name, Action<IContext>? callback=null) =>
+    public virtual PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) =>
         _context.SpawnNamed(props, name, callback);
 
-    public virtual void Watch(PID pid) =>
-        _context.Watch(pid);
+    public virtual void Watch(PID pid) => _context.Watch(pid);
 
-    public virtual void Unwatch(PID pid) =>
-        _context.Unwatch(pid);
+    public virtual void Unwatch(PID pid) => _context.Unwatch(pid);
 
-    public virtual void SetReceiveTimeout(TimeSpan duration) =>
-        _context.SetReceiveTimeout(duration);
+    public virtual void SetReceiveTimeout(TimeSpan duration) => _context.SetReceiveTimeout(duration);
 
-    public virtual void CancelReceiveTimeout() =>
-        _context.CancelReceiveTimeout();
+    public virtual void CancelReceiveTimeout() => _context.CancelReceiveTimeout();
 
-    public virtual void Forward(PID target) =>
-        _context.Forward(target);
+    public virtual void Forward(PID target) => _context.Forward(target);
 
     public virtual void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action) =>
         _context.ReenterAfter(target, action);
 
-    public virtual void ReenterAfter(Task target, Action action) =>
-        _context.ReenterAfter(target, action);
+    public virtual void ReenterAfter(Task target, Action action) => _context.ReenterAfter(target, action);
 
-    public void ReenterAfter(Task target, Action<Task> action) => 
-        _context.ReenterAfter(target, action);
+    public void ReenterAfter(Task target, Action<Task> action) => _context.ReenterAfter(target, action);
 
-    public void ReenterAfter(Task target, Func<Task, Task> action) =>
-        _context.ReenterAfter(target, action);
+    public void ReenterAfter(Task target, Func<Task, Task> action) => _context.ReenterAfter(target, action);
 
     public CapturedContext Capture() => _context.Capture();
 
     public void Apply(CapturedContext capturedContext) => _context.Apply(capturedContext);
 
-    public void ReenterAfterCancellation(CancellationToken cancellationToken, Action onCancelled) => _context.ReenterAfterCancellation(cancellationToken, onCancelled);
+    public void ReenterAfterCancellation(CancellationToken cancellationToken, Action onCancelled) =>
+        _context.ReenterAfterCancellation(cancellationToken, onCancelled);
 
     public void Stop(PID pid) => _context.Stop(pid);
 

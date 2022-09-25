@@ -3,6 +3,7 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading;
@@ -23,9 +24,11 @@ public class TimeoutTests
 
         await fixture.Members.First()
             .Invoking(m => m.RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
-                    new SlowPing {Message = "hi", DelayMs = 4000}, new CancellationTokenSource(500).Token
+                    new SlowPing { Message = "hi", DelayMs = 4000 }, new CancellationTokenSource(500).Token
                 )
-            ).Should().ThrowAsync<TimeoutException>();
+            )
+            .Should()
+            .ThrowAsync<TimeoutException>();
     }
 
     private string CreateIdentity(string baseId) => $"{Guid.NewGuid().ToString("N").Substring(0, 6)}-{baseId}-";

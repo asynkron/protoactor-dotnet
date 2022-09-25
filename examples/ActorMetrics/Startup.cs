@@ -12,7 +12,10 @@ namespace WebApplication1;
 
 public class Startup
 {
-    public Startup(IConfiguration configuration) => Configuration = configuration;
+    public Startup(IConfiguration configuration)
+    {
+        Configuration = configuration;
+    }
 
     public IConfiguration Configuration { get; }
 
@@ -20,13 +23,18 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddControllers();
-        services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "WebApplication1", Version = "v1"}); });
+
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "WebApplication1", Version = "v1" });
+        });
 
         services.AddOpenTelemetryMetrics(b => b
             .AddProtoActorInstrumentation()
             .AddAspNetCoreInstrumentation()
             .AddPrometheusExporter(prom => prom.ScrapeResponseCacheDurationMilliseconds = 1000)
         );
+
         RunDummyCluster.Run();
     }
 

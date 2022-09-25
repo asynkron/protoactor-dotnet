@@ -3,7 +3,9 @@
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -41,16 +43,19 @@ public class DefaultClusterContext : IClusterContext
             config.RequestLogThrottlePeriod,
             i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
         );
-        _requestTimeoutSeconds = (int) config.ActorRequestTimeout.TotalSeconds;
+
+        _requestTimeoutSeconds = (int)config.ActorRequestTimeout.TotalSeconds;
         _legacyTimeouts = config.LegacyRequestTimeoutBehavior;
 #if !NET6_0_OR_GREATER
-        var updateInterval = TimeSpan.FromMilliseconds(Math.Min(config.ActorRequestTimeout.TotalMilliseconds / 2, 1000));
+        var updateInterval =
+ TimeSpan.FromMilliseconds(Math.Min(config.ActorRequestTimeout.TotalMilliseconds / 2, 1000));
         _clock = new TaskClock(config.ActorRequestTimeout, updateInterval, cluster.System.Shutdown);
         _clock.Start();
 #endif
     }
 
-    public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context, CancellationToken ct)
+    public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context,
+        CancellationToken ct)
     {
         var i = 0;
 
@@ -75,15 +80,23 @@ public class DefaultClusterContext : IClusterContext
                 if (pid is null)
                 {
                     if (Logger.IsEnabled(LogLevel.Debug))
-                        Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup", clusterIdentity);
+                    {
+                        Logger.LogDebug("Requesting {ClusterIdentity} - Did not get PID from IdentityLookup",
+                            clusterIdentity);
+                    }
+
                     await Task.Delay(i * 20, CancellationToken.None);
+
                     continue;
                 }
 
                 // Ensures that a future is not re-used against another actor.
                 // avoid equality check for perf
                 // ReSharper disable once PossibleUnintendedReferenceComparison
-                if (lastPid is not null && pid != lastPid) RefreshFuture();
+                if (lastPid is not null && pid != lastPid)
+                {
+                    RefreshFuture();
+                }
 
                 Stopwatch t = null!;
 
@@ -119,7 +132,7 @@ public class DefaultClusterContext : IClusterContext
 
                         if (typeof(T) == typeof(MessageEnvelope))
                         {
-                            return (T) (object) MessageEnvelope.Wrap(task.Result);
+                            return (T)(object)MessageEnvelope.Wrap(task.Result);
                         }
 
                         if (untypedResult is DeadLetterResponse)
@@ -131,45 +144,67 @@ public class DefaultClusterContext : IClusterContext
 
                             RefreshFuture();
                             await RemoveFromSource(clusterIdentity, PidSource.Lookup, pid);
+
                             break;
                         }
 
-                        Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", untypedResult.GetType(), typeof(T));
+                        Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}",
+                            untypedResult.GetType(), typeof(T));
+
                         RefreshFuture();
                         await RemoveFromSource(clusterIdentity, source, pid);
+
                         break;
                     }
                     else
                     {
                         if (!context.System.Shutdown.IsCancellationRequested)
+                        {
                             if (Logger.IsEnabled(LogLevel.Debug))
+                            {
                                 Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                            }
+                        }
+
                         _pidCache.RemoveByVal(clusterIdentity, pid);
                     }
                 }
                 catch (TaskCanceledException)
                 {
                     if (!context.System.Shutdown.IsCancellationRequested)
+                    {
                         if (Logger.IsEnabled(LogLevel.Debug))
+                        {
                             Logger.LogDebug("TryRequestAsync timed out, PID from {Source}", source);
+                        }
+                    }
+
                     _pidCache.RemoveByVal(clusterIdentity, pid);
                 }
                 catch (TimeoutException)
                 {
                     lastPid = pid;
                     await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+
                     continue;
                 }
                 catch (Exception x)
                 {
                     x.CheckFailFast();
+
                     if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
+                    {
                         if (Logger.IsEnabled(LogLevel.Debug))
+                        {
                             Logger.LogDebug(x, "TryRequestAsync failed with exception, PID from {Source}", source);
+                        }
+                    }
+
                     _pidCache.RemoveByVal(clusterIdentity, pid);
                     RefreshFuture();
                     await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
                     await Task.Delay(i * 20, CancellationToken.None);
+
                     continue;
                 }
                 finally
@@ -177,11 +212,15 @@ public class DefaultClusterContext : IClusterContext
                     if (context.System.Metrics.Enabled)
                     {
                         var elapsed = t.Elapsed;
+
                         ClusterMetrics.ClusterRequestDuration
                             .Record(elapsed.TotalSeconds,
-                                new("id", _system.Id), new("address", _system.Address),
-                                new("clusterkind", clusterIdentity.Kind), new("messagetype", message.GetType().Name),
-                                new("pidsource", source == PidSource.Cache ? "PidCache" : "IIdentityLookup")
+                                new KeyValuePair<string, object?>("id", _system.Id),
+                                new KeyValuePair<string, object?>("address", _system.Address),
+                                new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind),
+                                new KeyValuePair<string, object?>("messagetype", message.GetType().Name),
+                                new KeyValuePair<string, object?>("pidsource",
+                                    source == PidSource.Cache ? "PidCache" : "IIdentityLookup")
                             );
                     }
                 }
@@ -189,8 +228,10 @@ public class DefaultClusterContext : IClusterContext
                 if (context.System.Metrics.Enabled)
                 {
                     ClusterMetrics.ClusterRequestRetryCount.Add(
-                        1, new("id", _system.Id), new("address", _system.Address),
-                        new("clusterkind", clusterIdentity.Kind), new("messagetype", message.GetType().Name)
+                        1, new KeyValuePair<string, object?>("id", _system.Id),
+                        new KeyValuePair<string, object?>("address", _system.Address),
+                        new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind),
+                        new KeyValuePair<string, object?>("messagetype", message.GetType().Name)
                     );
                 }
             }
@@ -228,12 +269,16 @@ public class DefaultClusterContext : IClusterContext
 
     private async ValueTask RemoveFromSource(ClusterIdentity clusterIdentity, PidSource source, PID pid)
     {
-        if (source == PidSource.Lookup) await _identityLookup.RemovePidAsync(clusterIdentity, pid, CancellationToken.None);
+        if (source == PidSource.Lookup)
+        {
+            await _identityLookup.RemovePidAsync(clusterIdentity, pid, CancellationToken.None);
+        }
 
         _pidCache.RemoveByVal(clusterIdentity, pid);
     }
 
-    private async ValueTask<PID?> GetPidFromLookup(ClusterIdentity clusterIdentity, ISenderContext context, CancellationToken ct)
+    private async ValueTask<PID?> GetPidFromLookup(ClusterIdentity clusterIdentity, ISenderContext context,
+        CancellationToken ct)
     {
         try
         {
@@ -242,26 +287,44 @@ public class DefaultClusterContext : IClusterContext
                 var pid = await ClusterMetrics.ClusterResolvePidDuration
                     .Observe(
                         async () => await _identityLookup.GetAsync(clusterIdentity, ct),
-                        new("id", _system.Id), new("address", _system.Address), new("clusterkind", clusterIdentity.Kind)
+                        new KeyValuePair<string, object?>("id", _system.Id),
+                        new KeyValuePair<string, object?>("address", _system.Address),
+                        new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind)
                     );
 
-                if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
+                if (pid is not null)
+                {
+                    _pidCache.TryAdd(clusterIdentity, pid);
+                }
+
                 return pid;
             }
             else
             {
                 var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
-                if (pid is not null) _pidCache.TryAdd(clusterIdentity, pid);
+
+                if (pid is not null)
+                {
+                    _pidCache.TryAdd(clusterIdentity, pid);
+                }
+
                 return pid;
             }
         }
-        catch (Exception e) when (e is not IdentityIsBlocked)
+        catch (Exception e) when (e is not IdentityIsBlockedException)
         {
             e.CheckFailFast();
-            if (context.System.Shutdown.IsCancellationRequested) return default;
+
+            if (context.System.Shutdown.IsCancellationRequested)
+            {
+                return default;
+            }
 
             if (_requestLogThrottle().IsOpen())
+            {
                 Logger.LogWarning(e, "Failed to get PID from IIdentityLookup for {ClusterIdentity}", clusterIdentity);
+            }
+
             return null;
         }
     }
@@ -281,16 +344,24 @@ public class DefaultClusterContext : IClusterContext
             return (ResponseStatus.DeadLetter, default);
         }
 
-        if (message == null) return (ResponseStatus.Ok, default);
+        if (message == null)
+        {
+            return (ResponseStatus.Ok, default);
+        }
 
-        if (message is T t) return (ResponseStatus.Ok, t);
+        if (message is T t)
+        {
+            return (ResponseStatus.Ok, t);
+        }
 
         if (typeof(T) == typeof(MessageEnvelope))
         {
-            return (ResponseStatus.Ok, (T) (object) MessageEnvelope.Wrap(result));
+            return (ResponseStatus.Ok, (T)(object)MessageEnvelope.Wrap(result));
         }
 
-        Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", message.GetType(), typeof(T));
+        Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", message.GetType(),
+            typeof(T));
+
         return (ResponseStatus.InvalidResponse, default);
     }
 
