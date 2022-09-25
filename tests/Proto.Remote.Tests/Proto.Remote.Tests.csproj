@@ -13,7 +13,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Update="FluentAssertions" Version="6.6.0"/>
+        <PackageReference Update="FluentAssertions" Version="6.7.0"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj"/>

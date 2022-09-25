@@ -27,7 +27,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Update="FluentAssertions" Version="6.6.0"/>
+        <PackageReference Update="FluentAssertions" Version="6.7.0"/>
     </ItemGroup>
 
     <ItemGroup>
