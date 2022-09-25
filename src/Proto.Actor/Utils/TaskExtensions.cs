@@ -100,7 +100,7 @@ public static class TaskExtensions
 
             if (completedTask != task)
             {
-                return (false, default);
+                return (false, default!);
             }
 
             timeoutCancellationTokenSource.Cancel();

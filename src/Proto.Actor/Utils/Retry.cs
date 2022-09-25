@@ -132,7 +132,9 @@ public static class Retry
         throw new RetriesExhaustedException("This should never happen...");
     }
 
+#pragma warning disable RCS1194
     public class RetriesExhaustedException : Exception
+#pragma warning restore RCS1194
     {
         public RetriesExhaustedException(string message) : base(message)
         {

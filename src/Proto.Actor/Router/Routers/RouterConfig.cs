@@ -75,7 +75,9 @@ public class RouterStartNotification
     }
 }
 
+#pragma warning disable RCS1194
 public class RouterStartFailedException : Exception
+#pragma warning restore RCS1194
 {
     public RouterStartFailedException(Exception inner) : base("Router failed to start", inner)
     {

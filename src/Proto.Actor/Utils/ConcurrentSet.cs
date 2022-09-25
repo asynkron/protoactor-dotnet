@@ -15,7 +15,7 @@ namespace Proto.Utils;
 /// </summary>
 /// <typeparam name="T"></typeparam>
 [PublicAPI]
-public class ConcurrentSet<T>
+public class ConcurrentSet<T> where T : notnull
 {
     private readonly ConcurrentDictionary<T, byte> _inner = new();
 

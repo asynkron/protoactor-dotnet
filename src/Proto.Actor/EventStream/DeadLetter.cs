@@ -110,7 +110,9 @@ public class DeadLetterProcess : Process
     }
 }
 
+#pragma warning disable RCS1194
 public class DeadLetterException : Exception
+#pragma warning restore RCS1194
 {
     public DeadLetterException(PID pid) : base($"{pid} no longer exists")
     {

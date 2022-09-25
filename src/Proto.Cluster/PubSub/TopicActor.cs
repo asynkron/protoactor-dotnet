@@ -140,7 +140,7 @@ public sealed class TopicActor : IActor
         var pid = await context.Cluster()
             .GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None);
 
-        return (s, pid);
+        return (s, pid!);
     }
 
     private async Task OnNotifyAboutFailingSubscribers(IContext context, NotifyAboutFailingSubscribersRequest msg)
