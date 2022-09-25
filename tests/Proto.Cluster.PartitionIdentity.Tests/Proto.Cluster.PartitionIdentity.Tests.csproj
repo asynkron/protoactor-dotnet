@@ -20,13 +20,14 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Update="FluentAssertions" Version="6.6.0"/>
-        <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.1.0"/>
+        <PackageReference Update="FluentAssertions" Version="6.7.0" />
+        <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+        <PackageReference Update="xunit" Version="2.4.2" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj"/>
-        <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj"/>
+        <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj" />
+        <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
     </ItemGroup>
 
 </Project>

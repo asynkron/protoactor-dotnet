@@ -6,11 +6,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj"/>
+        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     </ItemGroup>
 
 </Project>

@@ -10,13 +10,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.21.1" />
-        <PackageReference Include="Grpc.Tools" Version="2.46.3">
+        <PackageReference Include="Google.Protobuf" Version="3.21.6" />
+        <PackageReference Include="Grpc.Tools" Version="2.48.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
-        <PackageReference Include="Proto.Cluster.CodeGen" Version="0.31.0" />
+        <PackageReference Include="Proto.Cluster.CodeGen" Version="1.0.0-rc2.43" />
     </ItemGroup>
 
     <ItemGroup>
