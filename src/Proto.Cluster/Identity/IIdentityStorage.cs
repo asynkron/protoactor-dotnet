@@ -137,18 +137,22 @@ public class StoredActivation
     public string MemberId { get; }
 }
 
-public class StorageFailure : Exception
+#pragma warning disable RCS1194
+public class StorageFailureException : Exception
+#pragma warning restore RCS1194
 {
-    public StorageFailure(string message) : base(message)
+    public StorageFailureException(string message) : base(message)
     {
     }
 
-    public StorageFailure(string message, Exception innerException) : base(message, innerException)
+    public StorageFailureException(string message, Exception innerException) : base(message, innerException)
     {
     }
 }
 
-public class LockNotFoundException : StorageFailure
+#pragma warning disable RCS1194
+public class LockNotFoundException : StorageFailureException
+#pragma warning restore RCS1194
 {
     public LockNotFoundException(string message) : base(message)
     {

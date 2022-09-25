@@ -149,7 +149,7 @@ internal class IdentityStorageWorker : IActor
 
                     if (activator == null)
                     {
-                        return null;
+                        return null!;
                     }
 
                     //try to acquire global lock
@@ -178,7 +178,7 @@ internal class IdentityStorageWorker : IActor
                 {
                     if (_cluster.System.Shutdown.IsCancellationRequested)
                     {
-                        return null;
+                        return null!;
                     }
 
                     if (_shouldThrottle().IsOpen())
@@ -192,7 +192,7 @@ internal class IdentityStorageWorker : IActor
                 {
                     if (_cluster.System.Shutdown.IsCancellationRequested)
                     {
-                        return null;
+                        return null!;
                     }
 
                     if (_shouldThrottle().IsOpen())

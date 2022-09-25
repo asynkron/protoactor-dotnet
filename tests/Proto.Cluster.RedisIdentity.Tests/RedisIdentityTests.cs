@@ -73,7 +73,7 @@ public class ChaosMonkeyRedisIdentityClusterFixture : BaseInMemoryClusterFixture
 internal static class RedisFixture
 {
     private static readonly Lazy<ConnectionMultiplexer> LazyConnection = new(()
-        => ConnectionMultiplexer.Connect(TestConfig.Configuration.GetConnectionString("Redis")));
+        => ConnectionMultiplexer.Connect(TestConfig.Configuration.GetConnectionString("Redis")!));
 
     static RedisFixture()
     {

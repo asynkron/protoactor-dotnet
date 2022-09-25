@@ -117,7 +117,7 @@ public class PartitionIdentityLookup : IIdentityLookup
 
             if (resp?.InvalidIdentity == true)
             {
-                throw new IdentityIsBlocked(clusterIdentity);
+                throw new IdentityIsBlockedException(clusterIdentity);
             }
 
             if (_config.DeveloperLogging)
@@ -167,7 +167,7 @@ public class PartitionIdentityLookup : IIdentityLookup
 
             return null;
         }
-        catch (Exception e) when (e is not IdentityIsBlocked)
+        catch (Exception e) when (e is not IdentityIsBlockedException)
         {
             e.CheckFailFast();
 

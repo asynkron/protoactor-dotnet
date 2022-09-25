@@ -11,9 +11,11 @@ namespace Proto.Cluster.Identity;
 /// <summary>
 ///     Lets the caller know that the identity is not available to spawn.
 /// </summary>
-public class IdentityIsBlocked : Exception
+#pragma warning disable RCS1194
+public class IdentityIsBlockedException : Exception
+#pragma warning restore RCS1194
 {
-    public IdentityIsBlocked(ClusterIdentity blockedIdentity)
+    public IdentityIsBlockedException(ClusterIdentity blockedIdentity)
     {
         BlockedIdentity = blockedIdentity;
     }

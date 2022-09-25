@@ -202,7 +202,7 @@ public sealed class MongoIdentityStorage : IIdentityStorage
             Logger.LogWarning(x, "Mongo connection failure, retrying");
         }
 
-        throw new StorageFailure($"Failed to connect to MongoDB while looking up key {key}");
+        throw new StorageFailureException($"Failed to connect to MongoDB while looking up key {key}");
     }
 
     private string GetKey(ClusterIdentity clusterIdentity) => $"{_clusterName}/{clusterIdentity}";
