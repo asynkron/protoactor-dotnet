@@ -11,30 +11,31 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Handlebars.Net" Version="2.0.9"/>
-        <PackageReference Include="protobuf-net.Reflection" Version="3.0.101"/>
+        <PackageReference Include="Handlebars.Net" Version="2.0.9" />
+        <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
         <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Update="FluentAssertions" Version="6.6.0"/>
+        <PackageReference Update="FluentAssertions" Version="6.7.0" />
+        <PackageReference Update="xunit" Version="2.4.2" />
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Remove="ExpectedOutput.cs"/>
-        <Compile Remove="ExpectedOutputPackageless.cs"/>
-        <Content Include="foo.proto" CopyToOutputDirectory="Always"/>
-        <Content Include="foo_packageless.proto" CopyToOutputDirectory="Always"/>
-        <Content Include="bar.proto" CopyToOutputDirectory="Always"/>
-        <Content Include="invalid.proto" CopyToOutputDirectory="Always"/>
-        <Content Include="invalid2.proto" CopyToOutputDirectory="Always"/>
-        <Content Include="ExpectedOutput.cs" CopyToOutputDirectory="PreserveNewest"/>
-        <Content Include="ExpectedOutputPackageless.cs" CopyToOutputDirectory="PreserveNewest"/>
+        <Compile Remove="ExpectedOutput.cs" />
+        <Compile Remove="ExpectedOutputPackageless.cs" />
+        <Content Include="foo.proto" CopyToOutputDirectory="Always" />
+        <Content Include="foo_packageless.proto" CopyToOutputDirectory="Always" />
+        <Content Include="bar.proto" CopyToOutputDirectory="Always" />
+        <Content Include="invalid.proto" CopyToOutputDirectory="Always" />
+        <Content Include="invalid2.proto" CopyToOutputDirectory="Always" />
+        <Content Include="ExpectedOutput.cs" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="ExpectedOutputPackageless.cs" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj"/>
+        <ProjectReference Include="..\..\src\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj" />
     </ItemGroup>
 
 </Project>

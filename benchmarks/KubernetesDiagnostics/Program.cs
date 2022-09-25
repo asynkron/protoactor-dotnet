@@ -143,9 +143,8 @@ public static class Program
     {
         try
         {
-            var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
             Console.WriteLine("Running with Kubernetes Provider");
-            return new KubernetesProvider(kubernetes);
+            return new KubernetesProvider(new KubernetesProviderConfig());
         }
         catch
         {

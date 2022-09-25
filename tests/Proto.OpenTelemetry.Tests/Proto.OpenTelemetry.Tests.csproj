@@ -12,13 +12,13 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Grpc.Tools" Version="2.46.3">
+        <PackageReference Include="Grpc.Tools" Version="2.48.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0"/>
-        <PackageReference Include="OpenTelemetry" Version="1.2.0"/>
-        <PackageReference Include="xunit" Version="2.4.1"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+        <PackageReference Include="OpenTelemetry" Version="1.2.0" />
+        <PackageReference Include="xunit" Version="2.4.1" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
@@ -27,18 +27,19 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Update="FluentAssertions" Version="6.6.0"/>
+        <PackageReference Update="FluentAssertions" Version="6.7.0" />
+        <PackageReference Update="xunit" Version="2.4.2" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj"/>
-        <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj"/>
-        <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj"/>
-        <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj"/>
+        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
+        <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="*.proto"/>
+        <Protobuf Include="*.proto" />
     </ItemGroup>
 
 </Project>
