@@ -63,9 +63,9 @@ public sealed record RootContext : IRootContext
     public MessageHeader Headers { get; init; }
 
     public PID? Parent => null;
-    public PID? Self => null;
+    public PID Self => null!;
     PID? IInfoContext.Sender => null;
-    public IActor? Actor => null;
+    public IActor Actor => null!;
 
     public PID SpawnNamed(Props props, string name, Action<IContext>? callback = null)
     {

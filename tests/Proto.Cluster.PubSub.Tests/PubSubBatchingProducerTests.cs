@@ -261,16 +261,16 @@ public class PubSubBatchingProducerTests
         return Task.FromResult(new PublishResponse());
     }
 
-    private Task<PublishResponse?> Fail(PubSubBatch _) => throw new TestException();
+    private Task<PublishResponse> Fail(PubSubBatch _) => throw new TestException();
 
-    private async Task<PublishResponse?> Wait(PubSubBatch _)
+    private async Task<PublishResponse> Wait(PubSubBatch _)
     {
         await Task.Delay(1000);
 
         return new PublishResponse();
     }
 
-    private Func<PubSubBatch, Task<PublishResponse?>> Wait(int ms = 1000) =>
+    private Func<PubSubBatch, Task<PublishResponse>> Wait(int ms = 1000) =>
         async _ =>
         {
             await Task.Delay(ms);
@@ -278,14 +278,14 @@ public class PubSubBatchingProducerTests
             return new PublishResponse();
         };
 
-    private async Task<PublishResponse?> WaitThenFail(PubSubBatch _)
+    private async Task<PublishResponse> WaitThenFail(PubSubBatch _)
     {
         await Task.Delay(500);
 
         throw new TestException();
     }
 
-    private Func<PubSubBatch, Task<PublishResponse?>> WaitThenRecord(int ms = 500) =>
+    private Func<PubSubBatch, Task<PublishResponse>> WaitThenRecord(int ms = 500) =>
         async batch =>
         {
             await Task.Delay(ms);
@@ -297,7 +297,7 @@ public class PubSubBatchingProducerTests
             return new PublishResponse();
         };
 
-    private Func<PubSubBatch, Task<PublishResponse?>> FailTimesThenSucceed(int numFails)
+    private Func<PubSubBatch, Task<PublishResponse>> FailTimesThenSucceed(int numFails)
     {
         var times = 0;
 
@@ -306,7 +306,7 @@ public class PubSubBatchingProducerTests
             : Task.FromResult(new PublishResponse());
     }
 
-    private Task<PublishResponse?> Timeout(PubSubBatch _) => Task.FromResult<PublishResponse?>(null);
+    private Task<PublishResponse> Timeout(PubSubBatch _) => Task.FromResult<PublishResponse>(null!);
 
     private int[] AllSentNumbers(IEnumerable<PubSubBatch> batches) =>
         batches
@@ -320,7 +320,7 @@ public class PubSubBatchingProducerTests
     {
         private readonly Func<PubSubBatch, Task<PublishResponse>> _publish;
 
-        public MockPublisher(Func<PubSubBatch, Task<PublishResponse?>> publish)
+        public MockPublisher(Func<PubSubBatch, Task<PublishResponse>> publish)
         {
             _publish = publish;
         }

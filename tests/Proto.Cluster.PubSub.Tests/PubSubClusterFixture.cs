@@ -185,7 +185,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
         unsubRes.Should().NotBeNull("unsubscribing should not time out");
     }
 
-    public Task<PublishResponse?> PublishData(string topic, int data, CancellationToken cancel = default)
+    public Task<PublishResponse> PublishData(string topic, int data, CancellationToken cancel = default)
     {
         if (cancel == default)
         {
@@ -197,7 +197,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
             .Publish(topic, new DataPublished(data), cancel);
     }
 
-    public Task<PublishResponse?> PublishDataBatch(string topic, int[] data, CancellationToken cancel = default)
+    public Task<PublishResponse> PublishDataBatch(string topic, int[] data, CancellationToken cancel = default)
     {
         if (cancel == default)
         {

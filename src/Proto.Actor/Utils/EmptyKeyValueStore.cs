@@ -15,7 +15,7 @@ namespace Proto.Utils;
 /// <typeparam name="T"></typeparam>
 public class EmptyKeyValueStore<T> : IKeyValueStore<T>
 {
-    public Task<T?> GetAsync(string id, CancellationToken ct) => Task.FromResult(default(T));
+    public Task<T> GetAsync(string id, CancellationToken ct) => Task.FromResult(default(T))!;
 
     public Task SetAsync(string id, T state, CancellationToken ct) => Task.CompletedTask;
 

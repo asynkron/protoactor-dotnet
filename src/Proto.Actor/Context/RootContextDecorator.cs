@@ -52,9 +52,9 @@ public abstract class RootContextDecorator : IRootContext
         WithInnerContext(_context.WithSenderMiddleware(middleware));
 
     public virtual PID? Parent => null;
-    public virtual PID? Self => null;
+    public virtual PID Self => null!;
     public virtual PID? Sender => null;
-    public virtual IActor? Actor => null;
+    public virtual IActor Actor => null!;
     public virtual ActorSystem System => _context.System;
 
     public virtual T? Get<T>() => _context.Get<T>();

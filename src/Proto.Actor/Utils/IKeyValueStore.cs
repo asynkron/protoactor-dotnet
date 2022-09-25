@@ -23,7 +23,7 @@ public interface IKeyValueStore<T>
     /// <param name="id">Key</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    Task<T?> GetAsync(string id, CancellationToken ct);
+    Task<T> GetAsync(string id, CancellationToken ct);
 
     /// <summary>
     ///     Set the value for the given key.
