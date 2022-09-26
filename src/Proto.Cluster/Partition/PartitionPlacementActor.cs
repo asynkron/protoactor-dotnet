@@ -179,7 +179,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
 
     private Task OnStarted(IContext context)
     {
-        _subscription = context.System.EventStream.Subscribe<ActivationTerminating>(e => context.Send(context.Self!, e));
+        _subscription = context.System.EventStream.Subscribe<ActivationTerminating>(e => context.Send(context.Self, e));
 
         return Task.CompletedTask;
     }
