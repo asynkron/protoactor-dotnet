@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using k8s;
@@ -126,8 +127,6 @@ public class KubernetesProvider : IClusterProvider
 
         Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: {Port}", _port);
 
-        var existingLabels = pod.Metadata.Labels;
-
         var labels = new Dictionary<string, string>
         {
             [LabelCluster] = _clusterName,
@@ -135,21 +134,27 @@ public class KubernetesProvider : IClusterProvider
             [LabelMemberId] = _cluster.System.Id
         };
 
-        foreach (var kind in _kinds)
-        {
-            var labelKey = $"{LabelKind}-{kind}";
-            labels.TryAdd(labelKey, "true");
-        }
-
-        //add existing labels back
-        foreach (var existing in existingLabels)
+        foreach (var existing in pod.Metadata.Labels)
         {
             labels.TryAdd(existing.Key, existing.Value);
         }
 
+        var annotations = new Dictionary<string, string>
+        {
+            [AnnotationKinds] = string.Join(';', _kinds),
+        };
+
+        if (pod.Metadata.Annotations is not null)
+        {
+            foreach (var existing in pod.Metadata.Annotations)
+            {
+                annotations.TryAdd(existing.Key, existing.Value);
+            }
+        }
+
         try
         {
-            await kubernetes.ReplacePodLabels(_podName, KubernetesExtensions.GetKubeNamespace(), pod, labels);
+            await kubernetes.ReplacePodLabelsAndAnnotations(_podName, KubernetesExtensions.GetKubeNamespace(), pod, labels, annotations);
         }
         catch (Exception e)
         {
@@ -204,24 +209,15 @@ public class KubernetesProvider : IClusterProvider
 
         var pod = await kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
 
-        var labels = new Dictionary<string, string>(pod.Metadata.Labels);
+        var labels = pod.Metadata.Labels
+            .Where(label => !label.Key.StartsWith(ProtoClusterPrefix, StringComparison.Ordinal))
+            .ToDictionary(label => label.Key, label => label.Value);
 
-        foreach (var kind in _kinds)
-        {
-            try
-            {
-                var labelKey = $"{LabelKind}-{kind}";
-                labels.Remove(labelKey);
-            }
-            catch (Exception x)
-            {
-                Logger.LogError(x, "[Cluster][KubernetesProvider] Failed to remove label");
-            }
-        }
+        var annotations = pod.Metadata.Annotations
+            .Where(label => !label.Key.StartsWith(ProtoClusterPrefix, StringComparison.Ordinal))
+            .ToDictionary(label => label.Key, label => label.Value);
 
-        labels.Remove(LabelCluster);
-
-        await kubernetes.ReplacePodLabels(_podName, kubeNamespace, pod, labels);
+        await kubernetes.ReplacePodLabelsAndAnnotations(_podName, kubeNamespace, pod, labels, annotations);
 
         cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
     }

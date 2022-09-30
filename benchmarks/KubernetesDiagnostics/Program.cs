@@ -2,19 +2,14 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using k8s;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Consul;
 using Proto.Cluster.Gossip;
-using Proto.Cluster.Identity;
-using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
-using StackExchange.Redis;
 
 namespace KubernetesDiagnostics;
 
@@ -24,7 +19,6 @@ public static class Program
     {
         ThreadPool.SetMinThreads(100, 100);
         Console.WriteLine("Starting...");
-        Console.WriteLine("444");
 
         /*
          *  docker build . -t rogeralsing/kubdiagg   
@@ -38,9 +32,9 @@ public static class Program
         Log.SetLoggerFactory(l);
         var log = Log.CreateLogger("main");
 
-        var identity = new PartitionIdentityLookup(TimeSpan.FromSeconds(2),TimeSpan.FromSeconds(2));//  new IdentityStorageLookup(GetRedisId("MyCluster"));
+        var identity = new PartitionIdentityLookup(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2)
+        ); //  new IdentityStorageLookup(GetRedisId("MyCluster"));
 
-            
         /*
         - name: "REDIS"
           value: "redis"
@@ -59,8 +53,10 @@ public static class Program
         log.LogInformation("Port {port}", port);
         log.LogInformation("Advertised Host {advertisedHost}", advertisedHost);
 
-        var clusterprovider = GetProvider();
+        var clusterProvider = GetProvider();
 
+        var noOpsProps = Props.FromFunc(ctx => Task.CompletedTask);
+        var echoKind = new ClusterKind("echo", noOpsProps);
         var system = new ActorSystem(new ActorSystemConfig()
                 //     .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
                 //     .WithDeveloperSupervisionLogging(true)
@@ -71,15 +67,14 @@ public static class Program
                 .WithEndpointWriterMaxRetries(2)
             )
             .WithCluster(ClusterConfig
-                .Setup("mycluster", clusterprovider, identity)
+                .Setup("mycluster", clusterProvider, identity)
                 .WithClusterKind("empty", Props.Empty)
+                .WithClusterKind(echoKind)
             );
 
-        system.EventStream.Subscribe<GossipUpdate>(e => {
-                Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}");
-            }
+        system.EventStream.Subscribe<GossipUpdate>(e => { Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}"); }
         );
-            
+
         system.EventStream.Subscribe<ClusterTopology>(e => {
                 var members = e.Members;
                 var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
@@ -95,6 +90,10 @@ public static class Program
             }
         );
 
+        var cts = new CancellationTokenSource();
+
+        Console.CancelKeyPress += (_, _) => { cts.Cancel(); };
+
         await system
             .Cluster()
             .StartMemberAsync();
@@ -102,19 +101,38 @@ public static class Program
         var props = Props.FromFunc(ctx => Task.CompletedTask);
         system.Root.SpawnNamed(props, "dummy");
 
+        var clusterIdentity = ClusterIdentity.Create("some-id", echoKind.Name);
 
-        while (true)
+        while (!cts.IsCancellationRequested)
         {
-            var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
+            // var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
 
             var m = system.Cluster().MemberList.GetAllMembers();
             var hash = Member.TopologyHash(m);
-                
-            Console.WriteLine($"{DateTime.Now:O} Consensus {res}.. Hash {hash} Count {m.Length}");
+
+            Console.WriteLine($"{DateTime.Now:O} Hash {hash} Count {m.Length}");
+
+            try
+            {
+                var t = await system.Cluster().RequestAsync<Touched>(clusterIdentity, new Touch(), CancellationTokens.FromSeconds(1));
+
+                if (t != null)
+                {
+                    Console.WriteLine($"called cluster actor {t.Who}");
+                }
+                else
+                {
+                    Console.WriteLine($"call to cluster actor returned null");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Could not call cluster actor: {e}");
+            }
 
             foreach (var member in m)
             {
-                var pid = new PID(member.Address,"dummy");
+                var pid = new PID(member.Address, "dummy");
 
                 try
                 {
@@ -137,31 +155,11 @@ public static class Program
 
             await Task.Delay(3000);
         }
+        
+        await system
+            .Cluster()
+            .ShutdownAsync();
     }
 
-    private static IClusterProvider GetProvider()
-    {
-        try
-        {
-            Console.WriteLine("Running with Kubernetes Provider");
-            return new KubernetesProvider(new KubernetesProviderConfig());
-        }
-        catch
-        {
-            Console.WriteLine("Running with Consul Provider");
-            return new ConsulProvider(new ConsulProviderConfig());
-        }
-    }
-
-    private static IIdentityStorage GetRedisId(string clusterName)
-    {
-        var connectionString =
-            Environment.GetEnvironmentVariable("REDIS");
-
-        Console.WriteLine("REDIS " + connectionString);
-
-        var multiplexer = ConnectionMultiplexer.Connect(connectionString);
-        var identity = new RedisIdentityStorage(clusterName, multiplexer);
-        return identity;
-    }
+    private static IClusterProvider GetProvider() => new KubernetesProvider();
 }
