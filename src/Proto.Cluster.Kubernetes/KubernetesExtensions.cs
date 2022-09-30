@@ -64,7 +64,7 @@ internal static class KubernetesExtensions
         var kinds = pod
             .Metadata
             .Annotations
-            .Where(l => l.Key.StartsWith(LabelKinds))
+            .Where(l => l.Key.StartsWith(AnnotationKinds))
             .SelectMany(l => l.Value.Split(';'))
             .ToArray();
 

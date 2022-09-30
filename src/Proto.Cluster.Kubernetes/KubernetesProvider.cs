@@ -141,7 +141,7 @@ public class KubernetesProvider : IClusterProvider
 
         var annotations = new Dictionary<string, string>
         {
-            [LabelKinds] = string.Join(';', _kinds),
+            [AnnotationKinds] = string.Join(';', _kinds),
         };
 
         if (pod.Metadata.Annotations is not null)
@@ -210,11 +210,11 @@ public class KubernetesProvider : IClusterProvider
         var pod = await kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
 
         var labels = pod.Metadata.Labels
-            .Where(label => !label.Key.StartsWith(LabelPrefix, StringComparison.Ordinal))
+            .Where(label => !label.Key.StartsWith(ProtoClusterPrefix, StringComparison.Ordinal))
             .ToDictionary(label => label.Key, label => label.Value);
 
         var annotations = pod.Metadata.Annotations
-            .Where(label => !label.Key.StartsWith(LabelPrefix, StringComparison.Ordinal))
+            .Where(label => !label.Key.StartsWith(ProtoClusterPrefix, StringComparison.Ordinal))
             .ToDictionary(label => label.Key, label => label.Value);
 
         await kubernetes.ReplacePodLabelsAndAnnotations(_podName, kubeNamespace, pod, labels, annotations);
