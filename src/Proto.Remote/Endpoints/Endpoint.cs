@@ -17,6 +17,7 @@ using Proto.Remote.Metrics;
 
 namespace Proto.Remote;
 
+
 public abstract class Endpoint : IEndpoint
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
