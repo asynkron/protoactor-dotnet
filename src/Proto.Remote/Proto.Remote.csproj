@@ -9,7 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="Grpc.AspNetCore" Version="2.46.0" />
-        <PackageReference Include="Grpc.Core.Api" Version="2.48.0" />
+        <PackageReference Include="Grpc.Core.Api" Version="2.49.0" />
         <PackageReference Include="Grpc.HealthCheck" Version="2.46.3" />
         <PackageReference Include="Grpc.Net.Common" Version="2.48.0" />
         <PackageReference Include="Grpc.Tools" Version="2.48.1" PrivateAssets="All" />
