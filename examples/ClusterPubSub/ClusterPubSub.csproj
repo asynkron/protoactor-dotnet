@@ -16,7 +16,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
-        <PackageReference Include="Proto.Cluster.CodeGen" Version="1.0.0-rc2.43" />
+        <PackageReference Include="Proto.Cluster.CodeGen" Version="1.0.0-rc3.3" />
     </ItemGroup>
 
     <ItemGroup>
