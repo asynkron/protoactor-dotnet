@@ -243,7 +243,7 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// <param name="reason">Provide the reason for the shutdown, that can be used for diagnosing problems</param>
     public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
-        await Gossip.SetStateAsync("cluster:left", new Empty());
+        await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty());
 
         //TODO: improve later, await at least two gossip cycles
 
