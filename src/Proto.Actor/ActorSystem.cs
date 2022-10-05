@@ -128,7 +128,13 @@ public sealed class ActorSystem : IAsyncDisposable
     /// <summary>
     ///     Stops the actor system with reason = "Disposed"
     /// </summary>
-    public async ValueTask DisposeAsync() => await ShutdownAsync("Disposed");
+    public async ValueTask DisposeAsync()
+    {
+        if (!Shutdown.IsCancellationRequested)
+        {
+            await ShutdownAsync("Disposed");
+        }
+    }
 
     // NOTE: We don't dispose _cts here on purpose, as doing so causes
     // ObjectDisposedException to be thrown from certain background task
