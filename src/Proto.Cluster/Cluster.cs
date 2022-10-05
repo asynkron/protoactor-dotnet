@@ -33,6 +33,7 @@ public class Cluster : IActorSystemExtension<Cluster>
     private Func<IEnumerable<Measurement<long>>>? _clusterKindObserver;
     private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
     private Func<IEnumerable<Measurement<long>>>? _clusterMembersObserver;
+    private readonly TaskCompletionSource<bool> _shutdownCompletedTcs = new();
 
     public Cluster(ActorSystem system, ClusterConfig config)
     {
@@ -89,6 +90,11 @@ public class Cluster : IActorSystemExtension<Cluster>
     ///     IRemote implementation the cluster is using
     /// </summary>
     public IRemote Remote { get; private set; } = null!;
+
+    /// <summary>
+    ///     Awaitable task which will complete when this cluster has completed shutdown
+    /// </summary>
+    public Task ShutdownCompleted => _shutdownCompletedTcs.Task;
 
     /// <summary>
     ///     A list of known cluster members. See <see cref="Proto.Cluster.MemberList" /> for details
@@ -270,6 +276,7 @@ public class Cluster : IActorSystemExtension<Cluster>
 
         await Remote.ShutdownAsync(graceful);
 
+        _shutdownCompletedTcs.TrySetResult(true);
         Logger.LogInformation("Stopped Cluster {Id}", System.Id);
     }
 
