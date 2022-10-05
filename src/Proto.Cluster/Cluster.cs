@@ -255,9 +255,12 @@ public class Cluster : IActorSystemExtension<Cluster>
             _clusterMembersObserver = null;
         }
 
-        await System.ShutdownAsync(reason);
         Logger.LogInformation("Stopping Cluster {Id}", System.Id);
+        // Cancel the primary CancellationToken first which will shut down a number of concurrent systems simultaneously.
+        await System.ShutdownAsync(reason);
 
+        // Shut down the rest of the dependencies in reverse order that they were started.
+        await Provider.ShutdownAsync(graceful);
         await Gossip.ShutdownAsync();
 
         if (graceful)
@@ -265,7 +268,6 @@ public class Cluster : IActorSystemExtension<Cluster>
             await IdentityLookup.ShutdownAsync();
         }
 
-        await Config.ClusterProvider.ShutdownAsync(graceful);
         await Remote.ShutdownAsync(graceful);
 
         Logger.LogInformation("Stopped Cluster {Id}", System.Id);
