@@ -31,7 +31,7 @@ namespace Proto.Cluster;
 public class Cluster : IActorSystemExtension<Cluster>
 {
     private Func<IEnumerable<Measurement<long>>>? _clusterKindObserver;
-    private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
+    private readonly Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
     private Func<IEnumerable<Measurement<long>>>? _clusterMembersObserver;
     private readonly TaskCompletionSource<bool> _shutdownCompletedTcs = new();
 
