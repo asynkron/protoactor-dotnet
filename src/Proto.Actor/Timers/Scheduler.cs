@@ -9,6 +9,10 @@ namespace Proto.Timers;
 ///     Scheduler can be used to schedule a message to be sent in the future. It is useful e.g., when actor needs to do
 ///     some work after a certain time.
 /// </summary>
+/// <remarks>
+///     The user is responsible for cancelling sends. They will not be automatically
+///     cancelled when this object is distroyed and will be left around in the background.
+/// </remarks>
 [PublicAPI]
 public class Scheduler
 {
