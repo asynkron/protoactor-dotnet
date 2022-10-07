@@ -57,7 +57,6 @@ public record MemberList
     private int _nextMemberIndex;
 
     private TaskCompletionSource<bool> _startedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private bool _stopping;
     private IConsensusHandle<ulong>? _topologyConsensus;
 
     public MemberList(Cluster cluster)
@@ -284,12 +283,12 @@ public record MemberList
 
     private void SelfBlocked()
     {
-        if (_stopping)
+        // If already shutting down, nothing to do.
+        if (_system.Shutdown.IsCancellationRequested)
         {
             return;
         }
 
-        _stopping = true;
         Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
         _ = _cluster.ShutdownAsync(reason: "Blocked by MemberList");
     }

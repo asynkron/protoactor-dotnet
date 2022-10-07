@@ -455,12 +455,10 @@ public class Gossiper
         }
     }
 
-    internal Task ShutdownAsync()
+    internal async Task ShutdownAsync()
     {
         Logger.LogInformation("Shutting down heartbeat");
-        _context.Stop(_pid);
+        await _context.StopAsync(_pid);
         Logger.LogInformation("Shut down heartbeat");
-
-        return Task.CompletedTask;
     }
 }

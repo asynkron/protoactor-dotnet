@@ -31,8 +31,9 @@ namespace Proto.Cluster;
 public class Cluster : IActorSystemExtension<Cluster>
 {
     private Func<IEnumerable<Measurement<long>>>? _clusterKindObserver;
-    private Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
+    private readonly Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
     private Func<IEnumerable<Measurement<long>>>? _clusterMembersObserver;
+    private readonly TaskCompletionSource<bool> _shutdownCompletedTcs = new();
 
     public Cluster(ActorSystem system, ClusterConfig config)
     {
@@ -89,6 +90,11 @@ public class Cluster : IActorSystemExtension<Cluster>
     ///     IRemote implementation the cluster is using
     /// </summary>
     public IRemote Remote { get; private set; } = null!;
+
+    /// <summary>
+    ///     Awaitable task which will complete when this cluster has completed shutdown
+    /// </summary>
+    public Task ShutdownCompleted => _shutdownCompletedTcs.Task;
 
     /// <summary>
     ///     A list of known cluster members. See <see cref="Proto.Cluster.MemberList" /> for details
@@ -237,7 +243,7 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// <param name="reason">Provide the reason for the shutdown, that can be used for diagnosing problems</param>
     public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
-        await Gossip.SetStateAsync("cluster:left", new Empty());
+        await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty());
 
         //TODO: improve later, await at least two gossip cycles
 
@@ -255,9 +261,12 @@ public class Cluster : IActorSystemExtension<Cluster>
             _clusterMembersObserver = null;
         }
 
-        await System.ShutdownAsync(reason);
         Logger.LogInformation("Stopping Cluster {Id}", System.Id);
+        // Cancel the primary CancellationToken first which will shut down a number of concurrent systems simultaneously.
+        await System.ShutdownAsync(reason);
 
+        // Shut down the rest of the dependencies in reverse order that they were started.
+        await Provider.ShutdownAsync(graceful);
         await Gossip.ShutdownAsync();
 
         if (graceful)
@@ -265,9 +274,9 @@ public class Cluster : IActorSystemExtension<Cluster>
             await IdentityLookup.ShutdownAsync();
         }
 
-        await Config.ClusterProvider.ShutdownAsync(graceful);
         await Remote.ShutdownAsync(graceful);
 
+        _shutdownCompletedTcs.TrySetResult(true);
         Logger.LogInformation("Stopped Cluster {Id}", System.Id);
     }
 
