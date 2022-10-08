@@ -98,49 +98,11 @@ public class GossipActor : IActor
         }
 
         ReceiveState(context, gossipRequest.State);
+        
+        context.Respond(new GossipResponse());
 
-        //it's OK, we might not just yet be aware of this member yet....
-
-        // if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
-        // {
-        //     Logger.LogWarning("Got gossip request from unknown member {MemberId}", gossipRequest.MemberId);
-        //
-        //     // Nothing to send, do not provide sender or state payload
-        //     context.Respond(new GossipResponse());
-        //     return Task.CompletedTask;
-        // }
-
-        var memberState = _internal.GetMemberStateDelta(gossipRequest.MemberId);
-
-        if (!memberState.HasState)
-        {
-            if (Logger.IsEnabled(LogLevel.Debug))
-            {
-                Logger.LogDebug("Got gossip request from member {MemberId}, but no state was found",
-                    gossipRequest.MemberId);
-            }
-
-            // Nothing to send, do not provide sender or state payload
-            context.Respond(new GossipResponse());
-
-            return Task.CompletedTask;
-        }
-
-        context.Respond(new GossipResponse
-        {
-            State = memberState.State.Clone() //ensure we have a copy and not state that might mutate
-        });
-
+        
         return Task.CompletedTask;
-
-        //this code is broken
-        //
-        // context.RequestReenter<GossipResponseAck>(context.Sender!, new GossipResponse
-        //     {
-        //         State = memberState.State.Clone(), //ensure we have a copy and not state that might mutate
-        //     }, task => ReenterAfterResponseAck(context, task, memberState), CancellationTokens.WithTimeout(_gossipRequestTimeout));
-        //
-        // return Task.CompletedTask;
     }
 
     private void ReceiveState(IContext context, GossipState remoteState)
@@ -189,7 +151,7 @@ public class GossipActor : IActor
         //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
 
         // This will return a GossipResponse, but since we need could need to get the sender, we do not unpack it from the MessageEnvelope
-        context.RequestReenter<object>(pid, new GossipRequest
+        context.RequestReenter<GossipResponse>(pid, new GossipRequest
             {
                 MemberId = context.System.Id,
                 State = memberStateDelta.State.Clone() //ensure we have a copy and not send state that might mutate
@@ -199,29 +161,14 @@ public class GossipActor : IActor
         );
     }
 
-    private async Task GossipReenterAfterSend(IContext context, Task<object> task, MemberStateDelta delta)
+    private async Task GossipReenterAfterSend(IContext context, Task<GossipResponse> task, MemberStateDelta delta)
     {
         var logger = context.Logger();
 
         try
         {
             await task;
-            var envelope = task.Result as MessageEnvelope;
-
-            if (envelope?.Message is GossipResponse response)
-            {
-                delta.CommitOffsets();
-
-                if (response.State is not null)
-                {
-                    ReceiveState(context, response.State!);
-
-                    if (envelope.Sender is not null)
-                    {
-                        context.Send(envelope.Sender, new GossipResponseAck());
-                    }
-                }
-            }
+            delta.CommitOffsets();
         }
         catch (DeadLetterException)
         {
@@ -242,37 +189,6 @@ public class GossipActor : IActor
         {
             logger?.LogError(x, "GossipReenterAfterSend failed");
             Logger.LogError(x, "GossipReenterAfterSend failed");
-        }
-    }
-
-    private async Task ReenterAfterResponseAck(IContext context, Task<GossipResponseAck> task, MemberStateDelta delta)
-    {
-        var logger = context.Logger();
-
-        try
-        {
-            await task;
-            delta.CommitOffsets();
-        }
-        catch (DeadLetterException)
-        {
-            logger?.LogWarning("DeadLetter");
-            Logger.LogWarning("DeadLetter in ReenterAfterResponseAck");
-        }
-        catch (OperationCanceledException)
-        {
-            logger?.LogWarning("Timeout");
-            Logger.LogWarning("Timeout in ReenterAfterResponseAck");
-        }
-        catch (TimeoutException)
-        {
-            logger?.LogWarning("Timeout");
-            Logger.LogWarning("Timeout in ReenterAfterResponseAck");
-        }
-        catch (Exception x)
-        {
-            logger?.LogError(x, "ReenterAfterResponseAck failed");
-            Logger.LogError(x, "ReenterAfterResponseAck failed");
         }
     }
 }
