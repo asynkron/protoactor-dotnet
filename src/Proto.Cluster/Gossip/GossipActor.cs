@@ -141,54 +141,43 @@ public class GossipActor : IActor
     {
         var pid = PID.FromAddress(member.Address, Gossiper.GossipActorName);
 
-        logger?.LogInformation("Sending GossipRequest to {MemberId}", member.Id);
-
         if (Logger.IsEnabled(LogLevel.Debug))
         {
             Logger.LogDebug("Sending GossipRequest to {MemberId}", member.Id);
         }
 
-        //a short timeout is massively important, we cannot afford hanging around waiting for timeout, blocking other gossips from getting through
-
-        // This will return a GossipResponse, but since we need could need to get the sender, we do not unpack it from the MessageEnvelope
+        var start = DateTime.UtcNow;
         context.RequestReenter<GossipResponse>(pid, new GossipRequest
             {
                 MemberId = context.System.Id,
                 State = memberStateDelta.State.Clone() //ensure we have a copy and not send state that might mutate
             },
-            task => GossipReenterAfterSend(context, task, memberStateDelta),
+            async task =>
+            {
+                var delta = DateTime.UtcNow - start;
+                try
+                {
+                    await task;
+                    memberStateDelta.CommitOffsets();
+                }
+                catch (DeadLetterException)
+                {
+                    Logger.LogWarning("DeadLetter in GossipReenterAfterSend, elapsed {Delta}ms",delta.TotalMilliseconds);
+                }
+                catch (OperationCanceledException)
+                {
+                    Logger.LogWarning("OperationCancel in GossipReenterAfterSend, elapsed {Delta}ms",delta.TotalMilliseconds);
+                }
+                catch (TimeoutException)
+                {
+                    Logger.LogWarning("Timeout in GossipReenterAfterSend, elapsed {Delta}ms",delta.TotalMilliseconds);
+                }
+                catch (Exception x)
+                {
+                    Logger.LogError(x, "GossipReenterAfterSend failed, elapsed {Delta}ms",delta.TotalMilliseconds);
+                }
+            },
             CancellationTokens.WithTimeout(_gossipRequestTimeout)
         );
-    }
-
-    private async Task GossipReenterAfterSend(IContext context, Task<GossipResponse> task, MemberStateDelta delta)
-    {
-        var logger = context.Logger();
-
-        try
-        {
-            await task;
-            delta.CommitOffsets();
-        }
-        catch (DeadLetterException)
-        {
-            logger?.LogWarning("DeadLetter");
-            Logger.LogWarning("DeadLetter in GossipReenterAfterSend");
-        }
-        catch (OperationCanceledException)
-        {
-            logger?.LogWarning("Timeout");
-            Logger.LogWarning("Timeout in GossipReenterAfterSend");
-        }
-        catch (TimeoutException)
-        {
-            logger?.LogWarning("Timeout");
-            Logger.LogWarning("Timeout in GossipReenterAfterSend");
-        }
-        catch (Exception x)
-        {
-            logger?.LogError(x, "GossipReenterAfterSend failed");
-            Logger.LogError(x, "GossipReenterAfterSend failed");
-        }
     }
 }
