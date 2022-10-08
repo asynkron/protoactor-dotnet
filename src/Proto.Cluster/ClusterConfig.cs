@@ -89,12 +89,6 @@ public record ClusterConfig
     public TimeSpan HeartbeatExpiration { get; set; }
 
     /// <summary>
-    ///     Timeout for spawning an actor in the Partition Identity Lookup. Default is 5s.
-    /// </summary>
-    [Obsolete("Use ActorActivationTimeout instead")]
-    public TimeSpan TimeoutTimespan => ActorActivationTimeout;
-
-    /// <summary>
     ///     Timeout for single retry of actor request. Default is 5s.
     ///     Overall timeout for the request is controlled by the cancellation token on
     ///     <see cref="IClusterContext.RequestAsync{T}(ClusterIdentity, object, ISenderContext, CancellationToken)" />
