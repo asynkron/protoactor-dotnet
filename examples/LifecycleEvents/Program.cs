@@ -7,6 +7,7 @@
 using System;
 using System.Threading.Tasks;
 using Proto;
+using Proto.Extensions;
 
 namespace LifecycleEvents;
 
@@ -18,7 +19,7 @@ internal static class Program
 
         system.EventStream.Subscribe<DeadLetterEvent>(
             dl => Console.WriteLine(
-                $"DeadLetter from {dl.Sender} to {dl.Pid} : {dl.Message.GetType().Name} = '{dl.Message}'"
+                $"DeadLetter from {dl.Sender} to {dl.Pid} : {dl.Message.GetMessageTypeName()} = '{dl.Message}'"
             )
         );
 

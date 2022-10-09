@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
+using Proto.Extensions;
 using Proto.Utils;
 
 namespace Proto.Cluster;
@@ -218,7 +219,7 @@ public class DefaultClusterContext : IClusterContext
                                 new KeyValuePair<string, object?>("id", _system.Id),
                                 new KeyValuePair<string, object?>("address", _system.Address),
                                 new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind),
-                                new KeyValuePair<string, object?>("messagetype", message.GetType().Name),
+                                new KeyValuePair<string, object?>("messagetype", message.GetMessageTypeName()),
                                 new KeyValuePair<string, object?>("pidsource",
                                     source == PidSource.Cache ? "PidCache" : "IIdentityLookup")
                             );
@@ -231,7 +232,7 @@ public class DefaultClusterContext : IClusterContext
                         1, new KeyValuePair<string, object?>("id", _system.Id),
                         new KeyValuePair<string, object?>("address", _system.Address),
                         new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind),
-                        new KeyValuePair<string, object?>("messagetype", message.GetType().Name)
+                        new KeyValuePair<string, object?>("messagetype", message.GetMessageTypeName())
                     );
                 }
             }

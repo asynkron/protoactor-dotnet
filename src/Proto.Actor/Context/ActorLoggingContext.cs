@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Extensions;
 
 namespace Proto;
 
@@ -62,7 +63,7 @@ public class ActorLoggingContext : ActorContextDecorator
         if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
         {
             _logger.Log(logLevel, "Actor {Self} {ActorType} received message {MessageType}:{Message} from {Sender}",
-                Self, ActorType, message.GetType().Name,
+                Self, ActorType, message.GetMessageTypeName(),
                 message,
                 SenderOrNone(envelope)
             );
@@ -76,7 +77,7 @@ public class ActorLoggingContext : ActorContextDecorator
             {
                 _logger.Log(logLevel,
                     "Actor {Self} {ActorType} completed message {MessageType}:{Message} from {Sender}", Self, ActorType,
-                    message.GetType().Name,
+                    message.GetMessageTypeName(),
                     message,
                     SenderOrNone(envelope)
                 );
@@ -89,7 +90,7 @@ public class ActorLoggingContext : ActorContextDecorator
                 _logger.Log(_exceptionLogLevel, x,
                     "Actor {Self} {ActorType} failed during message {MessageType}:{Message} from {Sender}", Self,
                     ActorType,
-                    message.GetType().Name, message,
+                    message.GetMessageTypeName(), message,
                     SenderOrNone(envelope)
                 );
             }
@@ -126,7 +127,7 @@ public class ActorLoggingContext : ActorContextDecorator
         {
             _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending RequestAsync {MessageType}:{Message} to {Target}",
                 Self, ActorType,
-                message.GetType().Name, message, target
+                message.GetMessageTypeName(), message, target
             );
         }
 
@@ -139,7 +140,7 @@ public class ActorLoggingContext : ActorContextDecorator
                 _logger.Log(_logLevel,
                     "Actor {Self} {ActorType} Got response {Response} to {MessageType}:{Message} from {Target}", Self,
                     ActorType,
-                    response, message.GetType().Name, message, target
+                    response, message.GetMessageTypeName(), message, target
                 );
             }
 
@@ -153,7 +154,7 @@ public class ActorLoggingContext : ActorContextDecorator
                     "Actor {Self} {ActorType} Got exception waiting for RequestAsync response of {MessageType}:{Message} from {Target}",
                     Self,
                     ActorType,
-                    message.GetType().Name, message, target
+                    message.GetMessageTypeName(), message, target
                 );
             }
 
@@ -211,7 +212,7 @@ public class ActorLoggingContext : ActorContextDecorator
         {
             _logger.Log(logLevel, "Actor {Self} {ActorType} responded with {MessageType}:{Message} to {Sender}", Self,
                 ActorType,
-                message.GetType().Name, message, Sender
+                message.GetMessageTypeName(), message, Sender
             );
         }
 

@@ -8,6 +8,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Identity;
+using Proto.Extensions;
 using Proto.Utils;
 
 namespace Proto.Cluster;
@@ -70,7 +71,7 @@ public static class LocalAffinityExtensions
                     if (Logger.IsEnabled(LogLevel.Debug))
                     {
                         Logger.LogDebug("Relocating {ActorPid}, because of {MessageType} from {Sender}", context.Self,
-                            envelope.Message.GetType(), sender
+                            envelope.Message.GetMessageTypeName(), sender
                         );
                     }
 

@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using Proto.Extensions;
 using Proto.Mailbox;
 using Proto.Metrics;
 
@@ -54,7 +55,7 @@ public class DeadLetterEvent
     public MessageHeader Header { get; }
 
     public override string ToString() =>
-        $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetType()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
+        $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetMessageTypeName()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
 }
 
 /// <summary>
@@ -97,7 +98,7 @@ public class DeadLetterProcess : Process
         {
             ActorMetrics.DeadletterCount.Add(1, new KeyValuePair<string, object?>("id", System.Id),
                 new KeyValuePair<string, object?>("address", System.Address),
-                new KeyValuePair<string, object?>("messagetype", message.GetType().Name));
+                new KeyValuePair<string, object?>("messagetype", message.GetMessageTypeName()));
         }
 
         //trying to watch a dead pid returns terminated, NotFound

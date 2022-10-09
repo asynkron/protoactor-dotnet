@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
+using Proto.Diagnostics;
 
 namespace Proto;
 
@@ -14,7 +15,7 @@ namespace Proto;
 ///     Adds headers and sender information to a message.
 /// </summary>
 [PublicAPI]
-public record MessageEnvelope
+public record MessageEnvelope : IDiagnosticsTypeName
 {
     /// <summary>
     ///     Creates a new message envelope.
@@ -158,4 +159,10 @@ public record MessageEnvelope
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static PID? UnwrapSender(object? message) => (message as MessageEnvelope)?.Sender;
+
+    public string GetTypeName()
+    {
+        var m = Message?.GetType().Name ?? "null";
+        return $"MessageEnvelope({m})";
+    }
 }
