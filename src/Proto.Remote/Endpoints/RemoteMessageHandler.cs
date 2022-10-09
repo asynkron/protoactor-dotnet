@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Proto.Extensions;
 using Proto.Mailbox;
 using Proto.Remote.Metrics;
 
@@ -186,7 +187,7 @@ public sealed class RemoteMessageHandler
                             {
                                 _logger.LogTrace(
                                     "[{SystemAddress}] Received user message {MessageType} {Message} for {Target} from {Sender}",
-                                    _system.Address, message.GetType().Name, message, target, sender
+                                    _system.Address, message.GetMessageTypeName(), message, target, sender
                                 );
                             }
 

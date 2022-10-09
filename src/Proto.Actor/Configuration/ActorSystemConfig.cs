@@ -9,6 +9,7 @@ using System.Diagnostics;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Context;
+using Proto.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Proto;
@@ -250,11 +251,11 @@ public static class ActorSystemConfigExtensions
                 {
                     logger.Log(logLevel, "Receive is taking too long {Elapsed} {Self} incoming message {Message}",
                         sw.Elapsed, context.Self,
-                        envelope.Message.GetType().Name
+                        envelope.Message.GetHashCode()
                     );
 
                     Console.WriteLine(
-                        $"Receive is taking too long {sw.Elapsed} {context.Self} incoming message {envelope.Message.GetType().Name}");
+                        $"Receive is taking too long {sw.Elapsed} {context.Self} incoming message {envelope.Message.GetMessageTypeName()}");
                 }
 
                 return res;

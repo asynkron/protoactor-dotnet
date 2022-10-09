@@ -6,6 +6,7 @@
 
 using System;
 using Google.Protobuf;
+using Proto.Diagnostics;
 using Proto.Remote;
 
 namespace Proto.Cluster;
@@ -15,7 +16,7 @@ namespace Proto.Cluster;
 /// </summary>
 /// <param name="MethodIndex">Index of the code generated method that should process the request message</param>
 /// <param name="RequestMessage">Wrapped message</param>
-public record GrainRequestMessage(int MethodIndex, IMessage? RequestMessage) : IRootSerializable
+public record GrainRequestMessage(int MethodIndex, IMessage? RequestMessage) : IRootSerializable, IDiagnosticsTypeName
 {
     //serialize into the on-the-wire format
     public IRootSerialized Serialize(ActorSystem system)
@@ -40,5 +41,12 @@ public record GrainRequestMessage(int MethodIndex, IMessage? RequestMessage) : I
             MessageData = data,
             MessageTypeName = typeName
         };
+    }
+
+    public string GetTypeName()
+    {
+        var m = RequestMessage?.GetType().Name ?? "null";
+
+        return $"GrainRequest({m})";
     }
 }

@@ -12,6 +12,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Extensions;
 using Proto.Mailbox;
 using Proto.Utils;
 
@@ -50,7 +51,7 @@ public class EventStream : EventStream<object>
                 {
                     _logger.LogInformation(
                         "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
-                        dl.Message.GetType().Name,
+                        dl.Message.GetMessageTypeName(),
                         dl.Message,
                         dl.Pid,
                         dl.Sender

@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Diagnostics;
+using Proto.Extensions;
 using Proto.Future;
 using Proto.Mailbox;
 using Proto.Metrics;
@@ -424,7 +425,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
                 ActorMetrics.ActorMessageReceiveDuration.Record(sw.Elapsed.TotalSeconds,
                     metricTags[0], metricTags[1], metricTags[2],
                     new KeyValuePair<string, object?>("messagetype",
-                        MessageEnvelope.UnwrapMessage(msg)?.GetType().Name ?? "{null}")
+                        MessageEnvelope.UnwrapMessage(msg).GetMessageTypeName())
                 );
             }
         }

@@ -6,6 +6,7 @@
 
 using System;
 using Google.Protobuf;
+using Proto.Diagnostics;
 using Proto.Remote;
 
 namespace Proto.Cluster;
@@ -14,7 +15,7 @@ namespace Proto.Cluster;
 ///     A response message wrapper used for code-generated virtual actors (grains).
 /// </summary>
 /// <param name="ResponseMessage">Wrapped message</param>
-public record GrainResponseMessage(IMessage? ResponseMessage) : IRootSerializable
+public record GrainResponseMessage(IMessage? ResponseMessage) : IRootSerializable, IDiagnosticsTypeName
 {
     public IRootSerialized Serialize(ActorSystem system)
     {
@@ -36,5 +37,12 @@ public record GrainResponseMessage(IMessage? ResponseMessage) : IRootSerializabl
             MessageData = data,
             MessageTypeName = typeName
         };
+    }
+
+    public string GetTypeName()
+    {
+        var m = ResponseMessage?.GetType().Name ?? "null";
+
+        return $"GrainRequest({m})";
     }
 }

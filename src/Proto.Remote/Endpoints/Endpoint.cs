@@ -13,6 +13,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
+using Proto.Extensions;
 using Proto.Remote.Metrics;
 
 namespace Proto.Remote;
@@ -101,7 +102,7 @@ public abstract class Endpoint : IEndpoint
         {
             _logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {Message} to {Target} from {Sender}",
                 System.Address,
-                message.GetType().Name, message, target, sender
+                message.GetMessageTypeName(), message, target, sender
             );
         }
 
@@ -116,7 +117,7 @@ public abstract class Endpoint : IEndpoint
         {
             _logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {Message} to {Target} from {Sender}",
                 System.Address,
-                message.GetType().Name, message, target, sender
+                message.GetMessageTypeName(), message, target, sender
             );
 
             RejectRemoteDeliver(env);
@@ -466,13 +467,13 @@ public abstract class Endpoint : IEndpoint
             }
             catch (CodedOutputStream.OutOfSpaceException oom)
             {
-                _logger.LogError(oom, "Message is too large {Message}", message.GetType().Name);
+                _logger.LogError(oom, "Message is too large {Message}", message.GetMessageTypeName());
 
                 throw;
             }
             catch (Exception x)
             {
-                _logger.LogError(x, "Serialization failed for message {Message}", message.GetType().Name);
+                _logger.LogError(x, "Serialization failed for message {Message}", message.GetMessageTypeName());
 
                 throw;
             }
