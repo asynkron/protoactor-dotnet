@@ -220,7 +220,7 @@ public record MemberList
 
             if (topology.Left.Any())
             {
-                Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
+                Logger.LogInformation("[MemberList] Cluster members left {MembersLeft}", topology.Left);
             }
 
             BroadcastTopologyChanges(topology);
