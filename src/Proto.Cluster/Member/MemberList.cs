@@ -112,6 +112,8 @@ public record MemberList
 
     public string MemberId => _system.Id;
 
+    public bool Stopping { get; internal set; }
+
     /// <summary>
     ///     Gets a list of member ids (same as <see cref="ActorSystem.Id" />) that are currently active in the cluster.
     /// </summary>
@@ -284,7 +286,7 @@ public record MemberList
     private void SelfBlocked()
     {
         // If already shutting down, nothing to do.
-        if (_system.Shutdown.IsCancellationRequested)
+        if (Stopping || _system.Shutdown.IsCancellationRequested)
         {
             return;
         }
