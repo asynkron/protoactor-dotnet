@@ -6,7 +6,7 @@
 
 namespace Proto.Remote;
 
-public sealed record EndpointTerminatedEvent(bool OnError, string? Address, string? ActorSystemId)
+public sealed record EndpointTerminatedEvent(bool ShouldBlock, string? Address, string? ActorSystemId)
 {
     public override string ToString() => $"EndpointTerminatedEvent: {Address ?? ActorSystemId}";
 }

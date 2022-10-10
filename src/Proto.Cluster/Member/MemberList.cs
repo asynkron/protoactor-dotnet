@@ -313,7 +313,7 @@ public record MemberList
 
     private void TerminateMember(Member memberThatLeft)
     {
-        var endpointTerminated = new EndpointTerminatedEvent(false, memberThatLeft.Address, memberThatLeft.Id);
+        var endpointTerminated = new EndpointTerminatedEvent(true, memberThatLeft.Address, memberThatLeft.Id);
 
         if (Logger.IsEnabled(LogLevel.Information))
         {
