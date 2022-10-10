@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
+using Proto.Extensions;
 
 namespace Proto.OpenTelemetry;
 
@@ -25,7 +26,7 @@ internal static class OpenTelemetryHelpers
         ActivityKind activityKind = ActivityKind.Internal
     )
     {
-        var messageType = message?.GetType().Name ?? "Unknown";
+        var messageType = message.GetMessageTypeName();
 
         var name = $"Proto {source}.{verb} {messageType}";
         var tags = new[] { new KeyValuePair<string, object?>(ProtoTags.MessageType, messageType) };
