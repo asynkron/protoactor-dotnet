@@ -52,7 +52,7 @@ public sealed class ServerConnector
         _endpoint = endpoint;
         _maxNrOfRetries = remoteConfig.EndpointWriterOptions.MaxRetries;
         _backoff = remoteConfig.EndpointWriterOptions.RetryBackOff;
-        _runner = Task.Run(() => RunAsync());
+        _runner = Task.Run(RunAsync);
 
         if (_system.Metrics.Enabled)
         {
@@ -130,7 +130,7 @@ public sealed class ServerConnector
                 await call.ResponseStream.MoveNext().ConfigureAwait(false);
                 var response = call.ResponseStream.Current;
 
-                if (response.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectResponse)
+                if (response?.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectResponse)
                 {
                     throw new Exception("Expected ConnectResponse");
                 }

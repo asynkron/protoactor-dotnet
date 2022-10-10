@@ -112,6 +112,8 @@ public record MemberList
 
     public string MemberId => _system.Id;
 
+    public bool Stopping { get; internal set; }
+
     /// <summary>
     ///     Gets a list of member ids (same as <see cref="ActorSystem.Id" />) that are currently active in the cluster.
     /// </summary>
@@ -218,7 +220,7 @@ public record MemberList
 
             if (topology.Left.Any())
             {
-                Logger.LogInformation("[MemberList] Cluster members left {MembersJoined}", topology.Left);
+                Logger.LogInformation("[MemberList] Cluster members left {MembersLeft}", topology.Left);
             }
 
             BroadcastTopologyChanges(topology);
@@ -284,7 +286,7 @@ public record MemberList
     private void SelfBlocked()
     {
         // If already shutting down, nothing to do.
-        if (_system.Shutdown.IsCancellationRequested)
+        if (Stopping || _system.Shutdown.IsCancellationRequested)
         {
             return;
         }
@@ -311,7 +313,7 @@ public record MemberList
 
     private void TerminateMember(Member memberThatLeft)
     {
-        var endpointTerminated = new EndpointTerminatedEvent(false, memberThatLeft.Address, memberThatLeft.Id);
+        var endpointTerminated = new EndpointTerminatedEvent(true, memberThatLeft.Address, memberThatLeft.Id);
 
         if (Logger.IsEnabled(LogLevel.Information))
         {

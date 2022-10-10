@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 //   <copyright file="EndpointManager.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2022 Asynkron AB All rights reserved
 //   </copyright>
@@ -99,7 +99,7 @@ public sealed class EndpointManager
             {
                 endpoint.DisposeAsync().GetAwaiter().GetResult();
 
-                if (evt.OnError && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue &&
+                if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue &&
                     _blockedAddresses.TryAdd(evt.Address, DateTime.UtcNow))
                 {
                     _ = SafeTask.Run(async () =>
@@ -107,7 +107,7 @@ public sealed class EndpointManager
                         await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value)
                             .ConfigureAwait(false);
 
-                        _blockedAddresses.TryRemove(evt.Address, out var _);
+                        _blockedAddresses.TryRemove(evt.Address, out _);
                     });
                 }
             }
@@ -116,7 +116,7 @@ public sealed class EndpointManager
             {
                 endpoint.DisposeAsync().GetAwaiter().GetResult();
 
-                if (evt.OnError && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue &&
+                if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue &&
                     _blockedClientSystemIds.TryAdd(evt.ActorSystemId, DateTime.UtcNow))
                 {
                     _ = SafeTask.Run(async () =>
@@ -124,7 +124,7 @@ public sealed class EndpointManager
                         await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value)
                             .ConfigureAwait(false);
 
-                        _blockedClientSystemIds.TryRemove(evt.ActorSystemId, out var _);
+                        _blockedClientSystemIds.TryRemove(evt.ActorSystemId, out _);
                     });
                 }
             }
@@ -134,7 +134,7 @@ public sealed class EndpointManager
             evt.Address ?? evt.ActorSystemId);
     }
 
-    internal IEndpoint GetOrAddServerEndpoint(string address)
+    internal IEndpoint GetOrAddServerEndpoint(string? address)
     {
         if (address is null)
         {

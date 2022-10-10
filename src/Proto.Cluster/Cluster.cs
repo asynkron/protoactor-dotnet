@@ -243,7 +243,10 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// <param name="reason">Provide the reason for the shutdown, that can be used for diagnosing problems</param>
     public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
+        // Inform all members of the cluster that this node intends to leave. Also, let the MemberList know that this
+        // node was the one that initiated the shutdown to prevent another shutdown from being called.
         await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty());
+        MemberList.Stopping = true;
 
         //TODO: improve later, await at least two gossip cycles
 
