@@ -243,13 +243,17 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// <param name="reason">Provide the reason for the shutdown, that can be used for diagnosing problems</param>
     public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
+        Logger.LogInformation("Stopping Cluster {Id}", System.Id);
+
         // Inform all members of the cluster that this node intends to leave. Also, let the MemberList know that this
         // node was the one that initiated the shutdown to prevent another shutdown from being called.
-        await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty());
         MemberList.Stopping = true;
+        await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty());
 
-        //TODO: improve later, await at least two gossip cycles
+        // Deregister from configured cluster provider.
+        await Provider.ShutdownAsync(graceful);
 
+        // In case provider shutdown is quick, let's wait at least 2 gossip intervals.
         await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2);
 
         if (_clusterKindObserver != null)
@@ -264,12 +268,10 @@ public class Cluster : IActorSystemExtension<Cluster>
             _clusterMembersObserver = null;
         }
 
-        Logger.LogInformation("Stopping Cluster {Id}", System.Id);
         // Cancel the primary CancellationToken first which will shut down a number of concurrent systems simultaneously.
         await System.ShutdownAsync(reason);
 
         // Shut down the rest of the dependencies in reverse order that they were started.
-        await Provider.ShutdownAsync(graceful);
         await Gossip.ShutdownAsync();
 
         if (graceful)
