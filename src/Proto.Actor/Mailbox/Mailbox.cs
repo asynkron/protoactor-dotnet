@@ -7,6 +7,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Proto.Mailbox;
@@ -34,6 +35,9 @@ public static class BoundedMailbox
 {
     public static IMailbox Create(int size, params IMailboxStatistics[] stats) =>
         new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new BoundedMailboxQueue(size), stats);
+
+    public static IMailbox Create(int size, BoundedChannelFullMode fullMode, params IMailboxStatistics[] stats) =>
+        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new BoundedMailboxQueue(size, fullMode), stats);
 }
 
 public static class UnboundedMailbox
