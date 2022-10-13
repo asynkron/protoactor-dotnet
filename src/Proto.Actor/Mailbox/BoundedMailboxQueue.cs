@@ -15,9 +15,12 @@ public class BoundedMailboxQueue : IMailboxQueue
     private volatile bool _hasMessages;
     private long _length;
 
-    public BoundedMailboxQueue(int size)
+    public BoundedMailboxQueue(int size, BoundedChannelFullMode fullMode = BoundedChannelFullMode.Wait)
     {
-        _messages = Channel.CreateBounded<object>(size);
+        _messages = Channel.CreateBounded<object>(new BoundedChannelOptions(size)
+        {
+            FullMode = fullMode
+        });
     }
 
     public int Length => (int)Interlocked.Read(ref _length);
