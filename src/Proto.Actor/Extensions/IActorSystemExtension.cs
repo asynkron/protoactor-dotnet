@@ -4,7 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading;
+using System.Threading.Tasks;
+using Proto.Diagnostics;
 
 namespace Proto.Extensions;
 
@@ -16,6 +19,7 @@ public interface IActorSystemExtension
     private static int _nextId;
 
     internal static int GetNextId() => Interlocked.Increment(ref _nextId);
+    Task<DiagnosticsEntry[]> GetDiagnostics() => Task.FromResult(Array.Empty<DiagnosticsEntry>());
 }
 
 /// <summary>

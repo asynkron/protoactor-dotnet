@@ -21,7 +21,7 @@ var app = builder.Build();
 
 app.MapGet("/diagnostics", (ActorSystem system) =>
 {
-    var entries = system.Diagnostics.Get();
+    var entries = system.Diagnostics.GetDiagnostics();
     return entries;
 });
 

@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
 
@@ -9,12 +12,14 @@ namespace Proto.Diagnostics;
 
 public class DiagnosticsStore
 {
+    private readonly ActorSystem _system;
     private readonly ILogger _logger = Log.CreateLogger<DiagnosticsStore>();
     private readonly ConcurrentSet<DiagnosticsEntry> _entries = new();
     private readonly LogLevel _logLevel;
 
     public DiagnosticsStore(ActorSystem system)
     {
+        _system = system;
         _logLevel = system.Config.DiagnosticsLogLevel;
         RegisterEnvironmentSettings();
     }
@@ -62,9 +67,19 @@ public class DiagnosticsStore
         }
     }
 
-    public DiagnosticsEntry[] Get()
+    public async Task<DiagnosticsEntry[]> GetDiagnostics()
     {
-        return _entries.ToArray();
+        var entries = new List<DiagnosticsEntry>();
+        var extensions = _system.Extensions.GetAll().ToArray();
+
+        foreach (var e in extensions)
+        {
+            var res = await e.GetDiagnostics();
+            entries.AddRange(res);
+        }
+        entries.AddRange(_entries.ToArray());
+
+        return entries.ToArray();
     }
 }
 

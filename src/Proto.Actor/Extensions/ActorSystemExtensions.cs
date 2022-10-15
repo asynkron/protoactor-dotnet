@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 
 namespace Proto.Extensions;
 
@@ -75,6 +76,17 @@ public class ActorSystemExtensions
 
             _extensions[id] = extension;
             _actorSystem.Diagnostics.RegisterEvent("ActorSystem", $"Extension enabled {typeof(T).Name}");
+        }
+    }
+
+    public IEnumerable<IActorSystemExtension> GetAll()
+    {
+        foreach (var e in _extensions)
+        {
+            if (e == null)
+                continue;
+
+            yield return e;
         }
     }
 }

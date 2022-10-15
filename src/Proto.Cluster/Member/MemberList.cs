@@ -305,7 +305,6 @@ public record MemberList
     private void BroadcastTopologyChanges(ClusterTopology topology)
     {
         _system.Logger()?.LogDebug("MemberList sending state");
-        _cluster.Gossip.SetState(GossipKeys.Topology, topology);
         _eventStream.Publish(topology);
 
         //Console.WriteLine($"{_system.Id} Broadcasting {topology.TopologyHash} - {topology.Members.Count}");

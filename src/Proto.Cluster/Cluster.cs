@@ -18,6 +18,7 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Metrics;
 using Proto.Cluster.PubSub;
 using Proto.Cluster.Seed;
+using Proto.Diagnostics;
 using Proto.Extensions;
 using Proto.Remote;
 using Proto.Utils;
@@ -34,6 +35,17 @@ public class Cluster : IActorSystemExtension<Cluster>
     private readonly Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
     private Func<IEnumerable<Measurement<long>>>? _clusterMembersObserver;
     private readonly TaskCompletionSource<bool> _shutdownCompletedTcs = new();
+
+    public async Task<DiagnosticsEntry[]> GetDiagnostics()
+    {
+        var blocked = new DiagnosticsEntry("Cluster", "Blocked", System.Remote().BlockList.BlockedMembers.ToArray());
+
+        var t = await Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
+
+        var topology = new DiagnosticsEntry("Cluster", "Topology", t);
+
+        return new[] { blocked, topology };
+    }
 
     public Cluster(ActorSystem system, ClusterConfig config)
     {
