@@ -178,6 +178,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
                 logger.LogWarning("System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}", Id,
                     t);
+                
             }, Stopper.Token
         );
     }
