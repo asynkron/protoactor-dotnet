@@ -7,7 +7,7 @@ using Proto.Cluster.Partition;
 using Proto.Cluster.Seed;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
-using Proto.Remote.Healthchecks;
+using Proto.Remote.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 

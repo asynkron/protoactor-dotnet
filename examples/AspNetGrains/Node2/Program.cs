@@ -3,7 +3,7 @@ using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Seed;
 using Proto.Remote;
-using Proto.Remote.Healthchecks;
+using Proto.Remote.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 

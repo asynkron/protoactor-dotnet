@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace Proto.Remote.Healthchecks;
+namespace Proto.Remote.HealthChecks;
 
 /// <summary>
 ///     Reports unhealthy status if the <see cref="ActorSystem" /> is shutting down or completed the shutdown.
@@ -22,6 +22,7 @@ public class ActorSystemHealthCheck : IHealthCheck
     public ActorSystemHealthCheck(ActorSystem system)
     {
         _system = system;
+        _system.Diagnostics.RegisterEvent("Remote", "HealthChecks enabled");
     }
 
     public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context,
