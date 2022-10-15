@@ -33,4 +33,6 @@ app.MapGet("/diagnostics", (ActorSystem system) =>
     return entries;
 });
 
+app.MapHealthChecks("/health");
+
 app.Run();

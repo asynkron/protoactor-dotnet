@@ -16,7 +16,6 @@ builder.Services.AddProtoCluster("MyCluster", port: 8090,
 
 builder.Services.AddHealthChecks().AddCheck<ActorSystemHealthCheck>("proto", null, new[] { "ready", "live" });
 
-
 var app = builder.Build();
 
 app.MapGet("/diagnostics", (ActorSystem system) =>
@@ -24,5 +23,6 @@ app.MapGet("/diagnostics", (ActorSystem system) =>
     var entries = system.Diagnostics.Get();
     return entries;
 });
+app.MapHealthChecks("/health");
 
 app.Run();
