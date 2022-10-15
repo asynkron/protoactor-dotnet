@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
 
@@ -14,6 +15,23 @@ public class DiagnosticsStore
     public DiagnosticsStore(ActorSystem system)
     {
         _logLevel = system.Config.DiagnosticsLogLevel;
+        RegisterThreadPoolStats();
+    }
+
+    private void RegisterThreadPoolStats()
+    {
+        ThreadPool.GetMinThreads(out var minWorkerThreads, out var minCompletionPortThreads);
+        ThreadPool.GetAvailableThreads(out var availableWorkerThreads, out var availableCompletionPortThreads);
+
+        var stats = new
+        {
+            minWorkerThreads,
+            minCompletionPortThreads,
+            availableWorkerThreads,
+            availableCompletionPortThreads,
+        };
+
+        RegisterObject("ThreadPool", "Threads", stats);
     }
 
     public void RegisterEvent(string module, string message)
@@ -21,7 +39,7 @@ public class DiagnosticsStore
         var entry = new DiagnosticsEntry(module, message, null);
         if (_entries.TryAdd(entry))
         {
-            _logger.Log(_logLevel, "[Diagnostics] Event {Module}: {Message}", module, message);
+            _logger.Log(_logLevel, "[Diagnostics] {Module}: {Message}", module, message);
         }
     }
 
@@ -32,7 +50,7 @@ public class DiagnosticsStore
         if (_entries.TryAdd(entry))
         {
             var json = System.Text.Json.JsonSerializer.Serialize(data);
-            _logger.Log(_logLevel,"[Diagnostics] Event {Module}: {Key}: {Data}", module, key, json);
+            _logger.Log(_logLevel,"[Diagnostics] {Module}: {Key}: {Data}", module, key, json);
         }
     }
 
