@@ -14,6 +14,16 @@ namespace Proto.Cluster.Seed;
 
 public class SeedNodeClusterProvider : IClusterProvider
 {
+    public static IClusterProvider JoinSeedNode(string address, int port)
+    {
+        return new SeedNodeClusterProvider(new SeedNodeClusterProviderOptions((address, port)));
+    }
+    
+    public static IClusterProvider StartSeedNode()
+    {
+        return new SeedNodeClusterProvider();
+    }
+    
     private static readonly ILogger Logger = Log.CreateLogger<SeedNodeClusterProvider>();
     private readonly CancellationTokenSource _cts = new();
 

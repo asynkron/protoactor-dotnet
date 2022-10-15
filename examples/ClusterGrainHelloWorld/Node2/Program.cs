@@ -17,7 +17,40 @@ using Proto.Remote.GrpcNet;
 using static System.Threading.Tasks.Task;
 using ProtosReflection = ClusterHelloWorld.Messages.ProtosReflection;
 
-namespace Node2;
+Log.SetLoggerFactory(
+    LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
+
+// Required to allow unencrypted GrpcNet connections
+AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+
+var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
+    .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(8090).WithProtoMessages(ProtosReflection.Descriptor))
+    .WithCluster(ClusterConfig
+        .Setup("MyCluster", new SeedNodeClusterProvider(), new PartitionIdentityLookup())
+        .WithClusterKind(
+            HelloGrainActor.GetClusterKind((ctx, identity) => new HelloGrain(ctx, identity.Identity)))
+    );
+
+system.EventStream.Subscribe<ClusterTopology>(
+    e => { Console.WriteLine($"{DateTime.Now:O} My members {e.TopologyHash}"); }
+);
+
+await system
+    .Cluster()
+    .StartMemberAsync();
+
+Console.WriteLine("Started...");
+
+Console.CancelKeyPress += async (e, y) =>
+{
+    Console.WriteLine("Shutting Down...");
+
+    await system
+        .Cluster()
+        .ShutdownAsync();
+};
+
+await Delay(-1);
 
 public class HelloGrain : HelloGrainBase
 {
@@ -38,46 +71,5 @@ public class HelloGrain : HelloGrainBase
         };
 
         return FromResult(res);
-    }
-}
-
-internal class Program
-{
-    private static async Task Main()
-    {
-        Log.SetLoggerFactory(
-            LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
-
-        // Required to allow unencrypted GrpcNet connections
-        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-
-        var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
-            .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(8090).WithProtoMessages(ProtosReflection.Descriptor))
-            .WithCluster(ClusterConfig
-                .Setup("MyCluster", new SeedNodeClusterProvider(), new PartitionIdentityLookup())
-                .WithClusterKind(
-                    HelloGrainActor.GetClusterKind((ctx, identity) => new HelloGrain(ctx, identity.Identity)))
-            );
-
-        system.EventStream.Subscribe<ClusterTopology>(
-            e => { Console.WriteLine($"{DateTime.Now:O} My members {e.TopologyHash}"); }
-        );
-
-        await system
-            .Cluster()
-            .StartMemberAsync();
-
-        Console.WriteLine("Started...");
-
-        Console.CancelKeyPress += async (e, y) =>
-        {
-            Console.WriteLine("Shutting Down...");
-
-            await system
-                .Cluster()
-                .ShutdownAsync();
-        };
-
-        await Delay(-1);
     }
 }

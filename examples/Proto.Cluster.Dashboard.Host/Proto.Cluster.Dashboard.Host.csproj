@@ -12,8 +12,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Proto.Cluster.Dashboard\Proto.Cluster.Dashboard.csproj"/>
-        <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj"/>
+        <ProjectReference Include="..\..\src\Proto.Cluster.Dashboard\Proto.Cluster.Dashboard.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
     </ItemGroup>
 
 </Project>
