@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json.Serialization;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -15,23 +16,30 @@ public class DiagnosticsStore
     public DiagnosticsStore(ActorSystem system)
     {
         _logLevel = system.Config.DiagnosticsLogLevel;
-        RegisterThreadPoolStats();
+        RegisterEnvironmentSettings();
     }
 
-    private void RegisterThreadPoolStats()
+    private void RegisterEnvironmentSettings()
     {
         ThreadPool.GetMinThreads(out var minWorkerThreads, out var minCompletionPortThreads);
         ThreadPool.GetAvailableThreads(out var availableWorkerThreads, out var availableCompletionPortThreads);
-
+        var cpuCount = Environment.ProcessorCount;
+        var dotnetVersion = Environment.Version;
+        var platform = Environment.OSVersion.Platform;
+        var platformVersion = Environment.OSVersion.VersionString;
         var stats = new
         {
+            cpuCount,
+            dotnetVersion,
+            platform,
+            platformVersion,
             minWorkerThreads,
             minCompletionPortThreads,
             availableWorkerThreads,
             availableCompletionPortThreads,
         };
 
-        RegisterObject("ThreadPool", "Threads", stats);
+        RegisterObject("Environment", "Settings", stats);
     }
 
     public void RegisterEvent(string module, string message)
