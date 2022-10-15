@@ -80,7 +80,7 @@ public class GrpcNetClientRemote : IRemote
         _endpointManager.Start();
         _logger.LogInformation("Starting Proto.Actor client ({Address})", System.Id);
         Started = true;
-
+        System.Diagnostics.RegisterEvent("Remote", "Started GrpcNetClient Successfully");
         return Task.CompletedTask;
     }
 }

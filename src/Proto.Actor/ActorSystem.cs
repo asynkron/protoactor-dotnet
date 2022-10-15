@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Proto.Diagnostics;
 using Proto.Extensions;
 using Proto.Future;
 using Proto.Metrics;
@@ -36,6 +37,7 @@ public sealed class ActorSystem : IAsyncDisposable
     public ActorSystem(ActorSystemConfig config)
     {
         Stopper = new Stopper();
+        Diagnostics = new ();
         Config = config ?? throw new ArgumentNullException(nameof(config));
         ProcessRegistry = new ProcessRegistry(this);
         Root = config.ConfigureRootContext(new RootContext(this));
@@ -67,6 +69,11 @@ public sealed class ActorSystem : IAsyncDisposable
     ///     Configuration used to create the actor system.
     /// </summary>
     public ActorSystemConfig Config { get; }
+    
+    /// <summary>
+    ///     Diagnostics store, containing detected system issues
+    /// </summary>
+    public DiagnosticsStore Diagnostics { get; }
 
     /// <summary>
     ///     Manages all processes in the actor system (actors, futures, event stream, etc.).
@@ -184,6 +191,7 @@ public sealed class ActorSystem : IAsyncDisposable
         {
             _logger.LogInformation("Shutting down actor system {Id} - Reason {Reason}", Id, reason);
             Stopper.Stop(reason);
+            Diagnostics.RegisterEvent("ActorSystem", $"Stopped: {reason}");
         }
         catch
         {

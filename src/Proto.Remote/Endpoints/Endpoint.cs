@@ -467,12 +467,14 @@ public abstract class Endpoint : IEndpoint
             }
             catch (CodedOutputStream.OutOfSpaceException oom)
             {
+                System.Diagnostics.RegisterEvent("Remote", $"Message is too large {message.GetMessageTypeName()}");
                 _logger.LogError(oom, "Message is too large {Message}", message.GetMessageTypeName());
 
                 throw;
             }
             catch (Exception x)
             {
+                System.Diagnostics.RegisterEvent("Remote", $"Missing serializer for {message.GetMessageTypeName()}");
                 _logger.LogError(x, "Serialization failed for message {Message}", message.GetMessageTypeName());
 
                 throw;

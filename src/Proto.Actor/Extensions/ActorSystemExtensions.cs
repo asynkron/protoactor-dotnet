@@ -74,6 +74,7 @@ public class ActorSystemExtensions
             }
 
             _extensions[id] = extension;
+            _actorSystem.Diagnostics.RegisterEvent("ActorSystem", $"Extension enabled {typeof(T).Name}");
         }
     }
 }

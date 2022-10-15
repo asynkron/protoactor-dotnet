@@ -136,6 +136,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         Logger.LogInformation("Started as cluster member");
         await MemberList.Started;
         Logger.LogInformation("I see myself");
+        System.Diagnostics.RegisterEvent("Cluster", "Started Member Successfully");
     }
 
     /// <summary>
@@ -148,6 +149,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         await Provider.StartClientAsync(this);
 
         Logger.LogInformation("Started as cluster client");
+        System.Diagnostics.RegisterEvent("Cluster", "Started Client Successfully");
     }
 
     private async Task BeginStartAsync(bool client)
