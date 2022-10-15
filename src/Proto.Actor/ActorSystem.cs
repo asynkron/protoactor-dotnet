@@ -37,8 +37,8 @@ public sealed class ActorSystem : IAsyncDisposable
     public ActorSystem(ActorSystemConfig config)
     {
         Stopper = new Stopper();
-        Diagnostics = new ();
         Config = config ?? throw new ArgumentNullException(nameof(config));
+        Diagnostics = new DiagnosticsStore(this);
         ProcessRegistry = new ProcessRegistry(this);
         Root = config.ConfigureRootContext(new RootContext(this));
         DeadLetter = new DeadLetterProcess(this);
