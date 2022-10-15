@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Grpc.Net.Client;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -28,12 +29,14 @@ public record GrpcNetRemoteConfig : RemoteConfigBase
     /// <summary>
     ///     Channel options for the gRPC channel
     /// </summary>
+    [JsonIgnore]
     public GrpcChannelOptions ChannelOptions { get; init; } = new();
 
     /// <summary>
     ///     A delegate that performs additional configuration on Kestrel <see cref="ListenOptions" />.
     ///     If not supplied, the default implementation sets the protocol to HTTP2
     /// </summary>
+    [JsonIgnore]
     public Action<ListenOptions>? ConfigureKestrel { get; init; }
 
     /// <summary>
@@ -41,6 +44,7 @@ public record GrpcNetRemoteConfig : RemoteConfigBase
     ///     listens on.
     ///     By default, the first address is used.
     /// </summary>
+    [JsonIgnore]
     public Func<IEnumerable<Uri>?, Uri?> UriChooser { get; init; } = uris => uris?.FirstOrDefault();
 
     /// <summary>

@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading;
 using JetBrains.Annotations;
 using Proto.Cluster.Identity;
@@ -53,6 +54,7 @@ public record ClusterConfig
     ///     A delegate that returns a <see cref="IMemberStrategy" /> for the given cluster kind.
     ///     By default, <see cref="SimpleMemberStrategy" /> is used for all cluster kinds.
     /// </summary>
+    [JsonIgnore]
     public Func<Cluster, string, IMemberStrategy> MemberStrategyBuilder { get; init; }
 
     /// <summary>
@@ -64,11 +66,13 @@ public record ClusterConfig
     /// <summary>
     ///     Cluster kinds define types of the virtual actors supported by this member.
     /// </summary>
+    [JsonIgnore]
     public ImmutableList<ClusterKind> ClusterKinds { get; init; } = ImmutableList<ClusterKind>.Empty;
 
     /// <summary>
     ///     <see cref="IClusterProvider" /> to use for the cluster.
     /// </summary>
+    [JsonIgnore]
     public IClusterProvider ClusterProvider { get; }
 
     /// <summary>
@@ -131,6 +135,7 @@ public record ClusterConfig
     /// <summary>
     ///     The <see cref="IIdentityLookup" /> to use for the cluster
     /// </summary>
+    [JsonIgnore]
     public IIdentityLookup IdentityLookup { get; }
 
     /// <summary>
@@ -154,6 +159,7 @@ public record ClusterConfig
     ///     Creates the <see cref="IClusterContext" />. The default implementation creates an instance of
     ///     <see cref="DefaultClusterContext" />
     /// </summary>
+    [JsonIgnore]
     public Func<Cluster, IClusterContext> ClusterContextProducer { get; init; } = c => new DefaultClusterContext(c);
 
     /// <summary>
@@ -167,14 +173,6 @@ public record ClusterConfig
     ///     Default is false.
     /// </summary>
     public bool LegacyRequestTimeoutBehavior { get; init; }
-
-    /// <summary>
-    ///     Timeout for spawning an actor in the Partition Identity Lookup. Default is 5s.
-    /// </summary>
-    /// <param name="timeout"></param>
-    /// <returns></returns>
-    [Obsolete("Use ActorActivationTimeout instead")]
-    public ClusterConfig WithTimeout(TimeSpan timeout) => WithActorActivationTimeout(timeout);
 
     /// <summary>
     ///     Timeout for single retry of actor request. Default is 5s.

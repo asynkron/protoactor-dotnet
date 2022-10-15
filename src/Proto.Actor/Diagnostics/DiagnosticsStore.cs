@@ -8,7 +8,13 @@ public class DiagnosticsStore
 
     public void RegisterEvent(string module, string message)
     {
-        var entry = new DiagnosticsEntry(module, message);
+        var entry = new DiagnosticsEntry(module, message, null);
+        _entries.Add(entry);
+    }
+    
+    public void RegisterObject(string module, object data)
+    {
+        var entry = new DiagnosticsEntry(module, null, data);
         _entries.Add(entry);
     }
 
@@ -18,4 +24,4 @@ public class DiagnosticsStore
     }
 }
 
-public record DiagnosticsEntry(string Module, string Message);
+public record DiagnosticsEntry(string Module, string? Message, object? Data);

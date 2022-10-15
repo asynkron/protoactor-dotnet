@@ -124,6 +124,8 @@ public class GrpcNetRemote : IRemote
 
             Started = true;
             System.Diagnostics.RegisterEvent("Remote", "Started GrpcNet Successfully");
+            System.Diagnostics.RegisterObject("Remote", Config);
+            Config.Serialization.Init(System);
 
             return Task.CompletedTask;
         }

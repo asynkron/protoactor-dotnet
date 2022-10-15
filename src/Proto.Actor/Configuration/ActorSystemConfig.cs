@@ -10,6 +10,8 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Context;
 using Proto.Extensions;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 // ReSharper disable once CheckNamespace
 namespace Proto;
@@ -51,12 +53,14 @@ public record ActorSystemConfig
     ///     The result from this will be used as the default sender for all requests,
     ///     except requests overriding the sender context by parameter
     /// </summary>
+    [JsonIgnore]
     public Func<RootContext, IRootContext> ConfigureRootContext { get; init; } = context => context;
 
     /// <summary>
     ///     Allows ActorSystem-wide augmentation of any Props
     ///     All props are translated via this function
     /// </summary>
+    [JsonIgnore]
     public Func<Props, Props> ConfigureProps { get; init; } = props => props;
 
     /// <summary>
@@ -65,6 +69,7 @@ public record ActorSystemConfig
     ///     By default, DeadlineDecorator, LoggingContextDecorator are used. Additionally, the supervision strategy is set to
     ///     AlwaysRestart.
     /// </summary>
+    [JsonIgnore]
     public Func<string, Props, Props> ConfigureSystemProps { get; init; } = (_, props) =>
     {
         var logger = Log.CreateLogger("Proto.SystemActors");
@@ -103,6 +108,7 @@ public record ActorSystemConfig
     ///     Function used to serialize actor state to a diagnostics string
     ///     Can be used together with RemoteDiagnostics to view the state of remote actors
     /// </summary>
+    [JsonIgnore]
     public Func<IActor, string> DiagnosticsSerializer { get; set; } = Diagnostics.DiagnosticsSerializer.Serialize;
 
     /// <summary>
