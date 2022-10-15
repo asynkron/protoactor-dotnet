@@ -189,7 +189,7 @@ public class Gossiper
             var tmp = topology.Clone();
             tmp.Joined.Clear();
             tmp.Left.Clear();
-            _context.Send(_pid, topology);
+            _context.Send(_pid, tmp);
         });
         Logger.LogInformation("Started Cluster Gossip");
         _ = SafeTask.Run(GossipLoop);
