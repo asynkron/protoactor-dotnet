@@ -17,44 +17,38 @@ using Proto.Remote.GrpcNet;
 using static Proto.CancellationTokens;
 using ProtosReflection = ClusterHelloWorld.Messages.ProtosReflection;
 
-internal class Program
-{
-    private static async Task Main()
-    {
-        Log.SetLoggerFactory(
-            LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
+Log.SetLoggerFactory(
+    LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
 
-        // Required to allow unencrypted GrpcNet connections
-        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+// Required to allow unencrypted GrpcNet connections
+AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-        var system = new ActorSystem()
-            .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
-            .WithCluster(ClusterConfig
-                .Setup("MyCluster",
-                    new SeedNodeClusterProvider(new SeedNodeClusterProviderOptions(("127.0.0.1", 8090))),
-                    new PartitionIdentityLookup()));
+var system = new ActorSystem()
+    .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
+    .WithCluster(ClusterConfig
+        .Setup("MyCluster",
+            new SeedNodeClusterProvider(new SeedNodeClusterProviderOptions(("127.0.0.1", 8090))),
+            new PartitionIdentityLookup()));
 
-        system.EventStream.Subscribe<ClusterTopology>(
-            e => { Console.WriteLine($"{DateTime.Now:O} My members {e.TopologyHash}"); }
-        );
+system.EventStream.Subscribe<ClusterTopology>(
+    e => { Console.WriteLine($"{DateTime.Now:O} My members {e.TopologyHash}"); }
+);
 
-        await system
-            .Cluster()
-            .StartMemberAsync();
+await system
+    .Cluster()
+    .StartMemberAsync();
 
-        Console.WriteLine("Started");
+Console.WriteLine("Started");
 
-        var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
+var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
 
-        var res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
-        Console.WriteLine(res.Message);
+var res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
+Console.WriteLine(res.Message);
 
-        res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
-        Console.WriteLine(res.Message);
+res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
+Console.WriteLine(res.Message);
 
-        Console.WriteLine("Press enter to exit");
-        Console.ReadLine();
-        Console.WriteLine("Shutting Down...");
-        await system.Cluster().ShutdownAsync();
-    }
-}
+Console.WriteLine("Press enter to exit");
+Console.ReadLine();
+Console.WriteLine("Shutting Down...");
+await system.Cluster().ShutdownAsync();

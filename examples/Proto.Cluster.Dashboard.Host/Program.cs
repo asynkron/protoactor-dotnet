@@ -7,17 +7,25 @@ using Proto.Cluster.Partition;
 using Proto.Cluster.Seed;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote.Healthchecks;
 
 var builder = WebApplication.CreateBuilder(args);
-var system = GetSystem();
 
-builder.Services.AddProtoActorDashboard(system, new DashboardSettings
+
+builder.Services.AddLogging(x => x.AddConsole());
+builder.Services.AddProtoActorDashboard(new DashboardSettings
 {
     LogSearchPattern = "",
     TraceSearchPattern = ""
 });
 
-builder.Services.AddHostedService<ActorSystemHostedService>();
+builder.Services.AddProtoCluster("MyCluster", port: 8090,
+    configureRemote: r => r.WithRemoteDiagnostics(true),
+    configureCluster: c => c);
+
+builder.Services.AddHealthChecks().AddCheck<ActorSystemHealthCheck>("proto", null, new[] { "ready", "live" });
+
+
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
@@ -39,24 +47,3 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
-
-ActorSystem GetSystem()
-{
-    Log.SetLoggerFactory(
-        LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
-
-    var port = 0;
-    var advertisedHost = "localhost";
-    var provider = new SeedNodeClusterProvider();
-
-    var actorSystem =
-        new ActorSystem(ActorSystemConfig.Setup().WithDeveloperSupervisionLogging(true))
-            .WithRemote(GrpcNetRemoteConfig
-                .BindToAllInterfaces(advertisedHost, port)
-                .WithProtoMessages(SeedContractsReflection.Descriptor)
-                .WithProtoMessages(Empty.Descriptor.File)
-                .WithRemoteDiagnostics(true))
-            .WithCluster(ClusterConfig.Setup("MyCluster", provider, new PartitionIdentityLookup()));
-
-    return actorSystem;
-}
