@@ -123,6 +123,7 @@ public class GrpcNetRemote : IRemote
                 System.Address);
 
             Started = true;
+            System.Diagnostics.RegisterEvent("Remote", "Started GrpcNet Successfully");
 
             return Task.CompletedTask;
         }

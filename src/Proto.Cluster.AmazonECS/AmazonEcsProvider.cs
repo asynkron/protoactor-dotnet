@@ -53,7 +53,7 @@ public class AmazonEcsProvider : IClusterProvider
         _host = host;
         _port = port;
         _kinds = kinds;
-        _address = host + ":" + port;
+        _address = $"{host}:{port}";
         StartClusterMonitor();
         await RegisterMemberAsync();
     }

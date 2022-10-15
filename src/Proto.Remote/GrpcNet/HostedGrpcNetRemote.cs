@@ -59,7 +59,7 @@ public class HostedGrpcNetRemote : IRemote
                 System.Address);
 
             Started = true;
-
+            System.Diagnostics.RegisterEvent("Remote", "Started HostedGrpcNet Successfully");
             return Task.CompletedTask;
         }
     }
