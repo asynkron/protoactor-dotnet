@@ -202,10 +202,7 @@ public class Serialization : IActorSystemExtension<Serialization>
 
     public void	 Init(ActorSystem system)
     {
-        foreach (var tl in TypeLookup)
-        {
-            system.Diagnostics.RegisterEvent("Serialization", $"Registered Protobuf Type {tl.Key}");
-        }
+        system.Diagnostics.RegisterObject("Serialization", "Protobuf Types", TypeLookup.Keys.ToArray());
 
         foreach (var s in _serializers)
         {
