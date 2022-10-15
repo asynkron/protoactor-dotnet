@@ -27,4 +27,10 @@ app.MapGet("/", async (Cluster cluster) =>
     return res.Message;
 });
 
+app.MapGet("/diagnostics", (ActorSystem system) =>
+{
+    var entries = system.Diagnostics.Get();
+    return entries;
+});
+
 app.Run();
