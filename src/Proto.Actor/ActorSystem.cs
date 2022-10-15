@@ -51,7 +51,7 @@ public sealed class ActorSystem : IAsyncDisposable
         DeferredFuture =
             new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
         
-        Diagnostics.RegisterObject("ActorSystem", config);
+        Diagnostics.RegisterObject("ActorSystem", "Config", config);
 
         RunThreadPoolStats();
     }

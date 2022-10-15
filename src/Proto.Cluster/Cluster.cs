@@ -171,7 +171,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         InitIdentityProxy();
         await this.PubSub().StartAsync();
         InitPidCacheTimeouts();
-        System.Diagnostics.RegisterObject("Cluster", Config);
+        System.Diagnostics.RegisterObject("Cluster","Config", Config);
     }
 
     private void InitPidCacheTimeouts()

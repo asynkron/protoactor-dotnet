@@ -30,7 +30,7 @@ public class GrpcNetClientRemote : IRemote
         _config = config;
         System.Extensions.Register(this);
         System.Extensions.Register(config.Serialization);
-        System.Diagnostics.RegisterObject("Remote", Config);
+        System.Diagnostics.RegisterObject("Remote", "Config", Config);
         config.Serialization.Init(system);
         var channelProvider = new GrpcNetChannelProvider(_config);
         _endpointManager = new EndpointManager(System, Config, channelProvider);
@@ -83,7 +83,7 @@ public class GrpcNetClientRemote : IRemote
         _logger.LogInformation("Starting Proto.Actor client ({Address})", System.Id);
         Started = true;
         System.Diagnostics.RegisterEvent("Remote", "Started GrpcNetClient Successfully");
-        System.Diagnostics.RegisterObject("Cluster", Config);
+        System.Diagnostics.RegisterObject("Cluster", "Config", Config);
         return Task.CompletedTask;
     }
 }

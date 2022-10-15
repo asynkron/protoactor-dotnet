@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -27,7 +28,7 @@ public record ClusterKind(string Name, Props Props)
     /// <summary>
     ///     <see cref="IMemberStrategy" /> to be used when placing the actor in the cluster
     /// </summary>
-    public Func<Cluster, IMemberStrategy>? StrategyBuilder { get; init; }
+    [JsonIgnore] public Func<Cluster, IMemberStrategy>? StrategyBuilder { get; init; }
 
     /// <summary>
     ///     Optional filter that can prevent spawning identities outside of a certain set of allowed identities.
@@ -35,7 +36,11 @@ public record ClusterKind(string Name, Props Props)
     ///     user.
     ///     In this case the system could be protected from DoS attacks by preventing spawning random identities.
     /// </summary>
-    public CanSpawnIdentity? CanSpawnIdentity { get; init; }
+    [JsonIgnore] public CanSpawnIdentity? CanSpawnIdentity { get; init; }
+
+    
+    /// <summary>Props to spawn the virtual actor</summary>
+    [JsonIgnore] public Props Props { get; init; } = Props;
 
     /// <summary>
     ///     Sets the <see cref="IMemberStrategy" /> to be used when placing the actor in the cluster

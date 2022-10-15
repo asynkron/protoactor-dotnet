@@ -66,7 +66,6 @@ public record ClusterConfig
     /// <summary>
     ///     Cluster kinds define types of the virtual actors supported by this member.
     /// </summary>
-    [JsonIgnore]
     public ImmutableList<ClusterKind> ClusterKinds { get; init; } = ImmutableList<ClusterKind>.Empty;
 
     /// <summary>

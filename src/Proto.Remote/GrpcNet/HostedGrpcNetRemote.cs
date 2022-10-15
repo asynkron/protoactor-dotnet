@@ -60,7 +60,7 @@ public class HostedGrpcNetRemote : IRemote
 
             Started = true;
             System.Diagnostics.RegisterEvent("Remote", "Started HostedGrpcNet Successfully");
-            System.Diagnostics.RegisterObject("Remote", Config);
+            System.Diagnostics.RegisterObject("Remote", "Config" , Config);
             Config.Serialization.Init(System);
             return Task.CompletedTask;
         }
