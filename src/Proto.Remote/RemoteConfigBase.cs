@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 using Grpc.Core;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -38,12 +39,14 @@ public abstract record RemoteConfigBase
     /// <summary>
     ///     Known actor kinds that can be spawned remotely
     /// </summary>
+    [JsonIgnore]
     public ImmutableDictionary<string, Props> RemoteKinds { get; init; } =
         ImmutableDictionary<string, Props>.Empty;
 
     /// <summary>
     ///     Gets or sets the CallOptions for the gRPC channel.
     /// </summary>
+    [JsonIgnore]
     public CallOptions CallOptions { get; init; }
 
     /// <summary>
@@ -70,11 +73,13 @@ public abstract record RemoteConfigBase
     /// <summary>
     ///     Endpoint writer options
     /// </summary>
+    [JsonIgnore]
     public EndpointWriterOptions EndpointWriterOptions { get; init; } = new();
 
     /// <summary>
     ///     Serializations system that manages serializers for remote messages.
     /// </summary>
+    [JsonIgnore]
     public Serialization Serialization { get; init; } = new();
 
     /// <summary>

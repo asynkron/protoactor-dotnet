@@ -1,4 +1,5 @@
 using AspNetGrains.Messages;
+using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Seed;
 using Proto.Remote;
@@ -17,5 +18,11 @@ builder.Services.AddHealthChecks().AddCheck<ActorSystemHealthCheck>("proto", nul
 
 
 var app = builder.Build();
+
+app.MapGet("/diagnostics", (ActorSystem system) =>
+{
+    var entries = system.Diagnostics.Get();
+    return entries;
+});
 
 app.Run();

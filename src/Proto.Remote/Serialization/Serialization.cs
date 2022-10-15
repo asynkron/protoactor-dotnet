@@ -199,4 +199,18 @@ public class Serialization : IActorSystemExtension<Serialization>
         public ISerializer Serializer;
         public int SerializerId;
     }
+
+    public void	 Init(ActorSystem system)
+    {
+        foreach (var tl in TypeLookup)
+        {
+            system.Diagnostics.RegisterEvent("Serialization", $"Registered Protobuf Type {tl.Key}");
+        }
+
+        foreach (var s in _serializers)
+        {
+            system.Diagnostics.RegisterEvent("Serialization",
+                $"Registered Serializer {s.SerializerId} {s.Serializer.GetType().Name}");
+        }
+    }
 }
