@@ -2,13 +2,14 @@ using AspNetGrains.Messages;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Seed;
+using Proto.Remote;
 using Proto.Remote.Healthchecks;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(x => x.AddConsole());
 
 builder.Services.AddProtoCluster("MyCluster",
-    configureRemote: r => r,
+    configureRemote: r => r.WithProtoMessages(AspNetGrains.Messages.ProtosReflection.Descriptor),
     configureCluster: c => c, clusterProvider:SeedNodeClusterProvider.JoinSeedNode("localhost",8090));
 
 builder.Services.AddHealthChecks().AddCheck<ActorSystemHealthCheck>("proto", null, new[] { "ready", "live" });
