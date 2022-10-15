@@ -123,6 +123,11 @@ public record ActorSystemConfig
     public bool DeadLetterResponseLogging { get; init; }
 
     /// <summary>
+    ///     The LogLevel used for diagnostics logging
+    /// </summary>
+    public LogLevel DiagnosticsLogLevel { get; set; } = LogLevel.Information;
+
+    /// <summary>
     ///     Creates a new default ActorSystemConfig
     /// </summary>
     /// <returns>The new ActorSystemConfig</returns>
@@ -224,6 +229,14 @@ public record ActorSystemConfig
     /// </summary>
     public ActorSystemConfig WithDeadLetterResponseLogging(bool enabled) =>
         this with { DeadLetterResponseLogging = enabled };
+    
+    /// <summary>
+    ///     The LogLevel used for Diagnostics logging
+    /// </summary>
+    /// <param name="diagnosticsLogLevel"></param>
+    /// <returns></returns>
+    public ActorSystemConfig WithDiagnosticsLogLevel(LogLevel diagnosticsLogLevel) =>
+        this with { DiagnosticsLogLevel = diagnosticsLogLevel };
 }
 
 //Not part of the contract, but still shipped out of the box
