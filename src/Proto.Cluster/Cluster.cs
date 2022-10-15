@@ -38,6 +38,7 @@ public class Cluster : IActorSystemExtension<Cluster>
 
     public async Task<DiagnosticsEntry[]> GetDiagnostics()
     {
+        var now = new DiagnosticsEntry("Cluster", $"Local Time", DateTimeOffset.UtcNow);
         var blocked = new DiagnosticsEntry("Cluster", "Blocked", System.Remote().BlockList.BlockedMembers.ToArray());
 
         var t = await Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
@@ -49,7 +50,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         
         var heartbeat = new DiagnosticsEntry("Cluster", "Heartbeat", heartbeats);
 
-        return new[] { blocked, topology, heartbeat };
+        return new[] { now, blocked, topology, heartbeat };
     }
 
     public Cluster(ActorSystem system, ClusterConfig config)
