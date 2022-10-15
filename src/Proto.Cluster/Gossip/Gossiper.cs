@@ -184,7 +184,13 @@ public class Gossiper
             _cluster.Config.GossipMaxSend));
 
         _pid = _context.SpawnNamedSystem(props, GossipActorName);
-        _cluster.System.EventStream.Subscribe<ClusterTopology>(topology => _context.Send(_pid, topology));
+        _cluster.System.EventStream.Subscribe<ClusterTopology>(topology =>
+        {
+            var tmp = topology.Clone();
+            tmp.Joined.Clear();
+            tmp.Left.Clear();
+            _context.Send(_pid, topology);
+        });
         Logger.LogInformation("Started Cluster Gossip");
         _ = SafeTask.Run(GossipLoop);
 
