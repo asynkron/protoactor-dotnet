@@ -629,29 +629,33 @@ internal class PartitionIdentityActor : IActor
 
                 if (response.Pid != null)
                 {
-                    if (response.TopologyHash != TopologyHash) // Topology changed between request and response
+                    if (response.Failed is false)
                     {
-                        if (!_currentMemberAddresses.Contains(response.Pid.Address))
+                        if (response.TopologyHash != TopologyHash) // Topology changed between request and response
                         {
-                            // No longer part of cluster, dropped
-                            Logger.LogWarning(
-                                "[PartitionIdentity] Received activation response {@Response}, no longer part of cluster",
-                                response);
+                            if (!_currentMemberAddresses.Contains(response.Pid.Address))
+                            {
+                                // No longer part of cluster, dropped
+                                Logger.LogWarning(
+                                    "[PartitionIdentity] Received activation response {@Response}, no longer part of cluster",
+                                    response);
 
-                            Respond(new ActivationResponse { Failed = true });
+                                Respond(new ActivationResponse { Failed = true });
 
-                            return;
-                        }
+                                return;
+                            }
 
-                        var currentActivatorAddress =
-                            _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
+                            var currentActivatorAddress =
+                                _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
 
-                        if (_myAddress != currentActivatorAddress)
-                        {
-                            //Stop it or handover. ? Should be rebalanced in the current pass
-                            Logger.LogWarning(
-                                "[PartitionIdentity] Misplaced spawn: {ClusterIdentity}, {Pid}, Expected {MyAddress} ({MyTopology}), Actual {ActivatorAddress} ({ActivatorTopology})",
-                                msg.ClusterIdentity, response.Pid, _myAddress, TopologyHash, currentActivatorAddress, response.TopologyHash);
+                            if (_myAddress != currentActivatorAddress)
+                            {
+                                //Stop it or handover. ? Should be rebalanced in the current pass
+                                Logger.LogWarning(
+                                    "[PartitionIdentity] Misplaced spawn: {ClusterIdentity}, {Pid}, Expected {MyAddress} ({MyTopology}), Actual {ActivatorAddress} ({ActivatorTopology})",
+                                    msg.ClusterIdentity, response.Pid, _myAddress, TopologyHash,
+                                    currentActivatorAddress, response.TopologyHash);
+                            }
                         }
                     }
 

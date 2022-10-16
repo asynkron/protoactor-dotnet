@@ -167,7 +167,7 @@ public class PartitionActivatorActor : IActor
         {
             context.Respond(new ActivationResponse
                 {
-                    Pid = existing
+                    Pid = existing,
                 }
             );
         }
