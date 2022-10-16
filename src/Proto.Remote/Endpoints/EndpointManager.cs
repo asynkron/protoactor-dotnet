@@ -15,7 +15,7 @@ using Proto.Mailbox;
 
 namespace Proto.Remote;
 
-public sealed class EndpointManager
+public sealed class EndpointManager : IDiagnosticsProvider
 {
     public const string ActivatorActorName = "$activator";
 
@@ -272,10 +272,10 @@ public sealed class EndpointManager
         }
     }
 
-    public async Task<DiagnosticsEntry[]> GetDiagnostics()
+    public Task<DiagnosticsEntry[]> GetDiagnostics()
     {
         var endpoints = new DiagnosticsEntry("Remote", "Endpoints", _serverEndpoints.Keys.ToArray());
 
-        return new[] { endpoints };
+        return Task.FromResult(new[] { endpoints });
     }
 }

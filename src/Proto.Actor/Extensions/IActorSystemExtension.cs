@@ -14,12 +14,11 @@ namespace Proto.Extensions;
 /// <summary>
 ///     Marks a class as an actor system extension
 /// </summary>
-public interface IActorSystemExtension
+public interface IActorSystemExtension : IDiagnosticsProvider
 {
     private static int _nextId;
 
     internal static int GetNextId() => Interlocked.Increment(ref _nextId);
-    Task<DiagnosticsEntry[]> GetDiagnostics() => Task.FromResult(Array.Empty<DiagnosticsEntry>());
 }
 
 /// <summary>

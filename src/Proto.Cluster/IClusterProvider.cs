@@ -6,6 +6,7 @@
 
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Proto.Diagnostics;
 
 namespace Proto.Cluster;
 
@@ -14,7 +15,7 @@ namespace Proto.Cluster;
 ///     The cluster provider updates the <see cref="MemberList" />
 /// </summary>
 [PublicAPI]
-public interface IClusterProvider
+public interface IClusterProvider : IDiagnosticsProvider
 {
     /// <summary>
     ///     Starts the cluster provider

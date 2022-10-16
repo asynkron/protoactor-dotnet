@@ -6,6 +6,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Diagnostics;
 
 namespace Proto.Cluster.Identity;
 
@@ -13,7 +14,7 @@ namespace Proto.Cluster.Identity;
 ///     Identity lookup is used to activate and locate virtual actor activations in the cluster.
 ///     See <a href="https://proto.actor/docs/cluster/identity-lookup-net/">Identity Lookup docs</a> for more details.
 /// </summary>
-public interface IIdentityLookup
+public interface IIdentityLookup : IDiagnosticsProvider
 {
     /// <summary>
     ///     Activates or locates a virtual actor in the cluster.
