@@ -7,7 +7,7 @@
 namespace Proto.Diagnostics;
 
 /// <summary>
-///     Adds the ability to return a diagnostic string for an actor
+///     Adds the ability to return a diagnostic string for an actor instance
 /// </summary>
 public interface IActorDiagnostics
 {

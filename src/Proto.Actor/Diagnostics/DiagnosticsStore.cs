@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -81,25 +80,4 @@ public class DiagnosticsStore
 
         return entries.ToArray();
     }
-}
-
-public record DiagnosticsEntry
-{
-    // ReSharper disable once ConvertToPrimaryConstructor
-    public DiagnosticsEntry(string module, string? message, object? data)
-    {
-        Module = module;
-        Message = message;
-        Data = data;
-    }
-
-    public string Module { get;  }
-
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Message { get; }
-
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public object? Data { get; }
 }
