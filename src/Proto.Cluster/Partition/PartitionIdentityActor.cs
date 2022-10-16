@@ -650,8 +650,8 @@ internal class PartitionIdentityActor : IActor
                         {
                             //Stop it or handover. ? Should be rebalanced in the current pass
                             Logger.LogWarning(
-                                "[PartitionIdentity] Misplaced spawn: {ClusterIdentity}, {Pid}, {MyAddress}, {ActivatorAddress}",
-                                msg.ClusterIdentity, response.Pid, _myAddress, currentActivatorAddress);
+                                "[PartitionIdentity] Misplaced spawn: {ClusterIdentity}, {Pid}, Expected {MyAddress} ({MyTopology}), Actual {ActivatorAddress} ({ActivatorTopology})",
+                                msg.ClusterIdentity, response.Pid, _myAddress, TopologyHash, currentActivatorAddress, response.TopologyHash);
                         }
                     }
 
