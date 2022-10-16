@@ -6,7 +6,7 @@ namespace Node2;
 public class HelloGrain : HelloGrainBase
 {
     private readonly string _identity;
-    private int _count = 0;
+    private int _count;
 
     public HelloGrain(IContext ctx, string identity) : base(ctx)
     {
@@ -16,7 +16,7 @@ public class HelloGrain : HelloGrainBase
     public override Task<HelloResponse> SayHello(HelloRequest request)
     {
         _count++;
-        Console.WriteLine("Got request!! " + _count + " " + request.GetHashCode());
+        Console.WriteLine($"Got request!! {_count}");
 
         var res = new HelloResponse
         {

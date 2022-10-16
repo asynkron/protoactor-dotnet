@@ -23,7 +23,6 @@ app.MapGet("/", async (Cluster cluster) =>
     var res = await helloGrain.SayHello(new HelloRequest(), CancellationTokens.FromSeconds(5));
     Console.WriteLine(res.Message);
 
-    res = await helloGrain.SayHello(new HelloRequest(), CancellationTokens.FromSeconds(5));
     return res.Message;
 });
 
