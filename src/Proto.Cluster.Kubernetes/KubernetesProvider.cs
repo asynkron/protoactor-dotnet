@@ -12,6 +12,7 @@ using JetBrains.Annotations;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
+using Proto.Diagnostics;
 using Proto.Utils;
 using static Proto.Cluster.Kubernetes.Messages;
 using static Proto.Cluster.Kubernetes.ProtoLabels;
@@ -37,6 +38,29 @@ public class KubernetesProvider : IClusterProvider
     private MemberList _memberList;
     private string _podName;
     private int _port;
+
+    public async Task<DiagnosticsEntry[]> GetDiagnostics()
+    {
+        try
+        {
+            var selector = $"{LabelCluster}={_clusterName}";
+            using var client = _config.ClientFactory();
+            var res = await client.ListNamespacedPodWithHttpMessagesAsync(
+                KubernetesExtensions.GetKubeNamespace(),
+                labelSelector: selector,
+                watch: false,
+                timeoutSeconds: _config.WatchTimeoutSeconds
+            );
+
+            var pods = new DiagnosticsEntry("KubernetesProvider", "Pods", res.Body);
+
+            return new[] { pods };
+        }
+        catch (Exception x)
+        {
+            return new[] { new DiagnosticsEntry("KubernetesProvider", "Exception", x.ToString() ) };
+        }
+    }
 
     public KubernetesProvider() : this(new KubernetesProviderConfig())
     {
