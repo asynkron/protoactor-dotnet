@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Proto.Diagnostics;
 
 namespace Proto.Remote.GrpcNet;
 
@@ -38,6 +39,13 @@ public class GrpcNetRemote : IRemote
 
     public RemoteConfigBase Config => _config;
     public ActorSystem System { get; }
+
+    public async Task<DiagnosticsEntry[]> GetDiagnostics()
+    {
+        var endpoints = await _endpointManager.GetDiagnostics();
+
+        return endpoints;
+    }
 
     public Task StartAsync()
     {

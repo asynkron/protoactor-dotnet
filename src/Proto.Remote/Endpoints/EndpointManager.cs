@@ -6,9 +6,11 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Diagnostics;
 using Proto.Mailbox;
 
 namespace Proto.Remote;
@@ -268,5 +270,12 @@ public sealed class EndpointManager
         {
             _system.Root.Stop(ActivatorPid);
         }
+    }
+
+    public async Task<DiagnosticsEntry[]> GetDiagnostics()
+    {
+        var endpoints = new DiagnosticsEntry("Remote", "Endpoints", _serverEndpoints.Keys.ToArray());
+
+        return new[] { endpoints };
     }
 }
