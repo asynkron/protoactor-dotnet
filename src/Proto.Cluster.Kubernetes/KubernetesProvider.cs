@@ -41,18 +41,25 @@ public class KubernetesProvider : IClusterProvider
 
     public async Task<DiagnosticsEntry[]> GetDiagnostics()
     {
-        var selector = $"{LabelCluster}={_clusterName}";
-        using var client = _config.ClientFactory();
-        var res = await client.ListNamespacedPodWithHttpMessagesAsync(
-            KubernetesExtensions.GetKubeNamespace(),
-            labelSelector: selector,
-            watch: false,
-            timeoutSeconds: _config.WatchTimeoutSeconds
-        );
+        try
+        {
+            var selector = $"{LabelCluster}={_clusterName}";
+            using var client = _config.ClientFactory();
+            var res = await client.ListNamespacedPodWithHttpMessagesAsync(
+                KubernetesExtensions.GetKubeNamespace(),
+                labelSelector: selector,
+                watch: false,
+                timeoutSeconds: _config.WatchTimeoutSeconds
+            );
 
-        var pods = new DiagnosticsEntry("KubernetesProvider", "Pods", res.Body);
+            var pods = new DiagnosticsEntry("KubernetesProvider", "Pods", res.Body);
 
-        return new[] { pods };
+            return new[] { pods };
+        }
+        catch (Exception x)
+        {
+            return new[] { new DiagnosticsEntry("KubernetesProvider", "Exception", x.ToString() ) };
+        }
     }
 
     public KubernetesProvider() : this(new KubernetesProviderConfig())
