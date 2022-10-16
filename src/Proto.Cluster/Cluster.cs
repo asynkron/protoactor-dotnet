@@ -38,19 +38,32 @@ public class Cluster : IActorSystemExtension<Cluster>
 
     public async Task<DiagnosticsEntry[]> GetDiagnostics()
     {
-        var now = new DiagnosticsEntry("Cluster", $"Local Time", DateTimeOffset.UtcNow);
-        var blocked = new DiagnosticsEntry("Cluster", "Blocked", System.Remote().BlockList.BlockedMembers.ToArray());
+        var res = new List<DiagnosticsEntry>();
 
+        var now = new DiagnosticsEntry("Cluster", "Local Time", DateTimeOffset.UtcNow);
+        res.Add(now);
+        
+        var blocked = new DiagnosticsEntry("Cluster", "Blocked", System.Remote().BlockList.BlockedMembers.ToArray());
+        res.Add(blocked);
+        
         var t = await Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
 
         var topology = new DiagnosticsEntry("Cluster", "Topology", t);
+        res.Add(topology);
         
         var h = await Gossip.GetStateEntry(GossipKeys.Heartbeat);
         var heartbeats = h.Select(heartbeat => new DiagnosticsMemberHeartbeat(heartbeat.Key, heartbeat.Value.Value.Unpack<MemberHeartbeat>(), heartbeat.Value.LocalTimestamp)).ToArray();
         
         var heartbeat = new DiagnosticsEntry("Cluster", "Heartbeat", heartbeats);
+        res.Add(heartbeat);
 
-        return new[] { now, blocked, topology, heartbeat };
+        var idlookup = await IdentityLookup.GetDiagnostics();
+        res.AddRange(idlookup);
+
+        var provider = await Provider.GetDiagnostics();
+        res.AddRange(provider);
+
+        return res.ToArray();
     }
 
     public Cluster(ActorSystem system, ClusterConfig config)

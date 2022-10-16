@@ -52,7 +52,7 @@ public sealed class ActorSystem : IAsyncDisposable
             new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
         
         Diagnostics.RegisterObject("ActorSystem", "Config", config);
-
+        Diagnostics.RegisterObject("ActorSystem", "Id", Id);
         RunThreadPoolStats();
     }
 
@@ -194,7 +194,7 @@ public sealed class ActorSystem : IAsyncDisposable
         {
             _logger.LogInformation("Shutting down actor system {Id} - Reason {Reason}", Id, reason);
             Stopper.Stop(reason);
-            Diagnostics.RegisterEvent("ActorSystem", $"Stopped: {reason}");
+            Diagnostics.RegisterObject("ActorSystem", "Stopped", reason);
         }
         catch
         {
