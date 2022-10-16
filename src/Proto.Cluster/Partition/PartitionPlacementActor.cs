@@ -320,7 +320,11 @@ internal class PartitionPlacementActor : IActor, IDisposable
         if (clusterKind is null)
         {
             Logger.LogError("Failed to spawn {Kind}/{Identity}, kind not found for member", msg.Kind, msg.Identity);
-            context.Respond(new ActivationResponse { Failed = true });
+            context.Respond(new ActivationResponse
+            {
+                Failed = true,
+                TopologyHash = msg.TopologyHash
+            });
 
             return Task.CompletedTask;
         }
@@ -348,7 +352,8 @@ internal class PartitionPlacementActor : IActor, IDisposable
 
             context.Respond(new ActivationResponse
                 {
-                    Failed = true
+                    Failed = true,
+                    TopologyHash = msg.TopologyHash
                 }
             );
         }
@@ -379,7 +384,8 @@ internal class PartitionPlacementActor : IActor, IDisposable
 
                     context.Respond(new ActivationResponse
                         {
-                            Failed = true
+                            Failed = true,
+                            TopologyHash = msg.TopologyHash
                         }
                     );
                 }
@@ -398,7 +404,8 @@ internal class PartitionPlacementActor : IActor, IDisposable
 
             context.Respond(new ActivationResponse
                 {
-                    Pid = pid
+                    Pid = pid,
+                    TopologyHash = msg.TopologyHash
                 }
             );
         }
@@ -406,7 +413,11 @@ internal class PartitionPlacementActor : IActor, IDisposable
         {
             e.CheckFailFast();
             Logger.LogError(e, "[PartitionIdentity] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
-            context.Respond(new ActivationResponse { Failed = true });
+            context.Respond(new ActivationResponse
+            {
+                Failed = true,
+                TopologyHash = msg.TopologyHash
+            });
         }
     }
 
@@ -422,7 +433,8 @@ internal class PartitionPlacementActor : IActor, IDisposable
             context.Respond(new ActivationResponse
                 {
                     Failed = true,
-                    InvalidIdentity = true
+                    InvalidIdentity = true,
+                    TopologyHash = msg.TopologyHash
                 }
             );
         }

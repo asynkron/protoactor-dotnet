@@ -8,9 +8,9 @@ using Proto.Remote.HealthChecks;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(x => x.AddConsole());
 
-builder.Services.AddProtoCluster("MyCluster",
+builder.Services.AddProtoCluster("MyCluster", port:8090,
     configureRemote: r => r.WithProtoMessages(AspNetGrains.Messages.ProtosReflection.Descriptor),
-    configureCluster: c => c, clusterProvider:SeedNodeClusterProvider.JoinSeedNode("localhost",8090));
+    configureCluster: c => c, clusterProvider:SeedNodeClusterProvider.StartSeedNode());
 
 builder.Services.AddHealthChecks().AddCheck<ActorSystemHealthCheck>("proto", null, new[] { "ready", "live" });
 
