@@ -120,22 +120,7 @@ public class DefaultClusterContext : IClusterContext
                     if (task.IsCompleted)
                     {
                         var untypedResult = MessageEnvelope.UnwrapMessage(task.Result);
-
-                        if (untypedResult is T t1)
-                        {
-                            return t1;
-                        }
-
-                        if (untypedResult == null) // timeout, actual valid response cannot be null 
-                        {
-                            return TimeoutOrThrow();
-                        }
-
-                        if (typeof(T) == typeof(MessageEnvelope))
-                        {
-                            return (T)(object)MessageEnvelope.Wrap(task.Result);
-                        }
-
+                        
                         if (untypedResult is DeadLetterResponse)
                         {
                             if (!context.System.Shutdown.IsCancellationRequested && Logger.IsEnabled(LogLevel.Debug))
@@ -146,7 +131,22 @@ public class DefaultClusterContext : IClusterContext
                             RefreshFuture();
                             await RemoveFromSource(clusterIdentity, PidSource.Lookup, pid);
 
-                            break;
+                            continue;
+                        }
+                        
+                        if (untypedResult is T t1)
+                        {
+                            return t1;
+                        }
+
+                        if (untypedResult == null) // timeout, actual valid response cannot be null 
+                        {
+                            return TimeoutOrThrow();
+                        }
+                        
+                        if (typeof(T) == typeof(MessageEnvelope))
+                        {
+                            return (T)(object)MessageEnvelope.Wrap(task.Result);
                         }
 
                         Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}",
