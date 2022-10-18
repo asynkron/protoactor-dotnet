@@ -43,6 +43,14 @@ public record ClusterKind(string Name, Props Props)
     [JsonIgnore] public Props Props { get; init; } = Props;
 
     /// <summary>
+    ///     Creates a copy of the ClusterKind with the updated Props
+    /// </summary>
+    /// <param name="configureProps">Function to configure a new Props</param>
+    /// <returns></returns>
+    public ClusterKind WithProps(Func<Props, Props> configureProps) => 
+        this with { Props = configureProps(Props) };
+
+    /// <summary>
     ///     Sets the <see cref="IMemberStrategy" /> to be used when placing the actor in the cluster
     /// </summary>
     /// <param name="strategyBuilder"></param>
