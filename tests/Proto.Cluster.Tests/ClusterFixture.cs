@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using Microsoft.Extensions.Logging;
@@ -52,9 +53,12 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 #if NETCOREAPP3_1
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
+
+
         ClusterSize = clusterSize;
         _configure = configure;
         ClusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
+        ThreadPool.SetMaxThreads(100, 100);
 
 #pragma warning disable CS0162
         // ReSharper disable once HeuristicUnreachableCode
