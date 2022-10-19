@@ -205,7 +205,7 @@ namespace {{CsNamespace}}
             => new ClusterKind(Kind, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
 
         public static ClusterKind GetClusterKind<T>(IServiceProvider serviceProvider) where T : {{Name}}Base
-                    => new ClusterKind(Kind, Props.FromProducer(() => new {{Name}}Actor((ctx, id) => ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id))));
+            => new ClusterKind(Kind, Props.FromProducer(() => new {{Name}}Actor((ctx, id) => ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id))));
     }
 	{{/each}}	
 }
