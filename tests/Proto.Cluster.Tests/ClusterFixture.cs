@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using Microsoft.Extensions.Logging;
@@ -55,6 +56,9 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         ClusterSize = clusterSize;
         _configure = configure;
         ClusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
+
+        //TODO: check if this helps low resource envs like github actions.
+        ThreadPool.SetMaxThreads(100, 100);
 
 #pragma warning disable CS0162
         // ReSharper disable once HeuristicUnreachableCode

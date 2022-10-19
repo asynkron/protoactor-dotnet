@@ -9,7 +9,7 @@ namespace Proto.Cluster.Tests;
 
 public class RetryOnDeadLetterTests
 {
-    [Fact]
+    [Fact(Skip = "Flaky")]
     public async Task ShouldRetryRequestOnDeadLetterResponseRegardlessOfResponseType()
     {
         await using var fixture = new Fixture(1);
