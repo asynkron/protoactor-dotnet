@@ -356,8 +356,8 @@ namespace Acme.OtherSystem.Foo
 
         public static ClusterKind GetClusterKind(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
             => new ClusterKind(Kind, Props.FromProducer(() => new TestGrainActor(innerFactory)));
-        
-        public static ClusterKind GetClusterKind<T>(IServiceProvider serviceProvider) where T : TestGrainActorBase
+
+        public static ClusterKind GetClusterKind<T>(IServiceProvider serviceProvider) where T : TestGrainBase
             => new ClusterKind(Kind, Props.FromProducer(() => new TestGrainActor((ctx, id) => ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id))));
     }
 }
