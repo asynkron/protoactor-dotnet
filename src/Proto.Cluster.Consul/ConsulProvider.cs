@@ -12,6 +12,7 @@ using Consul;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Proto.Diagnostics;
 
 namespace Proto.Cluster.Consul;
 //TLDR;
@@ -48,6 +49,26 @@ public class ConsulProvider : IClusterProvider
     private MemberList _memberList;
     private int _port;
     private bool _shutdown;
+
+    public async Task<DiagnosticsEntry[]> GetDiagnostics()
+    {
+        try
+        {
+            var statuses = await _client.Health.Service(_consulServiceName, null, false, new QueryOptions
+                {
+
+                }
+                , _cluster.System.Shutdown
+            );
+
+            var health = new DiagnosticsEntry("ConsulProvider", "Services", statuses.Response);
+            return new[] { health };
+        }
+        catch (Exception x)
+        {
+            return new[] { new DiagnosticsEntry("ConsulProvider", "Exception", x.ToString() ) };
+        }
+    }
 
     public ConsulProvider(ConsulProviderConfig config) : this(config, _ => { })
     {
