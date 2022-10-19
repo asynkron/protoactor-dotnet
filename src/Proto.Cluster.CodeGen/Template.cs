@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using Proto;
 using Proto.Cluster;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace {{CsNamespace}}
 {
@@ -202,6 +203,9 @@ namespace {{CsNamespace}}
 
         public static ClusterKind GetClusterKind(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
             => new ClusterKind(Kind, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
+
+        public static ClusterKind GetClusterKind<T>(IServiceProvider serviceProvider) where T : {{Name}}Base
+            => new ClusterKind(Kind, Props.FromProducer(() => new {{Name}}Actor((ctx, id) => ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id))));
     }
 	{{/each}}	
 }
