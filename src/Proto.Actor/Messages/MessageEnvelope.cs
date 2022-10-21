@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Proto.Diagnostics;
+using Proto.Extensions;
 
 namespace Proto;
 
@@ -162,7 +163,7 @@ public record MessageEnvelope : IDiagnosticsTypeName
 
     public string GetTypeName()
     {
-        var m = Message?.GetType().Name ?? "null";
-        return $"MessageEnvelope({m})";
+        var m = Message.GetMessageTypeName();
+        return m;
     }
 }

@@ -46,7 +46,6 @@ public record GrainRequestMessage(int MethodIndex, IMessage? RequestMessage) : I
     public string GetTypeName()
     {
         var m = RequestMessage?.GetType().Name ?? "null";
-
-        return $"GrainRequest({m})";
+        return m;
     }
 }
