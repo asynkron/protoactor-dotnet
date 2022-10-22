@@ -15,7 +15,11 @@
         <RowTemplate>
             <MudTd DataLabel="Nr">@context.Module</MudTd>
             <MudTd DataLabel="Sign">@context.Message</MudTd>
-            <MudTd DataLabel="Name">@AsJson(context.Data)</MudTd>
+            <MudTd DataLabel="Name">
+                <pre>
+                @AsJson(context.Data)
+                </pre>
+            </MudTd>
         </RowTemplate>
     </MudTable>
 }
@@ -36,7 +40,10 @@
         {
             return "";
         }
-        var res = JsonSerializer.Serialize(data);
+        var res = JsonSerializer.Serialize(data, new JsonSerializerOptions()
+        {
+            WriteIndented = true 
+        });
         return res;
     }
 
