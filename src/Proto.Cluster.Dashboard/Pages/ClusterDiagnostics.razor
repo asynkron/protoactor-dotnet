@@ -2,8 +2,9 @@
 @using Proto.Diagnostics
 @using System.Text.Json
 @inject ActorSystem System
-
+@inject IJSRuntime JS
 <PageTitle>Cluster Diagnostics</PageTitle>
+
 @if (_diagnostics is not null)
 {
     <MudTable T="DiagnosticsEntry" Items="_diagnostics.OrderBy(e => e.Module).ThenBy(e => e.Message)">
@@ -16,9 +17,12 @@
             <MudTd DataLabel="Nr">@context.Module</MudTd>
             <MudTd DataLabel="Sign">@context.Message</MudTd>
             <MudTd DataLabel="Name">
-                <pre>
-                @AsJson(context.Data)
-                </pre>
+                @if (context.Data is not null)
+                {
+                    <pre>
+                        <code class="language-json">@AsJson(context.Data)</code>
+                    </pre>
+                }
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -45,6 +49,18 @@
             WriteIndented = true 
         });
         return res;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        await JS.InvokeAsync<string>("hljs.highlightAll");
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        
     }
 
 }
