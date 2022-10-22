@@ -17,8 +17,6 @@ public class LoggingRootDecorator : RootContextDecorator
     {
     }
 
-    protected override IRootContext WithInnerContext(IRootContext context) => new LoggingRootDecorator(context);
-
     public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken ct)
     {
         Console.WriteLine("Enter RequestAsync");

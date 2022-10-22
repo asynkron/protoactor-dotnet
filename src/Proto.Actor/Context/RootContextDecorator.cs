@@ -19,7 +19,7 @@ namespace Proto;
 [PublicAPI]
 public abstract class RootContextDecorator : IRootContext
 {
-    private readonly IRootContext _context;
+    private IRootContext _context;
 
     protected RootContextDecorator(IRootContext context)
     {
@@ -49,7 +49,7 @@ public abstract class RootContextDecorator : IRootContext
     public virtual Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
 
     public IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) =>
-        WithInnerContext(_context.WithSenderMiddleware(middleware));
+        _context = _context.WithSenderMiddleware(middleware);
 
     public virtual PID? Parent => null;
     public virtual PID Self => null!;
@@ -64,8 +64,6 @@ public abstract class RootContextDecorator : IRootContext
     public virtual void Remove<T>() => _context.Remove<T>();
 
     public IFuture GetFuture() => _context.GetFuture();
-
-    protected abstract IRootContext WithInnerContext(IRootContext context);
 
     public virtual void Request(PID target, object message) => _context.Request(target, message);
 }

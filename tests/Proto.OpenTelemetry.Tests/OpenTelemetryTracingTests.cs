@@ -86,6 +86,22 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
             }
         );
 
+    [Fact]
+    public async Task TracesPropagateCorrectlyForRequestWithSenderWithAdditionalMiddleware() =>
+        await VerifyTrace(async (tracedRoot, target) =>
+            {
+                var middleContext = tracedRoot.WithSenderMiddleware(next => async (context, _, envelope) =>
+                {
+                    var updatedEnvelope = envelope.WithHeader("test", "value");
+                    await next(context, target, updatedEnvelope);
+                });
+                var future = new FutureProcess(middleContext.System);
+                middleContext.Request(target, new TraceMe(SendAs.Request), future.Pid);
+                var response = (MessageEnvelope)await future.Task;
+                response.Message.Should().Be(new TraceResponse());
+            }
+        );
+
     /// <summary>
     ///     Checks that we have both the outer and innermost trace present, meaning that the trace has propagated
     ///     across the context boundaries

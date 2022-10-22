@@ -28,9 +28,6 @@ internal class OpenTelemetryRootContextDecorator : RootContextDecorator
 
     private static string Source => "Root";
 
-    protected override IRootContext WithInnerContext(IRootContext context) =>
-        new OpenTelemetryRootContextDecorator(context, _sendActivitySetup);
-
     public override void Send(PID target, object message) =>
         OpenTelemetryMethodsDecorators.Send(Source, target, message, _sendActivitySetup,
             () => base.Send(target, message));
