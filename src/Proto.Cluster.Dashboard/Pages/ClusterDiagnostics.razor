@@ -1,0 +1,43 @@
+@page "/ClusterDiagnostics"
+@using Proto.Diagnostics
+@using System.Text.Json
+@inject ActorSystem System
+
+<PageTitle>Cluster Diagnostics</PageTitle>
+@if (_diagnostics is not null)
+{
+    <MudTable T="DiagnosticsEntry" Items="_diagnostics.OrderBy(e => e.Module).ThenBy(e => e.Message)">
+        <HeaderContent>
+            <MudTh>Module</MudTh>
+            <MudTh>Message</MudTh>
+            <MudTh>Data</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nr">@context.Module</MudTd>
+            <MudTd DataLabel="Sign">@context.Message</MudTd>
+            <MudTd DataLabel="Name">@AsJson(context.Data)</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private DiagnosticsEntry[]? _diagnostics;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _diagnostics = await System.Diagnostics.GetDiagnostics();
+    }
+
+    private string AsJson(object? data)
+    {
+        if (data is null)
+        {
+            return "";
+        }
+        var res = JsonSerializer.Serialize(data);
+        return res;
+    }
+
+}
