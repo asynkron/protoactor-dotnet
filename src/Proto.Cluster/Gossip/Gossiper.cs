@@ -273,7 +273,11 @@ public class Gossiper
 
         //new blocked members
         var blocked = (from x in t
+                //never block ourselves
+                where x.Key != _cluster.System.Id
+                //pick any entry that is too old
                 where x.Value.Age > _cluster.Config.HeartbeatExpiration
+                //and not already part of the block list
                 where !alreadyBlocked.Contains(x.Key)
                 select x.Key)
             .ToArray();
