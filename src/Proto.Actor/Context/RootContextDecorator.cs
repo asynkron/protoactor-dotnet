@@ -48,8 +48,11 @@ public abstract class RootContextDecorator : IRootContext
 
     public virtual Task PoisonAsync(PID pid) => _context.PoisonAsync(pid);
 
-    public IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) =>
+    public IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware)
+    {
         _context = _context.WithSenderMiddleware(middleware);
+        return this;
+    }
 
     public virtual PID? Parent => null;
     public virtual PID Self => null!;
