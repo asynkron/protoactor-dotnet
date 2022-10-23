@@ -43,13 +43,19 @@ public sealed record RootContext : IRootContext
     {
         System = system;
 
-        SenderMiddleware = middleware.Reverse()
-            .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner));
+        SenderMiddleware = AggregateMiddleware(middleware);
 
         Headers = messageHeader ?? MessageHeader.Empty;
     }
 
     private Sender? SenderMiddleware { get; init; }
+
+    private Sender AggregateMiddleware(params Func<Sender, Sender>[] middleware)
+    {
+        return middleware
+            .Reverse()
+            .Aggregate(SenderMiddleware ?? (Sender)DefaultSender, (inner, outer) => outer(inner));
+    }
 
     private TypeDictionary<object, RootContext> Store { get; } = new(0, 1);
     public ActorSystem System { get; }
@@ -108,8 +114,7 @@ public sealed record RootContext : IRootContext
     public IRootContext WithSenderMiddleware(params Func<Sender, Sender>[] middleware) =>
         this with
         {
-            SenderMiddleware = middleware.Reverse()
-                .Aggregate((Sender)DefaultSender, (inner, outer) => outer(inner))
+            SenderMiddleware = AggregateMiddleware(middleware)
         };
 
     public IFuture GetFuture() => System.Future.Get();
