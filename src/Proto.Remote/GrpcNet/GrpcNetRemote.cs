@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Ben.Diagnostics;
 using Grpc.Health.V1;
 using Grpc.HealthCheck;
 using Microsoft.AspNetCore.Builder;
@@ -104,6 +105,7 @@ public class GrpcNetRemote : IRemote
                 )
                 .Configure(app =>
                     {
+                        app.UseBlockingDetection();
                         app.UseRouting();
 
                         app.UseEndpoints(endpoints =>

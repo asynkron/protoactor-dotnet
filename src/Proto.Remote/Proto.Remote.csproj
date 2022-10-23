@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Ben.BlockingDetector" Version="0.0.4" />
         <PackageReference Include="Grpc.AspNetCore" Version="2.46.0" />
         <PackageReference Include="Grpc.Core.Api" Version="2.49.0" />
         <PackageReference Include="Grpc.HealthCheck" Version="2.46.3" />
