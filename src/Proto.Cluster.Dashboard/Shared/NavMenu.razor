@@ -1,11 +1,12 @@
-﻿<MudNavMenu Style="width: 240px; overflow: hidden" Color="Color.Info">
+﻿<MudNavMenu Style="width: 64px; overflow-x: hidden" Color="Color.Info">
 
     <MudNavLink Href="./" Match="NavLinkMatch.All">
         <img src="./_content/Proto.Cluster.Dashboard/protosymbol.png" style="width: 32px;margin-left: -17px">
     </MudNavLink>
     <MudNavLink Disabled="true"></MudNavLink>
-    <MudNavLink Href="ClusterOverview" Match="NavLinkMatch.Prefix" Icon="@Icons.Filled.BarChart">Cluster Overview</MudNavLink>
-    <MudNavLink Href="ClusterState" Match="NavLinkMatch.Prefix" Icon="@Icons.Filled.RemoveRedEye">Cluster State</MudNavLink>
-    <MudNavLink Href="ActorDiagram" Match="NavLinkMatch.Prefix" Icon="@Icons.Filled.AccountTree">Actors</MudNavLink>
-    <MudNavLink Href="ClusterDiagnostics" Match="NavLinkMatch.Prefix" Icon="@Icons.Filled.Medication">Diagnostics</MudNavLink>
+    <ProtoNavLink Href="ClusterOverview" Icon="@Icons.Filled.BarChart">Cluster Overview</ProtoNavLink>
+    <ProtoNavLink Href="ClusterState" Icon="@Icons.Filled.RemoveRedEye">Cluster State</ProtoNavLink>
+    <ProtoNavLink Href="ActorDiagram" Icon="@Icons.Filled.AccountTree">Actors</ProtoNavLink>
+    <ProtoNavLink Href="ClusterDiagnostics" Icon="@Icons.Filled.Medication">Diagnostics</ProtoNavLink>
+
 </MudNavMenu>
