@@ -281,5 +281,31 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
 
+    [Fact]
+    public async Task Will_expire_topic_actor_after_idle()
+    {
+        var subscriberIds = _fixture.SubscriberIds("batching-producer-test", 20);
+        const string topic = "batching-producer";
+        const int numMessages = 100;
+
+        await _fixture.SubscribeAllTo(topic, subscriberIds);
+
+        var firstCluster = _fixture.Members.First();
+
+        await using var producer = firstCluster
+            .BatchingProducer(topic, new BatchingProducerConfig {PublisherIdleTimeout = TimeSpan.FromSeconds(2)});
+
+        var tasks = Enumerable.Range(0, numMessages).Select(i => producer.ProduceAsync(new DataPublished(i)));
+        await Task.WhenAll(tasks);
+
+        var pid = await firstCluster.GetAsync(ClusterIdentity.Create(topic, TopicActor.Kind), CancellationTokens.FromSeconds(2));
+        Assert.NotNull(pid);
+
+        await Task.Delay(TimeSpan.FromSeconds(5));
+
+        var newPid = await firstCluster.GetAsync(ClusterIdentity.Create(topic, TopicActor.Kind), CancellationTokens.FromSeconds(2));
+        Assert.NotEqual(newPid, pid);
+    }
+
     private void Log(string message) => _output.WriteLine($"[{DateTime.Now:hh:mm:ss.fff}] {message}");
 }

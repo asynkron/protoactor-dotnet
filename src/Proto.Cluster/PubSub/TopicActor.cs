@@ -39,6 +39,8 @@ public sealed class TopicActor : IActor
         {
             Started                                  => OnStarted(context),
             Stopping                                 => OnStopping(context),
+            ReceiveTimeout                           => OnReceiveTimeout(context),
+            Initialize msg                           => OnInitialize(context, msg),
             SubscribeRequest sub                     => OnSubscribe(context, sub),
             UnsubscribeRequest unsub                 => OnUnsubscribe(context, unsub),
             PubSubBatch batch                        => OnPubSubBatch(context, batch),
@@ -69,6 +71,22 @@ public sealed class TopicActor : IActor
         _topologySubscription?.Unsubscribe();
         _topologySubscription = null;
 
+        return Task.CompletedTask;
+    }
+
+    private static Task OnReceiveTimeout(IContext context)
+    {
+        context.Stop(context.Self);
+        return Task.CompletedTask;
+    }
+
+    private static Task OnInitialize(IContext context, Initialize msg)
+    {
+        if (msg.IdleTimeout != null)
+        {
+            context.SetReceiveTimeout(msg.IdleTimeout.ToTimeSpan());
+        }
+        context.Respond(new Acknowledge());
         return Task.CompletedTask;
     }
 
@@ -217,13 +235,10 @@ public sealed class TopicActor : IActor
 
             if (LogThrottle().IsOpen())
             {
-                var diagnosticMessage = subscribersThatLeft
-                    .Aggregate(
-                        $"Topic = {_topic} removed subscribers, removed subscribers, because they are dead or they are on members that left the cluster: ",
-                        (acc, subscriber) => acc + subscriber + ", "
-                    );
-
-                Logger.LogWarning(diagnosticMessage);
+                Logger.LogWarning(
+                    "Topic = {Topic} removed subscribers, removed subscribers, because they are dead or they are on members that left the cluster: {Subscribers}",
+                _topic,
+                    string.Join(", ", subscribersThatLeft));
             }
 
             await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } });

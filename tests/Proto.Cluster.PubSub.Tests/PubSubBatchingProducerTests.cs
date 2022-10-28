@@ -325,6 +325,11 @@ public class PubSubBatchingProducerTests
             _publish = publish;
         }
 
+        public Task Initialize(PublisherConfig? config, string topic, CancellationToken ct = default)
+        {
+            return Task.CompletedTask;
+        }
+
         public Task<PublishResponse> PublishBatch(string topic, PubSubBatch batch, CancellationToken ct = default) =>
             _publish(batch);
     }
@@ -333,6 +338,11 @@ public class PubSubBatchingProducerTests
     {
         public List<PubSubBatch> SentBatches { get; } = new();
         public bool ShouldFail { get; set; }
+
+        public Task Initialize(PublisherConfig? config, string topic, CancellationToken ct = default)
+        {
+            return Task.CompletedTask;
+        }
 
         public Task<PublishResponse> PublishBatch(string topic, PubSubBatch batch, CancellationToken ct = default)
         {

@@ -3,6 +3,7 @@ package cluster.pubsub;
 option csharp_namespace = "Proto.Cluster.PubSub";
 import "Proto.Actor/Protos.proto";
 import "ClusterContracts.proto";
+import "google/protobuf/duration.proto";
 
 // Identifies a subscriber by either ClusterIdentity or PID
 message SubscriberIdentity {
@@ -11,6 +12,13 @@ message SubscriberIdentity {
     cluster.ClusterIdentity cluster_identity = 2;
   }
 }
+
+// First request to initialize the actor.
+message Initialize {
+  google.protobuf.Duration idleTimeout = 1;
+}
+
+message Acknowledge {}
 
 // A list of subscribers
 message Subscribers {

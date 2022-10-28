@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
 
 namespace Proto.Cluster.PubSub;
 
@@ -18,6 +19,22 @@ public class Publisher : IPublisher
     public Publisher(Cluster cluster)
     {
         _cluster = cluster;
+    }
+
+    /// <summary>
+    ///     Initializes the internal mechanisms of this <see cref="Proto.Cluster.PubSub.IPublisher"></see>
+    /// </summary>
+    /// <param name="config">Configuration used to initialize this publisher</param>
+    /// <param name="topic">Topic to publish to</param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    public Task Initialize(PublisherConfig? config, string topic, CancellationToken ct = default)
+    {
+        var message = new Initialize
+        {
+            IdleTimeout = config?.IdleTimeout?.ToDuration()
+        };
+        return _cluster.RequestAsync<Acknowledge>(topic, TopicActor.Kind, message, ct);
     }
 
     /// <summary>

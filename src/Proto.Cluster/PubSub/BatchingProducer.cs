@@ -68,6 +68,10 @@ public class BatchingProducer : IAsyncDisposable
 
         try
         {
+            await _publisher.Initialize(new PublisherConfig
+            {
+                IdleTimeout = _config.PublisherIdleTimeout
+            }, _topic, cancel);
             try
             {
                 while (!cancel.IsCancellationRequested)
