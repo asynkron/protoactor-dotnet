@@ -1,6 +1,7 @@
 using System;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster;
 using Proto.Cluster.Identity;
@@ -36,7 +37,6 @@ public static class ServiceCollectionExtensions
             var loggerFactory = p.GetRequiredService<ILoggerFactory>();
             Log.SetLoggerFactory(loggerFactory);
 
-    
             configure(p, boot);
 
             var s = new ActorSystemConfig();
@@ -60,11 +60,15 @@ public static class ServiceCollectionExtensions
 
         self.AddSingleton(p => p.GetRequiredService<ActorSystem>().Cluster());
         self.AddSingleton(p => p.GetRequiredService<ActorSystem>().Root);
-        self.AddHostedService(p => new ProtoActorLifecycleHost(p.GetRequiredService<Cluster>(), boot.RunAsClient));
+        self.AddHostedService(p =>
+            new ProtoActorLifecycleHost(
+                p.GetRequiredService<ActorSystem>(),
+                p.GetRequiredService<IHostApplicationLifetime>(),
+                boot.RunAsClient));
 
         return self;
     }
-    
+
     public static IServiceCollection AddProtoCluster(this IServiceCollection self, string clusterName,
         string bindToHost = "localhost", int port = 0,
         Func<ActorSystemConfig, ActorSystemConfig>? configureSystem = null,
@@ -101,7 +105,11 @@ public static class ServiceCollectionExtensions
 
         self.AddSingleton(p => p.GetRequiredService<ActorSystem>().Cluster());
         self.AddSingleton(p => p.GetRequiredService<ActorSystem>().Root);
-        self.AddHostedService(p => new ProtoActorLifecycleHost(p.GetRequiredService<Cluster>(), runAsClient));
+        self.AddHostedService(p =>
+            new ProtoActorLifecycleHost(
+                p.GetRequiredService<ActorSystem>(),
+                p.GetRequiredService<IHostApplicationLifetime>(),
+                runAsClient));
 
         return self;
     }

@@ -4,32 +4,56 @@ using Microsoft.Extensions.Hosting;
 
 namespace Proto.Cluster;
 
-
 public class ProtoActorLifecycleHost : IHostedService
 {
-    private readonly Cluster _cluster;
+    private readonly ActorSystem _actorSystem;
     private readonly bool _runAsClient;
+    private readonly IHostApplicationLifetime _lifetime;
+    private bool _shutdownViaActorSystem;
 
-    public ProtoActorLifecycleHost(Cluster cluster, bool runAsClient)
+    public ProtoActorLifecycleHost(
+        ActorSystem actorSystem,
+        IHostApplicationLifetime lifetime,
+        bool runAsClient
+        )
     {
-        _cluster = cluster;
+        _actorSystem = actorSystem;
         _runAsClient = runAsClient;
+        _lifetime = lifetime;
     }
 
     public async Task StartAsync(CancellationToken _)
     {
+        // Register a callback for when the actor system shuts down.
+        _actorSystem.Shutdown.Register(() =>
+        {
+            if (_lifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                return;
+            }
+            _shutdownViaActorSystem = true;
+            _lifetime.StopApplication();
+        });
+
         if (_runAsClient)
         {
-            await _cluster.StartClientAsync();
+            await _actorSystem.Cluster().StartClientAsync();
         }
         else
         {
-            await _cluster.StartMemberAsync();
+            await _actorSystem.Cluster().StartMemberAsync();
         }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        await _cluster.ShutdownAsync();
+        if (_shutdownViaActorSystem)
+        {
+            await _actorSystem.Cluster().ShutdownCompleted;
+        }
+        else
+        {
+            await _actorSystem.Cluster().ShutdownAsync(true, "Host process is stopping");
+        }
     }
 }
