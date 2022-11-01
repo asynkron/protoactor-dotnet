@@ -16,6 +16,7 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
 using Proto.Remote;
+// ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 namespace Proto.Cluster.Gossip;
 
@@ -441,7 +442,6 @@ public class Gossiper
 
     private async Task SendStateAsync()
     {
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalse
         if (_pid == null)
         {
             //just make sure a cluster client cant send
@@ -467,6 +467,12 @@ public class Gossiper
 
     internal async Task ShutdownAsync()
     {
+        // _pid will be null when cluster started as "client"
+        if (_pid == null)
+        {
+            return;
+        }
+
         Logger.LogInformation("Shutting down heartbeat");
         await _context.StopAsync(_pid);
         Logger.LogInformation("Shut down heartbeat");
