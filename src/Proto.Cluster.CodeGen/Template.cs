@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Template.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -33,7 +33,7 @@ namespace {{CsNamespace}}
     {{#each Services}}
     public abstract class {{Name}}Base
     {
-        protected global::Proto.IContext Context {get;}
+        protected global::Proto.IContext Context { get; }
         protected global::Proto.ActorSystem System => Context.System;
         protected global::Proto.Cluster.Cluster Cluster => Context.System.Cluster();
     
@@ -109,7 +109,7 @@ namespace {{CsNamespace}}
         {
             var gr = new global::Proto.Cluster.GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, {{../Name}}Actor.Kind, gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, {{../Name}}Actor.Kind, gr, context, ct);
 
             return res switch
             {
@@ -198,9 +198,9 @@ namespace {{CsNamespace}}
             }
         }
 
-        private void Respond<T>(T response) where T: global::Google.Protobuf.IMessage => _context!.Respond(response is not null ? response : new global::Proto.Cluster.GrainResponseMessage(response));
+        private void Respond<T>(T response) where T : global::Google.Protobuf.IMessage => _context!.Respond(response is not null ? response : new global::Proto.Cluster.GrainResponseMessage(response));
         private void Respond() => _context!.Respond( new global::Proto.Cluster.GrainResponseMessage(null));
-        private void OnError(string error) => _context!.Respond( new global::Proto.Cluster.GrainErrorResponse {Err = error } );
+        private void OnError(string error) => _context!.Respond(new global::Proto.Cluster.GrainErrorResponse { Err = error });
 
         public static global::Proto.Cluster.ClusterKind GetClusterKind(Func<global::Proto.IContext, global::Proto.Cluster.ClusterIdentity, {{Name}}Base> innerFactory)
             => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
