@@ -30,7 +30,7 @@ namespace {{CsNamespace}}
         {{/each}}
     }
 
-	{{#each Services}}	
+    {{#each Services}}
     public abstract class {{Name}}Base
     {
         protected global::Proto.IContext Context {get;}
@@ -67,9 +67,9 @@ namespace {{CsNamespace}}
         }
         {{/each}}
     
-		{{#each Methods}}
+        {{#each Methods}}
         public abstract Task{{#if UseReturn}}<{{OutputName}}>{{/if}} {{Name}}({{SingleParameterDefinition}});
-		{{/each}}
+        {{/each}}
     }
 
     public class {{Name}}Client
@@ -83,7 +83,7 @@ namespace {{CsNamespace}}
             _cluster = cluster;
         }
 
-		{{#each Methods}}
+        {{#each Methods}}
         public async Task<{{OutputName}}?> {{Name}}({{LeadingParameterDefinition}}CancellationToken ct)
         {
             var gr = new global::Proto.Cluster.GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
@@ -125,7 +125,7 @@ namespace {{CsNamespace}}
                 _ => throw new NotSupportedException($""Unknown response type {res.GetType().FullName}"")
             };
         }
-		{{/each}}
+        {{/each}}
     }
 
     public class {{Name}}Actor : global::Proto.IActor
@@ -167,7 +167,7 @@ namespace {{CsNamespace}}
                 {
                     switch (methodIndex)
                     {
-			            {{#each Methods}}
+                        {{#each Methods}}
                         case {{Index}}:
                         {   
                             {{#if UseParameter}}
@@ -182,7 +182,7 @@ namespace {{CsNamespace}}
 
                             break;
                         }
-			            {{/each}}
+                        {{/each}}
                         default:
                             OnError($""Invalid client contract. Unexpected Index {methodIndex}"");
                             break;
@@ -208,7 +208,7 @@ namespace {{CsNamespace}}
         public static global::Proto.Cluster.ClusterKind GetClusterKind<T>(global::System.IServiceProvider serviceProvider) where T : {{Name}}Base
             => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new {{Name}}Actor((ctx, id) => global::Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id))));
     }
-	{{/each}}	
+    {{/each}}
 }
 ";
 }
