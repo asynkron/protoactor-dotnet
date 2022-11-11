@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="Template.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -171,9 +171,12 @@ namespace {{CsNamespace}}
                         case {{Index}}:
                         {   
                             {{#if UseParameter}}
-                            if(r is {{InputName}} input){
+                            if (r is {{InputName}} input)
+                            {
                                 await _inner!.{{Name}}(input, Respond, OnError);
-                            } else {
+                            }
+                            else
+                            {
                                 OnError($""Invalid client contract. Expected {{InputName}}, received {r?.GetType().FullName}"");
                             }
                             {{else}}
