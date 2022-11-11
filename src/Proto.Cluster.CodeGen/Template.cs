@@ -24,20 +24,20 @@ namespace {{CsNamespace}}
     public static partial class GrainExtensions
     {
         {{#each Services}}
-        public static {{Name}}Client Get{{Name}}(this Cluster cluster, string identity) => new {{Name}}Client(cluster, identity);
+        public static {{Name}}Client Get{{Name}}(this global::Proto.Cluster.Cluster cluster, string identity) => new {{Name}}Client(cluster, identity);
 
-        public static {{Name}}Client Get{{Name}}(this IContext context, string identity) => new {{Name}}Client(context.System.Cluster(), identity);
+        public static {{Name}}Client Get{{Name}}(this global::Proto.IContext context, string identity) => new {{Name}}Client(context.System.Cluster(), identity);
         {{/each}}
     }
 
 	{{#each Services}}	
     public abstract class {{Name}}Base
     {
-        protected IContext Context {get;}
-        protected ActorSystem System => Context.System;
-        protected Cluster Cluster => Context.System.Cluster();
+        protected global::Proto.IContext Context {get;}
+        protected global::Proto.ActorSystem System => Context.System;
+        protected global::Proto.Cluster.Cluster Cluster => Context.System.Cluster();
     
-        protected {{Name}}Base(IContext context)
+        protected {{Name}}Base(global::Proto.IContext context)
         {
             Context = context;
         }
@@ -75,9 +75,9 @@ namespace {{CsNamespace}}
     public class {{Name}}Client
     {
         private readonly string _id;
-        private readonly Cluster _cluster;
+        private readonly global::Proto.Cluster.Cluster _cluster;
 
-        public {{Name}}Client(Cluster cluster, string id)
+        public {{Name}}Client(global::Proto.Cluster.Cluster cluster, string id)
         {
             _id = id;
             _cluster = cluster;
@@ -86,18 +86,18 @@ namespace {{CsNamespace}}
 		{{#each Methods}}
         public async Task<{{OutputName}}?> {{Name}}({{LeadingParameterDefinition}}CancellationToken ct)
         {
-            var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
+            var gr = new global::Proto.Cluster.GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, {{../Name}}Actor.Kind, gr, ct);
 
             return res switch
             {
                 // normal response
-                {{OutputName}} message => {{#if UseReturn}}message{{else}}Nothing.Instance{{/if}},
+                {{OutputName}} message => {{#if UseReturn}}message{{else}}global::Proto.Nothing.Instance{{/if}},
                 // enveloped response
-                GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}Nothing.Instance{{/if}},
+                global::Proto.Cluster.GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}global::Proto.Nothing.Instance{{/if}},
                 // error response
-                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -105,20 +105,20 @@ namespace {{CsNamespace}}
             };
         }
         
-        public async Task<{{OutputName}}?> {{Name}}({{LeadingParameterDefinition}}ISenderContext context, CancellationToken ct)
+        public async Task<{{OutputName}}?> {{Name}}({{LeadingParameterDefinition}}global::Proto.ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
+            var gr = new global::Proto.Cluster.GrainRequestMessage({{Index}}, {{#if UseParameter}}{{Parameter}}{{else}}null{{/if}});
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, {{../Name}}Actor.Kind, gr,context, ct);
 
             return res switch
             {
                 // normal response
-                {{OutputName}} message => {{#if UseReturn}}message{{else}}Nothing.Instance{{/if}},
+                {{OutputName}} message => {{#if UseReturn}}message{{else}}global::Proto.Nothing.Instance{{/if}},
                 // enveloped response
-                GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}Nothing.Instance{{/if}},
+                global::Proto.Cluster.GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}global::Proto.Nothing.Instance{{/if}},
                 // error response
-                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -128,27 +128,27 @@ namespace {{CsNamespace}}
 		{{/each}}
     }
 
-    public class {{Name}}Actor : IActor
+    public class {{Name}}Actor : global::Proto.IActor
     {
         public const string Kind = ""{{Kind}}"";
 
         private {{Name}}Base? _inner;
-        private IContext? _context;
-        private readonly Func<IContext, ClusterIdentity, {{Name}}Base> _innerFactory;
+        private global::Proto.IContext? _context;
+        private readonly Func<global::Proto.IContext, global::Proto.Cluster.ClusterIdentity, {{Name}}Base> _innerFactory;
     
-        public {{Name}}Actor(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
+        public {{Name}}Actor(Func<global::Proto.IContext, global::Proto.Cluster.ClusterIdentity, {{Name}}Base> innerFactory)
         {
             _innerFactory = innerFactory;
         }
 
-        public async Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(global::Proto.IContext context)
         {
             switch (context.Message)
             {
                 case Started msg: 
                 {
                     _context = context;
-                    var id = context.Get<ClusterIdentity>()!; // Always populated on startup
+                    var id = context.Get<global::Proto.Cluster.ClusterIdentity>()!; // Always populated on startup
                     _inner = _innerFactory(context, id);
                     await _inner.OnStarted();
                     break;
@@ -198,15 +198,15 @@ namespace {{CsNamespace}}
             }
         }
 
-        private void Respond<T>(T response) where T: IMessage => _context!.Respond(response is not null ? response : new GrainResponseMessage(response));
-        private void Respond() => _context!.Respond( new GrainResponseMessage(null));
-        private void OnError(string error) => _context!.Respond( new GrainErrorResponse {Err = error } );
+        private void Respond<T>(T response) where T: global::Google.Protobuf.IMessage => _context!.Respond(response is not null ? response : new global::Proto.Cluster.GrainResponseMessage(response));
+        private void Respond() => _context!.Respond( new global::Proto.Cluster.GrainResponseMessage(null));
+        private void OnError(string error) => _context!.Respond( new global::Proto.Cluster.GrainErrorResponse {Err = error } );
 
-        public static ClusterKind GetClusterKind(Func<IContext, ClusterIdentity, {{Name}}Base> innerFactory)
-            => new ClusterKind(Kind, Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
+        public static global::Proto.Cluster.ClusterKind GetClusterKind(Func<global::Proto.IContext, global::Proto.Cluster.ClusterIdentity, {{Name}}Base> innerFactory)
+            => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
 
-        public static ClusterKind GetClusterKind<T>(IServiceProvider serviceProvider) where T : {{Name}}Base
-            => new ClusterKind(Kind, Props.FromProducer(() => new {{Name}}Actor((ctx, id) => ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id))));
+        public static global::Proto.Cluster.ClusterKind GetClusterKind<T>(global::System.IServiceProvider serviceProvider) where T : {{Name}}Base
+            => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new {{Name}}Actor((ctx, id) => global::Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id))));
     }
 	{{/each}}	
 }
