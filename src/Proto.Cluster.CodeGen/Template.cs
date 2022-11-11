@@ -202,7 +202,7 @@ namespace {{CsNamespace}}
         }
 
         private void Respond<T>(T response) where T : global::Google.Protobuf.IMessage => _context!.Respond(response is not null ? response : new global::Proto.Cluster.GrainResponseMessage(response));
-        private void Respond() => _context!.Respond( new global::Proto.Cluster.GrainResponseMessage(null));
+        private void Respond() => _context!.Respond(new global::Proto.Cluster.GrainResponseMessage(null));
         private void OnError(string error) => _context!.Respond(new global::Proto.Cluster.GrainErrorResponse { Err = error });
 
         public static global::Proto.Cluster.ClusterKind GetClusterKind(Func<global::Proto.IContext, global::Proto.Cluster.ClusterIdentity, {{Name}}Base> innerFactory)
