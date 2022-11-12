@@ -26,9 +26,10 @@ public static class Tracing
         [CallerMemberName] string callerName = "N/A")
     {
         using var activity = StartActivity(callerName);
-
+        
         if (activity is not null)
         {
+            activity.AddTag("test.name", callerName);
             testOutputHelper.WriteLine("TraceId: {0}", activity.TraceId);
         }
 

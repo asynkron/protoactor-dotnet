@@ -39,12 +39,13 @@ public interface IClusterFixture
 
 public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDisposable
 {
+    private static readonly object Lock = new();
     private const bool EnableTracing = false;
     public const string InvalidIdentity = "invalid";
     private readonly Func<ClusterConfig, ClusterConfig>? _configure;
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
     private readonly List<Cluster> _members = new();
-    private readonly TracerProvider? _tracerProvider;
+    private static TracerProvider? _tracerProvider;
 
     protected readonly string ClusterName;
 
@@ -58,13 +59,13 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         ClusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
 
         //TODO: check if this helps low resource envs like github actions.
-        ThreadPool.SetMaxThreads(100, 100);
+    //    ThreadPool.SetMaxThreads(100, 100);
 
 #pragma warning disable CS0162
         // ReSharper disable once HeuristicUnreachableCode
         if (EnableTracing)
         {
-            _tracerProvider = InitOpenTelemetryTracing();
+             InitOpenTelemetryTracing();
         }
 #pragma warning restore CS0162
     }
@@ -99,7 +100,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         try
         {
             await OnDisposing();
-            _tracerProvider?.Dispose();
+            //_tracerProvider?.Dispose();
             await Task.WhenAll(Members.ToList().Select(cluster => cluster.ShutdownAsync())).ConfigureAwait(false);
             Members.Clear(); // prevent multiple shutdown attempts if dispose is called multiple times
         }
@@ -143,15 +144,29 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     public IList<Cluster> Members => _members;
 
-    private static TracerProvider InitOpenTelemetryTracing() =>
-        Sdk.CreateTracerProviderBuilder()
-            .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                .AddService("Proto.Cluster.Tests")
-            )
-            .AddProtoActorInstrumentation()
-            .AddSource(Tracing.ActivitySourceName)
-            .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317"))
-            .Build();
+    private static void InitOpenTelemetryTracing()
+    {
+        lock (Lock)
+        {
+            if (_tracerProvider != null)
+            {
+                return;
+            }
+            
+            _tracerProvider = Sdk.CreateTracerProviderBuilder()
+                .SetResourceBuilder(ResourceBuilder.CreateDefault()
+                    .AddService("Proto.Cluster.Tests")
+                )
+                .AddProtoActorInstrumentation()
+                .AddSource(Tracing.ActivitySourceName)
+                .AddOtlpExporter(options =>
+                {
+                    options.Endpoint = new Uri("http://localhost:4317");
+                    options.ExportProcessorType = ExportProcessorType.Batch;
+                })
+                .Build();
+        }
+    }
 
     public virtual Task OnDisposing() => Task.CompletedTask;
 
@@ -204,6 +219,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         // ReSharper disable once HeuristicUnreachableCode
         return EnableTracing
             ? actorSystemConfig
+                .WithConfigureSystemProps((_,props) => props.WithTracing())
                 .WithConfigureProps(props => props.WithTracing())
                 .WithConfigureRootContext(context => context.WithTracing())
             : actorSystemConfig;
