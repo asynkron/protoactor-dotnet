@@ -19,36 +19,39 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
     [Fact]
     public async Task LocalAffinityMovesActivationsOnRemoteSender()
     {
-        var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)).Token;
-        var firstNode = Members[0];
-        var secondNode = Members[1];
+        await Tracing.Trace(async () =>
+        {
+            var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)).Token;
+            var firstNode = Members[0];
+            var secondNode = Members[1];
 
-        await PingAndVerifyLocality(firstNode, timeout, "1:1", firstNode.System.Address,
-            "Local affinity to sending node means that actors should spawn there"
-        );
-
-        LogProcessCounts();
-
-        await PingAndVerifyLocality(secondNode, timeout, "2:1", firstNode.System.Address,
-            "As the current instances exist on the 'wrong' node, these should respond before being moved"
-        );
-
-        LogProcessCounts();
-
-        _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
-        await Task.Delay(200, timeout);
-        LogProcessCounts();
-
-        await PingAndVerifyLocality(secondNode, timeout, "2.2", secondNode.System.Address,
-            "Relocation should be triggered, and the actors should be respawned on the local node"
-        );
-
-        LogProcessCounts();
-
-        void LogProcessCounts() =>
-            _testOutputHelper.WriteLine(
-                $"Processes: {firstNode.System.Address}: {firstNode.System.ProcessRegistry.ProcessCount}, {secondNode.System.Address}: {secondNode.System.ProcessRegistry.ProcessCount}"
+            await PingAndVerifyLocality(firstNode, timeout, "1:1", firstNode.System.Address,
+                "Local affinity to sending node means that actors should spawn there"
             );
+
+            LogProcessCounts();
+
+            await PingAndVerifyLocality(secondNode, timeout, "2:1", firstNode.System.Address,
+                "As the current instances exist on the 'wrong' node, these should respond before being moved"
+            );
+
+            LogProcessCounts();
+
+            _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
+            await Task.Delay(200, timeout);
+            LogProcessCounts();
+
+            await PingAndVerifyLocality(secondNode, timeout, "2.2", secondNode.System.Address,
+                "Relocation should be triggered, and the actors should be respawned on the local node"
+            );
+
+            LogProcessCounts();
+
+            void LogProcessCounts() =>
+                _testOutputHelper.WriteLine(
+                    $"Processes: {firstNode.System.Address}: {firstNode.System.ProcessRegistry.ProcessCount}, {secondNode.System.Address}: {secondNode.System.ProcessRegistry.ProcessCount}"
+                );
+        }, _testOutputHelper);
     }
 
     private async Task PingAndVerifyLocality(
