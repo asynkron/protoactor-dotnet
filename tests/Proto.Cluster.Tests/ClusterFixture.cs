@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Proto.Cluster.Cache;
@@ -152,7 +154,31 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             {
                 return;
             }
+
+            var endpoint = new Uri("http://localhost:4317");
             
+            var services = new ServiceCollection();
+            services.AddLogging(l =>
+            {
+                l.SetMinimumLevel(LogLevel.Debug);
+                l.AddOpenTelemetry(
+                    options =>
+                    {
+                        options
+                            .AddOtlpExporter(o =>
+                            {
+                                o.Endpoint = endpoint;
+                                o.ExportProcessorType = ExportProcessorType.Simple;
+                            });
+                    });
+            });
+
+            var serviceProvider = services.BuildServiceProvider();
+
+            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+
+            Log.SetLoggerFactory(loggerFactory);
+
             _tracerProvider = Sdk.CreateTracerProviderBuilder()
                 .SetResourceBuilder(ResourceBuilder.CreateDefault()
                     .AddService("Proto.Cluster.Tests")
@@ -161,7 +187,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 .AddSource(Tracing.ActivitySourceName)
                 .AddOtlpExporter(options =>
                 {
-                    options.Endpoint = new Uri("http://localhost:4317");
+                    options.Endpoint = endpoint;
                     options.ExportProcessorType = ExportProcessorType.Batch;
                 })
                 .Build();
