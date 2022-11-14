@@ -245,7 +245,6 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         // ReSharper disable once HeuristicUnreachableCode
         return EnableTracing
             ? actorSystemConfig
-                .WithConfigureSystemProps((_,props) => props.WithTracing())
                 .WithConfigureProps(props => props.WithTracing())
                 .WithConfigureRootContext(context => context.WithTracing())
             : actorSystemConfig;

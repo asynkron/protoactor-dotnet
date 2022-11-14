@@ -37,6 +37,22 @@ public abstract class ClusterTests : ClusterTestBase
     }
 
     [Fact]
+    public async Task CanSpawnASingleVirtualActor()
+    {
+        await Tracing.Trace(async () =>
+        {
+            var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+
+            var entryNode = Members[0];
+
+            var timer = Stopwatch.StartNew();
+            await PingPong(entryNode, "unicorn", timeout);
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Spawned 1 actor in {timer.Elapsed}");
+        }, _testOutputHelper);
+    }
+    
+    [Fact]
     public async Task TopologiesShouldHaveConsensus()
     {
         await Tracing.Trace(async () =>
