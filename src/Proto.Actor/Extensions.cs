@@ -48,12 +48,6 @@ public static class UtilExtensions
     public static Process Configure(this Process self)
     {
         var system = self.System;
-        var p = self;
-        foreach(var wrapper in system.Config.ConfigureProcess)
-        {
-            p = wrapper(p);
-        }
-
-        return p;
+        return system.Config.ConfigureProcess(self);
     }
 }

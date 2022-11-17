@@ -234,7 +234,7 @@ public record ActorSystemConfig
     /// <summary>
     ///     The LogLevel used for Diagnostics logging
     /// </summary>
-    /// <param name="diagnosticsLogLevel"></param>
+    /// <param name="diagnosticsLogLevel">The LogLevel used when logging diagnostics</param>
     /// <returns></returns>
     public ActorSystemConfig WithDiagnosticsLogLevel(LogLevel diagnosticsLogLevel) =>
         this with { DiagnosticsLogLevel = diagnosticsLogLevel };
@@ -244,10 +244,19 @@ public record ActorSystemConfig
     ///     Wraps a given process inside a wrapper process.
     ///     This allows for applying middleware on a process level
     /// </summary>
-    public IList<Func<Process, Process>> ConfigureProcess { get; set; } = new List<Func<Process, Process>>();
+    public Func<Process, Process> ConfigureProcess { get; set; } = process => process;
+
+    /// <summary>
+    ///     Wraps a given process inside a wrapper process.
+    ///     This allows for applying middleware on a process level
+    /// </summary>
+    /// <param name="configureProcess">The configure process function</param>
+    public ActorSystemConfig WithConfigureProcess(Func<Process, Process> configureProcess) =>
+        this with { ConfigureProcess = configureProcess };
 }
 
 //Not part of the contract, but still shipped out of the box
+[PublicAPI]
 public static class ActorSystemConfigExtensions
 {
     /// <summary>
