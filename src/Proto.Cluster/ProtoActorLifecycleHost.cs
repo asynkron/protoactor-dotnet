@@ -32,7 +32,11 @@ public class ProtoActorLifecycleHost : IHostedService
                 return;
             }
             _shutdownViaActorSystem = true;
-            _lifetime.StopApplication();
+
+            if (_actorSystem.Cluster().Config.ExitOnShutdown)
+            {
+                _lifetime.StopApplication();
+            }
         });
 
         if (_runAsClient)
