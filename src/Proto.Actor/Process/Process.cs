@@ -6,6 +6,8 @@
 
 // ReSharper disable once CheckNamespace
 
+using System;
+using System.Threading.Tasks;
 using Proto.Mailbox;
 
 namespace Proto;
@@ -17,7 +19,7 @@ public abstract class Process
         System = system;
     }
 
-    protected ActorSystem System { get; }
+    protected internal ActorSystem System { get; }
 
     protected internal abstract void SendUserMessage(PID pid, object message);
 

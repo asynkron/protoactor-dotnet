@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -237,6 +238,13 @@ public record ActorSystemConfig
     /// <returns></returns>
     public ActorSystemConfig WithDiagnosticsLogLevel(LogLevel diagnosticsLogLevel) =>
         this with { DiagnosticsLogLevel = diagnosticsLogLevel };
+
+
+    /// <summary>
+    ///     Wraps a given process inside a wrapper process.
+    ///     This allows for applying middleware on a process level
+    /// </summary>
+    public IList<Func<Process, Process>> ConfigureProcess { get; set; } = new List<Func<Process, Process>>();
 }
 
 //Not part of the contract, but still shipped out of the box

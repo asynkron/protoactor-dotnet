@@ -44,4 +44,16 @@ public static class UtilExtensions
         Console.WriteLine("[Fatal] Out of memory exception" + reason);
         Environment.FailFast(reason.Message, reason);
     }
+
+    public static Process Configure(this Process self)
+    {
+        var system = self.System;
+        var p = self;
+        foreach(var wrapper in system.Config.ConfigureProcess)
+        {
+            p = wrapper(p);
+        }
+
+        return p;
+    }
 }
