@@ -244,6 +244,7 @@ public record ActorSystemConfig
     ///     Wraps a given process inside a wrapper process.
     ///     This allows for applying middleware on a process level
     /// </summary>
+    [JsonIgnore]
     public Func<Process, Process> ConfigureProcess { get; set; } = process => process;
 
     /// <summary>
