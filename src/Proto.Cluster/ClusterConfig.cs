@@ -174,6 +174,11 @@ public record ClusterConfig
     public bool LegacyRequestTimeoutBehavior { get; init; }
 
     /// <summary>
+    ///     Exit the application process when the cluster is terminated. Default is false.
+    /// </summary>
+    public bool ExitOnShutdown { get; set; } = false;
+
+    /// <summary>
     ///     Timeout for single retry of actor request. Default is 5s.
     ///     Overall timeout for the request is controlled by the cancellation token on
     ///     <see cref="IClusterContext.RequestAsync{T}(ClusterIdentity, object, ISenderContext, CancellationToken)" />
@@ -345,6 +350,15 @@ public record ClusterConfig
     /// </summary>
     public ClusterConfig WithLegacyRequestTimeoutBehavior(bool enabled = true) =>
         this with { LegacyRequestTimeoutBehavior = enabled };
+    
+    
+    /// <summary>
+    ///     Exit the application process when the cluster is shutdown.
+    /// </summary>
+    /// <param name="enabled"></param>
+    /// <returns></returns>
+    public ClusterConfig WithExitOnShutdown(bool enabled = true) => 
+        this with { ExitOnShutdown = enabled };
 
     /// <summary>
     ///     Creates a new <see cref="ClusterConfig" />
