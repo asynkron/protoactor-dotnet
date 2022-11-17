@@ -41,7 +41,7 @@ public class DeadlineContextDecorator : ActorContextDecorator
     private readonly TimeSpan _deadline;
     private readonly ILogger _logger;
 
-    public DeadlineContextDecorator([NotNull] IContext context, TimeSpan deadline, ILogger logger) : base(context)
+    public DeadlineContextDecorator(IContext context, TimeSpan deadline, ILogger logger) : base(context)
     {
         _deadline = deadline;
         _logger = logger;

@@ -50,4 +50,7 @@ public static class UtilExtensions
         var system = self.System;
         return system.Config.ConfigureProcess(self);
     }
+
+    public static Func<T, T> Wrap<T>(this Func<T, T> self, Func<T, T> outer) => 
+        x => outer(self(x));
 }
