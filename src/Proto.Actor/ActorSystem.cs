@@ -40,12 +40,13 @@ public sealed class ActorSystem : IAsyncDisposable
         Config = config ?? throw new ArgumentNullException(nameof(config));
         Diagnostics = new DiagnosticsStore(this);
         ProcessRegistry = new ProcessRegistry(this);
-        Root = config.ConfigureRootContext(new RootContext(this));
-        DeadLetter = new DeadLetterProcess(this);
+        Root = NewRoot();
+        DeadLetter = new DeadLetterProcess(this).Configure();
         Guardians = new Guardians(this);
         EventStream = new EventStream(this);
         Metrics = new ProtoMetrics(config.MetricsEnabled);
-        ProcessRegistry.TryAdd("$eventstream", new EventStreamProcess(this));
+        var eventStream = new EventStreamProcess(this).Configure();
+        ProcessRegistry.TryAdd("$eventstream", eventStream);
         Extensions = new ActorSystemExtensions(this);
 
         DeferredFuture =
@@ -106,7 +107,7 @@ public sealed class ActorSystem : IAsyncDisposable
     /// <summary>
     ///     DeadLetter process that receives all messages that could not be delivered to an actor.
     /// </summary>
-    public DeadLetterProcess DeadLetter { get; }
+    public Process DeadLetter { get; }
 
     /// <summary>
     ///     Allows to broadcast messages across the actor system to anyone who explicitly subscribed.
@@ -226,8 +227,12 @@ public sealed class ActorSystem : IAsyncDisposable
         _port = 0;
     }
 
-    public RootContext NewRoot(MessageHeader? headers = null, params Func<Sender, Sender>[] middleware) =>
-        new(this, headers, middleware);
+    public IRootContext NewRoot(MessageHeader? headers = null, params Func<Sender, Sender>[] middleware)
+    {
+        var root = new RootContext(this, headers, middleware);
+        var configured = Config.ConfigureRootContext(root);
+        return configured;
+    }
 
     /// <summary>
     ///     Gets the network address of the actor system. Used by Proto.Remote.

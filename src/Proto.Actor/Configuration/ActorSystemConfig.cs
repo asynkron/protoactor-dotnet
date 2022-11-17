@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -233,61 +234,24 @@ public record ActorSystemConfig
     /// <summary>
     ///     The LogLevel used for Diagnostics logging
     /// </summary>
-    /// <param name="diagnosticsLogLevel"></param>
+    /// <param name="diagnosticsLogLevel">The LogLevel used when logging diagnostics</param>
     /// <returns></returns>
     public ActorSystemConfig WithDiagnosticsLogLevel(LogLevel diagnosticsLogLevel) =>
         this with { DiagnosticsLogLevel = diagnosticsLogLevel };
-}
 
-//Not part of the contract, but still shipped out of the box
-public static class ActorSystemConfigExtensions
-{
+
     /// <summary>
-    ///     Enables logging when the Receive method on an actor takes too long. This method appends to wraps existing
-    ///     ConfigureProps delegate.
+    ///     Wraps a given process inside a wrapper process.
+    ///     This allows for applying middleware on a process level
     /// </summary>
-    /// <param name="self"></param>
-    /// <param name="receiveDeadline">Time allowed for Receive call</param>
-    /// <param name="logLevel">Log level to use</param>
-    /// <returns></returns>
-    public static ActorSystemConfig WithDeveloperReceiveLogging(
-        this ActorSystemConfig self,
-        TimeSpan receiveDeadline,
-        LogLevel logLevel = LogLevel.Error
-    )
-    {
-        var inner = self.ConfigureProps;
-        var logger = Log.CreateLogger("DeveloperReceive");
+    [JsonIgnore]
+    public Func<Process, Process> ConfigureProcess { get; set; } = process => process;
 
-        Receiver DeveloperReceiveLogging(Receiver next) =>
-            (context, envelope) =>
-            {
-                var sw = Stopwatch.StartNew();
-                var res = next(context, envelope);
-                sw.Stop();
-
-                if (sw.Elapsed > receiveDeadline)
-                {
-                    logger.Log(logLevel, "Receive is taking too long {Elapsed} {Self} incoming message {Message}",
-                        sw.Elapsed, context.Self,
-                        envelope.Message.GetHashCode()
-                    );
-
-                    Console.WriteLine(
-                        $"Receive is taking too long {sw.Elapsed} {context.Self} incoming message {envelope.Message.GetMessageTypeName()}");
-                }
-
-                return res;
-            };
-
-        Props Outer(Props props)
-        {
-            props = inner(props);
-            props = props.WithReceiverMiddleware(DeveloperReceiveLogging);
-
-            return props;
-        }
-
-        return self with { ConfigureProps = Outer };
-    }
+    /// <summary>
+    ///     Wraps a given process inside a wrapper process.
+    ///     This allows for applying middleware on a process level
+    /// </summary>
+    /// <param name="configureProcess">The configure process function</param>
+    public ActorSystemConfig WithConfigureProcess(Func<Process, Process> configureProcess) =>
+        this with { ConfigureProcess = configureProcess };
 }
