@@ -35,18 +35,17 @@ public class GossipTests
     {
         await using var clusterFixture = new InMemoryClusterFixture();
         await clusterFixture.InitializeAsync().ConfigureAwait(false);
-        await Tracing.Trace(async () =>
-        {
-            const string initialValue = "hello consensus";
 
-            var fixtureMembers = clusterFixture.Members;
-            var consensusChecks = fixtureMembers.Select(CreateConsensusCheck).ToList();
+        const string initialValue = "hello consensus";
 
-            SetGossipState(fixtureMembers, initialValue);
+        var fixtureMembers = clusterFixture.Members;
+        var consensusChecks = fixtureMembers.Select(CreateConsensusCheck).ToList();
 
-            _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
-            await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
-        }, _testOutputHelper);
+        SetGossipState(fixtureMembers, initialValue);
+
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
+        await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
+
     }
 
     [Fact(Skip = "Flaky")]
@@ -97,44 +96,42 @@ public class GossipTests
     {
         await using var clusterFixture = new InMemoryClusterFixture();
         await clusterFixture.InitializeAsync();
-        await Tracing.Trace(async () =>
-        {
 
-            const string initialValue = "hello consensus";
-            const string otherValue = "hi";
+        const string initialValue = "hello consensus";
+        const string otherValue = "hi";
 
-            var consensusChecks = clusterFixture.Members.Select(CreateConsensusCheck).ToList();
+        var consensusChecks = clusterFixture.Members.Select(CreateConsensusCheck).ToList();
 
-            SetGossipState(clusterFixture.Members, initialValue);
+        SetGossipState(clusterFixture.Members, initialValue);
 
-            _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
-            await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
-            _testOutputHelper.WriteLine("Start: We are in consensus...");
-            var firstMember = clusterFixture.Members[0];
-            _testOutputHelper.WriteLine("First member " + firstMember.System.Id);
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
+        await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
+        _testOutputHelper.WriteLine("Start: We are in consensus...");
+        var firstMember = clusterFixture.Members[0];
+        _testOutputHelper.WriteLine("First member " + firstMember.System.Id);
 
-            var firstMemberConsensus = consensusChecks[0];
+        var firstMemberConsensus = consensusChecks[0];
 
-            // var logStore = new LogStore();
-            // firstMember.System.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
+        // var logStore = new LogStore();
+        // firstMember.System.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
-            // Sets a now inconsistent state on the first node
-            await firstMember.Gossip.SetStateAsync(GossipStateKey, new SomeGossipState { Key = otherValue });
+        // Sets a now inconsistent state on the first node
+        await firstMember.Gossip.SetStateAsync(GossipStateKey, new SomeGossipState { Key = otherValue });
 
-            var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(5000));
+        var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(5000));
 
-            afterSettingDifferingState.Should()
-                .BeEquivalentTo((false, (string)null),
-                    "We should be able to read our writes, and locally we do not have consensus");
+        afterSettingDifferingState.Should()
+            .BeEquivalentTo((false, (string)null),
+                "We should be able to read our writes, and locally we do not have consensus");
 
-            _testOutputHelper.WriteLine("Read our own writes...");
-            await Task.Delay(5000);
+        _testOutputHelper.WriteLine("Read our own writes...");
+        await Task.Delay(5000);
 
-            _testOutputHelper.WriteLine("Checking consensus...");
+        _testOutputHelper.WriteLine("Checking consensus...");
 
-            _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
-            await ShouldBeNotHaveConsensus(consensusChecks);
-        }, _testOutputHelper);
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
+        await ShouldBeNotHaveConsensus(consensusChecks);
+
     }
 
     private static async Task ShouldBeInConsensusAboutValue(List<IConsensusHandle<string>> consensusChecks,
