@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Proto.Utils;
 using Xunit;
 
 namespace Proto.Cluster.Tests;
@@ -18,7 +19,7 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
     }
 
     [Theory]
-    [InlineData(1000, 10, 8000)]
+    [InlineData(20, 10, 20000)]
     public async Task OrderedDeliveryFromActors(int sendingActors, int messagesSentPerCall, int timeoutMs)
     {
         

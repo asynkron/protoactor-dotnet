@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using OpenTelemetry.Trace;
+using Proto.Utils;
 using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests;
@@ -30,12 +31,17 @@ public static class Tracing
         if (activity is not null)
         {
             activity.AddTag("test.name", callerName);
-            testOutputHelper.WriteLine("TraceId: {0}", activity.TraceId);
+            testOutputHelper.WriteLine("http://localhost:5001/logs?traceId={0}", activity.TraceId);
         }
 
         try
         {
-            await callBack();
+            var res = await callBack().WaitUpTo(TimeSpan.FromSeconds(30));
+            if (!res)
+            {
+                testOutputHelper.WriteLine($"{callerName} timedout");
+                throw new TimeoutException($"{callerName} timedout");
+            }
         }
         catch (Exception e)
         {
