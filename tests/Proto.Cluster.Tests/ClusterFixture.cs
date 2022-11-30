@@ -102,8 +102,21 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         try
         {
             await OnDisposing();
-            //_tracerProvider?.Dispose();
-            await Task.WhenAll(Members.ToList().Select(cluster => cluster.ShutdownAsync())).ConfigureAwait(false);
+
+            if (EnableTracing)
+            {
+                var testName = this.GetType().Name;
+                using (Tracing.StartActivity("ClusterFixture.DisposeAsync " + testName))
+                {
+                    await WaitForMembersToShutdown();
+                }
+            }
+            else
+            {
+                await WaitForMembersToShutdown();
+            }
+
+            _tracerProvider?.Dispose();
             Members.Clear(); // prevent multiple shutdown attempts if dispose is called multiple times
         }
         catch (Exception e)
@@ -111,6 +124,28 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             _logger.LogError(e, "Failed to shutdown gracefully");
 
             throw;
+        }
+    }
+
+    private async Task WaitForMembersToShutdown()
+    {
+        foreach (var cluster in _members)
+        {
+            _logger.LogInformation("Preparing shutdown for cluster member {MemberId}", cluster.System.Id);
+        }
+
+        var tasks = Members.ToList().Select(cluster => (cluster, cluster.ShutdownAsync())).ToList();
+        foreach (var (cluster, task) in tasks)
+        {
+            try
+            {
+                _logger.LogInformation("Shutting down cluster member {MemberId}", cluster.System.Id);
+                await task;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error shutting down cluster {MemberId}", cluster.System.Id);
+            }
         }
     }
 
