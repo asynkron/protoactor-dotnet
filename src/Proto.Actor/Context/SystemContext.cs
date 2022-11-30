@@ -36,7 +36,7 @@ public static class SystemContext
                 ? self.System.Guardians.GetGuardianPid(props.GuardianStrategy)
                 : null;
 
-            return props.Spawn(self.System, name, parent);
+            return props.SpawnSystem(self.System, name, parent);
         }
         catch (Exception x)
         {
