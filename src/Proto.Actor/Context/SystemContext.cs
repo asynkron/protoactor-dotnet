@@ -36,9 +36,6 @@ public static class SystemContext
                 ? self.System.Guardians.GetGuardianPid(props.GuardianStrategy)
                 : null;
 
-            //augment props with system actor specific settings
-            props = self.System.ConfigureSystemProps(name, props);
-
             return props.Spawn(self.System, name, parent);
         }
         catch (Exception x)

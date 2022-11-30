@@ -235,7 +235,7 @@ public class Gossiper
             catch (Exception x)
             {
                 x.CheckFailFast();
-                Logger.LogError(x, "Gossip loop failed");
+                Logger.LogWarning(x, "Gossip loop failed");
             }
         }
     }
@@ -378,7 +378,7 @@ public class Gossiper
                             .Select(
                                 grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
                                             (grouping.Count() > 1 ? grouping.Count() + " nodes" : grouping.First())
-                            )
+                            ).ToArray()
                         );
                     }
 
@@ -409,7 +409,7 @@ public class Gossiper
                         .Select(
                             grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
                                         (grouping.Count() > 1 ? grouping.Count() + " nodes" : grouping.First())
-                        )
+                        ).ToArray()
                     );
                 }
 

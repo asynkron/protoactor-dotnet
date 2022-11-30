@@ -110,6 +110,37 @@ public sealed record Props
 
         return self;
     }
+    
+    public static PID SystemSpawner(ActorSystem system, string name, Props props, PID? parent,
+        Action<IContext>? callback)
+    {
+        //Ordering is important here
+        //first we create a mailbox and attach it to a process
+        props = system.ConfigureSystemProps(name, props);
+        var mailbox = props.MailboxProducer();
+        var dispatcher = props.Dispatcher;
+        var process = new ActorProcess(system, mailbox);
+
+        //then we register it to the process registry
+        var (self, absent) = system.ProcessRegistry.TryAdd(name, process);
+
+        //if this fails we exit and the process and mailbox is Garbage Collected
+        if (!absent)
+        {
+            throw new ProcessNameExistException(name, self);
+        }
+
+        //if successful, we create the actor and attach it to the mailbox
+        var ctx = ActorContext.Setup(system, props, parent, self, mailbox);
+        callback?.Invoke(ctx);
+        mailbox.RegisterHandlers(ctx, dispatcher);
+        mailbox.PostSystemMessage(Started.Instance);
+
+        //finally, start the mailbox and make the actor consume messages
+        mailbox.Start();
+
+        return self;
+    }
 
     /// <summary>
     ///     Delegate used to create the actor.
@@ -209,6 +240,11 @@ public sealed record Props
 
     internal PID Spawn(ActorSystem system, string name, PID? parent, Action<IContext>? callback = null) =>
         Spawner(system, name, this, parent, callback);
+    
+    internal PID SpawnSystem(ActorSystem system, string name, PID? parent, Action<IContext>? callback = null)
+    {
+        return SystemSpawner(system, name, this, parent, callback);
+    }
 
     /// <summary>
     ///     Props that spawn actors by calling the provided producer delegate.
