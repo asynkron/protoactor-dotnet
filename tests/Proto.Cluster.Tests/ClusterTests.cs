@@ -401,10 +401,10 @@ public abstract class ClusterTests : ClusterTestBase
 
             var timer = Stopwatch.StartNew();
 
-            await Task.WhenAll(Members.SelectMany(member =>
-                    GetActorIds(actorCount).Select(id => PingPong(member, id, timeout, kind))
-                )
-            );
+            var tasks = Members.SelectMany(member =>
+                GetActorIds(actorCount).Select(id => PingPong(member, id, timeout, kind))).ToList();
+
+            await Task.WhenAll(tasks);
 
             timer.Stop();
             _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");

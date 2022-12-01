@@ -16,6 +16,11 @@ public static class ProtoTags
     ///     GetType().Name on the message
     /// </summary>
     public const string MessageType = "proto.messagetype";
+    
+    /// <summary>
+    ///     GetType().Name on the response message
+    /// </summary>
+    public const string ResponseMessageType = "proto.responsemessagetype";
 
     /// <summary>
     ///     Message destination PID string representation

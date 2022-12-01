@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenTelemetry.Trace;
+using Proto.Extensions;
 using Proto.Mailbox;
 
 namespace Proto.OpenTelemetry;
@@ -107,6 +108,10 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
     public override Task Receive(MessageEnvelope envelope) =>
         OpenTelemetryMethodsDecorators.Receive(Source, envelope, _receiveActivitySetup,
             () => base.Receive(envelope));
+
+    public override void Respond(object message)=>
+        OpenTelemetryMethodsDecorators.Respond(Source, base.Sender!, message, _receiveActivitySetup,
+            () => base.Respond(message));
 }
 
 internal static class OpenTelemetryMethodsDecorators
@@ -194,7 +199,9 @@ internal static class OpenTelemetryMethodsDecorators
         {
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
 
-            return await requestAsync().ConfigureAwait(false);
+            var res= await requestAsync().ConfigureAwait(false);
+            activity?.SetTag(ProtoTags.ResponseMessageType, res.GetMessageTypeName());
+            return res;
         }
         catch (Exception ex)
         {
@@ -217,6 +224,29 @@ internal static class OpenTelemetryMethodsDecorators
         {
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
             forward();
+        }
+        catch (Exception ex)
+        {
+            activity?.RecordException(ex);
+            activity?.SetStatus(Status.Error);
+
+            throw;
+        }
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void Respond(string source, PID target, object message, ActivitySetup sendActivitySetup,
+        Action respond)
+    {
+        using var activity =
+            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, source, nameof(Forward),
+                message, sendActivitySetup);
+
+        try
+        {
+            activity?.SetTag(ProtoTags.TargetPID, target.ToString());
+            activity?.SetTag(ProtoTags.ResponseMessageType, message.GetMessageTypeName());
+            respond();
         }
         catch (Exception ex)
         {
