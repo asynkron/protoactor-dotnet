@@ -21,6 +21,7 @@ using Proto.Logging;
 using Proto.OpenTelemetry;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Utils;
 using Xunit;
 
 // ReSharper disable ClassNeverInstantiated.Global
@@ -115,8 +116,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             {
                 await WaitForMembersToShutdown();
             }
-
-            _tracerProvider?.Dispose();
+            
             Members.Clear(); // prevent multiple shutdown attempts if dispose is called multiple times
         }
         catch (Exception e)
@@ -140,7 +140,13 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             try
             {
                 _logger.LogInformation("Shutting down cluster member {MemberId}", cluster.System.Id);
-                await task;
+
+                var done = await task.WaitUpTo(TimeSpan.FromSeconds(5));
+                if (! done)
+                {
+                    _logger.LogWarning("Failed to shutdown cluster member {MemberId} gracefully", cluster.System.Id);
+                }
+                
             }
             catch (Exception e)
             {
@@ -234,11 +240,16 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     private async Task<IList<Cluster>> SpawnClusterNodes(
         int count,
         Func<ClusterConfig, ClusterConfig>? configure = null
-    ) =>
-        (await Task.WhenAll(
-            Enumerable.Range(0, count)
-                .Select(_ => SpawnClusterMember(configure))
-        )).ToList();
+    )
+    {
+        var tasks = Enumerable.Range(0, count)
+            .Select(_ => SpawnClusterMember(configure));
+        
+        var res = (await Task.WhenAll(tasks)).ToList();
+        await res.First().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(10));
+
+        return res;
+    }
 
     protected virtual async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig>? configure)
     {
@@ -281,6 +292,13 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         return EnableTracing
             ? actorSystemConfig
                 .WithConfigureProps(props => props.WithTracing())
+                .WithConfigureSystemProps((name,props) =>
+                {
+                    if (name == "$gossip")
+                        return props;
+                    
+                    return props.WithTracing();
+                })
                 .WithConfigureRootContext(context => context.WithTracing())
             : actorSystemConfig;
     }
