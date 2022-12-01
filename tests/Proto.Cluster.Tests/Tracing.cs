@@ -27,6 +27,7 @@ public static class Tracing
         [CallerMemberName] string callerName = "N/A")
     {
         await Task.Delay(1).ConfigureAwait(false);
+        var isTracingEnabled=false;
         using (var activity = StartActivity(callerName))
         {
 
@@ -35,6 +36,7 @@ public static class Tracing
                 activity.AddTag("test.name", callerName);
                 testOutputHelper.WriteLine("http://localhost:5001/logs?traceId={0}",
                     activity.TraceId.ToString().ToUpperInvariant());
+                isTracingEnabled = true;
             }
             else
             {
@@ -59,7 +61,10 @@ public static class Tracing
             }
         }
 
-        //flush tracing data. is there any other way?
-        await Task.Delay(5000);
+        if (isTracingEnabled)
+        {
+            //flush tracing data. is there any other way?
+            await Task.Delay(5000);
+        }
     }
 }
