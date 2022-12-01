@@ -52,6 +52,12 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     protected readonly string ClusterName;
 
+    static ClusterFixture()
+    {
+        //TODO: check if this helps low resource envs like github actions.
+        ThreadPool.SetMinThreads(20, 20);
+    }
+
     protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
     {
 #if NETCOREAPP3_1
@@ -60,9 +66,6 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         ClusterSize = clusterSize;
         _configure = configure;
         ClusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";
-
-        //TODO: check if this helps low resource envs like github actions.
-    //    ThreadPool.SetMaxThreads(100, 100);
 
 #pragma warning disable CS0162
         // ReSharper disable once HeuristicUnreachableCode
