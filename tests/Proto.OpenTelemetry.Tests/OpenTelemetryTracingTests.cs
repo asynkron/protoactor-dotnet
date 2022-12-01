@@ -115,8 +115,11 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         outerSpan.Should().NotBeNull();
         outerSpan!.SpanId.Should().Be(outerSpanId);
         outerSpan.OperationName.Should().Be(nameof(Trace));
-        var inner = activities.Last();
-        inner.Tags.Should().Contain(new KeyValuePair<string, string?>("inner", "true"));
+        //get second last activity
+
+        var inner = activities.LastOrDefault(s => s.Tags.Contains(new KeyValuePair<string, string?>("inner", "true")));
+
+        inner.Should().NotBeNull();
     }
 
     private async Task VerifyTrace(Func<IRootContext, PID, Task> action)
