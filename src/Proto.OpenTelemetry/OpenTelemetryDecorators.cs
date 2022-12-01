@@ -110,7 +110,7 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
             () => base.Receive(envelope));
 
     public override void Respond(object message)=>
-        OpenTelemetryMethodsDecorators.Respond(Source, base.Sender!, message, _receiveActivitySetup,
+        OpenTelemetryMethodsDecorators.Respond(message,
             () => base.Respond(message));
 }
 
@@ -235,16 +235,13 @@ internal static class OpenTelemetryMethodsDecorators
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void Respond(string source, PID target, object message, ActivitySetup sendActivitySetup,
+    internal static void Respond(object message,
         Action respond)
     {
-        using var activity =
-            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, source, nameof(Forward),
-                message, sendActivitySetup);
+        var activity = Activity.Current;
 
         try
         {
-            activity?.SetTag(ProtoTags.TargetPID, target.ToString());
             activity?.SetTag(ProtoTags.ResponseMessageType, message.GetMessageTypeName());
             respond();
         }
