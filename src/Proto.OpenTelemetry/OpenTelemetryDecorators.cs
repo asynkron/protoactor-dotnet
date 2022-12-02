@@ -112,6 +112,34 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
     public override void Respond(object message)=>
         OpenTelemetryMethodsDecorators.Respond(message,
             () => base.Respond(message));
+
+    public override void ReenterAfter(Task target, Action action)
+    {
+        var current = Activity.Current?.Context ?? default;
+        var message = base.Message;
+        var a2 = () =>
+        {
+            using var x = OpenTelemetryHelpers.BuildStartedActivity(current, Source, nameof(ReenterAfter), message,
+                _sendActivitySetup);
+            x?.SetTag(ProtoTags.ActionType, nameof(ReenterAfter));
+            action();
+        };
+        base.ReenterAfter(target, a2);
+    }
+
+    public override void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
+    {
+        var current = Activity.Current?.Context ?? default;
+        var message = base.Message;
+        Func<Task<T>, Task> a2 = async t =>
+        {
+            using var x = OpenTelemetryHelpers.BuildStartedActivity(current, Source, nameof(ReenterAfter), message,
+                _sendActivitySetup);
+            x?.SetTag(ProtoTags.ActionType, nameof(ReenterAfter));
+            await action(t);
+        };
+        base.ReenterAfter(target, a2);
+    }
 }
 
 internal static class OpenTelemetryMethodsDecorators

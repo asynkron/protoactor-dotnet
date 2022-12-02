@@ -524,6 +524,12 @@ internal class PartitionIdentityActor : IActor
         //Check if exist in current partition dictionary
         if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
         {
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Found {Pid} for {ClusterIdentity} in local lookup",
+                    pid, msg.ClusterIdentity);
+            }
+
             context.Respond(new ActivationResponse { Pid = pid });
 
             return Task.CompletedTask;
@@ -532,6 +538,12 @@ internal class PartitionIdentityActor : IActor
         // Wait for rebalance in progress
         if (_rebalanceTcs is not null)
         {
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Waiting for rebalance to complete for {ClusterIdentity}",
+                    msg.ClusterIdentity);
+            }
+
             context.ReenterAfter(_rebalanceTcs.Task, _ => OnActivationRequest(msg, context));
 
             return Task.CompletedTask;
@@ -539,6 +551,11 @@ internal class PartitionIdentityActor : IActor
 
         if (_memberHashRing.Count == 0)
         {
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] No members in cluster for {ClusterIdentity}",
+                    msg.ClusterIdentity);
+            }
             RespondWithFailure(context);
 
             return Task.CompletedTask;
@@ -576,6 +593,11 @@ internal class PartitionIdentityActor : IActor
         //once spawned, the key is removed from this dict
         if (_spawns.TryGetValue(msg.ClusterIdentity, out var res))
         {
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Found {Pid} for {ClusterIdentity} in pending lookup, waiting for spawn",
+                    res, msg.ClusterIdentity);
+            }
             // Just waits for the already in-progress activation to complete (or fail)
             context.ReenterAfter(res.Response.Task, task =>
                 {
@@ -594,6 +616,11 @@ internal class PartitionIdentityActor : IActor
         var setResponse = new TaskCompletionSource<ActivationResponse>();
         _spawns.Add(msg.ClusterIdentity, (setResponse, activatorAddress));
 
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Spawning {ClusterIdentity} on {ActivatorAddress}",
+                msg.ClusterIdentity, activatorAddress);
+        }
         //execution ends here. context.ReenterAfter is invoked once the task completes
         //but still within the actors sequential execution
         //but other messages could have been processed in between
@@ -614,6 +641,12 @@ internal class PartitionIdentityActor : IActor
             try
             {
                 var response = await rst;
+
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Spawned {ClusterIdentity} on {ActivatorAddress}",
+                        msg.ClusterIdentity, response.Pid.Address);
+                }
 
                 if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
                 {
