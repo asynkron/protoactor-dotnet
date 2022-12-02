@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests;
 
+[Collection("ClusterTests")]
 public class GossipCoreTests
 {
     private readonly ITestOutputHelper _output;
@@ -29,8 +30,8 @@ public class GossipCoreTests
     [Fact]
     public async Task Large_cluster_should_get_topology_consensus()
     {
-        const int memberCount = 100;
-        const int fanout = 3;
+        const int memberCount = 50;
+        const int fanout = 4;
 
         var members =
             Enumerable

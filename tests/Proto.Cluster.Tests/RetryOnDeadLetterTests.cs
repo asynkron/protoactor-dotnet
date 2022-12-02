@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Proto.Cluster.Tests;
 
+[Collection("ClusterTests")]
 public class RetryOnDeadLetterTests
 {
     [Fact(Skip = "Flaky")]
