@@ -43,7 +43,7 @@ public interface IClusterFixture
 public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDisposable
 {
     private static readonly object Lock = new();
-    private const bool EnableTracing = true;
+    private const bool EnableTracing = false;
     public const string InvalidIdentity = "invalid";
     private readonly Func<ClusterConfig, ClusterConfig>? _configure;
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
