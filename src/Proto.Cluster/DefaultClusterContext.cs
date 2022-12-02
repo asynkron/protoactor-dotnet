@@ -68,6 +68,11 @@ public class DefaultClusterContext : IClusterContext
             while (!ct.IsCancellationRequested && !context.System.Shutdown.IsCancellationRequested)
             {
                 i++;
+                
+                if (i > 1 && Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.LogDebug("RequestAsync attempt {Attempt} for {ClusterIdentity}", i, clusterIdentity);
+                }
 
                 var source = PidSource.Cache;
                 var pid = clusterIdentity.CachedPid ?? (_pidCache.TryGet(clusterIdentity, out var tmp) ? tmp : null);

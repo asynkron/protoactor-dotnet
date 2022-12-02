@@ -10,13 +10,11 @@ namespace Proto.Cluster.Tests;
 
 public static class Extensions
 {
-    public static Task<Pong> Ping(
-        this Cluster cluster,
+    public static Task<Pong> Ping(this Cluster cluster,
         string id,
         string message,
         CancellationToken token,
-        string kind = EchoActor.Kind
-    ) =>
+        string kind = EchoActor.Kind, ISenderContext senderContext = null) =>
         cluster.RequestAsync<Pong>(id, kind, new Ping { Message = message }, token);
 
     public static async Task<string> DumpClusterState(this IEnumerable<Cluster> members)

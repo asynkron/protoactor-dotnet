@@ -7,25 +7,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Extensions;
 
 namespace Proto;
-
-[PublicAPI]
-public static class ActorLoggingContextExtensions
-{
-    public static Props WithLoggingContextDecorator(
-        this Props props,
-        ILogger logger,
-        LogLevel logLevel = LogLevel.Debug,
-        LogLevel infrastructureLogLevel = LogLevel.None,
-        LogLevel exceptionLogLevel = LogLevel.Error
-    ) =>
-        props.WithContextDecorator(ctx =>
-            new ActorLoggingContext(ctx, logger, logLevel, infrastructureLogLevel, exceptionLogLevel));
-}
 
 /// <summary>
 ///     A decorator for <see cref="Proto.Context.ActorContext" /> that logs events related to message delivery to the
@@ -217,5 +202,61 @@ public class ActorLoggingContext : ActorContextDecorator
         }
 
         base.Respond(message);
+    }
+
+    public override void Forward(PID target)
+    {
+        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
+        {
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} forwarded message to {Target}", Self, ActorType, target);
+        }
+
+        base.Forward(target);
+    }
+
+    public override void Request(PID target, object message, PID? sender)
+    {
+        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
+        {
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending Request {MessageType}:{Message} to {Target}",
+                Self, ActorType,
+                message.GetMessageTypeName(), message, target
+            );
+        }
+
+        base.Request(target, message, sender);
+    }
+
+    public override void Send(PID target, object message)
+    {
+        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
+        {
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending {MessageType}:{Message} to {Target}", Self,
+                ActorType,
+                message.GetMessageTypeName(), message, target
+            );
+        }
+
+        base.Send(target, message);
+    }
+
+    public override void Unwatch(PID pid)
+    {
+        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
+        {
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} Unwatching {Pid}", Self, ActorType, pid);
+        }
+
+        base.Unwatch(pid);
+    }
+    
+    public override void Watch(PID pid)
+    {
+        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
+        {
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} Watching {Pid}", Self, ActorType, pid);
+        }
+
+        base.Watch(pid);
     }
 }

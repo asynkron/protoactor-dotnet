@@ -250,7 +250,8 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             .Select(_ => SpawnClusterMember(configure));
         
         var res = (await Task.WhenAll(tasks)).ToList();
-        await res.First().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(10));
+        var consensus = res.Select(m => m.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(10)));
+        await Task.WhenAll(consensus);
 
         return res;
     }
@@ -295,15 +296,15 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         // ReSharper disable once HeuristicUnreachableCode
         return EnableTracing
             ? actorSystemConfig
-                .WithConfigureProps(props => props.WithTracing())
+                .WithConfigureProps(props => props.WithTracing().WithLoggingContextDecorator(_logger).WithLoggingContextDecorator(_logger))
                 .WithConfigureSystemProps((name,props) =>
                 {
                     if (name == "$gossip")
                         return props;
-                    
-                    return props.WithTracing();
+
+                    return props.WithTracing().WithLoggingContextDecorator(_logger);
                 })
-                .WithConfigureRootContext(context => context.WithTracing())
+                .WithConfigureRootContext(context => context.WithTracing().WithLoggingContext(_logger))
             : actorSystemConfig;
     }
 
