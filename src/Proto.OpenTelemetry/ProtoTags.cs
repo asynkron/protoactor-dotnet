@@ -43,4 +43,9 @@ public static class ProtoTags
     ///     Type of the current actor, when applicable
     /// </summary>
     public const string ActorType = "proto.actortype";
+    
+    /// <summary>
+    ///     Name of the current action
+    /// </summary>
+    public const string ActionType = "proto.action";
 }

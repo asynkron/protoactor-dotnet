@@ -43,7 +43,7 @@ public interface IClusterFixture
 public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDisposable
 {
     private static readonly object Lock = new();
-    private const bool EnableTracing = false;
+    private const bool EnableTracing = true;
     public const string InvalidIdentity = "invalid";
     private readonly Func<ClusterConfig, ClusterConfig>? _configure;
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
@@ -120,7 +120,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             {
                 await WaitForMembersToShutdown();
             }
-            
+
             Members.Clear(); // prevent multiple shutdown attempts if dispose is called multiple times
         }
         catch (Exception e)
@@ -201,7 +201,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             }
 
             var endpoint = new Uri("http://localhost:4317");
-            
+            var builder = ResourceBuilder.CreateDefault();
             var services = new ServiceCollection();
             services.AddLogging(l =>
             {
@@ -210,6 +210,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                     options =>
                     {
                         options
+                            .SetResourceBuilder(builder)
                             .AddOtlpExporter(o =>
                             {
                                 o.Endpoint = endpoint;
@@ -225,7 +226,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             Log.SetLoggerFactory(loggerFactory);
 
             _tracerProvider = Sdk.CreateTracerProviderBuilder()
-                .SetResourceBuilder(ResourceBuilder.CreateDefault()
+                .SetResourceBuilder(builder
                     .AddService("Proto.Cluster.Tests")
                 )
                 .AddProtoActorInstrumentation()
@@ -233,7 +234,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 .AddOtlpExporter(options =>
                 {
                     options.Endpoint = endpoint;
-                    options.ExportProcessorType = ExportProcessorType.Batch;
+                    options.ExportProcessorType = ExportProcessorType.Simple;
                 })
                 .Build();
         }

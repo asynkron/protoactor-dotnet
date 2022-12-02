@@ -125,6 +125,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Send));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
             send();
         }
@@ -147,6 +148,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Request));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
             request();
         }
@@ -169,6 +171,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Request));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
 
             if (sender is not null)
@@ -192,16 +195,26 @@ internal static class OpenTelemetryMethodsDecorators
         ActivitySetup sendActivitySetup, Func<Task<T>> requestAsync)
     {
         using var activity =
-            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, source, nameof(Request),
+            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, source, nameof(RequestAsync),
                 message, sendActivitySetup);
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(RequestAsync));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
 
-            var res= await requestAsync().ConfigureAwait(false);
+            var res = await requestAsync().ConfigureAwait(false);
             activity?.SetTag(ProtoTags.ResponseMessageType, res.GetMessageTypeName());
             return res;
+        }
+        catch (TimeoutException ex)
+        {
+            activity?.SetTag(ProtoTags.ActionType, nameof(RequestAsync));
+            activity?.RecordException(ex);
+            activity?.SetStatus(Status.Error);
+            activity?.AddEvent(new ActivityEvent("Request Timeout"));
+
+            throw;
         }
         catch (Exception ex)
         {
@@ -222,6 +235,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Forward));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
             forward();
         }
@@ -242,6 +256,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Respond));
             activity?.SetTag(ProtoTags.ResponseMessageType, message.GetMessageTypeName());
             respond();
         }
@@ -275,6 +290,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Receive));
             if (envelope.Sender != null)
             {
                 activity?.SetTag(ProtoTags.SenderPID, envelope.Sender.ToString());
