@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Proto.Cluster.Tests;
 
+[Collection("ClusterTests")]
 public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDeliveryTests.OrderedDeliveryFixture>
 {
     public OrderedDeliveryTests(OrderedDeliveryFixture clusterFixture) : base(

@@ -590,7 +590,7 @@ internal class PartitionIdentityActor : IActor
 
         // Not in progress, spawn actor
 
-        var spawnResponse = SpawnRemoteActor(msg, activatorAddress);
+        var spawnResponse = SpawnRemoteActor(context, msg, activatorAddress);
         var setResponse = new TaskCompletionSource<ActivationResponse>();
         _spawns.Add(msg.ClusterIdentity, (setResponse, activatorAddress));
 
@@ -697,7 +697,8 @@ internal class PartitionIdentityActor : IActor
     private static void RespondWithFailure(IContext context) =>
         context.Respond(new ActivationResponse { Failed = true });
 
-    private async Task<ActivationResponse> SpawnRemoteActor(ActivationRequest req, string activatorAddress)
+    private async Task<ActivationResponse> SpawnRemoteActor(IContext context, ActivationRequest req,
+        string activatorAddress)
     {
         try
         {
@@ -710,7 +711,7 @@ internal class PartitionIdentityActor : IActor
             var timeout = _cluster.Config.ActorActivationTimeout;
             var activatorPid = PartitionManager.RemotePartitionPlacementActor(activatorAddress);
 
-            var res = await _cluster.System.Root.RequestAsync<ActivationResponse>(activatorPid, req, timeout);
+            var res = await context.RequestAsync<ActivationResponse>(activatorPid, req, timeout);
 
             return res;
         }

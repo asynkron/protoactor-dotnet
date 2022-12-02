@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests;
 
+[Collection("ClusterTests")]
 public class GossipTests
 {
     private const string GossipStateKey = "test-state";

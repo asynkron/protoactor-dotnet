@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Proto.Cluster.Tests;
 
+[Collection("ClusterTests")]
 public class PidCacheInvalidationTests : IClassFixture<InMemoryPidCacheInvalidationClusterFixture>
 {
     public PidCacheInvalidationTests(InMemoryPidCacheInvalidationClusterFixture clusterFixture)
