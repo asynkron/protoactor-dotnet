@@ -467,7 +467,8 @@ public abstract class ClusterTests : ClusterTestBase
         Cluster cluster,
         string id,
         CancellationToken token = default,
-        string kind = EchoActor.Kind
+        string kind = EchoActor.Kind,
+        ISenderContext context= null
     )
     {
         await Task.Yield();
@@ -478,7 +479,7 @@ public abstract class ClusterTests : ClusterTestBase
         {
             try
             {
-                response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind);
+                response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind, context);
             }
             catch (TimeoutException)
             {
