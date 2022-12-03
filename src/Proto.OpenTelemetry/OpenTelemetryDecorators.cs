@@ -112,6 +112,34 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
     public override void Respond(object message)=>
         OpenTelemetryMethodsDecorators.Respond(message,
             () => base.Respond(message));
+
+    public override void ReenterAfter(Task target, Action action)
+    {
+        var current = Activity.Current?.Context ?? default;
+        var message = base.Message;
+        var a2 = () =>
+        {
+            using var x = OpenTelemetryHelpers.BuildStartedActivity(current, Source, nameof(ReenterAfter), message,
+                _sendActivitySetup);
+            x?.SetTag(ProtoTags.ActionType, nameof(ReenterAfter));
+            action();
+        };
+        base.ReenterAfter(target, a2);
+    }
+
+    public override void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
+    {
+        var current = Activity.Current?.Context ?? default;
+        var message = base.Message;
+        Func<Task<T>, Task> a2 = async t =>
+        {
+            using var x = OpenTelemetryHelpers.BuildStartedActivity(current, Source, nameof(ReenterAfter), message,
+                _sendActivitySetup);
+            x?.SetTag(ProtoTags.ActionType, nameof(ReenterAfter));
+            await action(t);
+        };
+        base.ReenterAfter(target, a2);
+    }
 }
 
 internal static class OpenTelemetryMethodsDecorators
@@ -125,6 +153,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Send));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
             send();
         }
@@ -147,6 +176,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Request));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
             request();
         }
@@ -169,6 +199,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Request));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
 
             if (sender is not null)
@@ -192,16 +223,26 @@ internal static class OpenTelemetryMethodsDecorators
         ActivitySetup sendActivitySetup, Func<Task<T>> requestAsync)
     {
         using var activity =
-            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, source, nameof(Request),
+            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, source, nameof(RequestAsync),
                 message, sendActivitySetup);
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(RequestAsync));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
 
-            var res= await requestAsync().ConfigureAwait(false);
+            var res = await requestAsync().ConfigureAwait(false);
             activity?.SetTag(ProtoTags.ResponseMessageType, res.GetMessageTypeName());
             return res;
+        }
+        catch (TimeoutException ex)
+        {
+            activity?.SetTag(ProtoTags.ActionType, nameof(RequestAsync));
+            activity?.RecordException(ex);
+            activity?.SetStatus(Status.Error);
+            activity?.AddEvent(new ActivityEvent("Request Timeout"));
+
+            throw;
         }
         catch (Exception ex)
         {
@@ -222,6 +263,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Forward));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
             forward();
         }
@@ -242,6 +284,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Respond));
             activity?.SetTag(ProtoTags.ResponseMessageType, message.GetMessageTypeName());
             respond();
         }
@@ -275,6 +318,7 @@ internal static class OpenTelemetryMethodsDecorators
 
         try
         {
+            activity?.SetTag(ProtoTags.ActionType, nameof(Receive));
             if (envelope.Sender != null)
             {
                 activity?.SetTag(ProtoTags.SenderPID, envelope.Sender.ToString());
