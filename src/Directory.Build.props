@@ -23,6 +23,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="$(MSBuildStartupDirectory)\logo.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\logo.png" Pack="true" PackagePath="\"/>
     </ItemGroup>
 </Project>
