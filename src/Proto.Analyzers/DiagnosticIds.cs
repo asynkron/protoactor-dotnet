@@ -6,6 +6,6 @@ public static class DiagnosticIds
     /// The actor attempts to poison itself while waiting for a response.
     /// This is a recipe for a deadlock
     /// </summary>
-    public const string PoisonAsyncDeadlockRuleId = "PA0001";
+    public const string DeadlockRuleId = "PA0001";
 
 }

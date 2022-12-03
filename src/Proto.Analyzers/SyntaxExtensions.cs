@@ -10,9 +10,9 @@ internal static class SyntaxExtensions
         return memberAccess.Name.Identifier.ValueText == name;
     }
 
-    public static bool MethodCalledIs(this InvocationExpressionSyntax invocation, string methodName)
+    public static string? GetMethodCalled(this InvocationExpressionSyntax invocation)
     {
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess) return false;
-        return memberAccess.Name.Identifier.ValueText == methodName;
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess) return default;
+        return memberAccess.Name.Identifier.ValueText;
     }
 }

@@ -48,7 +48,7 @@ public class SomeActor : IActor
     }
 
     [Fact]
-    public async Task ShouldFindDeadlockOnContextSelf()
+    public async Task ShouldFindDeadlockOnPoisonAsyncSelf()
     {
         var test = @"
 using Proto;
@@ -66,7 +66,30 @@ public class SomeActor : IActor
 ";
         await VerifyAnalyzerAsync(
             test,
-            Diagnostic(DiagnosticDescriptors.PoisonAsyncDeadlock)
-                .WithSpan(11, 15, 11, 48));
+            Diagnostic(DiagnosticDescriptors.Deadlock)
+                .WithSpan(11, 15, 11, 48).WithArguments("PoisonAsync"));
+    }
+    
+    [Fact]
+    public async Task ShouldFindDeadlockOnStopAsyncSelf()
+    {
+        var test = @"
+using Proto;
+using System.Threading.Tasks;
+
+record SomeMessage(PID Pid);
+
+public class SomeActor : IActor
+{
+    public async Task ReceiveAsync(IContext context)
+    {
+        await context.StopAsync(context.Self);
+    }
+}
+";
+        await VerifyAnalyzerAsync(
+            test,
+            Diagnostic(DiagnosticDescriptors.Deadlock)
+                .WithSpan(11, 15, 11, 46).WithArguments("StopAsync"));
     }
 }
