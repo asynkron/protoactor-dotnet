@@ -20,6 +20,5 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Update="xunit" Version="2.4.2" />
     </ItemGroup>
 </Project>
