@@ -22,6 +22,7 @@ public sealed class RemoteMessageHandler
     private readonly ILogger _logger = Log.CreateLogger<RemoteMessageHandler>();
     private readonly Serialization _serialization;
     private readonly ActorSystem _system;
+    private readonly IRootContext _sendContext;
 
     public RemoteMessageHandler(EndpointManager endpointManager, ActorSystem system, Serialization serialization,
         RemoteConfigBase remoteConfig)
@@ -30,6 +31,9 @@ public sealed class RemoteMessageHandler
         _system = system;
         _serialization = serialization;
         _deserializationErrorLogLevel = remoteConfig.DeserializationErrorLogLevel;
+        
+        //important, must be undecorated context to not mess up e.g. Otel
+        _sendContext = new RootContext(system);
     }
 
     public void HandleRemoteMessage(RemoteMessage currentMessage, string remoteAddress)
@@ -191,7 +195,7 @@ public sealed class RemoteMessageHandler
                                 );
                             }
 
-                            _system.Root.Send(target, messageOrEnvelope);
+                            _sendContext.Send(target, messageOrEnvelope);
 
                             break;
                     }

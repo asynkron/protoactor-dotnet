@@ -61,11 +61,5 @@ public static class Tracing
                 throw;
             }
         }
-
-        if (isTracingEnabled)
-        {
-            //flush tracing data. is there any other way?
-            await Task.Delay(5000);
-        }
     }
 }
