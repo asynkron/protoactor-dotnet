@@ -115,6 +115,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 {
                     await WaitForMembersToShutdown();
                 }
+                _tracerProvider?.ForceFlush(1000);
             }
             else
             {
@@ -205,7 +206,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             var services = new ServiceCollection();
             services.AddLogging(l =>
             {
-                l.SetMinimumLevel(LogLevel.Warning);
+                l.SetMinimumLevel(LogLevel.Debug);
                 l.AddOpenTelemetry(
                     options =>
                     {
@@ -214,7 +215,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                             .AddOtlpExporter(o =>
                             {
                                 o.Endpoint = endpoint;
-                                o.ExportProcessorType = ExportProcessorType.Simple;
+                                o.ExportProcessorType = ExportProcessorType.Batch;
                             });
                     });
             });
@@ -234,7 +235,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 .AddOtlpExporter(options =>
                 {
                     options.Endpoint = endpoint;
-                    options.ExportProcessorType = ExportProcessorType.Simple;
+                    options.ExportProcessorType = ExportProcessorType.Batch;
                 })
                 .Build();
         }
