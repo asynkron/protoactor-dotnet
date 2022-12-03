@@ -251,8 +251,14 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             .Select(_ => SpawnClusterMember(configure));
         
         var res = (await Task.WhenAll(tasks)).ToList();
+        
+        
         var consensus = res.Select(m => m.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(10)));
-        await Task.WhenAll(consensus);
+        var x = await Task.WhenAll(consensus);
+        if (x.Any(c => !c.consensus))
+        {
+            throw new Exception("Failed to reach consensus");
+        }
 
         return res;
     }

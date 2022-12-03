@@ -8,6 +8,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OpenTelemetry.Trace;
 using Proto.Utils;
 using Xunit.Abstractions;
@@ -28,38 +29,40 @@ public static class Tracing
         [CallerMemberName] string callerName = "N/A")
     {
         await Task.Delay(1).ConfigureAwait(false);
-        var isTracingEnabled=false;
-        using (var activity = StartActivity(callerName))
+        var logger = Log.CreateLogger(callerName);
+        using var activity = StartActivity(callerName);
+        logger.LogInformation("Test started");
+
+        if (activity is not null)
         {
+            activity.AddTag("test.name", callerName);
+            testOutputHelper.WriteLine("http://localhost:5001/logs?traceId={0}",
+                activity.TraceId.ToString().ToUpperInvariant());
+        }
+        else
+        {
+            testOutputHelper.WriteLine("No active trace span");
+        }
 
-            if (activity is not null)
+        try
+        {
+            var res = await callBack().WaitUpTo(TimeSpan.FromSeconds(30));
+            if (!res)
             {
-                activity.AddTag("test.name", callerName);
-                testOutputHelper.WriteLine("http://localhost:5001/logs?traceId={0}",
-                    activity.TraceId.ToString().ToUpperInvariant());
-                isTracingEnabled = true;
+                testOutputHelper.WriteLine($"{callerName} timedout");
+                throw new TimeoutException($"{callerName} timedout");
             }
-            else
-            {
-                testOutputHelper.WriteLine("No active trace span");
-            }
+        }
+        catch (Exception e)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error);
+            activity?.RecordException(e);
 
-            try
-            {
-                var res = await callBack().WaitUpTo(TimeSpan.FromSeconds(30));
-                if (!res)
-                {
-                    testOutputHelper.WriteLine($"{callerName} timedout");
-                    throw new TimeoutException($"{callerName} timedout");
-                }
-            }
-            catch (Exception e)
-            {
-                activity?.SetStatus(ActivityStatusCode.Error);
-                activity?.RecordException(e);
-
-                throw;
-            }
+            throw;
+        }
+        finally
+        {
+            logger.LogInformation("Test ended");
         }
     }
 }

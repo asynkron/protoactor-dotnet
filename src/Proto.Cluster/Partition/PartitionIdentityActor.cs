@@ -642,12 +642,6 @@ internal class PartitionIdentityActor : IActor
             {
                 var response = await rst;
 
-                if (Logger.IsEnabled(LogLevel.Debug))
-                {
-                    Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Spawned {ClusterIdentity} on {ActivatorAddress}",
-                        msg.ClusterIdentity, response.Pid.Address);
-                }
-
                 if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
                 {
                     if (response.Pid is not null && !response.Pid.Equals(pid))
