@@ -3,10 +3,10 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <IncludeBuildOutput>false</IncludeBuildOutput>
-        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>10</LangVersion>
+        <NoPackageAnalysis>true</NoPackageAnalysis>
     </PropertyGroup>
 
     <ItemGroup>
