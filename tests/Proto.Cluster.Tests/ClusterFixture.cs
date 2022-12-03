@@ -55,7 +55,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     static ClusterFixture()
     {
         //TODO: check if this helps low resource envs like github actions.
-        ThreadPool.SetMinThreads(20, 20);
+        ThreadPool.SetMinThreads(40, 40);
     }
 
     protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
@@ -205,7 +205,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             var services = new ServiceCollection();
             services.AddLogging(l =>
             {
-                l.SetMinimumLevel(LogLevel.Debug);
+                l.SetMinimumLevel(LogLevel.Warning);
                 l.AddOpenTelemetry(
                     options =>
                     {
@@ -306,8 +306,8 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 .WithConfigureProps(props => props.WithTracing().WithLoggingContextDecorator(_logger).WithLoggingContextDecorator(_logger))
                 .WithConfigureSystemProps((name,props) =>
                 {
-                    if (name == "$gossip")
-                        return props;
+                    // if (name == "$gossip")
+                    //     return props;
 
                     return props.WithTracing().WithLoggingContextDecorator(_logger);
                 })
