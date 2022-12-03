@@ -16,7 +16,7 @@ public static class DiagnosticDescriptors
     
     public static readonly DiagnosticDescriptor TaskAsMessage =
         new(
-            DiagnosticIds.DeadlockRuleId,
+            DiagnosticIds.TaskAsStringRuleId,
             title: "Task attempted to be sent as a message",
             messageFormat: "Get the response from the task and send that instead",
             DiagnosticCategories.Logic,

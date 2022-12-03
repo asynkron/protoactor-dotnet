@@ -8,4 +8,8 @@ public static class DiagnosticIds
     /// </summary>
     public const string DeadlockRuleId = "PA0001";
 
+    /// <summary>
+    /// The actor attempts to send a Task as a message
+    /// </summary>
+    public const string TaskAsStringRuleId = "PA0002";
 }
