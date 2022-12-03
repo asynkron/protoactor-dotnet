@@ -655,6 +655,12 @@ internal class PartitionIdentityActor : IActor
                         context.Stop(response.Pid); // Stop duplicate activation
                     }
 
+                    if (Logger.IsEnabled(LogLevel.Debug))
+                    {
+                        Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Found {Pid} for {ClusterIdentity} in local lookup",
+                            pid, msg.ClusterIdentity);
+                    }
+
                     Respond(new ActivationResponse { Pid = pid, TopologyHash = TopologyHash });
 
                     return;
@@ -662,6 +668,12 @@ internal class PartitionIdentityActor : IActor
 
                 if (response.Pid != null)
                 {
+                    if (Logger.IsEnabled(LogLevel.Debug))
+                    {
+                        Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Spawned {ClusterIdentity} on {Pid}",
+                            msg.ClusterIdentity, response.Pid);
+                    }
+                    
                     if (response.Failed is false)
                     {
                         if (response.TopologyHash != TopologyHash) // Topology changed between request and response
