@@ -33,9 +33,10 @@ public static class Tracing
         var logger = Log.CreateLogger(callerName);
         using var activity = StartActivity(callerName);
         logger.LogInformation("Test started");
-
+        var traceId = "";
         if (activity is not null)
         {
+            traceId = activity.TraceId.ToString();
             activity.AddTag("test.name", callerName);
 
             var traceViewUrl =
@@ -44,15 +45,6 @@ public static class Tracing
             testOutputHelper.WriteLine(traceViewUrl);
             Console.WriteLine($"Running test: {callerName}");
             Console.WriteLine(traceViewUrl);
-
-            
-            var f = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
-            if (f != null)
-            {
-                Console.WriteLine("Github step summary file:" + f);
-                await File.AppendAllTextAsync(f, $"Running test: {callerName}");
-                await File.AppendAllTextAsync(f, traceViewUrl);
-            }
         }
         else
         {
@@ -78,6 +70,21 @@ public static class Tracing
         finally
         {
             logger.LogInformation("Test ended");
+            
+            var f = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
+            if (f != null)
+            {
+                var traceViewUrl =
+                    $"{TracingSettings.TraceViewUrl}/logs?traceId={traceId.ToUpperInvariant()}";
+
+                var markdown = $@"
+* Running test: {callerName} <br/>
+[TraceView]({traceViewUrl})
+
+
+";
+                await File.AppendAllTextAsync(f, markdown);
+            }
         }
     }
 }
