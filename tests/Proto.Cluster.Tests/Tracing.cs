@@ -88,16 +88,14 @@ public static class Tracing
 
 
                     var markdown = $@"
-🟢 [Test: {callerName}]({traceViewUrl}) <br/>
-🕒 Duration: {duration.TotalMilliseconds} ms <br/>
+🟢 [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
 ";
                     await File.AppendAllTextAsync(f, markdown);
                 }
                 else
                 {
                     var markdown = $@"
-🔴 [Test: {callerName}]({traceViewUrl}) <br/>
-🕒 Duration: {duration.TotalMilliseconds} ms <br/>
+🔴 [Test: {callerName}]({traceViewUrl}) <br/> - Duration: {duration.TotalMilliseconds} ms <br/>
 
 Error:
 ```
