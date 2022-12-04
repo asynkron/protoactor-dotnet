@@ -72,16 +72,13 @@ public static class Tracing
             logger.LogInformation("Test ended");
             
             var f = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
-            if (f != null)
+            if (f != null && traceId != "")
             {
                 var traceViewUrl =
                     $"{TracingSettings.TraceViewUrl}/logs?traceId={traceId.ToUpperInvariant()}";
 
                 var markdown = $@"
-* Running test: {callerName} <br/>
-[TraceView]({traceViewUrl})
-
-
+* [Test: {callerName}]({traceViewUrl}) <br/>
 ";
                 await File.AppendAllTextAsync(f, markdown);
             }
