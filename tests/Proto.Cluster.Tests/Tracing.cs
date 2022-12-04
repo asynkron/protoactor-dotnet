@@ -89,14 +89,15 @@ public static class Tracing
 
                     var markdown = $@"
 🟢 [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
+<img width=""100%"" src=""http://traceview.ornell.io/api/spanmap/{traceId}/svg"">
 ";
                     await File.AppendAllTextAsync(f, markdown);
                 }
                 else
                 {
                     var markdown = $@"
-🔴 [Test: {callerName}]({traceViewUrl}) <br/> - Duration: {duration.TotalMilliseconds} ms <br/>
-
+🔴 [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
+<img width=""100%"" src=""http://traceview.ornell.io/api/spanmap/{traceId}/svg"">
 Error:
 ```
 {error}
