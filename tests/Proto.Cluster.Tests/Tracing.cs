@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -32,14 +33,19 @@ public static class Tracing
         var logger = Log.CreateLogger(callerName);
         using var activity = StartActivity(callerName);
         logger.LogInformation("Test started");
+        var traceId = "";
+        var success = true;
+        var error = "";
+        var sw = Stopwatch.StartNew();
 
         if (activity is not null)
         {
+            traceId = activity.TraceId.ToString();
             activity.AddTag("test.name", callerName);
 
             var traceViewUrl =
                 $"{TracingSettings.TraceViewUrl}/logs?traceId={activity.TraceId.ToString().ToUpperInvariant()}";
-            
+
             testOutputHelper.WriteLine(traceViewUrl);
             Console.WriteLine($"Running test: {callerName}");
             Console.WriteLine(traceViewUrl);
@@ -62,12 +68,43 @@ public static class Tracing
         {
             activity?.SetStatus(ActivityStatusCode.Error);
             activity?.RecordException(e);
-
+            error = e.ToString();
+            success = false;
             throw;
         }
         finally
         {
             logger.LogInformation("Test ended");
+
+            var f = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
+            if (f != null && traceId != "")
+            {
+                var traceViewUrl =
+                    $"{TracingSettings.TraceViewUrl}/logs?traceId={traceId.ToUpperInvariant()}";
+
+                var duration = sw.Elapsed;
+                if (success)
+                {
+
+
+                    var markdown = $@"
+🟢 [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
+";
+                    await File.AppendAllTextAsync(f, markdown);
+                }
+                else
+                {
+                    var markdown = $@"
+🔴 [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
+
+Error:
+```
+{error}
+```
+";
+                    await File.AppendAllTextAsync(f, markdown);
+                }
+            }
         }
     }
 }
