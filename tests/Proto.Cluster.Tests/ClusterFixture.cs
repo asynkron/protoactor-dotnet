@@ -40,10 +40,18 @@ public interface IClusterFixture
     Task RemoveNode(Cluster member, bool graceful = true);
 }
 
+public static class TracingSettings
+{
+    public static bool EnableTracing;
+    public static string? OpenTelemetryUrl;
+    public static string? TraceViewUrl;
+}
+
 public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDisposable
 {
     private static readonly object Lock = new();
-    private const bool EnableTracing = false;
+
+    
     public const string InvalidIdentity = "invalid";
     private readonly Func<ClusterConfig, ClusterConfig>? _configure;
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
@@ -54,6 +62,10 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     static ClusterFixture()
     {
+        TracingSettings.OpenTelemetryUrl = Environment.GetEnvironmentVariable("OPENTELEMETRY_URL");
+        TracingSettings.TraceViewUrl = Environment.GetEnvironmentVariable("TRACEVIEW_URL");
+        TracingSettings.EnableTracing = TracingSettings.OpenTelemetryUrl != null;
+        
         //TODO: check if this helps low resource envs like github actions.
         ThreadPool.SetMinThreads(40, 40);
     }
@@ -69,7 +81,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
 #pragma warning disable CS0162
         // ReSharper disable once HeuristicUnreachableCode
-        if (EnableTracing)
+        if (TracingSettings.EnableTracing)
         {
              InitOpenTelemetryTracing();
         }
@@ -108,7 +120,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
             await OnDisposing();
 
-            if (EnableTracing)
+            if (TracingSettings.EnableTracing)
             {
                 var testName = this.GetType().Name;
                 using (Tracing.StartActivity("ClusterFixture.DisposeAsync " + testName))
@@ -201,7 +213,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 return;
             }
 
-            var endpoint = new Uri("http://localhost:4317");
+            var endpoint = new Uri(TracingSettings.OpenTelemetryUrl!);
             var builder = ResourceBuilder.CreateDefault();
             var services = new ServiceCollection();
             services.AddLogging(l =>
@@ -302,7 +314,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         var actorSystemConfig = ActorSystemConfig.Setup();
 
         // ReSharper disable once HeuristicUnreachableCode
-        return EnableTracing
+        return TracingSettings.EnableTracing
             ? actorSystemConfig
                 .WithConfigureProps(props => props.WithTracing().WithLoggingContextDecorator(_logger).WithLoggingContextDecorator(_logger))
                 .WithConfigureSystemProps((name,props) =>

@@ -9,6 +9,8 @@ on:
 env:
   DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
   TERM: xterm
+  OPENTELEMETRY_URL: http://otel.ornell.io:30798
+  TRACEVIEW_URL: http://traceview.ornell.io
   
 jobs:
   test-slow:  # slow tests that should run in parallel
