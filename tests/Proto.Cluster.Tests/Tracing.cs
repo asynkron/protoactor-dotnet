@@ -36,8 +36,13 @@ public static class Tracing
         if (activity is not null)
         {
             activity.AddTag("test.name", callerName);
+
+            var traceViewUrl =
+                $"{TracingSettings.TraceViewUrl}/logs?traceId={activity.TraceId.ToString().ToUpperInvariant()}";
             
-            testOutputHelper.WriteLine(TracingSettings.TraceViewUrl + "/logs?traceId=" + activity.TraceId.ToString().ToUpperInvariant());
+            testOutputHelper.WriteLine(traceViewUrl);
+            Console.WriteLine($"Running test: {callerName}");
+            Console.WriteLine(traceViewUrl);
         }
         else
         {
