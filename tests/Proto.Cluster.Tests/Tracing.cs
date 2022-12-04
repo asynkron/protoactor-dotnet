@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -43,6 +44,13 @@ public static class Tracing
             testOutputHelper.WriteLine(traceViewUrl);
             Console.WriteLine($"Running test: {callerName}");
             Console.WriteLine(traceViewUrl);
+
+            var f = Environment.GetEnvironmentVariable("$GITHUB_STEP_SUMMARY");
+            if (f != null)
+            {
+                await File.AppendAllTextAsync(f, $"Running test: {callerName}");
+                await File.AppendAllTextAsync(f, traceViewUrl);
+            }
         }
         else
         {
