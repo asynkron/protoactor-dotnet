@@ -34,6 +34,10 @@ public static class Tracing
         using var activity = StartActivity(callerName);
         logger.LogInformation("Test started");
         var traceId = "";
+        var success = true;
+        var error = "";
+        var sw = Stopwatch.StartNew();
+
         if (activity is not null)
         {
             traceId = activity.TraceId.ToString();
@@ -41,7 +45,7 @@ public static class Tracing
 
             var traceViewUrl =
                 $"{TracingSettings.TraceViewUrl}/logs?traceId={activity.TraceId.ToString().ToUpperInvariant()}";
-            
+
             testOutputHelper.WriteLine(traceViewUrl);
             Console.WriteLine($"Running test: {callerName}");
             Console.WriteLine(traceViewUrl);
@@ -64,23 +68,44 @@ public static class Tracing
         {
             activity?.SetStatus(ActivityStatusCode.Error);
             activity?.RecordException(e);
-
+            error = e.ToString();
+            success = false;
             throw;
         }
         finally
         {
             logger.LogInformation("Test ended");
-            
+
             var f = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
             if (f != null && traceId != "")
             {
                 var traceViewUrl =
                     $"{TracingSettings.TraceViewUrl}/logs?traceId={traceId.ToUpperInvariant()}";
 
-                var markdown = $@"
-* [Test: {callerName}]({traceViewUrl}) <br/>
+                var duration = sw.Elapsed;
+                if (success)
+                {
+
+
+                    var markdown = $@"
+🟢 [Test: {callerName}]({traceViewUrl}) <br/>
+🕒 Duration: {duration.TotalMilliseconds} ms <br/>
 ";
-                await File.AppendAllTextAsync(f, markdown);
+                    await File.AppendAllTextAsync(f, markdown);
+                }
+                else
+                {
+                    var markdown = $@"
+🔴 [Test: {callerName}]({traceViewUrl}) <br/>
+🕒 Duration: {duration.TotalMilliseconds} ms <br/>
+
+Error:
+```
+{error}
+```
+";
+                    await File.AppendAllTextAsync(f, markdown);
+                }
             }
         }
     }
