@@ -45,9 +45,11 @@ public static class Tracing
             Console.WriteLine($"Running test: {callerName}");
             Console.WriteLine(traceViewUrl);
 
-            var f = Environment.GetEnvironmentVariable("$GITHUB_STEP_SUMMARY");
+            
+            var f = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
             if (f != null)
             {
+                Console.WriteLine("Github step summary file:" + f);
                 await File.AppendAllTextAsync(f, $"Running test: {callerName}");
                 await File.AppendAllTextAsync(f, traceViewUrl);
             }
