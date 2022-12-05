@@ -83,10 +83,15 @@ public static class Tracing
                     $"{TracingSettings.TraceViewUrl}/logs?traceId={traceId.ToUpperInvariant()}";
 
                 var duration = sw.Elapsed;
+                var failIcon =
+                    "<img src=\"https://gist.githubusercontent.com/rogeralsing/d8566b01e0850be70f7af9bc9757691e/raw/7ce19c521b44e0e049c3762d8e7afe0314c60175/fail.svg\">";
+                var successIcon =
+                    "<img src=\"https://gist.githubusercontent.com/rogeralsing/b9165f8eaeb25f05226745c94ab011b6/raw/90b90eb6d762729be6bb88c70e321662b7647ec6/success.svg\">";
+                
 
 
                 var markdown = $@"
-{(success ? "🟢" : "🔴")} [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
+{(success ? successIcon : failIcon)} [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
 {(success ? "" : $"Error:\n```\n{error}\n```")}
 ";
                 await File.AppendAllTextAsync(f, markdown);
