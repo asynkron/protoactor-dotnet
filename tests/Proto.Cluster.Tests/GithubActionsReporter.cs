@@ -12,10 +12,16 @@ namespace Proto.Cluster.Tests;
 
 public class GithubActionsReporter
 {
+    private readonly string _reportName;
     private static readonly ILogger Logger = Log.CreateLogger<GithubActionsReporter>();
     public const string ActivitySourceName = "Proto.Cluster.Tests";
 
     private static readonly ActivitySource ActivitySource = new(ActivitySourceName);
+
+    public GithubActionsReporter(string reportName)
+    {
+        _reportName = reportName;
+    }
 
     private static Activity? StartActivity([CallerMemberName] string callerName = "N/A") =>
         ActivitySource.StartActivity(callerName);
@@ -75,7 +81,9 @@ public class GithubActionsReporter
         var f = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
         if (f != null)
         {
-            _output.AppendLine(@"
+            _output.AppendLine($@"
+<h2>{_reportName}</h2>
+
 <table>
 <tr>
 <th>
