@@ -96,9 +96,6 @@ Test
 <th>
 Duration
 </th>
-<th>
-Trace
-</th>
 </tr>");
             
             foreach (var res in _results)
@@ -111,9 +108,6 @@ Trace
 </td>
 <td>
 {res.Duration}
-</td>
-<td>
-<img src=""http://traceview.ornell.io/api/spanmap/{res.TraceId}/svg"" />
 </td>
 </tr>");
                 if(res.Exception is not null)
