@@ -84,9 +84,9 @@ public static class Tracing
 
                 var duration = sw.Elapsed;
                 var failIcon =
-                    "<img src=\"https://gist.githubusercontent.com/rogeralsing/d8566b01e0850be70f7af9bc9757691e/raw/7ce19c521b44e0e049c3762d8e7afe0314c60175/fail.svg\">";
+                    "<img src=\"https://gist.githubusercontent.com/rogeralsing/d8566b01e0850be70f7af9bc9757691e/raw/e025b5d58fe3aec1029a5c74f5ab2ee198960fcb/fail.svg\">";
                 var successIcon =
-                    "<img src=\"https://gist.githubusercontent.com/rogeralsing/b9165f8eaeb25f05226745c94ab011b6/raw/90b90eb6d762729be6bb88c70e321662b7647ec6/success.svg\">";
+                    "<img src=\"https://gist.githubusercontent.com/rogeralsing/b9165f8eaeb25f05226745c94ab011b6/raw/cb28ccf1a11c44c8b4c9173bc4aeb98bfa79ca4b/success.svg\">";
                 
 
 
