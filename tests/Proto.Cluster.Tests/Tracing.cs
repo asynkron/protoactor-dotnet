@@ -84,11 +84,13 @@ public static class Tracing
 
                 var duration = sw.Elapsed;
 
+
                 var markdown = $@"
 {(success ? "🟢" : "🔴")} [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
 {(success ? "" : $"Error:\n```\n{error}\n```")}
 ";
                 await File.AppendAllTextAsync(f, markdown);
+
             }
         }
     }
