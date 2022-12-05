@@ -19,7 +19,7 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
     [Fact]
     public async Task LocalAffinityMovesActivationsOnRemoteSender()
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)).Token;
             var firstNode = Members[0];

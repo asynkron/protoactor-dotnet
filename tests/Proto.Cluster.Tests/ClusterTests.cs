@@ -39,7 +39,7 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task CanSpawnASingleVirtualActor()
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
 
@@ -55,7 +55,7 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task TopologiesShouldHaveConsensus()
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             var consensus = await Task
                 .WhenAll(Members.Select(member =>
@@ -73,7 +73,7 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task HandlesSlowResponsesCorrectly()
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             var timeout = new CancellationTokenSource(20000).Token;
 
@@ -92,7 +92,7 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task SupportsMessageEnvelopeResponses()
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             var timeout = new CancellationTokenSource(20000).Token;
 
@@ -113,7 +113,7 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task StateIsReplicatedAcrossCluster()
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             if (ClusterFixture.ClusterSize < 2)
             {
@@ -165,7 +165,7 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task ReSpawnsClusterActorsFromDifferentNodes()
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             if (ClusterFixture.ClusterSize < 2)
             {
@@ -200,7 +200,7 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task HandlesLosingANode()
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             if (ClusterFixture.ClusterSize < 2)
             {
@@ -228,7 +228,7 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public async Task HandlesLosingANodeWhileProcessing()
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             if (ClusterFixture.ClusterSize < 2)
             {
@@ -276,7 +276,7 @@ public abstract class ClusterTests : ClusterTestBase
     [InlineData(10, 10000)]
     public async Task CanSpawnVirtualActorsSequentially(int actorCount, int timeoutMs)
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
@@ -298,7 +298,7 @@ public abstract class ClusterTests : ClusterTestBase
     [InlineData(10, 10000)]
     public async Task ConcurrentActivationsOnSameIdWorks(int clientCount, int timeoutMs)
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
@@ -318,7 +318,7 @@ public abstract class ClusterTests : ClusterTestBase
     [InlineData(10, 10000)]
     public async Task CanSpawnVirtualActorsConcurrently(int actorCount, int timeoutMs)
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
@@ -335,7 +335,7 @@ public abstract class ClusterTests : ClusterTestBase
     [InlineData(10, 10000)]
     public async Task CanSpawnMultipleKindsWithSameIdentityConcurrently(int actorCount, int timeoutMs)
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             using var cts = new CancellationTokenSource(timeoutMs);
             var timeout = cts.Token;
@@ -364,7 +364,7 @@ public abstract class ClusterTests : ClusterTestBase
     [InlineData(10, 10000)]
     public async Task CanSpawnMultipleKindsWithSameIdentityConcurrentlyWhenUsingFilters(int actorCount, int timeoutMs)
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             using var cts = new CancellationTokenSource(timeoutMs);
             var timeout = cts.Token;
@@ -395,7 +395,7 @@ public abstract class ClusterTests : ClusterTestBase
     [InlineData(10, 10000, EchoActor.AsyncFilteredKind)]
     public async Task CanSpawnVirtualActorsConcurrentlyOnAllNodes(int actorCount, int timeoutMs, string kind)
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
@@ -415,7 +415,7 @@ public abstract class ClusterTests : ClusterTestBase
     [InlineData(10000, EchoActor.FilteredKind)]
     [InlineData(10000, EchoActor.AsyncFilteredKind)]
     public async Task CanFilterActivations(int timeoutMs, string filteredKind) =>
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
             {
                 var timeout = new CancellationTokenSource(timeoutMs).Token;
 
@@ -436,7 +436,7 @@ public abstract class ClusterTests : ClusterTestBase
     [InlineData(10, 20000)]
     public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
     {
-        await Tracing.Trace(async () =>
+        await Trace(async () =>
         {
             using var cts = new CancellationTokenSource(timeoutMs);
             var timeout = cts.Token;

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
@@ -38,6 +39,8 @@ public interface IClusterFixture
     public Task<Cluster> SpawnNode();
 
     Task RemoveNode(Cluster member, bool graceful = true);
+
+    Task Trace(Func<Task> test, [CallerMemberName] string testName = "");
 }
 
 public static class TracingSettings
@@ -57,6 +60,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
     private readonly List<Cluster> _members = new();
     private static TracerProvider? _tracerProvider;
+    private GithubActionsReporter _reporter;
 
     protected readonly string ClusterName;
 
@@ -65,13 +69,14 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         TracingSettings.OpenTelemetryUrl = Environment.GetEnvironmentVariable("OPENTELEMETRY_URL");
         TracingSettings.TraceViewUrl = Environment.GetEnvironmentVariable("TRACEVIEW_URL");
         TracingSettings.EnableTracing = TracingSettings.OpenTelemetryUrl != null;
-        
+
         //TODO: check if this helps low resource envs like github actions.
         ThreadPool.SetMinThreads(40, 40);
     }
 
-    protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
+    protected ClusterFixture( int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
     {
+        _reporter = new GithubActionsReporter(GetType().Name);
 #if NETCOREAPP3_1
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
@@ -117,22 +122,11 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     {
         try
         {
+            await _reporter.WriteReportFile();
 
             await OnDisposing();
 
-            if (TracingSettings.EnableTracing)
-            {
-                var testName = this.GetType().Name;
-                using (Tracing.StartActivity("ClusterFixture.DisposeAsync " + testName))
-                {
-                    await WaitForMembersToShutdown();
-                }
-                _tracerProvider?.ForceFlush(1000);
-            }
-            else
-            {
-                await WaitForMembersToShutdown();
-            }
+            await WaitForMembersToShutdown();
 
             Members.Clear(); // prevent multiple shutdown attempts if dispose is called multiple times
         }
@@ -189,6 +183,11 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         }
     }
 
+    public Task Trace(Func<Task> test, string testName = "")
+    {
+        return _reporter.Run(test, testName);
+    }
+
     /// <summary>
     ///     Spawns a node, adds it to the cluster and member list
     /// </summary>
@@ -243,7 +242,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                     .AddService("Proto.Cluster.Tests")
                 )
                 .AddProtoActorInstrumentation()
-                .AddSource(Tracing.ActivitySourceName)
+                .AddSource(GithubActionsReporter.ActivitySourceName)
                 .AddOtlpExporter(options =>
                 {
                     options.Endpoint = endpoint;

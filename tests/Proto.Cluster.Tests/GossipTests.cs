@@ -55,41 +55,39 @@ public class GossipTests
         var timeout = CancellationTokens.FromSeconds(20);
         await using var clusterFixture = new InMemoryClusterFixture();
         await clusterFixture.InitializeAsync().ConfigureAwait(false);
-        await Tracing.Trace(async () =>
-        {
 
-            await Task.Delay(1000);
+        await Task.Delay(1000);
 
-            var (consensus, initialTopologyHash) =
-                await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
+        var (consensus, initialTopologyHash) =
+            await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
 
-            consensus.Should().BeTrue();
+        consensus.Should().BeTrue();
 
-            var fixtureMembers = clusterFixture.Members;
-            var consensusChecks = fixtureMembers.Select(CreateCompositeConsensusCheck).ToList();
+        var fixtureMembers = clusterFixture.Members;
+        var consensusChecks = fixtureMembers.Select(CreateCompositeConsensusCheck).ToList();
 
-            var firstNodeCheck = consensusChecks[0];
-            var notConsensus = await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(200), timeout);
+        var firstNodeCheck = consensusChecks[0];
+        var notConsensus = await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(200), timeout);
 
-            notConsensus.consensus.Should().BeFalse("We have not set the correct topology hash in the state yet");
+        notConsensus.consensus.Should().BeFalse("We have not set the correct topology hash in the state yet");
 
-            await SetTopologyGossipStateAsync(fixtureMembers, initialTopologyHash);
+        await SetTopologyGossipStateAsync(fixtureMembers, initialTopologyHash);
 
-            var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromSeconds(20), timeout);
+        var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromSeconds(20), timeout);
 
-            afterSettingMatchingState.consensus.Should()
-                .BeTrue("After assigning the matching topology hash, there should be consensus");
+        afterSettingMatchingState.consensus.Should()
+            .BeTrue("After assigning the matching topology hash, there should be consensus");
 
-            afterSettingMatchingState.value.Should().Be(initialTopologyHash);
+        afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
-            await clusterFixture.SpawnNode();
-            await Task.Delay(2000); // Allow topology state to propagate
+        await clusterFixture.SpawnNode();
+        await Task.Delay(2000); // Allow topology state to propagate
 
-            var afterChangingTopology =
-                await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout);
+        var afterChangingTopology =
+            await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout);
 
-            afterChangingTopology.consensus.Should().BeFalse("The state does no longer match the current topology");
-        }, _testOutputHelper);
+        afterChangingTopology.consensus.Should().BeFalse("The state does no longer match the current topology");
+
     }
 
     [Fact]
