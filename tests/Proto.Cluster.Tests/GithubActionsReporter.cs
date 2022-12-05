@@ -78,6 +78,10 @@ public class GithubActionsReporter
         var successIcon =
             "<img src=\"https://gist.githubusercontent.com/rogeralsing/b9165f8eaeb25f05226745c94ab011b6/raw/cb28ccf1a11c44c8b4c9173bc4aeb98bfa79ca4b/success.svg\">";
 
+        var serverUrl = Environment.GetEnvironmentVariable("GITHUB_SERVER_URL");
+        var repositorySlug = Environment.GetEnvironmentVariable("GITHUB_REPOSITORY");
+        var workspacePath = Environment.GetEnvironmentVariable("GITHUB_WORKSPACE");
+        var commitHash = Environment.GetEnvironmentVariable("GITHUB_SHA");
         var f = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
         if (f != null)
         {

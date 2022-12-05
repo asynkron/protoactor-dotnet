@@ -74,9 +74,9 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         ThreadPool.SetMinThreads(40, 40);
     }
 
-    protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null, [CallerMemberName]string callerName ="")
+    protected ClusterFixture( int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
     {
-        _reporter = new GithubActionsReporter(callerName);
+        _reporter = new GithubActionsReporter(GetType().Name);
 #if NETCOREAPP3_1
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
