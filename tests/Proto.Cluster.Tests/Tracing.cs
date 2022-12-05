@@ -83,27 +83,12 @@ public static class Tracing
                     $"{TracingSettings.TraceViewUrl}/logs?traceId={traceId.ToUpperInvariant()}";
 
                 var duration = sw.Elapsed;
-                if (success)
-                {
 
-
-                    var markdown = $@"
-🟢 [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
+                var markdown = $@"
+{(success ? "🟢" : "🔴")} [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
+{(success ? "" : $"Error:\n```\n{error}\n```")}
 ";
-                    await File.AppendAllTextAsync(f, markdown);
-                }
-                else
-                {
-                    var markdown = $@"
-🔴 [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
-
-Error:
-```
-{error}
-```
-";
-                    await File.AppendAllTextAsync(f, markdown);
-                }
+                await File.AppendAllTextAsync(f, markdown);
             }
         }
     }
