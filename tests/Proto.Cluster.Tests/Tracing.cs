@@ -83,27 +83,19 @@ public static class Tracing
                     $"{TracingSettings.TraceViewUrl}/logs?traceId={traceId.ToUpperInvariant()}";
 
                 var duration = sw.Elapsed;
-                if (success)
-                {
+                var failIcon =
+                    "<img src=\"https://gist.githubusercontent.com/rogeralsing/d8566b01e0850be70f7af9bc9757691e/raw/e025b5d58fe3aec1029a5c74f5ab2ee198960fcb/fail.svg\">";
+                var successIcon =
+                    "<img src=\"https://gist.githubusercontent.com/rogeralsing/b9165f8eaeb25f05226745c94ab011b6/raw/cb28ccf1a11c44c8b4c9173bc4aeb98bfa79ca4b/success.svg\">";
+                
 
 
-                    var markdown = $@"
-🟢 [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
+                var markdown = $@"
+{(success ? successIcon : failIcon)} [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
+{(success ? "" : $"Error:\n```\n{error}\n```")}
 ";
-                    await File.AppendAllTextAsync(f, markdown);
-                }
-                else
-                {
-                    var markdown = $@"
-🔴 [Test: {callerName}]({traceViewUrl}) - Duration: {duration.TotalMilliseconds} ms <br/>
+                await File.AppendAllTextAsync(f, markdown);
 
-Error:
-```
-{error}
-```
-";
-                    await File.AppendAllTextAsync(f, markdown);
-                }
             }
         }
     }
