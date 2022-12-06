@@ -85,6 +85,8 @@ public class GithubActionsReporter
         var f = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
         if (f != null)
         {
+            //get some time for traces to propagate
+            await Task.Delay(2000);
             _output.AppendLine($@"
 <h2>{_reportName}</h2>
 
