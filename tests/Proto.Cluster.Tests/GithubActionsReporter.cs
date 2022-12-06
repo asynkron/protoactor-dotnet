@@ -26,48 +26,48 @@ public class GithubActionsReporter
     private static Activity? StartActivity([CallerMemberName] string callerName = "N/A") =>
         ActivitySource.StartActivity(callerName);
     
-    private List<TestResult> _results = new();
+    private readonly List<TestResult> _results = new();
 
     private record TestResult(string Name, string TraceId, TimeSpan Duration, Exception? Exception= null);
     
     private readonly StringBuilder _output = new();
 
-    public async Task Run(Func<Task> test, [CallerMemberName]string testName="")
+    public async Task Run(Func<Task> test, [CallerMemberName] string testName = "")
     {
         await Task.Delay(1).ConfigureAwait(false);
-        
+
         using var activity = StartActivity(testName);
-        var traceId=  activity?.Context.TraceId.ToString().ToUpperInvariant() ?? "N/A";
+        var traceId = activity?.Context.TraceId.ToString().ToUpperInvariant() ?? "N/A";
         Logger.LogInformation("Test started");
-        Exception? exception = null;
+
         var sw = Stopwatch.StartNew();
-        
-        if (activity is not null)
-        {
-            traceId = activity.TraceId.ToString();
-            activity.AddTag("test.name", testName);
-
-            var traceViewUrl =
-                $"{TracingSettings.TraceViewUrl}/logs?traceId={traceId}";
-
-            Console.WriteLine($"Running test: {testName}");
-            Console.WriteLine(traceViewUrl);
-        }
-
         try
         {
+            if (activity is not null)
+            {
+                traceId = activity.TraceId.ToString();
+                activity.AddTag("test.name", testName);
+
+                var traceViewUrl =
+                    $"{TracingSettings.TraceViewUrl}/logs?traceId={traceId}";
+
+                Console.WriteLine($"Running test: {testName}");
+                Console.WriteLine(traceViewUrl);
+            }
+            
             await test();
             Logger.LogInformation("Test succeeded");
+            _results.Add(new TestResult(testName, traceId, sw.Elapsed));
         }
-        catch(Exception x)
+        catch (Exception x)
         {
-            exception = x;
-            Logger.LogError(x,"Test failed");
+            _results.Add(new TestResult(testName, traceId, sw.Elapsed, x));
+            Logger.LogError(x, "Test failed");
+            throw;
         }
-        sw.Stop();
-        if (activity is not null)
+        finally
         {
-            _results.Add(new TestResult(testName, traceId, sw.Elapsed, exception));
+            sw.Stop();
         }
     }
 

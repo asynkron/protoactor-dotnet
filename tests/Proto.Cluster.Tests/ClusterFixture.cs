@@ -185,7 +185,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         }
     }
 
-    public Task Trace(Func<Task> test, string testName = "")
+    public Task Trace(Func<Task> test, [CallerMemberName] string testName = "")
     {
         return _reporter.Run(test, testName);
     }
