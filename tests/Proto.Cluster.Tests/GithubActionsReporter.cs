@@ -114,7 +114,7 @@ Duration
 {res.Duration}
 </td>
 <td>
-   <img src=""{TracingSettings.TraceViewUrl}/api/spanmap/{res.TraceId}/svg"" />
+   <img height=""50"" src=""{TracingSettings.TraceViewUrl}/api/spanmap/{res.TraceId}/svg"" />
 </td>
 </tr>");
                     if (res.Exception is not null)
