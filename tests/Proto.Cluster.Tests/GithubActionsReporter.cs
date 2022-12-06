@@ -85,6 +85,8 @@ public class GithubActionsReporter
         var f = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
         if (f != null)
         {
+            //get some time for traces to propagate
+            await Task.Delay(2000);
             _output.AppendLine($@"
 <h2>{_reportName}</h2>
 
@@ -100,7 +102,9 @@ Duration
             
             foreach (var res in _results)
             {
-                _output.AppendLine($@"
+                try
+                {
+                    _output.AppendLine($@"
 <tr>
 <td>
 {(res.Exception != null ? failIcon : successIcon)}
@@ -109,17 +113,25 @@ Duration
 <td>
 {res.Duration}
 </td>
+<td>
+   <img height=""50"" src=""{TracingSettings.TraceViewUrl}/api/limit/spanmap/{res.TraceId}/svg"" />
+</td>
 </tr>");
-                if(res.Exception is not null)
-                {
-                    _output.AppendLine($@"
+                    if (res.Exception is not null)
+                    {
+                        _output.AppendLine($@"
 <tr>
-<td colspan=""2"">
+<td colspan=""3"">
 <code>
-{res.Exception}
+{res.Exception.ToString()}
 </code>
 </td>
 </tr>");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
             }
             _output.AppendLine("</table>");

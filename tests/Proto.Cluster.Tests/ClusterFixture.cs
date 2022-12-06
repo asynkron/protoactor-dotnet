@@ -122,6 +122,8 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     {
         try
         {
+            _tracerProvider?.ForceFlush();
+            
             await _reporter.WriteReportFile();
 
             await OnDisposing();
