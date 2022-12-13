@@ -268,6 +268,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Analyzers", "src\Prot
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Analyzers.Tests", "tests\Proto.Analyzers.Tests\Proto.Analyzers.Tests.csproj", "{E56413ED-8205-4AC1-A7CE-24A2C1711F54}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.AzureContainerApps", "Proto.Cluster.AzureContainerApps\Proto.Cluster.AzureContainerApps.csproj", "{4A8305DB-758B-4CAD-B8A8-146279A0729A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1346,6 +1348,18 @@ Global
 		{E56413ED-8205-4AC1-A7CE-24A2C1711F54}.Release|x64.Build.0 = Release|Any CPU
 		{E56413ED-8205-4AC1-A7CE-24A2C1711F54}.Release|x86.ActiveCfg = Release|Any CPU
 		{E56413ED-8205-4AC1-A7CE-24A2C1711F54}.Release|x86.Build.0 = Release|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Debug|x64.Build.0 = Debug|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Debug|x86.Build.0 = Debug|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Release|x64.ActiveCfg = Release|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Release|x64.Build.0 = Release|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Release|x86.ActiveCfg = Release|Any CPU
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1470,6 +1484,7 @@ Global
 		{B0F9003C-BA53-4948-8FB7-1F7F230F9310} = {3D12F5E5-9774-4D7E-8A5B-B1F64544925B}
 		{9D139291-31D9-4502-B5BD-EA522F54B008} = {3D12F5E5-9774-4D7E-8A5B-B1F64544925B}
 		{E56413ED-8205-4AC1-A7CE-24A2C1711F54} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
+		{4A8305DB-758B-4CAD-B8A8-146279A0729A} = {010B4228-6236-4111-B76E-90BD83780E35}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}
