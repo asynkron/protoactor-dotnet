@@ -245,26 +245,26 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             {
                 b.SetResourceBuilder(builder)
                     .AddProtoActorInstrumentation()
+                    .AddRuntimeInstrumentation()
+                    .AddOtlpExporter(ConfigureExporter);
+            });
+
+            services.AddOpenTelemetryTracing(b =>
+            {
+                b.SetResourceBuilder(builder
+                        .AddService("Proto.Cluster.Tests")
+                    )
+                    .AddProtoActorInstrumentation()
+                    .AddSource(GithubActionsReporter.ActivitySourceName)
                     .AddOtlpExporter(ConfigureExporter);
             });
 
             var serviceProvider = services.BuildServiceProvider();
-
             var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-
-
             Log.SetLoggerFactory(loggerFactory);
-
             _meterProvider = serviceProvider.GetRequiredService<MeterProvider>();
+            _tracerProvider =serviceProvider.GetRequiredService<TracerProvider>();
 
-            _tracerProvider = Sdk.CreateTracerProviderBuilder()
-                .SetResourceBuilder(builder
-                    .AddService("Proto.Cluster.Tests")
-                )
-                .AddProtoActorInstrumentation()
-                .AddSource(GithubActionsReporter.ActivitySourceName)
-                .AddOtlpExporter(ConfigureExporter)
-                .Build();
         }
     }
 
@@ -326,7 +326,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     protected virtual ActorSystemConfig GetActorSystemConfig()
     {
-        var actorSystemConfig = ActorSystemConfig.Setup();
+        var actorSystemConfig = ActorSystemConfig.Setup().WithMetrics();
 
         // ReSharper disable once HeuristicUnreachableCode
         return TracingSettings.EnableTracing
