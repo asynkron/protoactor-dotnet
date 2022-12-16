@@ -9,7 +9,9 @@ using ClusterTest.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Proto.Cluster.Cache;
@@ -60,15 +62,18 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
     private readonly List<Cluster> _members = new();
     private static TracerProvider? _tracerProvider;
+    private static MeterProvider? _meterProvider;
     private GithubActionsReporter _reporter;
 
     protected readonly string ClusterName;
 
     static ClusterFixture()
     {
-        TracingSettings.OpenTelemetryUrl = Environment.GetEnvironmentVariable("OPENTELEMETRY_URL");
-        TracingSettings.TraceViewUrl = Environment.GetEnvironmentVariable("TRACEVIEW_URL");
+        TracingSettings.OpenTelemetryUrl = Environment.GetEnvironmentVariable("OPENTELEMETRY_URL") ?? "http://localhost:4317";
+        TracingSettings.TraceViewUrl = Environment.GetEnvironmentVariable("TRACEVIEW_URL") ?? "http://localhost:5001";
         TracingSettings.EnableTracing = TracingSettings.OpenTelemetryUrl != null;
+
+        TracingSettings.EnableTracing = true;
 
         //TODO: check if this helps low resource envs like github actions.
         ThreadPool.SetMinThreads(40, 40);
@@ -122,6 +127,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     {
         try
         {
+            _meterProvider?.ForceFlush();
             _tracerProvider?.ForceFlush();
             
             await _reporter.WriteReportFile();
@@ -213,8 +219,14 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             {
                 return;
             }
-
             var endpoint = new Uri(TracingSettings.OpenTelemetryUrl!);
+            void ConfigureExporter(OtlpExporterOptions o)
+            {
+                o.Endpoint = endpoint;
+                o.ExportProcessorType = ExportProcessorType.Batch;
+            }
+
+
             var builder = ResourceBuilder.CreateDefault();
             var services = new ServiceCollection();
             services.AddLogging(l =>
@@ -225,19 +237,25 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                     {
                         options
                             .SetResourceBuilder(builder)
-                            .AddOtlpExporter(o =>
-                            {
-                                o.Endpoint = endpoint;
-                                o.ExportProcessorType = ExportProcessorType.Batch;
-                            });
+                            .AddOtlpExporter(ConfigureExporter);
                     });
+            });
+
+            services.AddOpenTelemetryMetrics(b =>
+            {
+                b.SetResourceBuilder(builder)
+                    .AddProtoActorInstrumentation()
+                    .AddOtlpExporter(ConfigureExporter);
             });
 
             var serviceProvider = services.BuildServiceProvider();
 
             var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 
+
             Log.SetLoggerFactory(loggerFactory);
+
+            _meterProvider = serviceProvider.GetRequiredService<MeterProvider>();
 
             _tracerProvider = Sdk.CreateTracerProviderBuilder()
                 .SetResourceBuilder(builder
@@ -245,11 +263,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 )
                 .AddProtoActorInstrumentation()
                 .AddSource(GithubActionsReporter.ActivitySourceName)
-                .AddOtlpExporter(options =>
-                {
-                    options.Endpoint = endpoint;
-                    options.ExportProcessorType = ExportProcessorType.Batch;
-                })
+                .AddOtlpExporter(ConfigureExporter)
                 .Build();
         }
     }
