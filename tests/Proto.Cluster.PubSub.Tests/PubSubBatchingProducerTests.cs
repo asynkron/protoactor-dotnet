@@ -364,5 +364,16 @@ public class PubSubBatchingProducerTests
     [SuppressMessage("Design", "CA1064:Exceptions should be public")]
     private class TestException : Exception
     {
+        public TestException() : base()
+        {
+        }
+
+        public TestException(string? message) : base(message)
+        {
+        }
+
+        public TestException(string? message, Exception? innerException) : base(message, innerException)
+        {
+        }
     }
 }

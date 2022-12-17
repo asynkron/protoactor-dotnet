@@ -116,7 +116,7 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
     public override void ReenterAfter(Task target, Action action)
     {
         var current = Activity.Current?.Context ?? default;
-        var message = base.Message;
+        var message = base.Message!;
         var a2 = () =>
         {
             using var x = OpenTelemetryHelpers.BuildStartedActivity(current, Source, nameof(ReenterAfter), message,
@@ -130,7 +130,7 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
     public override void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
     {
         var current = Activity.Current?.Context ?? default;
-        var message = base.Message;
+        var message = base.Message!;
         Func<Task<T>, Task> a2 = async t =>
         {
             using var x = OpenTelemetryHelpers.BuildStartedActivity(current, Source, nameof(ReenterAfter), message,

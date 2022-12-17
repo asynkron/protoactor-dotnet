@@ -239,7 +239,7 @@ public abstract class ClusterTests : ClusterTestBase
 
             var ingressNodes = new[] { Members[0], Members[1] };
             var victim = Members[2];
-            var ids = Enumerable.Range(1, 20).Select(id => id.ToString()).ToList();
+            var ids = Enumerable.Range(1, 3).Select(id => id.ToString()).ToList();
 
             var cts = new CancellationTokenSource();
 
@@ -252,12 +252,12 @@ public abstract class ClusterTests : ClusterTestBase
                 }
             );
 
-            await Task.Delay(2000);
+            await Task.Delay(1000);
             _testOutputHelper.WriteLine("Terminating node");
             await ClusterFixture.RemoveNode(victim);
             _testOutputHelper.WriteLine("Spawning node");
             await ClusterFixture.SpawnNode();
-            await Task.Delay(2000);
+            await Task.Delay(1000);
             cts.Cancel();
             await worker;
         }, _testOutputHelper);
