@@ -27,19 +27,12 @@
 
     <ItemGroup>
         <PackageReference Include="Handlebars.Net" Version="2.0.9"/>
-        
-        <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1"/>
         <PackageReference Include="protobuf-net" Version="3.0.101"/>
         <PackageReference Include="protobuf-net.Reflection" Version="3.0.101"/>
-
         <PackageReference Include="Microsoft.Build.Framework" Version="17.0.0"/>
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.0.0"/>
         <!-- Marks all packages as 'local only' so they don't end up in the nuspec. -->
         <PackageReference Update="@(PackageReference)" PrivateAssets="All"/>
-        <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
     </ItemGroup>
 
 

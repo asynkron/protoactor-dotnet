@@ -11,14 +11,4 @@
         <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
         <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
     </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="GitHubActionsTestLogger" Version="2.0.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
 </Project>

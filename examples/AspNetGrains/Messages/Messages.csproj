@@ -4,8 +4,8 @@
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.21.6" />
-        <PackageReference Include="Grpc.Tools" Version="2.48.1" PrivateAssets="All" />
+        <PackageReference Include="Google.Protobuf" Version="3.21.12" />
+        <PackageReference Include="Grpc.Tools" Version="2.51.0" PrivateAssets="All" />
         <PackageReference Include="Proto.Cluster.CodeGen" Version="1.0.0-rc3.17" />
     </ItemGroup>
     <ItemGroup>
