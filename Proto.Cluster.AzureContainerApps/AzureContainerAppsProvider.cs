@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Azure.Core;
 using Azure.ResourceManager;
 using Azure.ResourceManager.AppContainers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
 
@@ -12,33 +12,47 @@ namespace Proto.Cluster.AzureContainerApps;
 
 public class AzureContainerAppsProvider  : IClusterProvider
 {
+    public readonly string AdvertisedHost;
+    
     private readonly ArmClient _client;
     private readonly string _resourceGroup;
     private readonly string _containerAppName;
     private readonly string _revisionName;
     private readonly string _replicaName;
 
+    private string _memberId = null!;
     private string _address = null!;
     private Cluster _cluster = null!;
     private string _clusterName = null!;
     private string[] _kinds = null!;
+    private string _host = null!;
     private int _port;
-    
+
+    private readonly IConfiguration _configuration;
     private static readonly ILogger Logger = Log.CreateLogger<AzureContainerAppsProvider>();
     private static readonly TimeSpan PollIntervalInSeconds = TimeSpan.FromSeconds(5);
 
     public AzureContainerAppsProvider(
+        IConfiguration configuration,
         ArmClient client,
         string resourceGroup, 
         string containerAppName,
         string revisionName,
-        string replicaName)
+        string replicaName,
+        string advertisedHost = default)
     {
+        _configuration = configuration;
         _client = client;
         _resourceGroup = resourceGroup;
         _containerAppName = containerAppName;
         _revisionName = revisionName;
         _replicaName = replicaName;
+        AdvertisedHost = advertisedHost;
+        
+        if (string.IsNullOrEmpty(AdvertisedHost))
+        {
+            AdvertisedHost = ConfigUtils.FindIpAddress().ToString();
+        }
     }
 
     public async Task StartMemberAsync(Cluster cluster)
@@ -48,12 +62,14 @@ public class AzureContainerAppsProvider  : IClusterProvider
         var kinds = cluster.GetClusterKinds();
         _cluster = cluster;
         _clusterName = clusterName;
+        _memberId = cluster.System.Id;
         _port = port;
+        _host = host;
         _kinds = kinds;
         _address = $"{host}:{port}";
         
-        StartClusterMonitor();
         await RegisterMemberAsync();
+        StartClusterMonitor();
     }
 
     public Task StartClientAsync(Cluster cluster)
@@ -62,7 +78,9 @@ public class AzureContainerAppsProvider  : IClusterProvider
         var (host, port) = cluster.System.GetAddress();
         _cluster = cluster;
         _clusterName = clusterName;
+        _memberId = cluster.System.Id;
         _port = port;
+        _host = host;
         _kinds = Array.Empty<string>();
         
         StartClusterMonitor();
@@ -83,7 +101,8 @@ public class AzureContainerAppsProvider  : IClusterProvider
 
     private async Task RegisterMemberInner()
     {
-        var containerApp = await _client.GetResourceGroupResource(new ResourceIdentifier(_resourceGroup)).GetContainerAppAsync(_containerAppName);
+        var resourceGroup = await _client.GetResourceGroupByName(_resourceGroup);
+        var containerApp = await resourceGroup.Value.GetContainerAppAsync(_containerAppName);
         var revision = await containerApp.Value.GetContainerAppRevisionAsync(_revisionName);
 
         if (revision.Value.Data.TrafficWeight.GetValueOrDefault(0) == 0)
@@ -98,20 +117,22 @@ public class AzureContainerAppsProvider  : IClusterProvider
 
         var tags = new Dictionary<string, string>
         {
-            [ProtoLabels.LabelCluster] = _clusterName,
-            [ProtoLabels.LabelPort] = _port.ToString(),
-            [ProtoLabels.LabelMemberId] = _cluster.System.Id
+            [ResourceTagLabels.LabelCluster(_memberId)] = _clusterName,
+            [ResourceTagLabels.LabelHost(_memberId)] = AdvertisedHost,
+            [ResourceTagLabels.LabelPort(_memberId)] = _port.ToString(),
+            [ResourceTagLabels.LabelMemberId(_memberId)] = _memberId,
+            [ResourceTagLabels.LabelReplicaName(_memberId)] = _replicaName
         };
 
         foreach (var kind in _kinds)
         {
-            var labelKey = $"{ProtoLabels.LabelKind}-{kind}";
+            var labelKey = $"{ResourceTagLabels.LabelKind(_memberId)}-{kind}";
             tags.TryAdd(labelKey, "true");
         }
 
         try
         {
-            await _client.UpdateMemberMetadata(new ResourceIdentifier(_resourceGroup), _containerAppName, _revisionName, _replicaName, tags);
+            await _client.AddMemberTags(_resourceGroup, _containerAppName, tags);
         }
         catch (Exception x)
         {
@@ -128,7 +149,7 @@ public class AzureContainerAppsProvider  : IClusterProvider
 
                     try
                     {
-                        var members = await _client.GetClusterMembers(new ResourceIdentifier(_resourceGroup), _containerAppName);
+                        var members = await _client.GetClusterMembers(_resourceGroup, _containerAppName);
 
                         if (members.Any())
                         {
@@ -167,6 +188,6 @@ public class AzureContainerAppsProvider  : IClusterProvider
             _replicaName,
             _address);
 
-        await _client.UpdateMemberMetadata(new ResourceIdentifier(_resourceGroup), _containerAppName, _revisionName, _replicaName,new Dictionary<string, string>());
+        await _client.ClearMemberTags(_resourceGroup, _containerAppName, _memberId);
     }
 }
