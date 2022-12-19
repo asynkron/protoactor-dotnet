@@ -9,7 +9,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Update="MinVer" Version="3.0.0" />
-        <PackageReference Include="MudBlazor" Version="6.0.10" />
+        <PackageReference Include="MudBlazor" Version="6.1.6" />
     </ItemGroup>
 
     <ItemGroup>
