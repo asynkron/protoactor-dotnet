@@ -17,7 +17,7 @@ public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
 {
     internal PID? CachedPid { get; set; }
 
-    public string ToDiagnosticString() => $"{Kind}/{Identity}";
+    public string ToDiagnosticString() => $"\"{Kind}/{Identity}\"";
 
     /// <summary>
     ///     Creates ClusterIdentity from identity and cluster kind

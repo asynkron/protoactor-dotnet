@@ -33,7 +33,7 @@ public partial class PID : ICustomDiagnosticMessage
 
     internal Process? CurrentRef { get; private set; }
 
-    public string ToDiagnosticString() => $"{Address}/{Id}";
+    public string ToDiagnosticString() => $"\"{Address}/{Id}\"";
 
     /// <summary>
     ///     Creates a new PID instance from address and identifier.
