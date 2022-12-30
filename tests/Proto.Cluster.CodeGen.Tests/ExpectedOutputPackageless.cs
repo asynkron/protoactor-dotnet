@@ -12,18 +12,18 @@ namespace Acme.OtherSystem.Foo
 {
     public static partial class GrainExtensions
     {
-        public static TestGrainClient GetTestGrain(this Cluster cluster, string identity) => new TestGrainClient(cluster, identity);
+        public static TestGrainClient GetTestGrain(this global::Proto.Cluster.Cluster cluster, string identity) => new TestGrainClient(cluster, identity);
 
-        public static TestGrainClient GetTestGrain(this IContext context, string identity) => new TestGrainClient(context.System.Cluster(), identity);
+        public static TestGrainClient GetTestGrain(this global::Proto.IContext context, string identity) => new TestGrainClient(context.System.Cluster(), identity);
     }
 
     public abstract class TestGrainBase
     {
-        protected IContext Context {get;}
-        protected ActorSystem System => Context.System;
-        protected Cluster Cluster => Context.System.Cluster();
+        protected global::Proto.IContext Context { get; }
+        protected global::Proto.ActorSystem System => Context.System;
+        protected global::Proto.Cluster.Cluster Cluster => Context.System.Cluster();
     
-        protected TestGrainBase(IContext context)
+        protected TestGrainBase(global::Proto.IContext context)
         {
             Context = context;
         }
@@ -91,9 +91,9 @@ namespace Acme.OtherSystem.Foo
     public class TestGrainClient
     {
         private readonly string _id;
-        private readonly Cluster _cluster;
+        private readonly global::Proto.Cluster.Cluster _cluster;
 
-        public TestGrainClient(Cluster cluster, string id)
+        public TestGrainClient(global::Proto.Cluster.Cluster cluster, string id)
         {
             _id = id;
             _cluster = cluster;
@@ -101,7 +101,7 @@ namespace Acme.OtherSystem.Foo
 
         public async Task<Acme.Mysystem.Bar.GetCurrentStateResponse?> GetState(CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(0, null);
+            var gr = new global::Proto.Cluster.GrainRequestMessage(0, null);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr, ct);
 
@@ -110,9 +110,9 @@ namespace Acme.OtherSystem.Foo
                 // normal response
                 Acme.Mysystem.Bar.GetCurrentStateResponse message => message,
                 // enveloped response
-                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse?)grainResponse.ResponseMessage,
+                global::Proto.Cluster.GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse?)grainResponse.ResponseMessage,
                 // error response
-                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -120,20 +120,20 @@ namespace Acme.OtherSystem.Foo
             };
         }
         
-        public async Task<Acme.Mysystem.Bar.GetCurrentStateResponse?> GetState(ISenderContext context, CancellationToken ct)
+        public async Task<Acme.Mysystem.Bar.GetCurrentStateResponse?> GetState(global::Proto.ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(0, null);
+            var gr = new global::Proto.Cluster.GrainRequestMessage(0, null);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr, context, ct);
 
             return res switch
             {
                 // normal response
                 Acme.Mysystem.Bar.GetCurrentStateResponse message => message,
                 // enveloped response
-                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse?)grainResponse.ResponseMessage,
+                global::Proto.Cluster.GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.GetCurrentStateResponse?)grainResponse.ResponseMessage,
                 // error response
-                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -142,18 +142,18 @@ namespace Acme.OtherSystem.Foo
         }
         public async Task<Google.Protobuf.WellKnownTypes.Empty?> SendCommand(Acme.Mysystem.Bar.SomeCommand request, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(1, request);
+            var gr = new global::Proto.Cluster.GrainRequestMessage(1, request);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr, ct);
 
             return res switch
             {
                 // normal response
-                Google.Protobuf.WellKnownTypes.Empty message => Nothing.Instance,
+                Google.Protobuf.WellKnownTypes.Empty message => global::Proto.Nothing.Instance,
                 // enveloped response
-                GrainResponseMessage grainResponse => Nothing.Instance,
+                global::Proto.Cluster.GrainResponseMessage grainResponse => global::Proto.Nothing.Instance,
                 // error response
-                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -161,20 +161,20 @@ namespace Acme.OtherSystem.Foo
             };
         }
         
-        public async Task<Google.Protobuf.WellKnownTypes.Empty?> SendCommand(Acme.Mysystem.Bar.SomeCommand request, ISenderContext context, CancellationToken ct)
+        public async Task<Google.Protobuf.WellKnownTypes.Empty?> SendCommand(Acme.Mysystem.Bar.SomeCommand request, global::Proto.ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(1, request);
+            var gr = new global::Proto.Cluster.GrainRequestMessage(1, request);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr, context, ct);
 
             return res switch
             {
                 // normal response
-                Google.Protobuf.WellKnownTypes.Empty message => Nothing.Instance,
+                Google.Protobuf.WellKnownTypes.Empty message => global::Proto.Nothing.Instance,
                 // enveloped response
-                GrainResponseMessage grainResponse => Nothing.Instance,
+                global::Proto.Cluster.GrainResponseMessage grainResponse => global::Proto.Nothing.Instance,
                 // error response
-                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -183,7 +183,7 @@ namespace Acme.OtherSystem.Foo
         }
         public async Task<Acme.Mysystem.Bar.Response?> RequestResponse(Acme.Mysystem.Bar.Query request, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(2, request);
+            var gr = new global::Proto.Cluster.GrainRequestMessage(2, request);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr, ct);
 
@@ -192,9 +192,9 @@ namespace Acme.OtherSystem.Foo
                 // normal response
                 Acme.Mysystem.Bar.Response message => message,
                 // enveloped response
-                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response?)grainResponse.ResponseMessage,
+                global::Proto.Cluster.GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response?)grainResponse.ResponseMessage,
                 // error response
-                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -202,20 +202,20 @@ namespace Acme.OtherSystem.Foo
             };
         }
         
-        public async Task<Acme.Mysystem.Bar.Response?> RequestResponse(Acme.Mysystem.Bar.Query request, ISenderContext context, CancellationToken ct)
+        public async Task<Acme.Mysystem.Bar.Response?> RequestResponse(Acme.Mysystem.Bar.Query request, global::Proto.ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(2, request);
+            var gr = new global::Proto.Cluster.GrainRequestMessage(2, request);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr, context, ct);
 
             return res switch
             {
                 // normal response
                 Acme.Mysystem.Bar.Response message => message,
                 // enveloped response
-                GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response?)grainResponse.ResponseMessage,
+                global::Proto.Cluster.GrainResponseMessage grainResponse => (Acme.Mysystem.Bar.Response?)grainResponse.ResponseMessage,
                 // error response
-                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -224,18 +224,18 @@ namespace Acme.OtherSystem.Foo
         }
         public async Task<Google.Protobuf.WellKnownTypes.Empty?> NoParameterOrReturn(CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(3, null);
+            var gr = new global::Proto.Cluster.GrainRequestMessage(3, null);
             //request the RPC method to be invoked
             var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr, ct);
 
             return res switch
             {
                 // normal response
-                Google.Protobuf.WellKnownTypes.Empty message => Nothing.Instance,
+                Google.Protobuf.WellKnownTypes.Empty message => global::Proto.Nothing.Instance,
                 // enveloped response
-                GrainResponseMessage grainResponse => Nothing.Instance,
+                global::Proto.Cluster.GrainResponseMessage grainResponse => global::Proto.Nothing.Instance,
                 // error response
-                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -243,20 +243,20 @@ namespace Acme.OtherSystem.Foo
             };
         }
         
-        public async Task<Google.Protobuf.WellKnownTypes.Empty?> NoParameterOrReturn(ISenderContext context, CancellationToken ct)
+        public async Task<Google.Protobuf.WellKnownTypes.Empty?> NoParameterOrReturn(global::Proto.ISenderContext context, CancellationToken ct)
         {
-            var gr = new GrainRequestMessage(3, null);
+            var gr = new global::Proto.Cluster.GrainRequestMessage(3, null);
             //request the RPC method to be invoked
-            var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr,context, ct);
+            var res = await _cluster.RequestAsync<object>(_id, TestGrainActor.Kind, gr, context, ct);
 
             return res switch
             {
                 // normal response
-                Google.Protobuf.WellKnownTypes.Empty message => Nothing.Instance,
+                Google.Protobuf.WellKnownTypes.Empty message => global::Proto.Nothing.Instance,
                 // enveloped response
-                GrainResponseMessage grainResponse => Nothing.Instance,
+                global::Proto.Cluster.GrainResponseMessage grainResponse => global::Proto.Nothing.Instance,
                 // error response
-                GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -265,27 +265,27 @@ namespace Acme.OtherSystem.Foo
         }
     }
 
-    public class TestGrainActor : IActor
+    public class TestGrainActor : global::Proto.IActor
     {
         public const string Kind = "TestGrain";
 
         private TestGrainBase? _inner;
-        private IContext? _context;
-        private readonly Func<IContext, ClusterIdentity, TestGrainBase> _innerFactory;
+        private global::Proto.IContext? _context;
+        private readonly Func<global::Proto.IContext, global::Proto.Cluster.ClusterIdentity, TestGrainBase> _innerFactory;
     
-        public TestGrainActor(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
+        public TestGrainActor(Func<global::Proto.IContext, global::Proto.Cluster.ClusterIdentity, TestGrainBase> innerFactory)
         {
             _innerFactory = innerFactory;
         }
 
-        public async Task ReceiveAsync(IContext context)
+        public async Task ReceiveAsync(global::Proto.IContext context)
         {
             switch (context.Message)
             {
                 case Started msg: 
                 {
                     _context = context;
-                    var id = context.Get<ClusterIdentity>()!; // Always populated on startup
+                    var id = context.Get<global::Proto.Cluster.ClusterIdentity>()!; // Always populated on startup
                     _inner = _innerFactory(context, id);
                     await _inner.OnStarted();
                     break;
@@ -312,9 +312,12 @@ namespace Acme.OtherSystem.Foo
                         }
                         case 1:
                         {   
-                            if(r is Acme.Mysystem.Bar.SomeCommand input){
+                            if (r is Acme.Mysystem.Bar.SomeCommand input)
+                            {
                                 await _inner!.SendCommand(input, Respond, OnError);
-                            } else {
+                            }
+                            else
+                            {
                                 OnError($"Invalid client contract. Expected Acme.Mysystem.Bar.SomeCommand, received {r?.GetType().FullName}");
                             }
 
@@ -322,9 +325,12 @@ namespace Acme.OtherSystem.Foo
                         }
                         case 2:
                         {   
-                            if(r is Acme.Mysystem.Bar.Query input){
+                            if (r is Acme.Mysystem.Bar.Query input)
+                            {
                                 await _inner!.RequestResponse(input, Respond, OnError);
-                            } else {
+                            }
+                            else
+                            {
                                 OnError($"Invalid client contract. Expected Acme.Mysystem.Bar.Query, received {r?.GetType().FullName}");
                             }
 
@@ -351,14 +357,14 @@ namespace Acme.OtherSystem.Foo
             }
         }
 
-        private void Respond<T>(T response) where T: IMessage => _context!.Respond(response is not null ? response : new GrainResponseMessage(response));
-        private void Respond() => _context!.Respond( new GrainResponseMessage(null));
-        private void OnError(string error) => _context!.Respond( new GrainErrorResponse {Err = error } );
+        private void Respond<T>(T response) where T : global::Google.Protobuf.IMessage => _context!.Respond(response is not null ? response : new global::Proto.Cluster.GrainResponseMessage(response));
+        private void Respond() => _context!.Respond(new global::Proto.Cluster.GrainResponseMessage(null));
+        private void OnError(string error) => _context!.Respond(new global::Proto.Cluster.GrainErrorResponse { Err = error });
 
-        public static ClusterKind GetClusterKind(Func<IContext, ClusterIdentity, TestGrainBase> innerFactory)
-            => new ClusterKind(Kind, Props.FromProducer(() => new TestGrainActor(innerFactory)));
+        public static global::Proto.Cluster.ClusterKind GetClusterKind(Func<global::Proto.IContext, global::Proto.Cluster.ClusterIdentity, TestGrainBase> innerFactory)
+            => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new TestGrainActor(innerFactory)));
 
-        public static ClusterKind GetClusterKind<T>(IServiceProvider serviceProvider) where T : TestGrainBase
-            => new ClusterKind(Kind, Props.FromProducer(() => new TestGrainActor((ctx, id) => ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id))));
+        public static global::Proto.Cluster.ClusterKind GetClusterKind<T>(global::System.IServiceProvider serviceProvider) where T : TestGrainBase
+            => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new TestGrainActor((ctx, id) => global::Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id))));
     }
 }
