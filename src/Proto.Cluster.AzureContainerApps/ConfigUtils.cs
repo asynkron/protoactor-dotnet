@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using JetBrains.Annotations;
 
 namespace Proto.Cluster.AzureContainerApps;
 
@@ -29,7 +30,7 @@ public static class ConfigUtils
 
         return result;
 
-        static bool CompareIpAddresses(IPAddress lhs, IPAddress rhs)
+        static bool CompareIpAddresses(IPAddress lhs, [CanBeNull] IPAddress rhs)
         {
             if (rhs == null)
                 return true;
