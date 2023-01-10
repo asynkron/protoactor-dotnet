@@ -39,7 +39,7 @@ public class MartenProvider : IProvider
         var snapshot = await session.Query<Snapshot>()
             .Where(x => x.ActorName == actorName)
             .OrderByDescending(x => x.Index)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync().ConfigureAwait(false);
 
         return snapshot != null ? (snapshot.Data, snapshot.Index) : (null, 0);
     }

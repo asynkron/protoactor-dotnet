@@ -41,11 +41,11 @@ public class ProtoActorLifecycleHost : IHostedService
 
         if (_runAsClient)
         {
-            await _actorSystem.Cluster().StartClientAsync();
+            await _actorSystem.Cluster().StartClientAsync().ConfigureAwait(false);
         }
         else
         {
-            await _actorSystem.Cluster().StartMemberAsync();
+            await _actorSystem.Cluster().StartMemberAsync().ConfigureAwait(false);
         }
     }
 
@@ -53,11 +53,11 @@ public class ProtoActorLifecycleHost : IHostedService
     {
         if (_shutdownViaActorSystem)
         {
-            await _actorSystem.Cluster().ShutdownCompleted;
+            await _actorSystem.Cluster().ShutdownCompleted.ConfigureAwait(false);
         }
         else
         {
-            await _actorSystem.Cluster().ShutdownAsync(true, "Host process is stopping");
+            await _actorSystem.Cluster().ShutdownAsync(true, "Host process is stopping").ConfigureAwait(false);
         }
     }
 }

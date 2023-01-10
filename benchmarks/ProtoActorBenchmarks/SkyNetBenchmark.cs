@@ -62,7 +62,7 @@ public class SkyNetBenchmark
         );
     }
 
-    private class SkyNetRequestResponseActor : IActor
+    private sealed class SkyNetRequestResponseActor : IActor
     {
         private readonly ActorSystem _system;
 
@@ -93,7 +93,7 @@ public class SkyNetBenchmark
                     );
                 }
 
-                await Task.WhenAll(tasks);
+                await Task.WhenAll(tasks).ConfigureAwait(false);
                 var tot = 0L;
 
                 for (var i = 0; i < tasks.Length; i++)
@@ -111,7 +111,7 @@ public class SkyNetBenchmark
         public static Props Props(ActorSystem system) => Proto.Props.FromProducer(() => ProduceActor(system));
     }
 
-    class SkynetActor : IActor
+    private sealed class SkynetActor : IActor
     {
         private readonly ActorSystem _system;
         private long _replies;
@@ -169,7 +169,7 @@ public class SkyNetBenchmark
         public static Props Props(ActorSystem system) => Proto.Props.FromProducer(() => ProduceActor(system));
     }
 
-    class Request
+    sealed class Request
     {
         public long Num;
         public long Size;

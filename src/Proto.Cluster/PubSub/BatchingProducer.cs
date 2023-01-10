@@ -56,7 +56,7 @@ public class BatchingProducer : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _cts.Cancel();
-        await _publisherLoop;
+        await _publisherLoop.ConfigureAwait(false);
         _cts.Dispose();
     }
 
@@ -94,18 +94,18 @@ public class BatchingProducer : IAsyncDisposable
                             continue;
                         }
 
-                        await PublishBatch(batchWrapper);
+                        await PublishBatch(batchWrapper).ConfigureAwait(false);
                         batchWrapper = new PubSubBatchWithReceipts();
                     }
                     else
                     {
                         if (batchWrapper.Batch.Envelopes.Count > 0)
                         {
-                            await PublishBatch(batchWrapper);
+                            await PublishBatch(batchWrapper).ConfigureAwait(false);
                             batchWrapper = new PubSubBatchWithReceipts();
                         }
 
-                        await _publisherChannel.Reader.WaitToReadAsync(cancel);
+                        await _publisherChannel.Reader.WaitToReadAsync(cancel).ConfigureAwait(false);
                     }
                 }
             }
@@ -128,11 +128,11 @@ public class BatchingProducer : IAsyncDisposable
             }
 
             FailBatch(batchWrapper, e);
-            await FailPendingMessages(e);
+            await FailPendingMessages(e).ConfigureAwait(false);
         }
 
         CancelBatch(batchWrapper);
-        await CancelPendingMessages();
+        await CancelPendingMessages().ConfigureAwait(false);
 
         Logger.LogDebug("Producer is stopping the publisher loop for topic {Topic}", _topic);
     }

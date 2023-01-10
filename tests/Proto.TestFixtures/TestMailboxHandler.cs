@@ -23,7 +23,7 @@ public class TestMailboxHandler : IMessageInvoker, IDispatcher
     public async void Schedule(Func<Task> runner)
     {
         var waitingTaskExists = _taskCompletionQueue.TryDequeue(out var onScheduleCompleted);
-        await runner();
+        await runner().ConfigureAwait(false);
 
         if (waitingTaskExists)
         {
@@ -33,10 +33,10 @@ public class TestMailboxHandler : IMessageInvoker, IDispatcher
 
     // ReSharper disable once SuspiciousTypeConversion.Global
     public async ValueTask InvokeSystemMessageAsync(SystemMessage msg) =>
-        await ((TestMessageWithTaskCompletionSource)msg).TaskCompletionSource.Task;
+        await ((TestMessageWithTaskCompletionSource)msg).TaskCompletionSource.Task.ConfigureAwait(false);
 
     public async ValueTask InvokeUserMessageAsync(object msg) =>
-        await ((TestMessageWithTaskCompletionSource)msg).TaskCompletionSource.Task;
+        await ((TestMessageWithTaskCompletionSource)msg).TaskCompletionSource.Task.ConfigureAwait(false);
 
     public void EscalateFailure(Exception reason, object message)
     {

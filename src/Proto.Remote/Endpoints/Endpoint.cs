@@ -386,7 +386,7 @@ public abstract class Endpoint : IEndpoint
                     }
 
                     var batch = CreateBatch(messages);
-                    await Outgoing.Writer.WriteAsync(new RemoteMessage { MessageBatch = batch }, CancellationToken);
+                    await Outgoing.Writer.WriteAsync(new RemoteMessage { MessageBatch = batch }, CancellationToken).ConfigureAwait(false);
                     messages.Clear();
                 }
             }

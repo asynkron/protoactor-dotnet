@@ -20,7 +20,7 @@ public class LoggingRootDecorator : RootContextDecorator
     public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken ct)
     {
         Console.WriteLine("Enter RequestAsync");
-        var res = await base.RequestAsync<T>(target, message, ct);
+        var res = await base.RequestAsync<T>(target, message, ct).ConfigureAwait(false);
         Console.WriteLine("Exit RequestAsync");
 
         return res;
@@ -45,7 +45,7 @@ public class LoggingDecorator : ActorContextDecorator
     }
 }
 
-internal class Program
+internal static class Program
 {
     private static void Main(string[] args)
     {

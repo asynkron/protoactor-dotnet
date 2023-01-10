@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------
 using BenchmarkDotNet.Running;
 
-class Program
+static class Program
 {
     private static void Main() => BenchmarkRunner.Run<MailboxBenchmark>();
 }

@@ -6,7 +6,7 @@ using Proto.Mailbox;
 
 namespace LocalPingPong;
 
-class Program
+static class Program
 {
     private static async Task Main()
     {
@@ -54,7 +54,7 @@ class Program
                 }
 
                 Console.WriteLine("Waiting for actors");
-                await Task.WhenAll(tasks);
+                await Task.WhenAll(tasks).ConfigureAwait(false);
                 sw.Stop();
 
                 var totalMessages = messageCount * 2 * clientCount;

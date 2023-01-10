@@ -89,7 +89,7 @@ public class PartitionActivatorActor : IActor
         }
 
         //await graceful shutdown of all actors we no longer own
-        await Task.WhenAll(stopping);
+        await Task.WhenAll(stopping).ConfigureAwait(false);
         Logger.LogWarning("[PartitionActivator] ClusterTopology - Stopped {ActorCount} actors", toRemove.Count);
 
         // Remove all cached PIDs from PidCache that now points to

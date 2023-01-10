@@ -124,7 +124,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
 
                     _ = Task.Run(async () =>
                     {
-                        await RunClientWriter(responseStream, cancellationTokenSource, endpoint, systemId);
+                        await RunClientWriter(responseStream, cancellationTokenSource, endpoint, systemId).ConfigureAwait(false);
                     });
                 }
 
@@ -196,7 +196,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
                     throw new ArgumentOutOfRangeException();
             }
 
-            await RunReader(requestStream, address, cancellationTokenSource, systemId);
+            await RunReader(requestStream, address, cancellationTokenSource, systemId).ConfigureAwait(false);
         }
     }
 

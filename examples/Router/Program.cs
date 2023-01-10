@@ -32,7 +32,7 @@ internal class MyActor : IActor
     }
 }
 
-internal class Program
+internal static class Program
 {
     private static readonly Props MyActorProps = Props.FromProducer(() => new MyActor());
 

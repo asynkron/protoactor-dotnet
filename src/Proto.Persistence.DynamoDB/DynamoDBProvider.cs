@@ -48,7 +48,7 @@ public class DynamoDBProvider : IProvider, IDisposable
 
         while (true)
         {
-            var results = await query.GetNextSetAsync();
+            var results = await query.GetNextSetAsync().ConfigureAwait(false);
 
             foreach (var doc in results)
             {
@@ -80,7 +80,7 @@ public class DynamoDBProvider : IProvider, IDisposable
         var config = new QueryOperationConfig { ConsistentRead = true, BackwardSearch = true, Limit = 1 };
         config.Filter.AddCondition(_options.SnapshotsTableHashKey, QueryOperator.Equal, actorName);
         var query = _snapshotsTable.Query(config);
-        var results = await query.GetNextSetAsync();
+        var results = await query.GetNextSetAsync().ConfigureAwait(false);
         var doc = results.FirstOrDefault();
 
         if (doc == null)
@@ -111,7 +111,7 @@ public class DynamoDBProvider : IProvider, IDisposable
             { _options.EventsTableDataTypeKey, dataType.AssemblyQualifiedNameSimple() }
         };
 
-        await _eventsTable.PutItemAsync(doc);
+        await _eventsTable.PutItemAsync(doc).ConfigureAwait(false);
 
         return index++;
     }
@@ -129,7 +129,7 @@ public class DynamoDBProvider : IProvider, IDisposable
             { _options.SnapshotsTableDataTypeKey, dataType.AssemblyQualifiedNameSimple() }
         };
 
-        await _snapshotsTable.PutItemAsync(doc);
+        await _snapshotsTable.PutItemAsync(doc).ConfigureAwait(false);
     }
 
     public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
@@ -144,7 +144,7 @@ public class DynamoDBProvider : IProvider, IDisposable
 
             if (++writeCount >= 25) // 25 is max
             {
-                await write.ExecuteAsync();
+                await write.ExecuteAsync().ConfigureAwait(false);
                 write = _eventsTable.CreateBatchWrite();
                 writeCount = 0;
             }
@@ -152,7 +152,7 @@ public class DynamoDBProvider : IProvider, IDisposable
 
         if (writeCount > 0)
         {
-            await write.ExecuteAsync();
+            await write.ExecuteAsync().ConfigureAwait(false);
         }
     }
 
@@ -169,7 +169,7 @@ public class DynamoDBProvider : IProvider, IDisposable
 
         while (true)
         {
-            var results = await query.GetNextSetAsync();
+            var results = await query.GetNextSetAsync().ConfigureAwait(false);
 
             foreach (var doc in results)
             {
@@ -177,7 +177,7 @@ public class DynamoDBProvider : IProvider, IDisposable
 
                 if (++writeCount >= 25) // 25 is max
                 {
-                    await write.ExecuteAsync();
+                    await write.ExecuteAsync().ConfigureAwait(false);
                     write = _snapshotsTable.CreateBatchWrite();
                     writeCount = 0;
                 }

@@ -105,7 +105,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
             }
 
             var waitingRequests = handoverStates.Values.SelectMany(it => it.WaitingMessages).ToList();
-            await Task.WhenAll(waitingRequests).WaitUpTo(TimeSpan.FromSeconds(30), context.CancellationToken);
+            await Task.WhenAll(waitingRequests).WaitUpTo(TimeSpan.FromSeconds(30), context.CancellationToken).ConfigureAwait(false);
 
             // Ensure that we only update last rebalanced topology when all members have received the current activations
             if (waitingRequests.All(task
@@ -298,14 +298,14 @@ internal class PartitionPlacementActor : IActor, IDisposable
     private Task OnActivationRequest(IContext context, ActivationRequest msg)
     {
 
-        
+
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
         {
             if (Logger.IsEnabled(LogLevel.Debug))
             {
                 Logger.LogDebug("[PartitionPlacementActor] Activation already exists: {ClusterIdentity}, {Pid}", msg.ClusterIdentity, existing);
             }
-            
+
             //this identity already exists
             var response = new ActivationResponse
             {

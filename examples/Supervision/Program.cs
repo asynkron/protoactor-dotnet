@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
 
-internal class Program
+internal static class Program
 {
     private static void Main()
     {
@@ -52,7 +52,7 @@ internal class Program
             };
     }
 
-    private class ParentActor : IActor
+    private sealed class ParentActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {
@@ -86,7 +86,7 @@ internal class Program
         }
     }
 
-    private class ChildActor : IActor
+    private sealed class ChildActor : IActor
     {
         private readonly ILogger _logger = Log.CreateLogger<ChildActor>();
 
@@ -124,24 +124,24 @@ internal class Program
         }
     }
 
-    private class Hello
+    private sealed class Hello
     {
         public string Who;
     }
 
-    private class RecoverableException : Exception
+    private sealed class RecoverableException : Exception
     {
     }
 
-    private class FatalException : Exception
+    private sealed class FatalException : Exception
     {
     }
 
-    private class Fatal
+    private sealed class Fatal
     {
     }
 
-    private class Recoverable
+    private sealed class Recoverable
     {
     }
 }

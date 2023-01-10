@@ -44,7 +44,7 @@ public static class Extensions
         if (toDocumentMi == null)
         {
             toDocumentMi = typeof(DynamoDBContext).GetMethods()
-                .First(m => m.Name == "ToDocument" && m.GetParameters().Count() == 1);
+                .First(m => m.Name == "ToDocument" && m.GetParameters().Length == 1);
         }
 
         var doc = toDocumentMi
@@ -57,20 +57,20 @@ public static class Extensions
     public static string AssemblyQualifiedNameSimple(this Type type)
     {
         var name = type.AssemblyQualifiedName;
-        var index1St = name.IndexOf(",");
+        var index1St = name.IndexOf(",", StringComparison.Ordinal);
 
         if (index1St < 0)
         {
             return name;
         }
 
-        var index2nd = name.IndexOf(",", index1St + 1);
+        var index2nd = name.IndexOf(",", index1St + 1, StringComparison.Ordinal);
 
         if (index2nd < 0)
         {
             return name;
         }
 
-        return name.Substring(0, index2nd);
+        return name[..index2nd];
     }
 }

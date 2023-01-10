@@ -42,7 +42,7 @@ public class GrpcNetRemote : IRemote
 
     public async Task<DiagnosticsEntry[]> GetDiagnostics()
     {
-        var endpoints = await _endpointManager.GetDiagnostics();
+        var endpoints = await _endpointManager.GetDiagnostics().ConfigureAwait(false);
 
         return endpoints;
     }
@@ -161,7 +161,7 @@ public class GrpcNetRemote : IRemote
 
                     if (_host is not null)
                     {
-                        await _host.StopAsync();
+                        await _host.StopAsync().ConfigureAwait(false);
                     }
                 }
             }

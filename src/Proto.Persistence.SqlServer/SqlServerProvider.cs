@@ -84,11 +84,11 @@ public class SqlServerProvider : IProvider
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
-        using var connection = new SqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
 
-        using var command = new SqlCommand(_sqlReadEvents, connection);
+        await using var command = new SqlCommand(_sqlReadEvents, connection);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         command.Parameters.AddRange(
             new[]
@@ -101,9 +101,9 @@ public class SqlServerProvider : IProvider
 
         long lastIndex = -1;
 
-        var eventReader = await command.ExecuteReaderAsync();
+        var eventReader = await command.ExecuteReaderAsync().ConfigureAwait(false);
 
-        while (await eventReader.ReadAsync())
+        while (await eventReader.ReadAsync().ConfigureAwait(false))
         {
             lastIndex = (long)eventReader["EventIndex"];
 
@@ -122,7 +122,7 @@ public class SqlServerProvider : IProvider
 
         await using var command = new SqlCommand(_sqlReadSnapshot, connection);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         command.Parameters.Add(CreateParameter("ActorName", NVarChar, actorName));
 
@@ -236,7 +236,7 @@ public class SqlServerProvider : IProvider
 
         await using var command = new SqlCommand(sql, connection);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         await using var tx = connection.BeginTransaction();
 

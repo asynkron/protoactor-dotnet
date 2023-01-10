@@ -70,12 +70,12 @@ public sealed class EndpointManager : IDiagnosticsProvider
 
             foreach (var endpoint in _serverEndpoints.Values)
             {
-                endpoint.DisposeAsync().GetAwaiter().GetResult();
+                endpoint.DisposeAsync().AsTask().GetAwaiter().GetResult();
             }
 
             foreach (var endpoint in _clientEndpoints.Values)
             {
-                endpoint.DisposeAsync().GetAwaiter().GetResult();
+                endpoint.DisposeAsync().AsTask().GetAwaiter().GetResult();
             }
 
             _serverEndpoints.Clear();
@@ -99,7 +99,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
         {
             if (evt.Address is not null && _serverEndpoints.TryRemove(evt.Address, out var endpoint))
             {
-                endpoint.DisposeAsync().GetAwaiter().GetResult();
+                endpoint.DisposeAsync().AsTask().GetAwaiter().GetResult();
 
                 if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue &&
                     _blockedAddresses.TryAdd(evt.Address, DateTime.UtcNow))
@@ -116,7 +116,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
 
             if (evt.ActorSystemId is not null && _clientEndpoints.TryRemove(evt.ActorSystemId, out endpoint))
             {
-                endpoint.DisposeAsync().GetAwaiter().GetResult();
+                endpoint.DisposeAsync().AsTask().GetAwaiter().GetResult();
 
                 if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue &&
                     _blockedClientSystemIds.TryAdd(evt.ActorSystemId, DateTime.UtcNow))

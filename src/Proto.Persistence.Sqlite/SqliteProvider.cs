@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
@@ -92,7 +93,7 @@ public class SqliteProvider : IProvider
 
         while (await reader.ReadAsync().ConfigureAwait(false))
         {
-            indexes.Add(Convert.ToInt64(reader["EventIndex"]));
+            indexes.Add(Convert.ToInt64(reader["EventIndex"], CultureInfo.InvariantCulture));
 
             callback(JsonConvert.DeserializeObject<object>(reader["EventData"].ToString(), AutoTypeSettings));
         }

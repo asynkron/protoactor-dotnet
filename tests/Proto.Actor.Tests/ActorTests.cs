@@ -49,7 +49,7 @@ public class ActorTests
         //no code...
         var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
 
-        var reply = await context.RequestAsync<Touched>(pid, new Proto.Touch(), CancellationTokens.FromSeconds(5));
+        var reply = await context.RequestAsync<Touched>(pid, new Proto.Touch(), CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
 
         Assert.Equal(pid, reply.Who);
     }
@@ -65,7 +65,7 @@ public class ActorTests
         //no code...
         var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
 
-        var reply = await context.RequestAsync<object>(pid, new MyAutoRespondMessage());
+        var reply = await context.RequestAsync<object>(pid, new MyAutoRespondMessage()).ConfigureAwait(false);
 
         Assert.Equal("hey", reply);
     }
