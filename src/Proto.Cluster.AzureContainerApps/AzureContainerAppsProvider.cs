@@ -4,54 +4,48 @@ using System.Linq;
 using System.Threading.Tasks;
 using Azure.ResourceManager;
 using Azure.ResourceManager.AppContainers;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
 
 namespace Proto.Cluster.AzureContainerApps;
 
-public class AzureContainerAppsProvider  : IClusterProvider
+public class AzureContainerAppsProvider : IClusterProvider
 {
-    public readonly string AdvertisedHost;
-    
     private readonly ArmClient _client;
     private readonly string _resourceGroup;
     private readonly string _containerAppName;
     private readonly string _revisionName;
     private readonly string _replicaName;
+    private readonly string _advertisedHost;
 
     private string _memberId = null!;
     private string _address = null!;
     private Cluster _cluster = null!;
     private string _clusterName = null!;
     private string[] _kinds = null!;
-    private string _host = null!;
     private int _port;
 
-    private readonly IConfiguration _configuration;
     private static readonly ILogger Logger = Log.CreateLogger<AzureContainerAppsProvider>();
     private static readonly TimeSpan PollIntervalInSeconds = TimeSpan.FromSeconds(5);
 
     public AzureContainerAppsProvider(
-        IConfiguration configuration,
         ArmClient client,
-        string resourceGroup, 
+        string resourceGroup,
         string containerAppName,
         string revisionName,
         string replicaName,
         string advertisedHost = default)
     {
-        _configuration = configuration;
         _client = client;
         _resourceGroup = resourceGroup;
         _containerAppName = containerAppName;
         _revisionName = revisionName;
         _replicaName = replicaName;
-        AdvertisedHost = advertisedHost;
-        
-        if (string.IsNullOrEmpty(AdvertisedHost))
+        _advertisedHost = advertisedHost;
+
+        if (string.IsNullOrEmpty(_advertisedHost))
         {
-            AdvertisedHost = ConfigUtils.FindIpAddress().ToString();
+            _advertisedHost = ConfigUtils.FindIpAddress().ToString();
         }
     }
 
@@ -64,10 +58,9 @@ public class AzureContainerAppsProvider  : IClusterProvider
         _clusterName = clusterName;
         _memberId = cluster.System.Id;
         _port = port;
-        _host = host;
         _kinds = kinds;
         _address = $"{host}:{port}";
-        
+
         await RegisterMemberAsync();
         StartClusterMonitor();
     }
@@ -75,20 +68,19 @@ public class AzureContainerAppsProvider  : IClusterProvider
     public Task StartClientAsync(Cluster cluster)
     {
         var clusterName = cluster.Config.ClusterName;
-        var (host, port) = cluster.System.GetAddress();
+        var (_, port) = cluster.System.GetAddress();
         _cluster = cluster;
         _clusterName = clusterName;
         _memberId = cluster.System.Id;
         _port = port;
-        _host = host;
         _kinds = Array.Empty<string>();
-        
+
         StartClusterMonitor();
         return Task.CompletedTask;
     }
 
     public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync();
-    
+
     private async Task RegisterMemberAsync()
     {
         await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
@@ -109,16 +101,16 @@ public class AzureContainerAppsProvider  : IClusterProvider
         {
             return;
         }
-        
+
         Logger.LogInformation(
-            "[Cluster][AzureContainerAppsProvider] Registering service {ReplicaName} on {IpAddress}", 
+            "[Cluster][AzureContainerAppsProvider] Registering service {ReplicaName} on {IpAddress}",
             _replicaName,
             _address);
 
         var tags = new Dictionary<string, string>
         {
             [ResourceTagLabels.LabelCluster(_memberId)] = _clusterName,
-            [ResourceTagLabels.LabelHost(_memberId)] = AdvertisedHost,
+            [ResourceTagLabels.LabelHost(_memberId)] = _advertisedHost,
             [ResourceTagLabels.LabelPort(_memberId)] = _port.ToString(),
             [ResourceTagLabels.LabelMemberId(_memberId)] = _memberId,
             [ResourceTagLabels.LabelReplicaName(_memberId)] = _replicaName
@@ -145,7 +137,7 @@ public class AzureContainerAppsProvider  : IClusterProvider
             {
                 while (!_cluster.System.Shutdown.IsCancellationRequested)
                 {
-                    Logger.LogInformation("Calling ECS API");
+                    Logger.LogInformation("Calling ACS API");
 
                     try
                     {
@@ -184,7 +176,7 @@ public class AzureContainerAppsProvider  : IClusterProvider
     private async Task DeregisterMemberInner()
     {
         Logger.LogInformation(
-            "[Cluster][AzureContainerAppsProvider] Unregistering member {ReplicaName} on {IpAddress}", 
+            "[Cluster][AzureContainerAppsProvider] Unregistering member {ReplicaName} on {IpAddress}",
             _replicaName,
             _address);
 

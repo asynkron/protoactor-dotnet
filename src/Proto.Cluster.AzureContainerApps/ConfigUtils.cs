@@ -15,7 +15,7 @@ public static class ConfigUtils
             .SelectMany(nif => nif.GetIPProperties().UnicastAddresses.Select(a => a.Address))
             .Where(addr => addr.AddressFamily == family && !IPAddress.IsLoopback(addr))
             .ToList();
-        
+
         return PickSmallestIpAddress(addressCandidates);
     }
 
@@ -27,18 +27,19 @@ public static class ConfigUtils
             if (CompareIpAddresses(addr, result))
                 result = addr;
         }
+
         return result;
 
         static bool CompareIpAddresses(IPAddress lhs, IPAddress rhs)
         {
             if (rhs == null)
                 return true;
-            
+
             var lbytes = lhs.GetAddressBytes();
             var rbytes = rhs.GetAddressBytes();
 
             if (lbytes.Length != rbytes.Length) return lbytes.Length < rbytes.Length;
-            
+
             for (var i = 0; i < lbytes.Length; i++)
             {
                 if (lbytes[i] != rbytes[i])
@@ -46,6 +47,7 @@ public static class ConfigUtils
                     return lbytes[i] < rbytes[i];
                 }
             }
+
             return false;
         }
     }
