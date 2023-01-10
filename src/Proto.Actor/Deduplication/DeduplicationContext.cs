@@ -76,7 +76,7 @@ internal class DeDuplicator<T> where T : IEquatable<T>
                 return;
             }
 
-            await continuation();
+            await continuation().ConfigureAwait(false);
             CleanIfNeeded(cutoff, now);
             _lastCheck = now;
             Add(key!, now);
@@ -84,7 +84,7 @@ internal class DeDuplicator<T> where T : IEquatable<T>
             return;
         }
 
-        await continuation();
+        await continuation().ConfigureAwait(false);
     }
 
     private bool IsDuplicate(T key, long cutoff) =>

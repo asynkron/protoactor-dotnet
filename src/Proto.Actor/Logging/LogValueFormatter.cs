@@ -168,7 +168,7 @@ internal class LogValuesFormatter
         return valueArray;
     }
 
-    private object FormatArgument(object value)
+    private static object FormatArgument(object? value)
     {
         if (value == null)
         {
@@ -182,9 +182,8 @@ internal class LogValuesFormatter
         }
 
         // if the value implements IEnumerable, build a comma separated string.
-        var enumerable = value as IEnumerable;
 
-        if (enumerable != null)
+        if (value is IEnumerable enumerable)
         {
             return string.Join(", ", enumerable.Cast<object>().Select(o => o ?? NullValue));
         }

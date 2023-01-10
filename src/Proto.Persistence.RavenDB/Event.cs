@@ -1,6 +1,6 @@
 ﻿namespace Proto.Persistence.RavenDB;
 
-internal class Event
+internal sealed class Event
 {
     public Event(string actorName, long index, object data)
     {

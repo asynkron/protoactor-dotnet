@@ -70,6 +70,9 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         TracingSettings.TraceViewUrl = Environment.GetEnvironmentVariable("TRACEVIEW_URL");
         TracingSettings.EnableTracing = TracingSettings.OpenTelemetryUrl != null;
 
+        TracingSettings.OpenTelemetryUrl = "http://localhost:4317";
+        TracingSettings.EnableTracing = true;
+
         //TODO: check if this helps low resource envs like github actions.
         ThreadPool.SetMinThreads(40, 40);
     }
@@ -88,7 +91,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         // ReSharper disable once HeuristicUnreachableCode
         if (TracingSettings.EnableTracing)
         {
-             InitOpenTelemetryTracing();
+             GithubActionsReporter.InitOpenTelemetryTracing();
         }
 #pragma warning restore CS0162
     }
@@ -204,55 +207,6 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     }
 
     public IList<Cluster> Members => _members;
-
-    private static void InitOpenTelemetryTracing()
-    {
-        lock (Lock)
-        {
-            if (_tracerProvider != null)
-            {
-                return;
-            }
-
-            var endpoint = new Uri(TracingSettings.OpenTelemetryUrl!);
-            var builder = ResourceBuilder.CreateDefault();
-            var services = new ServiceCollection();
-            services.AddLogging(l =>
-            {
-                l.SetMinimumLevel(LogLevel.Debug);
-                l.AddOpenTelemetry(
-                    options =>
-                    {
-                        options
-                            .SetResourceBuilder(builder)
-                            .AddOtlpExporter(o =>
-                            {
-                                o.Endpoint = endpoint;
-                                o.ExportProcessorType = ExportProcessorType.Batch;
-                            });
-                    });
-            });
-
-            var serviceProvider = services.BuildServiceProvider();
-
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-
-            Log.SetLoggerFactory(loggerFactory);
-
-            _tracerProvider = Sdk.CreateTracerProviderBuilder()
-                .SetResourceBuilder(builder
-                    .AddService("Proto.Cluster.Tests")
-                )
-                .AddProtoActorInstrumentation()
-                .AddSource(GithubActionsReporter.ActivitySourceName)
-                .AddOtlpExporter(options =>
-                {
-                    options.Endpoint = endpoint;
-                    options.ExportProcessorType = ExportProcessorType.Batch;
-                })
-                .Build();
-        }
-    }
 
     public virtual Task OnDisposing() => Task.CompletedTask;
 

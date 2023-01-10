@@ -225,18 +225,18 @@ public class PubSubBatchingProducerTests
         var t1 = producer.ProduceAsync(new TestMessage(1), cts.Token);
 
         // give it a moment to spin
-        await Task.Delay(50);
+        await Task.Delay(50).ConfigureAwait(false);
 
         // cancel the message publish
         cts.Cancel();
         var sutAction = () => t1;
         // message should not be published and it should complete as canceled
-        await sutAction.Should().ThrowAsync<OperationCanceledException>("message should have been canceled");
+        await sutAction.Should().ThrowAsync<OperationCanceledException>("message should have been canceled").ConfigureAwait(false);
         publisher.SentBatches.Should().HaveCount(0);
 
         // if we now stop failing the publish, next message should go through
         publisher.ShouldFail = false;
-        await producer.ProduceAsync(new TestMessage(2));
+        await producer.ProduceAsync(new TestMessage(2)).ConfigureAwait(false);
 
         AllSentNumbers(publisher.SentBatches).Should().Equal(2);
     }
@@ -249,7 +249,7 @@ public class PubSubBatchingProducerTests
 
         var sutAction = () => _ = producer.ProduceAsync(new TestMessage(1));
 
-        await sutAction.Should().ThrowAsync<TimeoutException>();
+        await sutAction.Should().ThrowAsync<TimeoutException>().ConfigureAwait(false);
     }
 
     private Task<PublishResponse> Record(PubSubBatch batch)

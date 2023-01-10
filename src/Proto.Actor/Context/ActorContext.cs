@@ -417,7 +417,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             }
 
             var sw = Stopwatch.StartNew();
-            await self.InternalInvokeUserMessageAsync(msg);
+            await self.InternalInvokeUserMessageAsync(msg).ConfigureAwait(false);
             sw.Stop();
 
             if (self.System.Metrics.Enabled && metricTags.Length == 3)
@@ -443,7 +443,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     private async ValueTask HandleReceiveTimeout()
     {
         _messageOrEnvelope = Proto.ReceiveTimeout.Instance;
-        await DefaultReceive();
+        await DefaultReceive().ConfigureAwait(false);
     }
 
     private ValueTask HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
@@ -521,7 +521,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         //static, dont create closure
         static async ValueTask Await(ActorContext self, Task t, bool resetReceiveTimeout)
         {
-            await t;
+            await t.ConfigureAwait(false);
 
             if (resetReceiveTimeout)
             {
@@ -588,7 +588,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
 
         _messageOrEnvelope = cont.Message;
-        await cont.Action();
+        await cont.Action().ConfigureAwait(false);
     }
 
     private ActorContextExtras EnsureExtras()
@@ -657,8 +657,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         _state = ContextState.Restarting;
         CancelReceiveTimeout();
-        await InvokeUserMessageAsync(Restarting.Instance);
-        await StopAllChildren();
+        await InvokeUserMessageAsync(Restarting.Instance).ConfigureAwait(false);
+        await StopAllChildren().ConfigureAwait(false);
 
         if (System.Metrics.Enabled)
         {
@@ -715,11 +715,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         //In the case of a Watchee terminating, this will have no effect, except that the terminate message is
         //passed onto the user message Receive for user level handling
         _extras?.RemoveChild(msg.Who);
-        await InvokeUserMessageAsync(msg);
+        await InvokeUserMessageAsync(msg).ConfigureAwait(false);
 
         if (_state is ContextState.Stopping or ContextState.Restarting)
         {
-            await TryRestartOrStopAsync();
+            await TryRestartOrStopAsync().ConfigureAwait(false);
         }
     }
 
@@ -752,7 +752,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             catch (Exception e)
             {
                 Logger.LogError(e, "{Self} Error while handling Stopping message", self.Self);
-                // do not rethrow - prevent exceptions thrown from stopping handler from restarting the actor 
+                // do not rethrow - prevent exceptions thrown from stopping handler from restarting the actor
             }
 
             await self.StopAllChildren();

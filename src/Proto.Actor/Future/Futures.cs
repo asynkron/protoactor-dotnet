@@ -95,12 +95,12 @@ public sealed class FutureProcess : Process, IFuture
         {
             if (cancellationToken == default)
             {
-                return await _tcs.Task;
+                return await _tcs.Task.ConfigureAwait(false);
             }
 
             await using (cancellationToken.Register(() => _tcs.TrySetCanceled()))
             {
-                return await _tcs.Task;
+                return await _tcs.Task.ConfigureAwait(false);
             }
         }
         catch

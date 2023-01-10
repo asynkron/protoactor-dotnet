@@ -6,7 +6,13 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Proto.OpenTelemetry;
 
 namespace Proto.Cluster.Tests;
 
@@ -14,7 +20,7 @@ public class GithubActionsReporter
 {
     private readonly string _reportName;
     private static readonly ILogger Logger = Log.CreateLogger<GithubActionsReporter>();
-    public const string ActivitySourceName = "Proto.Cluster.Tests";
+    private const string ActivitySourceName = "Proto.Cluster.Tests";
 
     private static readonly ActivitySource ActivitySource = new(ActivitySourceName);
 
@@ -31,6 +37,8 @@ public class GithubActionsReporter
     private record TestResult(string Name, string TraceId, TimeSpan Duration, Exception? Exception= null);
     
     private readonly StringBuilder _output = new();
+    private static TracerProvider? tracerProvider;
+    private static readonly object Lock = new();
 
     public async Task Run(Func<Task> test, [CallerMemberName] string testName = "")
     {
@@ -137,6 +145,53 @@ Duration
             _output.AppendLine("</table>");
             
             await File.AppendAllTextAsync(f, _output.ToString());
+        }
+    }
+
+    public static void InitOpenTelemetryTracing()
+    {
+        lock (Lock)
+        {
+            if (tracerProvider != null)
+            {
+                return;
+            }
+
+            var endpoint = new Uri(TracingSettings.OpenTelemetryUrl!);
+            var builder = ResourceBuilder.CreateDefault();
+            var services = new ServiceCollection();
+            services.AddLogging(l =>
+            {
+                l.SetMinimumLevel(LogLevel.Debug);
+                l.AddOpenTelemetry(
+                    options =>
+                    {
+                        options
+                            .SetResourceBuilder(builder)
+                            .AddOtlpExporter(o =>
+                            {
+                                o.Endpoint = endpoint;
+                                o.ExportProcessorType = ExportProcessorType.Batch;
+                            });
+                    });
+            });
+
+            var serviceProvider = services.BuildServiceProvider();
+
+            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+
+            Log.SetLoggerFactory(loggerFactory);
+
+            tracerProvider = OtlpTraceExporterHelperExtensions.AddOtlpExporter((TracerProviderBuilder)TracerProviderBuilderExtensions.SetResourceBuilder((TracerProviderBuilder)Sdk.CreateTracerProviderBuilder(), builder
+                        .AddService("Proto.Cluster.Tests")
+                    )
+                    .AddProtoActorInstrumentation()
+                    .AddSource(ActivitySourceName), options =>
+                {
+                    options.Endpoint = endpoint;
+                    options.ExportProcessorType = ExportProcessorType.Batch;
+                })
+                .Build();
         }
     }
 }

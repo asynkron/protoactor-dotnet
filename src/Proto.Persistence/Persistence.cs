@@ -216,7 +216,7 @@ public class Persistence
     /// <returns></returns>
     public async Task RecoverStateAsync()
     {
-        var (snapshot, lastSnapshotIndex) = await _snapshotStore.GetSnapshotAsync(_actorId);
+        var (snapshot, lastSnapshotIndex) = await _snapshotStore.GetSnapshotAsync(_actorId).ConfigureAwait(false);
 
         if (snapshot is not null && _applySnapshot is not null)
         {
@@ -235,7 +235,7 @@ public class Persistence
                 Index++;
                 _applyEvent?.Invoke(new RecoverEvent(@event, Index));
             }
-        );
+        ).ConfigureAwait(true);
     }
 
     /// <summary>
@@ -265,7 +265,7 @@ public class Persistence
                 _applyEvent?.Invoke(new ReplayEvent(@event, Index));
                 Index++;
             }
-        );
+        ).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -284,7 +284,7 @@ public class Persistence
 
         var persistedEvent = new PersistedEvent(@event, Index + 1);
 
-        await _eventStore.PersistEventAsync(_actorId, persistedEvent.Index, persistedEvent.Data);
+        await _eventStore.PersistEventAsync(_actorId, persistedEvent.Index, persistedEvent.Data).ConfigureAwait(false);
 
         Index++;
 
@@ -294,7 +294,7 @@ public class Persistence
         {
             var persistedSnapshot = new PersistedSnapshot(_getState(), persistedEvent.Index);
 
-            await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, persistedSnapshot.State);
+            await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, persistedSnapshot.State).ConfigureAwait(false);
         }
     }
 

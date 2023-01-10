@@ -112,7 +112,7 @@ public class EventStream<T>
         var sub = new EventStreamSubscription<T>(
             this,
             dispatcher ?? Dispatchers.SynchronousDispatcher,
-            async x => { await channel.Writer.WriteAsync(x); }
+            async x => { await channel.Writer.WriteAsync(x).ConfigureAwait(false); }
         );
 
         _subscriptions.TryAdd(sub.Id, sub);

@@ -51,7 +51,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
         DeferredFuture =
             new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
-        
+
         Diagnostics.RegisterObject("ActorSystem", "Config", config);
         Diagnostics.RegisterObject("ActorSystem", "Id", Id);
         RunThreadPoolStats();
@@ -72,7 +72,7 @@ public sealed class ActorSystem : IAsyncDisposable
     ///     Configuration used to create the actor system.
     /// </summary>
     public ActorSystemConfig Config { get; }
-    
+
     /// <summary>
     ///     Diagnostics store, containing detected system issues
     /// </summary>
@@ -142,7 +142,7 @@ public sealed class ActorSystem : IAsyncDisposable
     {
         if (!Shutdown.IsCancellationRequested)
         {
-            await ShutdownAsync("Disposed");
+            await ShutdownAsync("Disposed").ConfigureAwait(false);
         }
     }
 
@@ -179,7 +179,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
                 logger.LogWarning("System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}", Id,
                     t);
-                
+
             }, Stopper.Token
         );
     }

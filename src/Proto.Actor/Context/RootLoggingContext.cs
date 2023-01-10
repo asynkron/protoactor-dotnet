@@ -26,7 +26,7 @@ public class RootLoggingContext : RootContextDecorator
         _infrastructureLogLevel = infrastructureLogLevel;
         _exceptionLogLevel = exceptionLogLevel;
     }
-    
+
     public override void Send(PID target, object message)
     {
         var logLevel = GetLogLevel(message);
@@ -39,7 +39,7 @@ public class RootLoggingContext : RootContextDecorator
 
         base.Send(target, message);
     }
-    
+
     private LogLevel GetLogLevel(object message)
     {
         // Don't log certain messages, as the Partition*Actor ends up spamming logs without this.
@@ -52,7 +52,7 @@ public class RootLoggingContext : RootContextDecorator
 
         return logLevel;
     }
-    
+
     public override void Request(PID target, object message, PID? sender)
     {
         var logLevel = GetLogLevel(message);
@@ -89,8 +89,8 @@ public class RootLoggingContext : RootContextDecorator
     public override async Task PoisonAsync(PID pid)
     {
 
-        await base.PoisonAsync(pid);
-        
+        await base.PoisonAsync(pid).ConfigureAwait(false);
+
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
             _logger.Log(_logLevel, "RootContext Poisoned {Pid}", pid);
@@ -99,8 +99,8 @@ public class RootLoggingContext : RootContextDecorator
 
     public override async Task StopAsync(PID pid)
     {
-        await base.StopAsync(pid);
-        
+        await base.StopAsync(pid).ConfigureAwait(false);
+
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
             _logger.Log(_logLevel, "RootContext Stopped {Pid}", pid);
@@ -155,7 +155,7 @@ public class RootLoggingContext : RootContextDecorator
 
         try
         {
-            var response = await base.RequestAsync<T>(target, message, cancellationToken);
+            var response = await base.RequestAsync<T>(target, message, cancellationToken).ConfigureAwait(false);
 
             if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
             {
