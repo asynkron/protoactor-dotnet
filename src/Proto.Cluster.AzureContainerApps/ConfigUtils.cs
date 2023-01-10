@@ -8,7 +8,7 @@ namespace Proto.Cluster.AzureContainerApps;
 
 public static class ConfigUtils
 {
-    internal static IPAddress FindIpAddress(AddressFamily family = AddressFamily.InterNetwork)
+    public static IPAddress FindSmallestIpAddress(AddressFamily family = AddressFamily.InterNetwork)
     {
         var addressCandidates = NetworkInterface.GetAllNetworkInterfaces()
             .Where(nif => nif.OperationalStatus == OperationalStatus.Up)
@@ -22,11 +22,10 @@ public static class ConfigUtils
     private static IPAddress PickSmallestIpAddress(IEnumerable<IPAddress> candidates)
     {
         IPAddress result = null!;
+
         foreach (var addr in candidates)
-        {
             if (CompareIpAddresses(addr, result))
                 result = addr;
-        }
 
         return result;
 
@@ -41,12 +40,8 @@ public static class ConfigUtils
             if (lbytes.Length != rbytes.Length) return lbytes.Length < rbytes.Length;
 
             for (var i = 0; i < lbytes.Length; i++)
-            {
                 if (lbytes[i] != rbytes[i])
-                {
                     return lbytes[i] < rbytes[i];
-                }
-            }
 
             return false;
         }

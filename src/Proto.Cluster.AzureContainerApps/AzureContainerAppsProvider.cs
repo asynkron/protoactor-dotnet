@@ -49,13 +49,10 @@ public class AzureContainerAppsProvider : IClusterProvider
     {
         _client = client;
         _resourceGroup = resourceGroup;
-        _containerAppName = containerAppName ?? Environment.GetEnvironmentVariable("CONTAINER_APP_NAME");
-        _revisionName = revisionName ?? Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION");
-        _replicaName = replicaName ?? Environment.GetEnvironmentVariable("HOSTNAME");
-        _advertisedHost = advertisedHost;
-
-        if (string.IsNullOrEmpty(_advertisedHost)) 
-            _advertisedHost = ConfigUtils.FindIpAddress().ToString();
+        _containerAppName = containerAppName ?? Environment.GetEnvironmentVariable("CONTAINER_APP_NAME") ?? throw new Exception("No app name provided");
+        _revisionName = revisionName ?? Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? throw new Exception("No app revision provided");
+        _replicaName = replicaName ?? Environment.GetEnvironmentVariable("HOSTNAME")  ?? throw new Exception("No replica name provided");
+        _advertisedHost = !string.IsNullOrEmpty(advertisedHost) ? advertisedHost : ConfigUtils.FindSmallestIpAddress().ToString();
     }
 
     public async Task StartMemberAsync(Cluster cluster)
