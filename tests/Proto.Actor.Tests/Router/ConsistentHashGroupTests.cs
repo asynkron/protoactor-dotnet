@@ -143,13 +143,13 @@ public class ConsistentHashGroupTests
 
         system.Root.Send(router, new Message("message1"));
         // routee1 handles "message1"
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
+        Assert.Equal(1, await system.Root.RequestAsync<int>(routee1, "received?", _timeout).ConfigureAwait(false));
         // remove receiver
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
         // routee2 should now handle "message1"
         system.Root.Send(router, new Message("message1"));
 
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
+        Assert.Equal(1, await system.Root.RequestAsync<int>(routee2, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
@@ -161,9 +161,9 @@ public class ConsistentHashGroupTests
 
         system.Root.Send(router, new RouterBroadcastMessage(new Message("hello")));
 
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee3, "received?", _timeout));
+        Assert.Equal(1, await system.Root.RequestAsync<int>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal(1, await system.Root.RequestAsync<int>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal(1, await system.Root.RequestAsync<int>(routee3, "received?", _timeout).ConfigureAwait(false));
     }
 
     private static (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees(

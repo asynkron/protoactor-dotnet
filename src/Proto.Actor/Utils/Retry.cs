@@ -32,7 +32,7 @@ public static class Retry
         {
             try
             {
-                var res = await body();
+                var res = await body().ConfigureAwait(false);
 
                 if (condition(res))
                 {
@@ -52,7 +52,7 @@ public static class Retry
                 }
 
                 var backoff = Math.Min(i * backoffMilliSeconds, maxBackoffMilliseconds);
-                await Task.Delay(backoff);
+                await Task.Delay(backoff).ConfigureAwait(false);
             }
         }
 
@@ -66,7 +66,7 @@ public static class Retry
         {
             try
             {
-                var res = await body();
+                var res = await body().ConfigureAwait(false);
 
                 return res;
             }
@@ -82,7 +82,7 @@ public static class Retry
                 }
 
                 var backoff = Math.Min(i * backoffMilliSeconds, maxBackoffMilliseconds);
-                await Task.Delay(backoff);
+                await Task.Delay(backoff).ConfigureAwait(false);
             }
         }
 
@@ -103,7 +103,7 @@ public static class Retry
         {
             try
             {
-                await body();
+                await body().ConfigureAwait(false);
 
                 return;
             }
@@ -125,7 +125,7 @@ public static class Retry
                 }
 
                 var backoff = Math.Min(i * backoffMilliSeconds, maxBackoffMilliseconds);
-                await Task.Delay(backoff);
+                await Task.Delay(backoff).ConfigureAwait(false);
             }
         }
 

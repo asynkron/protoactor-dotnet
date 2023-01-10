@@ -190,12 +190,12 @@ public sealed class FutureBatchProcess : Process, IDisposable
             {
                 if (cancellationToken == default)
                 {
-                    return await Tcs.Task;
+                    return await Tcs.Task.ConfigureAwait(false);
                 }
 
                 await using (cancellationToken.Register(() => Tcs.TrySetCanceled()))
                 {
-                    return await Tcs.Task;
+                    return await Tcs.Task.ConfigureAwait(false);
                 }
             }
             catch

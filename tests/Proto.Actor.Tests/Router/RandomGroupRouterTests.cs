@@ -22,9 +22,9 @@ public class RandomGroupRouterTests
         system.Root.Send(router, "2");
         system.Root.Send(router, "3");
 
-        Assert.Equal("2", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("3", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        Assert.Equal("2", await system.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("3", await system.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("1", await system.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
@@ -35,18 +35,18 @@ public class RandomGroupRouterTests
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
         system.Root.Send(router, new RouterAddRoutee(routee4));
-        await Task.Delay(500);
+        await Task.Delay(500).ConfigureAwait(false);
         system.Root.Send(router, "1");
         system.Root.Send(router, "2");
         system.Root.Send(router, "3");
         system.Root.Send(router, "4");
 
         // results are random! (but consistent due to seeding) As MyTestActor only stores the most
-        // recent message, "1" is overwritten by a subsequent message. 
-        Assert.Equal("2", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Null(await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
-        Assert.Equal("4", await system.Root.RequestAsync<string>(routee4, "received?", _timeout));
+        // recent message, "1" is overwritten by a subsequent message.
+        Assert.Equal("2", await system.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Null(await system.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("4", await system.Root.RequestAsync<string>(routee4, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]

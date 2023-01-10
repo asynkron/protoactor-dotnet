@@ -305,7 +305,7 @@ public class Persistence
     public async Task PersistSnapshotAsync(object snapshot)
     {
         var persistedSnapshot = new PersistedSnapshot(snapshot, Index + 1);
-        await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, snapshot);
+        await _snapshotStore.PersistSnapshotAsync(_actorId, persistedSnapshot.Index, snapshot).ConfigureAwait(false);
         Index++;
     }
 
@@ -331,12 +331,12 @@ public class Persistence
     ///     A <see cref="ISnapshotStrategy" /> that will not cause any snapshots to be stored. User should manually store
     ///     snapshots with <see cref="Persistence.PersistSnapshotAsync(object)" />
     /// </summary>
-    private class ManualSnapshots : ISnapshotStrategy
+    private sealed class ManualSnapshots : ISnapshotStrategy
     {
         public bool ShouldTakeSnapshot(PersistedEvent persistedEvent) => false;
     }
 
-    private class NoEventStore : IEventStore
+    private sealed class NoEventStore : IEventStore
     {
         public Task<long>
             GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback) =>
@@ -347,7 +347,7 @@ public class Persistence
         public Task DeleteEventsAsync(string actorName, long inclusiveToIndex) => Task.CompletedTask;
     }
 
-    private class NoSnapshotStore : ISnapshotStore
+    private sealed class NoSnapshotStore : ISnapshotStore
     {
         public Task<(object? Snapshot, long Index)> GetSnapshotAsync(string actorName) =>
             Task.FromResult<(object? Snapshot, long Index)>((null, 0));

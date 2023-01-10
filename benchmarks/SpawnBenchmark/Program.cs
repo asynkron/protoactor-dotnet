@@ -12,14 +12,14 @@ using Proto.Mailbox;
 
 namespace SpawnBenchmark;
 
-class Request
+sealed class Request
 {
     public long Div;
     public long Num;
     public long Size;
 }
 
-class MyActor : IActor
+sealed class MyActor : IActor
 {
     private readonly ActorSystem _system;
     private long _replies;
@@ -73,10 +73,10 @@ class MyActor : IActor
     }
 
     public static readonly Props Props = Props.FromProducer(s => new MyActor(s)).WithMailbox(() => new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new LockingUnboundedMailboxQueue(4)));
-    
+
 }
 
-class Program
+sealed class Program
 {
     private static void Main()
     {

@@ -21,7 +21,7 @@ public static class MetricsExtensions
     {
         var sw = Stopwatch.StartNew();
         var t = factory();
-        var res = await t;
+        var res = await t.ConfigureAwait(false);
         sw.Stop();
 
         histogram.Record(sw.Elapsed.TotalSeconds, tags);
@@ -34,7 +34,7 @@ public static class MetricsExtensions
     {
         var sw = Stopwatch.StartNew();
         var t = factory();
-        await t;
+        await t.ConfigureAwait(false);
         sw.Stop();
         histogram.Record(sw.Elapsed.TotalSeconds, tags);
     }

@@ -32,7 +32,7 @@ public class MongoDBProvider : IProvider
         var events = await EventCollection
             .Find(e => e.ActorName == actorName && e.EventIndex >= indexStart && e.EventIndex <= indexEnd)
             .Sort(sort)
-            .ToListAsync();
+            .ToListAsync().ConfigureAwait(false);
 
         foreach (var @event in events)
         {
@@ -49,14 +49,14 @@ public class MongoDBProvider : IProvider
         var snapshot = await SnapshotCollection
             .Find(s => s.ActorName == actorName)
             .Sort(sort)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync().ConfigureAwait(false);
 
         return snapshot != null ? (snapshot.Data, snapshot.SnapshotIndex) : (null, 0);
     }
 
     public async Task<long> PersistEventAsync(string actorName, long index, object @event)
     {
-        await EventCollection.InsertOneAsync(new Event(actorName, index, @event));
+        await EventCollection.InsertOneAsync(new Event(actorName, index, @event)).ConfigureAwait(false);
 
         return index++;
     }

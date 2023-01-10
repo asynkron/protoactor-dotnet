@@ -747,7 +747,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         {
             try
             {
-                await self.InvokeUserMessageAsync(Stopping.Instance);
+                await self.InvokeUserMessageAsync(Stopping.Instance).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -755,7 +755,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
                 // do not rethrow - prevent exceptions thrown from stopping handler from restarting the actor
             }
 
-            await self.StopAllChildren();
+            await self.StopAllChildren().ConfigureAwait(false);
         }
     }
 
@@ -797,11 +797,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         System.ProcessRegistry.Remove(Self);
         //This is intentional
-        await InvokeUserMessageAsync(Stopped.Instance);
+        await InvokeUserMessageAsync(Stopped.Instance).ConfigureAwait(false);
 
         _extras?.Dispose();
 
-        await DisposeActorIfDisposable();
+        await DisposeActorIfDisposable().ConfigureAwait(false);
 
         //Notify watchers
         _extras?.Watchers.SendSystemMessage(Terminated.From(Self, TerminatedReason.Stopped), System);
@@ -814,11 +814,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     private async ValueTask RestartAsync()
     {
-        await DisposeActorIfDisposable();
+        await DisposeActorIfDisposable().ConfigureAwait(false);
         Actor = IncarnateActor();
         Self.SendSystemMessage(System, ResumeMailbox.Instance);
 
-        await InvokeUserMessageAsync(Started.Instance);
+        await InvokeUserMessageAsync(Started.Instance).ConfigureAwait(false);
     }
 
     private ValueTask DisposeActorIfDisposable()

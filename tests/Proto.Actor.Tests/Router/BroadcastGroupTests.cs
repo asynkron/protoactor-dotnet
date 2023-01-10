@@ -158,7 +158,7 @@ public class BroadcastGroupTests
 
                     break;
                 case "go slow":
-                    await Task.Delay(5000);
+                    await Task.Delay(5000).ConfigureAwait(false);
 
                     break;
                 case string msg:

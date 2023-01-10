@@ -195,7 +195,7 @@ public sealed class DefaultMailbox : IMailbox
 
         static async Task Await(DefaultMailbox self, ValueTask task)
         {
-            await task;
+            await task.ConfigureAwait(false);
 
             Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
 
@@ -286,7 +286,7 @@ public sealed class DefaultMailbox : IMailbox
         {
             try
             {
-                await task;
+                await task.ConfigureAwait(false);
 
                 foreach (var t1 in self._stats)
                 {

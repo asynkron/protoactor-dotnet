@@ -118,9 +118,9 @@ public class SqlServerProvider : IProvider
         long snapshotIndex = 0;
         object snapshotData = null;
 
-        using var connection = new SqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
 
-        using var command = new SqlCommand(_sqlReadSnapshot, connection);
+        await using var command = new SqlCommand(_sqlReadSnapshot, connection);
 
         await connection.OpenAsync();
 
@@ -150,7 +150,7 @@ public class SqlServerProvider : IProvider
             CreateParameter("ActorName", NVarChar, item.ActorName),
             CreateParameter("EventIndex", BigInt, item.EventIndex),
             CreateParameter("EventData", NVarChar, JsonConvert.SerializeObject(item.EventData, AllTypeSettings))
-        );
+        ).ConfigureAwait(false);
 
         return index++;
     }
@@ -232,13 +232,13 @@ public class SqlServerProvider : IProvider
 
     private async Task ExecuteNonQueryAsync(string sql, params SqlParameter[] parameters)
     {
-        using var connection = new SqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
 
-        using var command = new SqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
 
         await connection.OpenAsync();
 
-        using var tx = connection.BeginTransaction();
+        await using var tx = connection.BeginTransaction();
 
         command.Transaction = tx;
 
@@ -247,7 +247,7 @@ public class SqlServerProvider : IProvider
             command.Parameters.AddRange(parameters);
         }
 
-        await command.ExecuteNonQueryAsync();
+        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 
         tx.Commit();
     }

@@ -53,7 +53,7 @@ public class PubSubBatchingProducerTests
 
         var tasks = Enumerable.Range(1, 100).Select(i => producer.ProduceAsync(new TestMessage(i))).ToArray();
 
-        await producer.DisposeAsync();
+        await producer.DisposeAsync().ConfigureAwait(false);
 
         // the first batch might complete processing, so we don't verify it
         tasks.Skip(5).All(t => t.IsCompleted).Should().BeTrue("all pending messages should complete");
@@ -70,7 +70,7 @@ public class PubSubBatchingProducerTests
 
         try
         {
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
         catch (TestException)
         {
@@ -161,7 +161,7 @@ public class PubSubBatchingProducerTests
                 }
             );
 
-        await producer.ProduceAsync(new TestMessage(1));
+        await producer.ProduceAsync(new TestMessage(1)).ConfigureAwait(false);
 
         retries.Should().Equal(1, 2, 3);
     }
@@ -183,11 +183,11 @@ public class PubSubBatchingProducerTests
 
         // fist batch fails and is skipped
         var sutAction = () => t1;
-        await sutAction.Should().ThrowAsync<TestException>();
+        await sutAction.Should().ThrowAsync<TestException>().ConfigureAwait(false);
 
         // then processing continues, second batch succeeds
         sutAction = () => t2;
-        await sutAction.Should().NotThrowAsync();
+        await sutAction.Should().NotThrowAsync().ConfigureAwait(false);
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public class PubSubBatchingProducerTests
 
         var t1 = producer.ProduceAsync(new TestMessage(1));
         // give it a moment to spin
-        await Task.Delay(50);
+        await Task.Delay(50).ConfigureAwait(false);
 
         await producer.DisposeAsync();
         t1.IsCanceled.Should().BeTrue();
@@ -265,7 +265,7 @@ public class PubSubBatchingProducerTests
 
     private async Task<PublishResponse> Wait(PubSubBatch _)
     {
-        await Task.Delay(1000);
+        await Task.Delay(1000).ConfigureAwait(false);
 
         return new PublishResponse();
     }

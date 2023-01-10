@@ -50,7 +50,7 @@ public class MartenProvider : IProvider
 
         session.Store(new Event(actorName, index, @event));
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync().ConfigureAwait(false);
 
         return index++;
     }
@@ -61,7 +61,7 @@ public class MartenProvider : IProvider
 
         session.Store(new Snapshot(actorName, index, snapshot));
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync().ConfigureAwait(false);
     }
 
     public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
@@ -73,18 +73,18 @@ public class MartenProvider : IProvider
             x.Index <= inclusiveToIndex
         );
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync().ConfigureAwait(false);
     }
 
     public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
     {
-        using var session = _store.OpenSession();
+        await using var session = _store.OpenSession();
 
         session.DeleteWhere<Snapshot>(x =>
             x.ActorName == actorName &&
             x.Index <= inclusiveToIndex
         );
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync().ConfigureAwait(false);
     }
 }
