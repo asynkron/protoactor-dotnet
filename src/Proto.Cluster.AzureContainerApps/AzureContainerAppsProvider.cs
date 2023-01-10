@@ -36,21 +36,21 @@ public class AzureContainerAppsProvider : IClusterProvider
     /// <param name="client">An existing <see cref="ArmClient"/></param> instance that you need to bring yourself.
     /// <param name="resourceGroup">The resource group name containing your Azure Container App.</param>
     /// <param name="containerAppName">The name of the container app. If not specified, the CONTAINER_APP_NAME environment variable is used.</param>
-    /// <param name="revision">The revision of the container app. If not specified, the CONTAINER_APP_REVISION environment variable is used.</param>
+    /// <param name="revisionName">The revisionName of the container app. If not specified, the CONTAINER_APP_REVISION environment variable is used.</param>
     /// <param name="replicaName">The replica name of the container app. If not specified, the HOSTNAME environment variable is used.</param>
     /// <param name="advertisedHost">The host or IP address of the container app. If not specified, will take the smallest local IP address (e.g. 127.0.0.1).</param>
     public AzureContainerAppsProvider(
         ArmClient client,
         string resourceGroup,
         [CanBeNull] string containerAppName = default,
-        [CanBeNull] string revision = default,
+        [CanBeNull] string revisionName = default,
         [CanBeNull] string replicaName = default,
         [CanBeNull] string advertisedHost = default)
     {
         _client = client;
         _resourceGroup = resourceGroup;
         _containerAppName = containerAppName ?? Environment.GetEnvironmentVariable("CONTAINER_APP_NAME");
-        _revisionName = revision ?? Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION");
+        _revisionName = revisionName ?? Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION");
         _replicaName = replicaName ?? Environment.GetEnvironmentVariable("HOSTNAME");
         _advertisedHost = advertisedHost;
 
