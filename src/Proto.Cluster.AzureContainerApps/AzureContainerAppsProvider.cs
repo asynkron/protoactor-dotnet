@@ -30,25 +30,32 @@ public class AzureContainerAppsProvider : IClusterProvider
     private static readonly ILogger Logger = Log.CreateLogger<AzureContainerAppsProvider>();
     private static readonly TimeSpan PollIntervalInSeconds = TimeSpan.FromSeconds(5);
 
+    /// <summary>
+    /// Use this constructor to create a new instance.
+    /// </summary>
+    /// <param name="client">An existing <see cref="ArmClient"/></param> instance that you need to bring yourself.
+    /// <param name="resourceGroup">The resource group name containing your Azure Container App.</param>
+    /// <param name="containerAppName">The name of the container app. If not specified, the CONTAINER_APP_NAME environment variable is used.</param>
+    /// <param name="revision">The revision of the container app. If not specified, the CONTAINER_APP_REVISION environment variable is used.</param>
+    /// <param name="replicaName">The replica name of the container app. If not specified, the HOSTNAME environment variable is used.</param>
+    /// <param name="advertisedHost">The host or IP address of the container app. If not specified, will take the smallest local IP address (e.g. 127.0.0.1).</param>
     public AzureContainerAppsProvider(
         ArmClient client,
         string resourceGroup,
-        string containerAppName,
-        string revisionName,
-        string replicaName,
-        string advertisedHost = default)
+        [CanBeNull] string containerAppName = default,
+        [CanBeNull] string revision = default,
+        [CanBeNull] string replicaName = default,
+        [CanBeNull] string advertisedHost = default)
     {
         _client = client;
         _resourceGroup = resourceGroup;
-        _containerAppName = containerAppName;
-        _revisionName = revisionName;
-        _replicaName = replicaName;
+        _containerAppName = containerAppName ?? Environment.GetEnvironmentVariable("CONTAINER_APP_NAME");
+        _revisionName = revision ?? Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION");
+        _replicaName = replicaName ?? Environment.GetEnvironmentVariable("HOSTNAME");
         _advertisedHost = advertisedHost;
 
-        if (string.IsNullOrEmpty(_advertisedHost))
-        {
+        if (string.IsNullOrEmpty(_advertisedHost)) 
             _advertisedHost = ConfigUtils.FindIpAddress().ToString();
-        }
     }
 
     public async Task StartMemberAsync(Cluster cluster)
@@ -85,11 +92,9 @@ public class AzureContainerAppsProvider : IClusterProvider
 
     private async Task RegisterMemberAsync()
     {
-        await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
+        await Retry.Try(RegisterMemberInner, retryCount: Retry.Forever, onError: OnError, onFailed: OnFailed);
 
-        static void OnError(int attempt, Exception exception) =>
-            Logger.LogWarning(exception, "Failed to register service");
-
+        static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
         static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to register service");
     }
 
@@ -100,9 +105,7 @@ public class AzureContainerAppsProvider : IClusterProvider
         var revision = await containerApp.Value.GetContainerAppRevisionAsync(_revisionName);
 
         if (revision.Value.Data.TrafficWeight.GetValueOrDefault(0) == 0)
-        {
             return;
-        }
 
         Logger.LogInformation(
             "[Cluster][AzureContainerAppsProvider] Registering service {ReplicaName} on {IpAddress}",
