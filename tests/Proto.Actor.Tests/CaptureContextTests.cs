@@ -38,7 +38,7 @@ public class CaptureContextActor : IActor
     {
         if (context.Message is Unstash unStash)
         {
-            await ProcessStash(context, unStash);
+            await ProcessStash(context, unStash).ConfigureAwait(false);
 
             return;
         }
@@ -56,7 +56,7 @@ public class CaptureContextActor : IActor
 
         foreach (var c in _stash)
         {
-            await c.Receive();
+            await c.Receive().ConfigureAwait(false);
         }
 
         context.Respond(new UnstashResponse(context.Message!));
@@ -76,7 +76,8 @@ public class CaptureContextTests
     [Fact]
     public async Task can_receive_captured_context()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var results = new Queue<UnstashResult>();
@@ -90,7 +91,7 @@ public class CaptureContextTests
         }
 
         context.Send(pid, new Unstash());
-        await context.PoisonAsync(pid);
+        await context.PoisonAsync(pid).ConfigureAwait(false);
 
         for (var i = 0; i < 10; i++)
         {
@@ -103,7 +104,8 @@ public class CaptureContextTests
     [Fact]
     public async Task can_continue_after_processing_capture()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var results = new Queue<UnstashResult>();
@@ -117,10 +119,10 @@ public class CaptureContextTests
         }
 
         var unstash = new Unstash();
-        var response = await context.RequestAsync<UnstashResponse>(pid, unstash, TimeSpan.FromSeconds(1));
+        var response = await context.RequestAsync<UnstashResponse>(pid, unstash, TimeSpan.FromSeconds(1)).ConfigureAwait(false);
         response.Should().NotBeNull();
         Assert.Same(response.Unstash, unstash);
-        await context.PoisonAsync(pid);
+        await context.PoisonAsync(pid).ConfigureAwait(false);
 
         for (var i = 0; i < 10; i++)
         {

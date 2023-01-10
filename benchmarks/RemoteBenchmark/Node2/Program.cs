@@ -45,7 +45,7 @@ public class EchoActor : IActor
     }
 }
 
-class Program
+static class Program
 {
     private static async Task Main()
     {
@@ -73,7 +73,7 @@ class Program
         var system = new ActorSystem(actorSystemConfig);
         var context = new RootContext(system);
         IRemote remote;
-            
+
         var remoteConfig = GrpcNetRemoteConfig
             .BindTo(advertisedHost, 12000)
             .WithChannelOptions(new GrpcChannelOptions
@@ -89,9 +89,9 @@ class Program
             .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
         remote = new GrpcNetRemote(system, remoteConfig);
 
-        await remote.StartAsync();
+        await remote.StartAsync().ConfigureAwait(false);
         context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
         Console.ReadLine();
-        await remote.ShutdownAsync();
+        await remote.ShutdownAsync().ConfigureAwait(false);
     }
 }

@@ -14,7 +14,8 @@ public class BroadcastGroupTests
     [Fact]
     public async Task BroadcastGroupRouter_AllRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
 
@@ -28,7 +29,8 @@ public class BroadcastGroupTests
     [Fact]
     public async Task BroadcastGroupRouter_WhenOneRouteeIsStopped_AllOtherRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
 
@@ -42,7 +44,8 @@ public class BroadcastGroupTests
     [Fact]
     public async Task BroadcastGroupRouter_WhenOneRouteeIsSlow_AllOtherRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
 
@@ -56,7 +59,8 @@ public class BroadcastGroupTests
     [Fact]
     public async Task BroadcastGroupRouter_RouteesCanBeRemoved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
 
@@ -71,7 +75,8 @@ public class BroadcastGroupTests
     [Fact]
     public async Task BroadcastGroupRouter_RouteesCanBeAdded()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
@@ -87,7 +92,8 @@ public class BroadcastGroupTests
     [Fact]
     public async Task BroadcastGroupRouter_RemovedRouteesNoLongerReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
 
@@ -103,7 +109,8 @@ public class BroadcastGroupTests
     [Fact]
     public async Task BroadcastGroupRouter_AddedRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
@@ -119,7 +126,8 @@ public class BroadcastGroupTests
     [Fact]
     public async Task BroadcastGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
 

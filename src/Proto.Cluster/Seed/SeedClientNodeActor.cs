@@ -54,7 +54,7 @@ public class SeedClientNodeActor : IActor
                 var pid = PID.FromAddress(host + ":" + port, SeedNodeActor.Name);
 
                 var res = await context.System.Root.RequestAsync<JoinResponse>(pid,
-                    new JoinAsClientRequest { SystemId = context.System.Id });
+                    new JoinAsClientRequest { SystemId = context.System.Id }).ConfigureAwait(false);
 
                 _members = _members.Add(res.Member.Id, res.Member);
                 context.Respond(new Connected(res.Member));
@@ -100,7 +100,7 @@ public class SeedClientNodeActor : IActor
                 {
                     var res = await context.RequestAsync<JoinResponse>(pid,
                         new JoinAsClientRequest { SystemId = context.System.Id },
-                        new CancellationTokenSource(5000).Token);
+                        new CancellationTokenSource(5000).Token).ConfigureAwait(false);
 
                     _members = _members.Add(res.Member.Id, res.Member);
                     Logger.LogInformation("Connected to seed node {Member}", member.Address);

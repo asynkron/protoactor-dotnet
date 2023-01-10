@@ -62,7 +62,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
             }
         }
 
-        await using (_endpointManager.CancellationToken.Register(Disconnect))
+        await using (_endpointManager.CancellationToken.Register(Disconnect).ConfigureAwait(false))
         {
             IEndpoint endpoint;
             string? address = null;

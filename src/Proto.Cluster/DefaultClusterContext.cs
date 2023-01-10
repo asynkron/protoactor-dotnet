@@ -119,7 +119,7 @@ public class DefaultClusterContext : IClusterContext
 #if NET6_0_OR_GREATER
                     await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds)).ConfigureAwait(false);
 #else
-                    await Task.WhenAny(task, _clock.CurrentBucket);
+                    await Task.WhenAny(task, _clock.CurrentBucket).ConfigureAwait(false);
 #endif
 
                     if (task.IsCompleted)

@@ -78,7 +78,7 @@ public sealed class IdentityStorageLogging : IIdentityStorage
                 method, subject, timer.Elapsed
             );
 
-            await call();
+            await call().ConfigureAwait(false);
             timer.Stop();
 
             _logger.LogInformation("{Method}: {Subject} after {Elapsed}",
@@ -107,7 +107,7 @@ public sealed class IdentityStorageLogging : IIdentityStorage
                 method, subject
             );
 
-            var result = await call();
+            var result = await call().ConfigureAwait(false);
             timer.Stop();
 
             _logger.LogInformation("{Method}: {Subject} after {Elapsed} returned {Result}",

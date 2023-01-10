@@ -17,7 +17,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -25,15 +26,16 @@ public class ConsistentHashGroupTests
         system.Root.Send(router, new Message("message1"));
         system.Root.Send(router, new Message("message1"));
 
-        Assert.Equal(3, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee3, "received?", _timeout));
+        Assert.Equal(3, await system.Root.RequestAsync<int>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal(0, await system.Root.RequestAsync<int>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal(0, await system.Root.RequestAsync<int>(routee3, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
     public async Task ConsistentHashGroupRouter_with_MessageHasherFunc_MessageWithSameHashAlwaysGoesToSameRoutee()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system, x => x.ToString()!);
 
@@ -41,15 +43,16 @@ public class ConsistentHashGroupTests
         system.Root.Send(router, "message1");
         system.Root.Send(router, "message1");
 
-        Assert.Equal(3, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee3, "received?", _timeout));
+        Assert.Equal(3, await system.Root.RequestAsync<int>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal(0, await system.Root.RequestAsync<int>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal(0, await system.Root.RequestAsync<int>(routee3, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
     public async Task ConsistentHashGroupRouter_MessagesWithDifferentHashesGoToDifferentRoutees()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -57,15 +60,16 @@ public class ConsistentHashGroupTests
         system.Root.Send(router, new Message("message2"));
         system.Root.Send(router, new Message("message3"));
 
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee3, "received?", _timeout));
+        Assert.Equal(1, await system.Root.RequestAsync<int>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal(1, await system.Root.RequestAsync<int>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal(1, await system.Root.RequestAsync<int>(routee3, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
     public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee_EvenWhenNewRouteeAdded()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -74,21 +78,22 @@ public class ConsistentHashGroupTests
         system.Root.Send(router, new RouterAddRoutee(routee4));
         system.Root.Send(router, new Message("message1"));
 
-        Assert.Equal(2, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee3, "received?", _timeout));
+        Assert.Equal(2, await system.Root.RequestAsync<int>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal(0, await system.Root.RequestAsync<int>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal(0, await system.Root.RequestAsync<int>(routee3, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
     public async Task ConsistentHashGroupRouter_RouteesCanBeRemoved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
 
-        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
         Assert.DoesNotContain(routee1, routees.Pids);
         Assert.Contains(routee2, routees.Pids);
         Assert.Contains(routee3, routees.Pids);
@@ -97,13 +102,14 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_RouteesCanBeAdded()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
         system.Root.Send(router, new RouterAddRoutee(routee4));
 
-        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
         Assert.Contains(routee1, routees.Pids);
         Assert.Contains(routee2, routees.Pids);
         Assert.Contains(routee3, routees.Pids);
@@ -113,31 +119,34 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_RemovedRouteesNoLongerReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, _, _) = CreateRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
         system.Root.Send(router, new Message("message1"));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
+        Assert.Equal(0, await system.Root.RequestAsync<int>(routee1, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
     public async Task ConsistentHashGroupRouter_AddedRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, _, _, _) = CreateRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
         system.Root.Send(router, new RouterAddRoutee(routee4));
         system.Root.Send(router, new Message("message4"));
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee4, "received?", _timeout));
+        Assert.Equal(1, await system.Root.RequestAsync<int>(routee4, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
     public async Task ConsistentHashGroupRouter_MessageIsReassignedWhenRouteeRemoved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, _) = CreateRouterWith3Routees(system);
 
@@ -155,7 +164,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -234,7 +244,7 @@ public class ConsistentHashGroupTests
         }
     }
 
-    internal class Message : IHashable
+    private sealed class Message : IHashable
     {
         private readonly string _value;
 

@@ -65,10 +65,10 @@ public class InProcessClusterRequestBenchmark
         pid = sys.Root.SpawnNamed(echoProps, "thing");
 
         _cluster = sys.Cluster();
-        await _cluster.StartMemberAsync();
+        await _cluster.StartMemberAsync().ConfigureAwait(false);
 
         _id = ClusterIdentity.Create("1", Kind);
-        await _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None);
+        await _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None).ConfigureAwait(false);
     }
 
     private static ClusterConfig ClusterConfig() => Proto.Cluster.ClusterConfig.Setup("testcluster",

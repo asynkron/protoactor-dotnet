@@ -84,9 +84,11 @@ public class SqlServerProvider : IProvider
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
-        await using var connection = new SqlConnection(_connectionString);
+        var connection = new SqlConnection(_connectionString);
+        await using var _ = connection.ConfigureAwait(false);
 
-        await using var command = new SqlCommand(_sqlReadEvents, connection);
+        var command = new SqlCommand(_sqlReadEvents, connection);
+        await using var __ = command.ConfigureAwait(false);
 
         await connection.OpenAsync().ConfigureAwait(false);
 
@@ -118,17 +120,19 @@ public class SqlServerProvider : IProvider
         long snapshotIndex = 0;
         object snapshotData = null;
 
-        await using var connection = new SqlConnection(_connectionString);
+        var connection = new SqlConnection(_connectionString);
+        await using var _ = connection.ConfigureAwait(false);
 
-        await using var command = new SqlCommand(_sqlReadSnapshot, connection);
+        var command = new SqlCommand(_sqlReadSnapshot, connection);
+        await using var __ = command.ConfigureAwait(false);
 
         await connection.OpenAsync().ConfigureAwait(false);
 
         command.Parameters.Add(CreateParameter("ActorName", NVarChar, actorName));
 
-        var snapshotReader = await command.ExecuteReaderAsync();
+        var snapshotReader = await command.ExecuteReaderAsync().ConfigureAwait(false);
 
-        while (await snapshotReader.ReadAsync())
+        while (await snapshotReader.ReadAsync().ConfigureAwait(false))
         {
             snapshotIndex = Convert.ToInt64(snapshotReader["SnapshotIndex"]);
 
@@ -232,13 +236,16 @@ public class SqlServerProvider : IProvider
 
     private async Task ExecuteNonQueryAsync(string sql, params SqlParameter[] parameters)
     {
-        await using var connection = new SqlConnection(_connectionString);
+        var connection = new SqlConnection(_connectionString);
+        await using var _ = connection.ConfigureAwait(false);
 
-        await using var command = new SqlCommand(sql, connection);
+        var command = new SqlCommand(sql, connection);
+        await using var __ = command.ConfigureAwait(false);
 
         await connection.OpenAsync().ConfigureAwait(false);
 
-        await using var tx = connection.BeginTransaction();
+        var tx = connection.BeginTransaction();
+        await using var ___ = tx.ConfigureAwait(false);
 
         command.Transaction = tx;
 

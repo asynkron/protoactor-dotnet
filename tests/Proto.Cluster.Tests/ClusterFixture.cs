@@ -54,7 +54,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 {
     private static readonly object Lock = new();
 
-    
+
     public const string InvalidIdentity = "invalid";
     private readonly Func<ClusterConfig, ClusterConfig>? _configure;
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
@@ -106,14 +106,14 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         ),
         new ClusterKind(EchoActor.AsyncFilteredKind, EchoActor.Props).WithSpawnPredicate(async (identity, ct) =>
             {
-                await Task.Delay(100, ct);
+                await Task.Delay(100, ct).ConfigureAwait(false);
 
                 return !identity.Equals(InvalidIdentity, StringComparison.InvariantCultureIgnoreCase);
             }
         )
     };
 
-    async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
+    async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync().ConfigureAwait(false);
 
     public async Task InitializeAsync()
     {
@@ -126,12 +126,12 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         try
         {
             _tracerProvider?.ForceFlush();
-            
-            await _reporter.WriteReportFile();
 
-            await OnDisposing();
+            await _reporter.WriteReportFile().ConfigureAwait(false);
 
-            await WaitForMembersToShutdown();
+            await OnDisposing().ConfigureAwait(false);
+
+            await WaitForMembersToShutdown().ConfigureAwait(false);
 
             Members.Clear(); // prevent multiple shutdown attempts if dispose is called multiple times
         }
@@ -157,12 +157,12 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             {
                 _logger.LogInformation("Shutting down cluster member {MemberId}", cluster.System.Id);
 
-                var done = await task.WaitUpTo(TimeSpan.FromSeconds(5));
+                var done = await task.WaitUpTo(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
                 if (! done)
                 {
                     _logger.LogWarning("Failed to shutdown cluster member {MemberId} gracefully", cluster.System.Id);
                 }
-                
+
             }
             catch (Exception e)
             {
@@ -200,7 +200,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     /// <exception cref="ArgumentException"></exception>
     public async Task<Cluster> SpawnNode()
     {
-        var newMember = await SpawnClusterMember(_configure);
+        var newMember = await SpawnClusterMember(_configure).ConfigureAwait(false);
         Members.Add(newMember);
 
         return newMember;
@@ -217,12 +217,12 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     {
         var tasks = Enumerable.Range(0, count)
             .Select(_ => SpawnClusterMember(configure));
-        
-        var res = (await Task.WhenAll(tasks)).ToList();
-        
-        
+
+        var res = (await Task.WhenAll(tasks).ConfigureAwait(false)).ToList();
+
+
         var consensus = res.Select(m => m.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(10)));
-        var x = await Task.WhenAll(consensus);
+        var x = await Task.WhenAll(consensus).ConfigureAwait(false);
         if (x.Any(c => !c.consensus))
         {
             throw new Exception("Failed to reach consensus");
@@ -259,7 +259,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
         var cluster = new Cluster(system, config);
 
-        await cluster.StartMemberAsync();
+        await cluster.StartMemberAsync().ConfigureAwait(false);
 
         return cluster;
     }
@@ -367,7 +367,7 @@ public class InMemoryPidCacheInvalidationClusterFixture : BaseInMemoryClusterFix
 
     protected override async Task<Cluster> SpawnClusterMember(Func<ClusterConfig, ClusterConfig>? configure)
     {
-        var cluster = await base.SpawnClusterMember(configure);
+        var cluster = await base.SpawnClusterMember(configure).ConfigureAwait(false);
 
         return cluster.WithPidCacheInvalidation();
     }

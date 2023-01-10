@@ -30,7 +30,7 @@ public class BatchFutureTests : ActorTestBase
 
         Context.Request(pid, "hello", future.Pid);
 
-        var reply = await future.Task;
+        var reply = await future.Task.ConfigureAwait(false);
         reply.Should().Be("hey");
     }
 
@@ -54,7 +54,7 @@ public class BatchFutureTests : ActorTestBase
 
         Context.Request(pid, "hello", future.Pid);
 
-        var reply = await future.Task;
+        var reply = await future.Task.ConfigureAwait(false);
         reply.Should().BeNull();
     }
 
@@ -84,7 +84,7 @@ public class BatchFutureTests : ActorTestBase
             futures[i] = future;
         }
 
-        var replies = await Task.WhenAll(futures.Select(future => future.Task));
+        var replies = await Task.WhenAll(futures.Select(future => future.Task)).ConfigureAwait(false);
 
         replies.Should().BeInAscendingOrder().And.HaveCount(batchSize);
     }
@@ -96,7 +96,7 @@ public class BatchFutureTests : ActorTestBase
                 {
                     if (ctx.Sender is not null)
                     {
-                        await Task.Delay(1);
+                        await Task.Delay(1).ConfigureAwait(false);
                         ctx.Respond(ctx.Message!);
                     }
                 }
@@ -115,10 +115,10 @@ public class BatchFutureTests : ActorTestBase
             Context.Request(pid, i, future.Pid);
         }
 
-        await futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }
+        await futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)).ConfigureAwait(false); }
             )
             .Should()
-            .ThrowAsync<TimeoutException>();
+            .ThrowAsync<TimeoutException>().ConfigureAwait(false);
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public class BatchFutureTests : ActorTestBase
             tasks[i] = batchContext.RequestAsync<object>(pid, i, cancellationToken);
         }
 
-        var replies = await Task.WhenAll(tasks);
+        var replies = await Task.WhenAll(tasks).ConfigureAwait(false);
 
         replies.Should().BeInAscendingOrder().And.HaveCount(size);
     }

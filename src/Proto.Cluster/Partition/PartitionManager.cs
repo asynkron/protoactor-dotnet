@@ -94,7 +94,7 @@ internal class PartitionManager
             await Task.WhenAll(
                 _context.StopAsync(_partitionPlacementActor),
                 _context.StopAsync(_partitionIdentityActor)
-            );
+            ).ConfigureAwait(false);
         }
     }
 

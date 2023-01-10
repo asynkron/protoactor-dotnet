@@ -44,19 +44,19 @@
     protected override async Task OnInitializedAsync()
     {
         _ = Task.Run(RunLoop, _cts.Token);
-        await base.OnInitializedAsync();
+        await base.OnInitializedAsync().ConfigureAwait(false);
     }
 
     private async Task MemberSelected(Member member)
     {
         _member = member;
-        await OnMemberSelected.InvokeAsync(member);
+        await OnMemberSelected.InvokeAsync(member).ConfigureAwait(false);
     }
 
     private async Task GossipState(GossipState gossipState)
     {
         _gossipState = gossipState;
-        await OnGossipState.InvokeAsync(gossipState);
+        await OnGossipState.InvokeAsync(gossipState).ConfigureAwait(false);
     }
 
     private async Task RunLoop()
@@ -65,10 +65,10 @@
         {
             try
             {
-                _gossipState = await System.Cluster().Gossip.GetStateSnapshot();
+                _gossipState = await System.Cluster().Gossip.GetStateSnapshot().ConfigureAwait(false);
                 _members = System.Cluster().MemberList.GetAllMembers();
-                await InvokeAsync(async () => { await GossipState(_gossipState); });
-                await Task.Delay(100);
+                await InvokeAsync(async () => { await GossipState(_gossipState).ConfigureAwait(false); }).ConfigureAwait(false);
+                await Task.Delay(100).ConfigureAwait(false);
             }
             catch (Exception x)
             {
@@ -94,6 +94,6 @@
 
     private IEnumerable<Member> SearchMembers() => _members!.Where(m => m.Id.Contains(_search) || m.Address.Contains(_search));
 
-    private async Task UpdateSearch() => await InvokeAsync(StateHasChanged);
+    private async Task UpdateSearch() => await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 
 }

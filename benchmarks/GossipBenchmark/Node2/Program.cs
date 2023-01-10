@@ -43,9 +43,9 @@ class Program
     {
         Proto.Log.SetLoggerFactory(
             LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
-        
+
         var logger = Log.CreateLogger("benchmark");
-        
+
         // Required to allow unencrypted GrpcNet connections
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         var system = new ActorSystem(new ActorSystemConfig()
@@ -58,7 +58,7 @@ class Program
                 .Setup("MyCluster", new SeedNodeClusterProvider(), new PartitionIdentityLookup())
                 .WithClusterKind(HelloGrainActor.GetClusterKind((ctx, identity) => new HelloGrain(ctx, identity.Identity)))
             );
-            
+
         system.EventStream.Subscribe<ClusterTopology>(e => {
                 Console.WriteLine($"{DateTime.Now:O} My members {e.TopologyHash}");
             }
@@ -66,7 +66,7 @@ class Program
 
         await system
             .Cluster()
-            .StartMemberAsync();
+            .StartMemberAsync().ConfigureAwait(false);
 
         Console.WriteLine("Started...");
 
@@ -74,11 +74,11 @@ class Program
             Console.WriteLine("Shutting Down...");
             await system
                 .Cluster()
-                .ShutdownAsync();
+                .ShutdownAsync().ConfigureAwait(false);
         };
 
 
-            
-        await Delay(-1);
+
+        await Delay(-1).ConfigureAwait(false);
     }
 }

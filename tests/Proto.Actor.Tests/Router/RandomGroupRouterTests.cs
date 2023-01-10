@@ -14,7 +14,8 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_RouteesReceiveMessagesInRandomOrder()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -30,7 +31,8 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_NewlyAddedRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
@@ -52,7 +54,8 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_RemovedRouteesDoNotReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, _, _) = CreateRouterWith3Routees(system);
 
@@ -63,19 +66,20 @@ public class RandomGroupRouterTests
             system.Root.Send(router, i.ToString());
         }
 
-        Assert.Null(await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
+        Assert.Null(await system.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
     public async Task RandomGroupRouter_RouteesCanBeRemoved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
 
-        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
         Assert.DoesNotContain(routee1, routees.Pids);
         Assert.Contains(routee2, routees.Pids);
         Assert.Contains(routee3, routees.Pids);
@@ -84,13 +88,14 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_RouteesCanBeAdded()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
         system.Root.Send(router, new RouterAddRoutee(routee4));
 
-        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
         Assert.Contains(routee1, routees.Pids);
         Assert.Contains(routee2, routees.Pids);
         Assert.Contains(routee3, routees.Pids);
@@ -100,15 +105,16 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterBroadcastMessage("hello"));
 
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
     }
 
     private (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees(ActorSystem system)

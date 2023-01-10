@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Proto.Persistence.SnapshotStrategies;
 using Xunit;
 
@@ -9,7 +10,7 @@ public class TimeStrategyTests
     [Fact]
     public void TimeStrategy_ShouldSnapshotAccordingToTheInterval()
     {
-        var now = DateTime.Parse("2000-01-01 12:00:00");
+        var now = DateTime.Parse("2000-01-01 12:00:00", CultureInfo.InvariantCulture);
         var strategy = new TimeStrategy(TimeSpan.FromSeconds(10), () => now);
         Assert.False(strategy.ShouldTakeSnapshot(new PersistedEvent(null, 0)));
         now = now.AddSeconds(5);

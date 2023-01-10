@@ -16,13 +16,14 @@ public class MartenProvider : IProvider
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
-        await using var session = _store.OpenSession();
+        var session = _store.OpenSession();
+        await using var _ = session.ConfigureAwait(false);
 
         var events = await session.Query<Event>()
             .Where(x => x.ActorName == actorName)
             .Where(x => x.Index >= indexStart && x.Index <= indexEnd)
             .OrderBy(x => x.Index)
-            .ToListAsync();
+            .ToListAsync().ConfigureAwait(false);
 
         foreach (var @event in events)
         {
@@ -34,7 +35,8 @@ public class MartenProvider : IProvider
 
     public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
     {
-        await using var session = _store.OpenSession();
+        var session = _store.OpenSession();
+        await using var _ = session.ConfigureAwait(false);
 
         var snapshot = await session.Query<Snapshot>()
             .Where(x => x.ActorName == actorName)
@@ -78,7 +80,8 @@ public class MartenProvider : IProvider
 
     public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
     {
-        await using var session = _store.OpenSession();
+        var session = _store.OpenSession();
+        await using var _ = session.ConfigureAwait(false);
 
         session.DeleteWhere<Snapshot>(x =>
             x.ActorName == actorName &&

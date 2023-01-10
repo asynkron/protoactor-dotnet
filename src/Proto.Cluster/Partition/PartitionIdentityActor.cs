@@ -640,7 +640,7 @@ internal class PartitionIdentityActor : IActor
         {
             try
             {
-                var response = await rst;
+                var response = await rst.ConfigureAwait(false);
 
                 if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
                 {
@@ -667,7 +667,7 @@ internal class PartitionIdentityActor : IActor
                         Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Spawned {ClusterIdentity} on {Pid}",
                             msg.ClusterIdentity, response.Pid);
                     }
-                    
+
                     if (response.Failed is false)
                     {
                         if (response.TopologyHash != TopologyHash) // Topology changed between request and response
@@ -750,7 +750,7 @@ internal class PartitionIdentityActor : IActor
             var timeout = _cluster.Config.ActorActivationTimeout;
             var activatorPid = PartitionManager.RemotePartitionPlacementActor(activatorAddress);
 
-            var res = await context.RequestAsync<ActivationResponse>(activatorPid, req, timeout);
+            var res = await context.RequestAsync<ActivationResponse>(activatorPid, req, timeout).ConfigureAwait(false);
 
             return res;
         }

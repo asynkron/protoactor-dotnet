@@ -109,7 +109,7 @@ public static class PubSubExtensions
     {
         var props = Props.FromFunc(receive);
         var pid = cluster.System.Root.Spawn(props);
-        await cluster.Subscribe(topic, pid);
+        await cluster.Subscribe(topic, pid).ConfigureAwait(false);
 
         return pid;
     }

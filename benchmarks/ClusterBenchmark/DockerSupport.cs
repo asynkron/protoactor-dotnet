@@ -53,7 +53,7 @@ public static  class DockerSupport
         //
         // Console.WriteLine("started redis");
 
-        await done;
+        await done.ConfigureAwait(false);
         Console.WriteLine("Exited.......");
     }
 }

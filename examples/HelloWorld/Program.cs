@@ -10,7 +10,7 @@ using Proto;
 
 namespace HelloWorld;
 
-internal class Program
+internal sealed class Program
 {
     private static void Main(string[] args)
     {
@@ -22,7 +22,7 @@ internal class Program
     }
 
     //Messages should be immutable to prevent race conditions between multiple actors
-    private class Hello
+    private sealed class Hello
     {
         public Hello(string who)
         {
@@ -33,7 +33,7 @@ internal class Program
     }
 
     //This is a standard actor
-    private class HelloActor : IActor
+    private sealed class HelloActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {

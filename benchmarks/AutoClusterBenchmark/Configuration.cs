@@ -107,7 +107,7 @@ public static class Configuration
         var identity = GetIdentityLookup();
 
         system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider, identity));
-        await system.Cluster().StartMemberAsync();
+        await system.Cluster().StartMemberAsync().ConfigureAwait(false);
         return system.Cluster();
     }
 
@@ -145,7 +145,7 @@ public static class Configuration
         var identity = GetIdentityLookup();
         system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider, identity));
 
-        await system.Cluster().StartClientAsync();
+        await system.Cluster().StartClientAsync().ConfigureAwait(false);
         return system.Cluster();
     }
 }

@@ -72,7 +72,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await base.OnInitializedAsync();
+        await base.OnInitializedAsync().ConfigureAwait(false);
 
         var members = System.Cluster().MemberList.GetAllMembers();
 
@@ -96,7 +96,7 @@
             var treeNode = root.GetChildFor(pid);
         }
         _root = root;
-        await InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
     }
 
     private Remoting.RemotingClient GetClient(string address)
@@ -127,7 +127,7 @@
 
         var pidStr = _selected.Pid.ToString();
         var url = Settings.LogSearchPattern!.Replace("%PID%", pidStr);
-        await JsRuntime.InvokeAsync<object>("open", new object[] { url, "_blank" });
+        await JsRuntime.InvokeAsync<object>("open", new object[] { url, "_blank" }).ConfigureAwait(false);
     }
 
     private async Task OpenTraces()
@@ -136,7 +136,7 @@
 
         var pidStr = _selected.Pid.ToString();
         var url = Settings.TraceSearchPattern!.Replace("%PID%", pidStr);
-        await JsRuntime.InvokeAsync<object>("open", new object[] { url, "_blank" });
+        await JsRuntime.InvokeAsync<object>("open", new object[] { url, "_blank" }).ConfigureAwait(false);
     }
 
 }

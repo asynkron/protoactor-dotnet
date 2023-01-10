@@ -228,7 +228,7 @@ public sealed class SharedFutureProcess : Process, IDisposable
                     return await _tcs.Task.ConfigureAwait(false);
                 }
 
-                await using (cancellationToken.Register(() => _tcs.TrySetCanceled()))
+                await using (cancellationToken.Register(() => _tcs.TrySetCanceled()).ConfigureAwait(false))
                 {
                     return await _tcs.Task.ConfigureAwait(false);
                 }

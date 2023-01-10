@@ -246,7 +246,7 @@ public class TestProbe : IActor, ITestProbe
         }
     }
 
-    private class RequestReference
+    private sealed class RequestReference
     {
     }
 }

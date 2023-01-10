@@ -11,7 +11,8 @@ public class WatchTests
     [Fact]
     public async Task MultipleStopsTriggerSingleTerminated()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         long counter = 0;
@@ -50,14 +51,15 @@ public class WatchTests
             )
         );
 
-        await Task.Delay(1000);
+        await Task.Delay(1000).ConfigureAwait(false);
         Assert.Equal(1, Interlocked.Read(ref counter));
     }
 
     [Fact]
     public async Task CanWatchLocalActors()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor())
@@ -68,8 +70,8 @@ public class WatchTests
             .WithMailbox(() => new TestMailbox())
         );
 
-        await context.StopAsync(watchee);
-        var terminatedMessageReceived = await context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
+        await context.StopAsync(watchee).ConfigureAwait(false);
+        var terminatedMessageReceived = await context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         Assert.True(terminatedMessageReceived);
     }
 

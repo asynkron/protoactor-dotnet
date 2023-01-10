@@ -191,7 +191,7 @@ public class DynamoDBProvider : IProvider, IDisposable
 
         if (writeCount > 0)
         {
-            await write.ExecuteAsync();
+            await write.ExecuteAsync().ConfigureAwait(false);
         }
     }
 

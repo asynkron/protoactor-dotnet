@@ -13,7 +13,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task EventsAreSavedToPersistence()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, _, actorId, providerState) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -31,7 +32,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task SnapshotsAreSavedToPersistence()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, _, actorId, providerState) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -47,7 +49,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task EventsCanBeDeleted()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, _, actorId, providerState) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -62,7 +65,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task SnapshotsCanBeDeleted()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, _, actorId, providerState) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -76,20 +80,22 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task GivenEventsOnly_StateIsRestoredFromEvents()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, props, _, _) = ExamplePersistentActorTests.CreateTestActor(context);
         context.Send(pid, new Multiply { Amount = 2 });
         context.Send(pid, new Multiply { Amount = 2 });
-        var state = await ExamplePersistentActorTests.RestartActorAndGetState(pid, props, context);
+        var state = await ExamplePersistentActorTests.RestartActorAndGetState(pid, props, context).ConfigureAwait(false);
         Assert.Equal(InitialState * 2 * 2, state);
     }
 
     [Fact]
     public async Task GivenASnapshotOnly_StateIsRestoredFromTheSnapshot()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, props, actorId, providerState) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -101,7 +107,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task GivenEventsThenASnapshot_StateShouldBeRestoredFromTheSnapshot()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, props, _, _) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -116,7 +123,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task GivenASnapshotAndSubsequentEvents_StateShouldBeRestoredFromSnapshotAndSubsequentEvents()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, props, _, _) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -133,7 +141,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task GivenMultipleSnapshots_StateIsRestoredFromMostRecentSnapshot()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, props, actorId, providerState) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -150,7 +159,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task GivenMultipleSnapshots_DeleteSnapshotObeysIndex()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, props, actorId, providerState) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -169,7 +179,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task GivenASnapshotAndEvents_WhenSnapshotDeleted_StateShouldBeRestoredFromEvents()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, props, actorId, providerState) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -188,7 +199,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task Index_IncrementsOnEventsSaved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, _, _, _) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -204,7 +216,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task Index_IsIncrementedByTakingASnapshot()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, _, _, _) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -219,7 +232,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task Index_IsCorrectAfterRecovery()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, props, _, _) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -238,7 +252,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task GivenEvents_CanReplayFromStartIndexToEndIndex()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var (pid, _, actorId, providerState) = ExamplePersistentActorTests.CreateTestActor(context);
@@ -257,7 +272,8 @@ public class ExamplePersistentActorTests
     [Fact]
     public async Task CanUseSeparateStores()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var actorId = Guid.NewGuid().ToString();
@@ -301,34 +317,34 @@ public class ExamplePersistentActorTests
     }
 }
 
-internal class State
+internal sealed class State
 {
     public int Value { get; set; }
 }
 
-internal class GetState
+internal sealed class GetState
 {
 }
 
-internal class GetIndex
+internal sealed class GetIndex
 {
 }
 
-internal class Multiply
-{
-    public int Amount { get; set; }
-}
-
-internal class Multiplied
+internal sealed class Multiply
 {
     public int Amount { get; set; }
 }
 
-internal class RequestSnapshot
+internal sealed class Multiplied
+{
+    public int Amount { get; set; }
+}
+
+internal sealed class RequestSnapshot
 {
 }
 
-internal class ExamplePersistentActor : IActor
+internal sealed class ExamplePersistentActor : IActor
 {
     private readonly Persistence _persistence;
     private State _state = new() { Value = 1 };

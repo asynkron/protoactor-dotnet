@@ -24,7 +24,7 @@ class Program
         Proto.Log.SetLoggerFactory(
             LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
         var logger = Log.CreateLogger("benchmark");
-        
+
         // Required to allow unencrypted GrpcNet connections
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         var system = new ActorSystem(new ActorSystemConfig()
@@ -32,7 +32,7 @@ class Program
                 .WithDeadLetterRequestLogging(true)
                 .WithDeadLetterResponseLogging(true)
                 .WithConfigureProps(p => p.WithDeadlineDecorator(TimeSpan.FromSeconds(1), logger).WithLoggingContextDecorator(logger)))
-            
+
             .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
             .WithCluster(ClusterConfig
                 .Setup("MyCluster", new SeedNodeClusterProvider(new(("127.0.0.1", 8090))), new PartitionIdentityLookup()));
@@ -41,24 +41,24 @@ class Program
                 Console.WriteLine($"{DateTime.Now:O} My members {e.TopologyHash}");
             }
         );
-        
+
         await system
             .Cluster()
-            .StartMemberAsync();
+            .StartMemberAsync().ConfigureAwait(false);
 
         Console.WriteLine("Started");
 
         var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
-        
-        var res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
+
+        var res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5)).ConfigureAwait(false);
         Console.WriteLine(res.Message);
 
-        res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
+        res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5)).ConfigureAwait(false);
         Console.WriteLine(res.Message);
 
         Console.WriteLine("Press enter to exit");
         Console.ReadLine();
         Console.WriteLine("Shutting Down...");
-        await system.Cluster().ShutdownAsync();
+        await system.Cluster().ShutdownAsync().ConfigureAwait(false);
     }
 }

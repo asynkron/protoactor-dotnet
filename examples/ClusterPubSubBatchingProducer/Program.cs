@@ -20,7 +20,7 @@ Log.SetLoggerFactory(LoggerFactory.Create(l =>
 var system = GetSystem();
 var cluster = system.Cluster();
 
-await cluster.StartMemberAsync();
+await cluster.StartMemberAsync().ConfigureAwait(false);
 
 long deliveredCount = 0;
 
@@ -38,7 +38,7 @@ for (var i = 0; i < 3; i++)
 
             return Task.CompletedTask;
         }
-    );
+    ).ConfigureAwait(false);
 }
 
 // produce
@@ -53,7 +53,7 @@ var producer = cluster.BatchingProducer("my-topic");
 var produceTasks =
     Enumerable.Range(1, count).Select(i => producer.ProduceAsync(new PingMessage { Data = i }));
 
-await Task.WhenAll(produceTasks);
+await Task.WhenAll(produceTasks).ConfigureAwait(false);
 stopwatch.Stop();
 
 Console.WriteLine(
@@ -62,8 +62,8 @@ Console.WriteLine(
 Console.WriteLine("Press any key to shut down...");
 Console.Read();
 
-await producer.DisposeAsync();
-await cluster.ShutdownAsync();
+await producer.DisposeAsync().ConfigureAwait(false);
+await cluster.ShutdownAsync().ConfigureAwait(false);
 
 static ActorSystem GetSystem() =>
     new ActorSystem()

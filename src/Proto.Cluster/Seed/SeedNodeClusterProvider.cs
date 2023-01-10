@@ -18,12 +18,12 @@ public class SeedNodeClusterProvider : IClusterProvider
     {
         return new SeedNodeClusterProvider(new SeedNodeClusterProviderOptions((address, port)));
     }
-    
+
     public static IClusterProvider StartSeedNode()
     {
         return new SeedNodeClusterProvider();
     }
-    
+
     private static readonly ILogger Logger = Log.CreateLogger<SeedNodeClusterProvider>();
     private readonly CancellationTokenSource _cts = new();
 
@@ -45,7 +45,7 @@ public class SeedNodeClusterProvider : IClusterProvider
             x => cluster.System.Root.Send(_pid, x));
 
         cluster.System.EventStream.Subscribe<ClusterTopology>(cluster.System.Root, _pid);
-        var result = await cluster.System.Root.RequestAsync<object>(_pid, new Connect(), _cts.Token);
+        var result = await cluster.System.Root.RequestAsync<object>(_pid, new Connect(), _cts.Token).ConfigureAwait(false);
 
         switch (result)
         {
@@ -62,7 +62,7 @@ public class SeedNodeClusterProvider : IClusterProvider
     {
         _cluster = cluster;
         _pid = cluster.System.Root.SpawnNamedSystem(SeedClientNodeActor.Props(_options), SeedClientNodeActor.Name);
-        var result = await cluster.System.Root.RequestAsync<object>(_pid, new Connect(), _cts.Token);
+        var result = await cluster.System.Root.RequestAsync<object>(_pid, new Connect(), _cts.Token).ConfigureAwait(false);
 
         switch (result)
         {

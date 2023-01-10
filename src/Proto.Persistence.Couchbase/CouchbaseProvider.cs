@@ -71,13 +71,13 @@ public class CouchbaseProvider : IProvider
 
         req.ScanConsistency(ScanConsistency.RequestPlus);
 
-        var res = await _bucket.QueryAsync<Event>(req);
+        var res = await _bucket.QueryAsync<Event>(req).ConfigureAwait(false);
 
         ThrowOnError(res);
 
         var envelopes = res.Rows;
 
-        await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key)));
+        await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key))).ConfigureAwait(false);
     }
 
     public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)

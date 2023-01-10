@@ -8,43 +8,46 @@ public class BehaviorTests
     [Fact]
     public async Task can_change_states()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var testActorProps = Props.FromProducer(() => new LightBulb());
         var actor = context.Spawn(testActorProps);
 
-        var response = await context.RequestAsync<string>(actor, new PressSwitch());
+        var response = await context.RequestAsync<string>(actor, new PressSwitch()).ConfigureAwait(false);
         Assert.Equal("Turning on", response);
-        response = await context.RequestAsync<string>(actor, new Touch());
+        response = await context.RequestAsync<string>(actor, new Touch()).ConfigureAwait(false);
         Assert.Equal("Hot!", response);
-        response = await context.RequestAsync<string>(actor, new PressSwitch());
+        response = await context.RequestAsync<string>(actor, new PressSwitch()).ConfigureAwait(false);
         Assert.Equal("Turning off", response);
-        response = await context.RequestAsync<string>(actor, new Touch());
+        response = await context.RequestAsync<string>(actor, new Touch()).ConfigureAwait(false);
         Assert.Equal("Cold", response);
     }
 
     [Fact]
     public async Task can_use_global_behaviour()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var __ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var testActorProps = Props.FromProducer(() => new LightBulb());
         var actor = context.Spawn(testActorProps);
-        var _ = await context.RequestAsync<string>(actor, new PressSwitch());
-        var response = await context.RequestAsync<string>(actor, new HitWithHammer());
+        var _ = await context.RequestAsync<string>(actor, new PressSwitch()).ConfigureAwait(false);
+        var response = await context.RequestAsync<string>(actor, new HitWithHammer()).ConfigureAwait(false);
         Assert.Equal("Smashed!", response);
-        response = await context.RequestAsync<string>(actor, new PressSwitch());
+        response = await context.RequestAsync<string>(actor, new PressSwitch()).ConfigureAwait(false);
         Assert.Equal("Broken", response);
-        response = await context.RequestAsync<string>(actor, new Touch());
+        response = await context.RequestAsync<string>(actor, new Touch()).ConfigureAwait(false);
         Assert.Equal("OW!", response);
     }
 
     [Fact]
     public async Task pop_behavior_should_restore_pushed_behavior()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -73,9 +76,9 @@ public class BehaviorTests
 
         var pid = SpawnActorFromFunc(behavior.ReceiveAsync);
 
-        var reply = await context.RequestAsync<string>(pid, "number");
-        var replyAfterPush = await context.RequestAsync<int>(pid, null!);
-        var replyAfterPop = await context.RequestAsync<string>(pid, "answertolifetheuniverseandeverything");
+        var reply = await context.RequestAsync<string>(pid, "number").ConfigureAwait(false);
+        var replyAfterPush = await context.RequestAsync<int>(pid, null!).ConfigureAwait(false);
+        var replyAfterPop = await context.RequestAsync<string>(pid, "answertolifetheuniverseandeverything").ConfigureAwait(false);
 
         Assert.Equal("number42answertolifetheuniverseandeverything", $"{reply}{replyAfterPush}{replyAfterPop}");
     }

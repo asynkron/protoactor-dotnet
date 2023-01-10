@@ -1,6 +1,6 @@
 ﻿namespace Proto.Persistence.SqlServer;
 
-internal class Snapshot
+internal sealed class Snapshot
 {
     public Snapshot(string actorName, long snapshotIndex, object snapshotData)
     {

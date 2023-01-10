@@ -58,17 +58,17 @@ public class ActorController : ControllerBase
     [HttpGet]
     public async Task<string> Get()
     {
-        //Get props for dependency injected actor 
+        //Get props for dependency injected actor
         var props = _actorSystem.DI().PropsFor<DependencyInjectedActor>();
 
         //spawn the actor
         var pid = _actorSystem.Root.Spawn(props);
 
         //send a request and await the response
-        var response = await _actorSystem.Root.RequestAsync<HelloResponse>(pid, new HelloRequest("Proto.Actor"));
+        var response = await _actorSystem.Root.RequestAsync<HelloResponse>(pid, new HelloRequest("Proto.Actor")).ConfigureAwait(false);
 
         //stop the actor
-        await _actorSystem.Root.StopAsync(pid);
+        await _actorSystem.Root.StopAsync(pid).ConfigureAwait(false);
 
         //return the result
         return response.Greeting;

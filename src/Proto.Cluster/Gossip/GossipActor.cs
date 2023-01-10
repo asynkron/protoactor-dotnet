@@ -98,10 +98,10 @@ public class GossipActor : IActor
         }
 
         ReceiveState(context, gossipRequest.State);
-        
+
         context.Respond(new GossipResponse());
 
-        
+
         return Task.CompletedTask;
     }
 
@@ -157,7 +157,7 @@ public class GossipActor : IActor
                 var delta = DateTime.UtcNow - start;
                 try
                 {
-                    await task;
+                    await task.ConfigureAwait(false);
                     memberStateDelta.CommitOffsets();
                 }
                 catch (DeadLetterException)

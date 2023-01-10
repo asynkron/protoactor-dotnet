@@ -80,7 +80,7 @@ public class PubSubMemberDeliveryActor : IActor
             SubscriberIdentity.IdentityOneofCase.ClusterIdentity => DeliverToClusterIdentity(context, pub,
                 s.ClusterIdentity),
             _ => Task.FromResult(DeliveryStatus.OtherError)
-        });
+        }).ConfigureAwait(false);
 
         return new SubscriberDeliveryReport { Subscriber = s, Status = status };
     }
@@ -94,7 +94,7 @@ public class PubSubMemberDeliveryActor : IActor
             // delivery should always be possible, since a virtual actor always exists
             var response = await context.ClusterRequestAsync<PublishResponse>(ci.Identity, ci.Kind, pub,
                 CancellationTokens.FromSeconds(_subscriberTimeoutSeconds)
-            );
+            ).ConfigureAwait(false);
 
             if (response == null)
             {
@@ -138,7 +138,7 @@ public class PubSubMemberDeliveryActor : IActor
         {
             // deliver to PID
             await context.RequestAsync<PublishResponse>(pid, pub,
-                CancellationTokens.FromSeconds(_subscriberTimeoutSeconds));
+                CancellationTokens.FromSeconds(_subscriberTimeoutSeconds)).ConfigureAwait(false);
 
             return DeliveryStatus.Delivered;
         }

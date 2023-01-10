@@ -17,7 +17,8 @@ public class LoggingExtensionTests
     [Fact]
     public async Task CanGetLoggingExtension()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         system.Extensions.Register(new InstanceLogger(LogLevel.Debug));
 
         var logger = system.Logger();
@@ -28,7 +29,8 @@ public class LoggingExtensionTests
     [Fact]
     public async Task CanLogToLogStore()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var logStore = new LogStore();
         system.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
@@ -43,7 +45,8 @@ public class LoggingExtensionTests
     [Fact]
     public async Task CanCompareEntriesInStore()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var logStore = new LogStore();
         system.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
@@ -66,7 +69,8 @@ public class LoggingExtensionTests
     {
         // this is not really a logging test, its just to highlight that ?. really ignores the right-side if null
 
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         //instance logger is null
         var logger = system.Logger();
 
@@ -81,7 +85,8 @@ public class LoggingExtensionTests
     [Fact]
     public async Task CanLogByCategory()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var logStore = new LogStore();
         system.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 

@@ -8,7 +8,7 @@ using static Proto.Remote.GrpcNet.GrpcNetRemoteConfig;
 using static System.Threading.Channels.Channel;
 
 var system = new ActorSystem().WithRemote(BindToLocalhost(8000));
-await system.Remote().StartAsync();
+await system.Remote().StartAsync().ConfigureAwait(false);
 
 var channel = CreateUnbounded<MyMessage>();
 _ = ChannelPublisher.StartNew(system.Root, channel, "publisher");
@@ -17,6 +17,6 @@ _ = ChannelPublisher.StartNew(system.Root, channel, "publisher");
 for (var i = 0; i < 30; i++)
 {
     Console.WriteLine("Sending message " + i);
-    await channel.Writer.WriteAsync(new MyMessage(i));
-    await Task.Delay(1000);
+    await channel.Writer.WriteAsync(new MyMessage(i)).ConfigureAwait(false);
+    await Task.Delay(1000).ConfigureAwait(false);
 }

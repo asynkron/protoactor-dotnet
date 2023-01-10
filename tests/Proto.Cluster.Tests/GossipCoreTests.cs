@@ -66,7 +66,7 @@ public class GossipCoreTests
 
         foreach (var m in environment.Values)
         {
-            await m.Gossip.UpdateClusterTopology(topology.Clone());
+            await m.Gossip.UpdateClusterTopology(topology.Clone()).ConfigureAwait(false);
         }
 
         var first = environment.Values.First().Gossip;
@@ -97,7 +97,7 @@ public class GossipCoreTests
             }
             , ct);
 
-        var x = await handle.TryGetConsensus(ct);
+        var x = await handle.TryGetConsensus(ct).ConfigureAwait(false);
 
         _output.WriteLine("Consensus topology hash " + x.value);
         _output.WriteLine("Gossip generations " + Interlocked.Read(ref gossipGenerations));

@@ -84,7 +84,7 @@ public class PartitionActivatorManager
         }
         else
         {
-            await _context.StopAsync(_partitionActivatorActor);
+            await _context.StopAsync(_partitionActivatorActor).ConfigureAwait(false);
         }
     }
 

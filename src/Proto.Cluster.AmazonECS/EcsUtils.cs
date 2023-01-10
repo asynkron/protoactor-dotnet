@@ -25,7 +25,7 @@ public static class EcsUtils
             {
                 Cluster = ecsClusterName
             }
-        );
+        ).ConfigureAwait(false);
 
         var instanceArns = allTasks.TaskArns;
 
@@ -39,7 +39,7 @@ public static class EcsUtils
                 Include = { "TAGS" },
                 Tasks = instanceArns
             }
-        );
+        ).ConfigureAwait(false);
 
         var members = new List<Member>();
 
@@ -91,6 +91,6 @@ public static class EcsUtils
         {
             ResourceArn = resourceArn,
             Tags = tags
-        });
+        }).ConfigureAwait(false);
     }
 }

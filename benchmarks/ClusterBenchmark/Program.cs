@@ -42,7 +42,7 @@ public static class Program
 
             var l = typeof(Program).Assembly.Location;
             Console.WriteLine($"Worker running {l}");
-            var worker = await Configuration.SpawnMember();
+            var worker = await Configuration.SpawnMember().ConfigureAwait(false);
             AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
             Thread.Sleep(Timeout.Infinite);
 
@@ -142,7 +142,7 @@ public static class Program
             "3" => RunWorkers(() => new RunMemberExternalProcGraceful(), run),
             "4" => RunWorkers(() => new RunMemberExternalProc(), run),
             _   => throw new ArgumentOutOfRangeException()
-        });
+        }).ConfigureAwait(false);
 
         var tps = requestCount / elapsed.TotalMilliseconds * 1000;
         Console.WriteLine();
@@ -162,7 +162,7 @@ public static class Program
 
         _ = SafeTask.Run(async () => {
                 var semaphore = new AsyncSemaphore(50);
-                var cluster = await Configuration.SpawnClient();
+                var cluster = await Configuration.SpawnClient().ConfigureAwait(false);
                 // var rnd = new Random();
                 var i = 0;
 
@@ -188,7 +188,7 @@ public static class Program
         {
             try
             {
-                await cluster.RequestAsync<object>(id, Request, context, cancellationToken);
+                await cluster.RequestAsync<object>(id, Request, context, cancellationToken).ConfigureAwait(false);
 
                 var res = Interlocked.Increment(ref successCount);
 
@@ -203,7 +203,7 @@ public static class Program
             }
             catch (TimeoutException)
             {
-                // ignored                
+                // ignored
             }
 
             OnError();
@@ -236,7 +236,7 @@ public static class Program
         {
             try
             {
-                await cluster.RequestAsync<object>(id, "hello", Request, context, cancellationToken);
+                await cluster.RequestAsync<object>(id, "hello", Request, context, cancellationToken).ConfigureAwait(false);
 
                 var res = Interlocked.Increment(ref successCount);
 
@@ -251,7 +251,7 @@ public static class Program
             }
             catch (TimeoutException)
             {
-                // ignored                
+                // ignored
             }
 
             OnError();
@@ -286,7 +286,7 @@ public static class Program
         var logger = Log.CreateLogger(nameof(Program));
 
         _ = SafeTask.Run(async () => {
-                var cluster = await Configuration.SpawnClient();
+                var cluster = await Configuration.SpawnClient().ConfigureAwait(false);
                 // var rnd = new Random();
                 var semaphore = new AsyncSemaphore(5);
                 var i = 0;
@@ -318,7 +318,7 @@ public static class Program
                     requests.Add(request);
                 }
 
-                await Task.WhenAll(requests);
+                await Task.WhenAll(requests).ConfigureAwait(false);
             }
             catch (Exception x)
             {
@@ -332,18 +332,18 @@ public static class Program
         var logger = Log.CreateLogger(nameof(Program));
 
         _ = SafeTask.Run(async () => {
-                var cluster = await Configuration.SpawnClient();
+                var cluster = await Configuration.SpawnClient().ConfigureAwait(false);
                 var rnd = new Random();
 
                 while (true)
                 {
                     var id = "myactor" + rnd.Next(0, actorCount);
                     var ct = CancellationTokens.FromSeconds(20);
-                    var res = await SendRequest(cluster, id, ct);
+                    var res = await SendRequest(cluster, id, ct).ConfigureAwait(false);
 
                     if (!res)
                     {
-                        var pid = await cluster.GetAsync(ClusterIdentity.Create(id, "hello"), CancellationTokens.FromSeconds(10));
+                        var pid = await cluster.GetAsync(ClusterIdentity.Create(id, "hello"), CancellationTokens.FromSeconds(10)).ConfigureAwait(false);
 
                         if (pid != null)
                         {
@@ -364,14 +364,14 @@ public static class Program
         var logger = Log.CreateLogger(nameof(Program));
 
         _ = SafeTask.Run(async () => {
-                var cluster = await Configuration.SpawnClient();
+                var cluster = await Configuration.SpawnClient().ConfigureAwait(false);
                 var rnd = new Random();
 
                 while (true)
                 {
                     var id = "myactor" + rnd.Next(0, actorCount);
                     var ct = CancellationTokens.FromSeconds(20);
-                    await SendRequest(cluster, id, ct);
+                    await SendRequest(cluster, id, ct).ConfigureAwait(false);
                 }
             }
         );
@@ -384,20 +384,20 @@ public static class Program
         for (var i = 0; i < memberCount; i++)
         {
             var p = memberFactory();
-            await p.Start();
-            await Task.Delay(500);
+            await p.Start().ConfigureAwait(false);
+            await Task.Delay(500).ConfigureAwait(false);
             Console.WriteLine("Worker started...");
             followers.Add(p);
         }
 
-        await Task.Delay(4000);
+        await Task.Delay(4000).ConfigureAwait(false);
 
         startClient();
         Console.WriteLine("Client started...");
 
         var sw = Stopwatch.StartNew();
 
-        await Task.Delay(killTimeoutSeconds * 1000);
+        await Task.Delay(killTimeoutSeconds * 1000).ConfigureAwait(false);
         bool first = true;
 
         foreach (var t in followers)
@@ -408,7 +408,7 @@ public static class Program
             }
             else
             {
-                await Task.Delay(killTimeoutSeconds * 1000);
+                await Task.Delay(killTimeoutSeconds * 1000).ConfigureAwait(false);
             }
 
             Console.WriteLine("Stopping node...");

@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 
-internal class Program
+internal static class Program
 {
     private static void Main(string[] args)
     {
@@ -71,6 +71,6 @@ internal class Program
     }
 }
 
-internal class NoInfluence : INotInfluenceReceiveTimeout
+internal sealed class NoInfluence : INotInfluenceReceiveTimeout
 {
 }

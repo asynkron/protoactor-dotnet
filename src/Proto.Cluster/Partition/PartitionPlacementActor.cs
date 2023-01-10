@@ -74,7 +74,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
             {
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    await Rebalance(context, msg);
+                    await Rebalance(context, msg).ConfigureAwait(false);
                 }
             }
         );
@@ -480,7 +480,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
                             CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
 
                         return await _context.RequestAsync<IdentityHandoverAck>(_target, identityHandover,
-                            linked.Token);
+                            linked.Token).ConfigureAwait(false);
                     }
                     catch (TimeoutException) when (!cancellationToken.IsCancellationRequested)
                     {

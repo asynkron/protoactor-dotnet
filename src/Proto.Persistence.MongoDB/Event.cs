@@ -8,7 +8,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Proto.Persistence.MongoDB;
 
-internal class Event
+internal sealed class Event
 {
     public Event(string actorName, long eventIndex, object data)
     {

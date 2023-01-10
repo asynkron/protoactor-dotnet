@@ -14,7 +14,8 @@ public class SupervisionTestsAllForOne
     [Fact]
     public async Task AllForOneStrategy_Should_ResumeChildOnFailure()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
@@ -44,7 +45,8 @@ public class SupervisionTestsAllForOne
     [Fact]
     public async Task AllForOneStrategy_Should_StopAllChildrenOnFailure()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -75,7 +77,8 @@ public class SupervisionTestsAllForOne
     [Fact]
     public async Task AllForOneStrategy_Should_RestartAllChildrenOnFailure()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -106,7 +109,8 @@ public class SupervisionTestsAllForOne
     [Fact]
     public async Task AllForOneStrategy_Should_PassExceptionOnRestart()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -137,7 +141,8 @@ public class SupervisionTestsAllForOne
     [Fact]
     public async Task AllForOneStrategy_Should_EscalateFailureToParent()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -189,13 +194,13 @@ public class SupervisionTestsAllForOne
         }
     }
 
-    private class ChildActor : IActor
+    private sealed class ChildActor : IActor
     {
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
-                case string _:
+                case string:
                     throw Exception;
             }
 

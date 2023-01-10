@@ -20,8 +20,9 @@ public class TimeoutTests
     [Fact]
     public async Task ThrowsTimeoutExceptionOnRequestTimeout()
     {
-        await using var fixture = new Fixture(1);
-        await fixture.InitializeAsync();
+        var fixture = new Fixture(1);
+        await using var _ = fixture.ConfigureAwait(false);
+        await fixture.InitializeAsync().ConfigureAwait(false);
 
         await fixture.Members.First()
             .Invoking(m => m.RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
@@ -29,7 +30,7 @@ public class TimeoutTests
                 )
             )
             .Should()
-            .ThrowAsync<TimeoutException>();
+            .ThrowAsync<TimeoutException>().ConfigureAwait(false);
     }
 
     private string CreateIdentity(string baseId) => $"{Guid.NewGuid().ToString("N").Substring(0, 6)}-{baseId}-";

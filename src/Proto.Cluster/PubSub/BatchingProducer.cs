@@ -71,7 +71,7 @@ public class BatchingProducer : IAsyncDisposable
             await _publisher.Initialize(new PublisherConfig
             {
                 IdleTimeout = _config.PublisherIdleTimeout
-            }, _topic, cancel);
+            }, _topic, cancel).ConfigureAwait(false);
             try
             {
                 while (!cancel.IsCancellationRequested)
@@ -139,7 +139,7 @@ public class BatchingProducer : IAsyncDisposable
 
     private async Task FailPendingMessages(Exception e)
     {
-        await foreach (var producerMessage in _publisherChannel.Reader.ReadAllAsync())
+        await foreach (var producerMessage in _publisherChannel.Reader.ReadAllAsync().ConfigureAwait(false))
         {
             producerMessage.TaskCompletionSource.SetException(e);
         }
@@ -147,7 +147,7 @@ public class BatchingProducer : IAsyncDisposable
 
     private async Task CancelPendingMessages()
     {
-        await foreach (var producerMessage in _publisherChannel.Reader.ReadAllAsync())
+        await foreach (var producerMessage in _publisherChannel.Reader.ReadAllAsync().ConfigureAwait(false))
         {
             producerMessage.TaskCompletionSource.SetCanceled();
         }
@@ -232,7 +232,7 @@ public class BatchingProducer : IAsyncDisposable
                 retries++;
 
                 var response = await _publisher.PublishBatch(_topic, batchWrapper.Batch,
-                    CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
+                    CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds)).ConfigureAwait(false);
 
                 if (response == null)
                 {
@@ -244,7 +244,7 @@ public class BatchingProducer : IAsyncDisposable
             }
             catch (Exception e)
             {
-                var decision = await _config.OnPublishingError(retries, e, batchWrapper.Batch);
+                var decision = await _config.OnPublishingError(retries, e, batchWrapper.Batch).ConfigureAwait(false);
 
                 if (decision == PublishingErrorDecision.FailBatchAndStop)
                 {
@@ -276,7 +276,7 @@ public class BatchingProducer : IAsyncDisposable
                 }
                 else if (decision.Delay != null)
                 {
-                    await Task.Delay(decision.Delay.Value);
+                    await Task.Delay(decision.Delay.Value).ConfigureAwait(false);
                 }
             }
         }

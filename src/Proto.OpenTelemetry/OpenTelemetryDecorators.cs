@@ -47,7 +47,7 @@ internal sealed class OpenTelemetryRootContextDecorator : RootContextDecorator
         );
 }
 
-internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
+internal sealed class OpenTelemetryActorContextDecorator : ActorContextDecorator
 {
     private readonly ActivitySetup _receiveActivitySetup;
     private readonly ActivitySetup _sendActivitySetup;

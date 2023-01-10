@@ -19,7 +19,7 @@ public class SomeActor: IActor
     }
 }
 ";
-        await VerifyAnalyzerFindsNothingAsync(test);
+        await VerifyAnalyzerFindsNothingAsync(test).ConfigureAwait(false);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class SomeActor : IActor
     }
 }
 ";
-        await VerifyAnalyzerFindsNothingAsync(test);
+        await VerifyAnalyzerFindsNothingAsync(test).ConfigureAwait(false);
     }
 
     [Fact]
@@ -67,9 +67,9 @@ public class SomeActor : IActor
         await VerifyAnalyzerAsync(
             test,
             Diagnostic(DiagnosticDescriptors.Deadlock)
-                .WithSpan(11, 15, 11, 48).WithArguments("PoisonAsync"));
+                .WithSpan(11, 15, 11, 48).WithArguments("PoisonAsync")).ConfigureAwait(false);
     }
-    
+
     [Fact]
     public async Task ShouldFindDeadlockOnStopAsyncSelf()
     {
@@ -90,6 +90,6 @@ public class SomeActor : IActor
         await VerifyAnalyzerAsync(
             test,
             Diagnostic(DiagnosticDescriptors.Deadlock)
-                .WithSpan(11, 15, 11, 46).WithArguments("StopAsync"));
+                .WithSpan(11, 15, 11, 46).WithArguments("StopAsync")).ConfigureAwait(false);
     }
 }

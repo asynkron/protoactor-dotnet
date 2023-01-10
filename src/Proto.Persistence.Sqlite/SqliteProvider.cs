@@ -45,7 +45,7 @@ public class SqliteProvider : IProvider
     {
         using var connection = new SqliteConnection(ConnectionString);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         using var deleteCommand = CreateCommand(
             connection,
@@ -75,21 +75,24 @@ public class SqliteProvider : IProvider
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
-        await using var connection = new SqliteConnection(ConnectionString);
+        var connection = new SqliteConnection(ConnectionString);
+        await using var _ = connection.ConfigureAwait(false);
 
         await connection.OpenAsync().ConfigureAwait(false);
 
-        await using var selectCommand = CreateCommand(
+        var selectCommand = CreateCommand(
             connection,
             "SELECT EventIndex, EventData FROM Events WHERE ActorName = $ActorName AND EventIndex >= $IndexStart AND EventIndex <= $IndexEnd ORDER BY EventIndex ASC",
             ("$ActorName", actorName),
             ("$IndexStart", indexStart),
             ("$IndexEnd", indexEnd)
         );
+        await using var __ = selectCommand.ConfigureAwait(false);
 
         var indexes = new List<long>();
 
-        await using var reader = await selectCommand.ExecuteReaderAsync();
+        var reader = await selectCommand.ExecuteReaderAsync().ConfigureAwait(false);
+        await using var ___ = reader.ConfigureAwait(false);
 
         while (await reader.ReadAsync().ConfigureAwait(false))
         {
@@ -110,15 +113,17 @@ public class SqliteProvider : IProvider
 
         await connection.OpenAsync().ConfigureAwait(false);
 
-        await using var selectCommand = CreateCommand(
+        var selectCommand = CreateCommand(
             connection,
             "SELECT SnapshotIndex, SnapshotData FROM Snapshots WHERE ActorName = $ActorName ORDER BY SnapshotIndex DESC LIMIT 1",
             ("$ActorName", actorName)
         );
+        await using var _ = selectCommand.ConfigureAwait(false);
 
-        await using var reader = await selectCommand.ExecuteReaderAsync().ConfigureAwait(false);
+        var reader = await selectCommand.ExecuteReaderAsync().ConfigureAwait(false);
+        await using var __ = reader.ConfigureAwait(false);
 
-        while (await reader.ReadAsync())
+        while (await reader.ReadAsync().ConfigureAwait(false))
         {
             snapshot = JsonConvert.DeserializeObject<object>(reader["SnapshotData"].ToString(), AutoTypeSettings);
             index = Convert.ToInt64(reader["SnapshotIndex"]);
@@ -135,7 +140,7 @@ public class SqliteProvider : IProvider
 
         using var connection = new SqliteConnection(ConnectionString);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         using var insertCommand = CreateCommand(
             connection,
@@ -157,11 +162,12 @@ public class SqliteProvider : IProvider
             actorName, index, JsonConvert.SerializeObject(snapshot, AllTypeSettings)
         );
 
-        await using var connection = new SqliteConnection(ConnectionString);
+        var connection = new SqliteConnection(ConnectionString);
+        await using var _ = connection.ConfigureAwait(false);
 
         await connection.OpenAsync().ConfigureAwait(false);
 
-        await using var insertCommand = CreateCommand(
+        var insertCommand = CreateCommand(
             connection,
             "INSERT INTO Snapshots (Id, ActorName, SnapshotIndex, SnapshotData) VALUES ($Id, $ActorName, $SnapshotIndex, $SnapshotData)",
             ("$Id", item.Id),
@@ -169,6 +175,7 @@ public class SqliteProvider : IProvider
             ("$SnapshotIndex", item.SnapshotIndex),
             ("$SnapshotData", item.SnapshotData)
         );
+        await using var __ = insertCommand.ConfigureAwait(false);
 
         await insertCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
     }

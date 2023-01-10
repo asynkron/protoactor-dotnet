@@ -94,7 +94,7 @@ internal class IdentityStoragePlacementActor : IActor
 
         try
         {
-            await _identityLookup.RemovePidAsync(msg.ClusterIdentity, pid, CancellationToken.None);
+            await _identityLookup.RemovePidAsync(msg.ClusterIdentity, pid, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -268,7 +268,7 @@ internal class IdentityStoragePlacementActor : IActor
             {
                 await _identityLookup.Storage.StoreActivation(_cluster.System.Id, spawnLock, pid,
                     context.CancellationToken
-                );
+                ).ConfigureAwait(false);
 
                 return true;
             }
@@ -283,7 +283,7 @@ internal class IdentityStoragePlacementActor : IActor
                 if (++attempts < PersistenceRetries)
                 {
                     Logger.LogWarning(e, "No entry was updated {@SpawnLock}. Retrying", spawnLock);
-                    await Task.Delay(50);
+                    await Task.Delay(50).ConfigureAwait(false);
                 }
                 else
                 {

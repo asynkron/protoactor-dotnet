@@ -146,7 +146,7 @@ internal class TransferProcess : IActor
         if (context.Message is Started)
         {
             context.SpawnNamed(TryDebit(_from, -_amount), "DebitAttempt");
-            await _persistence.PersistEventAsync(new TransferStarted());
+            await _persistence.PersistEventAsync(new TransferStarted()).ConfigureAwait(false);
         }
     }
 

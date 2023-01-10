@@ -50,7 +50,7 @@ public class KubernetesProvider : IClusterProvider
                 labelSelector: selector,
                 watch: false,
                 timeoutSeconds: _config.WatchTimeoutSeconds
-            );
+            ).ConfigureAwait(false);
 
             var pods = new DiagnosticsEntry("KubernetesProvider", "Pods", res.Body);
 
@@ -96,7 +96,7 @@ public class KubernetesProvider : IClusterProvider
         _kinds = kinds;
         _address = host + ":" + port;
         StartClusterMonitor();
-        await RegisterMemberAsync();
+        await RegisterMemberAsync().ConfigureAwait(false);
         MonitorMemberStatusChanges();
     }
 
@@ -119,13 +119,13 @@ public class KubernetesProvider : IClusterProvider
 
     public async Task ShutdownAsync(bool graceful)
     {
-        await DeregisterMemberAsync(_cluster);
-        await _cluster.System.Root.StopAsync(_clusterMonitor);
+        await DeregisterMemberAsync(_cluster).ConfigureAwait(false);
+        await _cluster.System.Root.StopAsync(_clusterMonitor).ConfigureAwait(false);
     }
 
     public async Task RegisterMemberAsync()
     {
-        await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
+        await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever).ConfigureAwait(false);
 
         static void OnError(int attempt, Exception exception) =>
             Logger.LogWarning(exception, "Failed to register service");
@@ -140,7 +140,7 @@ public class KubernetesProvider : IClusterProvider
         Logger.LogInformation("[Cluster][KubernetesProvider] Registering service {PodName} on {PodIp}", _podName,
             _address);
 
-        var pod = await kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace());
+        var pod = await kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace()).ConfigureAwait(false);
 
         if (pod is null)
         {
@@ -178,7 +178,7 @@ public class KubernetesProvider : IClusterProvider
 
         try
         {
-            await kubernetes.ReplacePodLabelsAndAnnotations(_podName, KubernetesExtensions.GetKubeNamespace(), pod, labels, annotations);
+            await kubernetes.ReplacePodLabelsAndAnnotations(_podName, KubernetesExtensions.GetKubeNamespace(), pod, labels, annotations).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -214,7 +214,7 @@ public class KubernetesProvider : IClusterProvider
 
     public async Task DeregisterMemberAsync(Cluster cluster)
     {
-        await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed);
+        await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
         static void OnError(int attempt, Exception exception) =>
             Logger.LogWarning(exception, "Failed to deregister service");
@@ -231,7 +231,7 @@ public class KubernetesProvider : IClusterProvider
 
         var kubeNamespace = KubernetesExtensions.GetKubeNamespace();
 
-        var pod = await kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace);
+        var pod = await kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace).ConfigureAwait(false);
 
         var labels = pod.Metadata.Labels
             .Where(label => !label.Key.StartsWith(ProtoClusterPrefix, StringComparison.Ordinal))
@@ -241,7 +241,7 @@ public class KubernetesProvider : IClusterProvider
             .Where(label => !label.Key.StartsWith(ProtoClusterPrefix, StringComparison.Ordinal))
             .ToDictionary(label => label.Key, label => label.Value);
 
-        await kubernetes.ReplacePodLabelsAndAnnotations(_podName, kubeNamespace, pod, labels, annotations);
+        await kubernetes.ReplacePodLabelsAndAnnotations(_podName, kubeNamespace, pod, labels, annotations).ConfigureAwait(false);
 
         cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
     }

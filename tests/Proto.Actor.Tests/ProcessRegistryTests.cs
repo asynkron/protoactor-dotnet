@@ -10,7 +10,8 @@ public class ProcessRegistryTests
     [Fact]
     public async Task Given_PIDDoesNotExist_TryAddShouldAddLocalPID()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);
@@ -24,7 +25,8 @@ public class ProcessRegistryTests
     [Fact]
     public async Task Given_PIDExists_TryAddShouldNotAddLocalPID()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);
@@ -38,7 +40,8 @@ public class ProcessRegistryTests
     [Fact]
     public async Task Given_PIDExists_GetShouldReturnIt()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);
@@ -53,7 +56,8 @@ public class ProcessRegistryTests
     [Fact]
     public async Task Given_PIDWasRemoved_GetShouldReturnDeadLetterProcess()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);
@@ -68,7 +72,8 @@ public class ProcessRegistryTests
     [Fact]
     public async Task Given_PIDExistsInHostResolver_GetShouldReturnIt()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var pid = new PID();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);
