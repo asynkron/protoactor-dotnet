@@ -35,7 +35,7 @@ internal class TypeDictionary<TValue, TNamespace>
 
             if (id >= _values.Length)
             {
-                Array.Resize(ref _values, (int)(id * _growthFactor));
+                Array.Resize(ref _values, (int)((id + 1) * _growthFactor));
             }
 
             _values[id] = value;
