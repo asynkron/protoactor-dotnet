@@ -16,7 +16,6 @@ public class GossipActor : IActor
     private static readonly ILogger Logger = Log.CreateLogger<GossipActor>();
     private readonly TimeSpan _gossipRequestTimeout;
     private readonly IGossip _internal;
-    private readonly ActorSystem _system;
 
     // lookup from state key -> consensus checks
 
@@ -29,11 +28,10 @@ public class GossipActor : IActor
         int gossipMaxSend
     )
     {
-        _system = system;
         _gossipRequestTimeout = gossipRequestTimeout;
 
         _internal = new Gossip(myId, gossipFanout, gossipMaxSend, instanceLogger,
-            () => _system.Cluster().MemberList.GetMembers());
+            () => system.Cluster().MemberList.GetMembers());
     }
 
     public Task ReceiveAsync(IContext context) =>

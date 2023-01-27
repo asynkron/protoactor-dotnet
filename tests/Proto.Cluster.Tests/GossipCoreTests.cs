@@ -30,8 +30,8 @@ public class GossipCoreTests
     [Fact]
     public async Task Large_cluster_should_get_topology_consensus()
     {
-        const int memberCount = 50;
-        const int fanout = 4;
+        const int memberCount = 300;
+        const int fanout = 3;
 
         var members =
             Enumerable
