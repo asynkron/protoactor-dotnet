@@ -70,31 +70,4 @@ public class AsyncSemaphore
             _semaphore.Release();
         }
     }
-
-    /// <summary>
-    ///     Starts a task when a slot within the maximum number of concurrent tasks is available. The caller will be blocked
-    ///     until the slot is available,
-    ///     however then the task is run asynchronously and the method returns.
-    /// </summary>
-    /// <param name="producer">Delegate to start the task</param>
-    public void Wait(Func<Task> producer)
-    {
-        //block caller
-        _semaphore.Wait();
-
-        _ = SafeTask.Run(async () =>
-            {
-                try
-                {
-                    var task = producer();
-                    await task;
-                }
-                finally
-                {
-                    //release once the async flow is done
-                    _semaphore.Release();
-                }
-            }
-        );
-    }
 }
