@@ -32,7 +32,7 @@ message GossipState {
 //we still know when _we_ as in this node, got this data.
 //and we can measure time from then til now.
 //
-//if we got a hear-beat from another node, and X seconds pass, we can assume it to be dead
+//if we got a heartbeat from another node, and X seconds pass, we can assume it to be dead
 message GossipKeyValue {
   int64 sequence_number = 2; //version is local to the owner member
   google.protobuf.Any value = 4; //value is any format

@@ -90,9 +90,7 @@ internal class Gossip
         }
 
         _state = newState;
-
-        //TODO: Optimize
-        Purge();
+        
         CheckConsensus(updatedKeys);
 
         return updates.ToImmutableList();
@@ -253,7 +251,7 @@ internal class Gossip
     {
         //find all members that have sent topology
         var members = _getMembers();
-
+        
         foreach (var memberId in _state.Members.Keys.ToArray())
         {
             if (!members.Contains(memberId))
