@@ -169,7 +169,7 @@ public static class Program
                 while (true)
                 {
                     var id = "myactor" + (i++ % actorCount);
-                    semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.FromSeconds(20)));
+                    await semaphore.WaitAsync(() => SendRequest(cluster, id, CancellationTokens.FromSeconds(20)));
                 }
             }
         );
@@ -294,7 +294,7 @@ public static class Program
                 while (true)
                 {
                     var b = i;
-                    semaphore.Wait(() => RunBatch(b, cluster));
+                    await semaphore.WaitAsync(() => RunBatch(b, cluster));
                     i = (i + batchSize) % actorCount;
                 }
             }
