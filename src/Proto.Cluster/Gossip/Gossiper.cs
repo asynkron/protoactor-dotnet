@@ -114,7 +114,7 @@ public class Gossiper
         try
         {
             var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid,
-                new GetGossipStateEntryRequest(key));
+                new GetGossipStateEntryRequest(key),CancellationTokens.FromSeconds(5));
 
             return res.State;
         }
