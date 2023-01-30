@@ -67,6 +67,8 @@ public abstract class ActorContextDecorator : IContext
 
     public void ReenterAfter(Task target, Action<Task> action) => _context.ReenterAfter(target, action);
 
+    public void ReenterAfter<T>(Task<T> target, Action<Task<T>> action) => _context.ReenterAfter(target, action);
+
     public void ReenterAfter(Task target, Func<Task, Task> action) => _context.ReenterAfter(target, action);
 
     public CapturedContext Capture() => _context.Capture();
