@@ -70,6 +70,29 @@ public class ReenterTests : ActorTestBase
     }
 
     [Fact]
+    public async Task ReenterTaskWithResult()
+    {
+        const int expectedResult = 2;
+
+        var props = Props.FromFunc(ctx =>
+            {
+                if (ctx.Message is "reenter")
+                {
+                    var task = Task.FromResult(expectedResult);
+                    ctx.ReenterAfter(task, completedTask => { ctx.Respond(completedTask.Result); });
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+
+        var pid = Context.Spawn(props);
+
+        var res = await Context.RequestAsync<int>(pid, "reenter", TimeSpan.FromSeconds(5));
+        Assert.Equal(expectedResult, res);
+    }
+
+    [Fact]
     public async Task ReenterAfterTimerCancelledToken()
     {
         var props = Props.FromProducer(() => new ReenterAfterCancellationActor());
