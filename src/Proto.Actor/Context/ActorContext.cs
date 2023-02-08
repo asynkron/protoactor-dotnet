@@ -73,16 +73,12 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         if (Sender is not null)
         {
-            if (Logger.IsEnabled(LogLevel.Debug))
-            {
-                Logger.LogDebug("{Self} Responding to {Sender} with message {Message}", Self, Sender, message);
-            }
-
+            Logger.ActorResponds(Self, Sender, Message);
             SendUserMessage(Sender, message);
         }
         else
         {
-            Logger.LogWarning("{Self} Tried to respond but sender is null, with message {Message}", Self, message);
+            Logger.ActorRespondsButSenderIsNull(Self, Message);
         }
     }
 
@@ -106,10 +102,9 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
             return pid;
         }
-        catch (Exception x)
+        catch (Exception)
         {
-            Logger.LogError(x, "{Self} Failed to spawn child actor {Name}", Self, name);
-
+            Logger.FailedToSpawnChildActor(Self, name);
             throw;
         }
     }
@@ -181,11 +176,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         switch (_messageOrEnvelope)
         {
             case null:
-                Logger.LogWarning("Message is null");
+                Logger.MessageIsNull();
 
                 return;
             case SystemMessage _:
-                Logger.LogWarning("SystemMessage cannot be forwarded. {Message}", _messageOrEnvelope);
+                Logger.SystemMessageCannotBeForwarded(_messageOrEnvelope);
 
                 return;
             default:
@@ -365,10 +360,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             Console.WriteLine(
                 $"[Supervision] Actor {Self} : {Actor.GetType().Name} failed with message:{message} exception:{reason}");
 
-            Logger.LogError(reason,
-                "[Supervision] Actor {Self} : {ActorType} failed with message:{Message} exception:{Reason}", Self,
-                Actor.GetType().Name, message, reason
-            );
+            Logger.EscalateFailure(reason, Self, Actor.GetType().Name, message);
         }
 
         ActorMetrics.ActorFailureCount.Add(1, _metricTags);
@@ -407,7 +399,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
         catch (Exception x)
         {
-            Logger.LogError(x, "Error handling SystemMessage {Message}", msg);
+            Logger.ErrorHandlingSystemMessage(x, msg);
 
             throw;
         }
@@ -580,7 +572,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     private static ValueTask HandleUnknownSystemMessage(object msg)
     {
         //TODO: sounds like a pretty severe issue if we end up here? what todo?
-        Logger.LogWarning("Unknown system message {Message}", msg);
+        Logger.UnknownSystemMessage(msg);
 
         return default;
     }
@@ -592,16 +584,9 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         // an older Actor instance.
         if (cont.Actor != Actor && cont is not { Actor: null })
         {
-            if (Logger.IsEnabled(LogLevel.Warning))
-            {
-                Logger.LogWarning(
-                    "{Self} Dropping Continuation (ReenterAfter) of {Message}",
-                    Self,
-                    MessageEnvelope.UnwrapMessage(cont.Message)
-                );
-            }
+                Logger.DroppingContinuation(Self, MessageEnvelope.UnwrapMessage(cont.Message));
 
-            return;
+                return;
         }
 
         _messageOrEnvelope = cont.Message;
@@ -768,7 +753,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             }
             catch (Exception e)
             {
-                Logger.LogError(e, "{Self} Error while handling Stopping message", self.Self);
+                Logger.ErrorHandlingStopingMessage(e, self.Self);
                 // do not rethrow - prevent exceptions thrown from stopping handler from restarting the actor 
             }
 
