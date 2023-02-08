@@ -76,7 +76,7 @@ public record ActorSystemConfig
         var logger = Log.CreateLogger("Proto.SystemActors");
 
         return props
-            .WithDeadlineDecorator(TimeSpan.FromSeconds(1), logger)
+            .WithDeadlineDecorator(TimeSpan.FromMilliseconds(100), logger)
             .WithLoggingContextDecorator(logger, LogLevel.None, LogLevel.Debug)
             .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
     };

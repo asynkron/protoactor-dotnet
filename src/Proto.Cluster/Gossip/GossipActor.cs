@@ -22,15 +22,13 @@ public class GossipActor : IActor
     public GossipActor(
         ActorSystem system,
         TimeSpan gossipRequestTimeout,
-        string myId,
         InstanceLogger? instanceLogger,
         int gossipFanout,
         int gossipMaxSend
     )
     {
         _gossipRequestTimeout = gossipRequestTimeout;
-
-        _internal = new Gossip(myId, gossipFanout, gossipMaxSend, instanceLogger,
+        _internal = new Gossip(system.Id, gossipFanout, gossipMaxSend, instanceLogger,
             () => system.Cluster().MemberList.GetMembers());
     }
 
