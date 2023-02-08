@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="ActorContextExtras.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2022 Asynkron AB All rights reserved
 // </copyright>
@@ -37,7 +37,14 @@ public sealed class ActorContextExtras : IDisposable
     public void Dispose()
     {
         ReceiveTimeoutTimer?.Dispose();
-        CancellationTokenSource.Dispose();
+        ReceiveTimeoutTimer = null;
+
+        // NOTE: We don't dispose CancellationTokenSource here on purpose, doing so causes
+        // ActorSystem shutdown issues because of DefaultMailbox.PostSystemMessage doing
+        // a Cancel call on that CancellationTokenSource. This can occur in cases of stopping
+        // an actor twice. Given that we utilize this CancellationTokenSource only via the Cancel()
+        // call, doing a Dispose() call is not required. More info can be found here:
+        // https://github.com/asynkron/protoactor-dotnet/issues/1916
     }
 
     public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
