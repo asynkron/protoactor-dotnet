@@ -280,6 +280,23 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         ScheduleContinuation(target, cont);
     }
 
+    public void ReenterAfter<T>(Task<T> target, Action<Task<T>> action)
+    {
+        var msg = _messageOrEnvelope;
+
+        var cont = new Continuation(
+            () =>
+            {
+                action(target);
+
+                return Task.CompletedTask;
+            },
+            msg,
+            Actor);
+
+        ScheduleContinuation(target, cont);
+    }
+
     public void ReenterAfter(Task target, Func<Task, Task> action)
     {
         var msg = _messageOrEnvelope;
