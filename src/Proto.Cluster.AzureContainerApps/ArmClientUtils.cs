@@ -17,7 +17,7 @@ public static class ArmClientUtils
     public static async Task<Member[]> GetClusterMembers(this ArmClient client, string resourceGroupName, string containerAppName)
     {
         var members = new List<Member>();
-        
+
         var containerApp = await (await client.GetResourceGroupByName(resourceGroupName)).Value.GetContainerAppAsync(containerAppName);
 
         if (containerApp is null || !containerApp.HasValue)
@@ -36,7 +36,7 @@ public static class ArmClientUtils
         var replicasWithTraffic = containerAppRevisions.SelectMany(r => r.GetContainerAppReplicas());
 
         var allTags = (await containerApp.Value.GetTagResource().GetAsync()).Value.Data.TagValues;
-        
+
         foreach (var replica in replicasWithTraffic)
         {
             var replicaNameTag = allTags.FirstOrDefault(kvp => kvp.Value == replica.Data.Name);
@@ -81,15 +81,16 @@ public static class ArmClientUtils
         var resourceGroup = await client.GetResourceGroupByName(resourceGroupName);
         var containerApp = await resourceGroup.Value.GetContainerAppAsync(containerAppName);
         var tagResource = containerApp.Value.GetTagResource();
-        
+
         var existingTags = (await tagResource.GetAsync()).Value.Data.TagValues;
         foreach (var tag in existingTags)
         {
             resourceTag.TagValues.Add(tag);
         }
+
         await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag));
     }
-    
+
     public static async Task ClearMemberTags(this ArmClient client, string resourceGroupName, string containerAppName, string memberId)
     {
         var resourceGroup = await client.GetResourceGroupByName(resourceGroupName);
@@ -98,7 +99,7 @@ public static class ArmClientUtils
 
         var resourceTag = new Tag();
         var existingTags = (await tagResource.GetAsync()).Value.Data.TagValues;
-        
+
         foreach (var tag in existingTags)
         {
             if (!tag.Key.StartsWith(ResourceTagLabels.LabelPrefix(memberId)))
@@ -106,13 +107,13 @@ public static class ArmClientUtils
                 resourceTag.TagValues.Add(tag);
             }
         }
-        
+
         await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag));
     }
 
-    public static async Task<Response<ResourceGroupResource>> GetResourceGroupByName(this ArmClient client, string resourceGroupName) => 
+    public static async Task<Response<ResourceGroupResource>> GetResourceGroupByName(this ArmClient client, string resourceGroupName) =>
         await (await client.GetDefaultSubscriptionAsync()).GetResourceGroups().GetAsync(resourceGroupName);
 
-    private static IEnumerable<ContainerAppRevisionResource> GetActiveRevisionsWithTraffic(ContainerAppResource containerApp) => 
-        containerApp.GetContainerAppRevisions().Where(r => r.HasData && r.Data.Active.GetValueOrDefault(false) && r.Data.TrafficWeight > 0);
+    private static IEnumerable<ContainerAppRevisionResource> GetActiveRevisionsWithTraffic(ContainerAppResource containerApp) =>
+        containerApp.GetContainerAppRevisions().Where(r => r.HasData && (r.Data.IsActive ?? false) && r.Data.TrafficWeight > 0);
 }

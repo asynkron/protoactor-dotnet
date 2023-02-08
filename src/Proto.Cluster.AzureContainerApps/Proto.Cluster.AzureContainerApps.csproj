@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+    <PropertyGroup>
+        <LangVersion>10</LangVersion>
+        <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Azure.ResourceManager.AppContainers" Version="1.0.1"/>
+        <PackageReference Include="Azure.ResourceManager.Resources" Version="1.3.1"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj"/>
+    </ItemGroup>
+</Project>
