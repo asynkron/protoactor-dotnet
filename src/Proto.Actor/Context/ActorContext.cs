@@ -452,7 +452,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     private async ValueTask HandleReceiveTimeout()
     {
         _messageOrEnvelope = Proto.ReceiveTimeout.Instance;
-        await DefaultReceive();
+        await InvokeUserMessageAsync(Proto.ReceiveTimeout.Instance);
     }
 
     private ValueTask HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
