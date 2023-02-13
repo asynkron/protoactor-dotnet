@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto;
 
-public static class SystemContext
+public static partial class SystemContext
 {
     private static readonly ILogger Logger = Log.CreateLogger(nameof(SystemContext));
 
@@ -25,9 +25,10 @@ public static class SystemContext
     {
         if (!name.StartsWith("$"))
         {
-            Logger.LogError("SystemContext Failed to spawn system actor {Name}", name);
+            var ex = new ArgumentException("System actor names must start with $", nameof(name));
+            Logger.LogFailedToSpawnActor(ex, name);
 
-            throw new ArgumentException("System actor names must start with $", nameof(name));
+            throw ex;
         }
 
         try
@@ -40,9 +41,12 @@ public static class SystemContext
         }
         catch (Exception x)
         {
-            Logger.LogError(x, "SystemContext Failed to spawn system actor {Name}", name);
+            Logger.LogFailedToSpawnActor(x, name);
 
             throw;
         }
     }
+
+    [LoggerMessage(0, LogLevel.Error, "SystemContext Failed to spawn system actor {Name}")]
+    static partial void LogFailedToSpawnActor(this ILogger logger, Exception ex, string name);
 }
