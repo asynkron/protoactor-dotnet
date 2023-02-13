@@ -26,20 +26,14 @@ public class RootLoggingContext : RootContextDecorator
         _infrastructureLogLevel = infrastructureLogLevel;
         _exceptionLogLevel = exceptionLogLevel;
     }
-    
+
     public override void Send(PID target, object message)
     {
-        var logLevel = GetLogLevel(message);
-
-        if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
-        {
-            _logger.Log(logLevel, "RootContext Sending {MessageType}:{Message} to {Target}", message.GetMessageTypeName(), message,
-                target);
-        }
+        _logger.RootContextSending(GetLogLevel(message), message.GetMessageTypeName(), message, target);
 
         base.Send(target, message);
     }
-    
+
     private LogLevel GetLogLevel(object message)
     {
         // Don't log certain messages, as the Partition*Actor ends up spamming logs without this.
@@ -52,59 +46,37 @@ public class RootLoggingContext : RootContextDecorator
 
         return logLevel;
     }
-    
+
     public override void Request(PID target, object message, PID? sender)
     {
-        var logLevel = GetLogLevel(message);
-
-        if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
-        {
-            _logger.Log(logLevel, "Sending Request {MessageType}:{Message} to {Target}", message.GetMessageTypeName(),
-                message, target);
-        }
+        _logger.RootContextSendingRequest(GetLogLevel(message), message.GetMessageTypeName(), message, target);
 
         base.Request(target, message, sender);
     }
 
     public override void Stop(PID pid)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "RootContext Stopping {Pid}", pid);
-        }
+        _logger.RootContextStopping(_logLevel, pid);
 
         base.Stop(pid);
     }
 
     public override void Poison(PID pid)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "RootContext Poisoning {Pid}", pid);
-        }
-
+        _logger.RootContextPoisoning(_logLevel, pid);
         base.Poison(pid);
     }
 
     public override async Task PoisonAsync(PID pid)
     {
-
         await base.PoisonAsync(pid);
-        
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "RootContext Poisoned {Pid}", pid);
-        }
+        _logger.RootContextPoisoned(_logLevel, pid);
     }
 
     public override async Task StopAsync(PID pid)
     {
         await base.StopAsync(pid);
-        
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "RootContext Stopped {Pid}", pid);
-        }
+        _logger.RootContextStopped(_logLevel, pid);
     }
 
     public override PID SpawnNamed(Props props, string name, Action<IContext>? callback = null)
@@ -112,70 +84,39 @@ public class RootLoggingContext : RootContextDecorator
         try
         {
             var pid = base.SpawnNamed(props, name, callback);
-
-            if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-            {
-                _logger.Log(_logLevel, "RootContext Spawned child actor {Name} with PID {Pid}", name, pid);
-            }
+            _logger.RootContextSpawnedNamed(_logLevel, name, pid);
 
             return pid;
         }
         catch (Exception x)
         {
-            if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
-            {
-                _logger.Log(_exceptionLogLevel, x, "RootContext Failed when spawning child actor {Name}", name);
-            }
-
+            _logger.RootContextFailedToSpawnNamed(_exceptionLogLevel, x, name);
             throw;
         }
     }
 
     public override void Request(PID target, object message)
     {
-        var logLevel = GetLogLevel(message);
-
-        if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
-        {
-            _logger.Log(logLevel, "RootContext Sending Request {MessageType}:{Message} to {Target}", message.GetMessageTypeName(),
-                message, target);
-        }
+        _logger.RootContextSendingRequest(GetLogLevel(message), message.GetMessageTypeName(), message, target);
 
         base.Request(target, message);
     }
 
     public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "RootContext Sending RequestAsync {MessageType}:{Message} to {Target}",
-                message.GetMessageTypeName(), message, target
-            );
-        }
-
+        var logLevel = GetLogLevel(message);
+        var messageType = message.GetMessageTypeName();
+        _logger.RootContextSendingRequestAsync(logLevel, messageType, message, target);
         try
         {
             var response = await base.RequestAsync<T>(target, message, cancellationToken);
-
-            if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-            {
-                _logger.Log(_logLevel,
-                    "RootContext Got response {Response} to {MessageType}:{Message} from {Target}",
-                    response, message.GetMessageTypeName(), message, target
-                );
-            }
+            _logger.RootContextGotResponse(logLevel, response, messageType, message, target);
 
             return response;
         }
         catch (Exception x)
         {
-            if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
-            {
-                _logger.Log(_exceptionLogLevel, x,
-                    "RootContext Got exception waiting for RequestAsync response of {MessageType}:{Message} from {Target}",
-                    message.GetMessageTypeName(), message, target
-                );
-            }
+            _logger.RootContextFailedSendingRequestAsync(_exceptionLogLevel, x, messageType, message, target);
 
             throw;
         }
