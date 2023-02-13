@@ -42,43 +42,18 @@ public class ActorLoggingContext : ActorContextDecorator
     public override async Task Receive(MessageEnvelope envelope)
     {
         var message = envelope.Message;
-
         var logLevel = GetLogLevel(message);
-
-        if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
-        {
-            _logger.Log(logLevel, "Actor {Self} {ActorType} received message {MessageType}:{Message} from {Sender}",
-                Self, ActorType, message.GetMessageTypeName(),
-                message,
-                SenderOrNone(envelope)
-            );
-        }
-
+        var messageType = message.GetMessageTypeName();
+        var sender = SenderOrNone(envelope);
+        _logger.ActorReceivedMessage(logLevel, Self, ActorType, messageType, message, sender);
         try
         {
             await base.Receive(envelope);
-
-            if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
-            {
-                _logger.Log(logLevel,
-                    "Actor {Self} {ActorType} completed message {MessageType}:{Message} from {Sender}", Self, ActorType,
-                    message.GetMessageTypeName(),
-                    message,
-                    SenderOrNone(envelope)
-                );
-            }
+            _logger.ActorCompletedMessage(logLevel, Self, ActorType, messageType, message, sender);
         }
         catch (Exception x)
         {
-            if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
-            {
-                _logger.Log(_exceptionLogLevel, x,
-                    "Actor {Self} {ActorType} failed during message {MessageType}:{Message} from {Sender}", Self,
-                    ActorType,
-                    message.GetMessageTypeName(), message,
-                    SenderOrNone(envelope)
-                );
-            }
+            _logger.ActorFailedToCompleteMessage(_exceptionLogLevel, x, Self, ActorType, messageType, message, sender);
 
             throw;
         }
@@ -86,63 +61,33 @@ public class ActorLoggingContext : ActorContextDecorator
 
     public override void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} ReenterAfter {Action}", Self, ActorType,
-                action.Method.Name);
-        }
+        _logger.ActorReenterAfter(_logLevel, Self, ActorType, action.Method.Name);
 
         base.ReenterAfter(target, action);
     }
 
     public override void ReenterAfter(Task target, Action action)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} ReenterAfter {Action}", Self, ActorType,
-                action.Method.Name);
-        }
+        _logger.ActorReenterAfter(_logLevel, Self, ActorType, action.Method.Name);
 
         base.ReenterAfter(target, action);
     }
 
     public override async Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending RequestAsync {MessageType}:{Message} to {Target}",
-                Self, ActorType,
-                message.GetMessageTypeName(), message, target
-            );
-        }
-
+        var messageType = message.GetMessageTypeName();
+        var logLevel = GetLogLevel(message);
+        _logger.ActorSendingRequestAsync(logLevel, Self, ActorType, messageType, message, target);
         try
         {
             var response = await base.RequestAsync<T>(target, message, cancellationToken);
-
-            if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-            {
-                _logger.Log(_logLevel,
-                    "Actor {Self} {ActorType} Got response {Response} to {MessageType}:{Message} from {Target}", Self,
-                    ActorType,
-                    response, message.GetMessageTypeName(), message, target
-                );
-            }
+            _logger.ActorGotResponse(logLevel, Self, ActorType, response, messageType, message, target);
 
             return response;
         }
         catch (Exception x)
         {
-            if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
-            {
-                _logger.Log(_exceptionLogLevel, x,
-                    "Actor {Self} {ActorType} Got exception waiting for RequestAsync response of {MessageType}:{Message} from {Target}",
-                    Self,
-                    ActorType,
-                    message.GetMessageTypeName(), message, target
-                );
-            }
-
+            _logger.ActorFailedWaitingForRequestAsync(_exceptionLogLevel, x, Self, ActorType, messageType, message, target);
             throw;
         }
     }
@@ -167,23 +112,13 @@ public class ActorLoggingContext : ActorContextDecorator
         try
         {
             var pid = base.SpawnNamed(props, name, callback);
-
-            if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-            {
-                _logger.Log(_logLevel, "Actor {Self} {ActorType} Spawned child actor {Name} with PID {Pid}", Self,
-                    ActorType, name, pid
-                );
-            }
+            _logger.ActorSpawnedNamed(_logLevel, Self, ActorType, name, pid);
 
             return pid;
         }
         catch (Exception x)
         {
-            if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
-            {
-                _logger.Log(_exceptionLogLevel, x, "Actor {Self} {ActorType} failed when spawning child actor {Name}",
-                    Self, ActorType, name);
-            }
+            _logger.ActorFailedSpawningChildActor(_exceptionLogLevel, x, Self, ActorType, name);
 
             throw;
         }
@@ -192,70 +127,42 @@ public class ActorLoggingContext : ActorContextDecorator
     public override void Respond(object message)
     {
         var logLevel = GetLogLevel(message);
-
-        if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
-        {
-            _logger.Log(logLevel, "Actor {Self} {ActorType} responded with {MessageType}:{Message} to {Sender}", Self,
-                ActorType,
-                message.GetMessageTypeName(), message, Sender
-            );
-        }
+        _logger.ActorResponded(logLevel, Self, ActorType, message.GetMessageTypeName(), message, Sender);
 
         base.Respond(message);
     }
 
     public override void Forward(PID target)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} forwarded message to {Target}", Self, ActorType, target);
-        }
+        _logger.ActorForwarded(_logLevel, Self, ActorType, target);
 
         base.Forward(target);
     }
 
     public override void Request(PID target, object message, PID? sender)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending Request {MessageType}:{Message} to {Target}",
-                Self, ActorType,
-                message.GetMessageTypeName(), message, target
-            );
-        }
+        _logger.ActorSendingRequest(GetLogLevel(message), Self, ActorType, message.GetMessageTypeName(), message, target);
 
         base.Request(target, message, sender);
     }
 
     public override void Send(PID target, object message)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending {MessageType}:{Message} to {Target}", Self,
-                ActorType,
-                message.GetMessageTypeName(), message, target
-            );
-        }
+        _logger.ActorSending(GetLogLevel(message), Self, ActorType, message.GetMessageTypeName(), message, target);
 
         base.Send(target, message);
     }
 
     public override void Unwatch(PID pid)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} Unwatching {Pid}", Self, ActorType, pid);
-        }
+        _logger.ActorUnwatching(_logLevel, Self, ActorType, pid);
 
         base.Unwatch(pid);
     }
-    
+
     public override void Watch(PID pid)
     {
-        if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
-        {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} Watching {Pid}", Self, ActorType, pid);
-        }
+        _logger.ActorWatching(_logLevel, Self, ActorType, pid);
 
         base.Watch(pid);
     }
