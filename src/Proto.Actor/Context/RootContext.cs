@@ -28,7 +28,7 @@ public interface IRootContext : ISpawnerContext, ISenderContext, IStopperContext
 }
 
 [PublicAPI]
-public sealed record RootContext : IRootContext
+public sealed partial record RootContext : IRootContext
 {
     private static readonly ILogger Logger = Log.CreateLogger<RootContext>();
 
@@ -90,7 +90,8 @@ public sealed record RootContext : IRootContext
         }
         catch (Exception x)
         {
-            Logger.LogError(x, "RootContext Failed to spawn root level actor {Name}", name);
+            // Question: This is also logged by the RootLoggingContext. Do we want to do it here as well? 
+            LogFailedToSpawnActor(x, name);
 
             throw;
         }
@@ -177,4 +178,7 @@ public sealed record RootContext : IRootContext
             target.SendUserMessage(System, message);
         }
     }
+
+    [LoggerMessage(0, LogLevel.Error, "RootContext Failed to spawn root level actor {Name}")]
+    partial void LogFailedToSpawnActor(Exception ex, string name);
 }
