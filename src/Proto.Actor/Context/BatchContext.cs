@@ -12,7 +12,7 @@ using Proto.Future;
 
 namespace Proto.Context;
 
-public sealed class BatchContext : ISenderContext, IDisposable
+public sealed partial class BatchContext : ISenderContext, IDisposable
 {
     private static readonly ILogger Logger = Log.CreateLogger<BatchContext>();
     private readonly FutureBatchProcess _batchProcess;
@@ -52,7 +52,7 @@ public sealed class BatchContext : ISenderContext, IDisposable
             case DeadLetterResponse:
                 if (_context.System.Config.DeadLetterResponseLogging)
                 {
-                    Logger.LogError("BatchContext {Self} got DeadLetterResponse for PID {Pid}", _context.Self, target);
+                    LogGotDeadLetterResponse(_context.Self, target);
                 }
 
                 throw new DeadLetterException(target);
@@ -102,4 +102,7 @@ public sealed class BatchContext : ISenderContext, IDisposable
     public void Send(PID target, object message) => _context.Send(target, message);
 
     public void Request(PID target, object message, PID? sender) => _context.Request(target, message, sender);
+
+    [LoggerMessage(0, LogLevel.Error, "BatchContext {Self} got DeadLetterResponse for PID {Target}")]
+    partial void LogGotDeadLetterResponse(PID self, PID target);
 }
