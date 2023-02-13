@@ -35,7 +35,7 @@ public static class DeadlineContextExtensions
 ///     A decorator for a <see cref="ActorContext" /> that logs warning message if Receive takes more time than specified
 ///     timeout.
 /// </summary>
-public class DeadlineContextDecorator : ActorContextDecorator
+public partial class DeadlineContextDecorator : ActorContextDecorator
 {
     private readonly IContext _context;
     private readonly TimeSpan _deadline;
@@ -61,12 +61,14 @@ public class DeadlineContextDecorator : ActorContextDecorator
 
         if (!ok)
         {
-            _logger.LogWarning("Actor {Self} deadline {Deadline}, exceeded on message {Message}", _context.Self,
-                _deadline, envelope.Message);
+            LogDeadlineExceeded(_context.Self, _deadline, envelope.Message);
 
             // keep waiting, we cannot just ignore and continue as an async task might still be running and updating state of the actor
             // if we return here, actor concurrency guarantees could break
             await t;
         }
     }
+
+    [LoggerMessage(0, LogLevel.Warning, "Actor {Self} deadline {Deadline}, exceeded on message {Message}")]
+    partial void LogDeadlineExceeded(PID self, TimeSpan deadline, object message);
 }
