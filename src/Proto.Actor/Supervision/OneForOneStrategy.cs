@@ -20,8 +20,9 @@ namespace Proto;
 ///     This strategy is appropriate when the failing child can be restarted independently from other children of the
 ///     supervisor.
 /// </summary>
-public class OneForOneStrategy : ISupervisorStrategy
+public partial class OneForOneStrategy : ISupervisorStrategy
 {
+    private static readonly (string Resume, string Restart, string Stop) Actions = ("Resuming", "Restarting", "Stopping");
     private static readonly ILogger Logger = Log.CreateLogger<OneForOneStrategy>();
 
     private readonly Decider _decider;
@@ -57,25 +58,25 @@ public class OneForOneStrategy : ISupervisorStrategy
         switch (directive)
         {
             case SupervisorDirective.Resume:
-                LogInfo("Resuming");
+                LogAction(reason, Actions.Resume, child, reason.Message);
                 supervisor.ResumeChildren(child);
 
                 break;
             case SupervisorDirective.Restart:
                 if (ShouldStop(rs))
                 {
-                    LogInfo("Stopping");
+                    LogAction(reason, Actions.Stop, child, reason.Message);
                     supervisor.StopChildren(child);
                 }
                 else
                 {
-                    LogInfo("Restarting");
+                    LogAction(reason, Actions.Restart, child, reason.Message);
                     supervisor.RestartChildren(reason, child);
                 }
 
                 break;
             case SupervisorDirective.Stop:
-                LogInfo("Stopping");
+                LogAction(reason, Actions.Stop, child, reason.Message);
                 supervisor.StopChildren(child);
 
                 break;
@@ -85,16 +86,6 @@ public class OneForOneStrategy : ISupervisorStrategy
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
-        }
-
-        void LogInfo(string action)
-        {
-            if (Logger.IsEnabled(LogLevel.Information))
-            {
-                Logger.LogInformation("{Action} {Actor} because of {Reason}", action,
-                    child, reason
-                );
-            }
         }
     }
 
@@ -116,4 +107,7 @@ public class OneForOneStrategy : ISupervisorStrategy
 
         return false;
     }
+
+    [LoggerMessage(0, LogLevel.Information, "{Action} {Actor} because of {Reason}")]
+    partial void LogAction(Exception ex, string action, PID actor, string reason);
 }

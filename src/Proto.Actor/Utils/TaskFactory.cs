@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto;
 
-public static class SafeTask
+public static partial class SafeTask
 {
     private static readonly ILogger Logger = Log.CreateLogger<TaskFactory>();
 
@@ -37,7 +37,10 @@ public static class SafeTask
         catch (Exception x)
         {
             x.CheckFailFast();
-            Logger.LogError(x, "Unhandled exception in async job {Job}", name);
+            Logger.UnhandledException(x, name);
         }
     }
+
+    [LoggerMessage(0, LogLevel.Error, "Unhandled exception in async job {Job}")]
+    static partial void UnhandledException(this ILogger logger, Exception ex, string job);
 }

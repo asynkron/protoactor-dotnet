@@ -22,7 +22,7 @@ namespace Proto;
 ///     Event stream global to an actor system.
 /// </summary>
 [PublicAPI]
-public class EventStream : EventStream<object>
+public partial class EventStream : EventStream<object>
 {
     private readonly ILogger _logger = Log.CreateLogger<EventStream>();
 
@@ -35,7 +35,7 @@ public class EventStream : EventStream<object>
 
         var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount,
             system.Config.DeadLetterThrottleInterval,
-            droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs", droppedLogs)
+            logCount => LogDeadLetterThrottled(logCount)
         );
 
         Subscribe<DeadLetterEvent>(
@@ -49,17 +49,17 @@ public class EventStream : EventStream<object>
                 if (!system.Shutdown.IsCancellationRequested && shouldThrottle().IsOpen() &&
                     dl.Message is not IIgnoreDeadLetterLogging)
                 {
-                    _logger.LogInformation(
-                        "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
-                        dl.Message.GetMessageTypeName(),
-                        dl.Message,
-                        dl.Pid,
-                        dl.Sender
-                    );
+                    LogCouldNotDeliver(dl.Message.GetMessageTypeName(), dl.Message, dl.Pid, dl.Sender);
                 }
             }
         );
     }
+
+    [LoggerMessage(0, LogLevel.Information, "[DeadLetter] Throttled {LogCount} logs")]
+    partial void LogDeadLetterThrottled(int logCount);
+
+    [LoggerMessage(1, LogLevel.Information, "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'")]
+    partial void LogCouldNotDeliver(string messageType, object message, PID target, PID sender);
 }
 
 /// <summary>
@@ -67,7 +67,7 @@ public class EventStream : EventStream<object>
 /// </summary>
 /// <typeparam name="T">Message type</typeparam>
 [PublicAPI]
-public class EventStream<T>
+public partial class EventStream<T>
 {
     private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
 
@@ -262,7 +262,7 @@ public class EventStream<T>
                     catch (Exception ex)
                     {
                         ex.CheckFailFast();
-                        _logger.LogError(0, ex, "Exception has occurred when publishing a message");
+                        LogFailedToPublishMessage(ex);
                     }
 
                     return Task.CompletedTask;
@@ -288,6 +288,9 @@ public class EventStream<T>
             Unsubscribe(subscription.Id);
         }
     }
+
+    [LoggerMessage(0, LogLevel.Error, "Exception has occurred when publishing a message")]
+    partial void LogFailedToPublishMessage(Exception ex);
 }
 
 public class EventStreamSubscription<T>

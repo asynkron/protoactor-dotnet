@@ -45,7 +45,6 @@ public class DeduplicationContext<T> : ActorContextDecorator where T : IEquatabl
 ///     Will deduplicate on a sender id if the sender is an unnamed actor (ie a FutureProcess)
 /// </summary>
 internal class DeDuplicator<T> where T : IEquatable<T>
-
 {
     private readonly TryGetDeduplicationKey<T> _getDeduplicationKey;
     private readonly ILogger _logger = Log.CreateLogger<DeDuplicator<T>>();
@@ -71,7 +70,7 @@ internal class DeDuplicator<T> where T : IEquatable<T>
 
             if (IsDuplicate(key!, cutoff))
             {
-                _logger.LogInformation("Request de-duplicated");
+                _logger.RequestDeDuplicated();
 
                 return;
             }

@@ -21,8 +21,9 @@ namespace Proto;
 ///     This strategy is appropriate when the children have a strong dependency, such that and any single one failing would
 ///     place them all into a potentially invalid state.
 /// </summary>
-public class AllForOneStrategy : ISupervisorStrategy
+public partial class AllForOneStrategy : ISupervisorStrategy
 {
+    private static readonly (string Resume, string Restart, string Stop) Actions = ("Resuming", "Restarting", "Stopping");
     private static readonly ILogger Logger = Log.CreateLogger<AllForOneStrategy>();
     private readonly Decider _decider;
     private readonly int _maxNrOfRetries;
@@ -57,25 +58,25 @@ public class AllForOneStrategy : ISupervisorStrategy
         switch (directive)
         {
             case SupervisorDirective.Resume:
-                LogInfo("Resuming");
+                LogAction(reason, Actions.Resume, child, reason.Message);
                 supervisor.ResumeChildren(child);
 
                 break;
             case SupervisorDirective.Restart:
                 if (ShouldStop(rs))
                 {
-                    LogInfo("Stopping");
+                    LogAction(reason, Actions.Stop, child, reason.Message);
                     supervisor.StopChildren(supervisor.Children.ToArray());
                 }
                 else
                 {
-                    LogInfo("Restarting");
+                    LogAction(reason, Actions.Restart, child, reason.Message);
                     supervisor.RestartChildren(reason, supervisor.Children.ToArray());
                 }
 
                 break;
             case SupervisorDirective.Stop:
-                LogInfo("Stopping");
+                LogAction(reason, Actions.Stop, child, reason.Message);
                 supervisor.StopChildren(supervisor.Children.ToArray());
 
                 break;
@@ -86,11 +87,6 @@ public class AllForOneStrategy : ISupervisorStrategy
             default:
                 throw new ArgumentOutOfRangeException();
         }
-
-        void LogInfo(string action) =>
-            Logger.LogInformation("{Action} {Actor} because of {Reason}", action,
-                child, reason
-            );
     }
 
     private bool ShouldStop(RestartStatistics rs)
@@ -111,4 +107,7 @@ public class AllForOneStrategy : ISupervisorStrategy
 
         return false;
     }
+
+    [LoggerMessage(0, LogLevel.Information, "{Action} {Actor} because of {Reason}")]
+    partial void LogAction(Exception ex, string action, PID actor, string reason);
 }

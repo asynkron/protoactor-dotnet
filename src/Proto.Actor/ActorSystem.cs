@@ -22,7 +22,7 @@ namespace Proto;
 ///     Manages all the local actors, their communication and supervision
 /// </summary>
 [PublicAPI]
-public sealed class ActorSystem : IAsyncDisposable
+public sealed partial class ActorSystem : IAsyncDisposable
 {
     public const string NoHost = "nonhost";
     public const string Client = "$client";
@@ -51,7 +51,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
         DeferredFuture =
             new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
-        
+
         Diagnostics.RegisterObject("ActorSystem", "Config", config);
         Diagnostics.RegisterObject("ActorSystem", "Id", Id);
         RunThreadPoolStats();
@@ -176,10 +176,7 @@ public sealed class ActorSystem : IAsyncDisposable
                 {
                     Console.WriteLine($"System {Id} - ThreadPool is running hot, ThreadPool latency {t}");
                 }
-
-                logger.LogWarning("System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}", Id,
-                    t);
-                
+                LogThreadPoolRunningHot(logger, Id, t);
             }, Stopper.Token
         );
     }
@@ -193,7 +190,7 @@ public sealed class ActorSystem : IAsyncDisposable
     {
         try
         {
-            _logger.LogInformation("Shutting down actor system {Id} - Reason {Reason}", Id, reason);
+            LogShuttingDown(Id, reason);
             Stopper.Stop(reason);
             Diagnostics.RegisterObject("ActorSystem", "Stopped", reason);
         }
@@ -254,4 +251,10 @@ public sealed class ActorSystem : IAsyncDisposable
     /// <param name="props"></param>
     /// <returns></returns>
     internal Props ConfigureSystemProps(string name, Props props) => Config.ConfigureSystemProps(name, props);
+
+    [LoggerMessage(0, LogLevel.Warning, "System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}")]
+    static partial void LogThreadPoolRunningHot(ILogger logger, string id, TimeSpan threadPoolLatency);
+
+    [LoggerMessage(1, LogLevel.Information, "Shutting down actor system {Id} - Reason {Reason}")]
+    partial void LogShuttingDown(string id, string reason);
 }

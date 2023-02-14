@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.DependencyInjection;
 
-public class DependencyResolver : IDependencyResolver
+public partial class DependencyResolver : IDependencyResolver
 {
     private static readonly ILogger Logger = Log.CreateLogger<DependencyResolver>();
     private readonly IServiceProvider _services;
@@ -31,9 +31,7 @@ public class DependencyResolver : IDependencyResolver
                 }
                 catch (Exception x)
                 {
-                    Logger.LogError(x, "DependencyResolved Failed resolving Props for actor type {ActorType}",
-                        actorType.Name);
-
+                    LogFailedResolvingProps(actorType.Name);
                     throw;
                 }
             }
@@ -50,11 +48,13 @@ public class DependencyResolver : IDependencyResolver
                 }
                 catch (Exception x)
                 {
-                    Logger.LogError(x, "DependencyResolved Failed resolving Props for actor type {ActorType}",
-                        actorType.Name);
+                    LogFailedResolvingProps(actorType.Name);
 
                     throw;
                 }
             }
         );
+
+    [LoggerMessage(0, LogLevel.Error, "DependencyResolved Failed resolving Props for actor type {ActorType}")]
+    partial void LogFailedResolvingProps(string actorType);
 }

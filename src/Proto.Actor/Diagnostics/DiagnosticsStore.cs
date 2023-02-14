@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
 
-
 namespace Proto.Diagnostics;
 
-public class DiagnosticsStore
+public partial class DiagnosticsStore
 {
     private readonly ActorSystem _system;
     private readonly ILogger _logger = Log.CreateLogger<DiagnosticsStore>();
@@ -51,7 +50,7 @@ public class DiagnosticsStore
         var entry = new DiagnosticsEntry(module, message, null);
         if (_entries.TryAdd(entry))
         {
-            _logger.Log(_logLevel, "[Diagnostics] {Module}: {Message}", module, message);
+            LogRegisteredEvent(_logLevel, module, message);
         }
     }
 
@@ -62,7 +61,7 @@ public class DiagnosticsStore
         if (_entries.TryAdd(entry))
         {
             var json = System.Text.Json.JsonSerializer.Serialize(data);
-            _logger.Log(_logLevel,"[Diagnostics] {Module}: {Key}: {Data}", module, key, json);
+            LogRegisteredObject(_logLevel, module, key, json);
         }
     }
 
@@ -80,4 +79,10 @@ public class DiagnosticsStore
 
         return entries.ToArray();
     }
+
+    [LoggerMessage(EventId = 0, Message = "[Diagnostics] {Module}: {Message}")]
+    partial void LogRegisteredEvent(LogLevel logLevel, string module, string message);
+
+    [LoggerMessage(EventId = 1, Message = "[Diagnostics] {Module}: {Key}: {Data}")]
+    partial void LogRegisteredObject(LogLevel logLevel, string module, string key, string data);
 }
