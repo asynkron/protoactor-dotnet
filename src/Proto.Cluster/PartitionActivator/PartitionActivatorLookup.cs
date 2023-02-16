@@ -53,7 +53,6 @@ public class PartitionActivatorLookup : IIdentityLookup
 
         var req = new ActivationRequest
         {
-            RequestId = Guid.NewGuid().ToString("N"),
             ClusterIdentity = clusterIdentity
         };
 

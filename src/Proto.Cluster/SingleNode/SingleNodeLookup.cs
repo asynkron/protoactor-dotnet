@@ -40,7 +40,6 @@ public class SingleNodeLookup : IIdentityLookup
 
         var req = new ActivationRequest
         {
-            RequestId = Guid.NewGuid().ToString("N"),
             ClusterIdentity = clusterIdentity
         };
 
