@@ -90,7 +90,6 @@ public class PartitionIdentityLookup : IIdentityLookup
 
         var req = new ActivationRequest
         {
-            RequestId = Guid.NewGuid().ToString("N"),
             ClusterIdentity = clusterIdentity,
             TopologyHash = topologyHash
         };
@@ -103,11 +102,6 @@ public class PartitionIdentityLookup : IIdentityLookup
 
         try
         {
-            if (_config.DeveloperLogging)
-            {
-                Console.WriteLine($"Sending Request {req.RequestId}");
-            }
-
             var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, cts.Token);
 
             if (resp?.Pid != null)
