@@ -77,6 +77,7 @@ public abstract class RemoteFixture : IRemoteFixture
         var hostBuilder = Host.CreateDefaultBuilder(Array.Empty<string>())
             .ConfigureServices(services =>
                 {
+                    services.Configure<HostOptions>(_ => _.ShutdownTimeout = TimeSpan.FromMinutes(1));
                     services.AddGrpc();
                     services.AddSingleton(Log.GetLoggerFactory());
 
