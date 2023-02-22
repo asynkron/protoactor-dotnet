@@ -91,6 +91,6 @@ public class PubSubMemberTests : IAsyncLifetime
         );
     }
 
-    private string[] SubscriberIds(string prefix, int count) =>
+    private static string[] SubscriberIds(string prefix, int count) =>
         Enumerable.Range(1, count).Select(i => $"{prefix}-{i:D4}").ToArray();
 }
