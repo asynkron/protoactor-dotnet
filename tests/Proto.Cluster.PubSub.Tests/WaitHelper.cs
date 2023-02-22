@@ -15,7 +15,7 @@ public static class WaitHelper
         TimeSpan? timeout = null)
     {
         timeout ??= TimeSpan.FromSeconds(15);
-
+        errorMessage ??= "The condition was not met within the timeout";
         using var cts = new CancellationTokenSource(timeout.Value);
 
         while (!cts.Token.IsCancellationRequested)
@@ -29,6 +29,6 @@ public static class WaitHelper
             await Task.Delay(100);
         }
 
-        throw new Exception(errorMessage ?? $"The condition was not met within the timeout of {timeout.Value}");
+        throw new Exception($"Timeout after {timeout.Value}. {errorMessage}");
     }
 }
