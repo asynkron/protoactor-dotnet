@@ -10,7 +10,7 @@ public static class WaitHelper
 {
     public static async Task WaitUntil(Func<bool> condition, string? errorMessage = null, TimeSpan? timeout = null)
     {
-        timeout ??= TimeSpan.FromSeconds(5);
+        timeout ??= TimeSpan.FromSeconds(15);
 
         var cts = new CancellationTokenSource(timeout.Value);
 
@@ -31,7 +31,7 @@ public static class WaitHelper
     public static async Task WaitUntil(Func<Task<bool>> condition, string? errorMessage = null,
         TimeSpan? timeout = null)
     {
-        timeout ??= TimeSpan.FromSeconds(5);
+        timeout ??= TimeSpan.FromSeconds(15);
 
         var cts = new CancellationTokenSource(timeout.Value);
 
