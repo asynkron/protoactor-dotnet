@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Partition;
+using Proto.Cluster.PartitionActivator;
 using Proto.Cluster.Seed;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
@@ -21,12 +22,12 @@ Log.SetLoggerFactory(
     LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
 
 // Required to allow unencrypted GrpcNet connections
-AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+// AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
 var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
     .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(8090).WithProtoMessages(ProtosReflection.Descriptor))
     .WithCluster(ClusterConfig
-        .Setup("MyCluster", new SeedNodeClusterProvider(), new PartitionIdentityLookup())
+        .Setup("MyCluster", SeedNodeClusterProvider.StartSeedNode(), new PartitionActivatorLookup())
         .WithClusterKind(
             HelloGrainActor.GetClusterKind((ctx, identity) => new HelloGrain(ctx, identity.Identity)))
     );

@@ -5,11 +5,11 @@
         <Nullable>enable</Nullable>
         <IsPackable>true</IsPackable>
         <LangVersion>10</LangVersion>
-        <TargetFrameworks>netstandard2.1;net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>netstandard2.1;net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.21.12" />
+        <PackageReference Include="Google.Protobuf" Version="3.22.0" />
         <PackageReference Include="Grpc.Tools" Version="2.51.0" PrivateAssets="All" />
         <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
