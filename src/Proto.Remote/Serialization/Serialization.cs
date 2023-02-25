@@ -12,7 +12,8 @@ using System.Text.Json;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Proto.Extensions;
-
+using ActorMessages = Proto.ProtosReflection;
+using RemoteMessages = Proto.Remote.ProtosReflection;
 namespace Proto.Remote;
 
 public class Serialization : IActorSystemExtension<Serialization>
@@ -31,14 +32,14 @@ public class Serialization : IActorSystemExtension<Serialization>
 
     public Serialization()
     {
-        RegisterFileDescriptor(Proto.ProtosReflection.Descriptor);
-        RegisterFileDescriptor(ProtosReflection.Descriptor);
+        RegisterFileDescriptor(ActorMessages.Descriptor);
+        RegisterFileDescriptor(RemoteMessages.Descriptor);
 
         RegisterSerializer(
             SERIALIZER_ID_PROTOBUF,
             0,
             new ProtobufSerializer(this));
-
+        
         RegisterSerializer(
             SERIALIZER_ID_JSON,
             -1000,
