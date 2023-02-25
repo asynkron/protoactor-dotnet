@@ -68,7 +68,7 @@ public static class DynamoDBExtensions
         int writeCapacityUnits
     )
     {
-        var existingTable = await dynamoDB.IsTableCreated(tableName, true);
+        var existingTable = await dynamoDB.IsTableCreated(tableName, true).ConfigureAwait(false);
 
         if (existingTable.Created)
         {
@@ -77,12 +77,12 @@ public static class DynamoDBExtensions
         else
         {
             var res = await dynamoDB.CreateTable(tableName, partitionKey, sortKey, readCapacityUnits,
-                writeCapacityUnits);
+                writeCapacityUnits).ConfigureAwait(false);
 
             if (res.TableStatus != "ACTIVE")
             {
-                await Task.Delay(2000);
-                await dynamoDB.IsTableCreated(tableName, false);
+                await Task.Delay(2000).ConfigureAwait(false);
+                await dynamoDB.IsTableCreated(tableName, false).ConfigureAwait(false);
             }
         }
     }
@@ -97,14 +97,14 @@ public static class DynamoDBExtensions
 
         do
         {
-            var (created, tableDesc, shouldRetry) = await TryCheckTable();
+            var (created, tableDesc, shouldRetry) = await TryCheckTable().ConfigureAwait(false);
 
             if (!shouldRetry)
             {
                 return (created, tableDesc);
             }
 
-            await Task.Delay(2000); // Wait 2 seconds.
+            await Task.Delay(2000).ConfigureAwait(false); // Wait 2 seconds.
         } while (retry-- > 0);
 
         // We've been waiting for 20s already. Lets throw exception.
@@ -116,7 +116,7 @@ public static class DynamoDBExtensions
             {
                 var res = await dynamoDB.DescribeTableAsync(
                     new DescribeTableRequest { TableName = tableName }
-                );
+                ).ConfigureAwait(false);
 
                 return res.Table.TableStatus.Value switch
                 {
@@ -182,7 +182,7 @@ public static class DynamoDBExtensions
             TableName = tableName
         };
 
-        var response = await dynamoDB.CreateTableAsync(request);
+        var response = await dynamoDB.CreateTableAsync(request).ConfigureAwait(false);
 
         return response.TableDescription;
     }

@@ -18,7 +18,7 @@ public class ProtoActorTestServicesRaw
         var ci = handle as ClusterIdentity ??
                     throw new ArgumentException($"Handle needs to be of type {nameof(ClusterIdentity)}", nameof(handle));  
 
-        var pong = await _cluster.RequestAsync<PongMessage>(ci, new PingMessage { Name = name}, CancellationTokens.FromSeconds(5));
+        var pong = await _cluster.RequestAsync<PongMessage>(ci, new PingMessage { Name = name}, CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
         
         var expectedResponse = "Hello " + name;
 
@@ -33,7 +33,7 @@ public class ProtoActorTestServicesRaw
     public async Task<object> Activate(string id)
     {
         var ci = ClusterIdentity.Create(id, "PingPongRaw");
-        var res = await _cluster.RequestAsync<PongMessage>(ci, new PingMessage(), CancellationToken.None);
+        var res = await _cluster.RequestAsync<PongMessage>(ci, new PingMessage(), CancellationToken.None).ConfigureAwait(false);
         return ci;
     }
 }

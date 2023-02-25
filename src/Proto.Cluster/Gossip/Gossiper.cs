@@ -79,7 +79,7 @@ public class Gossiper
 
         try
         {
-            var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key));
+            var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key)).ConfigureAwait(false);
 
             var dict = res.State;
             var typed = ImmutableDictionary<string, T>.Empty;
@@ -114,7 +114,7 @@ public class Gossiper
         try
         {
             var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid,
-                new GetGossipStateEntryRequest(key),CancellationTokens.FromSeconds(5));
+                new GetGossipStateEntryRequest(key),CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
 
             return res.State;
         }
@@ -170,7 +170,7 @@ public class Gossiper
 
         try
         {
-            await _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value));
+            await _context.RequestAsync<SetGossipStateResponse>(_pid, new SetGossipStateKey(key, value)).ConfigureAwait(false);
         }
         catch (DeadLetterException)
         {
@@ -210,19 +210,19 @@ public class Gossiper
         {
             try
             {
-                await Task.Delay(_cluster.Config.GossipInterval);
+                await Task.Delay(_cluster.Config.GossipInterval).ConfigureAwait(false);
 
-                await BlockExpiredHeartbeats();
+                await BlockExpiredHeartbeats().ConfigureAwait(false);
 
-                await BlockGracefullyLeft();
+                await BlockGracefullyLeft().ConfigureAwait(false);
 
                 await SetStateAsync(GossipKeys.Heartbeat, new MemberHeartbeat
                     {
                         ActorStatistics = GetActorStatistics()
                     }
-                );
+                ).ConfigureAwait(false);
 
-                await SendStateAsync();
+                await SendStateAsync().ConfigureAwait(false);
             }
             catch (DeadLetterException)
             {
@@ -245,7 +245,7 @@ public class Gossiper
 
     private async Task BlockGracefullyLeft()
     {
-        var t2 = await GetStateEntry(GossipKeys.GracefullyLeft);
+        var t2 = await GetStateEntry(GossipKeys.GracefullyLeft).ConfigureAwait(false);
 
         var blockList = _cluster.System.Remote().BlockList;
         var alreadyBlocked = blockList.BlockedMembers;
@@ -270,7 +270,7 @@ public class Gossiper
             return;
         }
 
-        var t = await GetStateEntry(GossipKeys.Heartbeat);
+        var t = await GetStateEntry(GossipKeys.Heartbeat).ConfigureAwait(false);
 
         var blockList = _cluster.System.Remote().BlockList;
         var alreadyBlocked = blockList.BlockedMembers;
@@ -454,7 +454,7 @@ public class Gossiper
         try
         {
             await _context.RequestAsync<SendGossipStateResponse>(_pid, new SendGossipStateRequest(),
-                CancellationTokens.FromSeconds(5));
+                CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
         }
         catch (DeadLetterException)
         {
@@ -477,7 +477,7 @@ public class Gossiper
         }
 
         Logger.LogInformation("Shutting down heartbeat");
-        await _context.StopAsync(_pid);
+        await _context.StopAsync(_pid).ConfigureAwait(false);
         Logger.LogInformation("Shut down heartbeat");
     }
 }

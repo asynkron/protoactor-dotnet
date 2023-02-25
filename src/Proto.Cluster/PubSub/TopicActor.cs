@@ -54,14 +54,14 @@ public sealed class TopicActor : IActor
         _topic = context.Get<ClusterIdentity>()!.Identity;
         _topologySubscription = context.System.EventStream.Subscribe<ClusterTopology>(context, context.Self);
 
-        var subs = await LoadSubscriptions(_topic);
+        var subs = await LoadSubscriptions(_topic).ConfigureAwait(false);
 
         if (subs.Subscribers_ is not null)
         {
             _subscribers = ImmutableHashSet.CreateRange(subs.Subscribers_);
         }
 
-        await UnsubscribeSubscribersOnMembersThatLeft(context);
+        await UnsubscribeSubscribersOnMembersThatLeft(context).ConfigureAwait(false);
 
         Logger.LogDebug("Topic {Topic} started", _topic);
     }
@@ -100,7 +100,7 @@ public sealed class TopicActor : IActor
             //when done, respond back here
 
             var pidTasks = _subscribers.Select(s => GetPid(context, s)).ToList();
-            var subscribers = await Task.WhenAll(pidTasks);
+            var subscribers = await Task.WhenAll(pidTasks).ConfigureAwait(false);
             var members = subscribers.GroupBy(subscriber => subscriber.pid.Address);
 
             var memberDeliveries =
@@ -156,14 +156,14 @@ public sealed class TopicActor : IActor
     {
         // TODO: optimize with caching
         var pid = await context.Cluster()
-            .GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None);
+            .GetAsync(s.ClusterIdentity.Identity, s.ClusterIdentity.Kind, CancellationToken.None).ConfigureAwait(false);
 
         return (s, pid!);
     }
 
     private async Task OnNotifyAboutFailingSubscribers(IContext context, NotifyAboutFailingSubscribersRequest msg)
     {
-        await UnsubscribeUnreachablePidSubscribers(msg.InvalidDeliveries);
+        await UnsubscribeUnreachablePidSubscribers(msg.InvalidDeliveries).ConfigureAwait(false);
         LogDeliveryErrors(msg.InvalidDeliveries);
 
         context.Respond(new NotifyAboutFailingSubscribersResponse());
@@ -194,7 +194,7 @@ public sealed class TopicActor : IActor
             .Select(s => s.Subscriber)
             .ToList();
 
-        await RemoveSubscribers(allUnreachable);
+        await RemoveSubscribers(allUnreachable).ConfigureAwait(false);
     }
 
     private async Task OnClusterTopologyChanged(IContext context, ClusterTopology topology)
@@ -208,7 +208,7 @@ public sealed class TopicActor : IActor
                             addressesThatLeft.Contains(s.Pid.Address))
                 .ToList();
 
-            await RemoveSubscribers(subscribersThatLeft);
+            await RemoveSubscribers(subscribersThatLeft).ConfigureAwait(false);
         }
     }
 
@@ -221,7 +221,7 @@ public sealed class TopicActor : IActor
                         !activeMemberAddresses.Contains(s.Pid.Address))
             .ToList();
 
-        await RemoveSubscribers(subscribersThatLeft);
+        await RemoveSubscribers(subscribersThatLeft).ConfigureAwait(false);
     }
 
     private async Task RemoveSubscribers(IReadOnlyCollection<SubscriberIdentity> subscribersThatLeft)
@@ -241,7 +241,7 @@ public sealed class TopicActor : IActor
                     string.Join(", ", subscribersThatLeft));
             }
 
-            await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } });
+            await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } }).ConfigureAwait(false);
         }
     }
 
@@ -250,7 +250,7 @@ public sealed class TopicActor : IActor
         try
         {
             //TODO: cancellation token config?
-            var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None);
+            var state = await _subscriptionStore.GetAsync(topic, CancellationToken.None).ConfigureAwait(false);
             Logger.LogDebug("Topic {Topic} loaded subscriptions {Subscriptions}", _topic, state);
 
             return state ?? new Subscribers();
@@ -272,7 +272,7 @@ public sealed class TopicActor : IActor
         {
             //TODO: cancellation token config?
             Logger.LogDebug("Topic {Topic} saved subscriptions {Subscriptions}", _topic, subs);
-            await _subscriptionStore.SetAsync(topic, subs, CancellationToken.None);
+            await _subscriptionStore.SetAsync(topic, subs, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -287,7 +287,7 @@ public sealed class TopicActor : IActor
     {
         _subscribers = _subscribers.Remove(unsub.Subscriber);
         Logger.LogDebug("Topic {Topic} - {Subscriber} unsubscribed", _topic, unsub);
-        await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } });
+        await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } }).ConfigureAwait(false);
         context.Respond(new UnsubscribeResponse());
     }
 
@@ -295,7 +295,7 @@ public sealed class TopicActor : IActor
     {
         _subscribers = _subscribers.Add(sub.Subscriber);
         Logger.LogDebug("Topic {Topic} - {Subscriber} subscribed", _topic, sub);
-        await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } });
+        await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } }).ConfigureAwait(false);
         context.Respond(new SubscribeResponse());
     }
 }

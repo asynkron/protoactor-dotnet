@@ -54,7 +54,7 @@ public static class OpenTelemetryTracingExtensions
                 envelope = envelope.WithHeaders(activity.Context.GetPropagationHeaders());
             }
 
-            await next(context, target, envelope);
+            await next(context, target, envelope).ConfigureAwait(false);
         };
 
     /// <summary>

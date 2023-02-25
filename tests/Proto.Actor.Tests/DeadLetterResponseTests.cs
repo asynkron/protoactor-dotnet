@@ -20,32 +20,34 @@ public class DeadLetterResponseTests
     [Fact]
     public async Task ThrowsDeadLetterException()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var echoPid = system.Root.Spawn(EchoProps);
 
         const string message = "hello";
-        var response = await context.RequestAsync<string>(echoPid, message);
+        var response = await context.RequestAsync<string>(echoPid, message).ConfigureAwait(false);
         response.Should().Be(message);
-        await context.PoisonAsync(echoPid);
+        await context.PoisonAsync(echoPid).ConfigureAwait(false);
 
         await context.Invoking(c => c.RequestAsync<string>(echoPid, message))
             .Should()
-            .ThrowExactlyAsync<DeadLetterException>();
+            .ThrowExactlyAsync<DeadLetterException>().ConfigureAwait(false);
     }
 
     [Fact]
     public async Task SendsDeadLetterResponse()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var validationActor = Props.FromProducer(() => new DeadLetterResponseValidationActor());
 
         var pid = context.Spawn(validationActor);
 
-        var response = await context.RequestAsync<string>(pid, "Validate");
+        var response = await context.RequestAsync<string>(pid, "Validate").ConfigureAwait(false);
 
         response.Should().Be("Validated");
     }
@@ -62,7 +64,7 @@ public class DeadLetterResponseTests
                 case "Validate":
                     _sender = context.Sender;
                     _deadLetterTarget = context.Spawn(EchoProps);
-                    await context.PoisonAsync(_deadLetterTarget);
+                    await context.PoisonAsync(_deadLetterTarget).ConfigureAwait(false);
                     context.Request(_deadLetterTarget, "One dead letter please");
 
                     break;

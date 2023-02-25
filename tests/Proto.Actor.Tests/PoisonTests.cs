@@ -28,7 +28,8 @@ public class PoisonTests
     [Fact]
     public async Task PoisonReturnsIfPidDoesNotExist()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var deadPid = PID.FromAddress(system.Address, "nowhere");
 
         var poisonTask = system.Root.PoisonAsync(deadPid);
@@ -41,7 +42,8 @@ public class PoisonTests
     [Fact]
     public async Task PoisonTerminatesActor()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var pid = system.Root.Spawn(EchoProps);
 
@@ -55,6 +57,6 @@ public class PoisonTests
 
         await system.Root.Invoking(ctx => ctx.RequestAsync<string>(pid, message))
             .Should()
-            .ThrowExactlyAsync<DeadLetterException>();
+            .ThrowExactlyAsync<DeadLetterException>().ConfigureAwait(false);
     }
 }

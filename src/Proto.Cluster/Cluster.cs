@@ -46,21 +46,21 @@ public class Cluster : IActorSystemExtension<Cluster>
         var blocked = new DiagnosticsEntry("Cluster", "Blocked", System.Remote().BlockList.BlockedMembers.ToArray());
         res.Add(blocked);
         
-        var t = await Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
+        var t = await Gossip.GetState<ClusterTopology>(GossipKeys.Topology).ConfigureAwait(false);
 
         var topology = new DiagnosticsEntry("Cluster", "Topology", t);
         res.Add(topology);
         
-        var h = await Gossip.GetStateEntry(GossipKeys.Heartbeat);
+        var h = await Gossip.GetStateEntry(GossipKeys.Heartbeat).ConfigureAwait(false);
         var heartbeats = h.Select(heartbeat => new DiagnosticsMemberHeartbeat(heartbeat.Key, heartbeat.Value.Value.Unpack<MemberHeartbeat>(), heartbeat.Value.LocalTimestamp)).ToArray();
         
         var heartbeat = new DiagnosticsEntry("Cluster", "Heartbeat", heartbeats);
         res.Add(heartbeat);
 
-        var idlookup = await IdentityLookup.GetDiagnostics();
+        var idlookup = await IdentityLookup.GetDiagnostics().ConfigureAwait(false);
         res.AddRange(idlookup);
 
-        var provider = await Provider.GetDiagnostics();
+        var provider = await Provider.GetDiagnostics().ConfigureAwait(false);
         res.AddRange(provider);
 
         return res.ToArray();
@@ -159,13 +159,13 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// </summary>
     public async Task StartMemberAsync()
     {
-        await BeginStartAsync(false);
+        await BeginStartAsync(false).ConfigureAwait(false);
         //gossiper must be started whenever any topology events starts flowing
-        await Gossip.StartAsync();
+        await Gossip.StartAsync().ConfigureAwait(false);
         MemberList.InitializeTopologyConsensus();
-        await Provider.StartMemberAsync(this);
+        await Provider.StartMemberAsync(this).ConfigureAwait(false);
         Logger.LogInformation("Started as cluster member");
-        await MemberList.Started;
+        await MemberList.Started.ConfigureAwait(false);
         Logger.LogInformation("I see myself");
         System.Diagnostics.RegisterEvent("Cluster", "Started Member Successfully");
     }
@@ -176,8 +176,8 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// </summary>
     public async Task StartClientAsync()
     {
-        await BeginStartAsync(true);
-        await Provider.StartClientAsync(this);
+        await BeginStartAsync(true).ConfigureAwait(false);
+        await Provider.StartClientAsync(this).ConfigureAwait(false);
 
         Logger.LogInformation("Started as cluster client");
         System.Diagnostics.RegisterEvent("Cluster", "Started Client Successfully");
@@ -191,16 +191,16 @@ public class Cluster : IActorSystemExtension<Cluster>
         IdentityLookup = Config.IdentityLookup;
 
         Remote = System.Extensions.GetRequired<IRemote>("Remote module must be configured when using cluster");
-        await Remote.StartAsync();
+        await Remote.StartAsync().ConfigureAwait(false);
 
         Logger.LogInformation("Starting");
         MemberList = new MemberList(this);
         ClusterContext = Config.ClusterContextProducer(this);
 
         var kinds = GetClusterKinds();
-        await IdentityLookup.SetupAsync(this, kinds, client);
+        await IdentityLookup.SetupAsync(this, kinds, client).ConfigureAwait(false);
         InitIdentityProxy();
-        await this.PubSub().StartAsync();
+        await this.PubSub().StartAsync().ConfigureAwait(false);
         InitPidCacheTimeouts();
         System.Diagnostics.RegisterObject("Cluster","Config", Config);
     }
@@ -213,7 +213,7 @@ public class Cluster : IActorSystemExtension<Cluster>
                 {
                     while (!System.Shutdown.IsCancellationRequested)
                     {
-                        await Task.Delay(Config.RemotePidCacheClearInterval, System.Shutdown);
+                        await Task.Delay(Config.RemotePidCacheClearInterval, System.Shutdown).ConfigureAwait(false);
                         PidCache.RemoveIdleRemoteProcessesOlderThan(Config.RemotePidCacheTimeToLive);
                     }
                 }, System.Shutdown
@@ -282,13 +282,13 @@ public class Cluster : IActorSystemExtension<Cluster>
         // Inform all members of the cluster that this node intends to leave. Also, let the MemberList know that this
         // node was the one that initiated the shutdown to prevent another shutdown from being called.
         MemberList.Stopping = true;
-        await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty());
+        await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty()).ConfigureAwait(false);
 
         // Deregister from configured cluster provider.
-        await Provider.ShutdownAsync(graceful);
+        await Provider.ShutdownAsync(graceful).ConfigureAwait(false);
 
         // In case provider shutdown is quick, let's wait at least 2 gossip intervals.
-        await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2);
+        await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2).ConfigureAwait(false);
 
         if (_clusterKindObserver != null)
         {
@@ -303,17 +303,17 @@ public class Cluster : IActorSystemExtension<Cluster>
         }
 
         // Cancel the primary CancellationToken first which will shut down a number of concurrent systems simultaneously.
-        await System.ShutdownAsync(reason);
+        await System.ShutdownAsync(reason).ConfigureAwait(false);
 
         // Shut down the rest of the dependencies in reverse order that they were started.
-        await Gossip.ShutdownAsync();
+        await Gossip.ShutdownAsync().ConfigureAwait(false);
 
         if (graceful)
         {
-            await IdentityLookup.ShutdownAsync();
+            await IdentityLookup.ShutdownAsync().ConfigureAwait(false);
         }
 
-        await Remote.ShutdownAsync(graceful);
+        await Remote.ShutdownAsync(graceful).ConfigureAwait(false);
 
         _shutdownCompletedTcs.TrySetResult(true);
         Logger.LogInformation("Stopped Cluster {Id}", System.Id);

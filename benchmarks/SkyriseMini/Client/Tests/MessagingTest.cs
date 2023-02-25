@@ -27,13 +27,13 @@ public class MessagingTest
             var actorIds = PrepareActorIds(parallelism);
 
             _logger.LogInformation("Activating {Parallelism} actors", parallelism);
-            var handles = await ActivateActors(actorIds);
+            var handles = await ActivateActors(actorIds).ConfigureAwait(false);
 
             _logger.LogInformation("Starting the messaging test");
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancel);
             cts.CancelAfter(TimeSpan.FromSeconds(durationInSeconds));
 
-            var (totalMessages, testDuration) = await TestWorker(handles, cts.Token);
+            var (totalMessages, testDuration) = await TestWorker(handles, cts.Token).ConfigureAwait(false);
 
             _logger.LogInformation("Messaging test completed, total messages = {TotalMessages}, duration = {TestDuration}, Throughput = {Throughput:F2} msg/s",
                 totalMessages, testDuration, totalMessages / testDuration.TotalSeconds);
@@ -50,7 +50,7 @@ public class MessagingTest
     async Task<object[]> ActivateActors(string[] actorIds)
     {
         var tasks = actorIds.Select(id => _activate(id)).ToArray();
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
         return tasks.Select(t => t.Result).ToArray();
     }
 
@@ -68,7 +68,7 @@ public class MessagingTest
             {
                 try
                 {
-                    await _ping(handle, Guid.NewGuid().ToString("N"));
+                    await _ping(handle, Guid.NewGuid().ToString("N")).ConfigureAwait(false);
 
                     var res = Interlocked.Increment(ref totalMessages);
 
@@ -86,7 +86,7 @@ public class MessagingTest
             }
         });
 
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
 
         overallStopwatch.Stop();
         return (totalMessages, overallStopwatch.Elapsed);

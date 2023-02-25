@@ -40,7 +40,7 @@ public class Scheduler
 
         _ = SafeTask.Run(async () =>
             {
-                await Task.Delay(delay, cts.Token);
+                await Task.Delay(delay, cts.Token).ConfigureAwait(false);
 
                 _context.Send(target, message);
             }, cts.Token
@@ -73,7 +73,7 @@ public class Scheduler
 
         _ = SafeTask.Run(async () =>
             {
-                await Task.Delay(delay, cts.Token);
+                await Task.Delay(delay, cts.Token).ConfigureAwait(false);
 
                 async Task Trigger()
                 {
@@ -86,11 +86,11 @@ public class Scheduler
 
                         _context.Send(target, message);
 
-                        await Task.Delay(interval, cts.Token);
+                        await Task.Delay(interval, cts.Token).ConfigureAwait(false);
                     }
                 }
 
-                await Trigger();
+                await Trigger().ConfigureAwait(false);
             }, cts.Token
         );
 
@@ -112,7 +112,7 @@ public class Scheduler
 
         _ = SafeTask.Run(async () =>
             {
-                await Task.Delay(delay, cts.Token);
+                await Task.Delay(delay, cts.Token).ConfigureAwait(false);
 
                 async Task Trigger()
                 {
@@ -125,11 +125,11 @@ public class Scheduler
 
                         _context.Request(target, message);
 
-                        await Task.Delay(interval, cts.Token);
+                        await Task.Delay(interval, cts.Token).ConfigureAwait(false);
                     }
                 }
 
-                await Trigger();
+                await Trigger().ConfigureAwait(false);
             }, cts.Token
         );
 

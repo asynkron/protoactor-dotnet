@@ -45,7 +45,7 @@ public class SingleNodeLookup : IIdentityLookup
 
         try
         {
-            var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(_activatorActor, req, cts.Token);
+            var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(_activatorActor, req, cts.Token).ConfigureAwait(false);
 
             if (resp.InvalidIdentity)
             {

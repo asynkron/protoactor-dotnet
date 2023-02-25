@@ -22,7 +22,7 @@ public class ActorSystemHostedService : IHostedService
             
         await _actorSystem
             .Cluster()
-            .StartMemberAsync();
+            .StartMemberAsync().ConfigureAwait(false);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -31,6 +31,6 @@ public class ActorSystemHostedService : IHostedService
 
         await _actorSystem
             .Cluster()
-            .ShutdownAsync();
+            .ShutdownAsync().ConfigureAwait(false);
     }
 }

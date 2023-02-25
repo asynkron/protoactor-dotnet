@@ -51,7 +51,7 @@ public class ProtoHost : IHostedService
                 tasks.Add(t);
             }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
     }
 

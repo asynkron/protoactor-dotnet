@@ -37,11 +37,11 @@ public static class Program
             Configuration.ResetAgent();
             ResetCounters();
 
-            var cluster = await Configuration.SpawnClient();
+            var cluster = await Configuration.SpawnClient().ConfigureAwait(false);
 
             var elapsed = await RunWorkers(
                 () => new RunMemberInProcGraceful(),
-                () => RunBatchClient(batchSize, cluster));
+                () => RunBatchClient(batchSize, cluster)).ConfigureAwait(false);
             var tps = _requestCount / elapsed.TotalMilliseconds * 1000;
             Console.WriteLine();
             Console.WriteLine($"Batch Size:\t{batchSize}");
@@ -49,9 +49,9 @@ public static class Program
             Console.WriteLine($"Successful:\t{_successCount:N0}");
             Console.WriteLine($"Failures:\t{_failureCount:N0}");
             Console.WriteLine($"Throughput:\t{tps:N0} requests/sec -> {(tps * 2):N0} msg/sec");
-            await cluster.ShutdownAsync();
+            await cluster.ShutdownAsync().ConfigureAwait(false);
 
-            await Task.Delay(5000);
+            await Task.Delay(5000).ConfigureAwait(false);
         }
     }
 
@@ -75,7 +75,7 @@ public static class Program
         {
             try
             {
-                await cluster.RequestAsync<object>(id, Request, context, cancellationToken);
+                await cluster.RequestAsync<object>(id, Request, context, cancellationToken).ConfigureAwait(false);
 
                 var res = Interlocked.Increment(ref _successCount);
 
@@ -130,7 +130,7 @@ public static class Program
 
                 while (!cluster.System.Shutdown.IsCancellationRequested)
                 {
-                    await semaphore.WaitAsync(() => RunBatch(rnd, cluster));
+                    await semaphore.WaitAsync(() => RunBatch(rnd, cluster)).ConfigureAwait(false);
                 }
             }
         );
@@ -153,7 +153,7 @@ public static class Program
                     requests.Add(request);
                 }
 
-                await Task.WhenAll(requests);
+                await Task.WhenAll(requests).ConfigureAwait(false);
             }
             catch (Exception x)
             {
@@ -171,20 +171,20 @@ public static class Program
         for (var i = 0; i < MemberCount; i++)
         {
             var p = memberFactory();
-            await p.Start();
-            await Task.Delay(500);
+            await p.Start().ConfigureAwait(false);
+            await Task.Delay(500).ConfigureAwait(false);
             Console.WriteLine("Worker started...");
             followers.Add(p);
         }
 
-        await Task.Delay(1000);
+        await Task.Delay(1000).ConfigureAwait(false);
 
-        await startClient();
+        await startClient().ConfigureAwait(false);
         Console.WriteLine("Client started...");
 
         var sw = Stopwatch.StartNew();
 
-        await Task.Delay(KillTimeoutSeconds * 1000);
+        await Task.Delay(KillTimeoutSeconds * 1000).ConfigureAwait(false);
         var first = true;
 
         foreach (var t in followers)
@@ -195,7 +195,7 @@ public static class Program
             }
             else
             {
-                await Task.Delay(KillTimeoutSeconds * 1000);
+                await Task.Delay(KillTimeoutSeconds * 1000).ConfigureAwait(false);
             }
 
             Console.WriteLine("Stopping node...");

@@ -46,7 +46,7 @@ public static class IRemoteExtensions
                 Kind = kind,
                 Name = name
             }, timeout
-        );
+        ).ConfigureAwait(false);
 
         return res;
 

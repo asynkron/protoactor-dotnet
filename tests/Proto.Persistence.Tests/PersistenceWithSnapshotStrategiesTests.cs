@@ -20,9 +20,9 @@ public class PersistenceWithSnapshotStrategiesTests
             new IntervalStrategy(1), () => state
         );
 
-        await persistence.PersistEventAsync(new Multiplied { Amount = 2 });
-        await persistence.PersistEventAsync(new Multiplied { Amount = 2 });
-        await persistence.PersistEventAsync(new Multiplied { Amount = 2 });
+        await persistence.PersistEventAsync(new Multiplied { Amount = 2 }).ConfigureAwait(false);
+        await persistence.PersistEventAsync(new Multiplied { Amount = 2 }).ConfigureAwait(false);
+        await persistence.PersistEventAsync(new Multiplied { Amount = 2 }).ConfigureAwait(false);
         var snapshots = provider.GetSnapshots(actorId);
         Assert.Equal(3, snapshots.Count);
         Assert.Equal(2, snapshots[0]);

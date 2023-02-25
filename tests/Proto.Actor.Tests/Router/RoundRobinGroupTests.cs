@@ -16,43 +16,45 @@ public class RoundRobinGroupTests
     [Fact]
     public async Task RoundRobinGroupRouter_RouteesReceiveMessagesInRoundRobinStyle()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
 
         system.Root.Send(router, "1");
 
         // only routee1 has received the message
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Null(await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Null(await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        Assert.Equal("1", await system.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Null(await system.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Null(await system.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
 
         system.Root.Send(router, "2");
         system.Root.Send(router, "3");
 
         // routees 2 and 3 receive next messages
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("2", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        Assert.Equal("1", await system.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("2", await system.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
 
         system.Root.Send(router, "4");
 
         // Round robin kicks in and routee1 receives next message
-        Assert.Equal("4", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("2", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        Assert.Equal("4", await system.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("2", await system.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
     public async Task RoundRobinGroupRouter_RouteesCanBeRemoved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
 
-        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
         Assert.DoesNotContain(routee1, routees.Pids);
         Assert.Contains(routee2, routees.Pids);
         Assert.Contains(routee3, routees.Pids);
@@ -61,13 +63,14 @@ public class RoundRobinGroupTests
     [Fact]
     public async Task RoundRobinGroupRouter_RouteesCanBeAdded()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
         system.Root.Send(router, new RouterAddRoutee(routee4));
 
-        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
         Assert.Contains(routee1, routees.Pids);
         Assert.Contains(routee2, routees.Pids);
         Assert.Contains(routee3, routees.Pids);
@@ -77,7 +80,8 @@ public class RoundRobinGroupTests
     [Fact]
     public async Task RoundRobinGroupRouter_RemovedRouteesNoLongerReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
 
@@ -90,15 +94,16 @@ public class RoundRobinGroupTests
         system.Root.Send(router, "3");
         system.Root.Send(router, "3");
 
-        Assert.Equal("0", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("3", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        Assert.Equal("0", await system.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("3", await system.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
     public async Task RoundRobinGroupRouter_AddedRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
@@ -109,24 +114,25 @@ public class RoundRobinGroupTests
         system.Root.Send(router, "1");
         system.Root.Send(router, "1");
 
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee4, "received?", _timeout));
+        Assert.Equal("1", await system.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("1", await system.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("1", await system.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("1", await system.Root.RequestAsync<string>(routee4, "received?", _timeout).ConfigureAwait(false));
     }
 
     [Fact]
     public async Task RoundRobinGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterBroadcastMessage("hello"));
 
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee2, "received?", _timeout).ConfigureAwait(false));
+        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout).ConfigureAwait(false));
     }
 
     private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees(ActorSystem system)

@@ -49,7 +49,7 @@ public class InProcessClusterBatchRequestBenchmark
             .WithCluster(ClusterConfig().WithClusterKind(echoKind));
 
         _cluster = sys.Cluster();
-        await _cluster.StartMemberAsync();
+        await _cluster.StartMemberAsync().ConfigureAwait(false);
         _ids = new ClusterIdentity[Identities];
 
         for (int i = 0; i < _ids.Length; i++)
@@ -60,7 +60,7 @@ public class InProcessClusterBatchRequestBenchmark
         // Activate identities
         foreach (var clusterIdentity in _ids)
         {
-            await _cluster.RequestAsync<int>(clusterIdentity, 1, CancellationToken.None);
+            await _cluster.RequestAsync<int>(clusterIdentity, 1, CancellationToken.None).ConfigureAwait(false);
         }
     }
 
@@ -127,7 +127,7 @@ public class InProcessClusterBatchRequestBenchmark
             tasks[i] = _cluster.RequestAsync<int>(id, i, batch, ct);
         }
 
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
         
 
@@ -144,6 +144,6 @@ public class InProcessClusterBatchRequestBenchmark
             tasks[i] = _cluster.RequestAsync<int>(id, i, ct);
         }
 
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 }

@@ -70,14 +70,14 @@ public class PidCacheTests
             .WithCluster(GetClusterConfig());
 
         var cluster = system.Cluster();
-        await cluster.StartMemberAsync();
+        await cluster.StartMemberAsync().ConfigureAwait(false);
 
         var identity = ClusterIdentity.Create("", "echo");
 
-        await cluster.RequestAsync<Ack>(identity, new Die(), timeout.Token);
+        await cluster.RequestAsync<Ack>(identity, new Die(), timeout.Token).ConfigureAwait(false);
 
         // Let the system purge the terminated PID,
-        await Task.Delay(50);
+        await Task.Delay(50).ConfigureAwait(false);
 
         cluster.PidCache.TryGet(identity, out _).Should().BeFalse();
     }

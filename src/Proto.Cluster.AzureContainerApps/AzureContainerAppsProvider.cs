@@ -67,7 +67,7 @@ public class AzureContainerAppsProvider : IClusterProvider
         _kinds = kinds;
         _address = $"{host}:{port}";
 
-        await RegisterMemberAsync();
+        await RegisterMemberAsync().ConfigureAwait(false);
         StartClusterMonitor();
     }
 
@@ -85,11 +85,11 @@ public class AzureContainerAppsProvider : IClusterProvider
         return Task.CompletedTask;
     }
 
-    public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync();
+    public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync().ConfigureAwait(false);
 
     private async Task RegisterMemberAsync()
     {
-        await Retry.Try(RegisterMemberInner, retryCount: Retry.Forever, onError: OnError, onFailed: OnFailed);
+        await Retry.Try(RegisterMemberInner, retryCount: Retry.Forever, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
         static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
         static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to register service");
@@ -97,9 +97,9 @@ public class AzureContainerAppsProvider : IClusterProvider
 
     private async Task RegisterMemberInner()
     {
-        var resourceGroup = await _client.GetResourceGroupByName(_resourceGroup);
-        var containerApp = await resourceGroup.Value.GetContainerAppAsync(_containerAppName);
-        var revision = await containerApp.Value.GetContainerAppRevisionAsync(_revisionName);
+        var resourceGroup = await _client.GetResourceGroupByName(_resourceGroup).ConfigureAwait(false);
+        var containerApp = await resourceGroup.Value.GetContainerAppAsync(_containerAppName).ConfigureAwait(false);
+        var revision = await containerApp.Value.GetContainerAppRevisionAsync(_revisionName).ConfigureAwait(false);
 
         if (revision.Value.Data.TrafficWeight.GetValueOrDefault(0) == 0)
             return;
@@ -126,7 +126,7 @@ public class AzureContainerAppsProvider : IClusterProvider
 
         try
         {
-            await _client.AddMemberTags(_resourceGroup, _containerAppName, tags);
+            await _client.AddMemberTags(_resourceGroup, _containerAppName, tags).ConfigureAwait(false);
         }
         catch (Exception x)
         {
@@ -143,7 +143,7 @@ public class AzureContainerAppsProvider : IClusterProvider
 
                     try
                     {
-                        var members = await _client.GetClusterMembers(_resourceGroup, _containerAppName);
+                        var members = await _client.GetClusterMembers(_resourceGroup, _containerAppName).ConfigureAwait(false);
 
                         if (members.Any())
                         {
@@ -160,14 +160,14 @@ public class AzureContainerAppsProvider : IClusterProvider
                         Logger.LogError(x, "Failed to get members from Azure Container Apps");
                     }
 
-                    await Task.Delay(PollIntervalInSeconds);
+                    await Task.Delay(PollIntervalInSeconds).ConfigureAwait(false);
                 }
             }
         );
 
     private async Task DeregisterMemberAsync()
     {
-        await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed);
+        await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
         static void OnError(int attempt, Exception exception) =>
             Logger.LogWarning(exception, "Failed to deregister service");
@@ -182,6 +182,6 @@ public class AzureContainerAppsProvider : IClusterProvider
             _replicaName,
             _address);
 
-        await _client.ClearMemberTags(_resourceGroup, _containerAppName, _memberId);
+        await _client.ClearMemberTags(_resourceGroup, _containerAppName, _memberId).ConfigureAwait(false);
     }
 }

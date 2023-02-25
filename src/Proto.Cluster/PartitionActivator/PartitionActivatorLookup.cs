@@ -64,7 +64,7 @@ public class PartitionActivatorLookup : IIdentityLookup
 
         try
         {
-            var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, cts.Token);
+            var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, cts.Token).ConfigureAwait(false);
 
             if (resp.InvalidIdentity)
             {

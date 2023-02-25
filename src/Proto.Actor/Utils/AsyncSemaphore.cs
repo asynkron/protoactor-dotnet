@@ -37,12 +37,12 @@ public class AsyncSemaphore
     /// <returns></returns>
     public async Task<T> WaitAsync<T>(Func<Task<T>> producer)
     {
-        await _semaphore.WaitAsync();
+        await _semaphore.WaitAsync().ConfigureAwait(false);
 
         try
         {
             var task = producer();
-            var result = await task;
+            var result = await task.ConfigureAwait(false);
 
             return result;
         }
@@ -58,12 +58,12 @@ public class AsyncSemaphore
     /// <param name="producer">Delegate to start the task</param>
     public async Task WaitAsync(Func<Task> producer)
     {
-        await _semaphore.WaitAsync();
+        await _semaphore.WaitAsync().ConfigureAwait(false);
 
         try
         {
             var task = producer();
-            await task;
+            await task.ConfigureAwait(false);
         }
         finally
         {
@@ -87,7 +87,7 @@ public class AsyncSemaphore
                 try
                 {
                     var task = producer();
-                    await task;
+                    await task.ConfigureAwait(false);
                 }
                 finally
                 {

@@ -74,7 +74,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
             {
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    await Rebalance(context, msg);
+                    await Rebalance(context, msg).ConfigureAwait(false);
                 }
             }
         );
@@ -105,7 +105,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
             }
 
             var waitingRequests = handoverStates.Values.SelectMany(it => it.WaitingMessages).ToList();
-            await Task.WhenAll(waitingRequests).WaitUpTo(TimeSpan.FromSeconds(30), context.CancellationToken);
+            await Task.WhenAll(waitingRequests).WaitUpTo(TimeSpan.FromSeconds(30), context.CancellationToken).ConfigureAwait(false);
 
             // Ensure that we only update last rebalanced topology when all members have received the current activations
             if (waitingRequests.All(task
@@ -480,7 +480,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
                             CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
 
                         return await _context.RequestAsync<IdentityHandoverAck>(_target, identityHandover,
-                            linked.Token);
+                            linked.Token).ConfigureAwait(false);
                     }
                     catch (TimeoutException) when (!cancellationToken.IsCancellationRequested)
                     {

@@ -18,14 +18,15 @@ public class PubSubBatchingProducerTests
     [Fact]
     public async Task Producer_sends_messages_in_batches()
     {
-        await using var producer = new BatchingProducer(new MockPublisher(Record), "topic",
+        var producer = new BatchingProducer(new MockPublisher(Record), "topic",
             new BatchingProducerConfig { BatchSize = 10 });
+        await using var _ = producer.ConfigureAwait(false);
 
         var tasks = Enumerable.Range(1, 10000)
             .Select(i => producer.ProduceAsync(new TestMessage(i)))
             .ToList();
 
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
 
         _batchesSent.Any(b => b.Envelopes.Count > 1).Should().BeTrue("messages should be batched");
         _batchesSent.All(b => b.Envelopes.Count <= 10).Should().BeTrue("batches should not exceed configured size");
@@ -39,10 +40,10 @@ public class PubSubBatchingProducerTests
         var producer = new BatchingProducer(new MockPublisher(Record), "topic",
             new BatchingProducerConfig { BatchSize = 10 });
 
-        await producer.DisposeAsync();
+        await producer.DisposeAsync().ConfigureAwait(false);
 
         var sutAction = () => producer.ProduceAsync(new TestMessage(1));
-        await sutAction.Should().ThrowAsync<InvalidOperationException>();
+        await sutAction.Should().ThrowAsync<InvalidOperationException>().ConfigureAwait(false);
     }
 
     [Fact]
@@ -53,7 +54,7 @@ public class PubSubBatchingProducerTests
 
         var tasks = Enumerable.Range(1, 100).Select(i => producer.ProduceAsync(new TestMessage(i))).ToArray();
 
-        await producer.DisposeAsync();
+        await producer.DisposeAsync().ConfigureAwait(false);
 
         // the first batch might complete processing, so we don't verify it
         tasks.Skip(5).All(t => t.IsCompleted).Should().BeTrue("all pending messages should complete");
@@ -70,7 +71,7 @@ public class PubSubBatchingProducerTests
 
         try
         {
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
         catch (TestException)
         {
@@ -84,17 +85,18 @@ public class PubSubBatchingProducerTests
     [Fact]
     public async Task Publishing_through_failed_producer_throws()
     {
-        await using var producer = new BatchingProducer(new MockPublisher(Fail), "topic",
+        var producer = new BatchingProducer(new MockPublisher(Fail), "topic",
             new BatchingProducerConfig { BatchSize = 10 });
+        await using var _ = producer.ConfigureAwait(false);
 
         var sutAction = () => producer.ProduceAsync(new TestMessage(1));
-        await sutAction.Should().ThrowAsync<TestException>(); // here we get the exception thrown during publish
+        await sutAction.Should().ThrowAsync<TestException>().ConfigureAwait(false); // here we get the exception thrown during publish
 
         sutAction = () => producer.ProduceAsync(new TestMessage(1));
 
         await sutAction.Should()
             .ThrowAsync<
-                InvalidOperationException>(); // we get InvalidOperationException because we can no longer produce new messages
+                InvalidOperationException>().ConfigureAwait(false); // we get InvalidOperationException because we can no longer produce new messages
     }
 
     [Fact]
@@ -118,9 +120,10 @@ public class PubSubBatchingProducerTests
     [Fact]
     public async Task Can_cancel_publishing_a_message()
     {
-        await using var producer =
+        var producer =
             new BatchingProducer(new MockPublisher(WaitThenRecord()), "topic",
                 new BatchingProducerConfig { BatchSize = 1, MaxQueueSize = 10 });
+        await using var _ = producer.ConfigureAwait(false);
 
         var messageWithoutCancellation = new TestMessage(1);
         var t1 = producer.ProduceAsync(messageWithoutCancellation);
@@ -133,11 +136,11 @@ public class PubSubBatchingProducerTests
 
         // first message completes
         var sutAction = () => t1;
-        await sutAction.Should().NotThrowAsync();
+        await sutAction.Should().NotThrowAsync().ConfigureAwait(false);
 
         // second throws cancelled
         sutAction = () => t2;
-        await sutAction.Should().ThrowAsync<OperationCanceledException>();
+        await sutAction.Should().ThrowAsync<OperationCanceledException>().ConfigureAwait(false);
 
         AllSentNumbers(_batchesSent).Should().Equal(1);
     }
@@ -147,7 +150,7 @@ public class PubSubBatchingProducerTests
     {
         var retries = new List<int>();
 
-        await using var producer =
+        var producer =
             new BatchingProducer(new MockPublisher(FailTimesThenSucceed(3)), "topic",
                 new BatchingProducerConfig
                 {
@@ -160,8 +163,9 @@ public class PubSubBatchingProducerTests
                     }
                 }
             );
+        await using var __ = producer.ConfigureAwait(false);
 
-        await producer.ProduceAsync(new TestMessage(1));
+        await producer.ProduceAsync(new TestMessage(1)).ConfigureAwait(false);
 
         retries.Should().Equal(1, 2, 3);
     }
@@ -169,7 +173,7 @@ public class PubSubBatchingProducerTests
     [Fact]
     public async Task Can_skip_batch_on_publishing_error()
     {
-        await using var producer =
+        var producer =
             new BatchingProducer(new MockPublisher(FailTimesThenSucceed(1)), "topic",
                 new BatchingProducerConfig
                 {
@@ -177,17 +181,18 @@ public class PubSubBatchingProducerTests
                     OnPublishingError = (_, _, _) => Task.FromResult(PublishingErrorDecision.FailBatchAndContinue)
                 }
             );
+        await using var __ = producer.ConfigureAwait(false);
 
         var t1 = producer.ProduceAsync(new TestMessage(1));
         var t2 = producer.ProduceAsync(new TestMessage(2));
 
         // fist batch fails and is skipped
         var sutAction = () => t1;
-        await sutAction.Should().ThrowAsync<TestException>();
+        await sutAction.Should().ThrowAsync<TestException>().ConfigureAwait(false);
 
         // then processing continues, second batch succeeds
         sutAction = () => t2;
-        await sutAction.Should().NotThrowAsync();
+        await sutAction.Should().NotThrowAsync().ConfigureAwait(false);
     }
 
     [Fact]
@@ -203,9 +208,9 @@ public class PubSubBatchingProducerTests
 
         var t1 = producer.ProduceAsync(new TestMessage(1));
         // give it a moment to spin
-        await Task.Delay(50);
+        await Task.Delay(50).ConfigureAwait(false);
 
-        await producer.DisposeAsync();
+        await producer.DisposeAsync().ConfigureAwait(false);
         t1.IsCanceled.Should().BeTrue();
     }
 
@@ -225,18 +230,18 @@ public class PubSubBatchingProducerTests
         var t1 = producer.ProduceAsync(new TestMessage(1), cts.Token);
 
         // give it a moment to spin
-        await Task.Delay(50);
+        await Task.Delay(50).ConfigureAwait(false);
 
         // cancel the message publish
         cts.Cancel();
         var sutAction = () => t1;
         // message should not be published and it should complete as canceled
-        await sutAction.Should().ThrowAsync<OperationCanceledException>("message should have been canceled");
+        await sutAction.Should().ThrowAsync<OperationCanceledException>("message should have been canceled").ConfigureAwait(false);
         publisher.SentBatches.Should().HaveCount(0);
 
         // if we now stop failing the publish, next message should go through
         publisher.ShouldFail = false;
-        await producer.ProduceAsync(new TestMessage(2));
+        await producer.ProduceAsync(new TestMessage(2)).ConfigureAwait(false);
 
         AllSentNumbers(publisher.SentBatches).Should().Equal(2);
     }
@@ -265,7 +270,7 @@ public class PubSubBatchingProducerTests
 
     private async Task<PublishResponse> Wait(PubSubBatch _)
     {
-        await Task.Delay(1000);
+        await Task.Delay(1000).ConfigureAwait(false);
 
         return new PublishResponse();
     }
@@ -273,14 +278,14 @@ public class PubSubBatchingProducerTests
     private Func<PubSubBatch, Task<PublishResponse>> Wait(int ms = 1000) =>
         async _ =>
         {
-            await Task.Delay(ms);
+            await Task.Delay(ms).ConfigureAwait(false);
 
             return new PublishResponse();
         };
 
     private async Task<PublishResponse> WaitThenFail(PubSubBatch _)
     {
-        await Task.Delay(500);
+        await Task.Delay(500).ConfigureAwait(false);
 
         throw new TestException();
     }
@@ -288,7 +293,7 @@ public class PubSubBatchingProducerTests
     private Func<PubSubBatch, Task<PublishResponse>> WaitThenRecord(int ms = 500) =>
         async batch =>
         {
-            await Task.Delay(ms);
+            await Task.Delay(ms).ConfigureAwait(false);
 
             var copy = new PubSubBatch();
             copy.Envelopes.AddRange(batch.Envelopes);

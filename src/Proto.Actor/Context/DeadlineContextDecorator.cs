@@ -57,7 +57,7 @@ public class DeadlineContextDecorator : ActorContextDecorator
             return;
         }
 
-        var ok = await t.WaitUpTo(_deadline);
+        var ok = await t.WaitUpTo(_deadline).ConfigureAwait(false);
 
         if (!ok)
         {
@@ -66,7 +66,7 @@ public class DeadlineContextDecorator : ActorContextDecorator
 
             // keep waiting, we cannot just ignore and continue as an async task might still be running and updating state of the actor
             // if we return here, actor concurrency guarantees could break
-            await t;
+            await t.ConfigureAwait(false);
         }
     }
 }

@@ -20,14 +20,15 @@ public class ForcedSerializationTests
     [Fact(Skip = "Does not work with tracing")]
     public async Task Forced_serialization_works_correctly_in_a_cluster()
     {
-        await using var fixture = new ForcedSerializationClusterFixture();
-        await fixture.InitializeAsync();
+        var fixture = new ForcedSerializationClusterFixture();
+        await using var _ = fixture.ConfigureAwait(false);
+        await fixture.InitializeAsync().ConfigureAwait(false);
         var entryMember = fixture.Members.First();
 
         var testData = Enumerable.Range(1, 100).Select(i => i.ToString()).ToList();
 
         var tasks = testData.Select(id => entryMember.Ping(id, id, CancellationTokens.FromSeconds(10))).ToList();
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
 
         var results = tasks.Select(t => t.Result.Message).ToList();
 

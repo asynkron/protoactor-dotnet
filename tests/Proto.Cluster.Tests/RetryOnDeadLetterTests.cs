@@ -13,17 +13,18 @@ public class RetryOnDeadLetterTests
     [Fact(Skip = "Flaky")]
     public async Task ShouldRetryRequestOnDeadLetterResponseRegardlessOfResponseType()
     {
-        await using var fixture = new Fixture(1);
-        await fixture.InitializeAsync();
+        var fixture = new Fixture(1);
+        await using var _ = fixture.ConfigureAwait(false);
+        await fixture.InitializeAsync().ConfigureAwait(false);
 
         var member = fixture.Members.First();
         var identity = CreateIdentity("dead-letter-test");
 
         // make sure the actor is created and the PID is cached
-        await member.RequestAsync<Pong>(identity, EchoActor.Kind, new Ping(), CancellationTokens.FromSeconds(1));
+        await member.RequestAsync<Pong>(identity, EchoActor.Kind, new Ping(), CancellationTokens.FromSeconds(1)).ConfigureAwait(false);
 
         // pretend we have an invalid PID in the cache
-        var otherMember = await fixture.SpawnNode();
+        var otherMember = await fixture.SpawnNode().ConfigureAwait(false);
         if (member.PidCache.TryGet(ClusterIdentity.Create(identity, EchoActor.Kind), out var pid))
         {
             var newPid = PID.FromAddress(otherMember.System.Address, pid.Id);
@@ -38,7 +39,7 @@ public class RetryOnDeadLetterTests
         }
 
         // check if the correct response type is returned
-        var response = await member.RequestAsync<object>(identity, EchoActor.Kind, new Ping(), CancellationTokens.FromSeconds(1));
+        var response = await member.RequestAsync<object>(identity, EchoActor.Kind, new Ping(), CancellationTokens.FromSeconds(1)).ConfigureAwait(false);
         response.Should().BeOfType<Pong>();
 
     }

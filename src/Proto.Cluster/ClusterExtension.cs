@@ -147,7 +147,7 @@ public static class Extensions
         )
         {
             clusterKind.Inc();
-            await baseReceive(ctx, startEnvelope);
+            await baseReceive(ctx, startEnvelope).ConfigureAwait(false);
         }
 
         async Task HandleRestarting(
@@ -156,7 +156,7 @@ public static class Extensions
             MessageEnvelope restartingEnvelope
         )
         {
-            await baseReceive(ctx, restartingEnvelope);
+            await baseReceive(ctx, restartingEnvelope).ConfigureAwait(false);
 
             // at this point the counter has been incremented by the Starting handler
             // Restarting means that the actor is currently stopping (but it won't get Stopping message)
@@ -187,7 +187,7 @@ public static class Extensions
                 cluster.PidCache.RemoveByVal(identity, ctx.Self);
             }
 
-            await baseReceive(ctx, stopEnvelope);
+            await baseReceive(ctx, stopEnvelope).ConfigureAwait(false);
         }
     }
 

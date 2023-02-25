@@ -28,7 +28,7 @@ public static class SafeTask
     {
         try
         {
-            await Task.Run(body, cancellationToken);
+            await Task.Run(body, cancellationToken).ConfigureAwait(false);
         }
         catch (TaskCanceledException)
         {

@@ -98,13 +98,13 @@ internal class Program
 
                     Console.WriteLine("MyPersistenceActor - Started");
                     Console.WriteLine("MyPersistenceActor - Current State: {0}", _state);
-                    await _persistence.RecoverStateAsync();
+                    await _persistence.RecoverStateAsync().ConfigureAwait(false);
                     context.Send(context.Self, new StartLoopActor());
 
                     break;
 
                 case StartLoopActor msg:
-                    await Handle(context, msg);
+                    await Handle(context, msg).ConfigureAwait(false);
 
                     break;
 
@@ -112,10 +112,10 @@ internal class Program
 
                     if (_snapshot++ % 10 == 0)
                     {
-                        await _persistence.PersistSnapshotAsync(_state);
+                        await _persistence.PersistSnapshotAsync(_state).ConfigureAwait(false);
                     }
 
-                    await Handle(msg);
+                    await Handle(msg).ConfigureAwait(false);
 
                     break;
             }
@@ -197,7 +197,7 @@ internal class Program
 
             _state.Name = message.Name;
 
-            await _persistence.PersistEventAsync(new RenameEvent { Name = message.Name });
+            await _persistence.PersistEventAsync(new RenameEvent { Name = message.Name }).ConfigureAwait(false);
         }
 
         private class StartLoopActor
@@ -224,7 +224,7 @@ internal class Program
                         {
                             context.Send(context.Parent, new RenameCommand { Name = GeneratePronounceableName(5) });
 
-                            await Task.Delay(TimeSpan.FromMilliseconds(500));
+                            await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
 
                             context.Send(context.Self, new LoopParentMessage());
                         }

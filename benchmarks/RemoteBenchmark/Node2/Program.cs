@@ -89,9 +89,9 @@ class Program
             .WithRemoteKind("echo", Props.FromProducer(() => new EchoActor()));
         remote = new GrpcNetRemote(system, remoteConfig);
 
-        await remote.StartAsync();
+        await remote.StartAsync().ConfigureAwait(false);
         context.SpawnNamed(Props.FromProducer(() => new EchoActor()), "remote");
         Console.ReadLine();
-        await remote.ShutdownAsync();
+        await remote.ShutdownAsync().ConfigureAwait(false);
     }
 }

@@ -58,7 +58,7 @@ internal class TransferProcess : IActor
 
                 // recover state from persistence - if there are any events, the current behavior 
                 // should change
-                await _persistence.RecoverStateAsync();
+                await _persistence.RecoverStateAsync().ConfigureAwait(false);
 
                 break;
             case Stopping:
@@ -70,11 +70,11 @@ internal class TransferProcess : IActor
 
                 break;
             case Stopped _ when !_processCompleted:
-                await _persistence.PersistEventAsync(new TransferFailed("Unknown. Transfer Process crashed"));
+                await _persistence.PersistEventAsync(new TransferFailed("Unknown. Transfer Process crashed")).ConfigureAwait(false);
 
                 await _persistence.PersistEventAsync(
                     new EscalateTransfer("Unknown failure. Transfer Process crashed")
-                );
+                ).ConfigureAwait(false);
 
                 context.Send(context.Parent!, new UnknownResult(context.Self));
 
@@ -96,7 +96,7 @@ internal class TransferProcess : IActor
 
         // pass through all messages to the current behavior. Note this includes the Started message we
         // may have just handled as what we should do when started depends on the current behavior
-        await _behavior.ReceiveAsync(context);
+        await _behavior.ReceiveAsync(context).ConfigureAwait(false);
     }
 
     private static Props TryCredit(PID targetActor, decimal amount) =>
@@ -146,7 +146,7 @@ internal class TransferProcess : IActor
         if (context.Message is Started)
         {
             context.SpawnNamed(TryDebit(_from, -_amount), "DebitAttempt");
-            await _persistence.PersistEventAsync(new TransferStarted());
+            await _persistence.PersistEventAsync(new TransferStarted()).ConfigureAwait(false);
         }
     }
 
@@ -161,13 +161,13 @@ internal class TransferProcess : IActor
                 break;
             case OK _:
                 // good to proceed to the credit
-                await _persistence.PersistEventAsync(new AccountDebited());
+                await _persistence.PersistEventAsync(new AccountDebited()).ConfigureAwait(false);
                 context.SpawnNamed(TryCredit(_to, +_amount), "CreditAttempt");
 
                 break;
             case Refused _:
                 // the debit has been refused, and should not be retried 
-                await _persistence.PersistEventAsync(new TransferFailed("Debit refused"));
+                await _persistence.PersistEventAsync(new TransferFailed("Debit refused")).ConfigureAwait(false);
                 context.Send(context.Parent!, new Result.FailedButConsistentResult(context.Self));
                 StopAll(context);
 
@@ -175,7 +175,7 @@ internal class TransferProcess : IActor
             case Terminated _:
                 // the actor that is trying to make the debit has failed to respond with success
                 // we dont know why
-                await _persistence.PersistEventAsync(new StatusUnknown());
+                await _persistence.PersistEventAsync(new StatusUnknown()).ConfigureAwait(false);
                 StopAll(context);
 
                 break;
@@ -193,13 +193,13 @@ internal class TransferProcess : IActor
                 break;
             case OK:
                 var fromBalance =
-                    await context.RequestAsync<decimal>(_from, new GetBalance(), TimeSpan.FromMilliseconds(2000));
+                    await context.RequestAsync<decimal>(_from, new GetBalance(), TimeSpan.FromMilliseconds(2000)).ConfigureAwait(false);
 
                 var toBalance =
-                    await context.RequestAsync<decimal>(_to, new GetBalance(), TimeSpan.FromMilliseconds(2000));
+                    await context.RequestAsync<decimal>(_to, new GetBalance(), TimeSpan.FromMilliseconds(2000)).ConfigureAwait(false);
 
-                await _persistence.PersistEventAsync(new AccountCredited());
-                await _persistence.PersistEventAsync(new TransferCompleted(_from, fromBalance, _to, toBalance));
+                await _persistence.PersistEventAsync(new AccountCredited()).ConfigureAwait(false);
+                await _persistence.PersistEventAsync(new TransferCompleted(_from, fromBalance, _to, toBalance)).ConfigureAwait(false);
                 context.Send(context.Parent!, new Result.SuccessResult(context.Self));
                 StopAll(context);
 
@@ -208,7 +208,7 @@ internal class TransferProcess : IActor
 
                 // sometimes a remote service might say it refuses to perform some operation. 
                 // This is different from a failure
-                await _persistence.PersistEventAsync(new CreditRefused());
+                await _persistence.PersistEventAsync(new CreditRefused()).ConfigureAwait(false);
 
                 // we have definitely debited the _from account as it was confirmed, and we 
                 // haven't credited to _to account, so try and rollback
@@ -219,7 +219,7 @@ internal class TransferProcess : IActor
                 // at this point, we do not know if the credit succeeded. The remote account has not 
                 // confirmed success, but it might have succeeded then crashed, or failed to respond.
                 // Given that we don't know, just fail + escalate
-                await _persistence.PersistEventAsync(new StatusUnknown());
+                await _persistence.PersistEventAsync(new StatusUnknown()).ConfigureAwait(false);
                 StopAll(context);
 
                 break;
@@ -236,8 +236,8 @@ internal class TransferProcess : IActor
 
                 break;
             case OK:
-                await _persistence.PersistEventAsync(new DebitRolledBack());
-                await _persistence.PersistEventAsync(new TransferFailed($"Unable to rollback debit to {_to.Id}"));
+                await _persistence.PersistEventAsync(new DebitRolledBack()).ConfigureAwait(false);
+                await _persistence.PersistEventAsync(new TransferFailed($"Unable to rollback debit to {_to.Id}")).ConfigureAwait(false);
                 context.Send(context.Parent!, new Result.FailedAndInconsistent(context.Self));
                 StopAll(context);
 
@@ -246,9 +246,9 @@ internal class TransferProcess : IActor
             case Terminated:
                 await _persistence.PersistEventAsync(
                     new TransferFailed($"Unable to rollback process. {_from.Id} is owed {_amount}")
-                );
+                ).ConfigureAwait(false);
 
-                await _persistence.PersistEventAsync(new EscalateTransfer($"{_from.Id} is owed {_amount}"));
+                await _persistence.PersistEventAsync(new EscalateTransfer($"{_from.Id} is owed {_amount}")).ConfigureAwait(false);
                 context.Send(context.Parent!, new Result.FailedAndInconsistent(context.Self));
                 StopAll(context);
 

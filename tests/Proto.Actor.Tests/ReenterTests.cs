@@ -24,7 +24,7 @@ public class ReenterTests : ActorTestBase
                 switch (ctx.Message)
                 {
                     case "reenter":
-                        await Task.Delay(500);
+                        await Task.Delay(500).ConfigureAwait(false);
                         ctx.Respond("done");
 
                         break;
@@ -44,7 +44,7 @@ public class ReenterTests : ActorTestBase
 
         var pid = Context.Spawn(props);
 
-        var res = await Context.RequestAsync<string>(pid, "start", TimeSpan.FromSeconds(5));
+        var res = await Context.RequestAsync<string>(pid, "start", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         Assert.Equal("response", res);
     }
 
@@ -65,7 +65,7 @@ public class ReenterTests : ActorTestBase
 
         var pid = Context.Spawn(props);
 
-        var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
+        var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         Assert.Equal("response", res);
     }
 
@@ -88,7 +88,7 @@ public class ReenterTests : ActorTestBase
 
         var pid = Context.Spawn(props);
 
-        var res = await Context.RequestAsync<int>(pid, "reenter", TimeSpan.FromSeconds(5));
+        var res = await Context.RequestAsync<int>(pid, "reenter", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         Assert.Equal(expectedResult, res);
     }
 
@@ -103,7 +103,7 @@ public class ReenterTests : ActorTestBase
         var request = new ReenterAfterCancellationActor.Request(cancellationTokenSource.Token);
 
         var res = await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request,
-            TimeSpan.FromSeconds(5));
+            TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
         res.Should().NotBeNull();
     }
@@ -120,7 +120,7 @@ public class ReenterTests : ActorTestBase
         var request = new ReenterAfterCancellationActor.Request(cancellationTokenSource.Token);
 
         var res = await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request,
-            TimeSpan.FromSeconds(5));
+            TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
         res.Should().NotBeNull();
     }
@@ -136,10 +136,10 @@ public class ReenterTests : ActorTestBase
 
         await Context.Invoking(async ctx
                 => await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request,
-                    TimeSpan.FromMilliseconds(500))
+                    TimeSpan.FromMilliseconds(500)).ConfigureAwait(false)
             )
             .Should()
-            .ThrowExactlyAsync<TimeoutException>();
+            .ThrowExactlyAsync<TimeoutException>().ConfigureAwait(false);
     }
 
     [Fact]
@@ -151,7 +151,7 @@ public class ReenterTests : ActorTestBase
                 {
                     var task = Task.Run(async () =>
                         {
-                            await Task.Delay(100);
+                            await Task.Delay(100).ConfigureAwait(false);
 
                             throw new Exception("Failed!");
                         }
@@ -166,7 +166,7 @@ public class ReenterTests : ActorTestBase
 
         var pid = Context.Spawn(props);
 
-        var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
+        var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         Assert.Equal("response", res);
     }
 
@@ -196,7 +196,7 @@ public class ReenterTests : ActorTestBase
 
         var pid = Context.Spawn(props);
 
-        var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5));
+        var res = await Context.RequestAsync<string>(pid, "reenter", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         Assert.Equal("response", res);
     }
 
@@ -242,7 +242,7 @@ public class ReenterTests : ActorTestBase
             Context.Send(pid, "reenter");
         }
 
-        await Context.PoisonAsync(pid);
+        await Context.PoisonAsync(pid).ConfigureAwait(false);
         Assert.True(correct);
         Assert.Equal(100000, counter);
     }
@@ -276,7 +276,7 @@ public class ReenterTests : ActorTestBase
                         break;
                     case "waitstate":
                         // Wait a while to make sure that Completion really didn't execute.
-                        await Task.Delay(50);
+                        await Task.Delay(50).ConfigureAwait(false);
 
                         while (!ctx.CancellationToken.IsCancellationRequested)
                         {
@@ -297,8 +297,8 @@ public class ReenterTests : ActorTestBase
 
         var pid = Context.Spawn(props);
 
-        await Context.RequestAsync<bool>(pid, "start", TimeSpan.FromSeconds(5));
-        var res = await Context.RequestAsync<bool>(pid, "waitstate", TimeSpan.FromSeconds(5));
+        await Context.RequestAsync<bool>(pid, "start", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+        var res = await Context.RequestAsync<bool>(pid, "waitstate", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         Assert.True(res);
     }
 

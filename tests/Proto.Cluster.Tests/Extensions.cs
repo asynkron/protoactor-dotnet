@@ -32,7 +32,7 @@ public static class Extensions
                 continue;
             }
 
-            var topology = await c.Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
+            var topology = await c.Gossip.GetState<ClusterTopology>(GossipKeys.Topology).ConfigureAwait(false);
 
             sb.AppendLine("\tGossip topology:");
 

@@ -142,7 +142,7 @@ public sealed class ActorSystem : IAsyncDisposable
     {
         if (!Shutdown.IsCancellationRequested)
         {
-            await ShutdownAsync("Disposed");
+            await ShutdownAsync("Disposed").ConfigureAwait(false);
         }
     }
 

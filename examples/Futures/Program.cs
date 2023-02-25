@@ -29,7 +29,7 @@ internal class Program
 
         var pid = context.Spawn(props);
 
-        var reply = await context.RequestAsync<string>(pid, "hello");
+        var reply = await context.RequestAsync<string>(pid, "hello").ConfigureAwait(false);
         Console.WriteLine(reply);
         Console.ReadLine();
     }

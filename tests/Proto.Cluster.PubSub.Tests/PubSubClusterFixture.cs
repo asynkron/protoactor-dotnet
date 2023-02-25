@@ -96,7 +96,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
             if (context.Message is DataPublished msg)
             {
                 await Task.Delay(4000,
-                    CancelWhenDisposing); // 4 seconds is longer than the configured subscriber timeout
+                    CancelWhenDisposing).ConfigureAwait(false); // 4 seconds is longer than the configured subscriber timeout
 
                 Deliveries.Add(new Delivery(context.ClusterIdentity()!.Identity, msg.Data));
                 context.Respond(new Response());
@@ -118,7 +118,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
     public async Task VerifyAllSubscribersGotAllTheData(string[] subscriberIds, int numMessages)
     {
         await WaitHelper.WaitUntil(() => Deliveries.Count == subscriberIds.Length * numMessages,
-            "All messages should be delivered");
+            "All messages should be delivered").ConfigureAwait(false);
 
         var expected = subscriberIds
             .SelectMany(id => Enumerable.Range(0, numMessages).Select(i => new Delivery(id, i)))
@@ -146,7 +146,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
     {
         foreach (var id in subscriberIds)
         {
-            await SubscribeTo(topic, id);
+            await SubscribeTo(topic, id).ConfigureAwait(false);
         }
     }
 
@@ -154,7 +154,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
     {
         foreach (var id in subscriberIds)
         {
-            await UnsubscribeFrom(topic, id);
+            await UnsubscribeFrom(topic, id).ConfigureAwait(false);
         }
     }
 
@@ -163,7 +163,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
 
     public async Task SubscribeTo(string topic, string identity, string kind = SubscriberKind)
     {
-        var subRes = await RandomMember().Subscribe(topic, identity, kind, CancellationTokens.FromSeconds(5));
+        var subRes = await RandomMember().Subscribe(topic, identity, kind, CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
 
         if (subRes == null)
         {
@@ -175,7 +175,7 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
 
     public async Task UnsubscribeFrom(string topic, string identity, string kind = SubscriberKind)
     {
-        var unsubRes = await RandomMember().Unsubscribe(topic, identity, kind, CancellationTokens.FromSeconds(5));
+        var unsubRes = await RandomMember().Unsubscribe(topic, identity, kind, CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
 
         if (unsubRes == null)
         {

@@ -27,7 +27,7 @@ public static class ChannelSubscriber
         var props = Props.FromProducer(() => new ChannelSubscriberActor<T>(publisher, channel, tcs));
         var pid = context.Spawn(props);
 
-        await tcs.Task;
+        await tcs.Task.ConfigureAwait(false);
 
         return pid;
     }
@@ -73,7 +73,7 @@ public class ChannelSubscriberActor<T> : IActor
                 break;
 
             case T typed:
-                await _channel.Writer.WriteAsync(typed);
+                await _channel.Writer.WriteAsync(typed).ConfigureAwait(false);
 
                 break;
         }

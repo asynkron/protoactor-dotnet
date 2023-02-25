@@ -45,35 +45,35 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         await VerifyTrace(async (rootContext, target) =>
             {
                 rootContext.Send(target, new TraceMe(SendAs.Send));
-                await Task.Delay(100);
+                await Task.Delay(100).ConfigureAwait(false);
             }
-        );
+        ).ConfigureAwait(false);
 
     [Fact]
     public async Task TracesPropagateCorrectlyForRequestAsync() =>
         await VerifyTrace(async (rootContext, target) =>
             {
-                var response = await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.RequestAsync));
+                var response = await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.RequestAsync)).ConfigureAwait(false);
                 response.Should().Be(new TraceResponse());
             }
-        );
+        ).ConfigureAwait(false);
 
     [Fact]
     public async Task TracesPropagateCorrectlyForRequest() =>
         await VerifyTrace(async (rootContext, target) =>
             {
                 rootContext.Request(target, new TraceMe(SendAs.Request));
-                await Task.Delay(100);
+                await Task.Delay(100).ConfigureAwait(false);
             }
-        );
+        ).ConfigureAwait(false);
 
     [Fact]
     public async Task TracesPropagateCorrectlyForRequestWithForward() =>
         await VerifyTrace(async (rootContext, target) =>
             {
-                await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.Forward));
+                await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.Forward)).ConfigureAwait(false);
             }
-        );
+        ).ConfigureAwait(false);
 
     [Fact]
     public async Task TracesPropagateCorrectlyForRequestWithSender() =>
@@ -81,10 +81,10 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
             {
                 var future = new FutureProcess(rootContext.System);
                 rootContext.Request(target, new TraceMe(SendAs.Request), future.Pid);
-                var response = (MessageEnvelope)await future.Task;
+                var response = (MessageEnvelope)await future.Task.ConfigureAwait(false);
                 response.Message.Should().Be(new TraceResponse());
             }
-        );
+        ).ConfigureAwait(false);
 
     [Fact]
     public async Task TracesPropagateCorrectlyForRequestWithSenderWithAdditionalMiddleware() =>
@@ -93,14 +93,14 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
                 var middleContext = tracedRoot.WithSenderMiddleware(next => async (context, _, envelope) =>
                 {
                     var updatedEnvelope = envelope.WithHeader("test", "value");
-                    await next(context, target, updatedEnvelope);
+                    await next(context, target, updatedEnvelope).ConfigureAwait(false);
                 });
                 var future = new FutureProcess(middleContext.System);
                 middleContext.Request(target, new TraceMe(SendAs.Request), future.Pid);
-                var response = (MessageEnvelope)await future.Task;
+                var response = (MessageEnvelope)await future.Task.ConfigureAwait(false);
                 response.Message.Should().Be(new TraceResponse());
             }
-        );
+        ).ConfigureAwait(false);
 
     /// <summary>
     ///     Checks that we have both the outer and innermost trace present, meaning that the trace has propagated
@@ -127,7 +127,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         var tracedRoot = new ActorSystem().Root.WithTracing();
         var testRoot = tracedRoot.SpawnNamed(ProxyTraceActorProps, "trace-test");
 
-        var (activitySpanId, activityTraceId) = await Trace(() => action(tracedRoot, testRoot));
+        var (activitySpanId, activityTraceId) = await Trace(() => action(tracedRoot, testRoot)).ConfigureAwait(false);
 
         TracesPropagateCorrectly(activitySpanId, activityTraceId);
     }
@@ -136,7 +136,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
     {
         using var activity = TestSource.StartActivity();
 
-        await action();
+        await action().ConfigureAwait(false);
 
         return (activity!.SpanId, activity.TraceId);
     }
@@ -151,9 +151,9 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         var (_, activityTraceId) = await Trace(async () =>
             {
                 tracedRoot.Send(testRoot, new TraceMe(SendAs.Invalid));
-                await Task.Delay(100);
+                await Task.Delay(100).ConfigureAwait(false);
             }
-        );
+        ).ConfigureAwait(false);
 
         var receiveActivity = _fixture
             .GetActivitiesByTraceId(activityTraceId)
@@ -185,7 +185,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         {
             if (context.Message is TraceMe msg)
             {
-                await OnTraceMe(context, msg);
+                await OnTraceMe(context, msg).ConfigureAwait(false);
             }
         }
 
@@ -196,13 +196,13 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
             switch (msg.Method)
             {
                 case SendAs.RequestAsync:
-                    ConditionalRespond(context, await context.RequestAsync<object>(target, msg));
+                    ConditionalRespond(context, await context.RequestAsync<object>(target, msg).ConfigureAwait(false));
 
                     break;
                 case SendAs.Request:
                     var future = new FutureProcess(context.System);
                     context.Request(target, msg, future.Pid);
-                    var response = (MessageEnvelope)await future.Task;
+                    var response = (MessageEnvelope)await future.Task.ConfigureAwait(false);
                     ConditionalRespond(context, response.Message);
 
                     break;

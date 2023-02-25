@@ -89,18 +89,19 @@ public class MessageHeaderTests
         root.Send(pid2, new StartMessage());
 
         //actor1 should have headers
-        var headers1 = await tcs1.Task.WithTimeout(TimeSpan.FromSeconds(5));
+        var headers1 = await tcs1.Task.WithTimeout(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         Assert.Equal(headers, headers1);
 
         //actor2 should have headers
-        var headers2 = await tcs2.Task.WithTimeout(TimeSpan.FromSeconds(5));
+        var headers2 = await tcs2.Task.WithTimeout(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         Assert.Equal(headers, headers2);
     }
 
     [Fact]
     public async Task Actors_can_reply_with_headers()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var echo = Props.FromFunc(ctx =>
             {
@@ -117,7 +118,7 @@ public class MessageHeaderTests
         var pid = system.Root.Spawn(echo);
 
         const int message = 1;
-        var (msg, header) = await system.Root.RequestWithHeadersAsync<int>(pid, message);
+        var (msg, header) = await system.Root.RequestWithHeadersAsync<int>(pid, message).ConfigureAwait(false);
 
         msg.Should().Be(message);
         header["foo"].Should().Be("bar");
@@ -126,7 +127,8 @@ public class MessageHeaderTests
     [Fact]
     public async Task RequestAsync_honors_message_envelopes()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
 
         var echo = Props.FromFunc(ctx =>
             {
@@ -146,7 +148,7 @@ public class MessageHeaderTests
         var response = await system.Root.RequestAsync<string>(pid,
             new MessageEnvelope(1, wrongPid, MessageHeader.Empty.With("foo", "bar")),
             CancellationTokens.FromSeconds(1)
-        );
+        ).ConfigureAwait(false);
 
         response.Should().Be("bar");
     }

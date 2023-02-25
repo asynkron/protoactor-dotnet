@@ -29,14 +29,14 @@
     protected override async Task OnInitializedAsync()
     {
         _ = Task.Run(RunLoop, _cts.Token);
-        await base.OnInitializedAsync();
+        await base.OnInitializedAsync().ConfigureAwait(false);
     }
 
     private async Task RunLoop()
     {
         while (!_cts.Token.IsCancellationRequested)
         {
-            var memberHeartbeats = await System.Cluster().Gossip.GetState<MemberHeartbeat>(GossipKeys.Heartbeat);
+            var memberHeartbeats = await System.Cluster().Gossip.GetState<MemberHeartbeat>(GossipKeys.Heartbeat).ConfigureAwait(false);
             var stats = (from x in memberHeartbeats
                 let memberId = x.Key
                 from y in x.Value.ActorStatistics.ActorCount
@@ -101,8 +101,8 @@
                 }
             }
 
-            await InvokeAsync(StateHasChanged);
-            await Task.Delay(100);
+            await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+            await Task.Delay(100).ConfigureAwait(false);
         }
     }
 

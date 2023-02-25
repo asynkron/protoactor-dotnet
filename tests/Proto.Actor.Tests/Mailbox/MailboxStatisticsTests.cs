@@ -35,7 +35,7 @@ public class MailboxStatisticsTests
         var msg1 = new TestMessageWithTaskCompletionSource();
 
         _mailbox.PostUserMessage(msg1);
-        await Task.Delay(1000);
+        await Task.Delay(1000).ConfigureAwait(false);
         Assert.Contains(msg1, _mailboxStatistics.Posted);
     }
 
@@ -45,7 +45,7 @@ public class MailboxStatisticsTests
         var msg1 = new TestMessageWithTaskCompletionSource();
 
         _mailbox.PostSystemMessage(msg1);
-        await Task.Delay(1000);
+        await Task.Delay(1000).ConfigureAwait(false);
         Assert.Contains(msg1, _mailboxStatistics.Posted);
     }
 
@@ -57,7 +57,7 @@ public class MailboxStatisticsTests
         _mailbox.PostUserMessage(msg1);
         Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
         msg1.TaskCompletionSource.SetResult(0);
-        await Task.Delay(1000);
+        await Task.Delay(1000).ConfigureAwait(false);
 
         Assert.Contains(msg1, _mailboxStatistics.Posted);
     }
@@ -80,7 +80,7 @@ public class MailboxStatisticsTests
         _mailbox.PostUserMessage(msg1);
 
         msg1.TaskCompletionSource.SetException(new Exception());
-        await Task.Delay(1000);
+        await Task.Delay(1000).ConfigureAwait(false);
 
         Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
     }
@@ -103,7 +103,7 @@ public class MailboxStatisticsTests
 
         _mailbox.PostSystemMessage(msg1);
         msg1.TaskCompletionSource.SetException(new Exception());
-        await Task.Delay(1000);
+        await Task.Delay(1000).ConfigureAwait(false);
 
         Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
     }

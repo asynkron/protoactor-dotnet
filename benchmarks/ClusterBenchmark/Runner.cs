@@ -21,18 +21,18 @@ public class RunMemberInProcGraceful : IRunMember
 {
     private Cluster? _cluster;
 
-    public async Task Start() => _cluster = await Configuration.SpawnMember();
+    public async Task Start() => _cluster = await Configuration.SpawnMember().ConfigureAwait(false);
 
-    public async Task Kill() => await _cluster!.ShutdownAsync();
+    public async Task Kill() => await _cluster!.ShutdownAsync().ConfigureAwait(false);
 }
 
 public class RunMemberInProc : IRunMember
 {
     private Cluster? _cluster;
 
-    public async Task Start() => _cluster = await Configuration.SpawnMember();
+    public async Task Start() => _cluster = await Configuration.SpawnMember().ConfigureAwait(false);
 
-    public async Task Kill() => await _cluster!.ShutdownAsync(false);
+    public async Task Kill() => await _cluster!.ShutdownAsync(false).ConfigureAwait(false);
 }
 
 public class RunMemberExternalProcGraceful : IRunMember

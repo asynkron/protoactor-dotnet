@@ -85,18 +85,18 @@ public static class RunDummyCluster
             {
                 var r = new Random();
 
-                await Task.Delay(5000);
+                await Task.Delay(5000).ConfigureAwait(false);
 
                 while (true)
                 {
-                    await Task.Delay(r.Next(1, 2000));
+                    await Task.Delay(r.Next(1, 2000)).ConfigureAwait(false);
 
                     var identity = $"someactor{r.Next(1, 100)}";
 
                     await system.Cluster()
                         .RequestAsync<SomeResponse>(identity, "somekind", new SomeRequest(),
                             CancellationTokens.FromSeconds(5)
-                        );
+                        ).ConfigureAwait(false);
                 }
             }
         );
@@ -114,7 +114,7 @@ public class MyActor : IActor
         if (context.Message is SomeRequest m)
         {
             Console.WriteLine("tick..");
-            await Task.Delay(r.Next(50, 500));
+            await Task.Delay(r.Next(50, 500)).ConfigureAwait(false);
             context.Respond(new SomeResponse());
         }
     }

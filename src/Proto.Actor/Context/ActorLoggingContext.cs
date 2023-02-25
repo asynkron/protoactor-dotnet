@@ -56,7 +56,7 @@ public class ActorLoggingContext : ActorContextDecorator
 
         try
         {
-            await base.Receive(envelope);
+            await base.Receive(envelope).ConfigureAwait(false);
 
             if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
             {
@@ -118,7 +118,7 @@ public class ActorLoggingContext : ActorContextDecorator
 
         try
         {
-            var response = await base.RequestAsync<T>(target, message, cancellationToken);
+            var response = await base.RequestAsync<T>(target, message, cancellationToken).ConfigureAwait(false);
 
             if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
             {

@@ -45,7 +45,7 @@ public sealed class BatchContext : ISenderContext, IDisposable
         ct.ThrowIfCancellationRequested();
         _context.Request(target, message, future.Pid);
         var task = ct == default || ct == _ct ? future.Task : future.GetTask(ct);
-        var result = await task;
+        var result = await task.ConfigureAwait(false);
 
         switch (result)
         {

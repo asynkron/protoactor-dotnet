@@ -65,10 +65,10 @@ public class ActorController : ControllerBase
         var pid = _actorSystem.Root.Spawn(props);
 
         //send a request and await the response
-        var response = await _actorSystem.Root.RequestAsync<HelloResponse>(pid, new HelloRequest("Proto.Actor"));
+        var response = await _actorSystem.Root.RequestAsync<HelloResponse>(pid, new HelloRequest("Proto.Actor")).ConfigureAwait(false);
 
         //stop the actor
-        await _actorSystem.Root.StopAsync(pid);
+        await _actorSystem.Root.StopAsync(pid).ConfigureAwait(false);
 
         //return the result
         return response.Greeting;

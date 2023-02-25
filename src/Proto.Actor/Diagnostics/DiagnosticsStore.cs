@@ -73,7 +73,7 @@ public class DiagnosticsStore
 
         foreach (var e in extensions)
         {
-            var res = await e.GetDiagnostics();
+            var res = await e.GetDiagnostics().ConfigureAwait(false);
             entries.AddRange(res);
         }
         entries.AddRange(_entries.ToArray());

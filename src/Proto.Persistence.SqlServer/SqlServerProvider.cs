@@ -88,7 +88,7 @@ public class SqlServerProvider : IProvider
 
         using var command = new SqlCommand(_sqlReadEvents, connection);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         command.Parameters.AddRange(
             new[]
@@ -101,9 +101,9 @@ public class SqlServerProvider : IProvider
 
         long lastIndex = -1;
 
-        var eventReader = await command.ExecuteReaderAsync();
+        var eventReader = await command.ExecuteReaderAsync().ConfigureAwait(false);
 
-        while (await eventReader.ReadAsync())
+        while (await eventReader.ReadAsync().ConfigureAwait(false))
         {
             lastIndex = (long)eventReader["EventIndex"];
 
@@ -122,13 +122,13 @@ public class SqlServerProvider : IProvider
 
         using var command = new SqlCommand(_sqlReadSnapshot, connection);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         command.Parameters.Add(CreateParameter("ActorName", NVarChar, actorName));
 
-        var snapshotReader = await command.ExecuteReaderAsync();
+        var snapshotReader = await command.ExecuteReaderAsync().ConfigureAwait(false);
 
-        while (await snapshotReader.ReadAsync())
+        while (await snapshotReader.ReadAsync().ConfigureAwait(false))
         {
             snapshotIndex = Convert.ToInt64(snapshotReader["SnapshotIndex"]);
 
@@ -150,7 +150,7 @@ public class SqlServerProvider : IProvider
             CreateParameter("ActorName", NVarChar, item.ActorName),
             CreateParameter("EventIndex", BigInt, item.EventIndex),
             CreateParameter("EventData", NVarChar, JsonConvert.SerializeObject(item.EventData, AllTypeSettings))
-        );
+        ).ConfigureAwait(false);
 
         return index++;
     }
@@ -236,7 +236,7 @@ public class SqlServerProvider : IProvider
 
         using var command = new SqlCommand(sql, connection);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         using var tx = connection.BeginTransaction();
 
@@ -247,7 +247,7 @@ public class SqlServerProvider : IProvider
             command.Parameters.AddRange(parameters);
         }
 
-        await command.ExecuteNonQueryAsync();
+        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 
         tx.Commit();
     }

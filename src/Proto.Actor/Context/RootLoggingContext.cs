@@ -89,7 +89,7 @@ public class RootLoggingContext : RootContextDecorator
     public override async Task PoisonAsync(PID pid)
     {
 
-        await base.PoisonAsync(pid);
+        await base.PoisonAsync(pid).ConfigureAwait(false);
         
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
@@ -99,7 +99,7 @@ public class RootLoggingContext : RootContextDecorator
 
     public override async Task StopAsync(PID pid)
     {
-        await base.StopAsync(pid);
+        await base.StopAsync(pid).ConfigureAwait(false);
         
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
@@ -155,7 +155,7 @@ public class RootLoggingContext : RootContextDecorator
 
         try
         {
-            var response = await base.RequestAsync<T>(target, message, cancellationToken);
+            var response = await base.RequestAsync<T>(target, message, cancellationToken).ConfigureAwait(false);
 
             if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
             {

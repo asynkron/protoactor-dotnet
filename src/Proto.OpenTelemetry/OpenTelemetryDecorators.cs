@@ -136,7 +136,7 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
             using var x = OpenTelemetryHelpers.BuildStartedActivity(current, Source, nameof(ReenterAfter), message,
                 _sendActivitySetup);
             x?.SetTag(ProtoTags.ActionType, nameof(ReenterAfter));
-            await action(t);
+            await action(t).ConfigureAwait(false);
         };
         base.ReenterAfter(target, a2);
     }

@@ -11,7 +11,8 @@ public class DisposableActorTests
     [Fact]
     public async Task WhenActorRestarted_DisposeIsCalled()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -35,7 +36,8 @@ public class DisposableActorTests
     [Fact]
     public async Task WhenActorRestarted_DisposeAsyncIsCalled()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -59,7 +61,8 @@ public class DisposableActorTests
     [Fact]
     public async Task WhenActorResumed_DisposeIsNotCalled()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -83,7 +86,8 @@ public class DisposableActorTests
     [Fact]
     public async Task WhenActorResumed_DisposeAsyncIsNotCalled()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -107,7 +111,8 @@ public class DisposableActorTests
     [Fact]
     public async Task WhenActorStopped_DisposeIsCalled()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var disposeCalled = false;
@@ -116,14 +121,15 @@ public class DisposableActorTests
             .WithMailbox(() => new TestMailbox());
 
         var pid = context.Spawn(props);
-        await context.StopAsync(pid);
+        await context.StopAsync(pid).ConfigureAwait(false);
         Assert.True(disposeCalled);
     }
 
     [Fact]
     public async Task WhenActorStopped_DisposeAsyncIsCalled()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var disposeCalled = false;
@@ -132,14 +138,15 @@ public class DisposableActorTests
             .WithMailbox(() => new TestMailbox());
 
         var pid = context.Spawn(props);
-        await context.StopAsync(pid);
+        await context.StopAsync(pid).ConfigureAwait(false);
         Assert.True(disposeCalled);
     }
 
     [Fact]
     public async Task WhenActorWithChildrenStopped_DisposeIsCalledInEachChild()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var child1Disposed = false;

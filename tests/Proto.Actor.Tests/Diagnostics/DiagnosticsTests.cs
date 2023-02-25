@@ -23,7 +23,8 @@ public class DiagnosticsTests
     [Fact]
     public async Task CanListPidsInProcessRegistry()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var props = Props.FromProducer(() => new MyDiagnosticsActor());
@@ -40,14 +41,15 @@ public class DiagnosticsTests
     [Fact]
     public async Task CanGetDiagnosticsStringFromActorDiagnostics()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system.ConfigureAwait(false);
         var context = system.Root;
 
         var props = Props.FromProducer(() => new MyDiagnosticsActor());
 
         var pid = context.Spawn(props);
 
-        var res = await DiagnosticTools.GetDiagnosticsString(system, pid);
+        var res = await DiagnosticTools.GetDiagnosticsString(system, pid).ConfigureAwait(false);
         Assert.Contains("Hello World", res, StringComparison.InvariantCulture);
     }
 }

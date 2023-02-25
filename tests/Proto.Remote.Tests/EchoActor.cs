@@ -59,13 +59,13 @@ public class EchoActor : IActor
                 var remoteActorResp = await context.System.Remote()
                     .SpawnNamedAsync(
                         sender.Address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
-                    );
+                    ).ConfigureAwait(false);
 
                 var remoteActor = remoteActorResp.Pid;
 
                 var pong = await context.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" },
                     TimeSpan.FromSeconds(10)
-                );
+                ).ConfigureAwait(false);
 
                 context.Respond(new SpawnOnMeAndPingResponse { Pid = remoteActor, Message = pong.Message });
 
