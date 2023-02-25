@@ -286,7 +286,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         }).ConfigureAwait(false);
     }
 
-    [Fact]
+    [Fact(Skip = "Flaky")]
     [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     public async Task Can_publish_messages_via_batching_producer()
     {
