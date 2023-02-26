@@ -23,7 +23,8 @@ public class DiagnosticsTests
     [Fact]
     public async Task CanListPidsInProcessRegistry()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var props = Props.FromProducer(() => new MyDiagnosticsActor());
@@ -40,7 +41,8 @@ public class DiagnosticsTests
     [Fact]
     public async Task CanGetDiagnosticsStringFromActorDiagnostics()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var props = Props.FromProducer(() => new MyDiagnosticsActor());

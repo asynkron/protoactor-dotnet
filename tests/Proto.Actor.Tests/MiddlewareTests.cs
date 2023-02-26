@@ -40,7 +40,8 @@ public class MiddlewareTests
     [Fact]
     public async Task Given_ContextDecorator_Should_Call_Decorator_Before_Actor_Receive()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var logs = new List<string>();
@@ -86,7 +87,8 @@ public class MiddlewareTests
     public async Task
         Given_ReceiverMiddleware_and_ContextDecorator_Should_Call_Middleware_and_Decorator_Before_Actor_Receive()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var logs = new List<string>();
@@ -139,7 +141,8 @@ public class MiddlewareTests
     [Fact]
     public async Task Given_ReceiverMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var logs = new List<string>();
@@ -190,7 +193,8 @@ public class MiddlewareTests
     [Fact]
     public async Task Given_SenderMiddleware_Should_Call_Middleware_In_Order()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var logs = new List<string>();

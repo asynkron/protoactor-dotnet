@@ -20,7 +20,8 @@ public class DeadLetterResponseTests
     [Fact]
     public async Task ThrowsDeadLetterException()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var echoPid = system.Root.Spawn(EchoProps);
@@ -38,7 +39,8 @@ public class DeadLetterResponseTests
     [Fact]
     public async Task SendsDeadLetterResponse()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var validationActor = Props.FromProducer(() => new DeadLetterResponseValidationActor());

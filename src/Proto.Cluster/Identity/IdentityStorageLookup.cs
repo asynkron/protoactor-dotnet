@@ -30,7 +30,7 @@ public class IdentityStorageLookup : IIdentityLookup
     {
         var msg = new GetPid(clusterIdentity, ct);
 
-        var res = await _system.Root.RequestAsync<PidResult>(_worker, msg, ct);
+        var res = await _system.Root.RequestAsync<PidResult>(_worker, msg, ct).ConfigureAwait(false);
 
         if (res?.IdentityBlocked == true)
         {
@@ -47,7 +47,7 @@ public class IdentityStorageLookup : IIdentityLookup
         _memberId = cluster.System.Id;
         MemberList = cluster.MemberList;
         _isClient = isClient;
-        await Storage.Init();
+        await Storage.Init().ConfigureAwait(false);
 
         var workerProps = Props.FromProducer(() => new IdentityStorageWorker(this));
         _worker = _system.Root.SpawnNamedSystem(workerProps, WorkerActorName);
@@ -75,14 +75,14 @@ public class IdentityStorageLookup : IIdentityLookup
 
     public async Task ShutdownAsync()
     {
-        await Cluster.System.Root.StopAsync(_worker);
+        await Cluster.System.Root.StopAsync(_worker).ConfigureAwait(false);
 
         if (!_isClient)
         {
-            await Cluster.System.Root.StopAsync(_placementActor);
+            await Cluster.System.Root.StopAsync(_placementActor).ConfigureAwait(false);
         }
 
-        await RemoveMemberAsync(_memberId);
+        await RemoveMemberAsync(_memberId).ConfigureAwait(false);
     }
 
     public Task RemovePidAsync(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)

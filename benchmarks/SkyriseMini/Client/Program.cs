@@ -45,7 +45,7 @@ try
                     manager.TrackTest(cancel => test.RunTest(parallelism, durationInSeconds, cancel));
                     return Task.CompletedTask;
                 }
-            ).ConfigureAwait(false);
+            );
             return Task.CompletedTask;
         }
     );

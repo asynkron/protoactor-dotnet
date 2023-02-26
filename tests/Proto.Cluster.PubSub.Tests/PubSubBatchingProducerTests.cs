@@ -18,8 +18,9 @@ public class PubSubBatchingProducerTests
     [Fact]
     public async Task Producer_sends_messages_in_batches()
     {
-        await using var producer = new BatchingProducer(new MockPublisher(Record), "topic",
+        var producer = new BatchingProducer(new MockPublisher(Record), "topic",
             new BatchingProducerConfig { BatchSize = 10 });
+        await using var _ = producer;
 
         var tasks = Enumerable.Range(1, 10000)
             .Select(i => producer.ProduceAsync(new TestMessage(i)))
@@ -84,8 +85,9 @@ public class PubSubBatchingProducerTests
     [Fact]
     public async Task Publishing_through_failed_producer_throws()
     {
-        await using var producer = new BatchingProducer(new MockPublisher(Fail), "topic",
+        var producer = new BatchingProducer(new MockPublisher(Fail), "topic",
             new BatchingProducerConfig { BatchSize = 10 });
+        await using var _ = producer;
 
         var sutAction = () => producer.ProduceAsync(new TestMessage(1));
         await sutAction.Should().ThrowAsync<TestException>(); // here we get the exception thrown during publish
@@ -118,9 +120,10 @@ public class PubSubBatchingProducerTests
     [Fact]
     public async Task Can_cancel_publishing_a_message()
     {
-        await using var producer =
+        var producer =
             new BatchingProducer(new MockPublisher(WaitThenRecord()), "topic",
                 new BatchingProducerConfig { BatchSize = 1, MaxQueueSize = 10 });
+        await using var _ = producer;
 
         var messageWithoutCancellation = new TestMessage(1);
         var t1 = producer.ProduceAsync(messageWithoutCancellation);
@@ -147,7 +150,7 @@ public class PubSubBatchingProducerTests
     {
         var retries = new List<int>();
 
-        await using var producer =
+        var producer =
             new BatchingProducer(new MockPublisher(FailTimesThenSucceed(3)), "topic",
                 new BatchingProducerConfig
                 {
@@ -160,6 +163,7 @@ public class PubSubBatchingProducerTests
                     }
                 }
             );
+        await using var __ = producer;
 
         await producer.ProduceAsync(new TestMessage(1));
 
@@ -169,7 +173,7 @@ public class PubSubBatchingProducerTests
     [Fact]
     public async Task Can_skip_batch_on_publishing_error()
     {
-        await using var producer =
+        var producer =
             new BatchingProducer(new MockPublisher(FailTimesThenSucceed(1)), "topic",
                 new BatchingProducerConfig
                 {
@@ -177,6 +181,7 @@ public class PubSubBatchingProducerTests
                     OnPublishingError = (_, _, _) => Task.FromResult(PublishingErrorDecision.FailBatchAndContinue)
                 }
             );
+        await using var __ = producer;
 
         var t1 = producer.ProduceAsync(new TestMessage(1));
         var t2 = producer.ProduceAsync(new TestMessage(2));

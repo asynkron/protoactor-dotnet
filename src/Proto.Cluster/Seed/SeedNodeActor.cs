@@ -63,7 +63,7 @@ public class SeedNodeActor : IActor
                         {
                             Joiner = context.Cluster().MemberList.Self
                         }
-                    );
+                    ).ConfigureAwait(false);
 
                     context.Respond(new Connected(res.Member));
 

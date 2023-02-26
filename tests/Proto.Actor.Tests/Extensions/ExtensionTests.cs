@@ -23,7 +23,8 @@ public class ExtensionTests
     [Fact]
     public async Task CanGetExtension()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         system.Extensions.Register(new ExtensionA
             {

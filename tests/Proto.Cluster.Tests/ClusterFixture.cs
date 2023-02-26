@@ -114,7 +114,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     public async Task InitializeAsync()
     {
-        var nodes = await SpawnClusterNodes(ClusterSize, _configure).ConfigureAwait(false);
+        var nodes = await SpawnClusterNodes(ClusterSize, _configure);
         _members.AddRange(nodes);
     }
 
@@ -177,7 +177,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         if (Members.Contains(member))
         {
             Members.Remove(member);
-            await member.ShutdownAsync(graceful, "Stopped by ClusterFixture").ConfigureAwait(false);
+            await member.ShutdownAsync(graceful, "Stopped by ClusterFixture");
         }
         else
         {

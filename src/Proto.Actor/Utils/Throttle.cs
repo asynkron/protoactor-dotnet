@@ -90,7 +90,7 @@ public static class Throttle
         void StartTimer(Action<int>? callBack) =>
             _ = SafeTask.Run(async () =>
                 {
-                    await Task.Delay(period);
+                    await Task.Delay(period).ConfigureAwait(false);
                     var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
 
                     if (timesCalled > maxEventsInPeriod)

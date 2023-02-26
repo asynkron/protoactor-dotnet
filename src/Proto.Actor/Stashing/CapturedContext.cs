@@ -22,7 +22,7 @@ public record CapturedContext(MessageEnvelope MessageEnvelope, IContext Context)
     public async Task Receive()
     {
         var current = Context.Capture();
-        await Context.Receive(MessageEnvelope);
+        await Context.Receive(MessageEnvelope).ConfigureAwait(false);
         current.Apply();
     }
 

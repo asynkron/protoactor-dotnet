@@ -17,7 +17,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -33,7 +34,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_with_MessageHasherFunc_MessageWithSameHashAlwaysGoesToSameRoutee()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system, x => x.ToString()!);
 
@@ -49,7 +51,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_MessagesWithDifferentHashesGoToDifferentRoutees()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -65,7 +68,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_MessageWithSameHashAlwaysGoesToSameRoutee_EvenWhenNewRouteeAdded()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -82,7 +86,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_RouteesCanBeRemoved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -97,7 +102,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_RouteesCanBeAdded()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
@@ -113,7 +119,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_RemovedRouteesNoLongerReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, _, _) = CreateRouterWith3Routees(system);
 
@@ -125,7 +132,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_AddedRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, _, _, _) = CreateRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
@@ -137,7 +145,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_MessageIsReassignedWhenRouteeRemoved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, _) = CreateRouterWith3Routees(system);
 
@@ -155,7 +164,8 @@ public class ConsistentHashGroupTests
     [Fact]
     public async Task ConsistentHashGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 

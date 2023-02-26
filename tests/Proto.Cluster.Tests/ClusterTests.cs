@@ -61,7 +61,7 @@ public abstract class ClusterTests : ClusterTestBase
                 .WhenAll(Members.Select(member =>
                     member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
                 .WaitUpTo(TimeSpan.FromSeconds(20))
-                .ConfigureAwait(false);
+                ;
 
             _testOutputHelper.WriteLine(await Members.DumpClusterState());
 

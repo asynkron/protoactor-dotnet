@@ -75,7 +75,7 @@ public sealed class RedisIdentityStorage : IIdentityStorage
 
             do
             {
-                await Task.Delay(20 * i++, ct);
+                await Task.Delay(20 * i++, ct).ConfigureAwait(false);
             } while (!ct.IsCancellationRequested
                      && _maxLockTime > timer.Elapsed
                      && (activationStatus = await LookupKey(db, key).ConfigureAwait(false))?.ActiveLockId == lockId

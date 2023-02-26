@@ -16,7 +16,8 @@ public class RoundRobinGroupTests
     [Fact]
     public async Task RoundRobinGroupRouter_RouteesReceiveMessagesInRoundRobinStyle()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
 
@@ -46,7 +47,8 @@ public class RoundRobinGroupTests
     [Fact]
     public async Task RoundRobinGroupRouter_RouteesCanBeRemoved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
 
@@ -61,7 +63,8 @@ public class RoundRobinGroupTests
     [Fact]
     public async Task RoundRobinGroupRouter_RouteesCanBeAdded()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
@@ -77,7 +80,8 @@ public class RoundRobinGroupTests
     [Fact]
     public async Task RoundRobinGroupRouter_RemovedRouteesNoLongerReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
 
@@ -98,7 +102,8 @@ public class RoundRobinGroupTests
     [Fact]
     public async Task RoundRobinGroupRouter_AddedRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
@@ -118,7 +123,8 @@ public class RoundRobinGroupTests
     [Fact]
     public async Task RoundRobinGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
 

@@ -72,7 +72,7 @@ public class BatchingMailbox : IMailbox
                 };
 
                 currentMessage = sys;
-                await _invoker.InvokeSystemMessageAsync(sys);
+                await _invoker.InvokeSystemMessageAsync(sys).ConfigureAwait(false);
             }
 
             if (!_suspended)
@@ -88,7 +88,7 @@ public class BatchingMailbox : IMailbox
                 if (batch.Count > 0)
                 {
                     currentMessage = batch;
-                    await _invoker.InvokeUserMessageAsync(new MessageBatch(batch));
+                    await _invoker.InvokeUserMessageAsync(new MessageBatch(batch)).ConfigureAwait(false);
                 }
             }
         }

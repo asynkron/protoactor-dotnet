@@ -56,7 +56,7 @@ public class BatchingProducer : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _cts.Cancel();
-        await _publisherLoop;
+        await _publisherLoop.ConfigureAwait(false);
         _cts.Dispose();
     }
 
@@ -71,7 +71,7 @@ public class BatchingProducer : IAsyncDisposable
             await _publisher.Initialize(new PublisherConfig
             {
                 IdleTimeout = _config.PublisherIdleTimeout
-            }, _topic, cancel);
+            }, _topic, cancel).ConfigureAwait(false);
             try
             {
                 while (!cancel.IsCancellationRequested)
@@ -94,18 +94,18 @@ public class BatchingProducer : IAsyncDisposable
                             continue;
                         }
 
-                        await PublishBatch(batchWrapper);
+                        await PublishBatch(batchWrapper).ConfigureAwait(false);
                         batchWrapper = new PubSubBatchWithReceipts();
                     }
                     else
                     {
                         if (batchWrapper.Batch.Envelopes.Count > 0)
                         {
-                            await PublishBatch(batchWrapper);
+                            await PublishBatch(batchWrapper).ConfigureAwait(false);
                             batchWrapper = new PubSubBatchWithReceipts();
                         }
 
-                        await _publisherChannel.Reader.WaitToReadAsync(cancel);
+                        await _publisherChannel.Reader.WaitToReadAsync(cancel).ConfigureAwait(false);
                     }
                 }
             }
@@ -128,18 +128,18 @@ public class BatchingProducer : IAsyncDisposable
             }
 
             FailBatch(batchWrapper, e);
-            await FailPendingMessages(e);
+            await FailPendingMessages(e).ConfigureAwait(false);
         }
 
         CancelBatch(batchWrapper);
-        await CancelPendingMessages();
+        await CancelPendingMessages().ConfigureAwait(false);
 
         Logger.LogDebug("Producer is stopping the publisher loop for topic {Topic}", _topic);
     }
 
     private async Task FailPendingMessages(Exception e)
     {
-        await foreach (var producerMessage in _publisherChannel.Reader.ReadAllAsync())
+        await foreach (var producerMessage in _publisherChannel.Reader.ReadAllAsync().ConfigureAwait(false))
         {
             producerMessage.TaskCompletionSource.SetException(e);
         }
@@ -147,7 +147,7 @@ public class BatchingProducer : IAsyncDisposable
 
     private async Task CancelPendingMessages()
     {
-        await foreach (var producerMessage in _publisherChannel.Reader.ReadAllAsync())
+        await foreach (var producerMessage in _publisherChannel.Reader.ReadAllAsync().ConfigureAwait(false))
         {
             producerMessage.TaskCompletionSource.SetCanceled();
         }
@@ -232,7 +232,7 @@ public class BatchingProducer : IAsyncDisposable
                 retries++;
 
                 var response = await _publisher.PublishBatch(_topic, batchWrapper.Batch,
-                    CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
+                    CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds)).ConfigureAwait(false);
 
                 if (response == null)
                 {
@@ -244,7 +244,7 @@ public class BatchingProducer : IAsyncDisposable
             }
             catch (Exception e)
             {
-                var decision = await _config.OnPublishingError(retries, e, batchWrapper.Batch);
+                var decision = await _config.OnPublishingError(retries, e, batchWrapper.Batch).ConfigureAwait(false);
 
                 if (decision == PublishingErrorDecision.FailBatchAndStop)
                 {
@@ -276,7 +276,7 @@ public class BatchingProducer : IAsyncDisposable
                 }
                 else if (decision.Delay != null)
                 {
-                    await Task.Delay(decision.Delay.Value);
+                    await Task.Delay(decision.Delay.Value).ConfigureAwait(false);
                 }
             }
         }

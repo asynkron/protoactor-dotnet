@@ -14,7 +14,8 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_RouteesReceiveMessagesInRandomOrder()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -30,7 +31,8 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_NewlyAddedRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
@@ -52,7 +54,8 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_RemovedRouteesDoNotReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, _, _) = CreateRouterWith3Routees(system);
 
@@ -69,7 +72,8 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_RouteesCanBeRemoved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
@@ -84,7 +88,8 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_RouteesCanBeAdded()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
@@ -100,7 +105,8 @@ public class RandomGroupRouterTests
     [Fact]
     public async Task RandomGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 

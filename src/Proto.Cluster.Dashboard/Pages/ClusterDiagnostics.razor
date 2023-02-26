@@ -37,9 +37,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await base.OnInitializedAsync();
+        await base.OnInitializedAsync().ConfigureAwait(false);
 
-        _diagnostics = await System.Diagnostics.GetDiagnostics();
+        _diagnostics = await System.Diagnostics.GetDiagnostics().ConfigureAwait(false);
     }
 
     private string AsJson(object? data)
@@ -57,8 +57,8 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await base.OnAfterRenderAsync(firstRender);
-        await JS.InvokeAsync<string>("hljs.highlightAll");
+        await base.OnAfterRenderAsync(firstRender).ConfigureAwait(false);
+        await JS.InvokeAsync<string>("hljs.highlightAll").ConfigureAwait(false);
     }
 
     protected override void OnAfterRender(bool firstRender)

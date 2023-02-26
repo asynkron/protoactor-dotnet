@@ -16,7 +16,8 @@ public class PoolRouterTests
     [Fact]
     public async Task BroadcastGroupPool_CreatesRoutees()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var props = system.Root.NewBroadcastPool(MyActorProps, 3)
             .WithMailbox(() => new TestMailbox());
@@ -29,7 +30,8 @@ public class PoolRouterTests
     [Fact]
     public async Task RoundRobinPool_CreatesRoutees()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var props = system.Root.NewRoundRobinPool(MyActorProps, 3)
             .WithMailbox(() => new TestMailbox());
@@ -42,7 +44,8 @@ public class PoolRouterTests
     [Fact]
     public async Task ConsistentHashPool_CreatesRoutees()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var props = system.Root.NewConsistentHashPool(MyActorProps, 3)
             .WithMailbox(() => new TestMailbox());
@@ -55,7 +58,8 @@ public class PoolRouterTests
     [Fact]
     public async Task RandomPool_CreatesRoutees()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var props = system.Root.NewRandomPool(MyActorProps, 3, 0)
             .WithMailbox(() => new TestMailbox());
@@ -68,7 +72,8 @@ public class PoolRouterTests
     [Fact]
     public async Task If_routee_props_then_router_creation_fails()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var failingProps = Props.FromProducer(() => throw new Exception("Failing props"));
 

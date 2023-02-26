@@ -80,7 +80,7 @@ public class DefaultClusterContext : IClusterContext
                 if (pid is null)
                 {
                     source = PidSource.Lookup;
-                    pid = await GetPidFromLookup(clusterIdentity, context, ct);
+                    pid = await GetPidFromLookup(clusterIdentity, context, ct).ConfigureAwait(false);
                 }
 
                 if (pid is null)
@@ -91,7 +91,7 @@ public class DefaultClusterContext : IClusterContext
                             clusterIdentity);
                     }
 
-                    await Task.Delay(i * 20, CancellationToken.None);
+                    await Task.Delay(i * 20, CancellationToken.None).ConfigureAwait(false);
 
                     continue;
                 }
@@ -117,9 +117,9 @@ public class DefaultClusterContext : IClusterContext
                     var task = future.Task;
 
 #if NET6_0_OR_GREATER
-                    await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds));
+                    await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds)).ConfigureAwait(false);
 #else
-                    await Task.WhenAny(task, _clock.CurrentBucket);
+                    await Task.WhenAny(task, _clock.CurrentBucket).ConfigureAwait(false);
 #endif
 
                     if (task.IsCompleted)
@@ -134,7 +134,7 @@ public class DefaultClusterContext : IClusterContext
                             }
 
                             RefreshFuture();
-                            await RemoveFromSource(clusterIdentity, PidSource.Lookup, pid);
+                            await RemoveFromSource(clusterIdentity, PidSource.Lookup, pid).ConfigureAwait(false);
 
                             continue;
                         }
@@ -158,7 +158,7 @@ public class DefaultClusterContext : IClusterContext
                             untypedResult.GetType(), typeof(T));
 
                         RefreshFuture();
-                        await RemoveFromSource(clusterIdentity, source, pid);
+                        await RemoveFromSource(clusterIdentity, source, pid).ConfigureAwait(false);
 
                         break;
                     }
@@ -190,7 +190,7 @@ public class DefaultClusterContext : IClusterContext
                 catch (TimeoutException)
                 {
                     lastPid = pid;
-                    await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
+                    await RemoveFromSource(clusterIdentity, PidSource.Cache, pid).ConfigureAwait(false);
 
                     continue;
                 }
@@ -208,8 +208,8 @@ public class DefaultClusterContext : IClusterContext
 
                     _pidCache.RemoveByVal(clusterIdentity, pid);
                     RefreshFuture();
-                    await RemoveFromSource(clusterIdentity, PidSource.Cache, pid);
-                    await Task.Delay(i * 20, CancellationToken.None);
+                    await RemoveFromSource(clusterIdentity, PidSource.Cache, pid).ConfigureAwait(false);
+                    await Task.Delay(i * 20, CancellationToken.None).ConfigureAwait(false);
 
                     continue;
                 }
@@ -277,7 +277,7 @@ public class DefaultClusterContext : IClusterContext
     {
         if (source == PidSource.Lookup)
         {
-            await _identityLookup.RemovePidAsync(clusterIdentity, pid, CancellationToken.None);
+            await _identityLookup.RemovePidAsync(clusterIdentity, pid, CancellationToken.None).ConfigureAwait(false);
         }
 
         _pidCache.RemoveByVal(clusterIdentity, pid);
@@ -292,11 +292,11 @@ public class DefaultClusterContext : IClusterContext
             {
                 var pid = await ClusterMetrics.ClusterResolvePidDuration
                     .Observe(
-                        async () => await _identityLookup.GetAsync(clusterIdentity, ct),
+                        async () => await _identityLookup.GetAsync(clusterIdentity, ct).ConfigureAwait(false),
                         new KeyValuePair<string, object?>("id", _system.Id),
                         new KeyValuePair<string, object?>("address", _system.Address),
                         new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind)
-                    );
+                    ).ConfigureAwait(false);
 
                 if (pid is not null)
                 {
@@ -307,7 +307,7 @@ public class DefaultClusterContext : IClusterContext
             }
             else
             {
-                var pid = await _identityLookup.GetAsync(clusterIdentity, ct);
+                var pid = await _identityLookup.GetAsync(clusterIdentity, ct).ConfigureAwait(false);
 
                 if (pid is not null)
                 {

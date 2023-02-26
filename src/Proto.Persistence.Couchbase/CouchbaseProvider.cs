@@ -37,7 +37,7 @@ public class CouchbaseProvider : IProvider
 
         req.ScanConsistency(ScanConsistency.RequestPlus);
 
-        var res = await _bucket.QueryAsync<Snapshot>(req);
+        var res = await _bucket.QueryAsync<Snapshot>(req).ConfigureAwait(false);
 
         ThrowOnError(res);
 
@@ -50,7 +50,7 @@ public class CouchbaseProvider : IProvider
     {
         var evnt = new Event(actorName, index, @event);
 
-        await _bucket.InsertAsync(evnt.Key, evnt);
+        await _bucket.InsertAsync(evnt.Key, evnt).ConfigureAwait(false);
 
         return index + 1;
     }
@@ -71,13 +71,13 @@ public class CouchbaseProvider : IProvider
 
         req.ScanConsistency(ScanConsistency.RequestPlus);
 
-        var res = await _bucket.QueryAsync<Event>(req);
+        var res = await _bucket.QueryAsync<Event>(req).ConfigureAwait(false);
 
         ThrowOnError(res);
 
         var envelopes = res.Rows;
 
-        await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key)));
+        await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key))).ConfigureAwait(false);
     }
 
     public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
@@ -89,13 +89,13 @@ public class CouchbaseProvider : IProvider
 
         req.ScanConsistency(ScanConsistency.RequestPlus);
 
-        var res = await _bucket.QueryAsync<Snapshot>(req);
+        var res = await _bucket.QueryAsync<Snapshot>(req).ConfigureAwait(false);
 
         ThrowOnError(res);
 
         var envelopes = res.Rows;
 
-        await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key)));
+        await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key))).ConfigureAwait(false);
     }
 
     private string GenerateGetEventsQuery(string actorName, long indexStart, long indexEnd) =>
@@ -111,7 +111,7 @@ public class CouchbaseProvider : IProvider
 
         req.ScanConsistency(ScanConsistency.RequestPlus);
 
-        var res = await _bucket.QueryAsync<Event>(req);
+        var res = await _bucket.QueryAsync<Event>(req).ConfigureAwait(false);
 
         ThrowOnError(res);
 

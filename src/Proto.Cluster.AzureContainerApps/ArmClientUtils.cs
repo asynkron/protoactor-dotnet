@@ -18,7 +18,7 @@ public static class ArmClientUtils
     {
         var members = new List<Member>();
 
-        var containerApp = await (await client.GetResourceGroupByName(resourceGroupName)).Value.GetContainerAppAsync(containerAppName);
+        var containerApp = await (await client.GetResourceGroupByName(resourceGroupName).ConfigureAwait(false)).Value.GetContainerAppAsync(containerAppName).ConfigureAwait(false);
 
         if (containerApp is null || !containerApp.HasValue)
         {
@@ -35,7 +35,7 @@ public static class ArmClientUtils
 
         var replicasWithTraffic = containerAppRevisions.SelectMany(r => r.GetContainerAppReplicas());
 
-        var allTags = (await containerApp.Value.GetTagResource().GetAsync()).Value.Data.TagValues;
+        var allTags = (await containerApp.Value.GetTagResource().GetAsync().ConfigureAwait(false)).Value.Data.TagValues;
 
         foreach (var replica in replicasWithTraffic)
         {
@@ -78,27 +78,27 @@ public static class ArmClientUtils
             resourceTag.TagValues.Add(tag);
         }
 
-        var resourceGroup = await client.GetResourceGroupByName(resourceGroupName);
-        var containerApp = await resourceGroup.Value.GetContainerAppAsync(containerAppName);
+        var resourceGroup = await client.GetResourceGroupByName(resourceGroupName).ConfigureAwait(false);
+        var containerApp = await resourceGroup.Value.GetContainerAppAsync(containerAppName).ConfigureAwait(false);
         var tagResource = containerApp.Value.GetTagResource();
 
-        var existingTags = (await tagResource.GetAsync()).Value.Data.TagValues;
+        var existingTags = (await tagResource.GetAsync().ConfigureAwait(false)).Value.Data.TagValues;
         foreach (var tag in existingTags)
         {
             resourceTag.TagValues.Add(tag);
         }
 
-        await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag));
+        await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag)).ConfigureAwait(false);
     }
 
     public static async Task ClearMemberTags(this ArmClient client, string resourceGroupName, string containerAppName, string memberId)
     {
-        var resourceGroup = await client.GetResourceGroupByName(resourceGroupName);
-        var containerApp = await resourceGroup.Value.GetContainerAppAsync(containerAppName);
+        var resourceGroup = await client.GetResourceGroupByName(resourceGroupName).ConfigureAwait(false);
+        var containerApp = await resourceGroup.Value.GetContainerAppAsync(containerAppName).ConfigureAwait(false);
         var tagResource = containerApp.Value.GetTagResource();
 
         var resourceTag = new Tag();
-        var existingTags = (await tagResource.GetAsync()).Value.Data.TagValues;
+        var existingTags = (await tagResource.GetAsync().ConfigureAwait(false)).Value.Data.TagValues;
 
         foreach (var tag in existingTags)
         {
@@ -108,11 +108,11 @@ public static class ArmClientUtils
             }
         }
 
-        await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag));
+        await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag)).ConfigureAwait(false);
     }
 
     public static async Task<Response<ResourceGroupResource>> GetResourceGroupByName(this ArmClient client, string resourceGroupName) =>
-        await (await client.GetDefaultSubscriptionAsync()).GetResourceGroups().GetAsync(resourceGroupName);
+        await (await client.GetDefaultSubscriptionAsync().ConfigureAwait(false)).GetResourceGroups().GetAsync(resourceGroupName).ConfigureAwait(false);
 
     private static IEnumerable<ContainerAppRevisionResource> GetActiveRevisionsWithTraffic(ContainerAppResource containerApp) =>
         containerApp.GetContainerAppRevisions().Where(r => r.HasData && (r.Data.IsActive ?? false) && r.Data.TrafficWeight > 0);

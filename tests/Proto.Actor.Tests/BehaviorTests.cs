@@ -8,7 +8,8 @@ public class BehaviorTests
     [Fact]
     public async Task can_change_states()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var testActorProps = Props.FromProducer(() => new LightBulb());
@@ -27,7 +28,8 @@ public class BehaviorTests
     [Fact]
     public async Task can_use_global_behaviour()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var __ = system;
         var context = system.Root;
 
         var testActorProps = Props.FromProducer(() => new LightBulb());
@@ -44,7 +46,8 @@ public class BehaviorTests
     [Fact]
     public async Task pop_behavior_should_restore_pushed_behavior()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));

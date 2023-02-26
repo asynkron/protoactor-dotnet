@@ -20,7 +20,8 @@ public class LegacyTimeoutTests
     [Fact]
     public async Task ReturnsNullOnRequestTimeoutInLegacyMode()
     {
-        await using var fixture = new Fixture(1);
+        var fixture = new Fixture(1);
+        await using var _ = fixture;
         await fixture.InitializeAsync();
 
         var response = await fixture.Members.First()

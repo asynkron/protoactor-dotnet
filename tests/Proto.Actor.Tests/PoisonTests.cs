@@ -28,12 +28,13 @@ public class PoisonTests
     [Fact]
     public async Task PoisonReturnsIfPidDoesNotExist()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var deadPid = PID.FromAddress(system.Address, "nowhere");
 
         var poisonTask = system.Root.PoisonAsync(deadPid);
 
-        var completed = await poisonTask.WaitUpTo(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+        var completed = await poisonTask.WaitUpTo(TimeSpan.FromSeconds(10));
 
         completed.Should().BeTrue("Or we did not get a response when poisoning a missing pid");
     }
@@ -41,15 +42,16 @@ public class PoisonTests
     [Fact]
     public async Task PoisonTerminatesActor()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var pid = system.Root.Spawn(EchoProps);
 
         const string message = "hello";
-        (await system.Root.RequestAsync<string>(pid, message).ConfigureAwait(false)).Should().Be(message);
+        (await system.Root.RequestAsync<string>(pid, message)).Should().Be(message);
 
         var poisonTask = system.Root.PoisonAsync(pid);
-        var completed = await poisonTask.WaitUpTo(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+        var completed = await poisonTask.WaitUpTo(TimeSpan.FromSeconds(10));
 
         completed.Should().BeTrue("Or we did not get a response when poisoning a live pid");
 

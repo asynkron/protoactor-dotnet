@@ -47,7 +47,7 @@ internal class SingleNodeActivatorActor : IActor
 
     private async Task OnStopping(IContext context)
     {
-        await StopActors(context);
+        await StopActors(context).ConfigureAwait(false);
 
         _cluster.PidCache.RemoveByPredicate(kv =>
             kv.Value.Address.Equals(context.System.Address, StringComparison.Ordinal));
@@ -68,7 +68,7 @@ internal class SingleNodeActivatorActor : IActor
         }
 
         //await graceful shutdown of all actors
-        await Task.WhenAll(stopping);
+        await Task.WhenAll(stopping).ConfigureAwait(false);
         Logger.LogInformation("[SingleNode] - Stopped {ActorCount} actors", clusterIdentities.Count);
     }
 

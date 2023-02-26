@@ -17,7 +17,8 @@ public class ActorTests
     [Fact]
     public async Task RequestActorAsync()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -41,7 +42,8 @@ public class ActorTests
     [Fact]
     public async Task RequestActorAsyncCanTouchActor()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -57,7 +59,8 @@ public class ActorTests
     [Fact]
     public async Task RequestActorAsyncAutoRespond()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -73,7 +76,8 @@ public class ActorTests
     [Fact]
     public async Task RequestActorAsync_should_raise_TimeoutException_when_timeout_is_reached()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -90,7 +94,8 @@ public class ActorTests
     [Fact]
     public async Task RequestActorAsync_should_not_raise_TimeoutException_when_result_is_first()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -114,7 +119,8 @@ public class ActorTests
     [Fact]
     public async Task ActorLifeCycle()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var messages = new Queue<object>();
@@ -145,7 +151,8 @@ public class ActorTests
     [Fact]
     public async Task ActorLifeCycleWhenExceptionIsThrown()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var messages = new Queue<object>();
@@ -200,7 +207,8 @@ public class ActorTests
     [Fact]
     public async Task StopActorWithLongRunningTask()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
         var messages = new Queue<object>();
 
@@ -240,7 +248,8 @@ public class ActorTests
     [Fact]
     public async Task ForwardActorAsync()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnForwarderFromFunc(Receive forwarder) => context.Spawn(Props.FromFunc(forwarder));

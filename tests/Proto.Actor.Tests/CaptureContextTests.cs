@@ -76,7 +76,8 @@ public class CaptureContextTests
     [Fact]
     public async Task can_receive_captured_context()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var results = new Queue<UnstashResult>();
@@ -103,7 +104,8 @@ public class CaptureContextTests
     [Fact]
     public async Task can_continue_after_processing_capture()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var results = new Queue<UnstashResult>();

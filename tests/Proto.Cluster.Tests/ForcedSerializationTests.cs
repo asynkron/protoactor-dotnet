@@ -20,7 +20,8 @@ public class ForcedSerializationTests
     [Fact(Skip = "Does not work with tracing")]
     public async Task Forced_serialization_works_correctly_in_a_cluster()
     {
-        await using var fixture = new ForcedSerializationClusterFixture();
+        var fixture = new ForcedSerializationClusterFixture();
+        await using var _ = fixture;
         await fixture.InitializeAsync();
         var entryMember = fixture.Members.First();
 

@@ -34,7 +34,7 @@ internal class GossipConsensusHandle<T> : IConsensusHandle<T>
         {
             var t = Volatile.Read(ref _consensusTcs).Task;
             // ReSharper disable once MethodSupportsCancellation
-            await Task.WhenAny(t, Task.Delay(500));
+            await Task.WhenAny(t, Task.Delay(500)).ConfigureAwait(false);
 
             if (t.IsCompleted)
             {

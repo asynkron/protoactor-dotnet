@@ -26,7 +26,7 @@ public class RavenDBProvider : IProvider
             .Where(x => x.ActorName == actorName)
             .Where(x => x.Index >= indexStart && x.Index <= indexEnd)
             .OrderBy(x => x.Index)
-            .ToListAsync();
+            .ToListAsync().ConfigureAwait(false);
 
         foreach (var @event in events)
         {
@@ -43,7 +43,7 @@ public class RavenDBProvider : IProvider
         var snapshot = await session.Query<Snapshot>()
             .Where(x => x.ActorName == actorName)
             .OrderByDescending(x => x.Index)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync().ConfigureAwait(false);
 
         return snapshot != null ? (snapshot.Data, snapshot.Index) : (null, 0);
     }
@@ -52,9 +52,9 @@ public class RavenDBProvider : IProvider
     {
         using var session = _store.OpenAsyncSession();
 
-        await session.StoreAsync(new Event(actorName, index, @event));
+        await session.StoreAsync(new Event(actorName, index, @event)).ConfigureAwait(false);
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync().ConfigureAwait(false);
 
         return index++;
     }
@@ -63,9 +63,9 @@ public class RavenDBProvider : IProvider
     {
         using var session = _store.OpenAsyncSession();
 
-        await session.StoreAsync(new Snapshot(actorName, index, snapshot));
+        await session.StoreAsync(new Snapshot(actorName, index, snapshot)).ConfigureAwait(false);
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync().ConfigureAwait(false);
     }
 
     public Task DeleteEventsAsync(string actorName, long inclusiveToIndex) =>

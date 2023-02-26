@@ -34,7 +34,7 @@ public class GithubActionsReporter
 
     public async Task Run(Func<Task> test, [CallerMemberName] string testName = "")
     {
-        await Task.Delay(1).ConfigureAwait(false);
+        await Task.Delay(1);
 
         using var activity = StartActivity(testName);
         var traceId = activity?.Context.TraceId.ToString().ToUpperInvariant() ?? "N/A";

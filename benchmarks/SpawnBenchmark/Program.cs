@@ -96,7 +96,7 @@ class Program
                     Div = 10
                 }
             );
-            t.ConfigureAwait(false);
+            
             var res = t.Result;
             Console.WriteLine(sw.Elapsed);
             Console.WriteLine(res);

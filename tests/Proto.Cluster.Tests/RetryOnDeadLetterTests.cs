@@ -13,7 +13,8 @@ public class RetryOnDeadLetterTests
     [Fact(Skip = "Flaky")]
     public async Task ShouldRetryRequestOnDeadLetterResponseRegardlessOfResponseType()
     {
-        await using var fixture = new Fixture(1);
+        var fixture = new Fixture(1);
+        await using var _ = fixture;
         await fixture.InitializeAsync();
 
         var member = fixture.Members.First();

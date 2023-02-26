@@ -11,7 +11,8 @@ public class WatchTests
     [Fact]
     public async Task MultipleStopsTriggerSingleTerminated()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         long counter = 0;
@@ -57,7 +58,8 @@ public class WatchTests
     [Fact]
     public async Task CanWatchLocalActors()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor())

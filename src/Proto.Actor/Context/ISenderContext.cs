@@ -111,7 +111,7 @@ public static class SenderContextExtensions
     public static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
     {
         using var cts = new CancellationTokenSource(timeout);
-        var res = await self.RequestAsync<T>(target, message, cts.Token);
+        var res = await self.RequestAsync<T>(target, message, cts.Token).ConfigureAwait(false);
 
         return res;
     }
@@ -153,7 +153,7 @@ public static class SenderContextExtensions
     )
     {
         var request = headers is null ? message : MessageEnvelope.Wrap(message, headers);
-        var result = await self.RequestAsync<MessageEnvelope>(target, request, cancellationToken);
+        var result = await self.RequestAsync<MessageEnvelope>(target, request, cancellationToken).ConfigureAwait(false);
 
         var messageResult = MessageEnvelope.UnwrapMessage(result);
 
@@ -179,7 +179,7 @@ public static class SenderContextExtensions
             : new MessageEnvelope(message, future.Pid);
 
         self.Send(target, messageEnvelope);
-        var result = await future.GetTask(cancellationToken);
+        var result = await future.GetTask(cancellationToken).ConfigureAwait(false);
 
         var messageResult = MessageEnvelope.UnwrapMessage(result);
 

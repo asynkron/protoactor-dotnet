@@ -34,8 +34,9 @@ public class GossipTests
     [Fact]
     public async Task CanGetConsensus()
     {
-        await using var clusterFixture = new InMemoryClusterFixture();
-        await clusterFixture.InitializeAsync().ConfigureAwait(false);
+        var clusterFixture = new InMemoryClusterFixture();
+        await using var _ = clusterFixture;
+        await clusterFixture.InitializeAsync();
 
         const string initialValue = "hello consensus";
 
@@ -53,8 +54,9 @@ public class GossipTests
     public async Task CompositeConsensusWorks()
     {
         var timeout = CancellationTokens.FromSeconds(20);
-        await using var clusterFixture = new InMemoryClusterFixture();
-        await clusterFixture.InitializeAsync().ConfigureAwait(false);
+        var clusterFixture = new InMemoryClusterFixture();
+        await using var _ = clusterFixture;
+        await clusterFixture.InitializeAsync();
 
         await Task.Delay(1000);
 
@@ -93,7 +95,8 @@ public class GossipTests
     [Fact]
     public async Task CanFallOutOfConsensus()
     {
-        await using var clusterFixture = new InMemoryClusterFixture();
+        var clusterFixture = new InMemoryClusterFixture();
+        await using var _ = clusterFixture;
         await clusterFixture.InitializeAsync();
 
         const string initialValue = "hello consensus";
@@ -138,7 +141,7 @@ public class GossipTests
     {
         var results = await Task
             .WhenAll(consensusChecks.Select(it => it.TryGetConsensus(CancellationTokens.FromSeconds(5))))
-            .ConfigureAwait(false);
+            ;
 
         foreach (var (consensus, consensusValue) in results)
         {
@@ -160,7 +163,7 @@ public class GossipTests
     {
         var results = await Task
             .WhenAll(consensusChecks.Select(it => it.TryGetConsensus(CancellationTokens.FromSeconds(1))))
-            .ConfigureAwait(false);
+            ;
 
         foreach (var (consensus, _) in results)
         {
@@ -197,6 +200,6 @@ public class GossipTests
     {
         using var check = CreateConsensusCheck(member);
 
-        return await check.TryGetConsensus(timeout, CancellationToken.None).ConfigureAwait(false);
+        return await check.TryGetConsensus(timeout, CancellationToken.None);
     }
 }

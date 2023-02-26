@@ -40,7 +40,7 @@ public class PidCacheTests
     //     var props = Props.FromProducer(() => new EchoActor());
     //     var deadPid = system.Root.SpawnNamed(props, "stopped");
     //     var alivePid = system.Root.SpawnNamed(props, "alive");
-    //     await system.Root.StopAsync(deadPid).ConfigureAwait(false);
+    //     await system.Root.StopAsync(deadPid);
     //
     //     var dummyIdentityLookup = new DummyIdentityLookup(alivePid);
     //     var pidCache = new PidCache();
