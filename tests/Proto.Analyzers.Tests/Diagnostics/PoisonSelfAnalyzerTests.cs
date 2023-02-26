@@ -19,7 +19,7 @@ public class SomeActor: IActor
     }
 }
 ";
-        await VerifyAnalyzerFindsNothingAsync(test).ConfigureAwait(false);
+        await VerifyAnalyzerFindsNothingAsync(test);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class SomeActor : IActor
     }
 }
 ";
-        await VerifyAnalyzerFindsNothingAsync(test).ConfigureAwait(false);
+        await VerifyAnalyzerFindsNothingAsync(test);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class SomeActor : IActor
         await VerifyAnalyzerAsync(
             test,
             Diagnostic(DiagnosticDescriptors.Deadlock)
-                .WithSpan(11, 15, 11, 48).WithArguments("PoisonAsync")).ConfigureAwait(false);
+                .WithSpan(11, 15, 11, 48).WithArguments("PoisonAsync"));
     }
     
     [Fact]
@@ -90,6 +90,6 @@ public class SomeActor : IActor
         await VerifyAnalyzerAsync(
             test,
             Diagnostic(DiagnosticDescriptors.Deadlock)
-                .WithSpan(11, 15, 11, 46).WithArguments("StopAsync")).ConfigureAwait(false);
+                .WithSpan(11, 15, 11, 46).WithArguments("StopAsync"));
     }
 }

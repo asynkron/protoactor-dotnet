@@ -48,8 +48,8 @@ public class PartitionIdentityTests
         const int memberCount = 3;
 
         Interlocked.Exchange(ref _requests, 0);
-        var fixture = await InitClusterFixture(memberCount, mode, send).ConfigureAwait(false);
-        await using var __ = fixture.ConfigureAwait(false);
+        var fixture = await InitClusterFixture(memberCount, mode, send);
+        await using var __ = fixture;
 
         var identities = Enumerable.Range(0, identityCount).Select(_ => Guid.NewGuid().ToString("N")).ToList();
 
@@ -69,7 +69,7 @@ public class PartitionIdentityTests
 
         while (!stop.IsCancellationRequested)
         {
-            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(1));
             var now = Interlocked.Read(ref _requests);
 
             _output.WriteLine(
@@ -81,7 +81,7 @@ public class PartitionIdentityTests
 
         _output.WriteLine($"Stopping cluster of {fixture.Members.Count} members");
         timer.Restart();
-        await fixture.DisposeAsync().ConfigureAwait(false);
+        await fixture.DisposeAsync();
         _output.WriteLine($"Stopped cluster in {timer.Elapsed}");
 
         var actorStates = fixture.Repository.Contents.ToList();
@@ -122,7 +122,7 @@ public class PartitionIdentityTests
                         tasks.Add(Inc(clusterFixture.Members[1], id, cancellationToken));
                     }
 
-                    await Task.WhenAll(tasks).ConfigureAwait(false);
+                    await Task.WhenAll(tasks);
                     tasks.Clear();
                 }
             }
@@ -137,7 +137,7 @@ public class PartitionIdentityTests
                 Identity = id,
                 Kind = ConcurrencyVerificationActor.Kind
             }, new IncCount(), cancellationToken
-        ).ConfigureAwait(false);
+        );
 
         if (!cancellationToken.IsCancellationRequested)
         {
@@ -164,7 +164,7 @@ public class PartitionIdentityTests
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    await Task.Delay(rnd.Next(50), cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(rnd.Next(50), cancellationToken);
                     var id = RandomIdentity(identities, rnd);
                     var member = clusterFixture.Members[rnd.Next(clusterFixture.Members.Count)];
 
@@ -175,7 +175,7 @@ public class PartitionIdentityTests
                     };
 
                     await member.RequestAsync<Ack>(clusterIdentity, new Die(), cancellationToken
-                    ).ConfigureAwait(false);
+                    );
 
                     Interlocked.Increment(ref _requests);
                 }
@@ -198,7 +198,7 @@ public class PartitionIdentityTests
                 {
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        await Task.Delay(rnd.Next(10000), cancellationToken).ConfigureAwait(false);
+                        await Task.Delay(rnd.Next(10000), cancellationToken);
                         var spawn = rnd.Next() % 2 == 0;
 
                         for (var i = 0; i <= rnd.Next() % 2; i++)
@@ -251,7 +251,7 @@ public class PartitionIdentityTests
         _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopping cluster member {member.System.Id} " +
                           (graceful ? "gracefully" : "with wanton disregard"));
 
-        await fixture.RemoveNode(member, graceful).ConfigureAwait(false);
+        await fixture.RemoveNode(member, graceful);
         _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopped cluster member {member.System.Id}");
     }
 
@@ -262,7 +262,7 @@ public class PartitionIdentityTests
     )
     {
         var fixture = new PartitionIdentityClusterFixture(memberCount, mode, send);
-        await fixture.InitializeAsync().ConfigureAwait(false);
+        await fixture.InitializeAsync();
 
         return fixture;
     }

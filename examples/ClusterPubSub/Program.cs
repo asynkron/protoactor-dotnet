@@ -25,16 +25,16 @@ internal static class Program
         var system = GetSystem();
         var cluster = system.Cluster();
 
-        await cluster.StartMemberAsync().ConfigureAwait(false);
+        await cluster.StartMemberAsync();
 
         for (var i = 0; i < 3; i++)
         {
-            await cluster.GetUserActor("user-" + i).Connect(CancellationToken.None).ConfigureAwait(false);
+            await cluster.GetUserActor("user-" + i).Connect(CancellationToken.None);
         }
 
         Console.ReadKey();
 
-        await cluster.ShutdownAsync().ConfigureAwait(false);
+        await cluster.ShutdownAsync();
     }
 
     private static ActorSystem GetSystem() =>

@@ -27,23 +27,23 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
 
             await PingAndVerifyLocality(firstNode, timeout, "1:1", firstNode.System.Address,
                 "Local affinity to sending node means that actors should spawn there"
-            ).ConfigureAwait(false);
+            );
 
             LogProcessCounts();
 
             await PingAndVerifyLocality(secondNode, timeout, "2:1", firstNode.System.Address,
                 "As the current instances exist on the 'wrong' node, these should respond before being moved"
-            ).ConfigureAwait(false);
+            );
 
             LogProcessCounts();
 
             _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
-            await Task.Delay(200, timeout).ConfigureAwait(false);
+            await Task.Delay(200, timeout);
             LogProcessCounts();
 
             await PingAndVerifyLocality(secondNode, timeout, "2.2", secondNode.System.Address,
                 "Relocation should be triggered, and the actors should be respawned on the local node"
-            ).ConfigureAwait(false);
+            );
 
             LogProcessCounts();
 
@@ -51,7 +51,7 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
                 _testOutputHelper.WriteLine(
                     $"Processes: {firstNode.System.Address}: {firstNode.System.ProcessRegistry.ProcessCount}, {secondNode.System.Address}: {secondNode.System.ProcessRegistry.ProcessCount}"
                 );
-        }, _testOutputHelper).ConfigureAwait(false);
+        }, _testOutputHelper);
     }
 
     private async Task PingAndVerifyLocality(
@@ -73,7 +73,7 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
                             {
                                 RequestId = requestId
                             }, token
-                        ).ConfigureAwait(false);
+                        );
 
                         response.Should().NotBeNull();
 
@@ -83,7 +83,7 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
                         }
                     }
                 )
-        ).ConfigureAwait(false);
+        );
     }
 }
 

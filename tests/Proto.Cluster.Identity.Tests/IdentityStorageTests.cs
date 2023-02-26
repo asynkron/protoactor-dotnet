@@ -55,7 +55,7 @@ public abstract class IdentityStorageTests : IDisposable
 
         var locks = await Task.WhenAll(Enumerable.Range(1, attempts)
             .Select(i => _storage.TryAcquireLock(identity, timeout))
-        ).ConfigureAwait(false);
+        );
 
         var successFullLock = locks.Where(it => it != null).ToList();
         successFullLock.Should().HaveCount(1);
@@ -76,7 +76,7 @@ public abstract class IdentityStorageTests : IDisposable
                     _storageInstance2.TryAcquireLock(identity, timeout)
                 }
             )
-        ).ConfigureAwait(false);
+        );
 
         var successfulLock = locks.Where(it => it != null).ToList();
         successfulLock.Should().HaveCount(1);
@@ -89,17 +89,17 @@ public abstract class IdentityStorageTests : IDisposable
         var activator = GetFakeActivator();
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
         var identity = new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
-        var spawnLock = await _storage.TryAcquireLock(identity, timeout).ConfigureAwait(false);
+        var spawnLock = await _storage.TryAcquireLock(identity, timeout);
         var pid = Activate(activator, identity);
-        await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout).ConfigureAwait(false);
+        await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout);
 
-        var activation = await _storage.TryGetExistingActivation(identity, timeout).ConfigureAwait(false);
+        var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
         activation.Should().NotBeNull();
         activation?.MemberId.Should().Be(activator.Id);
         activation?.Pid.Should().BeEquivalentTo(pid);
 
-        var noLock = await _storage.TryAcquireLock(identity, timeout).ConfigureAwait(false);
+        var noLock = await _storage.TryAcquireLock(identity, timeout);
 
         noLock.Should().BeNull("Since the activation is active, it should not be possible to take the lock");
     }
@@ -110,13 +110,13 @@ public abstract class IdentityStorageTests : IDisposable
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
         var identity = new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
 
-        var spawnLock = await _storage.TryAcquireLock(identity, timeout).ConfigureAwait(false);
+        var spawnLock = await _storage.TryAcquireLock(identity, timeout);
 
         spawnLock.Should().NotBeNull();
 
-        await _storage.RemoveLock(spawnLock!, timeout).ConfigureAwait(false);
+        await _storage.RemoveLock(spawnLock!, timeout);
 
-        var secondLock = await _storage.TryAcquireLock(identity, timeout).ConfigureAwait(false);
+        var secondLock = await _storage.TryAcquireLock(identity, timeout);
 
         secondLock.Should().NotBeNull("The initial lock should be cleared, and a second lock can be acquired.");
     }
@@ -125,9 +125,9 @@ public abstract class IdentityStorageTests : IDisposable
     public async Task CanStoreActivation()
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
-        var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout).ConfigureAwait(false);
+        var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout);
 
-        var activation = await _storage.TryGetExistingActivation(identity, timeout).ConfigureAwait(false);
+        var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
         activation.Should().NotBeNull();
         activation?.MemberId.Should().Be(activator.Id);
@@ -138,7 +138,7 @@ public abstract class IdentityStorageTests : IDisposable
     public async Task CannotStoreOverExisting()
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
-        var (activator, identity, _) = await GetActivatedClusterIdentity(timeout).ConfigureAwait(false);
+        var (activator, identity, _) = await GetActivatedClusterIdentity(timeout);
 
         var otherPid = Activate(activator, identity);
 
@@ -146,7 +146,7 @@ public abstract class IdentityStorageTests : IDisposable
                 storage.StoreActivation(activator.Id, new SpawnLock("someLockId", identity), otherPid, timeout)
             )
             .Should()
-            .ThrowAsync<LockNotFoundException>().ConfigureAwait(false);
+            .ThrowAsync<LockNotFoundException>();
     }
 
     [Fact]
@@ -162,20 +162,20 @@ public abstract class IdentityStorageTests : IDisposable
                 storage.StoreActivation(activator.Id, spawnLock, pid, timeout)
             )
             .Should()
-            .ThrowAsync<LockNotFoundException>().ConfigureAwait(false);
+            .ThrowAsync<LockNotFoundException>();
     }
 
     [Fact]
     public async Task CanRemoveActivation()
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
-        var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout).ConfigureAwait(false);
+        var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout);
 
-        var activation = await _storage.TryGetExistingActivation(identity, timeout).ConfigureAwait(false);
+        var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
-        await _storage.RemoveActivation(identity, pid, timeout).ConfigureAwait(false);
+        await _storage.RemoveActivation(identity, pid, timeout);
 
-        var afterRemoval = await _storage.TryGetExistingActivation(identity, timeout).ConfigureAwait(false);
+        var afterRemoval = await _storage.TryGetExistingActivation(identity, timeout);
 
         activation.Should().NotBeNull();
         activation?.MemberId.Should().Be(activator.Id);
@@ -188,15 +188,15 @@ public abstract class IdentityStorageTests : IDisposable
     public async Task DoesNotRemoveIfIdDoesNotMatch()
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
-        var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout).ConfigureAwait(false);
+        var (activator, identity, pid) = await GetActivatedClusterIdentity(timeout);
 
         var differentPid = Activate(activator, identity);
 
-        var activation = await _storage.TryGetExistingActivation(identity, timeout).ConfigureAwait(false);
+        var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
-        await _storage.RemoveActivation(identity, differentPid, timeout).ConfigureAwait(false);
+        await _storage.RemoveActivation(identity, differentPid, timeout);
 
-        var afterRemoval = await _storage.TryGetExistingActivation(identity, timeout).ConfigureAwait(false);
+        var afterRemoval = await _storage.TryGetExistingActivation(identity, timeout);
 
         activation.Should().NotBeNull();
         activation?.MemberId.Should().Be(activator.Id);
@@ -209,11 +209,11 @@ public abstract class IdentityStorageTests : IDisposable
     public async Task CanRemoveByMember()
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
-        var (activator, identity, _) = await GetActivatedClusterIdentity(timeout).ConfigureAwait(false);
+        var (activator, identity, _) = await GetActivatedClusterIdentity(timeout);
 
-        await _storage.RemoveMember(activator.Id, timeout).ConfigureAwait(false);
+        await _storage.RemoveMember(activator.Id, timeout);
 
-        var storedActivation = await _storage.TryGetExistingActivation(identity, timeout).ConfigureAwait(false);
+        var storedActivation = await _storage.TryGetExistingActivation(identity, timeout);
 
         storedActivation.Should().BeNull();
     }
@@ -222,15 +222,15 @@ public abstract class IdentityStorageTests : IDisposable
     public async Task WillNotRemoveCurrentActivationByPrevMember()
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
-        var (originalActivator, identity, origPid) = await GetActivatedClusterIdentity(timeout).ConfigureAwait(false);
+        var (originalActivator, identity, origPid) = await GetActivatedClusterIdentity(timeout);
 
-        await _storage.RemoveActivation(identity, origPid, timeout).ConfigureAwait(false);
+        await _storage.RemoveActivation(identity, origPid, timeout);
 
-        var (newActivator, _, newPid) = await GetActivatedClusterIdentity(timeout, identity: identity).ConfigureAwait(false);
+        var (newActivator, _, newPid) = await GetActivatedClusterIdentity(timeout, identity: identity);
 
-        await _storage.RemoveMember(originalActivator.Id, timeout).ConfigureAwait(false);
+        await _storage.RemoveMember(originalActivator.Id, timeout);
 
-        var activation = await _storage.TryGetExistingActivation(identity, timeout).ConfigureAwait(false);
+        var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
         activation.Should().NotBeNull();
         activation?.MemberId.Should().Be(newActivator.Id);
@@ -247,18 +247,18 @@ public abstract class IdentityStorageTests : IDisposable
 
         for (var i = 0; i < activations; i++)
         {
-            var (_, identity, _) = await GetActivatedClusterIdentity(timeout, activator).ConfigureAwait(false);
+            var (_, identity, _) = await GetActivatedClusterIdentity(timeout, activator);
             identities.Add(identity);
         }
 
         var timer = Stopwatch.StartNew();
-        await _storage.RemoveMember(activator.Id, timeout).ConfigureAwait(false);
+        await _storage.RemoveMember(activator.Id, timeout);
         timer.Stop();
         _testOutputHelper.WriteLine($"Removed {activations} activations in {timer.Elapsed}");
 
         foreach (var clusterIdentity in identities)
         {
-            var storedActivation = await _storage.TryGetExistingActivation(clusterIdentity, timeout).ConfigureAwait(false);
+            var storedActivation = await _storage.TryGetExistingActivation(clusterIdentity, timeout);
             storedActivation.Should().BeNull();
         }
     }
@@ -271,11 +271,11 @@ public abstract class IdentityStorageTests : IDisposable
     {
         activator ??= GetFakeActivator();
         identity ??= new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
-        var spawnLock = await _storage.TryAcquireLock(identity, timeout).ConfigureAwait(false);
+        var spawnLock = await _storage.TryAcquireLock(identity, timeout);
         var pid = Activate(activator, identity);
-        await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout).ConfigureAwait(false);
+        await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout);
 
-        var activation = await _storage.TryGetExistingActivation(identity, timeout).ConfigureAwait(false);
+        var activation = await _storage.TryGetExistingActivation(identity, timeout);
 
         return (activator, identity, activation!.Pid);
     }
@@ -286,17 +286,17 @@ public abstract class IdentityStorageTests : IDisposable
         var activator = GetFakeActivator();
         var timeout = CancellationTokens.FromSeconds(15);
         var identity = new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
-        var spawnLock = await _storage.TryAcquireLock(identity, timeout).ConfigureAwait(false);
+        var spawnLock = await _storage.TryAcquireLock(identity, timeout);
         var pid = Activate(activator, identity);
 
         _ = SafeTask.Run(async () =>
             {
-                await Task.Delay(500, timeout).ConfigureAwait(false);
-                await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout).ConfigureAwait(false);
+                await Task.Delay(500, timeout);
+                await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout);
             }, timeout
         );
 
-        var activation = await _storage.WaitForActivation(identity, timeout).ConfigureAwait(false);
+        var activation = await _storage.WaitForActivation(identity, timeout);
 
         activation.Should().NotBeNull();
         activation?.MemberId.Should().Be(activator.Id);
@@ -308,10 +308,10 @@ public abstract class IdentityStorageTests : IDisposable
     {
         var timeout = new CancellationTokenSource(10000).Token;
         var identity = new ClusterIdentity { Kind = "thing", Identity = NextId().ToString() };
-        await _storage.TryAcquireLock(identity, timeout).ConfigureAwait(false);
+        await _storage.TryAcquireLock(identity, timeout);
 
-        var activation = await _storage.WaitForActivation(identity, timeout).ConfigureAwait(false);
-        var spawnLock = await _storage.TryAcquireLock(identity, timeout).ConfigureAwait(false);
+        var activation = await _storage.WaitForActivation(identity, timeout);
+        var spawnLock = await _storage.TryAcquireLock(identity, timeout);
 
         activation.Should().BeNull("We did not activate it");
 

@@ -9,7 +9,7 @@ public class StoreTests
     public async Task Given_RootContextStore_SetAndGetCustomObject()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var toStore = new StoreType();

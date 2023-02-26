@@ -36,23 +36,23 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             const string topic = "single-test-topic";
             const int numMessages = 100;
 
-            await _fixture.SubscribeAllTo(topic, subscriberIds).ConfigureAwait(false);
+            await _fixture.SubscribeAllTo(topic, subscriberIds);
 
             for (var i = 0; i < numMessages; i++)
             {
-                var response = await _fixture.PublishData(topic, i).ConfigureAwait(false);
+                var response = await _fixture.PublishData(topic, i);
 
                 if (response == null)
                 {
-                    _output.WriteLine(await _fixture.Members.DumpClusterState().ConfigureAwait(false));
+                    _output.WriteLine(await _fixture.Members.DumpClusterState());
                 }
 
                 response.Should().NotBeNull("publishing should not time out");
                 response!.Status.Should().Be(PublishStatus.Ok);
             }
 
-            await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages).ConfigureAwait(false);
-        }).ConfigureAwait(false);
+            await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
+        });
     }
 
     [Fact]
@@ -64,23 +64,23 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             const string topic = "batch-test-topic";
             const int numMessages = 100;
 
-            await _fixture.SubscribeAllTo(topic, subscriberIds).ConfigureAwait(false);
+            await _fixture.SubscribeAllTo(topic, subscriberIds);
 
             for (var i = 0; i < numMessages / 10; i++)
             {
                 var data = Enumerable.Range(i * 10, 10).ToArray();
-                var response = await _fixture.PublishDataBatch(topic, data).ConfigureAwait(false);
+                var response = await _fixture.PublishDataBatch(topic, data);
 
                 if (response == null)
                 {
-                    _output.WriteLine(await _fixture.Members.DumpClusterState().ConfigureAwait(false));
+                    _output.WriteLine(await _fixture.Members.DumpClusterState());
                 }
 
                 response.Should().NotBeNull("publishing should not time out");
             }
 
-            await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages).ConfigureAwait(false);
-        }).ConfigureAwait(false);
+            await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
+        });
     }
 
     [Fact]
@@ -92,22 +92,22 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             const string sub2 = "unsubscribe-test-2";
             const string topic = "unsubscribe-test";
 
-            await _fixture.SubscribeTo(topic, sub1).ConfigureAwait(false);
-            await _fixture.SubscribeTo(topic, sub2).ConfigureAwait(false);
+            await _fixture.SubscribeTo(topic, sub1);
+            await _fixture.SubscribeTo(topic, sub2);
 
-            await _fixture.UnsubscribeFrom(topic, sub2).ConfigureAwait(false);
+            await _fixture.UnsubscribeFrom(topic, sub2);
 
-            await _fixture.PublishData(topic, 1).ConfigureAwait(false);
-            await Task.Delay(1000).ConfigureAwait(false); // give time for the message "not to be delivered" to second subscriber
+            await _fixture.PublishData(topic, 1);
+            await Task.Delay(1000); // give time for the message "not to be delivered" to second subscriber
 
             await WaitUntil(() => _fixture.Deliveries.Count == 1,
-                "only one delivery should happen because the other actor is unsubscribed").ConfigureAwait(false);
+                "only one delivery should happen because the other actor is unsubscribed");
 
             _fixture.Deliveries.Should()
                 .HaveCount(1, "only one delivery should happen because the other actor is unsubscribed");
 
             _fixture.Deliveries.First().Identity.Should().Be(sub1, "the other actor should be unsubscribed");
-        }).ConfigureAwait(false);
+        });
     }
 
     [Fact]
@@ -132,13 +132,13 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
 
             var member = _fixture.Members.First();
             var pid = member.System.Root.Spawn(props);
-            await member.Subscribe(topic, pid).ConfigureAwait(false);
+            await member.Subscribe(topic, pid);
 
-            await _fixture.PublishData(topic, 1).ConfigureAwait(false);
+            await _fixture.PublishData(topic, 1);
 
-            await WaitUntil(() => deliveredMessage != null, "Message should be delivered").ConfigureAwait(false);
+            await WaitUntil(() => deliveredMessage != null, "Message should be delivered");
             deliveredMessage.Should().BeEquivalentTo(new DataPublished(1));
-        }).ConfigureAwait(false);
+        });
     }
 
     [Fact]
@@ -164,14 +164,14 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             var member = _fixture.Members.First();
             var pid = member.System.Root.Spawn(props);
 
-            await member.Subscribe(topic, pid).ConfigureAwait(false);
-            await member.Unsubscribe(topic, pid).ConfigureAwait(false);
+            await member.Subscribe(topic, pid);
+            await member.Unsubscribe(topic, pid);
 
-            await _fixture.PublishData(topic, 1).ConfigureAwait(false);
-            await Task.Delay(1000).ConfigureAwait(false); // give time for the message "not to be delivered" to second subscriber
+            await _fixture.PublishData(topic, 1);
+            await Task.Delay(1000); // give time for the message "not to be delivered" to second subscriber
 
             deliveryCount.Should().Be(0);
-        }).ConfigureAwait(false);
+        });
     }
 
     [Fact]
@@ -201,30 +201,30 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             var pid1 = member.System.Root.Spawn(props);
             var pid2 = member.System.Root.Spawn(props);
 
-            await member.Subscribe(topic, pid1).ConfigureAwait(false);
-            await member.Subscribe(topic, pid2).ConfigureAwait(false);
+            await member.Subscribe(topic, pid1);
+            await member.Subscribe(topic, pid2);
 
             // publish one message
-            await _fixture.PublishData(topic, 1).ConfigureAwait(false);
-            await WaitUntil(() => deliveryCount == 2, "both messages should be delivered").ConfigureAwait(false);
+            await _fixture.PublishData(topic, 1);
+            await WaitUntil(() => deliveryCount == 2, "both messages should be delivered");
 
             // kill one of the actors
-            await member.System.Root.StopAsync(pid2).ConfigureAwait(false);
+            await member.System.Root.StopAsync(pid2);
 
             // publish again
-            var response = await _fixture.PublishData(topic, 2).ConfigureAwait(false);
+            var response = await _fixture.PublishData(topic, 2);
 
             response.Should().NotBeNull("the publish operation shouldn't have timed out");
-            await WaitUntil(() => deliveryCount == 3, "second publish should be delivered only to one of the actors").ConfigureAwait(false);
+            await WaitUntil(() => deliveryCount == 3, "second publish should be delivered only to one of the actors");
 
             await WaitUntil(async () =>
                 {
-                    var subscribers = await _fixture.GetSubscribersForTopic(topic).ConfigureAwait(false);
+                    var subscribers = await _fixture.GetSubscribersForTopic(topic);
 
                     return !subscribers.Subscribers_!.Contains(new SubscriberIdentity { Pid = pid2 });
                 }
-            ).ConfigureAwait(false);
-        }).ConfigureAwait(false);
+            );
+        });
     }
 
     [Fact]
@@ -241,7 +241,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
                 {
                     await Task.Delay(4000,
                         _fixture
-                            .CancelWhenDisposing).ConfigureAwait(false); // 4 seconds is longer than the subscriber timeout configured in the test fixture
+                            .CancelWhenDisposing); // 4 seconds is longer than the subscriber timeout configured in the test fixture
 
                     Interlocked.Increment(ref deliveryCount);
                 }
@@ -250,18 +250,18 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             // subscribe
             var member = _fixture.RandomMember();
             var pid = member.System.Root.Spawn(props);
-            await member.Subscribe(topic, pid).ConfigureAwait(false);
+            await member.Subscribe(topic, pid);
 
             // publish one message
-            await _fixture.PublishData(topic, 1).ConfigureAwait(false);
+            await _fixture.PublishData(topic, 1);
 
             // next published message should also be delivered
-            await _fixture.PublishData(topic, 1).ConfigureAwait(false);
+            await _fixture.PublishData(topic, 1);
 
             await WaitUntil(() => deliveryCount == 2,
                 "A timing out subscriber should not prevent subsequent publishes", TimeSpan.FromSeconds(10)
-            ).ConfigureAwait(false);
-        }).ConfigureAwait(false);
+            );
+        });
     }
 
     [Fact]
@@ -272,18 +272,18 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             const string topic = "slow-ci-subscriber";
 
             // subscribe
-            await _fixture.SubscribeTo(topic, "slow-ci-1", PubSubClusterFixture.TimeoutSubscriberKind).ConfigureAwait(false);
+            await _fixture.SubscribeTo(topic, "slow-ci-1", PubSubClusterFixture.TimeoutSubscriberKind);
 
             // publish one message
-            await _fixture.PublishData(topic, 1).ConfigureAwait(false);
+            await _fixture.PublishData(topic, 1);
 
             // next published message should also be delivered
-            await _fixture.PublishData(topic, 1).ConfigureAwait(false);
+            await _fixture.PublishData(topic, 1);
 
             await WaitUntil(() => _fixture.Deliveries.Count == 2,
                 "A timing out subscriber should not prevent subsequent publishes", TimeSpan.FromSeconds(10)
-            ).ConfigureAwait(false);
-        }).ConfigureAwait(false);
+            );
+        });
     }
 
     [Fact(Skip = "Flaky")]
@@ -296,17 +296,17 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             const string topic = "batching-producer";
             const int numMessages = 100;
 
-            await _fixture.SubscribeAllTo(topic, subscriberIds).ConfigureAwait(false);
+            await _fixture.SubscribeAllTo(topic, subscriberIds);
 
             var producer = _fixture.Members.First()
                 .BatchingProducer(topic, new BatchingProducerConfig { BatchSize = 10 });
-            await using var _ = producer.ConfigureAwait(false);
+            await using var _ = producer;
 
             var tasks = Enumerable.Range(0, numMessages).Select(i => producer.ProduceAsync(new DataPublished(i)));
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            await Task.WhenAll(tasks);
 
-            await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages).ConfigureAwait(false);
-        }).ConfigureAwait(false);
+            await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
+        });
     }
 
     [Fact]
@@ -318,27 +318,27 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             const string topic = "batching-producer";
             const int numMessages = 100;
 
-            await _fixture.SubscribeAllTo(topic, subscriberIds).ConfigureAwait(false);
+            await _fixture.SubscribeAllTo(topic, subscriberIds);
 
             var firstCluster = _fixture.Members.First();
 
             var producer = firstCluster
                 .BatchingProducer(topic, new BatchingProducerConfig { PublisherIdleTimeout = TimeSpan.FromSeconds(2) });
-            await using var _ = producer.ConfigureAwait(false);
+            await using var _ = producer;
 
             var tasks = Enumerable.Range(0, numMessages).Select(i => producer.ProduceAsync(new DataPublished(i)));
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            await Task.WhenAll(tasks);
 
             var pid = await firstCluster.GetAsync(ClusterIdentity.Create(topic, TopicActor.Kind),
-                CancellationTokens.FromSeconds(2)).ConfigureAwait(false);
+                CancellationTokens.FromSeconds(2));
             Assert.NotNull(pid);
 
-            await Task.Delay(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(5));
 
             var newPid = await firstCluster.GetAsync(ClusterIdentity.Create(topic, TopicActor.Kind),
-                CancellationTokens.FromSeconds(2)).ConfigureAwait(false);
+                CancellationTokens.FromSeconds(2));
             Assert.NotEqual(newPid, pid);
-        }).ConfigureAwait(false);
+        });
     }
 
     private void Log(string message) => _output.WriteLine($"[{DateTime.Now:hh:mm:ss.fff}] {message}");

@@ -28,12 +28,12 @@ public class SharedFutureTests : BaseFutureTests
     public async Task Should_reuse_completed_futures()
     {
         // first test should use all available futures, and should return them when done
-        await Futures_should_map_to_correct_response().ConfigureAwait(false);
+        await Futures_should_map_to_correct_response();
 
         //After they are returned, they should be available for re-use.
-        await Futures_should_map_to_correct_response().ConfigureAwait(false);
-        await Futures_should_map_to_correct_response().ConfigureAwait(false);
-        await Futures_should_map_to_correct_response().ConfigureAwait(false);
+        await Futures_should_map_to_correct_response();
+        await Futures_should_map_to_correct_response();
+        await Futures_should_map_to_correct_response();
     }
 
     [Fact]

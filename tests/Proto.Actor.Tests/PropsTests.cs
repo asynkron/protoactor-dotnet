@@ -12,7 +12,7 @@ public class PropsTests
     public async Task Can_pass_ActorSystem_via_Props()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var props = Props.FromProducer(s => new ActorWithSystem(s));
         var actor = (ActorWithSystem)props.Producer(system, null!);
         Assert.Same(system, actor.System);

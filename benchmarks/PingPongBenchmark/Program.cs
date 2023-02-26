@@ -54,7 +54,7 @@ class Program
                 }
 
                 Console.WriteLine("Waiting for actors");
-                await Task.WhenAll(tasks).ConfigureAwait(false);
+                await Task.WhenAll(tasks);
                 sw.Stop();
 
                 var totalMessages = messageCount * 2 * clientCount;

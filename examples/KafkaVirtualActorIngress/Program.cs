@@ -27,9 +27,9 @@ internal class Program
             .WithCluster(clusterConfig);
 
         var cluster = system.Cluster();
-        await cluster.StartMemberAsync().ConfigureAwait(false);
+        await cluster.StartMemberAsync();
 
-        await RunKafkaConsumeLoop(cluster).ConfigureAwait(false);
+        await RunKafkaConsumeLoop(cluster);
     }
 
     private static async Task RunKafkaConsumeLoop(Cluster cluster)
@@ -58,7 +58,7 @@ internal class Program
             }
 
             //await response form all actors
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            await Task.WhenAll(tasks);
             //TODO: commit back to Kafka that all messages succeeded
             sw.Stop();
             var tps = 1000.0 / sw.Elapsed.TotalMilliseconds * tasks.Count;

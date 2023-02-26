@@ -21,33 +21,33 @@ public class DeadLetterResponseTests
     public async Task ThrowsDeadLetterException()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var echoPid = system.Root.Spawn(EchoProps);
 
         const string message = "hello";
-        var response = await context.RequestAsync<string>(echoPid, message).ConfigureAwait(false);
+        var response = await context.RequestAsync<string>(echoPid, message);
         response.Should().Be(message);
-        await context.PoisonAsync(echoPid).ConfigureAwait(false);
+        await context.PoisonAsync(echoPid);
 
         await context.Invoking(c => c.RequestAsync<string>(echoPid, message))
             .Should()
-            .ThrowExactlyAsync<DeadLetterException>().ConfigureAwait(false);
+            .ThrowExactlyAsync<DeadLetterException>();
     }
 
     [Fact]
     public async Task SendsDeadLetterResponse()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var validationActor = Props.FromProducer(() => new DeadLetterResponseValidationActor());
 
         var pid = context.Spawn(validationActor);
 
-        var response = await context.RequestAsync<string>(pid, "Validate").ConfigureAwait(false);
+        var response = await context.RequestAsync<string>(pid, "Validate");
 
         response.Should().Be("Validated");
     }
@@ -64,7 +64,7 @@ public class DeadLetterResponseTests
                 case "Validate":
                     _sender = context.Sender;
                     _deadLetterTarget = context.Spawn(EchoProps);
-                    await context.PoisonAsync(_deadLetterTarget).ConfigureAwait(false);
+                    await context.PoisonAsync(_deadLetterTarget);
                     context.Request(_deadLetterTarget, "One dead letter please");
 
                     break;

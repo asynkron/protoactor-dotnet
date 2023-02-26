@@ -43,7 +43,7 @@ public class ConcurrentSpawnBenchmark
             .WithCluster(ClusterConfig().WithClusterKind(echoKind));
 
         _cluster = sys.Cluster();
-        await _cluster.StartMemberAsync().ConfigureAwait(false);
+        await _cluster.StartMemberAsync();
     }
 
     private ClusterConfig ClusterConfig() => Proto.Cluster.ClusterConfig.Setup("test-cluster",
@@ -76,7 +76,7 @@ public class ConcurrentSpawnBenchmark
             tasks[i] = _cluster.GetAsync(i.ToString(), Kind, cts.Token);
         }
 
-        var pids = await Task.WhenAll(tasks).ConfigureAwait(false);
+        var pids = await Task.WhenAll(tasks);
 
         for (var i = 0; i < ConcurrentSpawns; i++)
         {

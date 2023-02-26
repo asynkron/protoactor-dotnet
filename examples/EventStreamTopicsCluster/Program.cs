@@ -46,7 +46,7 @@ internal class Program
 
         await system
             .Cluster()
-            .StartMemberAsync().ConfigureAwait(false);
+            .StartMemberAsync();
 
         Console.WriteLine("Started");
 

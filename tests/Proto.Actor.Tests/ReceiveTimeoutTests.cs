@@ -12,7 +12,7 @@ public class ReceiveTimeoutTests
     public async Task receive_timeout_received_within_expected_time()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var timeoutReceived = false;
@@ -79,7 +79,7 @@ public class ReceiveTimeoutTests
                 while (!receiveTimeoutWaiter.Task.IsCompleted)
                 {
                     context.Send(pid, new IgnoreMe());
-                    await Task.Delay(100).ConfigureAwait(false);
+                    await Task.Delay(100);
                 }
             }
         );
@@ -92,7 +92,7 @@ public class ReceiveTimeoutTests
     public async Task receive_timeout_not_received_within_expected_time()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var timeoutReceived = false;
@@ -127,7 +127,7 @@ public class ReceiveTimeoutTests
     public async Task can_cancel_receive_timeout()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var timeoutReceived = false;
@@ -169,7 +169,7 @@ public class ReceiveTimeoutTests
     public async Task can_still_set_receive_timeout_after_cancelling()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var timeoutReceived = false;

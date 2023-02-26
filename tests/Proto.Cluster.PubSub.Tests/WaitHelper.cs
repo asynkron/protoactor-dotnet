@@ -22,7 +22,7 @@ public static class WaitHelper
             }
 
             // ReSharper disable once MethodSupportsCancellation
-            await Task.Delay(100).ConfigureAwait(false);
+            await Task.Delay(100);
         }
 
         throw new Exception(errorMessage ?? $"The condition was not met within the timeout of {timeout.Value}");
@@ -37,13 +37,13 @@ public static class WaitHelper
 
         while (!cts.Token.IsCancellationRequested)
         {
-            if (await condition().ConfigureAwait(false))
+            if (await condition())
             {
                 return;
             }
 
             // ReSharper disable once MethodSupportsCancellation
-            await Task.Delay(100).ConfigureAwait(false);
+            await Task.Delay(100);
         }
 
         throw new Exception(errorMessage ?? $"The condition was not met within the timeout of {timeout.Value}");

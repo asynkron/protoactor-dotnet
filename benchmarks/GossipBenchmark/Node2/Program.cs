@@ -66,7 +66,7 @@ class Program
 
         await system
             .Cluster()
-            .StartMemberAsync().ConfigureAwait(false);
+            .StartMemberAsync();
 
         Console.WriteLine("Started...");
 
@@ -74,11 +74,11 @@ class Program
             Console.WriteLine("Shutting Down...");
             await system
                 .Cluster()
-                .ShutdownAsync().ConfigureAwait(false);
+                .ShutdownAsync();
         };
 
 
             
-        await Delay(-1).ConfigureAwait(false);
+        await Delay(-1);
     }
 }

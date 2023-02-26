@@ -59,7 +59,7 @@ public class InProcessRequestAsyncBenchmark
             tasks[i] = System.Root.RequestAsync<object>(pid, 1, cancellationToken);
         }
 
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+        await Task.WhenAll(tasks);
     }
 
     [Benchmark]
@@ -80,7 +80,7 @@ public class InProcessRequestAsyncBenchmark
 
         try
         {
-            await Task.WhenAll(futures.Select(f => f.Task)).ConfigureAwait(false);
+            await Task.WhenAll(futures.Select(f => f.Task));
         }
         finally
         {
@@ -103,6 +103,6 @@ public class InProcessRequestAsyncBenchmark
             tasks[i] = batch.RequestAsync<object>(pid, 1, cancellationToken);
         }
 
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+        await Task.WhenAll(tasks);
     }
 }

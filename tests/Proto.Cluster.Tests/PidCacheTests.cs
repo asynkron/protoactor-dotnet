@@ -40,7 +40,7 @@ public class PidCacheTests
     //     var props = Props.FromProducer(() => new EchoActor());
     //     var deadPid = system.Root.SpawnNamed(props, "stopped");
     //     var alivePid = system.Root.SpawnNamed(props, "alive");
-    //     await system.Root.StopAsync(deadPid).ConfigureAwait(false);
+    //     await system.Root.StopAsync(deadPid);
     //
     //     var dummyIdentityLookup = new DummyIdentityLookup(alivePid);
     //     var pidCache = new PidCache();
@@ -70,14 +70,14 @@ public class PidCacheTests
             .WithCluster(GetClusterConfig());
 
         var cluster = system.Cluster();
-        await cluster.StartMemberAsync().ConfigureAwait(false);
+        await cluster.StartMemberAsync();
 
         var identity = ClusterIdentity.Create("", "echo");
 
-        await cluster.RequestAsync<Ack>(identity, new Die(), timeout.Token).ConfigureAwait(false);
+        await cluster.RequestAsync<Ack>(identity, new Die(), timeout.Token);
 
         // Let the system purge the terminated PID,
-        await Task.Delay(50).ConfigureAwait(false);
+        await Task.Delay(50);
 
         cluster.PidCache.TryGet(identity, out _).Should().BeFalse();
     }

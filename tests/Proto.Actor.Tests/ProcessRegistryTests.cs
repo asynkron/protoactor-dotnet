@@ -11,7 +11,7 @@ public class ProcessRegistryTests
     public async Task Given_PIDDoesNotExist_TryAddShouldAddLocalPID()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);
@@ -26,7 +26,7 @@ public class ProcessRegistryTests
     public async Task Given_PIDExists_TryAddShouldNotAddLocalPID()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);
@@ -41,7 +41,7 @@ public class ProcessRegistryTests
     public async Task Given_PIDExists_GetShouldReturnIt()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);
@@ -57,7 +57,7 @@ public class ProcessRegistryTests
     public async Task Given_PIDWasRemoved_GetShouldReturnDeadLetterProcess()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);
@@ -73,7 +73,7 @@ public class ProcessRegistryTests
     public async Task Given_PIDExistsInHostResolver_GetShouldReturnIt()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var pid = new PID();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);

@@ -40,13 +40,13 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
             )
             .ToList();
 
-        await Task.WhenAll(sendRequestsSent).ConfigureAwait(false);
+        await Task.WhenAll(sendRequestsSent);
 
         var result = await Members.First()
             .RequestAsync<AggregatorResult>(aggregatorId, VerifyOrderActor.Kind,
                 new AskAggregator(),
                 new CancellationTokenSource(5000).Token
-            ).ConfigureAwait(false);
+            );
 
         result.Should().NotBeNull("We expect a response from the aggregator actor");
         result.SequenceKeyCount.Should().Be(sendRequestsSent.Count, "We expect a unique id per send request");
@@ -85,7 +85,7 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
                                     SequenceId = _seq++,
                                     Sender = _instanceId
                                 }, CancellationToken.None
-                            ).ConfigureAwait(false);
+                            );
                     }
 
                     context.Respond(new Ack());

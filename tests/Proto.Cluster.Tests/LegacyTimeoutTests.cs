@@ -21,13 +21,13 @@ public class LegacyTimeoutTests
     public async Task ReturnsNullOnRequestTimeoutInLegacyMode()
     {
         var fixture = new Fixture(1);
-        await using var _ = fixture.ConfigureAwait(false);
-        await fixture.InitializeAsync().ConfigureAwait(false);
+        await using var _ = fixture;
+        await fixture.InitializeAsync();
 
         var response = await fixture.Members.First()
             .RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
                 new SlowPing { Message = "hi", DelayMs = 4000 }, new CancellationTokenSource(500).Token
-            ).ConfigureAwait(false);
+            );
 
         response.Should().BeNull();
     }

@@ -34,7 +34,7 @@ public class GithubActionsReporter
 
     public async Task Run(Func<Task> test, [CallerMemberName] string testName = "")
     {
-        await Task.Delay(1).ConfigureAwait(false);
+        await Task.Delay(1);
 
         using var activity = StartActivity(testName);
         var traceId = activity?.Context.TraceId.ToString().ToUpperInvariant() ?? "N/A";
@@ -55,7 +55,7 @@ public class GithubActionsReporter
                 Console.WriteLine(traceViewUrl);
             }
             
-            await test().ConfigureAwait(false);
+            await test();
             Logger.LogInformation("Test succeeded");
             _results.Add(new TestResult(testName, traceId, sw.Elapsed));
         }
@@ -86,7 +86,7 @@ public class GithubActionsReporter
         if (f != null)
         {
             //get some time for traces to propagate
-            await Task.Delay(2000).ConfigureAwait(false);
+            await Task.Delay(2000);
             _output.AppendLine($@"
 <h2>{_reportName}</h2>
 
@@ -136,7 +136,7 @@ Duration
             }
             _output.AppendLine("</table>");
             
-            await File.AppendAllTextAsync(f, _output.ToString()).ConfigureAwait(false);
+            await File.AppendAllTextAsync(f, _output.ToString());
         }
     }
 }

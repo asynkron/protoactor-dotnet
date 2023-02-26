@@ -37,20 +37,20 @@ system.EventStream.Subscribe<ClusterTopology>(
 
 await system
     .Cluster()
-    .StartMemberAsync().ConfigureAwait(false);
+    .StartMemberAsync();
 
 Console.WriteLine("Started");
 
 
 var helloGrain = system.Cluster().GetHelloGrain("MyGrain");
 
-var res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(15)).ConfigureAwait(false);
+var res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(15));
 Console.WriteLine(res.Message);
 
-res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5)).ConfigureAwait(false);
+res = await helloGrain.SayHello(new HelloRequest(), FromSeconds(5));
 Console.WriteLine(res.Message);
 
 Console.WriteLine("Press enter to exit");
 Console.ReadLine();
 Console.WriteLine("Shutting Down...");
-await system.Cluster().ShutdownAsync().ConfigureAwait(false);
+await system.Cluster().ShutdownAsync();

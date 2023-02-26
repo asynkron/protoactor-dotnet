@@ -35,7 +35,7 @@ public class MessageBatchTests
 
         var pid = system.Root.Spawn(props);
         system.Root.Send(pid, batch);
-        await system.Root.PoisonAsync(pid).ConfigureAwait(false);
+        await system.Root.PoisonAsync(pid);
 
         var expected = new[] { "hello", "world", "batch" };
         messages.Should().ContainInOrder(expected);

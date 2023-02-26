@@ -40,7 +40,7 @@ internal class Program
                 Console.WriteLine(" 1 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
                 Console.WriteLine(" 1 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
                 Console.WriteLine(" 1 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
-                await next(c, target, newEnvelope).ConfigureAwait(false);
+                await next(c, target, newEnvelope);
 
                 //this line might look confusing at first when reading the console output
                 //it looks like this finishes before the actor receive middleware kicks in
@@ -81,12 +81,12 @@ internal class Program
                         Console.WriteLine("  2 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
                         Console.WriteLine("  2 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
                         Console.WriteLine("  2 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
-                        await next(context, newEnvelope).ConfigureAwait(false);
+                        await next(context, newEnvelope);
                         Console.WriteLine("  2 Exit Actor ReceiverMiddleware");
                     }
                     else
                     {
-                        await next(context, envelope).ConfigureAwait(false);
+                        await next(context, envelope);
                     }
                 }
             )
@@ -101,7 +101,7 @@ internal class Program
                     Console.WriteLine("    4 TraceID: " + newEnvelope.Header.GetOrDefault("TraceID"));
                     Console.WriteLine("    4 SpanID: " + newEnvelope.Header.GetOrDefault("SpanID"));
                     Console.WriteLine("    4 ParentSpanID: " + newEnvelope.Header.GetOrDefault("ParentSpanID"));
-                    await next(context, target, envelope).ConfigureAwait(false);
+                    await next(context, target, envelope);
                     Console.WriteLine("    4 Exit Actor SenderMiddleware");
                 }
             );

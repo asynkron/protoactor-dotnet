@@ -15,7 +15,7 @@ public class SupervisionTestsAllForOne
     public async Task AllForOneStrategy_Should_ResumeChildOnFailure()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
@@ -46,7 +46,7 @@ public class SupervisionTestsAllForOne
     public async Task AllForOneStrategy_Should_StopAllChildrenOnFailure()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -78,7 +78,7 @@ public class SupervisionTestsAllForOne
     public async Task AllForOneStrategy_Should_RestartAllChildrenOnFailure()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -110,7 +110,7 @@ public class SupervisionTestsAllForOne
     public async Task AllForOneStrategy_Should_PassExceptionOnRestart()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -142,7 +142,7 @@ public class SupervisionTestsAllForOne
     public async Task AllForOneStrategy_Should_EscalateFailureToParent()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);

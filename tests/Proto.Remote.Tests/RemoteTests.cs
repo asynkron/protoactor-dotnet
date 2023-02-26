@@ -34,7 +34,7 @@ public abstract class RemoteTests
 
         var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" },
             TimeSpan.FromSeconds(10)
-        ).ConfigureAwait(false);
+        );
 
         Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
     }
@@ -49,7 +49,7 @@ public abstract class RemoteTests
         var response = await System.Root.RequestAsync<ForwardResponse>(remoteActor1, new Forward
                 { Message = "Hi", Target = remoteActor2 },
             TimeSpan.FromSeconds(10)
-        ).ConfigureAwait(false);
+        );
 
         response.Should()
             .BeEquivalentTo(new ForwardResponse
@@ -81,7 +81,7 @@ public abstract class RemoteTests
             System.Root.Request(remoteActor, request.message, request.future.Pid);
         }
 
-        var responses = await Task.WhenAll(requests.Select(request => GetResponse(request.future))).ConfigureAwait(false);
+        var responses = await Task.WhenAll(requests.Select(request => GetResponse(request.future)));
 
         for (var index = 0; index < requests.Count; index++)
         {
@@ -93,7 +93,7 @@ public abstract class RemoteTests
 
         static async Task<Pong> GetResponse(IFuture future)
         {
-            var response = await future.Task.ConfigureAwait(false);
+            var response = await future.Task;
 
             return response switch
             {
@@ -115,9 +115,9 @@ public abstract class RemoteTests
             {
                 await System.Root.RequestAsync<Pong>(unknownRemoteActor, new Ping { Message = "Hello" },
                     TimeSpan.FromSeconds(10)
-                ).ConfigureAwait(false);
+                );
             }
-        ).ConfigureAwait(false);
+        );
     }
 
     [Fact]
@@ -128,13 +128,13 @@ public abstract class RemoteTests
 
         var remoteActorResp = await Remote.SpawnNamedAsync(
             _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
-        ).ConfigureAwait(false);
+        );
 
         var remoteActor = remoteActorResp.Pid;
 
         var pong = await System.Root.RequestAsync<Pong>(remoteActor, new Ping { Message = "Hello" },
             TimeSpan.FromSeconds(10)
-        ).ConfigureAwait(false);
+        );
 
         Assert.Equal($"{_fixture.RemoteAddress} Hello", pong.Message);
     }
@@ -147,13 +147,13 @@ public abstract class RemoteTests
 
         var remoteActorResp = await Remote.SpawnNamedAsync(
             _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
-        ).ConfigureAwait(false);
+        );
 
         var remoteActor = remoteActorResp.Pid;
 
         var pong = await System.Root.RequestAsync<SpawnOnMeAndPingResponse>(remoteActor, new SpawnOnMeAndPing(),
             TimeSpan.FromSeconds(10)
-        ).ConfigureAwait(false);
+        );
 
         Assert.Equal($"{_fixture.ActorSystem.Address} Hello", pong.Message);
     }
@@ -162,8 +162,8 @@ public abstract class RemoteTests
     [DisplayTestMethodName]
     public async Task CanWatchRemoteActor()
     {
-        var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress).ConfigureAwait(false);
-        var localActor = await SpawnLocalActorAndWatch(remoteActor).ConfigureAwait(false);
+        var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
+        var localActor = await SpawnLocalActorAndWatch(remoteActor);
 
         System.Root.Stop(remoteActor);
 
@@ -174,7 +174,7 @@ public abstract class RemoteTests
                         localActor, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
                         TimeSpan.FromSeconds(10)
                     )
-            ).ConfigureAwait(false),
+            ),
             "Watching actor did not receive Termination message"
         );
     }
@@ -183,9 +183,9 @@ public abstract class RemoteTests
     [DisplayTestMethodName]
     public async Task CanWatchMultipleRemoteActors()
     {
-        var remoteActor1 = await SpawnRemoteActor(_fixture.RemoteAddress).ConfigureAwait(false);
-        var remoteActor2 = await SpawnRemoteActor(_fixture.RemoteAddress).ConfigureAwait(false);
-        var localActor = await SpawnLocalActorAndWatch(remoteActor1, remoteActor2).ConfigureAwait(false);
+        var remoteActor1 = await SpawnRemoteActor(_fixture.RemoteAddress);
+        var remoteActor2 = await SpawnRemoteActor(_fixture.RemoteAddress);
+        var localActor = await SpawnLocalActorAndWatch(remoteActor1, remoteActor2);
 
         System.Root.Stop(remoteActor1);
         System.Root.Stop(remoteActor2);
@@ -197,7 +197,7 @@ public abstract class RemoteTests
                         localActor, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor1.Id),
                         TimeSpan.FromSeconds(10)
                     )
-            ).ConfigureAwait(false),
+            ),
             "Watching actor did not receive Termination message"
         );
 
@@ -208,7 +208,7 @@ public abstract class RemoteTests
                         localActor, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor2.Id),
                         TimeSpan.FromSeconds(10)
                     )
-            ).ConfigureAwait(false),
+            ),
             "Watching actor did not receive Termination message"
         );
     }
@@ -217,10 +217,10 @@ public abstract class RemoteTests
     [DisplayTestMethodName]
     public async Task MultipleLocalActorsCanWatchRemoteActor()
     {
-        var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress).ConfigureAwait(false);
+        var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
-        var localActor1 = await SpawnLocalActorAndWatch(remoteActor).ConfigureAwait(false);
-        var localActor2 = await SpawnLocalActorAndWatch(remoteActor).ConfigureAwait(false);
+        var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
+        var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
         System.Root.Stop(remoteActor);
 
         Assert.True(
@@ -230,7 +230,7 @@ public abstract class RemoteTests
                         localActor1, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
                         TimeSpan.FromSeconds(10)
                     )
-            ).ConfigureAwait(false),
+            ),
             "Watching actor did not receive Termination message"
         );
 
@@ -241,7 +241,7 @@ public abstract class RemoteTests
                         localActor2, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
                         TimeSpan.FromSeconds(10)
                     )
-            ).ConfigureAwait(false),
+            ),
             "Watching actor did not receive Termination message"
         );
     }
@@ -250,11 +250,11 @@ public abstract class RemoteTests
     [DisplayTestMethodName]
     public async Task CanUnwatchRemoteActor()
     {
-        var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress).ConfigureAwait(false);
-        var localActor1 = await SpawnLocalActorAndWatch(remoteActor).ConfigureAwait(false);
-        var localActor2 = await SpawnLocalActorAndWatch(remoteActor).ConfigureAwait(false);
+        var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
+        var localActor1 = await SpawnLocalActorAndWatch(remoteActor);
+        var localActor2 = await SpawnLocalActorAndWatch(remoteActor);
         System.Root.Send(localActor2, new Unwatch(remoteActor));
-        await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(false); // wait for unwatch to propagate...
+        await Task.Delay(TimeSpan.FromSeconds(3)); // wait for unwatch to propagate...
         System.Root.Stop(remoteActor);
 
         // localActor1 is still watching so should get notified
@@ -265,7 +265,7 @@ public abstract class RemoteTests
                         localActor1, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
                         TimeSpan.FromSeconds(10)
                     )
-            ).ConfigureAwait(false),
+            ),
             "Watching actor did not receive Termination message"
         );
 
@@ -274,7 +274,7 @@ public abstract class RemoteTests
             await System.Root.RequestAsync<bool>(
                 localActor2, new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
                 TimeSpan.FromSeconds(10)
-            ).ConfigureAwait(false),
+            ),
             "Unwatch did not succeed."
         );
     }
@@ -283,8 +283,8 @@ public abstract class RemoteTests
     [DisplayTestMethodName]
     public async Task WhenRemoteTerminated_LocalWatcherReceivesNotification()
     {
-        var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress).ConfigureAwait(false);
-        var localActor = await SpawnLocalActorAndWatch(remoteActor).ConfigureAwait(false);
+        var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
+        var localActor = await SpawnLocalActorAndWatch(remoteActor);
 
         System.Root.Send(remoteActor, new Die());
 
@@ -295,14 +295,14 @@ public abstract class RemoteTests
                         new TerminatedMessageReceived(_fixture.RemoteAddress, remoteActor.Id),
                         TimeSpan.FromSeconds(10)
                     )
-            ).ConfigureAwait(false),
+            ),
             "Watching actor did not receive Termination message"
         );
 
         Assert.Equal(1,
             await System.Root.RequestAsync<int>(localActor, new GetTerminatedMessagesCount(),
                 TimeSpan.FromSeconds(10)
-            ).ConfigureAwait(false)
+            )
         );
     }
 
@@ -310,9 +310,9 @@ public abstract class RemoteTests
     [DisplayTestMethodName]
     public async Task CanMakeRequestToRemoteActor()
     {
-        var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress).ConfigureAwait(false);
+        var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
-        var res = await System.Root.RequestAsync<Touched>(remoteActor, new Touch(), TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+        var res = await System.Root.RequestAsync<Touched>(remoteActor, new Touch(), TimeSpan.FromSeconds(10));
         res.Who.Should().BeEquivalentTo(remoteActor);
     }
 
@@ -351,7 +351,7 @@ public abstract class RemoteTests
             )
         );
 
-        var actor = remote ? await SpawnRemoteActor(_fixture.RemoteAddress).ConfigureAwait(false) : SpawnLocalActor();
+        var actor = remote ? await SpawnRemoteActor(_fixture.RemoteAddress) : SpawnLocalActor();
 
         var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
 
@@ -360,9 +360,9 @@ public abstract class RemoteTests
             System.Root.Request(actor, NextMsg(), responseHandler);
         }
 
-        await Task.WhenAny(tcs.Task, timeout).ConfigureAwait(false);
+        await Task.WhenAny(tcs.Task, timeout);
 
-        var res = await System.Root.RequestAsync<Touched>(actor, new Touch(), TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+        var res = await System.Root.RequestAsync<Touched>(actor, new Touch(), TimeSpan.FromSeconds(1));
         res.Should().NotBeNull("Remote should still be alive");
         res.Who.Should().BeEquivalentTo(actor);
 
@@ -412,7 +412,7 @@ public abstract class RemoteTests
 
         var remoteActorResp = await Remote.SpawnNamedAsync(
             _fixture.RemoteAddress, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)
-        ).ConfigureAwait(false);
+        );
 
         var remoteActor = remoteActorResp.Pid;
 
@@ -423,7 +423,7 @@ public abstract class RemoteTests
 
         var res = await System.Root.RequestAsync<Ack>(remoteActor, msg,
             CancellationTokens.FromSeconds(5)
-        ).ConfigureAwait(false);
+        );
 
         res.Should().BeOfType<Ack>();
 
@@ -435,7 +435,7 @@ public abstract class RemoteTests
         var remoteActorName = Guid.NewGuid().ToString();
 
         var remoteActorResp =
-            await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+            await Remote.SpawnNamedAsync(address, remoteActorName, "EchoActor", TimeSpan.FromSeconds(10));
 
         return remoteActorResp.Pid;
     }
@@ -451,7 +451,7 @@ public abstract class RemoteTests
         // message to propagate to the remote actor
         var logger = Log.CreateLogger(nameof(SpawnLocalActorAndWatch));
         logger.LogInformation("Waiting for RemoteWatch to propagate...");
-        await Task.Delay(20).ConfigureAwait(false);
+        await Task.Delay(20);
 
         return actor;
     }
@@ -468,7 +468,7 @@ public abstract class RemoteTests
         {
             logger.LogInformation($"Attempting assertion (attempt {attempt} of {attempts})");
 
-            if (await predicate().ConfigureAwait(false))
+            if (await predicate())
             {
                 logger.LogInformation("Passed!");
 
@@ -476,7 +476,7 @@ public abstract class RemoteTests
             }
 
             attempt++;
-            await Task.Delay(interval).ConfigureAwait(false);
+            await Task.Delay(interval);
         }
 
         return false;

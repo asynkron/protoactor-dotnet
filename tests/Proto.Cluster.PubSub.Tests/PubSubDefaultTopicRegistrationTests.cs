@@ -30,15 +30,15 @@ public class PubSubDefaultTopicRegistrationTests : IAsyncLifetime
         const string topic = "topic-default-registration";
         const int numMessages = 100;
 
-        await _fixture.SubscribeAllTo(topic, subscriberIds).ConfigureAwait(false);
+        await _fixture.SubscribeAllTo(topic, subscriberIds);
 
         for (var i = 0; i < numMessages; i++)
         {
-            var response = await _fixture.PublishData(topic, i).ConfigureAwait(false);
+            var response = await _fixture.PublishData(topic, i);
             response.Should().NotBeNull("publishing should not time out");
             response!.Status.Should().Be(PublishStatus.Ok);
         }
 
-        await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages).ConfigureAwait(false);
+        await _fixture.VerifyAllSubscribersGotAllTheData(subscriberIds, numMessages);
     }
 }

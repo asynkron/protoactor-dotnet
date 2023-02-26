@@ -30,8 +30,8 @@ public class DeviceActor : IActor
         //TODO: handle SomeMessage
         _state.IntProperty = sm.IntProperty;
 
-        await EvaluateState().ConfigureAwait(false);
-        await SaveState().ConfigureAwait(false);
+        await EvaluateState();
+        await SaveState();
         context.Respond(new Ack());
     }
 
@@ -40,8 +40,8 @@ public class DeviceActor : IActor
         //TODO: handle SomeOtherMessage
         _state.Data = sm.Data;
 
-        await EvaluateState().ConfigureAwait(false);
-        await SaveState().ConfigureAwait(false);
+        await EvaluateState();
+        await SaveState();
         context.Respond(new Ack());
     }
 
@@ -64,7 +64,7 @@ public class DeviceActor : IActor
     private async Task OnStarted(IContext ctx)
     {
         _deviceId = ctx.ClusterIdentity()!.Identity;
-        _state = await LoadState().ConfigureAwait(false);
+        _state = await LoadState();
     }
 
     private async Task<DeviceState> LoadState()

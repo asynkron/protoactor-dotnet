@@ -18,7 +18,7 @@ public class ActorTests
     public async Task RequestActorAsync()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -34,7 +34,7 @@ public class ActorTests
             }
         );
 
-        var reply = await context.RequestAsync<object>(pid, "hello").ConfigureAwait(false);
+        var reply = await context.RequestAsync<object>(pid, "hello");
 
         Assert.Equal("hey", reply);
     }
@@ -43,7 +43,7 @@ public class ActorTests
     public async Task RequestActorAsyncCanTouchActor()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -51,7 +51,7 @@ public class ActorTests
         //no code...
         var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
 
-        var reply = await context.RequestAsync<Touched>(pid, new Proto.Touch(), CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
+        var reply = await context.RequestAsync<Touched>(pid, new Proto.Touch(), CancellationTokens.FromSeconds(5));
 
         Assert.Equal(pid, reply.Who);
     }
@@ -60,7 +60,7 @@ public class ActorTests
     public async Task RequestActorAsyncAutoRespond()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -68,7 +68,7 @@ public class ActorTests
         //no code...
         var pid = SpawnActorFromFunc(ctx => Task.CompletedTask);
 
-        var reply = await context.RequestAsync<object>(pid, new MyAutoRespondMessage()).ConfigureAwait(false);
+        var reply = await context.RequestAsync<object>(pid, new MyAutoRespondMessage());
 
         Assert.Equal("hey", reply);
     }
@@ -77,7 +77,7 @@ public class ActorTests
     public async Task RequestActorAsync_should_raise_TimeoutException_when_timeout_is_reached()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -86,7 +86,7 @@ public class ActorTests
 
         var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(
             () => { return context.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20)); }
-        ).ConfigureAwait(false);
+        );
 
         Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);
     }
@@ -95,7 +95,7 @@ public class ActorTests
     public async Task RequestActorAsync_should_not_raise_TimeoutException_when_result_is_first()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
@@ -111,7 +111,7 @@ public class ActorTests
             }
         );
 
-        var reply = await context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(1000)).ConfigureAwait(false);
+        var reply = await context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(1000));
 
         Assert.Equal("hey", reply);
     }
@@ -120,7 +120,7 @@ public class ActorTests
     public async Task ActorLifeCycle()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var messages = new Queue<object>();
@@ -138,7 +138,7 @@ public class ActorTests
 
         context.Send(pid, "hello");
 
-        await context.StopAsync(pid).ConfigureAwait(false);
+        await context.StopAsync(pid);
 
         Assert.Equal(4, messages.Count);
         var msgs = messages.ToArray();
@@ -152,7 +152,7 @@ public class ActorTests
     public async Task ActorLifeCycleWhenExceptionIsThrown()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var messages = new Queue<object>();
@@ -173,7 +173,7 @@ public class ActorTests
 
             if (ctx.Message is Started && capturedContext != null)
             {
-                await capturedContext.Receive().ConfigureAwait(false);
+                await capturedContext.Receive();
             }
 
             await Task.Yield();
@@ -191,7 +191,7 @@ public class ActorTests
         context.Send(pid, "hello");
         context.Send(pid, "hello");
 
-        await context.PoisonAsync(pid).ConfigureAwait(false);
+        await context.PoisonAsync(pid);
 
         Assert.Equal(7, messages.Count);
         var msgs = messages.ToArray();
@@ -208,7 +208,7 @@ public class ActorTests
     public async Task StopActorWithLongRunningTask()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
         var messages = new Queue<object>();
 
@@ -219,7 +219,7 @@ public class ActorTests
                 {
                     try
                     {
-                        await Task.Delay(5000, ctx.CancellationToken).ConfigureAwait(false);
+                        await Task.Delay(5000, ctx.CancellationToken);
                     }
                     catch (Exception e)
                     {
@@ -233,8 +233,8 @@ public class ActorTests
 
         context.Send(pid, "hello");
         // Wait a little while the actor starts to process the message//
-        await Task.Delay(15).ConfigureAwait(false);
-        await context.StopAsync(pid).ConfigureAwait(false);
+        await Task.Delay(15);
+        await context.StopAsync(pid);
 
         Assert.Equal(5, messages.Count);
         var msgs = messages.ToArray();
@@ -249,7 +249,7 @@ public class ActorTests
     public async Task ForwardActorAsync()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         PID SpawnForwarderFromFunc(Receive forwarder) => context.Spawn(Props.FromFunc(forwarder));
@@ -278,7 +278,7 @@ public class ActorTests
             }
         );
 
-        var reply = await context.RequestAsync<object>(forwarder, "hello").ConfigureAwait(false);
+        var reply = await context.RequestAsync<object>(forwarder, "hello");
 
         Assert.Equal("hey", reply);
     }

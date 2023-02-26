@@ -16,7 +16,7 @@ public class SupervisionTestsOneForOne
     public async Task OneForOneStrategy_Should_ResumeChildOnFailure()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
@@ -41,7 +41,7 @@ public class SupervisionTestsOneForOne
     public async Task OneForOneStrategy_Should_StopChildOnFailure()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -66,7 +66,7 @@ public class SupervisionTestsOneForOne
     public async Task OneForOneStrategy_Should_RestartChildOnFailure()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -92,7 +92,7 @@ public class SupervisionTestsOneForOne
         OneForOneStrategy_WhenRestartedLessThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldNotStopChild()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -130,7 +130,7 @@ public class SupervisionTestsOneForOne
         OneForOneStrategy_WhenRestartedMoreThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldStopChild()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -161,7 +161,7 @@ public class SupervisionTestsOneForOne
     public async Task OneForOneStrategy_Should_PassExceptionOnRestart()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -186,7 +186,7 @@ public class SupervisionTestsOneForOne
     public async Task OneForOneStrategy_Should_StopChildWhenRestartLimitReached()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -212,7 +212,7 @@ public class SupervisionTestsOneForOne
     public async Task OneForOneStrategy_WhenEscalateDirectiveWithoutGrandparent_ShouldRevertToDefaultDirective()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -250,7 +250,7 @@ public class SupervisionTestsOneForOne
     public async Task OneForOneStrategy_Should_EscalateFailureToParent()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -274,7 +274,7 @@ public class SupervisionTestsOneForOne
     public async Task OneForOneStrategy_Should_StopChildOnFailureWhenStarted()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
@@ -297,7 +297,7 @@ public class SupervisionTestsOneForOne
     public async Task OneForOneStrategy_Should_RestartParentOnEscalateFailure()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var parentMailboxStats = new TestMailboxStatistics(msg => msg is Restart);

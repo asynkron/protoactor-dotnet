@@ -22,7 +22,7 @@ public abstract class ActorTestBase : IAsyncLifetime
 
     public Task InitializeAsync() => Task.CompletedTask;
 
-    public async Task DisposeAsync() => await System.ShutdownAsync().ConfigureAwait(false);
+    public async Task DisposeAsync() => await System.ShutdownAsync();
 
     protected PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(forwarder));
 

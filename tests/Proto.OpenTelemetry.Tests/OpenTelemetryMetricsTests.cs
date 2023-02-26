@@ -36,12 +36,12 @@ public class OpenTelemetryMetricsTests : IAsyncLifetime
             .AddReader(new BaseExportingMetricReader(_testExporter))
             .Build();
 
-        _cluster = await StartCluster().ConfigureAwait(false);
+        _cluster = await StartCluster();
     }
 
     public async Task DisposeAsync()
     {
-        await _cluster!.ShutdownAsync().ConfigureAwait(false);
+        await _cluster!.ShutdownAsync();
         _meterProvider!.Dispose();
     }
 
@@ -49,10 +49,10 @@ public class OpenTelemetryMetricsTests : IAsyncLifetime
     public async Task ReportsBasicMetrics()
     {
         await _cluster!.RequestAsync<Pong>("echo1", EchoActor.Kind, new Ping { Message = "hello" },
-            CancellationToken.None).ConfigureAwait(false);
+            CancellationToken.None);
 
         await _cluster!.RequestAsync<Pong>("echo2", EchoActor.Kind, new Ping { Message = "hello" },
-            CancellationToken.None).ConfigureAwait(false);
+            CancellationToken.None);
 
         _meterProvider.ForceFlush();
 
@@ -110,7 +110,7 @@ public class OpenTelemetryMetricsTests : IAsyncLifetime
             )
             .Cluster();
 
-        await cluster.StartMemberAsync().ConfigureAwait(false);
+        await cluster.StartMemberAsync();
 
         return cluster;
     }

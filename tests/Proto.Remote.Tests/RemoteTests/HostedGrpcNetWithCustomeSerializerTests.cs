@@ -60,11 +60,11 @@ public class HostedGrpcNetWithCustomSerializerTests
 
         public override async Task DisposeAsync()
         {
-            await _clientHost.StopAsync().ConfigureAwait(false);
+            await _clientHost.StopAsync();
             _clientHost.Dispose();
-            await _serverHost.StopAsync().ConfigureAwait(false);
+            await _serverHost.StopAsync();
             _serverHost.Dispose();
-            await _serverHost2.StopAsync().ConfigureAwait(false);
+            await _serverHost2.StopAsync();
             _serverHost2.Dispose();
         }
     }

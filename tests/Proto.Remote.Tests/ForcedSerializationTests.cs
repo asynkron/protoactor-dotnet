@@ -134,7 +134,7 @@ namespace Proto.Remote.Tests
         public async Task It_preserves_headers()
         {
             var system = new ActorSystem(ActorSystemConfig.Setup());
-            await using var _ = system.ConfigureAwait(false);
+            await using var _ = system;
             system.Extensions.Register(new Serialization());
 
             var pid = system.Root.Spawn(_receivingActorProps);
@@ -152,7 +152,7 @@ namespace Proto.Remote.Tests
         public async Task It_preserves_sender()
         {
             var system = new ActorSystem(ActorSystemConfig.Setup());
-            await using var _ = system.ConfigureAwait(false);
+            await using var _ = system;
             system.Extensions.Register(new Serialization());
 
             var pid = system.Root.Spawn(_receivingActorProps);
@@ -174,7 +174,7 @@ namespace Proto.Remote.Tests
                     )
                 )
             );
-            await using var _ = system.ConfigureAwait(false);
+            await using var _ = system;
 
             system.Extensions.Register(new Serialization());
 

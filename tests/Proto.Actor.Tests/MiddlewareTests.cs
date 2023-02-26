@@ -41,7 +41,7 @@ public class MiddlewareTests
     public async Task Given_ContextDecorator_Should_Call_Decorator_Before_Actor_Receive()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var logs = new List<string>();
@@ -88,7 +88,7 @@ public class MiddlewareTests
         Given_ReceiverMiddleware_and_ContextDecorator_Should_Call_Middleware_and_Decorator_Before_Actor_Receive()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var logs = new List<string>();
@@ -115,12 +115,12 @@ public class MiddlewareTests
                     if (env.Message is string str && str == "start")
                     {
                         logs.Add("middleware");
-                        await next(c, env.WithMessage("middleware")).ConfigureAwait(false);
+                        await next(c, env.WithMessage("middleware"));
 
                         return;
                     }
 
-                    await next(c, env).ConfigureAwait(false);
+                    await next(c, env);
                 }
             )
             .WithMailbox(() => testMailbox)
@@ -142,7 +142,7 @@ public class MiddlewareTests
     public async Task Given_ReceiverMiddleware_Should_Call_Middleware_In_Order_Then_Actor_Receive()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var logs = new List<string>();
@@ -166,7 +166,7 @@ public class MiddlewareTests
                         logs.Add("middleware 1");
                     }
 
-                    await next(c, env).ConfigureAwait(false);
+                    await next(c, env);
                 },
                 next => async (c, env) =>
                 {
@@ -175,7 +175,7 @@ public class MiddlewareTests
                         logs.Add("middleware 2");
                     }
 
-                    await next(c, env).ConfigureAwait(false);
+                    await next(c, env);
                 }
             )
             .WithMailbox(() => testMailbox);
@@ -194,7 +194,7 @@ public class MiddlewareTests
     public async Task Given_SenderMiddleware_Should_Call_Middleware_In_Order()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var logs = new List<string>();

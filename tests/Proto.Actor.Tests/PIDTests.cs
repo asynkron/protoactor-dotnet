@@ -12,7 +12,7 @@ public class PidTests
     public async Task Given_ActorNotDead_Ref_ShouldReturnIt()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
         var pid = context.Spawn(Props.FromFunc(EmptyReceive));
 
@@ -25,11 +25,11 @@ public class PidTests
     public async Task Given_ActorDied_Ref_ShouldNotReturnIt()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var pid = context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
-        await context.StopAsync(pid).ConfigureAwait(false);
+        await context.StopAsync(pid);
 
         var p = pid.Ref(system);
 
@@ -40,7 +40,7 @@ public class PidTests
     public async Task Given_OtherProcess_Ref_ShouldReturnIt()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
 
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);

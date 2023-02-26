@@ -41,9 +41,9 @@ public abstract class RemoteFixture : IRemoteFixture
 
     public virtual async Task InitializeAsync()
     {
-        await ServerRemote1.StartAsync().ConfigureAwait(false);
-        await ServerRemote2.StartAsync().ConfigureAwait(false);
-        await Remote.StartAsync().ConfigureAwait(false);
+        await ServerRemote1.StartAsync();
+        await ServerRemote2.StartAsync();
+        await Remote.StartAsync();
         ServerRemote1.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
         ServerRemote2.System.Root.SpawnNamed(EchoActorProps, "EchoActorInstance");
     }

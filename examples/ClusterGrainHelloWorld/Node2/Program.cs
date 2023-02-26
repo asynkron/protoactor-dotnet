@@ -38,7 +38,7 @@ system.EventStream.Subscribe<ClusterTopology>(
 
 await system
     .Cluster()
-    .StartMemberAsync().ConfigureAwait(false);
+    .StartMemberAsync();
 
 Console.WriteLine("Started...");
 
@@ -48,10 +48,10 @@ Console.CancelKeyPress += async (e, y) =>
 
     await system
         .Cluster()
-        .ShutdownAsync().ConfigureAwait(false);
+        .ShutdownAsync();
 };
 
-await Delay(-1).ConfigureAwait(false);
+await Delay(-1);
 
 public class HelloGrain : HelloGrainBase
 {

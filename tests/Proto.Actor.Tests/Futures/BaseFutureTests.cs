@@ -39,7 +39,7 @@ public abstract class BaseFutureTests : ActorTestBase
 
         Context.Request(pid, "hello", future.Pid);
 
-        var reply = await future.Task.ConfigureAwait(false);
+        var reply = await future.Task;
         reply.Should().Be("hey");
     }
 
@@ -62,7 +62,7 @@ public abstract class BaseFutureTests : ActorTestBase
 
         Context.Request(pid, "hello", future.Pid);
 
-        var reply = await future.Task.ConfigureAwait(false);
+        var reply = await future.Task;
         reply.Should().BeNull();
     }
 
@@ -90,7 +90,7 @@ public abstract class BaseFutureTests : ActorTestBase
             futures[i] = future;
         }
 
-        var replies = await Task.WhenAll(futures.Select(future => future.Task)).ConfigureAwait(false);
+        var replies = await Task.WhenAll(futures.Select(future => future.Task));
 
         replies.Should().BeInAscendingOrder().And.HaveCount(BatchSize);
     }
@@ -102,7 +102,7 @@ public abstract class BaseFutureTests : ActorTestBase
                 {
                     if (ctx.Sender is not null)
                     {
-                        await Task.Delay(1).ConfigureAwait(false);
+                        await Task.Delay(1);
                         ctx.Respond(ctx.Message!);
                     }
                 }
@@ -125,10 +125,10 @@ public abstract class BaseFutureTests : ActorTestBase
                     // ReSharper disable once AccessToDisposedClosure
                     var tasks = f.Select(future => future.GetTask(cts.Token));
 
-                    return await Task.WhenAll(tasks).ConfigureAwait(false);
+                    return await Task.WhenAll(tasks);
                 }
             )
             .Should()
-            .ThrowAsync<TimeoutException>().ConfigureAwait(false);
+            .ThrowAsync<TimeoutException>();
     }
 }

@@ -82,7 +82,7 @@ public class ConcurrencyVerificationActor : IActor
     private async Task OnStopping(IContext context)
     {
         _state!.RecordStopping(context);
-        await Task.Delay(new Random().Next(50)).ConfigureAwait(false);
+        await Task.Delay(new Random().Next(50));
     }
 
     private async Task OnStarted(IContext context)
@@ -93,7 +93,7 @@ public class ConcurrencyVerificationActor : IActor
         _count = _state.StoredCount;
 
         // Simulate network hop
-        await Task.Delay(new Random().Next(50)).ConfigureAwait(false);
+        await Task.Delay(new Random().Next(50));
     }
 }
 

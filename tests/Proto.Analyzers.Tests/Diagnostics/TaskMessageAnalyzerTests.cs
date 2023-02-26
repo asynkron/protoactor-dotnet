@@ -28,7 +28,7 @@ public class SomeActor : IActor
 }
 ";
 
-        await VerifyAnalyzerFindsNothingAsync(test).ConfigureAwait(false);
+        await VerifyAnalyzerFindsNothingAsync(test);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class SomeActor : IActor
 }
 ";
 
-        await VerifyAnalyzerAsync(test, Diagnostic().WithSpan(15, 17, 15, 42)).ConfigureAwait(false);
+        await VerifyAnalyzerAsync(test, Diagnostic().WithSpan(15, 17, 15, 42));
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class SomeActor : IActor
 }
 ";
 
-        await VerifyAnalyzerAsync(test, Diagnostic().WithSpan(15, 17, 15, 53)).ConfigureAwait(false);
+        await VerifyAnalyzerAsync(test, Diagnostic().WithSpan(15, 17, 15, 53));
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class SomeActor : IActor
 }
 ";
 
-        await VerifyAnalyzerAsync(test, Diagnostic().WithSpan(15, 23, 15, 73)).ConfigureAwait(false);
+        await VerifyAnalyzerAsync(test, Diagnostic().WithSpan(15, 23, 15, 73));
     }
 
     [Fact]
@@ -142,6 +142,6 @@ public class SomeActor : IActor
 }
 ";
 
-        await VerifyAnalyzerAsync(test, Diagnostic().WithSpan(15, 17, 15, 51)).ConfigureAwait(false);
+        await VerifyAnalyzerAsync(test, Diagnostic().WithSpan(15, 17, 15, 51));
     }
 }

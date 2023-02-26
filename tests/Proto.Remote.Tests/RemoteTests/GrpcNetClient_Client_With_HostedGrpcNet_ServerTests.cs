@@ -32,10 +32,10 @@ public class GrpcNetClient_Client_With_HostedGrpcNet_ServerTests
 
         public override async Task DisposeAsync()
         {
-            await Remote.ShutdownAsync().ConfigureAwait(false);
-            await _serverHost.StopAsync().ConfigureAwait(false);
+            await Remote.ShutdownAsync();
+            await _serverHost.StopAsync();
             _serverHost.Dispose();
-            await _serverHost2.StopAsync().ConfigureAwait(false);
+            await _serverHost2.StopAsync();
             _serverHost2.Dispose();
         }
     }

@@ -27,7 +27,7 @@ internal class MyActor : IActor
         if (context.Message is Message msg)
         {
             Console.WriteLine($"Actor {context.Self.Id} got message '{msg.Text}'.");
-            await Task.Delay(500).ConfigureAwait(false);
+            await Task.Delay(500);
         }
     }
 }

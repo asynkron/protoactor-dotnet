@@ -35,8 +35,8 @@ public class GossipTests
     public async Task CanGetConsensus()
     {
         var clusterFixture = new InMemoryClusterFixture();
-        await using var _ = clusterFixture.ConfigureAwait(false);
-        await clusterFixture.InitializeAsync().ConfigureAwait(false);
+        await using var _ = clusterFixture;
+        await clusterFixture.InitializeAsync();
 
         const string initialValue = "hello consensus";
 
@@ -45,8 +45,8 @@ public class GossipTests
 
         SetGossipState(fixtureMembers, initialValue);
 
-        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState().ConfigureAwait(false));
-        await ShouldBeInConsensusAboutValue(consensusChecks, initialValue).ConfigureAwait(false);
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
+        await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
 
     }
 
@@ -55,13 +55,13 @@ public class GossipTests
     {
         var timeout = CancellationTokens.FromSeconds(20);
         var clusterFixture = new InMemoryClusterFixture();
-        await using var _ = clusterFixture.ConfigureAwait(false);
-        await clusterFixture.InitializeAsync().ConfigureAwait(false);
+        await using var _ = clusterFixture;
+        await clusterFixture.InitializeAsync();
 
-        await Task.Delay(1000).ConfigureAwait(false);
+        await Task.Delay(1000);
 
         var (consensus, initialTopologyHash) =
-            await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout).ConfigureAwait(false);
+            await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
 
         consensus.Should().BeTrue();
 
@@ -69,24 +69,24 @@ public class GossipTests
         var consensusChecks = fixtureMembers.Select(CreateCompositeConsensusCheck).ToList();
 
         var firstNodeCheck = consensusChecks[0];
-        var notConsensus = await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(200), timeout).ConfigureAwait(false);
+        var notConsensus = await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(200), timeout);
 
         notConsensus.consensus.Should().BeFalse("We have not set the correct topology hash in the state yet");
 
-        await SetTopologyGossipStateAsync(fixtureMembers, initialTopologyHash).ConfigureAwait(false);
+        await SetTopologyGossipStateAsync(fixtureMembers, initialTopologyHash);
 
-        var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromSeconds(20), timeout).ConfigureAwait(false);
+        var afterSettingMatchingState = await firstNodeCheck.TryGetConsensus(TimeSpan.FromSeconds(20), timeout);
 
         afterSettingMatchingState.consensus.Should()
             .BeTrue("After assigning the matching topology hash, there should be consensus");
 
         afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
-        await clusterFixture.SpawnNode().ConfigureAwait(false);
-        await Task.Delay(2000).ConfigureAwait(false); // Allow topology state to propagate
+        await clusterFixture.SpawnNode();
+        await Task.Delay(2000); // Allow topology state to propagate
 
         var afterChangingTopology =
-            await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout).ConfigureAwait(false);
+            await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout);
 
         afterChangingTopology.consensus.Should().BeFalse("The state does no longer match the current topology");
 
@@ -96,8 +96,8 @@ public class GossipTests
     public async Task CanFallOutOfConsensus()
     {
         var clusterFixture = new InMemoryClusterFixture();
-        await using var _ = clusterFixture.ConfigureAwait(false);
-        await clusterFixture.InitializeAsync().ConfigureAwait(false);
+        await using var _ = clusterFixture;
+        await clusterFixture.InitializeAsync();
 
         const string initialValue = "hello consensus";
         const string otherValue = "hi";
@@ -106,8 +106,8 @@ public class GossipTests
 
         SetGossipState(clusterFixture.Members, initialValue);
 
-        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState().ConfigureAwait(false));
-        await ShouldBeInConsensusAboutValue(consensusChecks, initialValue).ConfigureAwait(false);
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
+        await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
         _testOutputHelper.WriteLine("Start: We are in consensus...");
         var firstMember = clusterFixture.Members[0];
         _testOutputHelper.WriteLine("First member " + firstMember.System.Id);
@@ -118,21 +118,21 @@ public class GossipTests
         // firstMember.System.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
         // Sets a now inconsistent state on the first node
-        await firstMember.Gossip.SetStateAsync(GossipStateKey, new SomeGossipState { Key = otherValue }).ConfigureAwait(false);
+        await firstMember.Gossip.SetStateAsync(GossipStateKey, new SomeGossipState { Key = otherValue });
 
-        var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(5000)).ConfigureAwait(false);
+        var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(5000));
 
         afterSettingDifferingState.Should()
             .BeEquivalentTo((false, (string)null),
                 "We should be able to read our writes, and locally we do not have consensus");
 
         _testOutputHelper.WriteLine("Read our own writes...");
-        await Task.Delay(5000).ConfigureAwait(false);
+        await Task.Delay(5000);
 
         _testOutputHelper.WriteLine("Checking consensus...");
 
-        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState().ConfigureAwait(false));
-        await ShouldBeNotHaveConsensus(consensusChecks).ConfigureAwait(false);
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
+        await ShouldBeNotHaveConsensus(consensusChecks);
 
     }
 
@@ -141,7 +141,7 @@ public class GossipTests
     {
         var results = await Task
             .WhenAll(consensusChecks.Select(it => it.TryGetConsensus(CancellationTokens.FromSeconds(5))))
-            .ConfigureAwait(false);
+            ;
 
         foreach (var (consensus, consensusValue) in results)
         {
@@ -163,7 +163,7 @@ public class GossipTests
     {
         var results = await Task
             .WhenAll(consensusChecks.Select(it => it.TryGetConsensus(CancellationTokens.FromSeconds(1))))
-            .ConfigureAwait(false);
+            ;
 
         foreach (var (consensus, _) in results)
         {
@@ -200,6 +200,6 @@ public class GossipTests
     {
         using var check = CreateConsensusCheck(member);
 
-        return await check.TryGetConsensus(timeout, CancellationToken.None).ConfigureAwait(false);
+        return await check.TryGetConsensus(timeout, CancellationToken.None);
     }
 }

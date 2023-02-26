@@ -17,13 +17,13 @@ public class PoolRouterTests
     public async Task BroadcastGroupPool_CreatesRoutees()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
 
         var props = system.Root.NewBroadcastPool(MyActorProps, 3)
             .WithMailbox(() => new TestMailbox());
 
         var router = system.Root.Spawn(props);
-        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
+        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         Assert.Equal(3, routees.Pids.Count);
     }
 
@@ -31,13 +31,13 @@ public class PoolRouterTests
     public async Task RoundRobinPool_CreatesRoutees()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
 
         var props = system.Root.NewRoundRobinPool(MyActorProps, 3)
             .WithMailbox(() => new TestMailbox());
 
         var router = system.Root.Spawn(props);
-        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
+        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         Assert.Equal(3, routees.Pids.Count);
     }
 
@@ -45,13 +45,13 @@ public class PoolRouterTests
     public async Task ConsistentHashPool_CreatesRoutees()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
 
         var props = system.Root.NewConsistentHashPool(MyActorProps, 3)
             .WithMailbox(() => new TestMailbox());
 
         var router = system.Root.Spawn(props);
-        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
+        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         Assert.Equal(3, routees.Pids.Count);
     }
 
@@ -59,13 +59,13 @@ public class PoolRouterTests
     public async Task RandomPool_CreatesRoutees()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
 
         var props = system.Root.NewRandomPool(MyActorProps, 3, 0)
             .WithMailbox(() => new TestMailbox());
 
         var router = system.Root.Spawn(props);
-        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout).ConfigureAwait(false);
+        var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         Assert.Equal(3, routees.Pids.Count);
     }
 
@@ -73,7 +73,7 @@ public class PoolRouterTests
     public async Task If_routee_props_then_router_creation_fails()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
 
         var failingProps = Props.FromProducer(() => throw new Exception("Failing props"));
 

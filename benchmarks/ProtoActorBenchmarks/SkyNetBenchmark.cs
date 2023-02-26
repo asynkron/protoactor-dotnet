@@ -93,7 +93,7 @@ public class SkyNetBenchmark
                     );
                 }
 
-                await Task.WhenAll(tasks).ConfigureAwait(false);
+                await Task.WhenAll(tasks);
                 var tot = 0L;
 
                 for (var i = 0; i < tasks.Length; i++)

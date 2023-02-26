@@ -30,12 +30,12 @@ public static class ChannelPublisher
 
         _ = Task.Run(async () =>
             {
-                await foreach (var msg in channel.Reader.ReadAllAsync().ConfigureAwait(false))
+                await foreach (var msg in channel.Reader.ReadAllAsync())
                 {
                     context.Send(pid, msg!);
                 }
 
-                await context.PoisonAsync(pid).ConfigureAwait(false);
+                await context.PoisonAsync(pid);
             }
         );
 

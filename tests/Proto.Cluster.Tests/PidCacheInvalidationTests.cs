@@ -31,13 +31,13 @@ public class PidCacheInvalidationTests : IClassFixture<InMemoryPidCacheInvalidat
     {
         const string id = "1";
 
-        var remoteMember = await GetRemoteMemberFromActivation(id).ConfigureAwait(false);
+        var remoteMember = await GetRemoteMemberFromActivation(id);
         var cachedPid = GetFromPidCache(remoteMember, id);
 
         cachedPid.Should().NotBeNull();
-        await remoteMember.RequestAsync<object>(id, EchoActor.Kind, new Die(), CancellationToken.None).ConfigureAwait(false);
+        await remoteMember.RequestAsync<object>(id, EchoActor.Kind, new Die(), CancellationToken.None);
 
-        await Task.Delay(2000).ConfigureAwait(false); // PidCache is asynchronously cleared, allow the system to purge it
+        await Task.Delay(2000); // PidCache is asynchronously cleared, allow the system to purge it
 
         var cachedPidAfterStopping = GetFromPidCache(remoteMember, id);
 
@@ -61,7 +61,7 @@ public class PidCacheInvalidationTests : IClassFixture<InMemoryPidCacheInvalidat
         foreach (var member in Members)
         {
             var response =
-                await member.RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), CancellationToken.None).ConfigureAwait(false);
+                await member.RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), CancellationToken.None);
 
             // Get the first member which does not have the activation local to it.
             if (!response.Address.Equals(member.System.Address, StringComparison.OrdinalIgnoreCase))

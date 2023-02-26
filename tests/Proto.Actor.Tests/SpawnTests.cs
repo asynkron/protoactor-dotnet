@@ -17,7 +17,7 @@ public class SpawnTests
     public async Task Given_PropsWithSpawner_SpawnShouldReturnPidCreatedBySpawner()
     {
         var system = new ActorSystem();
-        await using var __ = system.ConfigureAwait(false);
+        await using var __ = system;
         var context = system.Root;
 
         var spawnedPid = PID.FromAddress("test", "test");
@@ -34,7 +34,7 @@ public class SpawnTests
     public async Task Given_Existing_Name_SpawnNamedShouldThrow()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var props = Props.FromFunc(EmptyReceive);
@@ -49,7 +49,7 @@ public class SpawnTests
     public async Task Given_Existing_Name_SpawnPrefixShouldReturnPID()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var props = Props.FromFunc(EmptyReceive);

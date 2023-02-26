@@ -38,7 +38,7 @@ public class CaptureContextActor : IActor
     {
         if (context.Message is Unstash unStash)
         {
-            await ProcessStash(context, unStash).ConfigureAwait(false);
+            await ProcessStash(context, unStash);
 
             return;
         }
@@ -56,7 +56,7 @@ public class CaptureContextActor : IActor
 
         foreach (var c in _stash)
         {
-            await c.Receive().ConfigureAwait(false);
+            await c.Receive();
         }
 
         context.Respond(new UnstashResponse(context.Message!));
@@ -77,7 +77,7 @@ public class CaptureContextTests
     public async Task can_receive_captured_context()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var results = new Queue<UnstashResult>();
@@ -91,7 +91,7 @@ public class CaptureContextTests
         }
 
         context.Send(pid, new Unstash());
-        await context.PoisonAsync(pid).ConfigureAwait(false);
+        await context.PoisonAsync(pid);
 
         for (var i = 0; i < 10; i++)
         {
@@ -105,7 +105,7 @@ public class CaptureContextTests
     public async Task can_continue_after_processing_capture()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var context = system.Root;
 
         var results = new Queue<UnstashResult>();
@@ -119,10 +119,10 @@ public class CaptureContextTests
         }
 
         var unstash = new Unstash();
-        var response = await context.RequestAsync<UnstashResponse>(pid, unstash, TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+        var response = await context.RequestAsync<UnstashResponse>(pid, unstash, TimeSpan.FromSeconds(1));
         response.Should().NotBeNull();
         Assert.Same(response.Unstash, unstash);
-        await context.PoisonAsync(pid).ConfigureAwait(false);
+        await context.PoisonAsync(pid);
 
         for (var i = 0; i < 10; i++)
         {

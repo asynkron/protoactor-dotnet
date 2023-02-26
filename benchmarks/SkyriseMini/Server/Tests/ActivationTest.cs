@@ -25,9 +25,9 @@ public class ActivationTest
                 activationCount, parallelism);
 
             _logger.LogInformation("Preparing {ActivationCount} actor ids", activationCount);
-            var actorIds = await PrepareActorIds(activationCount).ConfigureAwait(false);
+            var actorIds = await PrepareActorIds(activationCount);
         
-            var testDuration = await TestWorker(actorIds, parallelism, cancel).ConfigureAwait(false);
+            var testDuration = await TestWorker(actorIds, parallelism, cancel);
 
             _logger.LogInformation(
                 "Activation test completed, total activations = {TotalActivations}, duration = {TestDuration}, Throughput = {Throughput:F2} actors/s",
@@ -44,7 +44,7 @@ public class ActivationTest
         var ch = Channel.CreateBounded<string>(count);
 
         for (int i = 0; i < count; i++)
-            await ch.Writer.WriteAsync(Guid.NewGuid().ToString("N")).ConfigureAwait(false);
+            await ch.Writer.WriteAsync(Guid.NewGuid().ToString("N"));
         
         ch.Writer.Complete();
         return ch.Reader;
@@ -59,12 +59,12 @@ public class ActivationTest
         {
             var activationStopwatch = new Stopwatch();
 
-            await foreach (var actorId in actorIds.ReadAllAsync(cancel).ConfigureAwait(false))
+            await foreach (var actorId in actorIds.ReadAllAsync(cancel))
             {
                 try
                 {
                     activationStopwatch.Restart();
-                    await _activate(actorId).ConfigureAwait(false);
+                    await _activate(actorId);
                 
                     TestMetrics.MessageLatency.Record(activationStopwatch.ElapsedTicks / (double)Stopwatch.Frequency);
                     TestMetrics.MessageCount.Add(1);
@@ -79,7 +79,7 @@ public class ActivationTest
             activationStopwatch.Stop();
         });
 
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+        await Task.WhenAll(tasks);
 
         overallStopwatch.Stop();
         return overallStopwatch.Elapsed;

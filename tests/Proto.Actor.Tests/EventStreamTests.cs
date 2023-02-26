@@ -11,7 +11,7 @@ public class EventStreamTests
     public async Task EventStream_CanSubscribeToSpecificEventTypes()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var eventStream = system.EventStream;
         var received = "";
 
@@ -24,7 +24,7 @@ public class EventStreamTests
     public async Task EventStream_CanSubscribeToAllEventTypes()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var eventStream = system.EventStream;
         var receivedEvents = new List<object>();
 
@@ -39,7 +39,7 @@ public class EventStreamTests
     public async Task EventStream_CanUnsubscribeFromEvents()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var eventStream = system.EventStream;
         var receivedEvents = new List<object>();
         var subscription = eventStream.Subscribe<string>(@event => receivedEvents.Add(@event));
@@ -53,7 +53,7 @@ public class EventStreamTests
     public async Task EventStream_OnlyReceiveSubscribedToEventTypes()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var eventStream = system.EventStream;
 
         var eventsReceived = new List<object>();
@@ -66,7 +66,7 @@ public class EventStreamTests
     public async Task EventStream_CanSubscribeToSpecificEventTypes_Async()
     {
         var system = new ActorSystem();
-        await using var _ = system.ConfigureAwait(false);
+        await using var _ = system;
         var eventStream = system.EventStream;
 
         string received;

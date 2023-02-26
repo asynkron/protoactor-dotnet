@@ -20,7 +20,7 @@ app.MapGet("/", async (Cluster cluster) =>
 {
     var helloGrain = cluster.GetHelloGrain("MyGrain");
 
-    var res = await helloGrain.SayHello(new HelloRequest(), CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
+    var res = await helloGrain.SayHello(new HelloRequest(), CancellationTokens.FromSeconds(5));
     Console.WriteLine(res.Message);
 
     return res.Message;
