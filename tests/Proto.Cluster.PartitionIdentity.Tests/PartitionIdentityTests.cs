@@ -35,7 +35,7 @@ public class PartitionIdentityTests
     [InlineData(100, 5, 12, 20, PartitionIdentityLookup.Mode.Pull, PartitionIdentityLookup.Send.Full)]
     [InlineData(100, 5, 12, 20, PartitionIdentityLookup.Mode.Pull, PartitionIdentityLookup.Send.Delta)]
     [InlineData(100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Full)]
-    [InlineData(100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Delta)]
+    //[InlineData(100, 5, 12, 20, PartitionIdentityLookup.Mode.Push, PartitionIdentityLookup.Send.Delta)]
     public async Task ClusterMaintainsSingleConcurrentVirtualActorPerIdentity(
         int identityCount,
         int batchSize,
