@@ -35,6 +35,7 @@ public class Cluster : IActorSystemExtension<Cluster>
     private readonly Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
     private Func<IEnumerable<Measurement<long>>>? _clusterMembersObserver;
     private readonly TaskCompletionSource<bool> _shutdownCompletedTcs = new();
+    private readonly TaskCompletionSource<bool> _joinedClusterTcs = new();
 
     public async Task<DiagnosticsEntry[]> GetDiagnostics()
     {
@@ -123,6 +124,10 @@ public class Cluster : IActorSystemExtension<Cluster>
     public IRemote Remote { get; private set; } = null!;
 
     /// <summary>
+    ///     Awaitable task which will complete when this cluster has joined the cluster
+    /// </summary>
+    public Task JoinedCluster => _joinedClusterTcs.Task;
+    /// <summary>
     ///     Awaitable task which will complete when this cluster has completed shutdown
     /// </summary>
     public Task ShutdownCompleted => _shutdownCompletedTcs.Task;
@@ -195,6 +200,7 @@ public class Cluster : IActorSystemExtension<Cluster>
 
         Logger.LogInformation("Starting");
         MemberList = new MemberList(this);
+        _ = MemberList.Started.ContinueWith(_ => _joinedClusterTcs.TrySetResult(true));
         ClusterContext = Config.ClusterContextProducer(this);
 
         var kinds = GetClusterKinds();
