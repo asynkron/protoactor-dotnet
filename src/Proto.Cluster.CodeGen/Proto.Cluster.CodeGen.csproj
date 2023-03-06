@@ -28,7 +28,7 @@
     <ItemGroup>
         <PackageReference Include="Handlebars.Net" Version="2.0.9"/>
         <PackageReference Include="protobuf-net" Version="3.0.101"/>
-        <PackageReference Include="protobuf-net.Reflection" Version="3.0.101"/>
+        <PackageReference Include="protobuf-net.Reflection" Version="3.2.12"/>
         <PackageReference Include="Microsoft.Build.Framework" Version="17.0.0"/>
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.0.0"/>
         <!-- Marks all packages as 'local only' so they don't end up in the nuspec. -->
