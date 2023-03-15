@@ -305,11 +305,18 @@ public sealed class DefaultMailbox : IMailbox
     {
         if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
         {
+            if (_dispatcher == Dispatchers.DefaultDispatcher)
+            {
 #if NET5_0_OR_GREATER
-            ThreadPool.UnsafeQueueUserWorkItem(this, false);
+                ThreadPool.UnsafeQueueUserWorkItem(this, false);
 #else
-            ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this);
+                ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this);
 #endif
+            }
+            else
+            {
+                _dispatcher.Schedule(() => RunAsync(this));
+            }
         }
     }
 
