@@ -4,7 +4,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.12" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Proto.Persistence\Proto.Persistence.csproj" />

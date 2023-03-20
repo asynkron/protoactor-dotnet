@@ -3,7 +3,7 @@
         <TargetFrameworks>netstandard2.1;net6.0;net7.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
     </ItemGroup>
     <ItemGroup>
