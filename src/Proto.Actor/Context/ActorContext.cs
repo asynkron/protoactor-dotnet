@@ -600,8 +600,21 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             return _extras;
         }
 
-        var context = _props.ContextDecoratorChain?.Invoke(this) ?? this;
-        _extras = new ActorContextExtras(context);
+        
+        //YOLO: nobody else should touch this....
+#pragma warning disable RCS1059
+        lock (this)
+#pragma warning restore RCS1059
+        {
+            //early exit if another thread already created the extras
+            if (_extras is not null)
+            {
+                return _extras;
+            }
+            
+            var context = _props.ContextDecoratorChain?.Invoke(this) ?? this;
+            _extras = new ActorContextExtras(context);
+        }
 
         return _extras;
     }
