@@ -670,6 +670,13 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     private async ValueTask HandleRestartAsync()
     {
+        //restart invoked but system is stopping. stop the actor
+        if (System.Shutdown.IsCancellationRequested)
+        {
+            await HandleStopAsync();
+            return;
+        }
+
         _state = ContextState.Restarting;
         CancelReceiveTimeout();
         await InvokeUserMessageAsync(Restarting.Instance).ConfigureAwait(false);
