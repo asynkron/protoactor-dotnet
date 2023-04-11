@@ -7,6 +7,7 @@
 using System;
 using Google.Protobuf;
 using Proto.Diagnostics;
+using Proto.Extensions;
 using Proto.Remote;
 
 namespace Proto.Cluster;
@@ -43,9 +44,5 @@ public record GrainRequestMessage(int MethodIndex, IMessage? RequestMessage) : I
         };
     }
 
-    public string GetTypeName()
-    {
-        var m = RequestMessage?.GetType().Name ?? "null";
-        return m;
-    }
+    public string GetTypeName() => RequestMessage.GetMessageTypeName();
 }
