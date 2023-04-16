@@ -305,11 +305,7 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
         {
             if (_dispatcher == Dispatchers.DefaultDispatcher)
             {
-#if NET5_0_OR_GREATER
                 ThreadPool.UnsafeQueueUserWorkItem(this, false);
-#else
-                ThreadPool.UnsafeQueueUserWorkItem(RunWrapper, this);
-#endif
             }
             else
             {
