@@ -10,8 +10,7 @@ public class SharedFutureBugTests
     [Fact]
     public async Task Should_get_unique_future()
     {
-        var system = new ActorSystem();
-        await using var _ = system;
+        await using var system = new ActorSystem();
         var context = system.Root;
 
         var count = 100_000;

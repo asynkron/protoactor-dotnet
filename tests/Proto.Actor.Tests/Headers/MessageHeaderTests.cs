@@ -100,8 +100,7 @@ public class MessageHeaderTests
     [Fact]
     public async Task Actors_can_reply_with_headers()
     {
-        var system = new ActorSystem();
-        await using var _ = system;
+        await using var system = new ActorSystem();
 
         var echo = Props.FromFunc(ctx =>
             {
@@ -127,8 +126,7 @@ public class MessageHeaderTests
     [Fact]
     public async Task RequestAsync_honors_message_envelopes()
     {
-        var system = new ActorSystem();
-        await using var _ = system;
+        await using var system = new ActorSystem();
 
         var echo = Props.FromFunc(ctx =>
             {
