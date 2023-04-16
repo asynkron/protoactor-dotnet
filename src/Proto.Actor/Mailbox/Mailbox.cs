@@ -46,10 +46,8 @@ public static class UnboundedMailbox
         new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new UnboundedMailboxQueue(), stats);
 }
 
-public sealed class DefaultMailbox : IMailbox
-#if NET5_0_OR_GREATER
-    , IThreadPoolWorkItem
-#endif
+public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
+
 {
     private readonly IMailboxStatistics[] _stats;
     private readonly IMailboxQueue _systemMessages;
@@ -319,17 +317,9 @@ public sealed class DefaultMailbox : IMailbox
             }
         }
     }
-
-#if NET5_0_OR_GREATER
+    
     public void Execute() => _ = RunAsync(this);
-#else
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void RunWrapper(object state)
-    {
-        var y = (DefaultMailbox)state;
-        RunAsync(y);
-    }
-#endif
+
 }
 
 /// <summary>

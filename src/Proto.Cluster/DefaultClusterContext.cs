@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -24,9 +23,6 @@ public class DefaultClusterContext : IClusterContext
 
     private readonly PidCache _pidCache;
     private readonly ShouldThrottle _requestLogThrottle;
-#if !NET6_0_OR_GREATER
-    private readonly TaskClock _clock;
-#endif
     private readonly ActorSystem _system;
     private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
     private readonly int _requestTimeoutSeconds;
@@ -47,12 +43,6 @@ public class DefaultClusterContext : IClusterContext
 
         _requestTimeoutSeconds = (int)config.ActorRequestTimeout.TotalSeconds;
         _legacyTimeouts = config.LegacyRequestTimeoutBehavior;
-#if !NET6_0_OR_GREATER
-        var updateInterval =
- TimeSpan.FromMilliseconds(Math.Min(config.ActorRequestTimeout.TotalMilliseconds / 2, 1000));
-        _clock = new TaskClock(config.ActorRequestTimeout, updateInterval, cluster.System.Shutdown);
-        _clock.Start();
-#endif
     }
 
     public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context,
@@ -115,12 +105,8 @@ public class DefaultClusterContext : IClusterContext
                 {
                     context.Request(pid, message, future.Pid);
                     var task = future.Task;
-
-#if NET6_0_OR_GREATER
+                    
                     await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds)).ConfigureAwait(false);
-#else
-                    await Task.WhenAny(task, _clock.CurrentBucket).ConfigureAwait(false);
-#endif
 
                     if (task.IsCompleted)
                     {
@@ -333,49 +319,6 @@ public class DefaultClusterContext : IClusterContext
 
             return null;
         }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static (ResponseStatus Ok, T?) ToResult<T>(PidSource source, ISenderContext context, object result)
-    {
-        var message = MessageEnvelope.UnwrapMessage(result);
-
-        if (message is DeadLetterResponse)
-        {
-            if (!context.System.Shutdown.IsCancellationRequested && Logger.IsEnabled(LogLevel.Debug))
-            {
-                Logger.LogDebug("TryRequestAsync failed, dead PID from {Source}", source);
-            }
-
-            return (ResponseStatus.DeadLetter, default);
-        }
-
-        if (message == null)
-        {
-            return (ResponseStatus.Ok, default);
-        }
-
-        if (message is T t)
-        {
-            return (ResponseStatus.Ok, t);
-        }
-
-        if (typeof(T) == typeof(MessageEnvelope))
-        {
-            return (ResponseStatus.Ok, (T)(object)MessageEnvelope.Wrap(result));
-        }
-
-        Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}", message.GetType(),
-            typeof(T));
-
-        return (ResponseStatus.InvalidResponse, default);
-    }
-
-    private enum ResponseStatus
-    {
-        Ok,
-        InvalidResponse,
-        DeadLetter
     }
 
     private enum PidSource

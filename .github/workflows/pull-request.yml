@@ -53,7 +53,6 @@ jobs:
         dotnet:
           - net7.0
           - net6.0
-          - netcoreapp3.1
         test:
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"

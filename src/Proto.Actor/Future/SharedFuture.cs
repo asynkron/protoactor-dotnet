@@ -105,7 +105,7 @@ public sealed class SharedFutureProcess : Process, IDisposable
         _onStarted?.Invoke();
 
         var cs = requestSlot.CompletionSource!;
-        
+
         // //TODO: can this happen?
         // if (cs.Task.IsCanceled)
         // {

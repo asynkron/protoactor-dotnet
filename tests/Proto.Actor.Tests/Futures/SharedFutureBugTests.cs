@@ -18,6 +18,7 @@ public class SharedFutureBugTests
         for (int i = 0; i < count; i++)
         {
             var f = context.GetFuture();
+  
             var s = f.Pid.ToDiagnosticString();
             hashSet.Add(s);
         }
