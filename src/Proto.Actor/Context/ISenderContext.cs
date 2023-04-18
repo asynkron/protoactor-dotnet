@@ -172,6 +172,11 @@ public static class SenderContextExtensions
     internal static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message,
         CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            throw new ArgumentException("Cancellation token is already cancelled", nameof(cancellationToken));
+        }
+        
         using var future = self.GetFuture();
 
         var messageEnvelope = message is MessageEnvelope envelope
