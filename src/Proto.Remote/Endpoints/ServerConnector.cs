@@ -67,7 +67,7 @@ public sealed class ServerConnector
         await _runner.ConfigureAwait(false);
     }
 
-    public async Task RunAsync()
+    private async Task RunAsync()
     {
         string? actorSystemId = null;
         var rs = new RestartStatistics(0, null);
@@ -172,122 +172,9 @@ public sealed class ServerConnector
                     .CreateLinkedTokenSource(_cts.Token, cancellationTokenSource.Token)
                     .Token;
 
-                var writer = Task.Run(async () =>
-                {
-                    while (!combinedToken.IsCancellationRequested)
-                    {
-                        while (_endpoint.OutgoingStash.TryPop(out var message))
-                        {
-                            try
-                            {
-                                await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
-                            }
-                            catch (Exception)
-                            {
-                                _ = _endpoint.OutgoingStash.Append(message);
-                                cancellationTokenSource.Cancel();
+                var writer = StartWriter(combinedToken, call, cancellationTokenSource);
 
-                                throw;
-                            }
-                        }
-
-                        try
-                        {
-                            await foreach (var message in _endpoint.Outgoing.Reader.ReadAllAsync(combinedToken)
-                                               .ConfigureAwait(false))
-                            {
-                                try
-                                {
-                                    if (_system.Metrics.Enabled)
-                                    {
-                                        var sw = Stopwatch.StartNew();
-                                        await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
-                                        sw.Stop();
-                                        RemoteMetrics.RemoteWriteDuration.Record(sw.Elapsed.TotalSeconds, _metricTags);
-                                    }
-                                    else
-                                    {
-                                        await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
-                                    }
-                                }
-                                catch (Exception)
-                                {
-                                    _ = _endpoint.OutgoingStash.Append(message);
-                                    cancellationTokenSource.Cancel();
-
-                                    throw;
-                                }
-                            }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            _logger.LogDebug("[ServerConnector][{SystemAddress}] Writer cancelled for {Address}",
-                                _system.Address, _address);
-                        }
-                    }
-                });
-
-                var reader = Task.Run(async () =>
-                {
-                    try
-                    {
-                        while (await call.ResponseStream.MoveNext().ConfigureAwait(false))
-                        {
-                            // if (_endpoint.CancellationToken.IsCancellationRequested) continue;
-                            var currentMessage = call.ResponseStream.Current;
-
-                            switch (currentMessage.MessageTypeCase)
-                            {
-                                case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
-                                {
-                                    _logger.LogDebug(
-                                        "[ServerConnector][{SystemAddress}] Received disconnection request from {Address}",
-                                        _system.Address, _address);
-
-                                    var terminated = new EndpointTerminatedEvent(false, _address, actorSystemId);
-                                    _system.EventStream.Publish(terminated);
-
-                                    break;
-                                }
-                                default:
-                                    if (_connectorType == Type.ServerSide)
-                                    {
-                                        _logger.LogWarning(
-                                            "[ServerConnector][{SystemAddress}] Received {Message} from {_address}",
-                                            _system.Address, currentMessage, _address);
-                                    }
-                                    else
-                                    {
-                                        _remoteMessageHandler.HandleRemoteMessage(currentMessage, _address);
-                                    }
-
-                                    break;
-                            }
-                        }
-
-                        _logger.LogDebug("[ServerConnector][{SystemAddress}] Reader finished for {Address}",
-                            _system.Address, _address);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        _logger.LogDebug("[ServerConnector][{SystemAddress}] Reader cancelled for {Address}",
-                            _system.Address, _address);
-                    }
-                    catch (RpcException e) when (e.StatusCode == StatusCode.Cancelled)
-                    {
-                        _logger.LogWarning("[ServerConnector][{SystemAddress}] Reader cancelled for {Address}",
-                            _system.Address, _address);
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogWarning("[ServerConnector][{SystemAddress}] Error in reader for {Address} {Reason}",
-                            _system.Address, _address, e.GetType().Name);
-
-                        cancellationTokenSource.Cancel();
-
-                        throw;
-                    }
-                });
+                var reader = StartReader(call, actorSystemId, cancellationTokenSource);
 
                 _logger.LogInformation("[ServerConnector][{SystemAddress}] Connected to {Address}", _system.Address,
                     _address);
@@ -343,6 +230,129 @@ public sealed class ServerConnector
                     _system.Address, _address, duration, e.GetType().Name, rs.FailureCount, _maxNrOfRetries);
             }
         }
+    }
+
+    private Task StartWriter(CancellationToken combinedToken, AsyncDuplexStreamingCall<RemoteMessage, RemoteMessage> call, CancellationTokenSource cancellationTokenSource)
+    {
+        return Task.Run(async () =>
+        {
+            while (!combinedToken.IsCancellationRequested)
+            {
+                while (_endpoint.OutgoingStash.TryPop(out var message))
+                {
+                    try
+                    {
+                        await call.RequestStream.WriteAsync(message, combinedToken).ConfigureAwait(false);
+                    }
+                    catch (Exception)
+                    {
+                        _ = _endpoint.OutgoingStash.Append(message);
+                        cancellationTokenSource.Cancel();
+
+                        throw;
+                    }
+                }
+
+                try
+                {
+                    await foreach (var message in _endpoint.Outgoing.Reader.ReadAllAsync(combinedToken)
+                                       .ConfigureAwait(false))
+                    {
+                        try
+                        {
+                            if (_system.Metrics.Enabled)
+                            {
+                                var sw = Stopwatch.StartNew();
+                                await call.RequestStream.WriteAsync(message, combinedToken).ConfigureAwait(false);
+                                sw.Stop();
+                                RemoteMetrics.RemoteWriteDuration.Record(sw.Elapsed.TotalSeconds, _metricTags);
+                            }
+                            else
+                            {
+                                await call.RequestStream.WriteAsync(message, combinedToken).ConfigureAwait(false);
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            _ = _endpoint.OutgoingStash.Append(message);
+                            cancellationTokenSource.Cancel();
+
+                            throw;
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogDebug("[ServerConnector][{SystemAddress}] Writer cancelled for {Address}",
+                        _system.Address, _address);
+                }
+            }
+        });
+    }
+
+    private Task StartReader(AsyncDuplexStreamingCall<RemoteMessage, RemoteMessage> call, string actorSystemId, CancellationTokenSource cancellationTokenSource)
+    {
+        return Task.Run(async () =>
+        {
+            try
+            {
+                while (await call.ResponseStream.MoveNext().ConfigureAwait(false))
+                {
+                    // if (_endpoint.CancellationToken.IsCancellationRequested) continue;
+                    var currentMessage = call.ResponseStream.Current;
+
+                    switch (currentMessage.MessageTypeCase)
+                    {
+                        case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
+                        {
+                            _logger.LogDebug(
+                                "[ServerConnector][{SystemAddress}] Received disconnection request from {Address}",
+                                _system.Address, _address);
+
+                            var terminated = new EndpointTerminatedEvent(false, _address, actorSystemId);
+                            _system.EventStream.Publish(terminated);
+
+                            break;
+                        }
+                        default:
+                            if (_connectorType == Type.ServerSide)
+                            {
+                                _logger.LogWarning(
+                                    "[ServerConnector][{SystemAddress}] Received {Message} from {Addres}",
+                                    _system.Address, currentMessage, _address);
+                            }
+                            else
+                            {
+                                _remoteMessageHandler.HandleRemoteMessage(currentMessage, _address);
+                            }
+
+                            break;
+                    }
+                }
+
+                _logger.LogDebug("[ServerConnector][{SystemAddress}] Reader finished for {Address}",
+                    _system.Address, _address);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogDebug("[ServerConnector][{SystemAddress}] Reader cancelled for {Address}",
+                    _system.Address, _address);
+            }
+            catch (RpcException e) when (e.StatusCode == StatusCode.Cancelled)
+            {
+                _logger.LogWarning("[ServerConnector][{SystemAddress}] Reader cancelled for {Address}",
+                    _system.Address, _address);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning("[ServerConnector][{SystemAddress}] Error in reader for {Address} {Reason}",
+                    _system.Address, _address, e.GetType().Name);
+
+                cancellationTokenSource.Cancel();
+
+                throw;
+            }
+        });
     }
 
     private bool ShouldStop(RestartStatistics rs)
