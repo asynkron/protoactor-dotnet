@@ -67,7 +67,7 @@ public sealed class ServerConnector
         await _runner.ConfigureAwait(false);
     }
 
-    public async Task RunAsync()
+    private async Task RunAsync()
     {
         string? actorSystemId = null;
         var rs = new RestartStatistics(0, null);
@@ -242,7 +242,7 @@ public sealed class ServerConnector
                 {
                     try
                     {
-                        await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
+                        await call.RequestStream.WriteAsync(message, combinedToken).ConfigureAwait(false);
                     }
                     catch (Exception)
                     {
@@ -263,13 +263,13 @@ public sealed class ServerConnector
                             if (_system.Metrics.Enabled)
                             {
                                 var sw = Stopwatch.StartNew();
-                                await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
+                                await call.RequestStream.WriteAsync(message, combinedToken).ConfigureAwait(false);
                                 sw.Stop();
                                 RemoteMetrics.RemoteWriteDuration.Record(sw.Elapsed.TotalSeconds, _metricTags);
                             }
                             else
                             {
-                                await call.RequestStream.WriteAsync(message).ConfigureAwait(false);
+                                await call.RequestStream.WriteAsync(message, combinedToken).ConfigureAwait(false);
                             }
                         }
                         catch (Exception)
@@ -318,7 +318,7 @@ public sealed class ServerConnector
                             if (_connectorType == Type.ServerSide)
                             {
                                 _logger.LogWarning(
-                                    "[ServerConnector][{SystemAddress}] Received {Message} from {_address}",
+                                    "[ServerConnector][{SystemAddress}] Received {Message} from {Addres}",
                                     _system.Address, currentMessage, _address);
                             }
                             else
