@@ -168,7 +168,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
 
                     if (blocked.Any())
                     {
-                        _system.Remote().BlockList.Block(blocked);
+                        _system.Remote().BlockList.Block(blocked, "Blocked by remote member");
                     }
 
                     if (shouldExit)

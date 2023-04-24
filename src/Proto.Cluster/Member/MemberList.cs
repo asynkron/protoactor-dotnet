@@ -87,7 +87,7 @@ public record MemberList
                 //get blocked members from all other member states, and merge that with our own blocked set
                 var topology = u.Value.Unpack<ClusterTopology>();
                 var blocked = topology.Blocked.ToArray();
-                _cluster.Remote.BlockList.Block(blocked);
+                _cluster.Remote.BlockList.Block(blocked, "Blocked via gossip");
             }
         );
 
@@ -182,7 +182,7 @@ public record MemberList
 
             var left = _activeMembers.Except(activeMembers);
             var joined = activeMembers.Except(_activeMembers);
-            blockList.Block(left.Members.Select(m => m.Id));
+            blockList.Block(left.Members.Select(m => m.Id), "Member left cluster");
             _activeMembers = activeMembers;
 
             //notify that these members left
