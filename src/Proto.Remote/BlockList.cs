@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote;
 
@@ -21,6 +22,7 @@ public class BlockList
 {
     private readonly object _lock = new();
     private readonly ActorSystem _system;
+    private static readonly ILogger Logger = Log.CreateLogger<BlockList>();
 
     private ImmutableDictionary<string, DateTime> _blockedMembers = ImmutableDictionary<string, DateTime>.Empty;
 
@@ -37,12 +39,15 @@ public class BlockList
         .Select(kvp => kvp.Key)
         .ToImmutableHashSet();
 
-    internal void Block(IEnumerable<string> memberIds)
+    internal void Block(IEnumerable<string> memberIds, string reason)
     {
         lock (_lock)
         {
-            foreach (var member in memberIds)
+            var newIds = memberIds.ToHashSet().Except(_blockedMembers.Keys.ToHashSet());
+          
+            foreach (var member in newIds)
             {
+                Logger.LogInformation("Blocking member {MemberId} due to {Reason}", member, reason);
                 _blockedMembers = _blockedMembers.ContainsKey(member) switch
                 {
                     false => _blockedMembers.Add(member, DateTime.UtcNow),

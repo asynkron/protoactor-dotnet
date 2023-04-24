@@ -142,9 +142,9 @@ public sealed class ServerConnector
                     _logger.LogError(
                         "[ServerConnector][{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, we are blocked",
                         _system.Address, connectResponse.MemberId, _address);
-
+                    
                     //block self
-                    _system.Remote().BlockList.Block(new[] { _system.Id });
+                    _system.Remote().BlockList.Block(new[] { _system.Id }, "Blocked by remote member");
                     var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
                     _system.EventStream.Publish(terminated);
 

@@ -259,7 +259,7 @@ public class Gossiper
         if (gracefullyLeft.Any())
         {
             Logger.LogInformation("Blocking members due to gracefully leaving {Members}", gracefullyLeft);
-            blockList.Block(gracefullyLeft);
+            blockList.Block(gracefullyLeft, "Gracefully left");
         }
     }
 
@@ -291,7 +291,7 @@ public class Gossiper
             Logger.LogInformation("Blocking members due to expired heartbeat {Members}",
                 blocked.Cast<object>().ToArray());
 
-            blockList.Block(blocked);
+            blockList.Block(blocked, "Expired heartbeat");
         }
     }
 
