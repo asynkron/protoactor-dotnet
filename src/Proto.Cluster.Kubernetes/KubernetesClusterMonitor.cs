@@ -221,8 +221,8 @@ internal class KubernetesClusterMonitor : IActor
 
         var memberStatuses = _clusterPods.Values
             .Select(x => x.GetMemberStatus())
-            .Where(x => x.IsCandidate)
-            .Select(x => x.Status)
+            .Where(x => x.IsRunning && x.IsReady)
+            .Select(x => x.Member)
             .ToList();
 
         Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Topology received from Kubernetes {Members}",
