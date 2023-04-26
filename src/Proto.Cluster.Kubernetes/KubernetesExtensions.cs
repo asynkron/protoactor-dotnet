@@ -57,7 +57,7 @@ internal static class KubernetesExtensions
     /// </summary>
     /// <param name="pod">Kubernetes Pod object</param>
     /// <returns></returns>
-    internal static (bool IsCandidate, bool IsAlive, Member Status) GetMemberStatus(this V1Pod pod)
+    internal static MemberStatus GetMemberStatus(this V1Pod pod)
     {
         var isCandidate = pod.Status.Phase == "Running" && pod.Status.PodIP is not null;
 
@@ -73,7 +73,7 @@ internal static class KubernetesExtensions
         var mid = pod.Metadata.Labels[LabelMemberId];
         var alive = pod.Status.ContainerStatuses.All(x => x.Ready);
 
-        return (isCandidate, alive,
+        return new MemberStatus(isCandidate, alive,
             new Member
             {
                 Id = mid,
@@ -112,3 +112,5 @@ internal static class KubernetesExtensions
     /// <returns></returns>
     internal static string GetPodName() => Environment.MachineName;
 }
+
+public record MemberStatus(bool IsCandidate, bool IsAlive, Member Status);
