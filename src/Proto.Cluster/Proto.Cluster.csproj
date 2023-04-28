@@ -4,7 +4,7 @@
         <IsPackable>true</IsPackable>
         <Nullable>enable</Nullable>
         <LangVersion>10</LangVersion>
-        <TargetFrameworks>netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Grpc.Tools" Version="2.51.0" PrivateAssets="All" />

@@ -104,7 +104,15 @@ public sealed class SharedFutureProcess : Process, IDisposable
         Interlocked.Increment(ref _createdRequests);
         _onStarted?.Invoke();
 
-        return new SharedFutureHandle(this, pid, requestSlot.CompletionSource!);
+        var cs = requestSlot.CompletionSource!;
+
+        // //TODO: can this happen?
+        // if (cs.Task.IsCanceled)
+        // {
+        //     throw new Exception("SharedFuture bug, Task is canceled");
+        // }
+
+        return new SharedFutureHandle(this, pid, cs);
     }
 
     protected internal override void SendUserMessage(PID pid, object message)

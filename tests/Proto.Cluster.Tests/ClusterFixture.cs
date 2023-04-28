@@ -77,9 +77,6 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     protected ClusterFixture( int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
     {
         _reporter = new GithubActionsReporter(GetType().Name);
-#if NETCOREAPP3_1
-        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-#endif
         ClusterSize = clusterSize;
         _configure = configure;
         ClusterName = $"test-cluster-{Guid.NewGuid().ToString().Substring(0, 6)}";

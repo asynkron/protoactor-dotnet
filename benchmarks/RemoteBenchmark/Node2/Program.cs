@@ -57,10 +57,6 @@ class Program
             )
         );
 
-#if NETCOREAPP3_1
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-#endif
-
 
         Console.WriteLine("Enter Advertised Host (Default = 127.0.0.1)");
         var advertisedHost = Console.ReadLine().Trim();

@@ -17,8 +17,7 @@ public class FutureTests
     [Fact]
     public async Task Given_Actor_When_AwaitRequestAsync_Should_ReturnReply()
     {
-        var system = new ActorSystem();
-        await using var _ = system;
+        await using var system = new ActorSystem();
         var context = system.Root;
 
         var pid = context.Spawn(Props.FromFunc(ctx =>
@@ -41,8 +40,7 @@ public class FutureTests
     [Fact]
     public async Task Given_Actor_When_AwaitContextRequestAsync_Should_GetReply()
     {
-        var system = new ActorSystem();
-        await using var _ = system;
+        await using var system = new ActorSystem();
         var context = system.Root;
 
         var pid1 = context.Spawn(Props.FromFunc(ctx =>
@@ -76,8 +74,7 @@ public class FutureTests
     [Fact]
     public async Task Given_Actor_When_ReplyIsNull_Should_Return()
     {
-        var system = new ActorSystem();
-        await using var _ = system;
+        await using var system = new ActorSystem();
         var context = system.Root;
 
         var pid = context.Spawn(Props.FromFunc(ctx =>
@@ -101,8 +98,7 @@ public class FutureTests
     public void TestInATask() =>
         SafeTask.Run(async () =>
                 {
-                    var system = new ActorSystem();
-                    await using var _ = system;
+                    await using var system = new ActorSystem();
                     var context = system.Root;
 
                     var pid = context.Spawn(Props.FromFunc(ctx =>
@@ -134,8 +130,7 @@ public class FutureTests
     public void TestInATaskIndirect() =>
         Task.Run(async () =>
                 {
-                    var system = new ActorSystem();
-                    await using var _ = system;
+                    await using var system = new ActorSystem();
                     var context = system.Root;
 
                     var replier = context.Spawn(Props.FromFunc(ctx =>
