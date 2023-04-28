@@ -60,7 +60,7 @@ public static class Extensions
         return system;
     }
 
-    internal static IServiceCollection AddRemote(this IServiceCollection services,
+    public static IServiceCollection AddRemote(this IServiceCollection services,
         Func<IServiceProvider, GrpcNetRemoteConfig> configure)
     {
         services.AddSingleton(configure);
@@ -69,7 +69,7 @@ public static class Extensions
         return services;
     }
 
-    internal static IServiceCollection AddRemote(
+    public static IServiceCollection AddRemote(
         this IServiceCollection services,
         GrpcNetRemoteConfig config
     )
@@ -80,7 +80,7 @@ public static class Extensions
         return services;
     }
 
-    internal static IServiceCollection AddClientRemote(
+    public static IServiceCollection AddClientRemote(
         this IServiceCollection services,
         GrpcNetRemoteConfig config
     )
@@ -117,7 +117,7 @@ public static class Extensions
         return endpoints.MapGrpcService<Remoting.RemotingBase>();
     }
 
-    internal static void UseProtoRemote(this IApplicationBuilder applicationBuilder)
+    public static void UseProtoRemote(this IApplicationBuilder applicationBuilder)
     {
         var hostedRemote = applicationBuilder.ApplicationServices.GetRequiredService<HostedGrpcNetRemote>();
         hostedRemote.ServerAddressesFeature = applicationBuilder.ServerFeatures.Get<IServerAddressesFeature>();
@@ -125,7 +125,7 @@ public static class Extensions
         applicationBuilder.UseEndpoints(c => AddProtoRemoteEndpoint(c));
     }
 
-    internal static void UseProtoRemote(this IApplicationBuilder applicationBuilder,
+    public static void UseProtoRemote(this IApplicationBuilder applicationBuilder,
         Action<GrpcServiceEndpointConventionBuilder> configure)
     {
         var hostedRemote = applicationBuilder.ApplicationServices.GetRequiredService<HostedGrpcNetRemote>();

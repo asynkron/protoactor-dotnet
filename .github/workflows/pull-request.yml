@@ -33,7 +33,6 @@ jobs:
         with:
           dotnet-version: |
             6.0.x
-            3.1.x
 
       - name: Build
         run: dotnet build ProtoActor.sln -c Release
@@ -56,7 +55,6 @@ jobs:
         test:
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
-          - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
     
     steps:
@@ -69,7 +67,6 @@ jobs:
         with:
           dotnet-version: |
             6.0.x
-            3.1.x
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
@@ -86,7 +83,6 @@ jobs:
         test:
           - "tests/Proto.Actor.Tests/*.csproj"
           - "tests/Proto.Remote.Tests/*.csproj"
-          - "tests/Proto.Persistence.Tests/*.csproj"
           - "tests/Proto.OpenTelemetry.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
     
@@ -100,7 +96,7 @@ jobs:
         with:
           dotnet-version: |
             6.0.x
-            3.1.x
+
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
         run: |

@@ -29,7 +29,7 @@ public abstract class RemoteFixture : IRemoteFixture
 
     private static readonly LogStore _logStore = new();
     public IRemote ServerRemote2 { get; protected set; }
-    public LogStore LogStore { get; } = _logStore;
+    public LogStore LogStore => _logStore;
 
     public string RemoteAddress => ServerRemote1.System.Address;
     public string RemoteAddress2 => ServerRemote2.System.Address;
@@ -80,7 +80,7 @@ public abstract class RemoteFixture : IRemoteFixture
                     services.AddGrpc();
                     services.AddSingleton(Log.GetLoggerFactory());
 
-                    services.AddSingleton(sp =>
+                    services.AddSingleton(_ =>
                         {
                             var system = new ActorSystem();
 
