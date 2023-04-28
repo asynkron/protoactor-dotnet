@@ -25,7 +25,6 @@
         <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
         <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
     </ItemGroup>
 
     <ItemGroup>

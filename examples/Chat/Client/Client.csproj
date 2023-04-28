@@ -5,7 +5,6 @@
         <LangVersion>10</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\Proto.Remote\Proto.Remote.csproj"/>
-        <ProjectReference Include="..\Messages\Chat.Messages.csproj"/>
+        <ProjectReference Include="..\Messages\Chat.Messages.csproj" />
     </ItemGroup>
 </Project>

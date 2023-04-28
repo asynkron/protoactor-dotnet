@@ -1,0 +1,104 @@
+﻿
+syntax = "proto3";
+package remote;
+option csharp_namespace = "Proto.Remote";
+
+import "ActorContracts.proto";
+
+message RemoteMessage {
+  oneof message_type {
+    MessageBatch message_batch = 1;
+    ConnectRequest connect_request = 2;
+    ConnectResponse connect_response = 3;
+    DisconnectRequest disconnect_request = 4;
+  }
+}
+
+message MessageBatch {
+  repeated string type_names = 1;
+  repeated string targets = 2;
+  repeated MessageEnvelope envelopes = 3;
+  repeated actor.PID senders = 4; 
+}
+
+message MessageEnvelope {
+  int32 type_id = 1;
+  bytes message_data = 2;
+  int32 target = 3;
+  int32 sender = 4;
+  int32 serializer_id = 5;
+  MessageHeader message_header = 6;
+  uint32 target_request_id = 7;
+  uint32 sender_request_id = 8;
+}
+
+message MessageHeader {
+  map<string, string> header_data = 1;
+}
+
+message ActorPidRequest {
+  string name = 1;
+  string kind = 2;
+}
+
+message ActorPidResponse {
+  actor.PID pid = 1;
+  int32 status_code = 2;
+}
+
+message ConnectRequest {
+  oneof connection_type {
+    ClientConnection client_connection = 1;
+    ServerConnection server_connection = 2;
+  }
+}
+
+message ConnectResponse {
+  string member_id = 2;
+  bool blocked = 3;
+}
+
+message DisconnectRequest {
+
+}
+
+message ClientConnection {
+  string member_id = 1;
+}
+
+message ServerConnection {
+  string member_id = 1;
+  string address = 2;
+  repeated string block_list = 3;
+}
+
+
+
+service Remoting {
+  rpc Receive (stream RemoteMessage) returns (stream RemoteMessage) {}
+  rpc ListProcesses(ListProcessesRequest) returns (ListProcessesResponse) {}
+  rpc GetProcessDiagnostics(GetProcessDiagnosticsRequest) returns (GetProcessDiagnosticsResponse) {}
+}
+
+message ListProcessesRequest {
+  string pattern = 1;
+  ListProcessesMatchType type = 2;
+}
+
+enum ListProcessesMatchType {
+  MatchPartOfString = 0;
+  MatchExactString = 1;
+  MatchRegex = 2;
+}
+
+message ListProcessesResponse {
+  repeated actor.PID pids = 1;
+}
+
+message GetProcessDiagnosticsRequest {
+  actor.PID pid = 1;
+}
+
+message GetProcessDiagnosticsResponse {
+  string diagnostics_string= 1;
+}

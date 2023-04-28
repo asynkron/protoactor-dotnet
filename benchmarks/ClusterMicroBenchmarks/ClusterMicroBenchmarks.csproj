@@ -13,7 +13,6 @@
     <ItemGroup>
       <ProjectReference Include="..\..\src\Proto.Cluster.TestProvider\Proto.Cluster.TestProvider.csproj" />
       <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
     </ItemGroup>
 
 </Project>

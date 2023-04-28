@@ -20,7 +20,6 @@
         <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster.Kubernetes\Proto.Cluster.Kubernetes.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
     </ItemGroup>
 
     <ItemGroup>

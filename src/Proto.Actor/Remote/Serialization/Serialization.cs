@@ -12,8 +12,8 @@ using System.Text.Json;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Proto.Extensions;
-using ActorMessages = Proto.ProtosReflection;
-using RemoteMessages = Proto.Remote.ProtosReflection;
+using ActorMessages = Proto.ActorContractsReflection;
+using RemoteMessages = Proto.Remote.RemoteContractsReflection;
 namespace Proto.Remote;
 
 public class Serialization : IActorSystemExtension<Serialization>
