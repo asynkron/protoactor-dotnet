@@ -12,7 +12,7 @@ namespace Proto.Cluster.Gossip;
 
 public static class Extensions
 {
-    internal static (bool, T?) HasConsensus<T>(this IEnumerable<T?> enumerable)
+    public static (bool, T?) HasConsensus<T>(this IEnumerable<T?> enumerable)
     {
         using var enumerator = enumerable.GetEnumerator();
 
@@ -34,7 +34,7 @@ public static class Extensions
         return (true, first);
     }
 
-    internal static (IConsensusHandle<T> handle, ConsensusCheck check) Build<T>(
+    public static (IConsensusHandle<T> handle, ConsensusCheck check) Build<T>(
         this IConsensusCheckDefinition<T> consensusDefinition,
         Action cancel
     )

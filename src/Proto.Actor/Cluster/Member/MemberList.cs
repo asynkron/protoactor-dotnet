@@ -125,7 +125,7 @@ public record MemberList
             _cluster.Gossip.RegisterConsensusCheck<ClusterTopology, ulong>(GossipKeys.Topology,
                 topology => topology.TopologyHash);
 
-    internal Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct) =>
+    public Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct) =>
         _topologyConsensus?.TryGetConsensus(ct) ??
         Task.FromResult<(bool consensus, ulong topologyHash)>(default);
 

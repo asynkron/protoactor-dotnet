@@ -16,8 +16,7 @@ using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Identity;
-using Proto.Cluster.Identity.MongoDb;
-using Proto.Cluster.Identity.Redis;
+
 using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
 using Proto.OpenTelemetry;
@@ -25,7 +24,6 @@ using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using Serilog;
 using Serilog.Events;
-using StackExchange.Redis;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
 using Log = Serilog.Log;
 
@@ -118,39 +116,6 @@ public static class Configuration
             Send = PartitionIdentityLookup.Send.Delta
         }
     );
-
-    private static IIdentityLookup GetRedisIdentityLookup()
-    {
-        var multiplexer = ConnectionMultiplexer.Connect("localhost:6379");
-        var redisIdentityStorage = new RedisIdentityStorage("mycluster", multiplexer, maxConcurrency: 50);
-
-        return new IdentityStorageLookup(redisIdentityStorage);
-    }
-
-    private static IIdentityLookup GetMongoIdentityLookup()
-    {
-        var db = GetMongo();
-        var identity = new IdentityStorageLookup(
-            new MongoIdentityStorage("mycluster", db.GetCollection<PidLookupEntity>("pids"), 200)
-        );
-        return identity;
-    }
-
-    private static IMongoDatabase GetMongo()
-    {
-        var connectionString =
-            Environment.GetEnvironmentVariable("MONGO") ?? "mongodb://127.0.0.1:27017/ProtoMongo";
-        var url = MongoUrl.Create(connectionString);
-        var settings = MongoClientSettings.FromUrl(url);
-        // settings.WaitQueueSize = 10000;
-        // settings.WaitQueueTimeout = TimeSpan.FromSeconds(10);
-        //
-        // settings.WriteConcern = WriteConcern.WMajority;
-        // settings.ReadConcern = ReadConcern.Majority;
-        var client = new MongoClient(settings);
-        var database = client.GetDatabase("ProtoMongo");
-        return database;
-    }
 
     public static async Task<Cluster> SpawnMember()
     {

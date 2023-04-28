@@ -12,8 +12,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
-      <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
     </ItemGroup>
 
     <ItemGroup>

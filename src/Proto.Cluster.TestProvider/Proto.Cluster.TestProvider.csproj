@@ -8,6 +8,6 @@
         <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
+      <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
     </ItemGroup>
 </Project>

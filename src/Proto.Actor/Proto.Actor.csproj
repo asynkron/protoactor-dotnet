@@ -27,5 +27,10 @@
     <ItemGroup>
         <Protobuf Include="ActorContracts.proto" />
         <Protobuf Include="RemoteContracts.proto" />
+        <Protobuf Include="ClusterContracts.proto" />
+        <Protobuf Include="GossipContracts.proto" />
+        <Protobuf Include="GrainContracts.proto" />
+        <Protobuf Include="PubSubContracts.proto" />
+        <Protobuf Include="SeedContracts.proto" />
     </ItemGroup>
 </Project>

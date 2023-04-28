@@ -141,7 +141,7 @@ public class Cluster : IActorSystemExtension<Cluster>
 
     internal IClusterProvider Provider { get; set; } = null!;
 
-    internal PidCache PidCache { get; }
+    public PidCache PidCache { get; }
 
     private void SubscribeToTopologyEvents() =>
         System.EventStream.Subscribe<ClusterTopology>(e =>

@@ -15,7 +15,7 @@
         <ProtoGrain Include="Protos.proto" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+      <ProjectReference Include="..\..\..\src\Proto.Actor\Proto.Actor.csproj" />
     </ItemGroup>
 
 </Project>

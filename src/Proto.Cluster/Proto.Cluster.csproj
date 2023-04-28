@@ -10,13 +10,9 @@
         <PackageReference Include="Grpc.Tools" Version="2.51.0" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
-        <Protobuf Include="SeedContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
-        <Protobuf Include="ClusterContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
-        <Protobuf Include="GossipContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
-        <Protobuf Include="PubSubContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
-        <Protobuf Include="GrainContracts.proto" GrpcServices="Server" AdditionalImportDirs=".; ..\..\src" />
+      <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
+      <None Remove="..\..\logo.png" />
     </ItemGroup>
 </Project>

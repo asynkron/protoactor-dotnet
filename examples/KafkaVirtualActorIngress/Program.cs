@@ -6,11 +6,9 @@ using KafkaVirtualActorIngress.Messages;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
-using Proto.Cluster.Identity;
-using Proto.Cluster.Identity.Redis;
+using Proto.Cluster.PartitionActivator;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
-using StackExchange.Redis;
 
 namespace KafkaVirtualActorIngress;
 
@@ -119,7 +117,7 @@ internal class Program
 
     private static ClusterConfig GetClusterConfig(string clusterName) =>
         ClusterConfig
-            .Setup(clusterName, GetClusterProvider(), new IdentityStorageLookup(GetIdentityLookup(clusterName)))
+            .Setup(clusterName, GetClusterProvider(), new PartitionActivatorLookup())
             .WithClusterKind("device", Props.FromProducer(() => new DeviceActor())
                 //TODO: Uncomment to enable tracing
                 // .WithOpenTracing()
@@ -142,8 +140,5 @@ internal class Program
 
     private static IClusterProvider GetClusterProvider() => new ConsulProvider(new ConsulProviderConfig());
 
-    private static IIdentityStorage GetIdentityLookup(string clusterName) =>
-        new RedisIdentityStorage(clusterName, ConnectionMultiplexer
-            .Connect("localhost:6379" /* use proper config */)
-        );
+
 }

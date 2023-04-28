@@ -7,7 +7,6 @@
         <LangVersion>10</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
         <ProjectReference Include="..\Messages\Messages.csproj" />
     </ItemGroup>
 </Project>

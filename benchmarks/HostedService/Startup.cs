@@ -6,12 +6,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MongoDB.Driver;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Consul;
-using Proto.Cluster.Identity;
-using Proto.Cluster.Identity.MongoDb;
+using Proto.Cluster.PartitionActivator;
 using Proto.Remote.GrpcNet;
 
 namespace HostedService;
@@ -31,21 +29,9 @@ public class Startup
                     .SetMinimumLevel(LogLevel.Information)
             )
         );
-
-        var settings = MongoClientSettings.FromUrl(MongoUrl.Create("mongodb://127.0.0.1:27017"));
-        // settings.MinConnectionPoolSize = 10;
-        // settings.MaxConnectionPoolSize = 100;
-        settings.WaitQueueTimeout = TimeSpan.FromSeconds(10);
-#pragma warning disable 618
-        settings.WaitQueueSize = 10000;
-#pragma warning restore 618
-
-        var mongoClient = new MongoClient(settings);
-
-        var pids = mongoClient.GetDatabase("dummydb").GetCollection<PidLookupEntity>("pids");
-
+        
         var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
-        var identityLookup = new IdentityStorageLookup(new MongoIdentityStorage("foo", pids, 150));
+        var identityLookup = new PartitionActivatorLookup();
         var sys = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3).WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1)))
             .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))
             .WithCluster(ClusterConfig.Setup("test", clusterProvider, identityLookup)
