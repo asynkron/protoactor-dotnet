@@ -7,7 +7,6 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Proto.Persistence\Proto.Persistence.csproj" />
         <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
     </ItemGroup>
 </Project>

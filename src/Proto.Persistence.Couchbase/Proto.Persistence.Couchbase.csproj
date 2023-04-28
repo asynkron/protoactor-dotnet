@@ -5,7 +5,4 @@
     <ItemGroup>
         <PackageReference Include="CouchbaseNetClient" Version="2.7.22" />
     </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\Proto.Persistence\Proto.Persistence.csproj" />
-    </ItemGroup>
 </Project>

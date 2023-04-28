@@ -6,7 +6,4 @@
         <PackageReference Include="Marten" Version="4.3.1" />
 
     </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\Proto.Persistence\Proto.Persistence.csproj" />
-    </ItemGroup>
 </Project>

@@ -5,7 +5,4 @@
     <ItemGroup>
         <PackageReference Include="MongoDB.Driver" Version="2.19.0" />
     </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\Proto.Persistence\Proto.Persistence.csproj" />
-    </ItemGroup>
 </Project>
