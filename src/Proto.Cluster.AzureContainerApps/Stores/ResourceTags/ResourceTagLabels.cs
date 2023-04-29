@@ -1,4 +1,4 @@
-namespace Proto.Cluster.AzureContainerApps;
+namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
 public static class ResourceTagLabels
 {

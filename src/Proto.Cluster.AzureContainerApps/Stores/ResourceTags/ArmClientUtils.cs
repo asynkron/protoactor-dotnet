@@ -8,7 +8,7 @@ using Azure.ResourceManager.Resources;
 using Azure.ResourceManager.Resources.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Proto.Cluster.AzureContainerApps;
+namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
 public static class ArmClientUtils
 {
