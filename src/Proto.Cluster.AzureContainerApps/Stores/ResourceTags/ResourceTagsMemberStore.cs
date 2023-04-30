@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure;
 using Azure.ResourceManager;
 using Azure.ResourceManager.AppContainers;
+using Azure.ResourceManager.Resources;
+using Azure.ResourceManager.Resources.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -108,7 +111,7 @@ public class ResourceTagsMemberStore : IMemberStore
         {
             var resourceGroupName = _options.Value.ResourceGroupName;
             var containerAppName = _options.Value.ContainerAppName;
-            await _armClient.AddMemberTags(resourceGroupName, containerAppName, tags).ConfigureAwait(false);
+            await AddMemberTags(resourceGroupName, containerAppName, tags, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception x)
         {
@@ -121,7 +124,42 @@ public class ResourceTagsMemberStore : IMemberStore
         var resourceGroupName = _options.Value.ResourceGroupName;
         var containerAppName = _options.Value.ContainerAppName;
 
-        await _armClient.ClearMemberTags(resourceGroupName, containerAppName, memberId).ConfigureAwait(false);
+        var resourceGroup = await _armClient.GetResourceGroupByName(resourceGroupName).ConfigureAwait(false);
+        var containerApp = await resourceGroup.Value.GetContainerAppAsync(containerAppName, cancellationToken).ConfigureAwait(false);
+        var tagResource = containerApp.Value.GetTagResource();
+        var resourceTag = new Tag();
+        var existingTags = (await tagResource.GetAsync(cancellationToken).ConfigureAwait(false)).Value.Data.TagValues;
+
+        foreach (var tag in existingTags)
+        {
+            if (!tag.Key.StartsWith(ResourceTagLabels.LabelPrefix(memberId)))
+            {
+                resourceTag.TagValues.Add(tag);
+            }
+        }
+
+        await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag), cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task AddMemberTags(string resourceGroupName, string containerAppName, Dictionary<string, string> newTags, CancellationToken cancellationToken)
+    {
+        var resourceTag = new Tag();
+        foreach (var tag in newTags)
+        {
+            resourceTag.TagValues.Add(tag);
+        }
+
+        var resourceGroup = await _armClient.GetResourceGroupByName(resourceGroupName).ConfigureAwait(false);
+        var containerApp = await resourceGroup.Value.GetContainerAppAsync(containerAppName, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var tagResource = containerApp.Value.GetTagResource();
+        var existingTags = (await tagResource.GetAsync(cancellationToken).ConfigureAwait(false)).Value.Data.TagValues;
+
+        foreach (var tag in existingTags)
+        {
+            resourceTag.TagValues.Add(tag);
+        }
+
+        await tagResource.CreateOrUpdateAsync(WaitUntil.Completed, new TagResourceData(resourceTag), cancellationToken).ConfigureAwait(false);
     }
 
     private static IEnumerable<ContainerAppRevisionResource> GetActiveRevisionsWithTraffic(ContainerAppResource containerApp) =>
