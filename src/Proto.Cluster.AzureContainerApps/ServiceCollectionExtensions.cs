@@ -22,7 +22,7 @@ public static class ServiceCollectionExtensions
     /// <param name="armClientProvider">An <see cref="IArmClientProvider"/> to create <see cref="ArmClient"/> instances.</param>
     /// <param name="configure">An optional action to configure the provider options.</param>
     /// <returns>The service collection.</returns>
-    public static IServiceCollection AddAzureContainerAppsProvider(this IServiceCollection services, IArmClientProvider? armClientProvider = default, [AllowNull] Action<AzureContainerAppsProviderOptions> configure = null)
+    public static IServiceCollection AddAzureContainerAppsProvider(this IServiceCollection services, [CanBeNull] IArmClientProvider armClientProvider = default, [AllowNull] Action<AzureContainerAppsProviderOptions> configure = null)
     {
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);

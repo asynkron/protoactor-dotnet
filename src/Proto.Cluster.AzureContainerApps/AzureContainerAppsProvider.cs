@@ -21,11 +21,11 @@ public class AzureContainerAppsProvider : IClusterProvider
     private readonly IClusterMemberStore _clusterMemberStore;
     private readonly IOptions<AzureContainerAppsProviderOptions> _options;
     private readonly ILogger _logger;
-    private readonly string? _containerAppName;
+    [CanBeNull] private readonly string _containerAppName;
     private readonly string _revisionName;
     private readonly string _replicaName;
     private readonly string _advertisedHost;
-    
+
     private string _memberId = null!;
     private string _address = null!;
     private Cluster _cluster = null!;
@@ -54,7 +54,7 @@ public class AzureContainerAppsProvider : IClusterProvider
         _containerAppName = Environment.GetEnvironmentVariable("CONTAINER_APP_NAME") ?? throw new Exception("No app name provided");
         _revisionName = Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? throw new Exception("No app revision provided");
         _replicaName = Environment.GetEnvironmentVariable("HOSTNAME") ?? throw new Exception("No replica name provided");
-        _advertisedHost = ConfigUtils.FindSmallestIpAddress().ToString(); 
+        _advertisedHost = IPAddressUtils.FindSmallestIpAddress().ToString();
     }
 
     /// <inheritdoc />
@@ -71,7 +71,6 @@ public class AzureContainerAppsProvider : IClusterProvider
         _address = $"{host}:{port}";
         _client = await _armClientProvider.CreateClientAsync();
 
-        //await CleanupStoreAsync(cluster);
         await RegisterMemberAsync().ConfigureAwait(false);
         StartClusterMonitor();
     }
@@ -93,11 +92,6 @@ public class AzureContainerAppsProvider : IClusterProvider
 
     /// <inheritdoc />
     public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync().ConfigureAwait(false);
-    
-    private async Task CleanupStoreAsync(Cluster cluster)
-    {
-        await _clusterMemberStore.ClearAsync(cluster.Config.ClusterName);
-    }
 
     private async Task RegisterMemberAsync()
     {

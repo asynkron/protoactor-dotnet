@@ -1,10 +1,12 @@
 using Azure.ResourceManager;
+using JetBrains.Annotations;
 
 namespace Proto.Cluster.AzureContainerApps;
 
 /// <summary>
 /// Provides an <see cref="ArmClient"/> instance.
 /// </summary>
+[PublicAPI]
 public static class ArmClientProviders
 {
     /// <summary>

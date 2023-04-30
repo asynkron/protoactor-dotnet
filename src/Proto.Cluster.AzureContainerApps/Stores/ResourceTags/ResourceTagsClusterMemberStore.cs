@@ -23,10 +23,10 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
     private readonly ILogger _logger;
     private readonly string _containerAppName;
     private readonly string _resourceGroupName;
-    private readonly string? _subscriptionId;
-    
-    private ArmClient? _armClient;
-    
+    [CanBeNull] private readonly string _subscriptionId;
+
+    [CanBeNull] private ArmClient _armClient;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ResourceTagsClusterMemberStore"/> class.
     /// </summary>
@@ -50,8 +50,8 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
     internal ResourceTagsClusterMemberStore(
         IArmClientProvider armArmClientProvider,
         ILogger<ResourceTagsClusterMemberStore> logger,
-        string resourceGroupName, 
-        string? subscriptionId = default)
+        string resourceGroupName,
+        [CanBeNull] string subscriptionId = default)
     {
         _armClientProvider = armArmClientProvider;
         _logger = logger;
@@ -77,7 +77,7 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         // Get the app container managed environment in order to get the other container apps.
         var environmentId = containerApp.Data.EnvironmentId;
         var containerApps = (await GetContainerAppsAsync(environmentId, cancellationToken).ConfigureAwait(false)).ToList();
-        
+
         // Build a list of all tags from all container apps.
         var allTags = containerApps.SelectMany(x => x.Data.Tags).ToList();
 
@@ -103,7 +103,7 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
             member.Kinds.AddRange(kinds);
             members.Add(member);
         }
-        
+
         return members.ToArray();
     }
 
@@ -135,10 +135,10 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
     public async ValueTask UnregisterAsync(string memberId, CancellationToken cancellationToken = default)
     {
         var containerApp = await GetContainerAppAsync(cancellationToken).ConfigureAwait(false);
-        
-        if(containerApp == null)
+
+        if (containerApp == null)
             return;
-        
+
         var existingTags = containerApp.Data.Tags;
         var prefixedName = ResourceTagNames.Prefix(memberId);
 
@@ -153,25 +153,25 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
     public async ValueTask ClearAsync(string clusterName, CancellationToken cancellationToken = default)
     {
         var containerApp = await GetContainerAppAsync(cancellationToken).ConfigureAwait(false);
-        
-        if(containerApp == null)
+
+        if (containerApp == null)
             return;
-        
+
         var existingTags = containerApp.Data.Tags;
         var prefixedName = ResourceTagNames.NamePrefix;
-        
+
         foreach (var tag in existingTags)
             if (tag.Key.StartsWith(prefixedName))
                 existingTags.Remove(tag.Key);
-        
+
         await containerApp.SetTagsAsync(existingTags, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task AddMemberTags(Dictionary<string, string> newTags, CancellationToken cancellationToken)
     {
         var containerApp = await GetContainerAppAsync(cancellationToken).ConfigureAwait(false);
-        
-        if(containerApp == null)
+
+        if (containerApp == null)
             return;
 
         var tags = containerApp.Data.Tags;
@@ -182,7 +182,8 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         await containerApp.SetTagsAsync(tags, cancellationToken);
     }
 
-    private async Task<ContainerAppResource?> GetContainerAppAsync(CancellationToken cancellationToken)
+    [ItemCanBeNull]
+    private async Task<ContainerAppResource> GetContainerAppAsync(CancellationToken cancellationToken)
     {
         var armClient = await GetArmClientAsync().ConfigureAwait(false);
         var subscriptionId = _subscriptionId;
@@ -191,7 +192,7 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         var resource = await resourceGroup.GetContainerAppAsync(_containerAppName, cancellationToken).ConfigureAwait(false);
         return resource.HasValue ? resource.Value : default;
     }
-    
+
     private async Task<ContainerAppManagedEnvironmentResource> GetContainerAppManagedEnvironmentResourceAsync(ContainerAppResource containerApp, CancellationToken cancellationToken)
     {
         var armClient = await GetArmClientAsync().ConfigureAwait(false);
@@ -199,7 +200,7 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         var response = armClient.GetContainerAppManagedEnvironmentResource(environmentId);
         return response;
     }
-    
+
     private async Task<IEnumerable<ContainerAppResource>> GetContainerAppsAsync(ResourceIdentifier environmentId, CancellationToken cancellationToken)
     {
         var armClient = await GetArmClientAsync();
@@ -208,7 +209,7 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         var resourceGroup = await armClient.GetResourceGroupByNameAsync(resourceGroupName, subscriptionId, cancellationToken).ConfigureAwait(false);
         return resourceGroup.GetContainerApps().Where(x => x.Data.EnvironmentId == environmentId);
     }
-    
+
     private static IEnumerable<ContainerAppRevisionResource> GetActiveRevisionsWithTraffic(ContainerAppResource containerApp) =>
         containerApp.GetContainerAppRevisions().Where(r => r.HasData && (r.Data.IsActive ?? false) && r.Data.TrafficWeight > 0);
 

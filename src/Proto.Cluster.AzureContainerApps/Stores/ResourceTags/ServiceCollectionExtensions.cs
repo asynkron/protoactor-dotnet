@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -8,6 +9,7 @@ namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 /// <summary>
 /// Adds extension methods to <see cref="IServiceCollection"/> for registering the Azure Container Apps provider
 /// </summary>
+[PublicAPI]
 public static class ServiceCollectionExtensions
 {
     /// <summary>

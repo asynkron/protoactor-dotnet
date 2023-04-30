@@ -7,7 +7,7 @@ using JetBrains.Annotations;
 
 namespace Proto.Cluster.AzureContainerApps;
 
-public static class ConfigUtils
+public static class IPAddressUtils
 {
     public static IPAddress FindSmallestIpAddress(AddressFamily family = AddressFamily.InterNetwork)
     {
