@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Azure.ResourceManager;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
@@ -33,7 +34,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton(armClientProvider);
 
         // Register the default member store.
-        services.AddSingleton<IClusterMemberStore, ResourceTagsClusterMemberStore>(sp =>
+        services.TryAddSingleton<IClusterMemberStore>(sp =>
         {
             var clientProvider = sp.GetRequiredService<IArmClientProvider>();
             var logger = sp.GetRequiredService<ILogger<ResourceTagsClusterMemberStore>>();
