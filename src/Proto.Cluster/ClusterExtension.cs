@@ -147,7 +147,15 @@ public static class Extensions
         )
         {
             clusterKind.Inc();
-            await baseReceive(ctx, startEnvelope).ConfigureAwait(false);
+            try
+            {
+                await baseReceive(ctx, startEnvelope).ConfigureAwait(false);
+            }
+            catch
+            {
+                //if start fails, we need to decrement the counter
+                clusterKind.Dec();
+            }
         }
 
         async Task HandleRestarting(
