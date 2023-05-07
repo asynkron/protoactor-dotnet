@@ -155,6 +155,7 @@ public static class Extensions
             {
                 //if start fails, we need to decrement the counter
                 clusterKind.Dec();
+                throw;
             }
         }
 
