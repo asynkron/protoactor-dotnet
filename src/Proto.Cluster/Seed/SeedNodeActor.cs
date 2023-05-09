@@ -20,7 +20,7 @@ public class SeedNodeActor : IActor
     private static readonly ILogger Logger = Log.CreateLogger<SeedNodeActor>();
     private readonly SeedNodeClusterProviderOptions _options;
     private ImmutableList<PID> _clients = ImmutableList<PID>.Empty;
-    private ClusterTopology? _lastestTopology;
+    private ClusterTopology? _latestTopology;
     private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
 
     private SeedNodeActor(SeedNodeClusterProviderOptions options)
@@ -45,7 +45,22 @@ public class SeedNodeActor : IActor
     {
         var (selfHost, selfPort) = context.System.GetAddress();
 
-        if (_options.SeedNodes.Except(new[] { (selfHost, selfPort) }).Any())
+        (string, int)[] seedNodes;
+
+        if (_options.Discovery != null)
+        {
+            var nodes = await _options.Discovery.GetAll().ConfigureAwait(false);
+            Logger.LogInformation("Starting via SeedNode Discovery, found seed nodes {@Members}", nodes);
+            seedNodes = nodes.Select(n => (n.host, n.port)).ToArray();
+            
+        }
+        else
+        {
+            Logger.LogInformation("Starting via SeedNode, found seed nodes {@Members}", _options.SeedNodes);
+            seedNodes = _options.SeedNodes.Except(new[] { (selfHost, selfPort) }).ToArray();
+        }
+
+        if (seedNodes.Any())
         {
             foreach (var (host, port) in _options.SeedNodes)
             {
@@ -84,12 +99,10 @@ public class SeedNodeActor : IActor
         }
     }
 
-    private Task OnClusterTopology(IContext context, ClusterTopology clusterTopology)
+    private async Task OnClusterTopology(IContext context, ClusterTopology clusterTopology)
     {
-        _lastestTopology = clusterTopology;
-        NotifyClients(context, clusterTopology);
-
-        return Task.CompletedTask;
+        _latestTopology = clusterTopology;
+        await NotifyClients(context, clusterTopology);
     }
 
     private Task OnClientTerminated(Terminated pid)
@@ -122,9 +135,9 @@ public class SeedNodeActor : IActor
             _clients = _clients.Add(clientSeed);
             context.Respond(new JoinResponse { Member = context.Cluster().MemberList.Self });
 
-            if (_lastestTopology != null)
+            if (_latestTopology != null)
             {
-                context.Send(clientSeed, _lastestTopology);
+                context.Send(clientSeed, _latestTopology);
             }
             else
             {
@@ -138,9 +151,9 @@ public class SeedNodeActor : IActor
             _clients = _clients.Add(clientSeed);
             context.Respond(new JoinResponse { Member = context.Cluster().MemberList.Self });
 
-            if (_lastestTopology != null)
+            if (_latestTopology != null)
             {
-                context.Send(clientSeed, _lastestTopology);
+                context.Send(clientSeed, _latestTopology);
             }
         }
 
@@ -160,7 +173,7 @@ public class SeedNodeActor : IActor
     private Task OnTopologyUpdate(IContext context, GossipUpdate update)
     {
         var topology = update.Value.Unpack<ClusterTopology>();
-        _lastestTopology = topology;
+        _latestTopology = topology;
 
         foreach (var m in topology.Members)
         {
