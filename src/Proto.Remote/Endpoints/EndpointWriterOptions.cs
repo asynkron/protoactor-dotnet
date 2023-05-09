@@ -11,9 +11,9 @@ public class EndpointWriterOptions
     public int EndpointWriterBatchSize { get; set; } = 1000;
 
     /// <summary>
-    ///     The number of times to retry the connection within the RetryTimeSpan, default is 8.
+    ///     The number of times to retry the connection within the RetryTimeSpan, default is 3.
     /// </summary>
-    public int MaxRetries { get; set; } = 8;
+    public int MaxRetries { get; set; } = 3;
 
     /// <summary>
     ///     The timespan that restarts are counted within, meaning that the retry counter resets after this timespan if no
