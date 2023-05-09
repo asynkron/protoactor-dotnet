@@ -14,6 +14,7 @@ using Proto.Cluster.Gossip;
 
 namespace Proto.Cluster.Seed;
 
+[PublicAPI]
 public class SeedNodeClusterProvider : IClusterProvider
 {
     [PublicAPI]
@@ -67,6 +68,15 @@ public class SeedNodeClusterProvider : IClusterProvider
             default:
                 throw new Exception("Failed to join any seed node");
         }
+        
+        if (_options.Discovery != null)
+        {
+            var (selfHost, selfPort) = _cluster.System.GetAddress();
+            
+            await _options.Discovery.Register(_cluster.System.Id, selfHost, selfPort);
+            Logger.LogInformation("Registering self in SeedNode Discovery {Id} {Host}:{Port}",
+                cluster.System.Id, selfHost, selfPort);
+        }
     }
 
     public async Task StartClientAsync(Cluster cluster)
@@ -91,6 +101,13 @@ public class SeedNodeClusterProvider : IClusterProvider
         if (_pid is not null && _cluster is not null)
         {
             await _cluster.System.Root.StopAsync(_pid).ConfigureAwait(false);
+        }
+        if (_options.Discovery is not null)
+        {
+            var (selfHost, selfPort) = _cluster.System.GetAddress();
+            await _options.Discovery.Remove(_cluster!.System.Id);
+            Logger.LogInformation("Removing self from SeedNode Discovery {Id} {Host}:{Port}",
+                _cluster.System.Id, selfHost, selfPort);
         }
 
         _cts.Cancel();

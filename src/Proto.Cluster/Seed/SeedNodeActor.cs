@@ -53,9 +53,6 @@ public class SeedNodeActor : IActor
             Logger.LogInformation("Starting via SeedNode Discovery, found seed nodes {@Members}", nodes);
             seedNodes = nodes.Select(n => (n.host, n.port)).ToArray();
             
-            await _options.Discovery.Register(context.System.Id, selfHost, selfPort);
-            Logger.LogInformation("Registering self in SeedNode Discovery {Id} {Host}:{Port}", context.System.Id,
-                selfHost, selfPort);
         }
         else
         {
