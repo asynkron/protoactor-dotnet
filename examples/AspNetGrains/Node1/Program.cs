@@ -4,7 +4,6 @@ using Proto.Cluster;
 using Proto.Cluster.Seed;
 using Proto.Cluster.SeedNode.Redis;
 using Proto.Remote;
-using Proto.Remote.HealthChecks;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +12,7 @@ builder.Services.AddLogging(x => x.AddConsole());
 var multiplexer = ConnectionMultiplexer.Connect("localhost:6379");
 var discovery = new RedisSeedNodeDiscovery(multiplexer);
 
-builder.Services.AddProtoCluster("MyCluster", port: 8090,
+builder.Services.AddProtoCluster("MyCluster", port: 0,
     configureRemote: r => r.WithProtoMessages(AspNetGrains.Messages.ProtosReflection.Descriptor),
     configureCluster: c => c, clusterProvider: SeedNodeClusterProvider.JoinWithDiscovery(discovery));
 

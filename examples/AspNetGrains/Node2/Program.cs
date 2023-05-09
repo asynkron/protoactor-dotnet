@@ -4,7 +4,6 @@ using Proto.Cluster;
 using Proto.Cluster.Seed;
 using Proto.Cluster.SeedNode.Redis;
 using Proto.Remote;
-using Proto.Remote.HealthChecks;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
