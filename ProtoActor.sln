@@ -270,6 +270,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Analyzers.Tests", "te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.AzureContainerApps", "src\Proto.Cluster.AzureContainerApps\Proto.Cluster.AzureContainerApps.csproj", "{4DF9BBFF-C480-4550-B2BA-6603DAE6BC6F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.SeedNode.Redis", "src\Proto.Cluster.SeedNode.Redis\Proto.Cluster.SeedNode.Redis.csproj", "{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1360,6 +1362,18 @@ Global
 		{4DF9BBFF-C480-4550-B2BA-6603DAE6BC6F}.Release|x64.Build.0 = Release|Any CPU
 		{4DF9BBFF-C480-4550-B2BA-6603DAE6BC6F}.Release|x86.ActiveCfg = Release|Any CPU
 		{4DF9BBFF-C480-4550-B2BA-6603DAE6BC6F}.Release|x86.Build.0 = Release|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Debug|x64.Build.0 = Debug|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Debug|x86.Build.0 = Debug|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Release|x64.ActiveCfg = Release|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Release|x64.Build.0 = Release|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Release|x86.ActiveCfg = Release|Any CPU
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1485,6 +1499,7 @@ Global
 		{9D139291-31D9-4502-B5BD-EA522F54B008} = {3D12F5E5-9774-4D7E-8A5B-B1F64544925B}
 		{E56413ED-8205-4AC1-A7CE-24A2C1711F54} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
 		{4DF9BBFF-C480-4550-B2BA-6603DAE6BC6F} = {3D12F5E5-9774-4D7E-8A5B-B1F64544925B}
+		{BDB67DAB-12F8-4D9F-BF7E-9F5D9E723816} = {3D12F5E5-9774-4D7E-8A5B-B1F64544925B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}

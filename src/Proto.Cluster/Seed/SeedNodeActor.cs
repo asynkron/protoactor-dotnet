@@ -45,40 +45,42 @@ public class SeedNodeActor : IActor
     {
         var (selfHost, selfPort) = context.System.GetAddress();
 
-        (string, int)[] seedNodes;
+        (string, string, int)[] seedNodes;
 
         if (_options.Discovery != null)
         {
-            var nodes = await _options.Discovery.GetAll().ConfigureAwait(false);
-            Logger.LogInformation("Starting via SeedNode Discovery, found seed nodes {@Members}", nodes);
-            seedNodes = nodes.Select(n => (n.host, n.port)).ToArray();
-            
+            seedNodes = await _options.Discovery.GetAll().ConfigureAwait(false);
+            Logger.LogInformation("Starting via SeedNode Discovery, found seed nodes {@Members}", seedNodes);
         }
         else
         {
             Logger.LogInformation("Starting via SeedNode, found seed nodes {@Members}", _options.SeedNodes);
-            seedNodes = _options.SeedNodes.Except(new[] { (selfHost, selfPort) }).ToArray();
+            //hack: manual seed nodes does not care about member id, but we need consistent data below
+            seedNodes = _options.SeedNodes.Except(new[] { (selfHost, selfPort) }).Select(t => ("",t.Item1,t.Item2)).ToArray();
         }
 
         if (seedNodes.Any())
         {
-            foreach (var (host, port) in _options.SeedNodes)
+            foreach (var (memberid, host, port) in seedNodes)
             {
                 //never connect to yourself
                 if (host == selfHost && port == selfPort)
                 {
+                    Logger.LogInformation("Skipping self seed node {Host}:{Port}", host, port);
                     continue;
                 }
 
                 try
                 {
+                    Logger.LogInformation("Creating pid...");
                     var pid = PID.FromAddress(host + ":" + port, Name);
+                    Logger.LogInformation("Trying to join seed node {Pid}", pid);
 
                     var res = await context.System.Root.RequestAsync<JoinResponse>(pid, new JoinRequest
                         {
                             Joiner = context.Cluster().MemberList.Self
                         }
-                    ).ConfigureAwait(false);
+                    , TimeSpan.FromSeconds(10));
 
                     context.Respond(new Connected(res.Member));
 
@@ -87,11 +89,23 @@ public class SeedNodeActor : IActor
                 catch (Exception x)
                 {
                     x.CheckFailFast();
+                    if (_options.Discovery is not null)
+                    {
+                        await _options.Discovery.Remove(memberid);
+                    }
                     Logger.LogError(x, "Failed to connect to seed node {Host}:{Port}", host, port);
                 }
             }
 
-            context.Respond(new FailedToConnect());
+            if (_options.Discovery is not null)
+            {
+                //stale members found, couldn't connect, mark ourselves as seednode
+                context.Respond(new Connected(context.Cluster().MemberList.Self));
+            }
+            else
+            {
+                context.Respond(new FailedToConnect());
+            }
         }
         else
         {

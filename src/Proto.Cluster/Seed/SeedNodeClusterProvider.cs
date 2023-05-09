@@ -29,7 +29,7 @@ public class SeedNodeClusterProvider : IClusterProvider
         return new SeedNodeClusterProvider();
     }
     
-    public static async Task<IClusterProvider> StartSeedNodeAsync(ISeedNodeDiscovery discovery)
+    public static IClusterProvider JoinWithDiscovery(ISeedNodeDiscovery discovery)
     {
         var options = new SeedNodeClusterProviderOptions(discovery);
         var provider = new SeedNodeClusterProvider(options);

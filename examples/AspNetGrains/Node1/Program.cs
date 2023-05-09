@@ -2,17 +2,21 @@ using AspNetGrains.Messages;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Seed;
+using Proto.Cluster.SeedNode.Redis;
 using Proto.Remote;
-using Proto.Remote.HealthChecks;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(x => x.AddConsole());
 
-builder.Services.AddProtoCluster("MyCluster", port:8090,
-    configureRemote: r => r.WithProtoMessages(AspNetGrains.Messages.ProtosReflection.Descriptor),
-    configureCluster: c => c, clusterProvider:SeedNodeClusterProvider.StartSeedNode());
+var multiplexer = ConnectionMultiplexer.Connect("localhost:6379");
+var discovery = new RedisSeedNodeDiscovery(multiplexer);
 
-builder.Services.AddHealthChecks().AddCheck<ActorSystemHealthCheck>("proto", null, new[] { "ready", "live" });
+builder.Services.AddProtoCluster("MyCluster", port: 0,
+    configureRemote: r => r.WithProtoMessages(AspNetGrains.Messages.ProtosReflection.Descriptor),
+    configureCluster: c => c, clusterProvider: SeedNodeClusterProvider.JoinWithDiscovery(discovery));
+
+builder.Services.AddHealthChecks().AddCheck<ClusterHealthCheck>("proto", null, new[] { "ready", "live" });
 
 var app = builder.Build();
 
