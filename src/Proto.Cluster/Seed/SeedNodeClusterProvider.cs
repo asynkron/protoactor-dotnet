@@ -5,8 +5,10 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
 
@@ -14,14 +16,23 @@ namespace Proto.Cluster.Seed;
 
 public class SeedNodeClusterProvider : IClusterProvider
 {
+    [PublicAPI]
     public static IClusterProvider JoinSeedNode(string address, int port)
     {
         return new SeedNodeClusterProvider(new SeedNodeClusterProviderOptions((address, port)));
     }
     
+    [PublicAPI]
     public static IClusterProvider StartSeedNode()
     {
         return new SeedNodeClusterProvider();
+    }
+    
+    public static async Task<IClusterProvider> StartSeedNodeAsync(ISeedNodeDiscovery discovery)
+    {
+        var options = new SeedNodeClusterProviderOptions(discovery);
+        var provider = new SeedNodeClusterProvider(options);
+        return provider;
     }
     
     private static readonly ILogger Logger = Log.CreateLogger<SeedNodeClusterProvider>();

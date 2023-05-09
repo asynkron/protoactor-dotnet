@@ -297,8 +297,6 @@ internal class PartitionPlacementActor : IActor, IDisposable
 
     private Task OnActivationRequest(IContext context, ActivationRequest msg)
     {
-
-        
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
         {
             if (Logger.IsEnabled(LogLevel.Debug))
