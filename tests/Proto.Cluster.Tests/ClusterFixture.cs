@@ -68,7 +68,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     {
         TracingSettings.OpenTelemetryUrl = Environment.GetEnvironmentVariable("OPENTELEMETRY_URL");
         TracingSettings.TraceViewUrl = Environment.GetEnvironmentVariable("TRACEVIEW_URL");
-        TracingSettings.OpenTelemetryUrl = "http://Localhost:4317";
+     //   TracingSettings.OpenTelemetryUrl = "http://Localhost:4317";
         TracingSettings.EnableTracing = TracingSettings.OpenTelemetryUrl != null;
 
         //TODO: check if this helps low resource envs like github actions.
