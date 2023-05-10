@@ -33,7 +33,7 @@ public static class Program
         var log = Log.CreateLogger("main");
 
         var identity = new PartitionIdentityLookup(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2)
-        ); //  new IdentityStorageLookup(GetRedisId("MyCluster"));
+        ); 
 
         /*
         - name: "REDIS"
@@ -57,10 +57,7 @@ public static class Program
 
         var noOpsProps = Props.FromFunc(ctx => Task.CompletedTask);
         var echoKind = new ClusterKind("echo", noOpsProps);
-        var system = new ActorSystem(new ActorSystemConfig()
-                //     .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1))
-                //     .WithDeveloperSupervisionLogging(true)
-            )
+        var system = new ActorSystem(new ActorSystemConfig())
             .WithRemote(GrpcNetRemoteConfig
                 .BindTo(host, port)
                 .WithAdvertisedHost(advertisedHost)
@@ -72,21 +69,13 @@ public static class Program
                 .WithClusterKind(echoKind)
             );
 
-        system.EventStream.Subscribe<GossipUpdate>(e => { Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}"); }
-        );
+      //  system.EventStream.Subscribe<GossipUpdate>(e => { Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}"); });
 
         system.EventStream.Subscribe<ClusterTopology>(e => {
-                var members = e.Members;
-                var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-                var key = string.Join("", x);
-                var hash = MurmurHash2.Hash(key);
+
+                var hash = e.TopologyHash;
 
                 Console.WriteLine($"{DateTime.Now:O} My members {hash}");
-
-                // foreach (var member in members.OrderBy(m => m.Id))
-                // {
-                //     Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
-                // }
             }
         );
 
@@ -105,8 +94,6 @@ public static class Program
 
         while (!cts.IsCancellationRequested)
         {
-            // var res = await system.Cluster().MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
-
             var m = system.Cluster().MemberList.GetAllMembers();
             var hash = Member.TopologyHash(m);
 

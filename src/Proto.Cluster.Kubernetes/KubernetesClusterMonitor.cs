@@ -79,25 +79,30 @@ internal class KubernetesClusterMonitor : IActor
         return Task.CompletedTask;
     }
 
-    private async Task StartWatchingCluster(IContext context)
+    private Task StartWatchingCluster(IContext context)
     {
-        try
+        _ = SafeTask.Run(async () =>
         {
-            await Poll();
-        }
-        catch (Exception x)
-        {
-            Logger.LogError(x, "[Cluster][KubernetesProvider] Failed to poll the Kubernetes API");
-        }
+            try
+            {
+                await Poll();
+            }
+            catch (Exception x)
+            {
+                Logger.LogError(x, "[Cluster][KubernetesProvider] Failed to poll the Kubernetes API");
+            }
 
-        if (!_config.DisableWatch)
-        {
-            await Watch();
-        }
+            if (!_config.DisableWatch)
+            {
+                await Watch();
+            }
 
-        await Task.Delay(1000);
+            await Task.Delay(1000);
 
-        context.Send(context.Self, new StartWatchingCluster(_clusterName));
+            context.Send(context.Self, new StartWatchingCluster(_clusterName));
+        });
+
+        return Task.CompletedTask;
     }
 
     private Task Watch()
@@ -290,6 +295,12 @@ internal class KubernetesClusterMonitor : IActor
 
     private void UpdateTopology()
     {
+        if (_clusterPods?.Values is null)
+        {
+            Logger.LogInformation("[Cluster][KubernetesProvider] No pods found in the cluster");
+            return;
+        }
+        
         var memberStatuses = _clusterPods.Values
             .Select(x => x.GetMemberStatus())
             .Where(x => x.IsRunning && (x.IsReady || x.Member.Id == _cluster.System.Id))

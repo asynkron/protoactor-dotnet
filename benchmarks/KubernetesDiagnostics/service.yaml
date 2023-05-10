@@ -1,22 +1,24 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-namespace
+---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: proto-cluster
+  namespace: my-namespace
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: proto-cluster
-  labels:
-    app: kubdiag
+  namespace: my-namespace
 rules:
   - apiGroups:
       - ""
     resources:
-      - endpoints
       - pods
-      - services
-      - services/status
     verbs:
       - get
       - list
@@ -28,7 +30,8 @@ kind: RoleBinding
 metadata:
   name: proto-cluster
   labels:
-    app: kubdiag
+    app: kubediag
+  namespace: my-namespace
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -40,37 +43,38 @@ subjects:
 apiVersion: v1
 kind: Service
 metadata:
-  name: testing
+  name: kubediag
   labels:
-    app: kubdiag
+    app: kubediag
+  namespace: my-namespace
 spec:
   ports:
     - port: 8080
       name: protoactor
   selector:
-    app: kubdiag
+    app: kubediag
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: diagapp
+  name: kubediag
+  namespace: my-namespace
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: kubdiag
+      app: kubediag
   template:
     metadata:
       labels:
-        app: kubdiag
+        app: kubediag
         version: v1
     spec:
       serviceAccountName: proto-cluster
       containers:
-        - name: kubdiag
-          # there is nothing sensitive in here, its just a diagnostics app
-          image: rogeralsing/kubdiagg:default2
-          imagePullPolicy: Never
+        - name: kubediag
+          image: rogeralsing/kubediag:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
