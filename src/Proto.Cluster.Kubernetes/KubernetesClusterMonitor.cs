@@ -28,7 +28,6 @@ internal class KubernetesClusterMonitor : IActor
     private string _address;
     private string _clusterName;
     private IKubernetes _kubernetes;
-    private DateTime _lastRestart;
     private string _podName;
     private bool _stopping;
     private Watcher<V1Pod> _watcher;
@@ -46,7 +45,7 @@ internal class KubernetesClusterMonitor : IActor
         context.Message switch
         {
             RegisterMember cmd       => Register(cmd),
-            StartWatchingCluster cmd => StartWatchingCluster(cmd.ClusterName, context),
+            StartWatchingCluster _   => StartWatchingCluster(context),
             DeregisterMember         => StopWatchingCluster(),
             Stopping                 => StopWatchingCluster(),
             _                        => Task.CompletedTask
@@ -80,20 +79,31 @@ internal class KubernetesClusterMonitor : IActor
         return Task.CompletedTask;
     }
 
-    private Task StartWatchingCluster(string clusterName, ISenderContext context)
+    private async Task StartWatchingCluster(IContext context)
     {
-        var selector = $"{LabelCluster}={clusterName}";
+        try
+        {
+            await Poll();
+        }
+        catch (Exception x)
+        {
+            Logger.LogError(x, "[Cluster][KubernetesProvider] Failed to poll the Kubernetes API");
+        }
 
-        Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Starting to watch pods with {Selector}",
-            selector);
+        if (!_config.DisableWatch)
+        {
+            await Watch();
+        }
+        
+        await Task.Delay(1000);
+        
+        context.Send(context.Self, new StartWatchingCluster(_clusterName));
+    }
 
-        _watcherTask = _kubernetes.ListNamespacedPodWithHttpMessagesAsync(
-            KubernetesExtensions.GetKubeNamespace(),
-            labelSelector: selector,
-            watch: true,
-            timeoutSeconds: _config.WatchTimeoutSeconds
-        );
-
+    private Task Watch()
+    {
+        var tcs = new TaskCompletionSource();
+        _watcherTask = GetListTask(_clusterName);
         _watcher = _watcherTask.Watch<V1Pod, V1PodList>(Watch, Error, Closed);
         _watching = true;
 
@@ -127,16 +137,71 @@ internal class KubernetesClusterMonitor : IActor
 
         void Restart()
         {
-            _lastRestart = DateTime.UtcNow;
             _watching = false;
 
             DisposeWatcher();
             DisposeWatcherTask();
 
-            context.Send(context.Self!, new StartWatchingCluster(_clusterName));
+            tcs.SetResult();
         }
 
-        return Task.CompletedTask;
+        return tcs.Task;
+    }
+
+    private async Task Poll()
+    {
+        var x = await GetListTask(_clusterName);
+        foreach (var eventPod in x.Body.Items)
+        {
+            var podLabels = eventPod.Metadata.Labels;
+
+            if (!podLabels.TryGetValue(LabelCluster, out var podClusterName))
+            {
+                Logger.LogInformation(
+                    "[Cluster][KubernetesProvider] The pod {PodName} is not a Proto.Cluster node",
+                    eventPod.Metadata.Name
+                );
+
+                continue;
+            }
+
+            if (_clusterName != podClusterName)
+            {
+                Logger.LogInformation(
+                    "[Cluster][KubernetesProvider] The pod {PodName} is from another cluster {Cluster}",
+                    eventPod.Metadata.Name, _clusterName
+                );
+
+                continue;
+            }
+
+            _clusterPods[eventPod.Uid()] = eventPod;
+        }
+
+        var uids = x.Body.Items.Select(p => p.Uid()).ToHashSet();
+        var toRemove = _clusterPods.Keys.Where(k => !uids.Contains(k)).ToList();
+        
+        foreach(var uid in toRemove)
+        {
+            _clusterPods.Remove(uid);
+        }
+        
+        UpdateTopology();
+    }
+
+    private Task<HttpOperationResponse<V1PodList>> GetListTask(string clusterName)
+    {
+        var selector = $"{LabelCluster}={clusterName}";
+
+        Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Starting to watch pods with {Selector}",
+            selector);
+
+        return _kubernetes.ListNamespacedPodWithHttpMessagesAsync(
+            KubernetesExtensions.GetKubeNamespace(),
+            labelSelector: selector,
+            watch: true,
+            timeoutSeconds: _config.WatchTimeoutSeconds
+        );
     }
 
     private void RecreateKubernetesClient()
@@ -219,6 +284,11 @@ internal class KubernetesClusterMonitor : IActor
             _clusterPods[eventPod.Uid()] = eventPod;
         }
 
+        UpdateTopology();
+    }
+
+    private void UpdateTopology()
+    {
         var memberStatuses = _clusterPods.Values
             .Select(x => x.GetMemberStatus())
             .Where(x => x.IsRunning && (x.IsReady || x.Member.Id == _cluster.System.Id))
