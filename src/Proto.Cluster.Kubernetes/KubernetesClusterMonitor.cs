@@ -44,11 +44,11 @@ internal class KubernetesClusterMonitor : IActor
     public Task ReceiveAsync(IContext context) =>
         context.Message switch
         {
-            RegisterMember cmd       => Register(cmd),
-            StartWatchingCluster _   => StartWatchingCluster(context),
-            DeregisterMember         => StopWatchingCluster(),
-            Stopping                 => StopWatchingCluster(),
-            _                        => Task.CompletedTask
+            RegisterMember cmd => Register(cmd),
+            StartWatchingCluster _ => StartWatchingCluster(context),
+            DeregisterMember => StopWatchingCluster(),
+            Stopping => StopWatchingCluster(),
+            _ => Task.CompletedTask
         };
 
     private Task Register(RegisterMember cmd)
@@ -94,16 +94,16 @@ internal class KubernetesClusterMonitor : IActor
         {
             await Watch();
         }
-        
+
         await Task.Delay(1000);
-        
+
         context.Send(context.Self, new StartWatchingCluster(_clusterName));
     }
 
     private Task Watch()
     {
         var tcs = new TaskCompletionSource();
-        _watcherTask = GetListTask(_clusterName);
+        _watcherTask = GetListTask(_clusterName, true, _config.WatchTimeoutSeconds);
         _watcher = _watcherTask.Watch<V1Pod, V1PodList>(Watch, Error, Closed);
         _watching = true;
 
@@ -150,7 +150,7 @@ internal class KubernetesClusterMonitor : IActor
 
     private async Task Poll()
     {
-        var x = await GetListTask(_clusterName);
+        var x = await GetListTask(_clusterName, false, 2);
         foreach (var eventPod in x.Body.Items)
         {
             var podLabels = eventPod.Metadata.Labels;
@@ -180,16 +180,16 @@ internal class KubernetesClusterMonitor : IActor
 
         var uids = x.Body.Items.Select(p => p.Uid()).ToHashSet();
         var toRemove = _clusterPods.Keys.Where(k => !uids.Contains(k)).ToList();
-        
-        foreach(var uid in toRemove)
+
+        foreach (var uid in toRemove)
         {
             _clusterPods.Remove(uid);
         }
-        
+
         UpdateTopology();
     }
 
-    private Task<HttpOperationResponse<V1PodList>> GetListTask(string clusterName)
+    private Task<HttpOperationResponse<V1PodList>> GetListTask(string clusterName, bool watch, int timeoutInSeconds)
     {
         var selector = $"{LabelCluster}={clusterName}";
 
@@ -199,8 +199,8 @@ internal class KubernetesClusterMonitor : IActor
         return _kubernetes.ListNamespacedPodWithHttpMessagesAsync(
             KubernetesExtensions.GetKubeNamespace(),
             labelSelector: selector,
-            watch: true,
-            timeoutSeconds: _config.WatchTimeoutSeconds
+            watch: watch,
+            timeoutSeconds: timeoutInSeconds
         );
     }
 
