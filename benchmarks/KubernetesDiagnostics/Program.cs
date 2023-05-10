@@ -69,20 +69,13 @@ public static class Program
                 .WithClusterKind(echoKind)
             );
 
-        system.EventStream.Subscribe<GossipUpdate>(e => { Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}"); });
+      //  system.EventStream.Subscribe<GossipUpdate>(e => { Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}"); });
 
         system.EventStream.Subscribe<ClusterTopology>(e => {
-                var members = e.Members;
-                var x = members.Select(m => m.Id).OrderBy(i => i).ToArray();
-                var key = string.Join("", x);
-                var hash = MurmurHash2.Hash(key);
+
+                var hash = e.TopologyHash;
 
                 Console.WriteLine($"{DateTime.Now:O} My members {hash}");
-
-                // foreach (var member in members.OrderBy(m => m.Id))
-                // {
-                //     Console.WriteLine(member.Id + "\t" + member.Address + "\t" + member.Kinds);
-                // }
             }
         );
 
