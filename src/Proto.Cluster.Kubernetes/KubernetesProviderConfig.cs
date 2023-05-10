@@ -13,17 +13,23 @@ namespace Proto.Cluster.Kubernetes;
 public record KubernetesProviderConfig
 {
     public KubernetesProviderConfig(int watchTimeoutSeconds = 30, bool developerLogging = false,
-        Func<IKubernetes> clientFactory = null)
+        Func<IKubernetes> clientFactory = null, bool disableWatch = false)
     {
         WatchTimeoutSeconds = watchTimeoutSeconds;
         DeveloperLogging = developerLogging;
         ClientFactory = clientFactory ?? DefaultFactory;
+        DisableWatch = disableWatch;
     }
 
     /// <summary>
     ///     A timeout for the watch pods operation
     /// </summary>
     public int WatchTimeoutSeconds { get; }
+
+    /// <summary>
+    ///    Disable the watch pods operation and rely on HTTP request response polling instead
+    /// </summary>
+    public bool DisableWatch { get; set; }
 
     /// <summary>
     ///     Enables more detailed logging
