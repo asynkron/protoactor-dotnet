@@ -81,13 +81,20 @@ internal class KubernetesClusterMonitor : IActor
 
     private async Task StartWatchingCluster(IContext context)
     {
-        await Poll();
+        try
+        {
+            await Poll();
+        }
+        catch (Exception x)
+        {
+            Logger.LogError(x, "[Cluster][KubernetesProvider] Failed to poll the Kubernetes API");
+        }
 
         if (!_config.DisableWatch)
         {
             await Watch();
         }
-
+        
         await Task.Delay(1000);
         
         context.Send(context.Self, new StartWatchingCluster(_clusterName));
