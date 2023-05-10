@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
@@ -44,5 +45,6 @@ public static class Log
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [Obsolete("Inject ILogger<T> instead", false)]
     public static ILogger CreateLogger<T>() => _loggerFactory.CreateLogger<T>();
 }

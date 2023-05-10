@@ -8,7 +8,7 @@ kind: Role
 metadata:
   name: proto-cluster
   labels:
-    app: kubdiag
+    app: kubediag
 rules:
   - apiGroups:
       - ""
@@ -28,7 +28,7 @@ kind: RoleBinding
 metadata:
   name: proto-cluster
   labels:
-    app: kubdiag
+    app: kubediag
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -42,13 +42,13 @@ kind: Service
 metadata:
   name: testing
   labels:
-    app: kubdiag
+    app: kubediag
 spec:
   ports:
     - port: 8080
       name: protoactor
   selector:
-    app: kubdiag
+    app: kubediag
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -58,19 +58,19 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app: kubdiag
+      app: kubediag
   template:
     metadata:
       labels:
-        app: kubdiag
+        app: kubediag
         version: v1
     spec:
       serviceAccountName: proto-cluster
       containers:
-        - name: kubdiag
+        - name: kubediag
           # there is nothing sensitive in here, its just a diagnostics app
-          image: rogeralsing/kubdiagg:default2
-          imagePullPolicy: Never
+          image: rogeralsing/kubediag:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
