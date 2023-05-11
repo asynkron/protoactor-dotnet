@@ -55,7 +55,7 @@ public class DeadLetterEvent
     public MessageHeader Header { get; }
 
     public override string ToString() =>
-        $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetMessageTypeName()}:{MessagePayload}, Sender: {Sender}, Headers: {Header} ]";
+        $"DeadLetterEvent: [ Pid: {Pid}, Message: {Message.GetMessageTypeName()}:{Message}, Sender: {Sender}, Headers: {Header} ]";
 }
 
 /// <summary>
