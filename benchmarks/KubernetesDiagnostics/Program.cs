@@ -86,6 +86,12 @@ public static class Program
         await system
             .Cluster()
             .StartMemberAsync();
+        
+        system.Shutdown.Register(() =>
+        {
+            Console.WriteLine("Shutting down...");
+            Environment.Exit(0);
+        });
 
         var props = Props.FromFunc(ctx => Task.CompletedTask);
         system.Root.SpawnNamed(props, "dummy");

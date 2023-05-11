@@ -294,7 +294,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
         system.EventStream.Subscribe<object>(e =>
             {
-                logger?.LogDebug("EventStream {MessageType}:{Message}", e.GetType().Name, e);
+                logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e);
             }
         );
 

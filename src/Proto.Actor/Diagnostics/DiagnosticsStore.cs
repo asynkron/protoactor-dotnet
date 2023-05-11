@@ -51,7 +51,7 @@ public class DiagnosticsStore
         var entry = new DiagnosticsEntry(module, message, null);
         if (_entries.TryAdd(entry))
         {
-            _logger.Log(_logLevel, "[Diagnostics] {Module}: {Message}", module, message);
+            _logger.Log(_logLevel, "[Diagnostics] {Module}: {MessagePayload}", module, message);
         }
     }
 

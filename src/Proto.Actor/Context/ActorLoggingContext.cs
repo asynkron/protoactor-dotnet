@@ -47,7 +47,7 @@ public class ActorLoggingContext : ActorContextDecorator
 
         if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
         {
-            _logger.Log(logLevel, "Actor {Self} {ActorType} received message {MessageType}:{Message} from {Sender}",
+            _logger.Log(logLevel, "Actor {Self} {ActorType} received message {MessageType}:{MessagePayload} from {Sender}",
                 Self, ActorType, message.GetMessageTypeName(),
                 message,
                 SenderOrNone(envelope)
@@ -61,7 +61,7 @@ public class ActorLoggingContext : ActorContextDecorator
             if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
             {
                 _logger.Log(logLevel,
-                    "Actor {Self} {ActorType} completed message {MessageType}:{Message} from {Sender}", Self, ActorType,
+                    "Actor {Self} {ActorType} completed message {MessageType}:{MessagePayload} from {Sender}", Self, ActorType,
                     message.GetMessageTypeName(),
                     message,
                     SenderOrNone(envelope)
@@ -73,7 +73,7 @@ public class ActorLoggingContext : ActorContextDecorator
             if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
             {
                 _logger.Log(_exceptionLogLevel, x,
-                    "Actor {Self} {ActorType} failed during message {MessageType}:{Message} from {Sender}", Self,
+                    "Actor {Self} {ActorType} failed during message {MessageType}:{MessagePayload} from {Sender}", Self,
                     ActorType,
                     message.GetMessageTypeName(), message,
                     SenderOrNone(envelope)
@@ -110,7 +110,7 @@ public class ActorLoggingContext : ActorContextDecorator
     {
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending RequestAsync {MessageType}:{Message} to {Target}",
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending RequestAsync {MessageType}:{MessagePayload} to {Target}",
                 Self, ActorType,
                 message.GetMessageTypeName(), message, target
             );
@@ -123,7 +123,7 @@ public class ActorLoggingContext : ActorContextDecorator
             if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
             {
                 _logger.Log(_logLevel,
-                    "Actor {Self} {ActorType} Got response {Response} to {MessageType}:{Message} from {Target}", Self,
+                    "Actor {Self} {ActorType} Got response {Response} to {MessageType}:{MessagePayload} from {Target}", Self,
                     ActorType,
                     response, message.GetMessageTypeName(), message, target
                 );
@@ -136,7 +136,7 @@ public class ActorLoggingContext : ActorContextDecorator
             if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
             {
                 _logger.Log(_exceptionLogLevel, x,
-                    "Actor {Self} {ActorType} Got exception waiting for RequestAsync response of {MessageType}:{Message} from {Target}",
+                    "Actor {Self} {ActorType} Got exception waiting for RequestAsync response of {MessageType}:{MessagePayload} from {Target}",
                     Self,
                     ActorType,
                     message.GetMessageTypeName(), message, target
@@ -195,7 +195,7 @@ public class ActorLoggingContext : ActorContextDecorator
 
         if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
         {
-            _logger.Log(logLevel, "Actor {Self} {ActorType} responded with {MessageType}:{Message} to {Sender}", Self,
+            _logger.Log(logLevel, "Actor {Self} {ActorType} responded with {MessageType}:{MessagePayload} to {Sender}", Self,
                 ActorType,
                 message.GetMessageTypeName(), message, Sender
             );
@@ -218,7 +218,7 @@ public class ActorLoggingContext : ActorContextDecorator
     {
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending Request {MessageType}:{Message} to {Target}",
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending Request {MessageType}:{MessagePayload} to {Target}",
                 Self, ActorType,
                 message.GetMessageTypeName(), message, target
             );
@@ -231,7 +231,7 @@ public class ActorLoggingContext : ActorContextDecorator
     {
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
-            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending {MessageType}:{Message} to {Target}", Self,
+            _logger.Log(_logLevel, "Actor {Self} {ActorType} Sending {MessageType}:{MessagePayload} to {Target}", Self,
                 ActorType,
                 message.GetMessageTypeName(), message, target
             );

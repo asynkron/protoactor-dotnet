@@ -50,7 +50,7 @@ public class EventStream : EventStream<object>
                     dl.Message is not IIgnoreDeadLetterLogging)
                 {
                     _logger.LogInformation(
-                        "[DeadLetter] could not deliver '{MessageType}:{Message}' to '{Target}' from '{Sender}'",
+                        "[DeadLetter] could not deliver '{MessageType}:{MessagePayload}' to '{Target}' from '{Sender}'",
                         dl.Message.GetMessageTypeName(),
                         dl.Message,
                         dl.Pid,

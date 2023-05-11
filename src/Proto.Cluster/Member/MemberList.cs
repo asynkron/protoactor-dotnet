@@ -361,7 +361,7 @@ public record MemberList
             catch (Exception x)
             {
                 x.CheckFailFast();
-                Logger.LogError(x, "[MemberList] Failed to broadcast {Message} to {Pid}", message, pid);
+                Logger.LogError(x, "[MemberList] Failed to broadcast {MessagePayload} to {Pid}", message, pid);
             }
         }
     }

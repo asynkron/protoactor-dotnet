@@ -174,7 +174,7 @@ public class GrpcNetRemote : IRemote
         catch (Exception ex)
         {
             _logger.LogError(
-                ex, "Proto.Actor server stopped on {Address} with error: {Message}",
+                ex, "Proto.Actor server stopped on {Address} with error: {MessagePayload}",
                 System.Address, ex.Message
             );
         }

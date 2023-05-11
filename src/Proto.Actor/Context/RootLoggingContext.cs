@@ -33,7 +33,7 @@ public class RootLoggingContext : RootContextDecorator
 
         if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
         {
-            _logger.Log(logLevel, "RootContext Sending {MessageType}:{Message} to {Target}", message.GetMessageTypeName(), message,
+            _logger.Log(logLevel, "RootContext Sending {MessageType}:{MessagePayload} to {Target}", message.GetMessageTypeName(), message,
                 target);
         }
 
@@ -59,7 +59,7 @@ public class RootLoggingContext : RootContextDecorator
 
         if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
         {
-            _logger.Log(logLevel, "Sending Request {MessageType}:{Message} to {Target}", message.GetMessageTypeName(),
+            _logger.Log(logLevel, "Sending Request {MessageType}:{MessagePayload} to {Target}", message.GetMessageTypeName(),
                 message, target);
         }
 
@@ -137,7 +137,7 @@ public class RootLoggingContext : RootContextDecorator
 
         if (logLevel != LogLevel.None && _logger.IsEnabled(logLevel))
         {
-            _logger.Log(logLevel, "RootContext Sending Request {MessageType}:{Message} to {Target}", message.GetMessageTypeName(),
+            _logger.Log(logLevel, "RootContext Sending Request {MessageType}:{MessagePayload} to {Target}", message.GetMessageTypeName(),
                 message, target);
         }
 
@@ -148,7 +148,7 @@ public class RootLoggingContext : RootContextDecorator
     {
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
-            _logger.Log(_logLevel, "RootContext Sending RequestAsync {MessageType}:{Message} to {Target}",
+            _logger.Log(_logLevel, "RootContext Sending RequestAsync {MessageType}:{MessagePayload} to {Target}",
                 message.GetMessageTypeName(), message, target
             );
         }
@@ -160,7 +160,7 @@ public class RootLoggingContext : RootContextDecorator
             if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
             {
                 _logger.Log(_logLevel,
-                    "RootContext Got response {Response} to {MessageType}:{Message} from {Target}",
+                    "RootContext Got response {Response} to {MessageType}:{MessagePayload} from {Target}",
                     response, message.GetMessageTypeName(), message, target
                 );
             }
@@ -172,7 +172,7 @@ public class RootLoggingContext : RootContextDecorator
             if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
             {
                 _logger.Log(_exceptionLogLevel, x,
-                    "RootContext Got exception waiting for RequestAsync response of {MessageType}:{Message} from {Target}",
+                    "RootContext Got exception waiting for RequestAsync response of {MessageType}:{MessagePayload} from {Target}",
                     message.GetMessageTypeName(), message, target
                 );
             }

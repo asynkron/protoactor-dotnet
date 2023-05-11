@@ -61,7 +61,7 @@ public class DeadlineContextDecorator : ActorContextDecorator
 
         if (!ok)
         {
-            _logger.LogWarning("Actor {Self} deadline {Deadline}, exceeded on message {Message}", _context.Self,
+            _logger.LogWarning("Actor {Self} deadline {Deadline}, exceeded on message {MessagePayload}", _context.Self,
                 _deadline, envelope.Message);
 
             // keep waiting, we cannot just ignore and continue as an async task might still be running and updating state of the actor
