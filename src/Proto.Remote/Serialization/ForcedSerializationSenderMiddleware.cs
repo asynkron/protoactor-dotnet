@@ -78,7 +78,7 @@ public static class ForcedSerializationSenderMiddleware
                 }
                 catch (CodedOutputStream.OutOfSpaceException oom)
                 {
-                    Logger.LogError(oom, "Message is too large for serialization {Message}", message?.GetType().Name);
+                    Logger.LogError(oom, "Message is too large for serialization {MessagePayload}", message?.GetType().Name);
 
                     throw;
                 }
@@ -86,7 +86,7 @@ public static class ForcedSerializationSenderMiddleware
                 {
                     ex.CheckFailFast();
 
-                    Logger.LogError(ex, "Forced serialization -> deserialization failed for message {Message}",
+                    Logger.LogError(ex, "Forced serialization -> deserialization failed for message {MessagePayload}",
                         message?.GetType().Name);
 
                     throw;

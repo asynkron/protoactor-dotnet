@@ -318,7 +318,7 @@ public sealed class ServerConnector
                             if (_connectorType == Type.ServerSide)
                             {
                                 _logger.LogWarning(
-                                    "[ServerConnector][{SystemAddress}] Received {Message} from {Addres}",
+                                    "[ServerConnector][{SystemAddress}] Received {MessagePayload} from {Addres}",
                                     _system.Address, currentMessage, _address);
                             }
                             else

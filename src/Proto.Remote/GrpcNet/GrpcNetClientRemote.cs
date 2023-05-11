@@ -69,7 +69,7 @@ public class GrpcNetClientRemote : IRemote
         catch (Exception ex)
         {
             _logger.LogError(
-                ex, "Proto.Actor client {Id} stopped with error: {Message}",
+                ex, "Proto.Actor client {Id} stopped with error: {MessagePayload}",
                 System.Id, ex.Message
             );
         }

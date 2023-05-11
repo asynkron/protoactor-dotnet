@@ -142,7 +142,7 @@ public sealed class RemoteMessageHandler
                             if (_logger.IsEnabled(LogLevel.Trace))
                             {
                                 _logger.LogTrace(
-                                    "[{SystemAddress}] Received message {MessageType} {Message} for {Target}",
+                                    "[{SystemAddress}] Received message {MessageType} {MessagePayload} for {Target}",
                                     _system.Address,
                                     msg.GetType().Name, msg, target
                                 );
@@ -159,7 +159,7 @@ public sealed class RemoteMessageHandler
                             if (_logger.IsEnabled(LogLevel.Trace))
                             {
                                 _logger.LogTrace(
-                                    "[{SystemAddress}] Received system message {MessageType} {Message} for {Target}",
+                                    "[{SystemAddress}] Received system message {MessageType} {MessagePayload} for {Target}",
                                     _system.Address,
                                     sys.GetType().Name, sys, target
                                 );
@@ -190,7 +190,7 @@ public sealed class RemoteMessageHandler
                             if (_logger.IsEnabled(LogLevel.Trace))
                             {
                                 _logger.LogTrace(
-                                    "[{SystemAddress}] Received user message {MessageType} {Message} for {Target} from {Sender}",
+                                    "[{SystemAddress}] Received user message {MessageType} {MessagePayload} for {Target} from {Sender}",
                                     _system.Address, message.GetMessageTypeName(), message, target, sender
                                 );
                             }

@@ -100,7 +100,7 @@ public abstract class Endpoint : IEndpoint
 
         if (_logger.IsEnabled(LogLevel.Trace))
         {
-            _logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {Message} to {Target} from {Sender}",
+            _logger.LogTrace("[{SystemAddress}] Sending message {MessageType} {MessagePayload} to {Target} from {Sender}",
                 System.Address,
                 message.GetMessageTypeName(), message, target, sender
             );
@@ -115,7 +115,7 @@ public abstract class Endpoint : IEndpoint
 
         if (CancellationToken.IsCancellationRequested || !_remoteDelivers.Writer.TryWrite(env))
         {
-            _logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {Message} to {Target} from {Sender}",
+            _logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {MessagePayload} to {Target} from {Sender}",
                 System.Address,
                 message.GetMessageTypeName(), message, target, sender
             );
@@ -249,7 +249,7 @@ public abstract class Endpoint : IEndpoint
                         message = RemoteConfig.Serialization.Deserialize(typeName, envelope.MessageData,
                             envelope.SerializerId);
 
-                        // _logger.LogDebug("Received (Type) {Message}", message.GetType(), message);
+                        // _logger.LogDebug("Received (Type) {MessagePayload}", message.GetType(), message);
 
                         //translate from on-the-wire representation to in-process representation
                         //this only applies to root level messages, and never on nested child messages
@@ -468,14 +468,14 @@ public abstract class Endpoint : IEndpoint
             catch (CodedOutputStream.OutOfSpaceException oom)
             {
                 System.Diagnostics.RegisterEvent("Remote", $"Message is too large {message.GetMessageTypeName()}");
-                _logger.LogError(oom, "Message is too large {Message}", message.GetMessageTypeName());
+                _logger.LogError(oom, "Message is too large {MessagePayload}", message.GetMessageTypeName());
 
                 throw;
             }
             catch (Exception x)
             {
                 System.Diagnostics.RegisterEvent("Remote", $"Missing serializer for {message.GetMessageTypeName()}");
-                _logger.LogError(x, "Serialization failed for message {Message}", message.GetMessageTypeName());
+                _logger.LogError(x, "Serialization failed for message {MessagePayload}", message.GetMessageTypeName());
 
                 throw;
             }
