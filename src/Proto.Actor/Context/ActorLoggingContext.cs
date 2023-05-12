@@ -135,12 +135,12 @@ public class ActorLoggingContext : ActorContextDecorator
         {
             if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
             {
-                _logger.Log(_exceptionLogLevel, x,
-                    "Actor {Self} {ActorType} Got exception waiting for RequestAsync response of {MessageType}:{MessagePayload} from {Target}",
-                    Self,
-                    ActorType,
-                    message.GetMessageTypeName(), message, target
-                );
+                // _logger.Log(_exceptionLogLevel, x,
+                //     "Actor {Self} {ActorType} Got exception waiting for RequestAsync response of {MessageType}:{MessagePayload} from {Target}",
+                //     Self,
+                //     ActorType,
+                //     message.GetMessageTypeName(), message, target
+                // );
             }
 
             throw;
