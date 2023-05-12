@@ -161,9 +161,9 @@ internal class PartitionIdentityActor : IActor
             }
         }
 
-        if (Logger.IsEnabled(LogLevel.Information))
+        if (Logger.IsEnabled(LogLevel.Debug))
         {
-            Logger.LogInformation(
+            Logger.LogDebug(
                 "[PartitionIdentity] Topology {TopologyHash} rebalance completed in {Elapsed}, received {@Stats}",
                 TopologyHash, _rebalanceTimer?.Elapsed, sink.CompletedHandovers);
         }
@@ -256,10 +256,13 @@ internal class PartitionIdentityActor : IActor
         _currentHandover = new HandoverSink(msg, TakeOverIdentities(context));
         _rebalanceTimer = Stopwatch.StartNew();
 
-        Logger.LogInformation(
-            "{SystemId} topology {CurrentTopology} Pausing activations while rebalance in progress, {SpawnCount} spawns waiting",
-            _cluster.System.Id, TopologyHash, _spawns.Count
-        );
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.LogDebug(
+                "{SystemId} topology {CurrentTopology} Pausing activations while rebalance in progress, {SpawnCount} spawns waiting",
+                _cluster.System.Id, TopologyHash, _spawns.Count
+            );
+        }
 
         if (_config.Mode == PartitionIdentityLookup.Mode.Push) // Good things comes to those who wait
         {
@@ -297,7 +300,7 @@ internal class PartitionIdentityActor : IActor
                 }
                 else
                 {
-                    Logger.LogError(
+                    Logger.LogWarning(
                         "[PartitionIdentity] {SystemId} Consensus not reached, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
                         _cluster.System.Id, TopologyHash, consensusResult.Result.topologyHash, timer.Elapsed
                     );
@@ -412,18 +415,18 @@ internal class PartitionIdentityActor : IActor
         ClusterTopology? deltaBaseline = null
     )
     {
-        if (Logger.IsEnabled(LogLevel.Information))
+        if (Logger.IsEnabled(LogLevel.Debug))
         {
             if (deltaBaseline is not null)
             {
-                Logger.LogInformation(
+                Logger.LogDebug(
                     "[PartitionIdentity] Pulling activations between topology {PrevTopology} and {CurrentTopology} from {@MemberAddresses}",
                     deltaBaseline.TopologyHash, msg.TopologyHash, memberAddresses
                 );
             }
             else
             {
-                Logger.LogInformation(
+                Logger.LogDebug(
                     "[PartitionIdentity] Pulling activations for topology {CurrentTopology} from {@MemberAddresses}",
                     msg.TopologyHash,
                     memberAddresses
