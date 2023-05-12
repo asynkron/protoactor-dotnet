@@ -152,43 +152,24 @@ public class GossipActor : IActor
             {
                 var delta = DateTime.UtcNow - start;
                 var self = context.Cluster().MemberList.Self;
+                
+                //if the target is no longer part of the cluster. don't log. the failure is expected.. issue #1992
+                if (!context.Cluster().MemberList.TryGetMember(targetMember.Id, out _))
+                {
+                    return;
+                }
+
                 try
                 {
                     await task.ConfigureAwait(false);
                     memberStateDelta.CommitOffsets();
                 }
-                catch (DeadLetterException)
-                {
-                    //if the target is no longer part of the cluster. don't log. the failure is expected.. issue #1992
-                    if (context.Cluster().MemberList.TryGetMember(targetMember.Id, out _))
-                    {
-                        //log member issue #1993
-                        Logger.LogWarning(
-                            "DeadLetter in GossipReenterAfterSend, elapsed {Delta}ms for target member {TargetMember} from {SelfMember}",
-                            delta.TotalMilliseconds, targetMember, self);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    //if the target is no longer part of the cluster. don't log. the failure is expected.. issue #1992
-                    if (context.Cluster().MemberList.TryGetMember(targetMember.Id, out _))
-                    {
-                        //log member issue #1993
-                        Logger.LogWarning(
-                            "OperationCancel in GossipReenterAfterSend, elapsed {Delta}ms for target member {TargetMember} from {SelfMember}",
-                            delta.TotalMilliseconds, targetMember, self);
-                    }
-                }
                 catch (TimeoutException)
                 {
-                    //if the target is no longer part of the cluster. don't log. the failure is expected.. issue #1992
-                    if (context.Cluster().MemberList.TryGetMember(targetMember.Id, out _))
-                    {
-                        //log member issue #1993
-                        Logger.LogWarning(
-                            "Timeout in GossipReenterAfterSend, elapsed {Delta}ms for target member {TargetMember} from {SelfMember}",
-                            delta.TotalMilliseconds, targetMember, self);
-                    }
+                    //log member issue #1993
+                    Logger.LogWarning(
+                        "Timeout in GossipReenterAfterSend, elapsed {Delta}ms for target member {TargetMember} from {SelfMember}",
+                        delta.TotalMilliseconds, targetMember, self);
                 }
                 catch (Exception x)
                 {
