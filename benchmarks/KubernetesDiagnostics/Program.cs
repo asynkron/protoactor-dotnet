@@ -16,7 +16,7 @@ var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(x => x.AddConsole());
 
-builder.Services.AddProtoCluster((sp, x) =>
+builder.Services.AddProtoCluster((_, x) =>
 {
     x.Port = 0;
     x.ConfigureRemote = r =>
@@ -44,8 +44,6 @@ app.MapGet("/", async (Cluster cluster) =>
 app.MapHealthChecks("/health");
 
 app.Run();
-
-
 
 public class DummyHostedService : IHostedService
 {
