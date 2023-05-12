@@ -96,11 +96,14 @@ internal class PartitionIdentityRebalanceWorker : IActor, IDisposable
 
         if (_remainingPartitions.Count == 0)
         {
-            Logger.LogInformation(
-                "[PartitionIdentity] Pulled activations from {MemberCount} partitions completed in {Elapsed}",
-                _request!.CurrentTopology.Members.Count,
-                _timer!.Elapsed
-            );
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug(
+                    "[PartitionIdentity] Pulled activations from {MemberCount} partitions completed in {Elapsed}",
+                    _request!.CurrentTopology.Members.Count,
+                    _timer!.Elapsed
+                );
+            }
 
             context.Self.Stop(context.System);
         }

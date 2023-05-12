@@ -314,9 +314,9 @@ public record MemberList
     {
         var endpointTerminated = new EndpointTerminatedEvent(true, memberThatLeft.Address, memberThatLeft.Id);
 
-        if (Logger.IsEnabled(LogLevel.Information))
+        if (Logger.IsEnabled(LogLevel.Debug))
         {
-            Logger.LogInformation("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
+            Logger.LogDebug("[MemberList] Published event {@EndpointTerminated}", endpointTerminated);
         }
 
         _cluster.System.EventStream.Publish(endpointTerminated);
