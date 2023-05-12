@@ -14,7 +14,11 @@ using Proto.Remote;
 var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddLogging(x => x.AddConsole());
+builder.Services.AddLogging(x => x.AddSimpleConsole(c =>
+{
+    c.SingleLine = true;
+}));
+
 
 builder.Services.AddProtoCluster((_, x) =>
 {
@@ -69,22 +73,28 @@ public class DummyHostedService : IHostedService
             }
         );
 
-
         var props = Props.FromFunc(ctx => Task.CompletedTask);
         _system.Root.SpawnNamed(props, "dummy");
 
-        var clusterIdentity = ClusterIdentity.Create("some-id", new ClusterKind("echo", Props.FromFunc(ctx => Task.CompletedTask)).Name);
+        _ = SafeTask.Run(RunLoop);
+    }
+
+    private async Task RunLoop()
+    {
+        var clusterIdentity =
+            ClusterIdentity.Create("some-id", new ClusterKind("echo", Props.FromFunc(ctx => Task.CompletedTask)).Name);
 
         while (_running)
         {
             var m = _system.Cluster().MemberList.GetAllMembers();
             var hash = Member.TopologyHash(m);
-            
+
             _logger.LogInformation($"{DateTime.Now:O} Hash {hash} Count {m.Length}");
 
             try
             {
-                var t = await _system.Cluster().RequestAsync<Touched>(clusterIdentity, new Touch(), CancellationTokens.FromSeconds(1));
+                var t = await _system.Cluster()
+                    .RequestAsync<Touched>(clusterIdentity, new Touch(), CancellationTokens.FromSeconds(1));
 
                 if (t != null)
                 {
@@ -97,7 +107,7 @@ public class DummyHostedService : IHostedService
             }
             catch (Exception e)
             {
-                _logger.LogError(e,"Could not call cluster actor");
+                _logger.LogError(e, "Could not call cluster actor");
             }
 
             foreach (var member in m)
@@ -125,7 +135,6 @@ public class DummyHostedService : IHostedService
 
             await Task.Delay(3000);
         }
-        
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
