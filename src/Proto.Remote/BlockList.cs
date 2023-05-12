@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote;
 
-public record MemberBlocked(string MemberId);
+public record MemberBlocked(string MemberId, string Reason);
 
 /// <summary>
 ///     <see cref="BlockList" /> contains all members that have been blocked from communication, e.g. due to
@@ -47,14 +47,13 @@ public class BlockList
           
             foreach (var member in newIds)
             {
-                Logger.LogInformation("Blocking member {MemberId} due to {Reason}", member, reason);
                 _blockedMembers = _blockedMembers.ContainsKey(member) switch
                 {
                     false => _blockedMembers.Add(member, DateTime.UtcNow),
                     _     => _blockedMembers.SetItem(member, DateTime.UtcNow)
                 };
 
-                _system.EventStream.Publish(new MemberBlocked(member));
+                _system.EventStream.Publish(new MemberBlocked(member, reason));
             }
         }
     }

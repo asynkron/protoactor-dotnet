@@ -97,6 +97,11 @@ public record MemberList
                 {
                     SelfBlocked();
                 }
+                
+                //only log if the member is known to us
+                if (TryGetMember(b.MemberId, out _)) {
+                    Logger.LogInformation("Blocking member {MemberId} due to {Reason}", b.MemberId, b.Reason);
+                }
 
                 UpdateClusterTopology(_activeMembers.Members);
             }, Dispatchers.DefaultDispatcher
