@@ -63,6 +63,7 @@ public static class ServiceCollectionExtensions
         self.AddHostedService(p =>
             new ProtoActorLifecycleHost(
                 p.GetRequiredService<ActorSystem>(),
+                p.GetRequiredService<ILogger<ProtoActorLifecycleHost>>(),
                 p.GetRequiredService<IHostApplicationLifetime>(),
                 boot.RunAsClient));
 
@@ -108,6 +109,7 @@ public static class ServiceCollectionExtensions
         self.AddHostedService(p =>
             new ProtoActorLifecycleHost(
                 p.GetRequiredService<ActorSystem>(),
+                p.GetRequiredService<ILogger<ProtoActorLifecycleHost>>(),
                 p.GetRequiredService<IHostApplicationLifetime>(),
                 runAsClient));
 
