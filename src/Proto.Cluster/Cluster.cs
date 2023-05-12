@@ -287,14 +287,17 @@ public class Cluster : IActorSystemExtension<Cluster>
 
         // Inform all members of the cluster that this node intends to leave. Also, let the MemberList know that this
         // node was the one that initiated the shutdown to prevent another shutdown from being called.
+        Logger.LogInformation("Setting GracefullyLeft gossip state for {Id}", System.Id);
         MemberList.Stopping = true;
         await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty()).ConfigureAwait(false);
 
-        // Deregister from configured cluster provider.
-        await Provider.ShutdownAsync(graceful).ConfigureAwait(false);
-
+        Logger.LogInformation("Waiting for two gossip intervals to pass for {Id}", System.Id);
         // In case provider shutdown is quick, let's wait at least 2 gossip intervals.
         await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2).ConfigureAwait(false);
+        
+        Logger.LogInformation("Stopping cluster provider for {Id}", System.Id);
+        // Deregister from configured cluster provider.
+        await Provider.ShutdownAsync(graceful).ConfigureAwait(false);
 
         if (_clusterKindObserver != null)
         {
