@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Kubernetes;
-using Proto.Cluster.Partition;
+using Proto.Cluster.PartitionActivator;
 using Proto.Remote;
 
 var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
@@ -28,10 +28,12 @@ builder.Services.AddProtoCluster((_, x) =>
 
     x.ConfigureCluster = c => c
         .WithClusterKind("echo", Props.FromFunc(ctx => Task.CompletedTask))
-        .WithClusterKind("empty", Props.FromFunc(ctx => Task.CompletedTask));
+        .WithClusterKind("empty", Props.FromFunc(ctx => Task.CompletedTask))
+        .WithExitOnShutdown()
+        .WithHeartbeatExpirationDisabled();
 
     x.ClusterProvider = new KubernetesProvider();
-    x.IdentityLookup = new PartitionIdentityLookup();
+    x.IdentityLookup = new PartitionActivatorLookup();
     
 });
 
@@ -77,6 +79,7 @@ public class DummyHostedService : IHostedService
         _system.Root.SpawnNamed(props, "dummy");
 
         _ = SafeTask.Run(RunLoop);
+        _ = SafeTask.Run(PrintMembersLoop);
     }
 
     private async Task RunLoop()
@@ -87,23 +90,13 @@ public class DummyHostedService : IHostedService
         while (_running)
         {
             var m = _system.Cluster().MemberList.GetAllMembers();
-            var hash = Member.TopologyHash(m);
-
-            _logger.LogInformation($"{DateTime.Now:O} Hash {hash} Count {m.Length}");
 
             try
             {
                 var t = await _system.Cluster()
                     .RequestAsync<Touched>(clusterIdentity, new Touch(), CancellationTokens.FromSeconds(1));
 
-                if (t != null)
-                {
-                    _logger.LogInformation($"called cluster actor {t.Who}");
-                }
-                else
-                {
-                    _logger.LogInformation($"call to cluster actor returned null");
-                }
+                _logger.LogInformation($"called cluster actor {t.Who}");
             }
             catch (Exception e)
             {
@@ -133,7 +126,21 @@ public class DummyHostedService : IHostedService
                 }
             }
 
-            await Task.Delay(3000);
+            await Task.Delay(5000);
+        }
+    }
+    
+    private async Task PrintMembersLoop()
+    {
+
+        while (_running)
+        {
+            var m = _system.Cluster().MemberList.GetAllMembers();
+            var hash = Member.TopologyHash(m);
+
+            _logger.LogInformation($"{DateTime.Now:O} Hash {hash} Count {m.Length}");
+
+            await Task.Delay(2000);
         }
     }
 
