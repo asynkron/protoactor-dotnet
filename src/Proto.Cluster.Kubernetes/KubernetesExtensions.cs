@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Json.Patch;
 using k8s;
 using k8s.Models;
@@ -57,9 +58,16 @@ internal static class KubernetesExtensions
     /// </summary>
     /// <param name="pod">Kubernetes Pod object</param>
     /// <returns></returns>
+    [CanBeNull]
     internal static MemberStatus GetMemberStatus(this V1Pod pod)
     {
-        var isRunning = pod.Status.Phase == "Running" && pod.Status.PodIP is not null;
+        var isRunning = pod.Status is { Phase: "Running", PodIP: not null };
+
+        if (pod.Status?.ContainerStatuses is null)
+            return null;
+        
+        if (pod.Metadata?.Labels is null)
+            return null;
 
         var kinds = pod
             .Metadata
