@@ -114,37 +114,44 @@ internal class Gossip
     //TODO: this does not need to use a callback, it can return a list of MemberStates
     public void SendState(SendStateAction sendStateToMember)
     {
-        var logger = _logger?.BeginMethodScope();
-
-        foreach (var member in _otherMembers)
+        try
         {
-            GossipStateManagement.EnsureMemberStateExists(_state, member.Id);
+            var logger = _logger?.BeginMethodScope();
+
+            foreach (var member in _otherMembers)
+            {
+                GossipStateManagement.EnsureMemberStateExists(_state, member.Id);
+            }
+
+            var randomMembers = _otherMembers.OrderByRandom(_rnd);
+
+            var fanoutCount = 0;
+
+            foreach (var member in randomMembers)
+            {
+                //TODO: we can chunk up sends here
+                //instead of sending less state, we can send all of it, but in chunks
+                var memberState = GetMemberStateDelta(member.Id);
+
+                if (!memberState.HasState)
+                {
+                    continue;
+                }
+
+                //fire and forget, we handle results in ReenterAfter
+                sendStateToMember(memberState, member, logger);
+
+                fanoutCount++;
+
+                if (fanoutCount == _gossipFanout)
+                {
+                    break;
+                }
+            }
         }
-
-        var randomMembers = _otherMembers.OrderByRandom(_rnd);
-
-        var fanoutCount = 0;
-
-        foreach (var member in randomMembers)
+        catch (Exception x)
         {
-            //TODO: we can chunk up sends here
-            //instead of sending less state, we can send all of it, but in chunks
-            var memberState = GetMemberStateDelta(member.Id);
-
-            if (!memberState.HasState)
-            {
-                continue;
-            }
-
-            //fire and forget, we handle results in ReenterAfter
-            sendStateToMember(memberState, member, logger);
-
-            fanoutCount++;
-
-            if (fanoutCount == _gossipFanout)
-            {
-                break;
-            }
+            Logger.LogError(x, "SendState failed");
         }
     }
 
