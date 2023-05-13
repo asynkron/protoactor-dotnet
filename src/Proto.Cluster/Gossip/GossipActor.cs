@@ -8,6 +8,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
+using Proto.Remote;
 
 namespace Proto.Cluster.Gossip;
 
@@ -87,12 +88,18 @@ public class GossipActor : IActor
     {
         var logger = context.Logger()?.BeginScope<GossipActor>();
         logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
+        
+        if (context.Remote().BlockList.BlockedMembers.Contains(gossipRequest.MemberId))
+        {
+            Logger.LogInformation("Blocked gossip request from {MemberId}", gossipRequest.MemberId);
+            return Task.CompletedTask;
+        }
 
         if (Logger.IsEnabled(LogLevel.Debug))
         {
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
         }
-
+        
         ReceiveState(context, gossipRequest.State);
 
         context.Respond(new GossipResponse());

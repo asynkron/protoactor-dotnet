@@ -83,7 +83,7 @@ public abstract record RemoteConfigBase
     public Serialization Serialization { get; init; } = new();
 
     /// <summary>
-    ///     After the remote connection is terminated, this is the time period the enpoint manager will monitor messages
+    ///     After the remote connection is terminated, this is the time period the endpoint manager will monitor messages
     ///     arriving to this connection
     ///     and generate deadletter events for them. Default value is 3 seconds.
     /// </summary>
