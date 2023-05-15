@@ -339,6 +339,12 @@ public record ClusterConfig
     public ClusterConfig WithHeartbeatExpiration(TimeSpan expiration) => this with { HeartbeatExpiration = expiration };
 
     /// <summary>
+    ///  Disables gossip heartbeat expiration.
+    /// </summary>
+    /// <returns></returns>
+    public ClusterConfig WithHeartbeatExpirationDisabled() => this with { HeartbeatExpiration = TimeSpan.Zero };
+
+    /// <summary>
     ///     Configuration for the PubSub extension.
     /// </summary>
     public ClusterConfig WithPubSubConfig(PubSubConfig config) => this with { PubSubConfig = config };

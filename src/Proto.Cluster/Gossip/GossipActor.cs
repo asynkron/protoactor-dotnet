@@ -7,7 +7,9 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Extensions;
 using Proto.Logging;
+using Proto.Remote;
 
 namespace Proto.Cluster.Gossip;
 
@@ -32,19 +34,31 @@ public class GossipActor : IActor
             () => system.Cluster().MemberList.GetMembers());
     }
 
-    public Task ReceiveAsync(IContext context) =>
-        context.Message switch
+    public async Task ReceiveAsync(IContext context)
+    {
+        try
         {
-            SetGossipStateKey setState => OnSetGossipStateKey(context, setState),
-            GetGossipStateRequest getState => OnGetGossipStateKey(context, getState),
-            GetGossipStateEntryRequest getState => OnGetGossipStateEntryKey(context, getState),
-            GetGossipStateSnapshot => OnGetGossipStateSnapshot(context),
-            GossipRequest gossipRequest => OnGossipRequest(context, gossipRequest),
-            SendGossipStateRequest => OnSendGossipState(context),
-            AddConsensusCheck request => OnAddConsensusCheck(context, request),
-            ClusterTopology clusterTopology => OnClusterTopology(clusterTopology),
-            _ => Task.CompletedTask
-        };
+         //   Logger.LogInformation("GossipActor Received {MessageType}", context.Message.GetMessageTypeName());
+            var t = context.Message switch
+            {
+                SetGossipStateKey setState => OnSetGossipStateKey(context, setState),
+                GetGossipStateRequest getState => OnGetGossipStateKey(context, getState),
+                GetGossipStateEntryRequest getState => OnGetGossipStateEntryKey(context, getState),
+                GetGossipStateSnapshot => OnGetGossipStateSnapshot(context),
+                GossipRequest gossipRequest => OnGossipRequest(context, gossipRequest),
+                SendGossipStateRequest => OnSendGossipState(context),
+                AddConsensusCheck request => OnAddConsensusCheck(context, request),
+                ClusterTopology clusterTopology => OnClusterTopology(clusterTopology),
+                _ => Task.CompletedTask
+            };
+            await t;
+         //   Logger.LogInformation("GossipActor Done {MessageType}", context.Message.GetMessageTypeName());
+        }
+        catch (Exception x)
+        {
+            Logger.LogError(x, "GossipActor Failed {MessageType}", context.Message.GetMessageTypeName());
+        }
+    }
 
     private Task OnGetGossipStateEntryKey(IContext context, GetGossipStateEntryRequest getState)
     {
@@ -87,12 +101,18 @@ public class GossipActor : IActor
     {
         var logger = context.Logger()?.BeginScope<GossipActor>();
         logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
+        
+        if (context.Remote().BlockList.BlockedMembers.Contains(gossipRequest.MemberId))
+        {
+            Logger.LogInformation("Blocked gossip request from {MemberId}", gossipRequest.MemberId);
+            return Task.CompletedTask;
+        }
 
         if (Logger.IsEnabled(LogLevel.Debug))
         {
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
         }
-
+        
         ReceiveState(context, gossipRequest.State);
 
         context.Respond(new GossipResponse());

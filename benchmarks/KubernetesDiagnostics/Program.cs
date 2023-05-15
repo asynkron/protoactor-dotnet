@@ -1,126 +1,106 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Gossip;
 using Proto.Cluster.Kubernetes;
-using Proto.Cluster.Partition;
+using Proto.Cluster.PartitionActivator;
 using Proto.Remote;
-using Proto.Remote.GrpcNet;
 
-namespace KubernetesDiagnostics;
+var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
-public static class Program
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddLogging(x => x.AddSimpleConsole(c =>
 {
-    public static async Task Main()
+    c.SingleLine = true;
+}));
+
+
+builder.Services.AddProtoCluster((_, x) =>
+{
+    x.Port = 0;
+    x.ConfigureRemote = r =>
+        r.WithAdvertisedHost(advertisedHost);
+
+    x.ConfigureCluster = c => c
+        .WithClusterKind("echo", Props.FromFunc(ctx => Task.CompletedTask))
+        .WithClusterKind("empty", Props.FromFunc(ctx => Task.CompletedTask))
+        .WithExitOnShutdown()
+        .WithHeartbeatExpirationDisabled();
+
+    x.ClusterProvider = new KubernetesProvider();
+    x.IdentityLookup = new PartitionActivatorLookup();
+    
+});
+
+builder.Services.AddHealthChecks().AddCheck<ClusterHealthCheck>("proto", null, new[] { "ready", "live" });
+builder.Services.AddHostedService<DummyHostedService>();
+
+var app = builder.Build();
+
+app.MapGet("/", async (Cluster cluster) =>
+{
+
+});
+
+app.MapHealthChecks("/health");
+
+app.Run();
+
+public class DummyHostedService : IHostedService
+{
+    private readonly ActorSystem _system;
+    private readonly ILogger<DummyHostedService> _logger;
+    private bool _running;
+
+    public DummyHostedService(ActorSystem system, ILogger<DummyHostedService> logger)
     {
-        ThreadPool.SetMinThreads(100, 100);
-        Console.WriteLine("Starting...");
+        _system = system;
+        _logger = logger;
+    }
 
-        /*
-         *  docker build . -t rogeralsing/kubdiagg   
-         *  kubectl apply --filename service.yaml    
-         *  kubectl get pods -l app=kubdiag
-         *  kubectl logs -l app=kubdiag --all-containers
-         * 
-         */
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Starting DummyHostedService");
+        _running = true;
 
-        var l = LoggerFactory.Create(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
-        Log.SetLoggerFactory(l);
-        var log = Log.CreateLogger("main");
-
-        var identity = new PartitionIdentityLookup(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2)
-        ); 
-
-        /*
-        - name: "REDIS"
-          value: "redis"
-        - name: PROTOPORT
-          value: "8080"
-        - name: PROTOHOST
-          value: "0.0.0.0"
-        - name: "PROTOHOSTPUBLIC"
-         */
-
-        var port = int.Parse(Environment.GetEnvironmentVariable("PROTOPORT") ?? "0");
-        var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? "127.0.0.1";
-        var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
-
-        log.LogInformation("Host {host}", host);
-        log.LogInformation("Port {port}", port);
-        log.LogInformation("Advertised Host {advertisedHost}", advertisedHost);
-
-        var clusterProvider = GetProvider();
-
-        var noOpsProps = Props.FromFunc(ctx => Task.CompletedTask);
-        var echoKind = new ClusterKind("echo", noOpsProps);
-        var system = new ActorSystem(new ActorSystemConfig())
-            .WithRemote(GrpcNetRemoteConfig
-                .BindTo(host, port)
-                .WithAdvertisedHost(advertisedHost)
-                .WithEndpointWriterMaxRetries(2)
-            )
-            .WithCluster(ClusterConfig
-                .Setup("mycluster", clusterProvider, identity)
-                .WithClusterKind("empty", Props.Empty)
-                .WithClusterKind(echoKind)
-            );
-
-      //  system.EventStream.Subscribe<GossipUpdate>(e => { Console.WriteLine($"{DateTime.Now:O} Gossip update Member {e.MemberId} Key {e.Key}"); });
-
-        system.EventStream.Subscribe<ClusterTopology>(e => {
+        _system.EventStream.Subscribe<ClusterTopology>(e => {
 
                 var hash = e.TopologyHash;
-
-                Console.WriteLine($"{DateTime.Now:O} My members {hash}");
+                _logger.LogInformation($"{DateTime.Now:O} My members {hash}");
             }
         );
 
-        var cts = new CancellationTokenSource();
-
-        Console.CancelKeyPress += (_, _) => { cts.Cancel(); };
-
-        await system
-            .Cluster()
-            .StartMemberAsync();
-        
-        system.Shutdown.Register(() =>
-        {
-            Console.WriteLine("Shutting down...");
-            Environment.Exit(0);
-        });
-
         var props = Props.FromFunc(ctx => Task.CompletedTask);
-        system.Root.SpawnNamed(props, "dummy");
+        _system.Root.SpawnNamed(props, "dummy");
 
-        var clusterIdentity = ClusterIdentity.Create("some-id", echoKind.Name);
+        _ = SafeTask.Run(RunLoop);
+        _ = SafeTask.Run(PrintMembersLoop);
+    }
 
-        while (!cts.IsCancellationRequested)
+    private async Task RunLoop()
+    {
+        var clusterIdentity =
+            ClusterIdentity.Create("some-id", new ClusterKind("echo", Props.FromFunc(ctx => Task.CompletedTask)).Name);
+
+        while (_running)
         {
-            var m = system.Cluster().MemberList.GetAllMembers();
-            var hash = Member.TopologyHash(m);
-
-            Console.WriteLine($"{DateTime.Now:O} Hash {hash} Count {m.Length}");
+            var m = _system.Cluster().MemberList.GetAllMembers();
 
             try
             {
-                var t = await system.Cluster().RequestAsync<Touched>(clusterIdentity, new Touch(), CancellationTokens.FromSeconds(1));
+                var t = await _system.Cluster()
+                    .RequestAsync<Touched>(clusterIdentity, new Touch(), CancellationTokens.FromSeconds(1));
 
-                if (t != null)
-                {
-                    Console.WriteLine($"called cluster actor {t.Who}");
-                }
-                else
-                {
-                    Console.WriteLine($"call to cluster actor returned null");
-                }
+                _logger.LogInformation($"called cluster actor {t.Who}");
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Could not call cluster actor: {e}");
+                _logger.LogError(e, "Could not call cluster actor");
             }
 
             foreach (var member in m)
@@ -129,30 +109,44 @@ public static class Program
 
                 try
                 {
-                    var t = await system.Root.RequestAsync<Touched>(pid, new Touch(), CancellationTokens.FromSeconds(1));
+                    var t = await _system.Root.RequestAsync<Touched>(pid, new Touch(), CancellationTokens.FromSeconds(1));
 
                     if (t != null)
                     {
-                        Console.WriteLine($"called dummy actor {pid}");
+                        _logger.LogInformation("called dummy actor {PID}", pid);
                     }
                     else
                     {
-                        Console.WriteLine($"call to dummy actor timed out {pid}");
+                        _logger.LogInformation("call to dummy actor timed out {PID}", pid);
                     }
                 }
                 catch
                 {
-                    Console.WriteLine($"Could not call dummy actor {pid}");
+                    _logger.LogInformation("Could not call dummy actor {PID}", pid);
                 }
             }
 
-            await Task.Delay(3000);
+            await Task.Delay(5000);
         }
-        
-        await system
-            .Cluster()
-            .ShutdownAsync();
+    }
+    
+    private async Task PrintMembersLoop()
+    {
+
+        while (_running)
+        {
+            var m = _system.Cluster().MemberList.GetAllMembers();
+            var hash = Member.TopologyHash(m);
+
+            _logger.LogInformation($"{DateTime.Now:O} Hash {hash} Count {m.Length}");
+
+            await Task.Delay(2000);
+        }
     }
 
-    private static IClusterProvider GetProvider() => new KubernetesProvider();
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        _running = false;
+        return Task.CompletedTask;
+    }
 }

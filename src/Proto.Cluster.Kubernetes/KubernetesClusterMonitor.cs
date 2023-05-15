@@ -303,6 +303,7 @@ internal class KubernetesClusterMonitor : IActor
         
         var memberStatuses = _clusterPods.Values
             .Select(x => x.GetMemberStatus())
+            .Where(x => x is not null)
             .Where(x => x.IsRunning && (x.IsReady || x.Member.Id == _cluster.System.Id))
             .Select(x => x.Member)
             .ToList();
