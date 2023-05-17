@@ -52,6 +52,6 @@ public class GossipMemberStrategy : IMemberStrategy
     public Member? GetActivator(string senderAddress)
     {
         var leastActorsMember = GetLeastActorsMember();
-        return _members.TryGetValue(leastActorsMember, out var m) ? m : _rr.GetMember();
+        return leastActorsMember != null && _members.TryGetValue(leastActorsMember, out var m) ? m : _rr.GetMember();
     }
 }
