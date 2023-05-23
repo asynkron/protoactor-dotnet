@@ -280,9 +280,9 @@ public record MemberList
                 }
                 
                 var index = _nextMemberIndex++;
-                _metaMembers = _metaMembers.Add(newMember.Id, new MetaMember(newMember, index));
-                _membersByIndex = _membersByIndex.Add(index, newMember);
-                _indexByAddress = _indexByAddress.Add(newMember.Address, index);
+                _metaMembers = _metaMembers.SetItem(newMember.Id, new MetaMember(newMember, index));
+                _membersByIndex = _membersByIndex.SetItem(index, newMember);
+                _indexByAddress = _indexByAddress.SetItem(newMember.Address, index);
     
                 foreach (var kind in newMember.Kinds)
                 {
