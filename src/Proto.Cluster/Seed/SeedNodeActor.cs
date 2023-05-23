@@ -185,7 +185,7 @@ public class SeedNodeActor : IActor
     }
 
     private Task OnTopologyUpdate(IContext context, GossipUpdate update)
-    {
+    {    
         var topology = update.Value.Unpack<ClusterTopology>();
         _latestTopology = topology;
 

@@ -271,19 +271,32 @@ public record MemberList
 
         void MemberJoin(Member newMember)
         {
-            var index = _nextMemberIndex++;
-            _metaMembers = _metaMembers.Add(newMember.Id, new MetaMember(newMember, index));
-            _membersByIndex = _membersByIndex.Add(index, newMember);
-            _indexByAddress = _indexByAddress.Add(newMember.Address, index);
-
-            foreach (var kind in newMember.Kinds)
+            try
             {
-                if (!_memberStrategyByKind.ContainsKey(kind))
+                if (_metaMembers.ContainsKey(newMember.Id))
                 {
-                    _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, GetMemberStrategyByKind(kind));
+                    Logger.LogError("Member {Member} already exists in MemberList", newMember);
+                    return;
                 }
-
-                _memberStrategyByKind[kind].AddMember(newMember);
+                
+                var index = _nextMemberIndex++;
+                _metaMembers = _metaMembers.Add(newMember.Id, new MetaMember(newMember, index));
+                _membersByIndex = _membersByIndex.Add(index, newMember);
+                _indexByAddress = _indexByAddress.Add(newMember.Address, index);
+    
+                foreach (var kind in newMember.Kinds)
+                {
+                    if (!_memberStrategyByKind.ContainsKey(kind))
+                    {
+                        _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, GetMemberStrategyByKind(kind));
+                    }
+    
+                    _memberStrategyByKind[kind].AddMember(newMember);
+                }
+            }
+            catch(Exception x)
+            {
+                Logger.LogError(x, "Error during MemberJoin {Member}", newMember);
             }
         }
     }
