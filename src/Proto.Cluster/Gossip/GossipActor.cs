@@ -191,6 +191,12 @@ public class GossipActor : IActor
                         "Timeout in GossipReenterAfterSend, elapsed {Delta}ms for target member {TargetMember} from {SelfMember}",
                         delta.TotalMilliseconds, targetMember, self);
                 }
+                catch (DeadLetterException x)
+                {
+                    Logger.LogDebug(x,
+                        "DeadLetter in GossipReenterAfterSend, elapsed {Delta}ms for target member {TargetMember} from {SelfMember}",
+                        delta.TotalMilliseconds, targetMember, self);
+                }
                 catch (Exception x)
                 {
                     //if the target is no longer part of the cluster. don't log. the failure is expected.. issue #1992
