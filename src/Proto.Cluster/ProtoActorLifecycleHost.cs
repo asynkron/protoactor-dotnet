@@ -51,7 +51,7 @@ public class ProtoActorLifecycleHost : IHostedService
         }
         else
         {
-            _logger.LogInformation("[ProtoActorLifecycleHost]{SystemId} Starting Proto.Actor cluster client", _actorSystem.Id);
+            _logger.LogInformation("[ProtoActorLifecycleHost]{SystemId} Starting Proto.Actor cluster member", _actorSystem.Id);
             await _actorSystem.Cluster().StartMemberAsync().ConfigureAwait(false);
         }
     }
