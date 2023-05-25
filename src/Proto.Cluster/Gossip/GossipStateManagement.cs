@@ -38,7 +38,25 @@ internal static class GossipStateManagement
             return memberState;
         }
 
-        memberState = new GossipState.Types.GossipMemberState();
+        //ensure the member state exists
+        memberState = new GossipState.Types.GossipMemberState
+        {
+            Values =
+            {
+                {
+                    //make sure we have a heartbeat entry
+                    GossipKeys.Heartbeat, new GossipKeyValue
+                    {
+                        Value = Any.Pack(new MemberHeartbeat
+                        {
+                            ActorStatistics = new ActorStatistics()
+                        }),
+                        LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                    }
+                }
+            }
+        };
+
         state.Members.Add(memberId, memberState);
 
         return memberState;
