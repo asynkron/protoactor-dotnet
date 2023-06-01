@@ -11,8 +11,4 @@
       <ProjectReference Include="..\Messages\Messages.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Reference Include="StackExchange.Redis" />
-    </ItemGroup>
-
 </Project>
