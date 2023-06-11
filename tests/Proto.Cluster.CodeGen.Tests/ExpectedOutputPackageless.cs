@@ -364,7 +364,7 @@ namespace Acme.OtherSystem.Foo
         public static global::Proto.Cluster.ClusterKind GetClusterKind(Func<global::Proto.IContext, global::Proto.Cluster.ClusterIdentity, TestGrainBase> innerFactory)
             => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new TestGrainActor(innerFactory)));
 
-        public static global::Proto.Cluster.ClusterKind GetClusterKind<T>(global::System.IServiceProvider serviceProvider) where T : TestGrainBase
-            => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new TestGrainActor((ctx, id) => global::Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id))));
+        public static global::Proto.Cluster.ClusterKind GetClusterKind<T>(global::System.IServiceProvider serviceProvider, params object[] parameters) where T : TestGrainBase
+            => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new TestGrainActor((ctx, id) => global::Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id, parameters))));
     }
 }
