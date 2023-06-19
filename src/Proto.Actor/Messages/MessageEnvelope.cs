@@ -72,6 +72,16 @@ public record MessageEnvelope : IDiagnosticsTypeName
     public MessageEnvelope WithSender(PID sender) => this with { Sender = sender };
 
     /// <summary>
+    ///     Adds a sender <see cref="PID" /> if the message is an envelope, otherwise creates a new envelope with the given sender.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="sender"></param>
+    /// <returns>New envelope</returns>
+    public static MessageEnvelope WithSender(object message, PID sender) => message is MessageEnvelope env
+        ? env.WithSender(sender)
+        : new MessageEnvelope(message, sender);
+
+    /// <summary>
     ///     Adds the wrapped message to the message envelope.
     /// </summary>
     /// <param name="message"></param>

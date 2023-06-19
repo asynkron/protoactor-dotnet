@@ -151,6 +151,85 @@ public class MessageHeaderTests
         response.Should().Be("bar");
     }
 
+    [Fact]
+    public async Task Request_honors_message_envelopes()
+    {
+        await using var system = new ActorSystem();
+
+        var echo = Props.FromFunc(ctx =>
+            {
+                if (ctx.Sender is not null)
+                {
+                    if (ctx.Headers.Count == 1)
+                    {
+                        ctx.Respond(ctx.Headers["foo"]);
+                    }
+                    else
+                    {
+                        ctx.Respond("Invalid headers in request");
+                    }
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+
+        var pid = system.Root.Spawn(echo);
+
+        var wrongPid = PID.FromAddress("some-incorrect-address", "some-id");
+
+        using var future = system.Future.Get();
+
+        system.Root.Request(pid,
+            new MessageEnvelope(1, wrongPid, MessageHeader.Empty.With("foo", "bar")),
+            future.Pid
+        );
+
+        var response = await future.Task;
+
+        response.Should().Be("bar");
+    }
+    
+    [Fact]
+    public async Task Actor_Request_honors_message_envelopes()
+    {
+        await using var system = new ActorSystem();
+
+        var echo = Props.FromFunc(ctx =>
+            {
+                if (ctx.Sender is not null)
+                {
+                    if (ctx.Headers.Count == 1)
+                    {
+                        ctx.Request(ctx.Sender, MessageEnvelope.Wrap(ctx.Message!, ctx.Headers));
+                    }
+                    else
+                    {
+                        ctx.Respond("Invalid headers in request");
+                    }
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+
+        var pid = system.Root.Spawn(echo);
+
+        var wrongPid = PID.FromAddress("some-incorrect-address", "some-id");
+
+        using var future = system.Future.Get();
+
+        system.Root.Request(pid,
+            new MessageEnvelope(1, wrongPid, MessageHeader.Empty.With("foo", "bar")),
+            future.Pid
+        );
+
+        var response = await future.Task;
+
+        response.Should().BeOfType<MessageEnvelope>()
+            .Which.Header["foo"].Should().Be("bar");
+    }
+
     public record SomeRequest;
 
     public record SomeResponse;
