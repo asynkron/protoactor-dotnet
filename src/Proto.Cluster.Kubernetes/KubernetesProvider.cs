@@ -48,9 +48,8 @@ public class KubernetesProvider : IClusterProvider
             var res = await client.ListNamespacedPodWithHttpMessagesAsync(
                 KubernetesExtensions.GetKubeNamespace(),
                 labelSelector: selector,
-                watch: false,
-                timeoutSeconds: _config.WatchTimeoutSeconds
-            ).ConfigureAwait(false);
+                timeoutSeconds: _config.WatchTimeoutSeconds,
+                watch: false).ConfigureAwait(false);
 
             var pods = new DiagnosticsEntry("KubernetesProvider", "Pods", res.Body);
 

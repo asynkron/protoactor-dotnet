@@ -7,7 +7,7 @@
 
     <ItemGroup>
         <PackageReference Include="JsonPatch.Net" Version="1.1.2" />
-        <PackageReference Include="KubernetesClient" Version="7.1.3-g341580fb9b" />
+        <PackageReference Include="KubernetesClient" Version="7.2.19" />
     </ItemGroup>
 
     <ItemGroup>

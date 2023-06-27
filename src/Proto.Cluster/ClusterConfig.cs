@@ -42,7 +42,7 @@ public record ClusterConfig
         GossipRequestTimeout = TimeSpan.FromMilliseconds(1500);
         GossipFanout = 3;
         GossipMaxSend = 50;
-        HeartbeatExpiration = TimeSpan.FromSeconds(20);
+        HeartbeatExpiration = TimeSpan.Zero;
         ClusterRequestDeDuplicationWindow = TimeSpan.FromSeconds(30);
         IdentityLookup = identityLookup;
         MemberStrategyBuilder = (_, _) => new SimpleMemberStrategy();
