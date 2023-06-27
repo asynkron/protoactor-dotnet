@@ -42,10 +42,7 @@ builder.Services.AddHostedService<DummyHostedService>();
 
 var app = builder.Build();
 
-app.MapGet("/", async (Cluster cluster) =>
-{
-
-});
+app.MapGet("/", (Cluster cluster) => Task.CompletedTask);
 
 app.MapHealthChecks("/health");
 
