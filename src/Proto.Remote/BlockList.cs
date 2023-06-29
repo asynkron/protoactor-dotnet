@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote;
 
@@ -22,7 +21,6 @@ public class BlockList
 {
     private readonly object _lock = new();
     private readonly ActorSystem _system;
-    private static readonly ILogger Logger = Log.CreateLogger<BlockList>();
 
     private ImmutableDictionary<string, DateTime> _blockedMembers = ImmutableDictionary<string, DateTime>.Empty;
 
