@@ -27,6 +27,11 @@ public sealed record Props
     public ProducerWithSystemAndContext Producer { get; init; } = NullProducer;
 
     /// <summary>
+    ///   Time to wait for the actor to start before logging warning message.
+    /// </summary>
+    public TimeSpan StartDeadline { get; init; } = TimeSpan.FromMilliseconds(100);
+
+    /// <summary>
     ///     Delegate used to create the mailbox.
     /// </summary>
     public MailboxProducer MailboxProducer { get; init; } = () => UnboundedMailbox.Create();
@@ -146,6 +151,8 @@ public sealed record Props
     ///     Delegate used to create the actor.
     /// </summary>
     public Props WithProducer(Producer producer) => this with { Producer = (_, _) => producer() };
+    
+    public Props PropsWithStartDeadline(TimeSpan deadline) => this with { StartDeadline = deadline };
 
     /// <summary>
     ///     Delegate used to create the actor.

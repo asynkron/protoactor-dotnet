@@ -17,6 +17,7 @@ using Proto.Extensions;
 using Proto.Future;
 using Proto.Mailbox;
 using Proto.Metrics;
+using Proto.Utils;
 
 namespace Proto.Context;
 
@@ -30,6 +31,12 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     private ActorContextExtras? _extras;
     private object? _messageOrEnvelope;
     private ContextState _state;
+    
+    private ShouldThrottle shouldThrottleStartLogs = Throttle.Create(1000,TimeSpan.FromSeconds(1), droppedLogs =>
+    {
+        Logger.LogInformation("[ActorContext] Throttled {LogCount} logs", droppedLogs);
+    } );
+    
 
     public ActorContext(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)
     {
@@ -383,7 +390,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         {
             return msg switch
             {
-                Started s                       => InvokeUserMessageAsync(s),
+                Started s                       => HandleStartedAsync(),
                 Stop _                          => HandleStopAsync(),
                 Terminated t                    => HandleTerminatedAsync(t),
                 Watch w                         => HandleWatch(w),
@@ -402,6 +409,32 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             Logger.ErrorHandlingSystemMessage(x, msg);
 
             throw;
+        }
+    }
+
+    private ValueTask HandleStartedAsync()
+    {
+        if (_props.StartDeadline != TimeSpan.Zero)
+        {
+            return Await();
+        }
+
+        return InvokeUserMessageAsync(Started.Instance);
+        
+        async ValueTask Await()
+        {
+            var sw = Stopwatch.StartNew();
+            await InvokeUserMessageAsync(Started.Instance);
+            sw.Stop();
+            if (sw.Elapsed > _props.StartDeadline)
+            {
+                if (shouldThrottleStartLogs().IsOpen())
+                {
+                    Logger.LogCritical(
+                        "Actor {Self} took too long to start, deadline is {Deadline}, actual start time is {ActualStart}, your system might suffer from incorrect design, please consider reaching out to https://proto.actor/docs/training/ for help",
+                        Self, _props.StartDeadline, sw.Elapsed);
+                }
+            }
         }
     }
 
