@@ -1,12 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Amazon.DynamoDBv2;
+using Couchbase;
 using Marten;
 using Microsoft.Data.Sqlite;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
+using MongoDB.Driver;
+using Proto.Persistence.Couchbase;
+using Proto.Persistence.DynamoDB;
 using Proto.Persistence.Marten;
+using Proto.Persistence.MongoDB;
+using Proto.Persistence.RavenDB;
 using Proto.Persistence.Sqlite;
+using Proto.Persistence.SqlServer;
 using Proto.TestFixtures;
+using Raven.Client.ServerWide;
+using Raven.Client.ServerWide.Operations;
+using Testcontainers.CouchDb;
+using Testcontainers.DynamoDb;
+using Testcontainers.MongoDb;
+using Testcontainers.MsSql;
 using Testcontainers.PostgreSql;
+using Testcontainers.RavenDb;
 using Xunit;
 
 namespace Proto.Persistence.Tests;
@@ -22,24 +40,73 @@ public class ExamplePersistentActorTests: IAsyncLifetime
         .WithPassword("root")
         .WithCommand(new[] { "-c", "log_statement=all" })
         .Build();
-  
 
+    readonly MsSqlContainer _msSqlContainer = new MsSqlBuilder()
+        .Build();
+    readonly CouchDbContainer _couchDbContainer = new CouchDbBuilder()
+        .Build();
+    readonly DynamoDbContainer _dynamoDbContainer = new DynamoDbBuilder()
+        .Build();
+    readonly MongoDbContainer _mongoDbContainer = new MongoDbBuilder()
+        .Build();
+
+    readonly RavenDbContainer _ravenDbContainer = new RavenDbBuilder()
+        .Build();
     private IProvider GetProvider(TestProvider providerType)
     {
-        
-        return providerType switch
+        switch (providerType)
         {
-            TestProvider.InMemory => new InMemoryProvider(),
-            TestProvider.Marten => new MartenProvider(DocumentStore.For(_dbContainer.GetConnectionString())),
-            TestProvider.Sqlite => new SqliteProvider(new SqliteConnectionStringBuilder($"Data Source=file:{Guid.NewGuid()}?mode=memory")),
-            _ => throw new ArgumentOutOfRangeException(nameof(providerType), providerType, null)
-        };
+            case TestProvider.InMemory:
+                return new InMemoryProvider();
+            case TestProvider.Marten:
+                return new MartenProvider(DocumentStore.For(_dbContainer.GetConnectionString()));
+            case TestProvider.Sqlite:
+                return new SqliteProvider(
+                    new SqliteConnectionStringBuilder($"Data Source=file:{Guid.NewGuid()}?mode=memory"));
+            case TestProvider.SqlServer:
+                return new SqlServerProvider(_msSqlContainer.GetConnectionString(), true);
+            case TestProvider.RavenDb:
+                var documentStore = new Raven.Client.Documents.DocumentStore()
+                {
+                    Urls = new[] { _ravenDbContainer.GetConnectionString() },
+                    Database = "IntegrationTest"
+                };
+                documentStore.Initialize();
+                documentStore.Maintenance.Server.Send(new CreateDatabaseOperation(new DatabaseRecord("IntegrationTest")));
+             
+                return new RavenDBProvider(documentStore);
+            case TestProvider.DynamoDb:
+                return new DynamoDBProvider(
+                    new AmazonDynamoDBClient(new AmazonDynamoDBConfig()
+                    {
+                        ServiceURL = _dynamoDbContainer.GetConnectionString()
+                    }), new DynamoDBProviderOptions("Events", "Snapshots"));
+            case TestProvider.MongoDb:
+                try
+                {
+                    ObjectSerializer objectSerializer = new ObjectSerializer(type => 
+                        ObjectSerializer.DefaultAllowedTypes(type) || type.FullName.StartsWith("Proto.Persistence.Tests"));
+        
+                    BsonSerializer.RegisterSerializer(objectSerializer);
+                }
+                catch (BsonSerializationException e)
+                {
+                }
+                return new MongoDBProvider(new MongoClient(_mongoDbContainer.GetConnectionString())
+                    .GetDatabase("Test"));
+            default:
+                // TestProvider.Couchbase => new CouchbaseProvider(new CouchbaseBucket(_couchDbContainer.)),
+                throw new ArgumentOutOfRangeException(nameof(providerType), providerType, null);
+        }
     }
     
     [Theory]
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
    
     public async Task EventsAreSavedToPersistence(TestProvider testProvider)
     {
@@ -62,6 +129,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task SnapshotsAreSavedToPersistence(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -72,13 +142,17 @@ public class ExamplePersistentActorTests: IAsyncLifetime
         context.Send(pid, new RequestSnapshot());
         var (snapshot, _) = await providerState.GetSnapshotAsync(actorId);
         var snapshotState = snapshot as State;
-        Assert.Equal(10, snapshotState.Value);
+        Assert.NotNull(snapshotState?.Value);
+        Assert.Equal(10, snapshotState?.Value);
     }
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task EventsCanBeDeleted(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -97,6 +171,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task SnapshotsCanBeDeleted(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -112,7 +189,11 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task GivenEventsOnly_StateIsRestoredFromEvents(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -127,7 +208,11 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task GivenASnapshotOnly_StateIsRestoredFromTheSnapshot(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -143,6 +228,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     
     public async Task GivenEventsThenASnapshot_StateShouldBeRestoredFromTheSnapshot(TestProvider  testProvider)
     {
@@ -162,6 +250,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task GivenASnapshotAndSubsequentEvents_StateShouldBeRestoredFromSnapshotAndSubsequentEvents( TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -182,6 +273,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task GivenMultipleSnapshots_StateIsRestoredFromMostRecentSnapshot(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -202,6 +296,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task GivenMultipleSnapshots_DeleteSnapshotObeysIndex(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -224,6 +321,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task GivenASnapshotAndEvents_WhenSnapshotDeleted_StateShouldBeRestoredFromEvents(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -246,6 +346,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task Index_IncrementsOnEventsSaved(TestProvider  testProvider)
     {
         await using var system = new ActorSystem();
@@ -265,6 +368,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task Index_IsIncrementedByTakingASnapshot(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -283,6 +389,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task Index_IsCorrectAfterRecovery(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -303,7 +412,11 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task GivenEvents_CanReplayFromStartIndexToEndIndex(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -326,6 +439,9 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+    [InlineData(TestProvider.SqlServer)]
+    [InlineData(TestProvider.RavenDb)]
+    [InlineData(TestProvider.MongoDb)]
     public async Task CanUseSeparateStores(TestProvider  testProvider)
     {
         await using var system = new ActorSystem();
@@ -375,14 +491,23 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     public async Task InitializeAsync()
     {
         await  _dbContainer.StartAsync();
+        await  _msSqlContainer.StartAsync();
+        await  _mongoDbContainer.StartAsync();
+        await  _dynamoDbContainer.StartAsync();
+        await  _ravenDbContainer.StartAsync();
        
     }
 
     public async Task DisposeAsync()
     {
-        await _dbContainer.StopAsync();
+        await  _dbContainer.StopAsync();
+        await  _msSqlContainer.StopAsync();
+        await  _mongoDbContainer.StopAsync();
+        await  _dynamoDbContainer.StopAsync();
+        await  _ravenDbContainer.StopAsync();
     }
 }
+
 
 internal class State
 {
@@ -398,6 +523,7 @@ public enum TestProvider
     RavenDb=5,
     Sqlite=6,
     SqlServer=7,
+    DynamoDb
 }
 internal class GetState
 {
