@@ -4,9 +4,13 @@
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Testcontainers" Version="3.2.0" />
+        <PackageReference Include="Testcontainers.PostgreSql" Version="3.2.0" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\src\Proto.Persistence.Marten\Proto.Persistence.Marten.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Persistence.Sqlite\Proto.Persistence.Sqlite.csproj" />
         <ProjectReference Include="..\..\src\Proto.Persistence\Proto.Persistence.csproj" />
         <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
     </ItemGroup>
