@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten;
+using Microsoft.Data.Sqlite;
 using Proto.Persistence.Marten;
+using Proto.Persistence.Sqlite;
 using Proto.TestFixtures;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -14,26 +16,31 @@ namespace Proto.Persistence.Tests;
 public class ExamplePersistentActorTests: IAsyncLifetime
 {
     private const int InitialState = 1;
-    private readonly PostgreSqlContainer DbContainer = new PostgreSqlBuilder()
+    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithDatabase("IntegrationTests")
         .WithUsername("postgres")
         .WithPassword("root")
         .WithCommand(new[] { "-c", "log_statement=all" })
         .Build();
+  
 
     private IProvider GetProvider(TestProvider providerType)
     {
+        
         return providerType switch
         {
             TestProvider.InMemory => new InMemoryProvider(),
-            TestProvider.Marten => new MartenProvider(DocumentStore.For(DbContainer.GetConnectionString())),
+            TestProvider.Marten => new MartenProvider(DocumentStore.For(_dbContainer.GetConnectionString())),
+            TestProvider.Sqlite => new SqliteProvider(new SqliteConnectionStringBuilder($"Data Source=file:{Guid.NewGuid()}?mode=memory")),
             _ => throw new ArgumentOutOfRangeException(nameof(providerType), providerType, null)
         };
     }
     
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
+   
     public async Task EventsAreSavedToPersistence(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -53,6 +60,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task SnapshotsAreSavedToPersistence(TestProvider testProvider)
     {
@@ -69,6 +77,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task EventsCanBeDeleted(TestProvider testProvider)
     {
@@ -86,6 +95,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task SnapshotsCanBeDeleted(TestProvider testProvider)
     {
@@ -131,6 +141,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     
     public async Task GivenEventsThenASnapshot_StateShouldBeRestoredFromTheSnapshot(TestProvider  testProvider)
@@ -149,6 +160,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task GivenASnapshotAndSubsequentEvents_StateShouldBeRestoredFromSnapshotAndSubsequentEvents( TestProvider testProvider)
     {
@@ -168,6 +180,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task GivenMultipleSnapshots_StateIsRestoredFromMostRecentSnapshot(TestProvider testProvider)
     {
@@ -187,6 +200,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task GivenMultipleSnapshots_DeleteSnapshotObeysIndex(TestProvider testProvider)
     {
@@ -208,6 +222,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task GivenASnapshotAndEvents_WhenSnapshotDeleted_StateShouldBeRestoredFromEvents(TestProvider testProvider)
     {
@@ -229,6 +244,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task Index_IncrementsOnEventsSaved(TestProvider  testProvider)
     {
@@ -247,6 +263,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task Index_IsIncrementedByTakingASnapshot(TestProvider testProvider)
     {
@@ -264,6 +281,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task Index_IsCorrectAfterRecovery(TestProvider testProvider)
     {
@@ -306,6 +324,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
 
     [Theory]
     [InlineData(TestProvider.InMemory)]
+    [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     public async Task CanUseSeparateStores(TestProvider  testProvider)
     {
@@ -355,12 +374,13 @@ public class ExamplePersistentActorTests: IAsyncLifetime
    
     public async Task InitializeAsync()
     {
-        await  DbContainer.StartAsync();
+        await  _dbContainer.StartAsync();
+       
     }
 
     public async Task DisposeAsync()
     {
-        await DbContainer.StopAsync();
+        await _dbContainer.StopAsync();
     }
 }
 
