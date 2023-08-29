@@ -16,7 +16,7 @@ public class MartenProvider : IProvider
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
-        var session = _store.OpenSession();
+        var session = _store.IdentitySession();
         await using var _ = session.ConfigureAwait(false);
 
         var events = await session.Query<Event>()
@@ -35,7 +35,7 @@ public class MartenProvider : IProvider
 
     public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
     {
-        var session = _store.OpenSession();
+        var session = _store.IdentitySession();
         await using var _ = session.ConfigureAwait(false);
 
         var snapshot = await session.Query<Snapshot>()
@@ -48,7 +48,7 @@ public class MartenProvider : IProvider
 
     public async Task<long> PersistEventAsync(string actorName, long index, object @event)
     {
-        using var session = _store.OpenSession();
+        var session = _store.IdentitySession();
 
         session.Store(new Event(actorName, index, @event));
 
@@ -59,7 +59,7 @@ public class MartenProvider : IProvider
 
     public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
     {
-        using var session = _store.OpenSession();
+        var session = _store.IdentitySession();
 
         session.Store(new Snapshot(actorName, index, snapshot));
 
@@ -68,7 +68,7 @@ public class MartenProvider : IProvider
 
     public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
     {
-        using var session = _store.OpenSession();
+        var session = _store.IdentitySession();
 
         session.DeleteWhere<Event>(x =>
             x.ActorName == actorName &&
@@ -80,7 +80,7 @@ public class MartenProvider : IProvider
 
     public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
     {
-        using var session = _store.OpenSession();
+        var session = _store.IdentitySession();
 
         session.DeleteWhere<Snapshot>(x =>
             x.ActorName == actorName &&
