@@ -4,9 +4,23 @@
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Testcontainers" Version="3.3.0" />
+        <PackageReference Include="Testcontainers.PostgreSql" Version="3.3.0" />
+        <PackageReference Include="Testcontainers.CouchDb" Version="3.3.0" />
+        <PackageReference Include="Testcontainers.MsSql" Version="3.3.0" />
+        <PackageReference Include="Testcontainers.DynamoDb" Version="3.3.0" />
+        <PackageReference Include="Testcontainers.RavenDb" Version="3.3.0" />
+        <PackageReference Include="Testcontainers.MongoDb" Version="3.3.0" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\src\Proto.Persistence.Couchbase\Proto.Persistence.Couchbase.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Persistence.DynamoDB\Proto.Persistence.DynamoDB.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Persistence.Marten\Proto.Persistence.Marten.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Persistence.MongoDB\Proto.Persistence.MongoDB.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Persistence.RavenDB\Proto.Persistence.RavenDB.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Persistence.Sqlite\Proto.Persistence.Sqlite.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Persistence.SqlServer\Proto.Persistence.SqlServer.csproj" />
         <ProjectReference Include="..\..\src\Proto.Persistence\Proto.Persistence.csproj" />
         <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
     </ItemGroup>
