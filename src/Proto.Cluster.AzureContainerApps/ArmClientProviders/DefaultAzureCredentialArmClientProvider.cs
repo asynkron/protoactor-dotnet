@@ -3,8 +3,9 @@ using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.ResourceManager;
 using JetBrains.Annotations;
+using Proto.Cluster.AzureContainerApps.Contracts;
 
-namespace Proto.Cluster.AzureContainerApps;
+namespace Proto.Cluster.AzureContainerApps.ArmClientProviders;
 
 /// <summary>
 /// Provides an <see cref="ArmClient"/> instance using <see cref="Azure.Identity.DefaultAzureCredential"/>
