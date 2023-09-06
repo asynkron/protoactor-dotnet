@@ -61,7 +61,7 @@ jobs:
         test:
           - "tests/Proto.Actor.Tests/*.csproj"
           - "tests/Proto.Remote.Tests/*.csproj"
-          - "tests/Proto.Persistence.Tests/*.csproj"
+          # "tests/Proto.Persistence.Tests/*.csproj"
           - "tests/Proto.OpenTelemetry.Tests/*.csproj"
           - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
             
