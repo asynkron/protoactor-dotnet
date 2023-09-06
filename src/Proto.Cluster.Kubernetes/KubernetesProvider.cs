@@ -45,7 +45,7 @@ public class KubernetesProvider : IClusterProvider
         {
             var selector = $"{LabelCluster}={_clusterName}";
             using var client = _config.ClientFactory();
-            var res = await client.ListNamespacedPodWithHttpMessagesAsync(
+            var res = await client.CoreV1.ListNamespacedPodWithHttpMessagesAsync(
                 KubernetesExtensions.GetKubeNamespace(),
                 labelSelector: selector,
                 timeoutSeconds: _config.WatchTimeoutSeconds,
@@ -139,7 +139,7 @@ public class KubernetesProvider : IClusterProvider
         Logger.LogInformation("[Cluster][KubernetesProvider] Registering service {PodName} on {PodIp}", _podName,
             _address);
 
-        var pod = await kubernetes.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace()).ConfigureAwait(false);
+        var pod = await kubernetes.CoreV1.ReadNamespacedPodAsync(_podName, KubernetesExtensions.GetKubeNamespace()).ConfigureAwait(false);
 
         if (pod is null)
         {
@@ -230,7 +230,7 @@ public class KubernetesProvider : IClusterProvider
 
         var kubeNamespace = KubernetesExtensions.GetKubeNamespace();
 
-        var pod = await kubernetes.ReadNamespacedPodAsync(_podName, kubeNamespace).ConfigureAwait(false);
+        var pod = await kubernetes.CoreV1.ReadNamespacedPodAsync(_podName, kubeNamespace).ConfigureAwait(false);
 
         var labels = pod.Metadata.Labels
             .Where(label => !label.Key.StartsWith(ProtoClusterPrefix, StringComparison.Ordinal))

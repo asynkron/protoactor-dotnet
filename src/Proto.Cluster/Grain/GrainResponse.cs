@@ -14,9 +14,11 @@ namespace Proto.Cluster;
 /// </summary>
 public partial class GrainResponse : IRootSerialized
 {
+    //deserialize into the in-process message type that the grain actors understands
     public IRootSerializable Deserialize(ActorSystem system)
     {
-        if (MessageData.IsEmpty)
+        //special case for null messages
+        if (MessageData.IsEmpty && string.IsNullOrEmpty(MessageTypeName))
         {
             return new GrainResponseMessage(null);
         }
