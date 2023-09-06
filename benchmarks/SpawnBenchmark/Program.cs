@@ -72,7 +72,7 @@ class MyActor : IActor
         }
     }
 
-    public static readonly Props Props = Props.FromProducer(s => new MyActor(s)).WithMailbox(() => new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new LockingUnboundedMailboxQueue(4)));
+    public static readonly Props Props = Props.FromProducer(s => new MyActor(s)).WithMailbox(() => new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new LockingUnboundedMailboxQueue(4))).WithStartDeadline(TimeSpan.Zero);
     
 }
 

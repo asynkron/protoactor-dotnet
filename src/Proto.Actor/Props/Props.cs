@@ -152,7 +152,7 @@ public sealed record Props
     /// </summary>
     public Props WithProducer(Producer producer) => this with { Producer = (_, _) => producer() };
     
-    public Props PropsWithStartDeadline(TimeSpan deadline) => this with { StartDeadline = deadline };
+    public Props WithStartDeadline(TimeSpan deadline) => this with { StartDeadline = deadline };
 
     /// <summary>
     ///     Delegate used to create the actor.
