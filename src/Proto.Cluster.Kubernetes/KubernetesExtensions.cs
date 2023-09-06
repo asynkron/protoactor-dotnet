@@ -49,7 +49,7 @@ internal static class KubernetesExtensions
         var expected = JsonSerializer.SerializeToDocument(pod);
         var patch = old.CreatePatch(expected);
 
-        return kubernetes.PatchNamespacedPodAsync(new V1Patch(patch, V1Patch.PatchType.JsonPatch), podName,
+        return kubernetes.CoreV1.PatchNamespacedPodAsync(new V1Patch(patch, V1Patch.PatchType.JsonPatch), podName,
             podNamespace);
     }
 

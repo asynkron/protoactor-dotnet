@@ -202,7 +202,7 @@ internal class KubernetesClusterMonitor : IActor
         Logger.Log(_config.DebugLogLevel, "[Cluster][KubernetesProvider] Starting to watch pods with {Selector}",
             selector);
 
-        return _kubernetes.ListNamespacedPodWithHttpMessagesAsync(
+        return _kubernetes.CoreV1.ListNamespacedPodWithHttpMessagesAsync(
             KubernetesExtensions.GetKubeNamespace(),
             labelSelector: selector,
             watch: watch,
