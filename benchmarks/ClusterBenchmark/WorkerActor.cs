@@ -30,7 +30,7 @@ public class WorkerActor : IActor
 
         // if (_rnd.Next(0, 1000) == 0)
         // {
-        //     
+        //
         //
         //     ctx.Stop(ctx.Self);
         // }

@@ -8,14 +8,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 try
 {
-    builder.Host.UseSerilog((_, lcfg) =>
-        lcfg
-            .ReadFrom.Configuration(builder.Configuration)
-            .WriteTo.Console()
-            .WriteTo.Seq(builder.Configuration["SeqUrl"]!)
-            .Enrich.WithProperty("Service", Assembly.GetExecutingAssembly().GetName().Name)
+    builder.Host.UseSerilog(
+        (_, lcfg) =>
+            lcfg.ReadFrom
+                .Configuration(builder.Configuration)
+                .WriteTo.Console()
+                .WriteTo.Seq(builder.Configuration["SeqUrl"]!)
+                .Enrich.WithProperty("Service", Assembly.GetExecutingAssembly().GetName().Name)
     );
-    
+
     Console.WriteLine("Starting server");
     builder.AddProtoActorSUT();
     var app = builder.Build();

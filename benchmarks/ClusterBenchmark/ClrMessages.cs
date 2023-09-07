@@ -6,4 +6,5 @@
 namespace ClusterExperiment1;
 
 public record HelloRequestPoco();
+
 public record HelloResponsePoco();

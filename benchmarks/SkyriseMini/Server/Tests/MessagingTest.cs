@@ -21,8 +21,11 @@ public class MessagingTest
     {
         try
         {
-            _logger.LogInformation("Starting messaging test with parallelism = {Parallelism}, duration = {Duration}s", parallelism,
-                durationInSeconds);
+            _logger.LogInformation(
+                "Starting messaging test with parallelism = {Parallelism}, duration = {Duration}s",
+                parallelism,
+                durationInSeconds
+            );
 
             var actorIds = PrepareActorIds(parallelism);
 
@@ -35,8 +38,12 @@ public class MessagingTest
 
             var (totalMessages, testDuration) = await TestWorker(handles, cts.Token);
 
-            _logger.LogInformation("Messaging test completed, total messages = {TotalMessages}, duration = {TestDuration}, Throughput = {Throughput:F2} msg/s",
-                totalMessages, testDuration, totalMessages / testDuration.TotalSeconds);
+            _logger.LogInformation(
+                "Messaging test completed, total messages = {TotalMessages}, duration = {TestDuration}, Throughput = {Throughput:F2} msg/s",
+                totalMessages,
+                testDuration,
+                totalMessages / testDuration.TotalSeconds
+            );
         }
         catch (Exception e)
         {
@@ -54,7 +61,10 @@ public class MessagingTest
         return tasks.Select(t => t.Result).ToArray();
     }
 
-    async Task<(long TotalMessages, TimeSpan TestDuration)> TestWorker(object[] handles, CancellationToken cancel)
+    async Task<(long TotalMessages, TimeSpan TestDuration)> TestWorker(
+        object[] handles,
+        CancellationToken cancel
+    )
     {
         var totalMessages = 0L;
         var overallStopwatch = new Stopwatch();
@@ -62,15 +72,17 @@ public class MessagingTest
 
         var tasks = handles.Select(async handle =>
         {
-            var messageStopwatch = new Stopwatch(); 
+            var messageStopwatch = new Stopwatch();
             while (!cancel.IsCancellationRequested)
             {
                 try
                 {
                     messageStopwatch.Restart();
                     await _ping(handle, Guid.NewGuid().ToString("N"));
-                
-                    TestMetrics.MessageLatency.Record(messageStopwatch.ElapsedTicks / (double)Stopwatch.Frequency);
+
+                    TestMetrics.MessageLatency.Record(
+                        messageStopwatch.ElapsedTicks / (double)Stopwatch.Frequency
+                    );
                     TestMetrics.MessageCount.Add(1);
                     Interlocked.Increment(ref totalMessages);
                 }

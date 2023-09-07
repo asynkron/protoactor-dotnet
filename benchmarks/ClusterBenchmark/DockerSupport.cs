@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ClusterExperiment1;
 
-public static  class DockerSupport
+public static class DockerSupport
 {
     public static async Task Run(Task done)
     {

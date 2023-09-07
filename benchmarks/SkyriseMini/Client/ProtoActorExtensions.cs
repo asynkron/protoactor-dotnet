@@ -18,18 +18,23 @@ namespace SkyriseMini;
 
 public static class ProtoActorExtensions
 {
-    public static WebApplicationBuilder AddProtoActorTestServicesRaw(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddProtoActorTestServicesRaw(
+        this WebApplicationBuilder builder
+    )
     {
         builder.Services.AddSingleton<ProtoActorTestServicesRaw>();
-        builder.Services.AddSingleton<Ping>(provider => provider.GetRequiredService<ProtoActorTestServicesRaw>().Ping);
-        builder.Services.AddSingleton<Activate>(provider => provider.GetRequiredService<ProtoActorTestServicesRaw>().Activate);
+        builder.Services.AddSingleton<Ping>(
+            provider => provider.GetRequiredService<ProtoActorTestServicesRaw>().Ping
+        );
+        builder.Services.AddSingleton<Activate>(
+            provider => provider.GetRequiredService<ProtoActorTestServicesRaw>().Activate
+        );
 
         return builder;
     }
 
     public static WebApplicationBuilder AddProtoActorClient(this WebApplicationBuilder builder)
     {
-        
         builder.Services.AddSingleton(provider =>
         {
             var config = builder.Configuration.GetSection("ProtoActor");
@@ -43,7 +48,8 @@ public static class ProtoActorExtensions
 
             var system = new ActorSystem(actorSystemConfig);
 
-            var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost()
+            var remoteConfig = GrpcNetRemoteConfig
+                .BindToLocalhost()
                 .WithProtoMessages(ProtoActorSut.Contracts.ProtosReflection.Descriptor)
                 // .WithChannelOptions(new GrpcChannelOptions
                 //     {
@@ -57,8 +63,11 @@ public static class ProtoActorExtensions
 
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
 
-            var clusterConfig = ClusterConfig
-                .Setup(config["ClusterName"]!, clusterProvider, new PartitionIdentityLookup());
+            var clusterConfig = ClusterConfig.Setup(
+                config["ClusterName"]!,
+                clusterProvider,
+                new PartitionIdentityLookup()
+            );
 
             system
                 .WithServiceProvider(provider)
@@ -68,7 +77,7 @@ public static class ProtoActorExtensions
 
             return system;
         });
-        
+
         builder.Services.AddHostedService<ActorSystemHostedService>();
 
         return builder;

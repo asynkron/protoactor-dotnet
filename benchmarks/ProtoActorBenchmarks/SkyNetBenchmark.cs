@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Proto;
+
 // ReSharper disable MethodHasAsyncOverload
 
 namespace ProtoActorBenchmarks;
@@ -42,11 +43,10 @@ public class SkyNetBenchmark
     public Task SkyNetRequestAsync()
     {
         var pid = _context.Spawn(SkyNetRequestResponseActor.Props(_actorSystem));
-        return _context.RequestAsync<long>(pid, new Request
-            {
-                Num = 0,
-                Size = 1000000,
-            }, CancellationToken.None
+        return _context.RequestAsync<long>(
+            pid,
+            new Request { Num = 0, Size = 1000000, },
+            CancellationToken.None
         );
     }
 
@@ -54,11 +54,10 @@ public class SkyNetBenchmark
     public Task SkyNetMessaging()
     {
         var pid = _context.Spawn(SkynetActor.Props(_actorSystem));
-        return _context.RequestAsync<long>(pid, new Request
-            {
-                Num = 0,
-                Size = 1000000,
-            }, CancellationToken.None
+        return _context.RequestAsync<long>(
+            pid,
+            new Request { Num = 0, Size = 1000000, },
+            CancellationToken.None
         );
     }
 
@@ -85,11 +84,9 @@ public class SkyNetBenchmark
                 for (var i = 0; i < 10; i++)
                 {
                     var pid = _system.Root.Spawn(Props(_system));
-                    tasks[i] = context.RequestAsync<long>(pid, new Request
-                        {
-                            Size = each,
-                            Num = calc.Num + i * each
-                        }
+                    tasks[i] = context.RequestAsync<long>(
+                        pid,
+                        new Request { Size = each, Num = calc.Num + i * each }
                     );
                 }
 
@@ -108,7 +105,8 @@ public class SkyNetBenchmark
 
         private static SkyNetRequestResponseActor ProduceActor(ActorSystem system) => new(system);
 
-        public static Props Props(ActorSystem system) => Proto.Props.FromProducer(() => ProduceActor(system));
+        public static Props Props(ActorSystem system) =>
+            Proto.Props.FromProducer(() => ProduceActor(system));
     }
 
     class SkynetActor : IActor
@@ -126,28 +124,28 @@ public class SkyNetBenchmark
 
             switch (msg)
             {
-                case Request {Size: 1} r:
+                case Request { Size: 1 } r:
                     context.Respond(r.Num);
                     context.Stop(context.Self);
                     return Task.CompletedTask;
-                case Request r: {
+                case Request r:
+                {
                     _replies = 10;
                     _replyTo = context.Sender;
 
                     for (var i = 0; i < 10; i++)
                     {
                         var child = _system.Root.Spawn(Props(_system));
-                        context.Request(child, new Request
-                            {
-                                Num = r.Num + i * (r.Size / 10),
-                                Size = r.Size / 10,
-                            }
+                        context.Request(
+                            child,
+                            new Request { Num = r.Num + i * (r.Size / 10), Size = r.Size / 10, }
                         );
                     }
 
                     return Task.CompletedTask;
                 }
-                case long res: {
+                case long res:
+                {
                     _sum += res;
                     _replies--;
 
@@ -166,7 +164,8 @@ public class SkyNetBenchmark
 
         private static SkynetActor ProduceActor(ActorSystem system) => new(system);
 
-        public static Props Props(ActorSystem system) => Proto.Props.FromProducer(() => ProduceActor(system));
+        public static Props Props(ActorSystem system) =>
+            Proto.Props.FromProducer(() => ProduceActor(system));
     }
 
     class Request

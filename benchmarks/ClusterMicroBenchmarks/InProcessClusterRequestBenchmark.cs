@@ -36,11 +36,12 @@ public class InProcessClusterRequestBenchmark
     [GlobalSetup]
     public async Task Setup()
     {
-        var echoProps = Props.FromFunc(ctx => {
-                if (ctx.Sender is not null) ctx.Respond(ctx.Message!);
-                return Task.CompletedTask;
-            }
-        );
+        var echoProps = Props.FromFunc(ctx =>
+        {
+            if (ctx.Sender is not null)
+                ctx.Respond(ctx.Message!);
+            return Task.CompletedTask;
+        });
 
         if (RequestDeduplication)
         {
@@ -54,11 +55,7 @@ public class InProcessClusterRequestBenchmark
             echoKind.WithLocalAffinityRelocationStrategy();
         }
 
-        var sys = new ActorSystem(new ActorSystemConfig
-                {
-                    SharedFutures = SharedFutures
-                }
-            )
+        var sys = new ActorSystem(new ActorSystemConfig { SharedFutures = SharedFutures })
             .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))
             .WithCluster(ClusterConfig().WithClusterKind(echoKind));
 
@@ -71,20 +68,25 @@ public class InProcessClusterRequestBenchmark
         await _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None);
     }
 
-    private static ClusterConfig ClusterConfig() => Proto.Cluster.ClusterConfig.Setup("testcluster",
-        new TestProvider(new TestProviderOptions(), new InMemAgent()),
-        new PartitionIdentityLookup()
-    );
+    private static ClusterConfig ClusterConfig() =>
+        Proto.Cluster.ClusterConfig.Setup(
+            "testcluster",
+            new TestProvider(new TestProviderOptions(), new InMemAgent()),
+            new PartitionIdentityLookup()
+        );
 
     [GlobalCleanup]
     public Task Cleanup() => _cluster.ShutdownAsync();
 
     [Benchmark]
-    public Task RequestAsync() => _cluster.System.Root.RequestAsync<object>(pid, 1, CancellationToken.None);
+    public Task RequestAsync() =>
+        _cluster.System.Root.RequestAsync<object>(pid, 1, CancellationToken.None);
 
     [Benchmark]
-    public Task ClusterRequestAsync() => _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None);
+    public Task ClusterRequestAsync() =>
+        _cluster.RequestAsync<int>(_id.Identity, _id.Kind, 1, CancellationToken.None);
 
     [Benchmark]
-    public Task ClusterIdentityRequestAsync() => _cluster.RequestAsync<int>(_id, 1, CancellationToken.None);
+    public Task ClusterIdentityRequestAsync() =>
+        _cluster.RequestAsync<int>(_id, 1, CancellationToken.None);
 }

@@ -32,7 +32,7 @@ public static class Program
     {
         ThreadPool.SetMinThreads(0, 0);
 
-        foreach (var batchSize in new[] {100, 150, 200, 250, 300})
+        foreach (var batchSize in new[] { 100, 150, 200, 250, 300 })
         {
             Configuration.ResetAgent();
             ResetCounters();
@@ -41,7 +41,8 @@ public static class Program
 
             var elapsed = await RunWorkers(
                 () => new RunMemberInProcGraceful(),
-                () => RunBatchClient(batchSize, cluster));
+                () => RunBatchClient(batchSize, cluster)
+            );
             var tps = _requestCount / elapsed.TotalMilliseconds * 1000;
             Console.WriteLine();
             Console.WriteLine($"Batch Size:\t{batchSize}");
@@ -62,7 +63,12 @@ public static class Program
         _successCount = 0;
     }
 
-    private static async Task SendRequest(Cluster cluster, ClusterIdentity id, CancellationToken cancellationToken, ISenderContext? context = null)
+    private static async Task SendRequest(
+        Cluster cluster,
+        ClusterIdentity id,
+        CancellationToken cancellationToken,
+        ISenderContext? context = null
+    )
     {
         Interlocked.Increment(ref _requestCount);
 
@@ -90,7 +96,7 @@ public static class Program
             }
             catch (TimeoutException)
             {
-                // ignored                
+                // ignored
             }
 
             OnError();
@@ -102,7 +108,8 @@ public static class Program
 
         void OnError()
         {
-            if (cluster.System.Shutdown.IsCancellationRequested) return;
+            if (cluster.System.Shutdown.IsCancellationRequested)
+                return;
 
             Interlocked.Increment(ref _failureCount);
 
@@ -124,16 +131,16 @@ public static class Program
 
         var logger = Log.CreateLogger(nameof(Program));
 
-        _ = SafeTask.Run(async () => {
-                var rnd = new Random();
-                var semaphore = new AsyncSemaphore(5);
+        _ = SafeTask.Run(async () =>
+        {
+            var rnd = new Random();
+            var semaphore = new AsyncSemaphore(5);
 
-                while (!cluster.System.Shutdown.IsCancellationRequested)
-                {
-                    await semaphore.WaitAsync(() => RunBatch(rnd, cluster));
-                }
+            while (!cluster.System.Shutdown.IsCancellationRequested)
+            {
+                await semaphore.WaitAsync(() => RunBatch(rnd, cluster));
             }
-        );
+        });
 
         async Task RunBatch(Random? rnd, Cluster cluster)
         {
@@ -164,7 +171,10 @@ public static class Program
         return Task.CompletedTask;
     }
 
-    private static async Task<TimeSpan> RunWorkers(Func<IRunMember> memberFactory, Func<Task> startClient)
+    private static async Task<TimeSpan> RunWorkers(
+        Func<IRunMember> memberFactory,
+        Func<Task> startClient
+    )
     {
         var followers = new List<IRunMember>();
 

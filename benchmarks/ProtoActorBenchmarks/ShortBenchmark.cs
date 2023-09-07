@@ -24,7 +24,8 @@ public class ShortBenchmark
     {
         _context = new RootContext(new ActorSystem());
 
-        _echoProps = Props.FromProducer(() => new EchoActor2())
+        _echoProps = Props
+            .FromProducer(() => new EchoActor2())
             .WithMailbox(() => BoundedMailbox.Create(2048));
         _echoActor = _context.Spawn(_echoProps);
         _timeout = TimeSpan.FromSeconds(5);

@@ -22,12 +22,12 @@ public class Program
         const int batchSize = 100;
 
         Console.WriteLine("ClientCount\t\tDispatcher\t\tElapsed\t\tMsg/sec");
-        var tps = new[] {50, 100, 200, 400, 800};
-        int[] clientCounts = {4, 8, 16, 32};
+        var tps = new[] { 50, 100, 200, 400, 800 };
+        int[] clientCounts = { 4, 8, 16, 32 };
 
         foreach (var t in tps)
         {
-            var d = new ThreadPoolDispatcher {Throughput = t};
+            var d = new ThreadPoolDispatcher { Throughput = t };
 
             foreach (var clientCount in clientCounts)
             {
@@ -35,14 +35,14 @@ public class Program
                 var pongActor = new PID[clientCount];
                 var completions = new TaskCompletionSource<bool>[clientCount];
 
-                var pongProps = Props.FromProducer(() => new PongActor())
-                    .WithDispatcher(d);
+                var pongProps = Props.FromProducer(() => new PongActor()).WithDispatcher(d);
 
                 for (var i = 0; i < clientCount; i++)
                 {
                     var tsc = new TaskCompletionSource<bool>();
                     completions[i] = tsc;
-                    var pingProps = Props.FromProducer(() => new PingActor(tsc, messageCount, batchSize))
+                    var pingProps = Props
+                        .FromProducer(() => new PingActor(tsc, messageCount, batchSize))
                         .WithDispatcher(d);
 
                     pingActor[i] = context.Spawn(pingProps);
@@ -65,10 +65,13 @@ public class Program
                 sw.Stop();
                 var totalMessages = messageCount * 2 * clientCount;
 
-                var x = ((int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d)).ToString("#,##0,,M",
+                var x = ((int)(totalMessages / (double)sw.ElapsedMilliseconds * 1000.0d)).ToString(
+                    "#,##0,,M",
                     CultureInfo.InvariantCulture
                 );
-                Console.WriteLine($"{clientCount}\t\t\t{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}");
+                Console.WriteLine(
+                    $"{clientCount}\t\t\t{t}\t\t\t{sw.ElapsedMilliseconds} ms\t\t{x}"
+                );
                 await Task.Delay(2000);
             }
         }
@@ -130,8 +133,10 @@ public class PingActor : IActor
             case Msg m:
                 _messageCount--;
 
-                if (_messageCount <= 0) _wgStop.SetResult(true);
-                else context.Send(_targetPid, m);
+                if (_messageCount <= 0)
+                    _wgStop.SetResult(true);
+                else
+                    context.Send(_targetPid, m);
                 break;
         }
 

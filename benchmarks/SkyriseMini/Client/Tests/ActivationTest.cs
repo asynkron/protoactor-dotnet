@@ -2,7 +2,6 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 
-
 namespace SkyriseMini.Tests;
 
 public class ActivationTest
@@ -22,16 +21,21 @@ public class ActivationTest
         {
             _logger.LogInformation(
                 "Starting activation test with activation count = {ActivationCount}, parallelism = {Parallelism}",
-                activationCount, parallelism);
+                activationCount,
+                parallelism
+            );
 
             _logger.LogInformation("Preparing {ActivationCount} actor ids", activationCount);
             var actorIds = await PrepareActorIds(activationCount);
-        
+
             var testDuration = await TestWorker(actorIds, parallelism, cancel);
 
             _logger.LogInformation(
                 "Activation test completed, total activations = {TotalActivations}, duration = {TestDuration}, Throughput = {Throughput:F2} actors/s",
-                activationCount, testDuration, activationCount / testDuration.TotalSeconds);
+                activationCount,
+                testDuration,
+                activationCount / testDuration.TotalSeconds
+            );
         }
         catch (Exception e)
         {
@@ -45,36 +49,41 @@ public class ActivationTest
 
         for (int i = 0; i < count; i++)
             await ch.Writer.WriteAsync(Guid.NewGuid().ToString("N"));
-        
+
         ch.Writer.Complete();
         return ch.Reader;
     }
-    
-    async Task<TimeSpan> TestWorker(ChannelReader<string> actorIds, int parallelism, CancellationToken cancel)
+
+    async Task<TimeSpan> TestWorker(
+        ChannelReader<string> actorIds,
+        int parallelism,
+        CancellationToken cancel
+    )
     {
         var overallStopwatch = new Stopwatch();
         overallStopwatch.Start();
 
-        var tasks = Enumerable.Range(1, parallelism).Select(async _ =>
-        {
-            var activationStopwatch = new Stopwatch();
-
-            await foreach (var actorId in actorIds.ReadAllAsync(cancel))
+        var tasks = Enumerable
+            .Range(1, parallelism)
+            .Select(async _ =>
             {
-                try
-                {
-                    activationStopwatch.Restart();
-                    await _activate(actorId);
+                var activationStopwatch = new Stopwatch();
 
-                }
-                catch (Exception e)
+                await foreach (var actorId in actorIds.ReadAllAsync(cancel))
                 {
-                    _logger.LogError(e, "Error during test");
+                    try
+                    {
+                        activationStopwatch.Restart();
+                        await _activate(actorId);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Error during test");
+                    }
                 }
-            }
-            
-            activationStopwatch.Stop();
-        });
+
+                activationStopwatch.Stop();
+            });
 
         await Task.WhenAll(tasks);
 

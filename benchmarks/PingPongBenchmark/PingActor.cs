@@ -47,7 +47,8 @@ public class PingActor : IActor
                     Console.Write(".");
                     context.Send(_replyTo, true);
                 }
-                else if (_messageCount > 0) context.Send(_pong, new PingMsg(context.Self));
+                else if (_messageCount > 0)
+                    context.Send(_pong, new PingMsg(context.Self));
 
                 break;
         }
