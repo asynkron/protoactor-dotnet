@@ -21,7 +21,10 @@ public class RendezvousBenchmark
     public int NodeCount { get; set; }
 
     private int _i = 0;
-    private static readonly string[] Ids = Enumerable.Range(0, 100).Select(_ => Guid.NewGuid().ToString()).ToArray();
+    private static readonly string[] Ids = Enumerable
+        .Range(0, 100)
+        .Select(_ => Guid.NewGuid().ToString())
+        .ToArray();
 
     private Rendezvous _rendezvous;
     private MemberHashRing _memberHashRing;
@@ -31,13 +34,18 @@ public class RendezvousBenchmark
     [GlobalSetup]
     public void Setup()
     {
-        var members = Enumerable.Range(0, NodeCount).Select(i => new Member
-            {
-                Host = "localhost",
-                Id = Guid.NewGuid().ToString("N"),
-                Port = i + 1000
-            }
-        ).ToArray();
+        var members = Enumerable
+            .Range(0, NodeCount)
+            .Select(
+                i =>
+                    new Member
+                    {
+                        Host = "localhost",
+                        Id = Guid.NewGuid().ToString("N"),
+                        Port = i + 1000
+                    }
+            )
+            .ToArray();
         _rendezvous = new Rendezvous();
         _rendezvous.UpdateMembers(members);
         _rendezvousFast = new RendezvousFast(members);

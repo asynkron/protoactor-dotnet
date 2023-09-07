@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
-
 namespace SkyriseMini.Tests;
 
 public class MessagingTest
@@ -21,8 +20,11 @@ public class MessagingTest
     {
         try
         {
-            _logger.LogInformation("Starting messaging test with parallelism = {Parallelism}, duration = {Duration}s", parallelism,
-                durationInSeconds);
+            _logger.LogInformation(
+                "Starting messaging test with parallelism = {Parallelism}, duration = {Duration}s",
+                parallelism,
+                durationInSeconds
+            );
 
             var actorIds = PrepareActorIds(parallelism);
 
@@ -35,8 +37,12 @@ public class MessagingTest
 
             var (totalMessages, testDuration) = await TestWorker(handles, cts.Token);
 
-            _logger.LogInformation("Messaging test completed, total messages = {TotalMessages}, duration = {TestDuration}, Throughput = {Throughput:F2} msg/s",
-                totalMessages, testDuration, totalMessages / testDuration.TotalSeconds);
+            _logger.LogInformation(
+                "Messaging test completed, total messages = {TotalMessages}, duration = {TestDuration}, Throughput = {Throughput:F2} msg/s",
+                totalMessages,
+                testDuration,
+                totalMessages / testDuration.TotalSeconds
+            );
         }
         catch (Exception e)
         {
@@ -54,16 +60,19 @@ public class MessagingTest
         return tasks.Select(t => t.Result).ToArray();
     }
 
-    async Task<(long TotalMessages, TimeSpan TestDuration)> TestWorker(object[] handles, CancellationToken cancel)
+    async Task<(long TotalMessages, TimeSpan TestDuration)> TestWorker(
+        object[] handles,
+        CancellationToken cancel
+    )
     {
         var totalMessages = 0L;
         var overallStopwatch = new Stopwatch();
         overallStopwatch.Start();
 
-
         bool error = false;
         var sw = Stopwatch.StartNew();
-        var tasks = handles.Select(async handle => {
+        var tasks = handles.Select(async handle =>
+        {
             while (!cancel.IsCancellationRequested && !error)
             {
                 try
@@ -74,7 +83,7 @@ public class MessagingTest
 
                     if (res % 100000 == 0)
                     {
-                        var tps = (int)(totalMessages / (double) sw.ElapsedMilliseconds * 1000.0);
+                        var tps = (int)(totalMessages / (double)sw.ElapsedMilliseconds * 1000.0);
                         Console.WriteLine(tps);
                     }
                 }

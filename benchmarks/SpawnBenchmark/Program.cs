@@ -34,18 +34,21 @@ class MyActor : IActor
 
         switch (msg)
         {
-            case Request {Size: 1} r:
+            case Request { Size: 1 } r:
                 context.Respond(r.Num);
                 context.Stop(context.Self);
                 return Task.CompletedTask;
-            case Request r: {
+            case Request r:
+            {
                 _replies = r.Div;
                 _replyTo = context.Sender;
 
                 for (var i = 0; i < r.Div; i++)
                 {
                     var child = _system.Root.Spawn(Props);
-                    context.Request(child, new Request
+                    context.Request(
+                        child,
+                        new Request
                         {
                             Num = r.Num + i * (r.Size / r.Div),
                             Size = r.Size / r.Div,
@@ -56,7 +59,8 @@ class MyActor : IActor
 
                 return Task.CompletedTask;
             }
-            case long res: {
+            case long res:
+            {
                 _sum += res;
                 _replies--;
 
@@ -72,8 +76,16 @@ class MyActor : IActor
         }
     }
 
-    public static readonly Props Props = Props.FromProducer(s => new MyActor(s)).WithMailbox(() => new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new LockingUnboundedMailboxQueue(4))).WithStartDeadline(TimeSpan.Zero);
-    
+    public static readonly Props Props = Props
+        .FromProducer(s => new MyActor(s))
+        .WithMailbox(
+            () =>
+                new DefaultMailbox(
+                    new LockingUnboundedMailboxQueue(4),
+                    new LockingUnboundedMailboxQueue(4)
+                )
+        )
+        .WithStartDeadline(TimeSpan.Zero);
 }
 
 class Program
@@ -89,14 +101,16 @@ class Program
 
             var pid = context.Spawn(MyActor.Props);
             var sw = Stopwatch.StartNew();
-            var t = context.RequestAsync<long>(pid, new Request
+            var t = context.RequestAsync<long>(
+                pid,
+                new Request
                 {
                     Num = 0,
                     Size = 1000000,
                     Div = 10
                 }
             );
-            
+
             var res = t.Result;
             Console.WriteLine(sw.Elapsed);
             Console.WriteLine(res);

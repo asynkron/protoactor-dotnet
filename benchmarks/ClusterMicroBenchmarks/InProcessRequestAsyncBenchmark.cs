@@ -19,7 +19,6 @@ public class InProcessRequestAsyncBenchmark
     public int BatchSize { get; set; }
 
     [Params(true, false)]
-
     public bool UseSharedFutures { get; set; }
 
     private ActorSystem System;
@@ -29,16 +28,14 @@ public class InProcessRequestAsyncBenchmark
     [GlobalSetup]
     public void Setup()
     {
-        var echoProps = Props.FromFunc(ctx => {
-                if (ctx.Sender is not null) ctx.Respond(ctx.Message!);
-                return Task.CompletedTask;
-            }
-        );
-
-        System = new ActorSystem(new ActorSystemConfig
+        var echoProps = Props.FromFunc(ctx =>
         {
-            SharedFutures = UseSharedFutures
+            if (ctx.Sender is not null)
+                ctx.Respond(ctx.Message!);
+            return Task.CompletedTask;
         });
+
+        System = new ActorSystem(new ActorSystemConfig { SharedFutures = UseSharedFutures });
         pid = System.Root.SpawnNamed(echoProps, "thing");
     }
 

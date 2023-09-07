@@ -21,6 +21,7 @@ public class EchoActor : IActor
 {
     private PID _sender;
     private static readonly Pong Pong = new Pong();
+
     // private int _count = 0;
 
     public Task ReceiveAsync(IContext context)
@@ -49,14 +50,15 @@ class Program
 {
     private static async Task Main()
     {
-        Log.SetLoggerFactory(LoggerFactory.Create(c => c
-                .SetMinimumLevel(LogLevel.Information)
-                .AddFilter("Microsoft", LogLevel.None)
-                .AddFilter("Grpc", LogLevel.None)
-                .AddConsole()
+        Log.SetLoggerFactory(
+            LoggerFactory.Create(
+                c =>
+                    c.SetMinimumLevel(LogLevel.Information)
+                        .AddFilter("Microsoft", LogLevel.None)
+                        .AddFilter("Grpc", LogLevel.None)
+                        .AddConsole()
             )
         );
-
 
         Console.WriteLine("Enter Advertised Host (Default = 127.0.0.1)");
         var advertisedHost = Console.ReadLine().Trim();
@@ -69,10 +71,11 @@ class Program
         var system = new ActorSystem(actorSystemConfig);
         var context = new RootContext(system);
         IRemote remote;
-            
+
         var remoteConfig = GrpcNetRemoteConfig
             .BindTo(advertisedHost, 12000)
-            .WithChannelOptions(new GrpcChannelOptions
+            .WithChannelOptions(
+                new GrpcChannelOptions
                 {
                     CompressionProviders = new ICompressionProvider[]
                     {

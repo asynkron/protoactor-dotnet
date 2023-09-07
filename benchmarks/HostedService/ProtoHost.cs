@@ -16,7 +16,11 @@ public class ProtoHost : IHostedService
     private readonly Cluster _cluster;
     private readonly ILogger<ProtoHost> _logger;
 
-    public ProtoHost(Cluster cluster, ILogger<ProtoHost> logger, IHostApplicationLifetime appLifetime)
+    public ProtoHost(
+        Cluster cluster,
+        ILogger<ProtoHost> logger,
+        IHostApplicationLifetime appLifetime
+    )
     {
         _cluster = cluster;
         _logger = logger;
@@ -26,7 +30,9 @@ public class ProtoHost : IHostedService
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting cluster...");
-        _appLifetime.ApplicationStarted.Register(() => SafeTask.Run(RunRequestLoop, _appLifetime.ApplicationStopping));
+        _appLifetime.ApplicationStarted.Register(
+            () => SafeTask.Run(RunRequestLoop, _appLifetime.ApplicationStopping)
+        );
         _appLifetime.ApplicationStopping.Register(OnStopping);
         return Task.CompletedTask;
     }
@@ -47,7 +53,12 @@ public class ProtoHost : IHostedService
             for (var i = 0; i < 1000; i++)
             {
                 var id = rnd.Next(0, 100000);
-                var t = _cluster.RequestAsync<int>($"abc{id}", "kind", 123, new CancellationTokenSource(20000).Token);
+                var t = _cluster.RequestAsync<int>(
+                    $"abc{id}",
+                    "kind",
+                    123,
+                    new CancellationTokenSource(20000).Token
+                );
                 tasks.Add(t);
             }
 
@@ -57,9 +68,11 @@ public class ProtoHost : IHostedService
 
     private void OnStopping()
     {
-        var completedInTime = _cluster.ShutdownAsync()
+        var completedInTime = _cluster
+            .ShutdownAsync()
             .WaitUpTo(TimeSpan.FromSeconds(15))
-            .GetAwaiter().GetResult();
+            .GetAwaiter()
+            .GetResult();
         if (!completedInTime)
             _logger.LogError("Shut down cluster timed out...");
     }

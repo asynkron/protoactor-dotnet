@@ -30,11 +30,12 @@ public class ConcurrentSpawnBenchmark
     [GlobalSetup]
     public async Task Setup()
     {
-        var echoProps = Props.FromFunc(ctx => {
-                if (ctx.Sender is not null) ctx.Respond(ctx.Message!);
-                return Task.CompletedTask;
-            }
-        );
+        var echoProps = Props.FromFunc(ctx =>
+        {
+            if (ctx.Sender is not null)
+                ctx.Respond(ctx.Message!);
+            return Task.CompletedTask;
+        });
 
         var echoKind = new ClusterKind(Kind, echoProps);
 
@@ -46,10 +47,12 @@ public class ConcurrentSpawnBenchmark
         await _cluster.StartMemberAsync();
     }
 
-    private ClusterConfig ClusterConfig() => Proto.Cluster.ClusterConfig.Setup("test-cluster",
-        new TestProvider(new TestProviderOptions(), new InMemAgent()),
-        GetIdentityLookup()
-    );
+    private ClusterConfig ClusterConfig() =>
+        Proto.Cluster.ClusterConfig.Setup(
+            "test-cluster",
+            new TestProvider(new TestProviderOptions(), new InMemAgent()),
+            GetIdentityLookup()
+        );
 
     private PartitionIdentityLookup GetIdentityLookup()
     {
@@ -80,7 +83,8 @@ public class ConcurrentSpawnBenchmark
 
         for (var i = 0; i < ConcurrentSpawns; i++)
         {
-            if (pids[i] is null) throw new Exception("Failed to return id " + i);
+            if (pids[i] is null)
+                throw new Exception("Failed to return id " + i);
         }
     }
 

@@ -18,7 +18,6 @@ namespace SkyriseMini;
 
 public static class ProtoActorExtensions
 {
-
     public static WebApplicationBuilder AddProtoActorSUT(this WebApplicationBuilder builder)
     {
         builder.Services.AddSingleton(provider =>
@@ -34,7 +33,8 @@ public static class ProtoActorExtensions
 
             var system = new ActorSystem(actorSystemConfig);
 
-            var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost()
+            var remoteConfig = GrpcNetRemoteConfig
+                .BindToLocalhost()
                 .WithProtoMessages(ProtoActorSut.Contracts.ProtosReflection.Descriptor)
                 // .WithChannelOptions(new GrpcChannelOptions
                 //     {
@@ -47,11 +47,11 @@ public static class ProtoActorExtensions
                 .WithLogLevelForDeserializationErrors(LogLevel.Critical);
 
             var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
-            
+
             var clusterConfig = ClusterConfig
                 .Setup(config["ClusterName"]!, clusterProvider, new PartitionIdentityLookup())
-                .WithClusterKind("PingPongRaw",Props.FromProducer(() => new PingPongActorRaw()) );
-            
+                .WithClusterKind("PingPongRaw", Props.FromProducer(() => new PingPongActorRaw()));
+
             system
                 .WithServiceProvider(provider)
                 .WithRemote(remoteConfig)
@@ -60,11 +60,9 @@ public static class ProtoActorExtensions
 
             return system;
         });
-                
+
         builder.Services.AddHostedService<ActorSystemHostedService>();
 
         return builder;
     }
-    
-    
 }

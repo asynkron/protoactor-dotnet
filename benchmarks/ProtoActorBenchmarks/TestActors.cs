@@ -32,9 +32,11 @@ public class PingActor : IActor
             case Msg m:
                 _batch--;
 
-                if (_batch > 0) break;
+                if (_batch > 0)
+                    break;
 
-                if (!SendBatch(context, m.Sender)) _wgStop.SetResult(true);
+                if (!SendBatch(context, m.Sender))
+                    _wgStop.SetResult(true);
 
                 break;
         }
@@ -44,7 +46,8 @@ public class PingActor : IActor
 
     private bool SendBatch(IContext context, PID sender)
     {
-        if (_messageCount == 0) return false;
+        if (_messageCount == 0)
+            return false;
 
         var m = new Msg(context.Self);
 

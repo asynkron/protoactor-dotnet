@@ -14,30 +14,34 @@ using Proto.Remote;
 var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddLogging(x => x.AddSimpleConsole(c =>
-{
-    c.SingleLine = true;
-}));
+builder.Services.AddLogging(
+    x =>
+        x.AddSimpleConsole(c =>
+        {
+            c.SingleLine = true;
+        })
+);
 
+builder.Services.AddProtoCluster(
+    (_, x) =>
+    {
+        x.Port = 0;
+        x.ConfigureRemote = r => r.WithAdvertisedHost(advertisedHost);
 
-builder.Services.AddProtoCluster((_, x) =>
-{
-    x.Port = 0;
-    x.ConfigureRemote = r =>
-        r.WithAdvertisedHost(advertisedHost);
+        x.ConfigureCluster = c =>
+            c.WithClusterKind("echo", Props.FromFunc(ctx => Task.CompletedTask))
+                .WithClusterKind("empty", Props.FromFunc(ctx => Task.CompletedTask))
+                .WithExitOnShutdown()
+                .WithHeartbeatExpirationDisabled();
 
-    x.ConfigureCluster = c => c
-        .WithClusterKind("echo", Props.FromFunc(ctx => Task.CompletedTask))
-        .WithClusterKind("empty", Props.FromFunc(ctx => Task.CompletedTask))
-        .WithExitOnShutdown()
-        .WithHeartbeatExpirationDisabled();
+        x.ClusterProvider = new KubernetesProvider();
+        x.IdentityLookup = new PartitionActivatorLookup();
+    }
+);
 
-    x.ClusterProvider = new KubernetesProvider();
-    x.IdentityLookup = new PartitionActivatorLookup();
-    
-});
-
-builder.Services.AddHealthChecks().AddCheck<ClusterHealthCheck>("proto", null, new[] { "ready", "live" });
+builder.Services
+    .AddHealthChecks()
+    .AddCheck<ClusterHealthCheck>("proto", null, new[] { "ready", "live" });
 builder.Services.AddHostedService<DummyHostedService>();
 
 var app = builder.Build();
@@ -65,12 +69,11 @@ public class DummyHostedService : IHostedService
         _logger.LogInformation("Starting DummyHostedService");
         _running = true;
 
-        _system.EventStream.Subscribe<ClusterTopology>(e => {
-
-                var hash = e.TopologyHash;
-                _logger.LogInformation($"{DateTime.Now:O} My members {hash}");
-            }
-        );
+        _system.EventStream.Subscribe<ClusterTopology>(e =>
+        {
+            var hash = e.TopologyHash;
+            _logger.LogInformation($"{DateTime.Now:O} My members {hash}");
+        });
 
         var props = Props.FromFunc(ctx => Task.CompletedTask);
         _system.Root.SpawnNamed(props, "dummy");
@@ -81,8 +84,10 @@ public class DummyHostedService : IHostedService
 
     private async Task RunLoop()
     {
-        var clusterIdentity =
-            ClusterIdentity.Create("some-id", new ClusterKind("echo", Props.FromFunc(ctx => Task.CompletedTask)).Name);
+        var clusterIdentity = ClusterIdentity.Create(
+            "some-id",
+            new ClusterKind("echo", Props.FromFunc(ctx => Task.CompletedTask)).Name
+        );
 
         while (_running)
         {
@@ -90,8 +95,13 @@ public class DummyHostedService : IHostedService
 
             try
             {
-                var t = await _system.Cluster()
-                    .RequestAsync<Touched>(clusterIdentity, new Touch(), CancellationTokens.FromSeconds(1));
+                var t = await _system
+                    .Cluster()
+                    .RequestAsync<Touched>(
+                        clusterIdentity,
+                        new Touch(),
+                        CancellationTokens.FromSeconds(1)
+                    );
 
                 _logger.LogInformation($"called cluster actor {t.Who}");
             }
@@ -106,7 +116,11 @@ public class DummyHostedService : IHostedService
 
                 try
                 {
-                    var t = await _system.Root.RequestAsync<Touched>(pid, new Touch(), CancellationTokens.FromSeconds(1));
+                    var t = await _system.Root.RequestAsync<Touched>(
+                        pid,
+                        new Touch(),
+                        CancellationTokens.FromSeconds(1)
+                    );
 
                     if (t != null)
                     {
@@ -126,10 +140,9 @@ public class DummyHostedService : IHostedService
             await Task.Delay(5000);
         }
     }
-    
+
     private async Task PrintMembersLoop()
     {
-
         while (_running)
         {
             var m = _system.Cluster().MemberList.GetAllMembers();

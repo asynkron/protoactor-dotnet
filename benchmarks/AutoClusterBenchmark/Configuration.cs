@@ -39,7 +39,8 @@ public static class Configuration
 
     private static GrpcNetRemoteConfig GetRemoteConfig()
     {
-        var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
+        var portStr =
+            Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
         var port = int.Parse(portStr);
         var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfigBase.Localhost;
         var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
@@ -47,7 +48,8 @@ public static class Configuration
         var remoteConfig = GrpcNetRemoteConfig
             .BindTo(host, port)
             .WithAdvertisedHost(advertisedHost)
-            .WithChannelOptions(new GrpcChannelOptions
+            .WithChannelOptions(
+                new GrpcChannelOptions
                 {
                     CompressionProviders = new[]
                     {
@@ -63,12 +65,13 @@ public static class Configuration
 
     private static InMemAgent Agent = null!;
 
-    private static TestProviderOptions Options = new()
-    {
-        DeregisterCritical = TimeSpan.FromSeconds(10),
-        RefreshTtl = TimeSpan.FromSeconds(5),
-        ServiceTtl = TimeSpan.FromSeconds(3)
-    };
+    private static TestProviderOptions Options =
+        new()
+        {
+            DeregisterCritical = TimeSpan.FromSeconds(10),
+            RefreshTtl = TimeSpan.FromSeconds(5),
+            ServiceTtl = TimeSpan.FromSeconds(3)
+        };
 
     public static void ResetAgent()
     {
@@ -77,36 +80,40 @@ public static class Configuration
 
     private static IClusterProvider ClusterProvider() => new TestProvider(Options, Agent);
 
-    private static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(
-        new PartitionConfig
-        {
-            RebalanceActivationsCompletionTimeout = TimeSpan.FromSeconds(5),
-            GetPidTimeout = TimeSpan.FromSeconds(5),
-            RebalanceRequestTimeout = TimeSpan.FromSeconds(1),
-            Mode = PartitionIdentityLookup.Mode.Push,
-        }
-    );
+    private static IIdentityLookup GetIdentityLookup() =>
+        new PartitionIdentityLookup(
+            new PartitionConfig
+            {
+                RebalanceActivationsCompletionTimeout = TimeSpan.FromSeconds(5),
+                GetPidTimeout = TimeSpan.FromSeconds(5),
+                RebalanceRequestTimeout = TimeSpan.FromSeconds(1),
+                Mode = PartitionIdentityLookup.Mode.Push,
+            }
+        );
 
     public static async Task<Cluster> SpawnMember()
     {
-        var system = new ActorSystem(GetMemberActorSystemConfig()
-        );
-        system.EventStream.Subscribe<ClusterTopology>(e => {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"M:{system.Id}-{system.Address}-ClusterTopology:{e.GetMembershipHashCode()}");
-                Console.ResetColor();
-            }
-        );
-        system.EventStream.Subscribe<LeaderElected>(e => {
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"M:{system.Id}-{system.Address}-Leader:{e.Leader.Id}");
-                Console.ResetColor();
-            }
-        );
+        var system = new ActorSystem(GetMemberActorSystemConfig());
+        system.EventStream.Subscribe<ClusterTopology>(e =>
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(
+                $"M:{system.Id}-{system.Address}-ClusterTopology:{e.GetMembershipHashCode()}"
+            );
+            Console.ResetColor();
+        });
+        system.EventStream.Subscribe<LeaderElected>(e =>
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"M:{system.Id}-{system.Address}-Leader:{e.Leader.Id}");
+            Console.ResetColor();
+        });
         var clusterProvider = ClusterProvider();
         var identity = GetIdentityLookup();
 
-        system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider, identity));
+        system
+            .WithRemote(GetRemoteConfig())
+            .WithCluster(GetClusterConfig(clusterProvider, identity));
         await system.Cluster().StartMemberAsync();
         return system.Cluster();
     }
@@ -124,26 +131,33 @@ public static class Configuration
 
     public static async Task<Cluster> SpawnClient()
     {
-        var config = new ActorSystemConfig().WithDeadLetterThrottleCount(3)
+        var config = new ActorSystemConfig()
+            .WithDeadLetterThrottleCount(3)
             .WithSharedFutures()
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
             .WithDeadLetterRequestLogging(false);
-        var system = new ActorSystem(EnableTracing ? config.WithConfigureProps(props => props.WithTracing()) : config);
-        system.EventStream.Subscribe<ClusterTopology>(e => {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"C:{system.Id}-{system.Address}-ClusterTopology:{e.GetMembershipHashCode()}");
-                Console.ResetColor();
-            }
+        var system = new ActorSystem(
+            EnableTracing ? config.WithConfigureProps(props => props.WithTracing()) : config
         );
-        system.EventStream.Subscribe<LeaderElected>(e => {
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"C:{system.Id}-{system.Address}-Leader:{e.Leader.Id}");
-                Console.ResetColor();
-            }
-        );
+        system.EventStream.Subscribe<ClusterTopology>(e =>
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(
+                $"C:{system.Id}-{system.Address}-ClusterTopology:{e.GetMembershipHashCode()}"
+            );
+            Console.ResetColor();
+        });
+        system.EventStream.Subscribe<LeaderElected>(e =>
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"C:{system.Id}-{system.Address}-Leader:{e.Leader.Id}");
+            Console.ResetColor();
+        });
         var clusterProvider = ClusterProvider();
         var identity = GetIdentityLookup();
-        system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider, identity));
+        system
+            .WithRemote(GetRemoteConfig())
+            .WithCluster(GetClusterConfig(clusterProvider, identity));
 
         await system.Cluster().StartClientAsync();
         return system.Cluster();

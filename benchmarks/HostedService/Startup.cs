@@ -26,10 +26,8 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddLogging(l => l.AddConsole());
-        Log.SetLoggerFactory(LoggerFactory.Create(l1 =>
-                l1.AddConsole()
-                    .SetMinimumLevel(LogLevel.Information)
-            )
+        Log.SetLoggerFactory(
+            LoggerFactory.Create(l1 => l1.AddConsole().SetMinimumLevel(LogLevel.Information))
         );
 
         var settings = MongoClientSettings.FromUrl(MongoUrl.Create("mongodb://127.0.0.1:27017"));
@@ -46,15 +44,24 @@ public class Startup
 
         var clusterProvider = new ConsulProvider(new ConsulProviderConfig());
         var identityLookup = new IdentityStorageLookup(new MongoIdentityStorage("foo", pids, 150));
-        var sys = new ActorSystem(new ActorSystemConfig().WithDeadLetterThrottleCount(3).WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1)))
+        var sys = new ActorSystem(
+            new ActorSystemConfig()
+                .WithDeadLetterThrottleCount(3)
+                .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
+        )
             .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))
-            .WithCluster(ClusterConfig.Setup("test", clusterProvider, identityLookup)
-                .WithClusterKind("kind", Props.FromFunc(ctx => {
-                            if (ctx.Message is int i) ctx.Respond(i * 2);
+            .WithCluster(
+                ClusterConfig
+                    .Setup("test", clusterProvider, identityLookup)
+                    .WithClusterKind(
+                        "kind",
+                        Props.FromFunc(ctx =>
+                        {
+                            if (ctx.Message is int i)
+                                ctx.Respond(i * 2);
                             return Task.CompletedTask;
-                        }
+                        })
                     )
-                )
             );
 
         sys.Cluster().StartMemberAsync().Wait();
@@ -72,7 +79,9 @@ public class Startup
         {
             app.UseDeveloperExceptionPage();
             app.UseSwagger();
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "HostedService v1"));
+            app.UseSwaggerUI(
+                c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "HostedService v1")
+            );
         }
 
         app.UseHttpsRedirection();
@@ -81,6 +90,9 @@ public class Startup
 
         app.UseAuthorization();
 
-        app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
     }
 }
