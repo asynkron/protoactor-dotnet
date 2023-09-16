@@ -183,6 +183,8 @@ public record MemberList
                 return;
             }
 
+            activeMembers = RemoveDuplicateAddresses(activeMembers);
+
             // Cancel any work based on the previous topology
             _currentTopologyTokenSource?.Cancel();
             _currentTopologyTokenSource = new CancellationTokenSource();
@@ -301,6 +303,21 @@ public record MemberList
                 Logger.LogError(x, "Error during MemberJoin {Member}", newMember);
             }
         }
+    }
+
+    private static ImmutableMemberSet RemoveDuplicateAddresses(ImmutableMemberSet activeMembers)
+    {
+        var duplicateAddresses = activeMembers.Members.ToLookup(m => m.Address);
+        foreach (var dup in duplicateAddresses.Where(d => d.Count() > 1))
+        {
+            var youngest = dup.OrderByDescending(m => m.Age).First();
+            var rest = dup.Where(m => m.Id != youngest.Id).Select(m => m.Id).ToArray();
+
+            Logger.LogWarning("Duplicate address {Address} found, removing {Rest}", dup.Key, rest);
+            activeMembers = activeMembers.Except(rest);
+        }
+
+        return activeMembers;
     }
 
     private void SelfBlocked()
