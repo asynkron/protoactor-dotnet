@@ -29,7 +29,9 @@ namespace Proto.Cluster;
 [PublicAPI]
 public record MemberList
 {
+#pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<MemberList>();
+#pragma warning restore CS0618 // Type or member is obsolete
     private readonly Cluster _cluster;
     private readonly EventStream _eventStream;
     private readonly object _lock = new();
@@ -324,8 +326,6 @@ public record MemberList
     {
         _system.Logger()?.LogDebug("MemberList sending state");
         _eventStream.Publish(topology);
-
-        //Console.WriteLine($"{_system.Id} Broadcasting {topology.TopologyHash} - {topology.Members.Count}");
     }
 
     private void TerminateMember(Member memberThatLeft)
