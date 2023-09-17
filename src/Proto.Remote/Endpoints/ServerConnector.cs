@@ -210,9 +210,18 @@ public sealed class ServerConnector
 
                 if (ShouldStop(rs))
                 {
-                    _logger.LogError(e,
-                        "[ServerConnector][{SystemAddress}] Stopping connection to {Address} after retries expired because of {Reason}",
-                        _system.Address, _address, e.GetType().Name);
+                    if (e is RpcException { StatusCode: StatusCode.Unavailable })
+                    {
+                        _logger.LogInformation(
+                            "[ServerConnector][{SystemAddress}] Stopping connection to {Address} after retries expired because the endpoint is unavailable",
+                            _system.Address, _address);
+                    }
+                    else
+                    {
+                        _logger.LogError(e,
+                            "[ServerConnector][{SystemAddress}] Stopping connection to {Address} after retries expired because of {Reason}",
+                            _system.Address, _address, e.GetType().Name);
+                    }
 
                     var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
                     _system.EventStream.Publish(terminated);
