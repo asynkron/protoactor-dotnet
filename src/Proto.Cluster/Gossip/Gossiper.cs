@@ -203,6 +203,8 @@ public class Gossiper
 
     private async Task GossipLoop()
     {
+        Logger.LogInformation("Gossip is waiting for cluster to join");
+        await _cluster.JoinedCluster;
         Logger.LogInformation("Starting gossip loop");
         await Task.Yield();
 

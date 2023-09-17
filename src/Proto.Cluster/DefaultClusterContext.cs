@@ -19,14 +19,17 @@ namespace Proto.Cluster;
 
 public class DefaultClusterContext : IClusterContext
 {
+#pragma warning disable CS0618 // Type or member is obsolete
+    private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
+#pragma warning restore CS0618 // Type or member is obsolete
+    
     private readonly IIdentityLookup _identityLookup;
-
     private readonly PidCache _pidCache;
     private readonly ShouldThrottle _requestLogThrottle;
     private readonly ActorSystem _system;
-    private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
     private readonly int _requestTimeoutSeconds;
     private readonly bool _legacyTimeouts;
+    private readonly Cluster _cluster;
 
     public DefaultClusterContext(Cluster cluster)
     {
@@ -34,6 +37,7 @@ public class DefaultClusterContext : IClusterContext
         _pidCache = cluster.PidCache;
         var config = cluster.Config;
         _system = cluster.System;
+        _cluster = cluster;
 
         _requestLogThrottle = Throttle.Create(
             config.MaxNumberOfEventsInRequestLogThrottlePeriod,
@@ -48,6 +52,11 @@ public class DefaultClusterContext : IClusterContext
     public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context,
         CancellationToken ct)
     {
+        if (!_cluster.JoinedCluster.IsCompletedSuccessfully)
+        {
+            await _cluster.JoinedCluster;
+        }
+        
         var i = 0;
 
         var future = context.GetFuture();
