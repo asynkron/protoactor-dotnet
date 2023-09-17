@@ -7,3 +7,4 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Proto.Actor.Tests")]
+[assembly: InternalsVisibleTo("Proto.Premium")]
