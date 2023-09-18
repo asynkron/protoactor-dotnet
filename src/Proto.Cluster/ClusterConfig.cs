@@ -388,6 +388,7 @@ public record ClusterConfig
     /// <summary>
     ///    The code to run when a member is expired from the cluster.
     /// </summary>
+    [JsonIgnore]
     public Func<Cluster, Task> BlockExpiredMembers { get; init; } = Gossiper.BlockExpiredMembers;
     
     /// <summary>
