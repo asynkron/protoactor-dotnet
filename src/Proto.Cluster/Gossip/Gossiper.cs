@@ -271,7 +271,7 @@ public class Gossiper
             return;
         }
         
-        await _cluster.Config.BlockExpiredMembers(_cluster);
+        await _cluster.Config.HeartbeatExpirationHandler(_cluster);
     }
 
     public static async Task BlockExpiredMembers(Cluster cluster)
