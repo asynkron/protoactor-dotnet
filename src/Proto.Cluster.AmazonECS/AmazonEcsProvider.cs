@@ -140,7 +140,7 @@ public class AmazonEcsProvider : IClusterProvider
                         Logger.LogError(x, "Failed to get members from ECS");
                     }
 
-                    await Task.Delay(_config.PollIntervalSeconds).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromSeconds(_config.PollIntervalSeconds)).ConfigureAwait(false);
                 }
             }
         );
