@@ -389,13 +389,13 @@ public record ClusterConfig
     ///    The code to run when a member is expired from the cluster.
     /// </summary>
     [JsonIgnore]
-    public Func<Cluster, Task> BlockExpiredMembers { get; init; } = Gossiper.BlockExpiredMembers;
+    public Func<Cluster, Task> HeartbeatExpirationHandler { get; init; } = Gossiper.BlockExpiredMembers;
     
     /// <summary>
     ///    Configures the code to run when a member is expired from the cluster.
     /// </summary>
-    /// <param name="blockExpiredMembers"></param>
+    /// <param name="heartbeatExpirationHandler"></param>
     /// <returns></returns>
-    public ClusterConfig WithBlockExpiredMembers(Func<Cluster, Task> blockExpiredMembers) =>
-        this with { BlockExpiredMembers = blockExpiredMembers };
+    public ClusterConfig WithHeartbeatExpirationHandler(Func<Cluster, Task> heartbeatExpirationHandler) =>
+        this with { HeartbeatExpirationHandler = heartbeatExpirationHandler };
 }
