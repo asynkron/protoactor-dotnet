@@ -9,7 +9,9 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
 using Proto.Cluster.PubSub;
 using Proto.Remote;
@@ -382,4 +384,17 @@ public record ClusterConfig
         IIdentityLookup identityLookup
     ) =>
         new(clusterName, clusterProvider, identityLookup);
+
+    /// <summary>
+    ///    The code to run when a member is expired from the cluster.
+    /// </summary>
+    public Func<Cluster, Task> BlockExpiredMembers { get; init; } = Gossiper.BlockExpiredMembers;
+    
+    /// <summary>
+    ///    Configures the code to run when a member is expired from the cluster.
+    /// </summary>
+    /// <param name="blockExpiredMembers"></param>
+    /// <returns></returns>
+    public ClusterConfig WithBlockExpiredMembers(Func<Cluster, Task> blockExpiredMembers) =>
+        this with { BlockExpiredMembers = blockExpiredMembers };
 }

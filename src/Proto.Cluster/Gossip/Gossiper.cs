@@ -270,18 +270,21 @@ public class Gossiper
         {
             return;
         }
+        
+        await _cluster.Config.BlockExpiredMembers(_cluster);
+    }
 
-        var t = await GetStateEntry(GossipKeys.Heartbeat).ConfigureAwait(false);
-
-        var blockList = _cluster.System.Remote().BlockList;
+    public static async Task BlockExpiredMembers(Cluster cluster)
+    {
+        var gossipState = await cluster.Gossip. GetStateEntry(GossipKeys.Heartbeat).ConfigureAwait(false);
+        var blockList = cluster.Remote.BlockList;
         var alreadyBlocked = blockList.BlockedMembers;
-
         //new blocked members
-        var blocked = (from x in t
+        var blocked = (from x in gossipState
                 //never block ourselves
-                where x.Key != _cluster.System.Id
+                where x.Key != cluster.System.Id
                 //pick any entry that is too old
-                where x.Value.Age > _cluster.Config.HeartbeatExpiration
+                where x.Value.Age > cluster.Config.HeartbeatExpiration
                 //and not already part of the block list
                 where !alreadyBlocked.Contains(x.Key)
                 select x.Key)
