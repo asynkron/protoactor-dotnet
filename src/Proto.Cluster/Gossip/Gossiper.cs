@@ -181,7 +181,7 @@ public class Gossiper
         }
     }
 
-    internal Task StartAsync()
+    internal Task StartGossipActorAsync()
     {
         var props = Props.FromProducer(() => new GossipActor(
             _cluster.System,
@@ -198,6 +198,13 @@ public class Gossiper
             tmp.Left.Clear();
             _context.Send(_pid, tmp);
         });
+        
+        return Task.CompletedTask;
+    }
+
+    internal Task StartgossipLoopAsync()
+    {
+
         Logger.LogInformation("Started Cluster Gossip");
         _ = SafeTask.Run(GossipLoop);
 

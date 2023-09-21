@@ -164,9 +164,10 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// </summary>
     public async Task StartMemberAsync()
     {
+        await Gossip.StartGossipActorAsync().ConfigureAwait(false);
         await BeginStartAsync(false).ConfigureAwait(false);
         //gossiper must be started whenever any topology events starts flowing
-        await Gossip.StartAsync().ConfigureAwait(false);
+        await Gossip.StartgossipLoopAsync().ConfigureAwait(false);
         MemberList.InitializeTopologyConsensus();
         await Provider.StartMemberAsync(this).ConfigureAwait(false);
         Logger.LogInformation("Started as cluster member");
