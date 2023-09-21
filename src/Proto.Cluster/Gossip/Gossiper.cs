@@ -49,7 +49,9 @@ public class Gossiper
 {
     public const string GossipActorName = "$gossip";
 
+#pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<Gossiper>();
+#pragma warning restore CS0618 // Type or member is obsolete
     private readonly Cluster _cluster;
     private readonly IRootContext _context;
     private PID _pid = null!;
@@ -143,6 +145,7 @@ public class Gossiper
 
         if (_pid == null)
         {
+            Logger.LogError("Gossiper is not started, cannot set state");
             return;
         }
 
@@ -178,7 +181,7 @@ public class Gossiper
         }
     }
 
-    internal Task StartAsync()
+    internal Task StartGossipActorAsync()
     {
         var props = Props.FromProducer(() => new GossipActor(
             _cluster.System,
@@ -195,6 +198,13 @@ public class Gossiper
             tmp.Left.Clear();
             _context.Send(_pid, tmp);
         });
+        
+        return Task.CompletedTask;
+    }
+
+    internal Task StartgossipLoopAsync()
+    {
+
         Logger.LogInformation("Started Cluster Gossip");
         _ = SafeTask.Run(GossipLoop);
 
