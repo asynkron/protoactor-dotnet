@@ -22,6 +22,7 @@ internal class Gossip
     private static readonly ILogger Logger = Log.CreateLogger<Gossip>();
     private readonly ConsensusChecks _consensusChecks = new();
     private readonly Func<ImmutableHashSet<string>> _getMembers;
+    private readonly bool _gossipDebugLogging;
     private readonly int _gossipFanout;
     private readonly int _gossipMaxSend;
     private readonly InstanceLogger? _logger;
@@ -34,11 +35,12 @@ internal class Gossip
     private GossipState _state = new();
 
     public Gossip(string myId, int gossipFanout, int gossipMaxSend, InstanceLogger? logger,
-        Func<ImmutableHashSet<string>> getMembers)
+        Func<ImmutableHashSet<string>> getMembers, bool gossipDebugLogging)
     {
         _myId = myId;
         _logger = logger;
         _getMembers = getMembers;
+        _gossipDebugLogging = gossipDebugLogging;
         _gossipFanout = gossipFanout;
         _gossipMaxSend = gossipMaxSend;
     }
@@ -89,6 +91,11 @@ internal class Gossip
             return ImmutableList<GossipUpdate>.Empty;
         }
 
+        if (_gossipDebugLogging)
+        {
+            Logger.LogInformation("ReceiveState: Gossip updates {Updates}", updates);
+        }
+
         _state = newState;
         
         CheckConsensus(updatedKeys);
@@ -102,9 +109,15 @@ internal class Gossip
         _localSequenceNo = GossipStateManagement.SetKey(_state, key, message, _myId, _localSequenceNo);
         logger?.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
         Logger.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
+        
+        if (_gossipDebugLogging)
+        {
+            Logger.LogInformation("SetState: Gossip key {Key} - {Value} - {State}", key, message, _state);
+        }
 
         if (!_state.Members.ContainsKey(_myId))
         {
+            Logger?.LogCritical("State corrupt");
             logger?.LogCritical("State corrupt");
         }
 
@@ -123,9 +136,15 @@ internal class Gossip
                 GossipStateManagement.EnsureMemberStateExists(_state, member.Id);
             }
 
-            var randomMembers = _otherMembers.OrderByRandom(_rnd);
+            var randomMembers = _otherMembers.OrderByRandom(_rnd).ToArray();
 
             var fanoutCount = 0;
+            
+            if (_gossipDebugLogging)
+            {
+                var ids = randomMembers.Select(m => m.Id).ToArray();
+                Logger.LogInformation("SendState: Gossip to members {Members}", ids);
+            }
 
             foreach (var member in randomMembers)
             {

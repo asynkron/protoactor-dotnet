@@ -66,6 +66,11 @@ public record ClusterConfig
     public string ClusterName { get; }
 
     /// <summary>
+    ///    Enables debug logging for the gossip protocol.
+    /// </summary>
+    public bool GossipDebugLogging { get; set; } = false;
+
+    /// <summary>
     ///     Cluster kinds define types of the virtual actors supported by this member.
     /// </summary>
     public ImmutableList<ClusterKind> ClusterKinds { get; init; } = ImmutableList<ClusterKind>.Empty;

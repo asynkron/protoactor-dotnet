@@ -31,7 +31,7 @@ public class GossipActor : IActor
     {
         _gossipRequestTimeout = gossipRequestTimeout;
         _internal = new Gossip(system.Id, gossipFanout, gossipMaxSend, instanceLogger,
-            () => system.Cluster().MemberList.GetMembers());
+            () => system.Cluster().MemberList.GetMembers(), system.Cluster().Config.GossipDebugLogging);
     }
 
     public async Task ReceiveAsync(IContext context)
@@ -163,11 +163,16 @@ public class GossipActor : IActor
         }
 
         var start = DateTime.UtcNow;
-        context.RequestReenter<GossipResponse>(pid, new GossipRequest
-            {
-                MemberId = context.System.Id,
-                State = memberStateDelta.State.Clone() //ensure we have a copy and not send state that might mutate
-            },
+        var gossipRequest = new GossipRequest
+        {
+            MemberId = context.System.Id,
+            State = memberStateDelta.State.Clone() //ensure we have a copy and not send state that might mutate
+        };
+        if (context.Cluster().Config.GossipDebugLogging)
+        {
+            Logger.LogInformation("Sending GossipRequest {Request} to {MemberId}", gossipRequest, targetMember.Id);
+        }
+        context.RequestReenter<GossipResponse>(pid, gossipRequest,
             async task =>
             {
                 var delta = DateTime.UtcNow - start;
