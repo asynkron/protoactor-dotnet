@@ -45,7 +45,7 @@ public class GossipCoreTests
                     m => m.Id,
                     m => (
                         Gossip: new Gossip.Gossip(m.Id, fanout, memberCount, null,
-                            () => members.Select(m => m.Id).ToImmutableHashSet()),
+                            () => members.Select(m => m.Id).ToImmutableHashSet(), false),
                         Member: m));
 
         var sends = 0L;
