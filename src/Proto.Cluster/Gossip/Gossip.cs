@@ -94,6 +94,9 @@ internal class Gossip
         if (_gossipDebugLogging)
         {
             Logger.LogInformation("ReceiveState: Gossip updates {Updates}", updates);
+            Logger.LogInformation("ReceiveState: Old Gossip state {State}", _state);
+            Logger.LogInformation("ReceiveState: New Gossip state {State}", newState);
+            Logger.LogInformation("ReceiveState: Updated Keys {Keys}", updatedKeys);
         }
 
         _state = newState;
