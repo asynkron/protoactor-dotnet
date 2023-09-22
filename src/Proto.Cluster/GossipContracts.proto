@@ -12,6 +12,7 @@ message GossipRequest {
 //Ack a gossip request
 message GossipResponse {
   GossipState state = 1;
+  bool rejected = 2;
 }
 
 //two GossipState objects can be merged

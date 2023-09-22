@@ -15,7 +15,9 @@ namespace Proto.Cluster.Gossip;
 
 public class GossipActor : IActor
 {
+#pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<GossipActor>();
+#pragma warning restore CS0618 // Type or member is obsolete
     private readonly TimeSpan _gossipRequestTimeout;
     private readonly IGossip _internal;
 
@@ -105,8 +107,25 @@ public class GossipActor : IActor
         if (context.Remote().BlockList.BlockedMembers.Contains(gossipRequest.MemberId))
         {
             Logger.LogInformation("Blocked gossip request from {MemberId}", gossipRequest.MemberId);
+            context.Respond(new GossipResponse()
+            {
+                Rejected = true,
+            });
             return Task.CompletedTask;
         }
+
+        if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
+        {
+            Logger.LogInformation("Ignoring gossip request from {MemberId} as it is not a member", gossipRequest.MemberId);
+            context.Respond(new GossipResponse()
+            {
+                Rejected = true,
+            });
+            return Task.CompletedTask;
+        }
+        
+        
+        
 
         if (Logger.IsEnabled(LogLevel.Debug))
         {
@@ -186,7 +205,13 @@ public class GossipActor : IActor
 
                 try
                 {
-                    await task.ConfigureAwait(false);
+                    var res = await task.ConfigureAwait(false);
+                    if (res.Rejected)
+                    {
+                        //we could be smarter here. rejected because of block? then init shutdown
+                        return;
+                    }
+                    
                     memberStateDelta.CommitOffsets();
                 }
                 catch (TimeoutException)
