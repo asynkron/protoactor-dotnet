@@ -37,6 +37,7 @@ public static class EcsUtils
         var describedTasks = await c.DescribeTasksAsync(new DescribeTasksRequest
             {
                 Include = { "TAGS" },
+                Cluster = ecsClusterName,
                 Tasks = instanceArns
             }
         ).ConfigureAwait(false);
