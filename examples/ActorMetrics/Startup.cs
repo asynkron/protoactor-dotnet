@@ -29,11 +29,12 @@ public class Startup
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "WebApplication1", Version = "v1" });
         });
 
-        services.AddOpenTelemetryMetrics(b => b
+        services.AddOpenTelemetry().WithMetrics(b => b
             .AddProtoActorInstrumentation()
             .AddAspNetCoreInstrumentation()
             .AddPrometheusExporter(prom => prom.ScrapeResponseCacheDurationMilliseconds = 1000)
         );
+        
 
         RunDummyCluster.Run();
     }
