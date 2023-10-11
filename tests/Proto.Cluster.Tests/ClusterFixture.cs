@@ -9,6 +9,7 @@ using ClusterTest.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -223,7 +224,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                     {
                         options
                             .SetResourceBuilder(builder)
-                            .AddOtlpExporter(o =>
+                            .AddOtlpExporter( (OtlpExporterOptions  o)  =>
                             {
                                 o.Endpoint = endpoint;
                                 o.ExportProcessorType = ExportProcessorType.Batch;

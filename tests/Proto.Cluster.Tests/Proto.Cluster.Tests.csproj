@@ -15,9 +15,9 @@
     <ItemGroup>
         <PackageReference Include="Grpc.Tools" Version="2.51.0" PrivateAssets="All" />
         <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" />
-        <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.4.0-beta.3" />
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.4.0-beta.3" />
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol.Logs" Version="1.4.0-beta.3" />
+        <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.5.1" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.6.0" />
+
         <PackageReference Include="System.Interactive.Async" Version="6.0.1" />
     </ItemGroup>
     <ItemGroup>

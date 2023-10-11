@@ -13,7 +13,9 @@ namespace Proto.Cluster.Tests;
 public class GithubActionsReporter
 {
     private readonly string _reportName;
+#pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<GithubActionsReporter>();
+#pragma warning restore CS0618 // Type or member is obsolete
     public const string ActivitySourceName = "Proto.Cluster.Tests";
 
     private static readonly ActivitySource ActivitySource = new(ActivitySourceName);
