@@ -209,7 +209,16 @@ namespace {{CsNamespace}}
             => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new {{Name}}Actor(innerFactory)));
 
         public static global::Proto.Cluster.ClusterKind GetClusterKind<T>(global::System.IServiceProvider serviceProvider, params object[] parameters) where T : {{Name}}Base
-            => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new {{Name}}Actor((ctx, id) => global::Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<T>(serviceProvider, ctx, id, parameters))));
+            => new global::Proto.Cluster.ClusterKind(Kind, global::Proto.Props.FromProducer(() => new {{Name}}Actor((ctx, id) => {
+                var allParameters = new object[parameters.Length + 2];
+                allParameters[0] = ctx;
+                allParameters[1] = id;
+                if (parameters.Length > 0)
+                {
+                    parameters.CopyTo(allParameters, 2);
+                }
+                return global::Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<T>(serviceProvider, allParameters);
+            })));
     }
     {{/each}}
 }
