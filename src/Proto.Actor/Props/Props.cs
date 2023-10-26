@@ -88,6 +88,12 @@ public sealed record Props
     public static PID DefaultSpawner(ActorSystem system, string name, Props props, PID? parent,
         Action<IContext>? callback)
     {
+        //if system is shutting down. don't spawn new actors
+        if (system.Shutdown.IsCancellationRequested)
+        {
+            return system.DeadLetterPid;
+        }
+        
         //Ordering is important here
         //first we create a mailbox and attach it to a process
         props = system.ConfigureProps(props);

@@ -510,7 +510,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Task InternalInvokeUserMessageAsync(object msg)
     {
-        if (_state == ContextState.Stopped)
+        if (_state == ContextState.Stopped || System.Shutdown.IsCancellationRequested)
         {
             //already stopped, send message to deadletter process
             System.DeadLetter.SendUserMessage(Self, msg);

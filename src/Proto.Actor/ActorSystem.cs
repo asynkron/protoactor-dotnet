@@ -26,7 +26,9 @@ public sealed class ActorSystem : IAsyncDisposable
 {
     public const string NoHost = "nonhost";
     public const string Client = "$client";
+#pragma warning disable CS0618 // Type or member is obsolete
     private readonly ILogger _logger = Log.CreateLogger<ActorSystem>();
+#pragma warning restore CS0618 // Type or member is obsolete
     private string _host = NoHost;
     private int _port;
 
@@ -41,7 +43,11 @@ public sealed class ActorSystem : IAsyncDisposable
         Diagnostics = new DiagnosticsStore(this);
         ProcessRegistry = new ProcessRegistry(this);
         Root = NewRoot();
-        DeadLetter = new DeadLetterProcess(this).Configure();
+        var dl = new DeadLetterProcess(this);
+        var dlPid = new PID(Address, "$deadletter", dl);
+        DeadLetterPid = dlPid;
+        DeadLetter = dl.Configure();
+        ProcessRegistry.TryAdd("$deadletter", DeadLetter);
         Guardians = new Guardians(this);
         EventStream = new EventStream(this);
         Metrics = new ProtoMetrics(config.MetricsEnabled);
@@ -108,6 +114,11 @@ public sealed class ActorSystem : IAsyncDisposable
     ///     DeadLetter process that receives all messages that could not be delivered to an actor.
     /// </summary>
     public Process DeadLetter { get; }
+    
+    /// <summary>
+    ///     Pid for the DeadLetter process.
+    /// </summary>
+    public PID DeadLetterPid { get; }
 
     /// <summary>
     ///     Allows to broadcast messages across the actor system to anyone who explicitly subscribed.
