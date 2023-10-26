@@ -384,7 +384,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
     }
 
-    public ValueTask InvokeSystemMessageAsync(SystemMessage msg)
+    public Task InvokeSystemMessageAsync(SystemMessage msg)
     {
         try
         {
@@ -412,7 +412,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
     }
 
-    private ValueTask HandleStartedAsync()
+    private Task HandleStartedAsync()
     {
         if (_props.StartDeadline != TimeSpan.Zero)
         {
@@ -421,7 +421,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
         return InvokeUserMessageAsync(Started.Instance);
         
-        async ValueTask Await()
+        async Task Await()
         {
             var sw = Stopwatch.StartNew();
             await InvokeUserMessageAsync(Started.Instance);
@@ -438,7 +438,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
     }
 
-    public ValueTask InvokeUserMessageAsync(object msg)
+    public Task InvokeUserMessageAsync(object msg)
     {
         if (!System.Metrics.Enabled)
         {
@@ -448,7 +448,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         return Await(this, msg, _metricTags);
 
         //static, don't create a closure
-        static async ValueTask Await(ActorContext self, object msg, KeyValuePair<string, object?>[] metricTags)
+        static async Task Await(ActorContext self, object msg, KeyValuePair<string, object?>[] metricTags)
         {
             if (self.System.Metrics.Enabled)
             {
@@ -482,13 +482,13 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     public void ResumeChildren(params PID[] pids) => pids.SendSystemMessage(ResumeMailbox.Instance, System);
 
-    private async ValueTask HandleReceiveTimeout()
+    private async Task HandleReceiveTimeout()
     {
         _messageOrEnvelope = Proto.ReceiveTimeout.Instance;
         await InvokeUserMessageAsync(Proto.ReceiveTimeout.Instance).ConfigureAwait(false);
     }
 
-    private ValueTask HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
+    private Task HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
     {
         var diagnosticsString = "ActorType:" + Actor.GetType().Name + "\n";
 
@@ -508,14 +508,14 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ValueTask InternalInvokeUserMessageAsync(object msg)
+    private Task InternalInvokeUserMessageAsync(object msg)
     {
         if (_state == ContextState.Stopped)
         {
             //already stopped, send message to deadletter process
             System.DeadLetter.SendUserMessage(Self, msg);
 
-            return default;
+            return Task.CompletedTask;
         }
 
         var influenceReceiveTimeout = false;
@@ -561,7 +561,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         return Await(this, t, influenceReceiveTimeout);
 
         //static, dont create closure
-        static async ValueTask Await(ActorContext self, Task t, bool resetReceiveTimeout)
+        static async Task Await(ActorContext self, Task t, bool resetReceiveTimeout)
         {
             await t.ConfigureAwait(false);
 
@@ -602,15 +602,15 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         _ = Continue(target, cont, this);
     }
 
-    private static ValueTask HandleUnknownSystemMessage(object msg)
+    private static Task HandleUnknownSystemMessage(object msg)
     {
         //TODO: sounds like a pretty severe issue if we end up here? what todo?
         Logger.UnknownSystemMessage(msg);
 
-        return default;
+        return Task.CompletedTask;
     }
 
-    private async ValueTask HandleContinuation(Continuation cont)
+    private async Task HandleContinuation(Continuation cont)
     {
         // Don't execute the continuation if the actor instance changed.
         // Without this, Continuation's Action closure would execute with
@@ -701,7 +701,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         return _props.Producer(System, this);
     }
 
-    private async ValueTask HandleRestartAsync()
+    private async Task HandleRestartAsync()
     {
         //restart invoked but system is stopping. stop the actor
         if (System.Shutdown.IsCancellationRequested)
@@ -721,14 +721,14 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
     }
 
-    private ValueTask HandleUnwatch(Unwatch uw)
+    private Task HandleUnwatch(Unwatch uw)
     {
         _extras?.Unwatch(uw.Watcher);
 
         return default;
     }
 
-    private ValueTask HandleWatch(Watch w)
+    private Task HandleWatch(Watch w)
     {
         if (_state >= ContextState.Stopping)
         {
@@ -742,7 +742,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         return default;
     }
 
-    private ValueTask HandleFailureAsync(Failure msg)
+    private Task HandleFailureAsync(Failure msg)
     {
         switch (Actor)
         {
@@ -761,11 +761,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
                 break;
         }
 
-        return default;
+        return Task.CompletedTask;
     }
 
     // this will be triggered by the actors own Termination, _and_ terminating direct children, or Watchees
-    private async ValueTask HandleTerminatedAsync(Terminated msg)
+    private async Task HandleTerminatedAsync(Terminated msg)
     {
         //In the case of a Watchee terminating, this will have no effect, except that the terminate message is
         //passed onto the user message Receive for user level handling
@@ -785,7 +785,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         );
 
     //Initiate stopping, not final
-    private ValueTask HandleStopAsync()
+    private Task HandleStopAsync()
     {
         if (_state >= ContextState.Stopping)
         {
@@ -798,7 +798,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
         return Await(this);
 
-        static async ValueTask Await(ActorContext self)
+        static async Task Await(ActorContext self)
         {
             try
             {
