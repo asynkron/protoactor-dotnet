@@ -397,7 +397,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
                 Unwatch uw                      => HandleUnwatch(uw),
                 Failure f                       => HandleFailureAsync(f),
                 Restart                         => HandleRestartAsync(),
-                SuspendMailbox or ResumeMailbox => default,
+                SuspendMailbox or ResumeMailbox => Task.CompletedTask,
                 Continuation cont               => HandleContinuation(cont),
                 ProcessDiagnosticsRequest pdr   => HandleProcessDiagnosticsRequest(pdr),
                 ReceiveTimeout _                => HandleReceiveTimeout(),
