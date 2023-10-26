@@ -504,7 +504,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
         processDiagnosticsRequest.Result.SetResult(diagnosticsString);
 
-        return default;
+        return Task.CompletedTask;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -555,7 +555,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
                 _extras?.ResetReceiveTimeoutTimer(ReceiveTimeout);
             }
 
-            return default;
+            return Task.CompletedTask;
         }
 
         return Await(this, t, influenceReceiveTimeout);
@@ -725,7 +725,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         _extras?.Unwatch(uw.Watcher);
 
-        return default;
+        return Task.CompletedTask;
     }
 
     private Task HandleWatch(Watch w)
@@ -739,7 +739,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             EnsureExtras().Watch(w.Watcher);
         }
 
-        return default;
+        return Task.CompletedTask;
     }
 
     private Task HandleFailureAsync(Failure msg)
@@ -790,7 +790,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         if (_state >= ContextState.Stopping)
         {
             //already stopping or stopped
-            return default;
+            return Task.CompletedTask;
         }
 
         _state = ContextState.Stopping;
@@ -814,7 +814,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
     }
 
-    private ValueTask StopAllChildren()
+    private Task StopAllChildren()
     {
         if (_extras != null)
         {
@@ -829,11 +829,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     //intermediate stopping stage, waiting for children to stop
     //this is directly triggered by StopAllChildren, or by Terminated messages from stopping children
-    private ValueTask TryRestartOrStopAsync()
+    private Task TryRestartOrStopAsync()
     {
         if (_extras?.Children.Count > 0)
         {
-            return default;
+            return Task.CompletedTask;
         }
 
         CancelReceiveTimeout();
@@ -843,12 +843,12 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         {
             ContextState.Restarting => RestartAsync(),
             ContextState.Stopping   => FinalizeStopAsync(),
-            _                       => default
+            _                       => Task.CompletedTask
         };
     }
 
     //Last and final termination step
-    private async ValueTask FinalizeStopAsync()
+    private async Task FinalizeStopAsync()
     {
         System.ProcessRegistry.Remove(Self);
         //This is intentional
@@ -867,7 +867,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         _state = ContextState.Stopped;
     }
 
-    private async ValueTask RestartAsync()
+    private async Task RestartAsync()
     {
         await DisposeActorIfDisposable().ConfigureAwait(false);
         Actor = IncarnateActor();
