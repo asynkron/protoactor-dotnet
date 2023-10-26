@@ -14,9 +14,9 @@ public interface IMessageInvoker
 {
     CancellationTokenSource? CancellationTokenSource { get; }
 
-    ValueTask InvokeSystemMessageAsync(SystemMessage msg);
+    Task InvokeSystemMessageAsync(SystemMessage msg);
 
-    ValueTask InvokeUserMessageAsync(object msg);
+    Task InvokeUserMessageAsync(object msg);
 
     void EscalateFailure(Exception reason, object? message);
 }
@@ -123,9 +123,9 @@ internal class NoopInvoker : IMessageInvoker
 
     public CancellationTokenSource CancellationTokenSource => throw new NotImplementedException();
 
-    public ValueTask InvokeSystemMessageAsync(SystemMessage msg) => throw new NotImplementedException();
+    public Task InvokeSystemMessageAsync(SystemMessage msg) => throw new NotImplementedException();
 
-    public ValueTask InvokeUserMessageAsync(object msg) => throw new NotImplementedException();
+    public Task InvokeUserMessageAsync(object msg) => throw new NotImplementedException();
 
     public void EscalateFailure(Exception reason, object? message) => throw new NotImplementedException();
 }

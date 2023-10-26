@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -93,7 +92,7 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
     {
         // if the message is a batch message, we unpack the content as individual messages in the mailbox
         // feature Aka: Samkuvertering in Swedish...
-        if (msg is IMessageBatch || (msg is MessageEnvelope e && e.Message is IMessageBatch))
+        if (msg is IMessageBatch || msg is MessageEnvelope { Message: IMessageBatch })
         {
             var batch = (IMessageBatch)MessageEnvelope.UnwrapMessage(msg)!;
             var messages = batch.GetMessages();
@@ -177,7 +176,7 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
 
         Interlocked.Exchange(ref mailbox._status, MailboxStatus.Idle);
 
-        if (mailbox._systemMessages.HasMessages || (!mailbox._suspended && mailbox._userMailbox.HasMessages))
+        if (mailbox._systemMessages.HasMessages || mailbox is { _suspended: false, _userMailbox.HasMessages: true })
         {
             mailbox.Schedule();
         }
@@ -191,13 +190,13 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
 
         return Task.CompletedTask;
 
-        static async Task Await(DefaultMailbox self, ValueTask task)
+        static async Task Await(DefaultMailbox self, Task task)
         {
             await task.ConfigureAwait(false);
 
             Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
 
-            if (self._systemMessages.HasMessages || (!self._suspended && self._userMailbox.HasMessages))
+            if (self._systemMessages.HasMessages || self is { _suspended: false, _userMailbox.HasMessages: true })
             {
                 self.Schedule();
             }
@@ -211,7 +210,7 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
         }
     }
 
-    private ValueTask ProcessMessages()
+    private Task ProcessMessages()
     {
         object? msg = null;
 
@@ -278,9 +277,9 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
             _invoker.EscalateFailure(e, msg);
         }
 
-        return default;
+        return Task.CompletedTask;
 
-        static async ValueTask Await(object msg, ValueTask task, DefaultMailbox self)
+        static async Task Await(object msg, Task task, DefaultMailbox self)
         {
             try
             {

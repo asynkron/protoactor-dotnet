@@ -32,10 +32,10 @@ public class TestMailboxHandler : IMessageInvoker, IDispatcher
     }
 
     // ReSharper disable once SuspiciousTypeConversion.Global
-    public async ValueTask InvokeSystemMessageAsync(SystemMessage msg) =>
+    public async Task InvokeSystemMessageAsync(SystemMessage msg) =>
         await ((TestMessageWithTaskCompletionSource)msg).TaskCompletionSource.Task;
 
-    public async ValueTask InvokeUserMessageAsync(object msg) =>
+    public async Task InvokeUserMessageAsync(object msg) =>
         await ((TestMessageWithTaskCompletionSource)msg).TaskCompletionSource.Task;
 
     public void EscalateFailure(Exception reason, object message)
