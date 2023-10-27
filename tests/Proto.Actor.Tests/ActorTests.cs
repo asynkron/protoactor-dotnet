@@ -15,6 +15,76 @@ internal class MyAutoRespondMessage : IAutoRespond
 public class ActorTests
 {
     [Fact]
+    public async Task CanNotSpawnAfterShutdown()
+    {
+        await using var system = new ActorSystem();
+        var context = system.Root;
+
+        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
+
+        var pid = SpawnActorFromFunc(ctx =>
+            {
+                if (ctx.Message is string)
+                {
+                    ctx.Respond("hey");
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+
+        var reply = await context.RequestAsync<object>(pid, "hello");
+        Assert.Equal("hey", reply);
+
+        await system.ShutdownAsync();
+        
+        var pid2 = SpawnActorFromFunc(ctx =>
+            {
+                if (ctx.Message is string)
+                {
+                    ctx.Respond("hey");
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+        
+        Assert.Same(system.DeadLetterPid, pid2);
+    }
+    
+    [Fact]
+    public async Task CanNotSendUserMessageAfterShutdown()
+    {
+        await using var system = new ActorSystem();
+        var context = system.Root;
+
+        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
+
+        var pid = SpawnActorFromFunc(ctx =>
+            {
+                if (ctx.Message is string)
+                {
+                    ctx.Respond("hey");
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+
+        var reply = await context.RequestAsync<object>(pid, "hello");
+        Assert.Equal("hey", reply);
+
+        await system.ShutdownAsync();
+        
+        //expect DeadLetterException
+        
+        await Assert.ThrowsAsync<DeadLetterException>(async () =>
+        {
+            await context.RequestAsync<object>(pid, "hello");
+        }); 
+    }
+    
+    [Fact]
     public async Task RequestActorAsync()
     {
         var system = new ActorSystem();
