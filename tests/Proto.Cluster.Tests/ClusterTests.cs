@@ -63,6 +63,7 @@ public abstract class ClusterTests : ClusterTestBase
 
             try
             {
+                await clientNode.JoinedCluster.WaitAsync(timeout);
                 clientNode.JoinedCluster.IsCompletedSuccessfully.Should().BeTrue();
                 
                 var timer = Stopwatch.StartNew();
