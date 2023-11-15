@@ -28,7 +28,6 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public void ClusterMembersMatch()
     {
-        
         var memberSet = Members.First().MemberList.GetMembers();
 
         memberSet.Should().NotBeEmpty();
@@ -51,21 +50,24 @@ public abstract class ClusterTests : ClusterTestBase
             _testOutputHelper.WriteLine($"Spawned 1 actor in {timer.Elapsed}");
         }, _testOutputHelper);
     }
-    
+
     [Fact]
     public async Task ClientsCanCallCluster()
     {
+        if (!ClusterFixture.SupportsClients)
+            return;
+
         await Trace(async () =>
         {
             var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
 
-            var clientNode = await  ClusterFixture.SpawnClient();
+            var clientNode = await ClusterFixture.SpawnClient();
 
             try
             {
                 await clientNode.JoinedCluster.WaitAsync(timeout);
                 clientNode.JoinedCluster.IsCompletedSuccessfully.Should().BeTrue();
-                
+
                 var timer = Stopwatch.StartNew();
                 await PingPong(clientNode, "client-unicorn", timeout);
                 timer.Stop();
@@ -76,19 +78,18 @@ public abstract class ClusterTests : ClusterTestBase
                 await ClusterFixture.RemoveNode(clientNode);
                 throw;
             }
-            
         }, _testOutputHelper);
     }
-    
+
     [Fact]
     public async Task TopologiesShouldHaveConsensus()
     {
         await Trace(async () =>
         {
             var consensus = await Task
-                .WhenAll(Members.Select(member =>
-                    member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
-                .WaitUpTo(TimeSpan.FromSeconds(20))
+                    .WhenAll(Members.Select(member =>
+                        member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
+                    .WaitUpTo(TimeSpan.FromSeconds(20))
                 ;
 
             _testOutputHelper.WriteLine(await Members.DumpClusterState());
@@ -496,7 +497,7 @@ public abstract class ClusterTests : ClusterTestBase
         string id,
         CancellationToken token = default,
         string kind = EchoActor.Kind,
-        ISenderContext context= null
+        ISenderContext context = null
     )
     {
         await Task.Yield();

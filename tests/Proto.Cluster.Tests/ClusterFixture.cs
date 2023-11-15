@@ -34,6 +34,8 @@ public interface IClusterFixture
 {
     IList<Cluster> Members { get; }
 
+    bool SupportsClients { get; }
+
     LogStore LogStore { get; }
     int ClusterSize { get; }
 
@@ -56,7 +58,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 {
     private static readonly object Lock = new();
 
-    
+
     public const string InvalidIdentity = "invalid";
     private readonly Func<ClusterConfig, ClusterConfig>? _configure;
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
@@ -71,14 +73,14 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     {
         TracingSettings.OpenTelemetryUrl = Environment.GetEnvironmentVariable("OPENTELEMETRY_URL");
         TracingSettings.TraceViewUrl = Environment.GetEnvironmentVariable("TRACEVIEW_URL");
-     //   TracingSettings.OpenTelemetryUrl = "http://Localhost:4317";
+        //   TracingSettings.OpenTelemetryUrl = "http://Localhost:4317";
         TracingSettings.EnableTracing = TracingSettings.OpenTelemetryUrl != null;
 
         //TODO: check if this helps low resource envs like github actions.
         ThreadPool.SetMinThreads(40, 40);
     }
 
-    protected ClusterFixture( int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
+    protected ClusterFixture(int clusterSize, Func<ClusterConfig, ClusterConfig>? configure = null)
     {
         _reporter = new GithubActionsReporter(GetType().Name);
         ClusterSize = clusterSize;
@@ -89,10 +91,13 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         // ReSharper disable once HeuristicUnreachableCode
         if (TracingSettings.EnableTracing)
         {
-             InitOpenTelemetryTracing();
+            InitOpenTelemetryTracing();
         }
 #pragma warning restore CS0162
     }
+
+    public virtual bool SupportsClients => true;
+
 
     protected virtual ClusterKind[] ClusterKinds => new[]
     {
@@ -124,7 +129,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         try
         {
             _tracerProvider?.ForceFlush();
-            
+
             await _reporter.WriteReportFile();
 
             await OnDisposing();
@@ -156,11 +161,10 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                 _logger.LogInformation("Shutting down cluster member {MemberId}", cluster.System.Id);
 
                 var done = await task.WaitUpTo(TimeSpan.FromSeconds(5));
-                if (! done)
+                if (!done)
                 {
                     _logger.LogWarning("Failed to shutdown cluster member {MemberId} gracefully", cluster.System.Id);
                 }
-                
             }
             catch (Exception e)
             {
@@ -208,7 +212,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
         return newMember;
     }
-    
+
     /// <summary>
     ///     Spawns a node, adds it to the cluster and member list
     /// </summary>
@@ -245,7 +249,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
                     {
                         options
                             .SetResourceBuilder(builder)
-                            .AddOtlpExporter( (OtlpExporterOptions  o)  =>
+                            .AddOtlpExporter((OtlpExporterOptions o) =>
                             {
                                 o.Endpoint = endpoint;
                                 o.ExportProcessorType = ExportProcessorType.Batch;
@@ -283,10 +287,10 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     {
         var tasks = Enumerable.Range(0, count)
             .Select(_ => SpawnClusterMember(configure));
-        
+
         var res = (await Task.WhenAll(tasks)).ToList();
-        
-        
+
+
         var consensus = res.Select(m => m.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(10)));
         var x = await Task.WhenAll(consensus);
         if (x.Any(c => !c.consensus))
@@ -314,22 +318,19 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
         var logger = system.Logger()?.BeginScope<EventStream>();
 
-        system.EventStream.Subscribe<object>(e =>
-            {
-                logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e);
-            }
+        system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e); }
         );
 
         var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
         var _ = new GrpcNetRemote(system, remoteConfig);
 
         var cluster = new Cluster(system, config);
-        
+
         await cluster.StartMemberAsync();
 
         return cluster;
     }
-    
+
     protected virtual async Task<Cluster> SpawnClusterClient(Func<ClusterConfig, ClusterConfig>? configure)
     {
         var config = ClusterConfig.Setup(
@@ -346,17 +347,14 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
         var logger = system.Logger()?.BeginScope<EventStream>();
 
-        system.EventStream.Subscribe<object>(e =>
-            {
-                logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e);
-            }
+        system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e); }
         );
 
         var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
         var _ = new GrpcNetRemote(system, remoteConfig);
 
         var cluster = new Cluster(system, config);
-        
+
         await cluster.StartClientAsync();
 
         return cluster;
@@ -370,7 +368,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         return TracingSettings.EnableTracing
             ? actorSystemConfig
                 .WithConfigureProps(props => props.WithTracing().WithLoggingContextDecorator(_logger).WithLoggingContextDecorator(_logger))
-                .WithConfigureSystemProps((name,props) =>
+                .WithConfigureSystemProps((name, props) =>
                 {
                     // if (name == "$gossip")
                     //     return props;
@@ -480,4 +478,6 @@ public class SingleNodeProviderFixture : ClusterFixture
     protected override IClusterProvider GetClusterProvider() => new SingleNodeProvider();
 
     protected override IIdentityLookup GetIdentityLookup(string clusterName) => new SingleNodeLookup();
+
+    public override bool SupportsClients => false;
 }
