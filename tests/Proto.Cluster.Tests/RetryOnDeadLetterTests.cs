@@ -24,7 +24,7 @@ public class RetryOnDeadLetterTests
         await member.RequestAsync<Pong>(identity, EchoActor.Kind, new Ping(), CancellationTokens.FromSeconds(1));
 
         // pretend we have an invalid PID in the cache
-        var otherMember = await fixture.SpawnNode();
+        var otherMember = await fixture.SpawnMember();
         if (member.PidCache.TryGet(ClusterIdentity.Create(identity, EchoActor.Kind), out var pid))
         {
             var newPid = PID.FromAddress(otherMember.System.Address, pid.Id);

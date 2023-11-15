@@ -60,12 +60,14 @@ public record MemberList
 
     private TaskCompletionSource<bool> _startedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private IConsensusHandle<ulong>? _topologyConsensus;
+    private readonly bool _asClient;
 
-    public MemberList(Cluster cluster)
+    public MemberList(Cluster cluster, bool asClient = false)
     {
         _cluster = cluster;
         _system = _cluster.System;
         _root = _system.Root;
+        _asClient = asClient;
         var (host, port) = _cluster.System.GetAddress();
 
         Self = new Member
@@ -99,9 +101,10 @@ public record MemberList
                 {
                     SelfBlocked();
                 }
-                
+
                 //only log if the member is known to us
-                if (TryGetMember(b.MemberId, out _)) {
+                if (TryGetMember(b.MemberId, out _))
+                {
                     Logger.LogInformation("Blocking member {MemberId} due to {Reason}", b.MemberId, b.Reason);
                 }
 
@@ -236,7 +239,7 @@ public record MemberList
 
             if (!_startedTcs.Task.IsCompleted)
             {
-                if (activeMembers.Contains(_system.Id))
+                if (_asClient || activeMembers.Contains(_system.Id))
                 {
                     _startedTcs.TrySetResult(true);
                 }
@@ -282,23 +285,23 @@ public record MemberList
                     Logger.LogError("Member {Member} already exists in MemberList", newMember);
                     return;
                 }
-                
+
                 var index = _nextMemberIndex++;
                 _metaMembers = _metaMembers.SetItem(newMember.Id, new MetaMember(newMember, index));
                 _membersByIndex = _membersByIndex.SetItem(index, newMember);
                 _indexByAddress = _indexByAddress.SetItem(newMember.Address, index);
-    
+
                 foreach (var kind in newMember.Kinds)
                 {
                     if (!_memberStrategyByKind.ContainsKey(kind))
                     {
                         _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, GetMemberStrategyByKind(kind));
                     }
-    
+
                     _memberStrategyByKind[kind].AddMember(newMember);
                 }
             }
-            catch(Exception x)
+            catch (Exception x)
             {
                 Logger.LogError(x, "Error during MemberJoin {Member}", newMember);
             }

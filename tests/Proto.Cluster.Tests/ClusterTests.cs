@@ -53,6 +53,33 @@ public abstract class ClusterTests : ClusterTestBase
     }
     
     [Fact]
+    public async Task ClientsCanCallCluster()
+    {
+        await Trace(async () =>
+        {
+            var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+
+            var clientNode = await  ClusterFixture.SpawnClient();
+
+            try
+            {
+                clientNode.JoinedCluster.IsCompletedSuccessfully.Should().BeTrue();
+                
+                var timer = Stopwatch.StartNew();
+                await PingPong(clientNode, "client-unicorn", timeout);
+                timer.Stop();
+                _testOutputHelper.WriteLine($"Spawned 1 actor in {timer.Elapsed}");
+            }
+            catch
+            {
+                await ClusterFixture.RemoveNode(clientNode);
+                throw;
+            }
+            
+        }, _testOutputHelper);
+    }
+    
+    [Fact]
     public async Task TopologiesShouldHaveConsensus()
     {
         await Trace(async () =>
@@ -217,7 +244,7 @@ public abstract class ClusterTests : ClusterTestBase
             _testOutputHelper.WriteLine("Removing node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
             await ClusterFixture.RemoveNode(toBeRemoved);
             _testOutputHelper.WriteLine("Removed node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
-            await ClusterFixture.SpawnNode();
+            await ClusterFixture.SpawnMember();
 
             await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
 
@@ -256,7 +283,7 @@ public abstract class ClusterTests : ClusterTestBase
             _testOutputHelper.WriteLine("Terminating node");
             await ClusterFixture.RemoveNode(victim);
             _testOutputHelper.WriteLine("Spawning node");
-            await ClusterFixture.SpawnNode();
+            await ClusterFixture.SpawnMember();
             await Task.Delay(1000);
             cts.Cancel();
             await worker;

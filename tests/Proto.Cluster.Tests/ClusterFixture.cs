@@ -37,7 +37,8 @@ public interface IClusterFixture
     LogStore LogStore { get; }
     int ClusterSize { get; }
 
-    public Task<Cluster> SpawnNode();
+    public Task<Cluster> SpawnMember();
+    public Task<Cluster> SpawnClient();
 
     Task RemoveNode(Cluster member, bool graceful = true);
 
@@ -60,6 +61,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     private readonly Func<ClusterConfig, ClusterConfig>? _configure;
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
     private readonly List<Cluster> _members = new();
+    private readonly List<Cluster> _clients = new();
     private static TracerProvider? _tracerProvider;
     private GithubActionsReporter _reporter;
 
@@ -178,6 +180,11 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             Members.Remove(member);
             await member.ShutdownAsync(graceful, "Stopped by ClusterFixture");
         }
+        else if (Clients.Contains(member))
+        {
+            Clients.Remove(member);
+            await member.ShutdownAsync(graceful, "Stopped by ClusterFixture");
+        }
         else
         {
             throw new ArgumentException("No such member");
@@ -194,15 +201,29 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     /// </summary>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public async Task<Cluster> SpawnNode()
+    public async Task<Cluster> SpawnMember()
     {
         var newMember = await SpawnClusterMember(_configure);
-        Members.Add(newMember);
+        _members.Add(newMember);
+
+        return newMember;
+    }
+    
+    /// <summary>
+    ///     Spawns a node, adds it to the cluster and member list
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task<Cluster> SpawnClient()
+    {
+        var newMember = await SpawnClusterClient(_configure);
+        _clients.Add(newMember);
 
         return newMember;
     }
 
     public IList<Cluster> Members => _members;
+    public IList<Cluster> Clients => _clients;
 
     private static void InitOpenTelemetryTracing()
     {
@@ -303,8 +324,40 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         var _ = new GrpcNetRemote(system, remoteConfig);
 
         var cluster = new Cluster(system, config);
-
+        
         await cluster.StartMemberAsync();
+
+        return cluster;
+    }
+    
+    protected virtual async Task<Cluster> SpawnClusterClient(Func<ClusterConfig, ClusterConfig>? configure)
+    {
+        var config = ClusterConfig.Setup(
+                ClusterName,
+                GetClusterProvider(),
+                GetIdentityLookup(ClusterName)
+            )
+            .WithHeartbeatExpiration(TimeSpan.Zero);
+
+        config = configure?.Invoke(config) ?? config;
+
+        var system = new ActorSystem(GetActorSystemConfig());
+        system.Extensions.Register(new InstanceLogger(LogLevel.Debug, LogStore, category: system.Id));
+
+        var logger = system.Logger()?.BeginScope<EventStream>();
+
+        system.EventStream.Subscribe<object>(e =>
+            {
+                logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e);
+            }
+        );
+
+        var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
+        var _ = new GrpcNetRemote(system, remoteConfig);
+
+        var cluster = new Cluster(system, config);
+        
+        await cluster.StartClientAsync();
 
         return cluster;
     }
