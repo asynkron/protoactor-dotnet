@@ -82,7 +82,7 @@ public class GossipTests
 
         afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
-        await clusterFixture.SpawnNode();
+        await clusterFixture.SpawnMember();
         await Task.Delay(2000); // Allow topology state to propagate
 
         var afterChangingTopology =

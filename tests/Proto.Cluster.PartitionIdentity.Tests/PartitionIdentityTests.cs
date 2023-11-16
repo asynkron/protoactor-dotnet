@@ -209,7 +209,7 @@ public class PartitionIdentityTests
                                 {
                                     _output.WriteLine($"[{DateTimeOffset.Now:O}] Starting cluster member");
 
-                                    _ = clusterFixture.SpawnNode()
+                                    _ = clusterFixture.SpawnMember()
                                         .ContinueWith(
                                             t =>
                                             {

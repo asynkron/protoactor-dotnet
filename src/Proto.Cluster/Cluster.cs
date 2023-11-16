@@ -200,7 +200,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         await Remote.StartAsync().ConfigureAwait(false);
 
         Logger.LogInformation("Starting");
-        MemberList = new MemberList(this);
+        MemberList = new MemberList(this, client);
         _ = MemberList.Started.ContinueWith(_ => _joinedClusterTcs.TrySetResult(true));
         ClusterContext = Config.ClusterContextProducer(this);
 

@@ -28,7 +28,6 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public void ClusterMembersMatch()
     {
-        
         var memberSet = Members.First().MemberList.GetMembers();
 
         memberSet.Should().NotBeEmpty();
@@ -51,16 +50,46 @@ public abstract class ClusterTests : ClusterTestBase
             _testOutputHelper.WriteLine($"Spawned 1 actor in {timer.Elapsed}");
         }, _testOutputHelper);
     }
-    
+
+    [Fact]
+    public async Task ClientsCanCallCluster()
+    {
+        if (!ClusterFixture.SupportsClients)
+            return;
+
+        await Trace(async () =>
+        {
+            var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+
+            var clientNode = await ClusterFixture.SpawnClient();
+
+            try
+            {
+                await clientNode.JoinedCluster.WaitAsync(timeout);
+                clientNode.JoinedCluster.IsCompletedSuccessfully.Should().BeTrue();
+
+                var timer = Stopwatch.StartNew();
+                await PingPong(clientNode, "client-unicorn", timeout);
+                timer.Stop();
+                _testOutputHelper.WriteLine($"Spawned 1 actor in {timer.Elapsed}");
+            }
+            catch
+            {
+                await ClusterFixture.RemoveNode(clientNode);
+                throw;
+            }
+        }, _testOutputHelper);
+    }
+
     [Fact]
     public async Task TopologiesShouldHaveConsensus()
     {
         await Trace(async () =>
         {
             var consensus = await Task
-                .WhenAll(Members.Select(member =>
-                    member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
-                .WaitUpTo(TimeSpan.FromSeconds(20))
+                    .WhenAll(Members.Select(member =>
+                        member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
+                    .WaitUpTo(TimeSpan.FromSeconds(20))
                 ;
 
             _testOutputHelper.WriteLine(await Members.DumpClusterState());
@@ -217,7 +246,7 @@ public abstract class ClusterTests : ClusterTestBase
             _testOutputHelper.WriteLine("Removing node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
             await ClusterFixture.RemoveNode(toBeRemoved);
             _testOutputHelper.WriteLine("Removed node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
-            await ClusterFixture.SpawnNode();
+            await ClusterFixture.SpawnMember();
 
             await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
 
@@ -256,7 +285,7 @@ public abstract class ClusterTests : ClusterTestBase
             _testOutputHelper.WriteLine("Terminating node");
             await ClusterFixture.RemoveNode(victim);
             _testOutputHelper.WriteLine("Spawning node");
-            await ClusterFixture.SpawnNode();
+            await ClusterFixture.SpawnMember();
             await Task.Delay(1000);
             cts.Cancel();
             await worker;
@@ -468,7 +497,7 @@ public abstract class ClusterTests : ClusterTestBase
         string id,
         CancellationToken token = default,
         string kind = EchoActor.Kind,
-        ISenderContext context= null
+        ISenderContext context = null
     )
     {
         await Task.Yield();
