@@ -80,27 +80,20 @@ public class EventStream : EventStream<object>
 
         foreach (var sub in Subscriptions.Values)
         {
-            var action = () =>
+            void Action()
             {
-                sub.Dispatcher.Schedule(
-                    () =>
-                    {
-                        try
-                        {
-                            sub.Action(msg);
-                        }
-                        catch (Exception ex)
-                        {
-                            ex.CheckFailFast();
-                            _logger.LogError(0, ex, "Exception has occurred when publishing a message");
-                        }
+                try
+                {
+                    sub.Action(msg);
+                }
+                catch (Exception ex)
+                {
+                    ex.CheckFailFast();
+                    _logger.LogError(0, ex, "Exception has occurred when publishing a message");
+                }
+            }
 
-                        return Task.CompletedTask;
-                    }
-                );
-            };
-
-            var runner = new EventStreamRunner(action);
+            var runner = new EventStreamRunner(Action);
             _system.Root.Send(_pid, runner);
         }
     }
@@ -159,7 +152,6 @@ public class EventStream<T>
     {
         var sub = new EventStreamSubscription<T>(
             this,
-            dispatcher ?? Dispatchers.SynchronousDispatcher,
             x =>
             {
                 action(x);
@@ -183,7 +175,6 @@ public class EventStream<T>
     {
         var sub = new EventStreamSubscription<T>(
             this,
-            dispatcher ?? Dispatchers.SynchronousDispatcher,
             async x => { await channel.Writer.WriteAsync(x).ConfigureAwait(false); }
         );
 
@@ -200,7 +191,7 @@ public class EventStream<T>
     /// <returns>A new subscription that can be used to unsubscribe</returns>
     public EventStreamSubscription<T> Subscribe(Func<T, Task> action, IDispatcher? dispatcher = null)
     {
-        var sub = new EventStreamSubscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
+        var sub = new EventStreamSubscription<T>(this, action);
         Subscriptions.TryAdd(sub.Id, sub);
 
         return sub;
@@ -217,7 +208,6 @@ public class EventStream<T>
     {
         var sub = new EventStreamSubscription<T>(
             this,
-            dispatcher ?? Dispatchers.SynchronousDispatcher,
             msg =>
             {
                 if (msg is TMsg typed)
@@ -249,7 +239,6 @@ public class EventStream<T>
     {
         var sub = new EventStreamSubscription<T>(
             this,
-            dispatcher ?? Dispatchers.SynchronousDispatcher,
             msg =>
             {
                 if (msg is TMsg typed && predicate(typed))
@@ -276,7 +265,6 @@ public class EventStream<T>
     {
         var sub = new EventStreamSubscription<T>(
             this,
-            Dispatchers.SynchronousDispatcher,
             msg =>
             {
                 if (msg is TMsg)
@@ -307,7 +295,6 @@ public class EventStream<T>
     {
         var sub = new EventStreamSubscription<T>(
             this,
-            dispatcher ?? Dispatchers.SynchronousDispatcher,
             msg => msg is TMsg typed ? action(typed) : Task.CompletedTask
         );
 
@@ -324,24 +311,19 @@ public class EventStream<T>
     {
         foreach (var sub in Subscriptions.Values)
         {
-            sub.Dispatcher.Schedule(
-                () =>
-                {
-                    try
-                    {
-                        sub.Action(msg);
-                    }
-                    catch (Exception ex)
-                    {
-                        ex.CheckFailFast();
-                        _logger.LogError(0, ex, "Exception has occurred when publishing a message");
-                    }
 
-                    return Task.CompletedTask;
-                }
-            );
+            try
+            {
+                sub.Action(msg);
+            }
+            catch (Exception ex)
+            {
+                ex.CheckFailFast();
+                _logger.LogError(0, ex, "Exception has occurred when publishing a message");
+            }
         }
     }
+
 
     /// <summary>
     ///     Remove a subscription by id
@@ -366,16 +348,14 @@ public class EventStreamSubscription<T>
 {
     private readonly EventStream<T> _eventStream;
 
-    public EventStreamSubscription(EventStream<T> eventStream, IDispatcher dispatcher, Func<T, Task> action)
+    public EventStreamSubscription(EventStream<T> eventStream, Func<T, Task> action)
     {
         Id = Guid.NewGuid();
         _eventStream = eventStream;
-        Dispatcher = dispatcher;
         Action = action;
     }
 
     public Guid Id { get; }
-    public IDispatcher Dispatcher { get; }
     public Func<T, Task> Action { get; }
 
     public void Unsubscribe() => _eventStream.Unsubscribe(Id);
