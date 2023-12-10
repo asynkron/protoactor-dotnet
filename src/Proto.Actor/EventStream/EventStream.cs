@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -72,6 +73,11 @@ public class EventStream : EventStream<object>
 
     public override void Publish(object msg)
     {
+        if (_pid == null)
+        {
+            SpinWait.SpinUntil(() => _pid != null);
+        }
+
         foreach (var sub in Subscriptions.Values)
         {
             var action = () =>
