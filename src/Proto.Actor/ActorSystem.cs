@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Proto.Diagnostics;
 using Proto.Extensions;
 using Proto.Future;
+using Proto.Mailbox;
 using Proto.Metrics;
 using Proto.Utils;
 
@@ -49,8 +50,9 @@ public sealed class ActorSystem : IAsyncDisposable
         DeadLetter = dl.Configure();
         ProcessRegistry.TryAdd("$deadletter", DeadLetter);
         Guardians = new Guardians(this);
-        EventStream = new EventStream(this);
         Metrics = new ProtoMetrics(config.MetricsEnabled);
+        EventStream = new EventStream(this);
+        ActorDispatcher = new ActorDispatcher(this);
         var eventStream = new EventStreamProcess(this).Configure();
         ProcessRegistry.TryAdd("$eventstream", eventStream);
         Extensions = new ActorSystemExtensions(this);
@@ -88,6 +90,11 @@ public sealed class ActorSystem : IAsyncDisposable
     ///     Manages all processes in the actor system (actors, futures, event stream, etc.).
     /// </summary>
     public ProcessRegistry ProcessRegistry { get; }
+    
+    /// <summary>
+    ///    Dispatcher used to schedule messages via an actor.
+    /// </summary>
+    public IDispatcher ActorDispatcher { get; }
 
     /// <summary>
     ///     Root context of the actor system. Use it to spawn actors or send messages from outside of an actor context.
