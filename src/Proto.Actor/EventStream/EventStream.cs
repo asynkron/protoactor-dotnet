@@ -24,10 +24,19 @@ namespace Proto;
 [PublicAPI]
 public class EventStream : EventStream<object>
 {
+#pragma warning disable CS0618 // Type or member is obsolete
     private readonly ILogger _logger = Log.CreateLogger<EventStream>();
+    private readonly PID _pid;
+    private readonly ActorSystem _system;
+#pragma warning restore CS0618 // Type or member is obsolete
 
     internal EventStream(ActorSystem system)
     {
+        _system = system;
+        var props = Props.FromProducer(() => new EventStreamPublisherActor());
+        _pid = system.Root.SpawnNamedSystem( props,"$eventstream-actor");
+        
+        
         if (!_logger.IsEnabled(LogLevel.Information))
         {
             return;
@@ -60,6 +69,61 @@ public class EventStream : EventStream<object>
             }
         );
     }
+
+    public override void Publish(object msg)
+    {
+        foreach (var sub in Subscriptions.Values)
+        {
+            var action = () =>
+            {
+                sub.Dispatcher.Schedule(
+                    () =>
+                    {
+                        try
+                        {
+                            sub.Action(msg);
+                        }
+                        catch (Exception ex)
+                        {
+                            ex.CheckFailFast();
+                            _logger.LogError(0, ex, "Exception has occurred when publishing a message");
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                );
+            };
+
+            var runner = new EventStreamRunner(action);
+            _system.Root.Send(_pid, runner);
+        }
+    }
+}
+
+
+public record EventStreamRunner(Action Run);
+public class EventStreamPublisherActor : IActor
+{
+#pragma warning disable CS0618 // Type or member is obsolete
+    private readonly ILogger _logger = Log.CreateLogger<EventStreamPublisherActor>();
+#pragma warning restore CS0618 // Type or member is obsolete
+    public Task ReceiveAsync(IContext context)
+    {
+        if (context.Message is EventStreamRunner runner)
+        {
+            try
+            { 
+                runner.Run();
+            }
+            catch(Exception ex)
+            {
+                ex.CheckFailFast();
+                _logger.LogError(0, ex, "Exception has occurred when publishing a message");
+            }
+        }
+
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>
@@ -69,9 +133,11 @@ public class EventStream : EventStream<object>
 [PublicAPI]
 public class EventStream<T>
 {
+#pragma warning disable CS0618 // Type or member is obsolete
     private readonly ILogger _logger = Log.CreateLogger<EventStream<T>>();
+#pragma warning restore CS0618 // Type or member is obsolete
 
-    private readonly ConcurrentDictionary<Guid, EventStreamSubscription<T>> _subscriptions = new();
+    public ConcurrentDictionary<Guid, EventStreamSubscription<T>> Subscriptions { get; } = new();
 
     internal EventStream()
     {
@@ -96,7 +162,7 @@ public class EventStream<T>
             }
         );
 
-        _subscriptions.TryAdd(sub.Id, sub);
+        Subscriptions.TryAdd(sub.Id, sub);
 
         return sub;
     }
@@ -115,7 +181,7 @@ public class EventStream<T>
             async x => { await channel.Writer.WriteAsync(x).ConfigureAwait(false); }
         );
 
-        _subscriptions.TryAdd(sub.Id, sub);
+        Subscriptions.TryAdd(sub.Id, sub);
 
         return sub;
     }
@@ -129,7 +195,7 @@ public class EventStream<T>
     public EventStreamSubscription<T> Subscribe(Func<T, Task> action, IDispatcher? dispatcher = null)
     {
         var sub = new EventStreamSubscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
-        _subscriptions.TryAdd(sub.Id, sub);
+        Subscriptions.TryAdd(sub.Id, sub);
 
         return sub;
     }
@@ -157,7 +223,7 @@ public class EventStream<T>
             }
         );
 
-        _subscriptions.TryAdd(sub.Id, sub);
+        Subscriptions.TryAdd(sub.Id, sub);
 
         return sub;
     }
@@ -189,7 +255,7 @@ public class EventStream<T>
             }
         );
 
-        _subscriptions.TryAdd(sub.Id, sub);
+        Subscriptions.TryAdd(sub.Id, sub);
 
         return sub;
     }
@@ -219,7 +285,7 @@ public class EventStream<T>
             }
         );
 
-        _subscriptions.TryAdd(sub.Id, sub);
+        Subscriptions.TryAdd(sub.Id, sub);
 
         return sub;
     }
@@ -239,7 +305,7 @@ public class EventStream<T>
             msg => msg is TMsg typed ? action(typed) : Task.CompletedTask
         );
 
-        _subscriptions.TryAdd(sub.Id, sub);
+        Subscriptions.TryAdd(sub.Id, sub);
 
         return sub;
     }
@@ -248,9 +314,9 @@ public class EventStream<T>
     ///     Publish a message to the event stream
     /// </summary>
     /// <param name="msg">A message to publish</param>
-    public void Publish(T msg)
+    public virtual void Publish(T msg)
     {
-        foreach (var sub in _subscriptions.Values)
+        foreach (var sub in Subscriptions.Values)
         {
             sub.Dispatcher.Schedule(
                 () =>
@@ -275,7 +341,7 @@ public class EventStream<T>
     ///     Remove a subscription by id
     /// </summary>
     /// <param name="id">Subscription id</param>
-    public void Unsubscribe(Guid id) => _subscriptions.TryRemove(id, out _);
+    public void Unsubscribe(Guid id) => Subscriptions.TryRemove(id, out _);
 
     /// <summary>
     ///     Remove a subscription

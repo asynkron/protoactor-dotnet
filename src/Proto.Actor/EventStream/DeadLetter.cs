@@ -16,8 +16,8 @@ namespace Proto;
 
 /// <summary>
 ///     A wrapper for a message that could not be delivered to the original recipient. Such message is wrapped in
-///     a <see cref="DeadLetterEvent{T}" /> by the <see cref="DeadLetterProcess" /> and forwarded
-///     to the <see cref="EventStream{T}" />
+///     a <see cref="DeadLetterEvent" /> by the <see cref="DeadLetterProcess" /> and forwarded
+///     to the <see cref="EventStream" />
 /// </summary>
 [PublicAPI]
 public class DeadLetterEvent
