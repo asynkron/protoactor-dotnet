@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
 using Xunit;
@@ -17,6 +18,9 @@ public class EventStreamTests
 
         eventStream.Subscribe<string>(theString => received = theString);
         eventStream.Publish("hello");
+        
+        await Task.Delay(1000);
+        
         Assert.Equal("hello", received);
     }
 
@@ -32,6 +36,9 @@ public class EventStreamTests
         eventStream.Publish("hello");
         eventStream.Publish(1);
         eventStream.Publish(true);
+
+        await Task.Delay(1000);
+        
         Assert.Equal(3, receivedEvents.Count);
     }
 
@@ -46,6 +53,9 @@ public class EventStreamTests
         eventStream.Publish("first message");
         subscription.Unsubscribe();
         eventStream.Publish("second message");
+        
+        await Task.Delay(1000);
+        
         Assert.Single(receivedEvents);
     }
 
@@ -59,6 +69,9 @@ public class EventStreamTests
         var eventsReceived = new List<object>();
         eventStream.Subscribe<int>(@event => eventsReceived.Add(@event));
         eventStream.Publish("not an int");
+        
+        await Task.Delay(1000);
+        
         Assert.Empty(eventsReceived);
     }
 
@@ -79,5 +92,6 @@ public class EventStreamTests
         );
 
         eventStream.Publish("hello");
+        await Task.Delay(1000);
     }
 }
