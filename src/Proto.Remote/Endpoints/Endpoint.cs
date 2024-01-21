@@ -22,8 +22,11 @@ public abstract class Endpoint : IEndpoint
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly LogLevel _deserializationErrorLogLevel;
+#pragma warning disable CS0618 // Type or member is obsolete
     private readonly ILogger _logger = Log.CreateLogger<Endpoint>();
+#pragma warning restore CS0618 // Type or member is obsolete
     private readonly Channel<RemoteDeliver> _remoteDelivers = Channel.CreateUnbounded<RemoteDeliver>();
+    private readonly Channel<RemoteDeliver> _remotePriorityDelivers = Channel.CreateUnbounded<RemoteDeliver>();
     private readonly Task _sender;
     private readonly object _synLock = new();
     private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
@@ -112,8 +115,13 @@ public abstract class Endpoint : IEndpoint
         }
 
         var env = new RemoteDeliver(header, message, target, sender);
+        var didWrite = message switch
+        {
+            IRemotePriorityMessage => _remotePriorityDelivers.Writer.TryWrite(env),
+            _ => _remoteDelivers.Writer.TryWrite(env)
+        };
 
-        if (CancellationToken.IsCancellationRequested || !_remoteDelivers.Writer.TryWrite(env))
+        if (CancellationToken.IsCancellationRequested || !didWrite)
         {
             _logger.LogWarning("[{SystemAddress}] Dropping message {MessageType} {MessagePayload} to {Target} from {Sender}",
                 System.Address,
@@ -372,14 +380,39 @@ public abstract class Endpoint : IEndpoint
             try
             {
                 var messages = new List<RemoteDeliver>(RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize);
-
-                while (await _remoteDelivers.Reader.WaitToReadAsync(CancellationToken).ConfigureAwait(false))
+                
+                while (true)
                 {
-                    while (_remoteDelivers.Reader.TryRead(out var remoteDeliver))
+                    var t1 = _remoteDelivers.Reader.WaitToReadAsync(CancellationToken).AsTask();
+                    var t2 = _remotePriorityDelivers.Reader.WaitToReadAsync(CancellationToken).AsTask();
+                    await Task.WhenAny(t1, t2);
+                    
+                    while (true)
                     {
-                        messages.Add(remoteDeliver);
+                        var didWrite = false;
+                        if (_remotePriorityDelivers.Reader.TryRead(out var remoteDeliver))
+                        {
+                            messages.Add(remoteDeliver);
+                            didWrite = true;
+                        }
 
                         if (messages.Count >= RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize)
+                        {
+                            break;
+                        }
+                        
+                        if (_remoteDelivers.Reader.TryRead(out remoteDeliver))
+                        {
+                            messages.Add(remoteDeliver);
+                            didWrite = true;
+                        }
+
+                        if (messages.Count >= RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize)
+                        {
+                            break;
+                        }
+
+                        if (!didWrite)
                         {
                             break;
                         }
