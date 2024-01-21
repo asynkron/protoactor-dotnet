@@ -386,21 +386,27 @@ public abstract class Endpoint : IEndpoint
                     var t1 = _remoteDelivers.Reader.WaitToReadAsync(CancellationToken).AsTask();
                     var t2 = _remotePriorityDelivers.Reader.WaitToReadAsync(CancellationToken).AsTask();
                     await Task.WhenAny(t1, t2);
-                    
+                    var i = 0;
                     while (true)
                     {
                         var didWrite = false;
-                        if (_remotePriorityDelivers.Reader.TryRead(out var remoteDeliver))
+                        RemoteDeliver? remoteDeliver;
+                        
+                        //we don´t need complete priority, we need "enough" important messages to get over
+                        if (i++ % 10 == 0)
                         {
-                            messages.Add(remoteDeliver);
-                            didWrite = true;
+                            if (_remotePriorityDelivers.Reader.TryRead(out remoteDeliver))
+                            {
+                                messages.Add(remoteDeliver);
+                                didWrite = true;
+                            }
+
+                            if (messages.Count >= RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize)
+                            {
+                                break;
+                            }
                         }
 
-                        if (messages.Count >= RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize)
-                        {
-                            break;
-                        }
-                        
                         if (_remoteDelivers.Reader.TryRead(out remoteDeliver))
                         {
                             messages.Add(remoteDeliver);
