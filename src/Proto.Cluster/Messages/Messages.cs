@@ -139,3 +139,8 @@ public partial class Member
         return hash;
     }
 }
+
+public partial class MemberHeartbeat : IRemotePriorityMessage
+{
+    
+}
