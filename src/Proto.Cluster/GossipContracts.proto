@@ -5,8 +5,9 @@ import "google/protobuf/any.proto";
 
 
 message GossipRequest {
-  string member_id = 2;
   GossipState state = 1;
+  string member_id = 2;
+  optional string request_id = 3;
 }
 
 //Ack a gossip request

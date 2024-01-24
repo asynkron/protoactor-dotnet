@@ -39,8 +39,6 @@ internal interface IGossipCore
     /// </summary>
     /// <param name="sendStateToMember"></param>
     void SendState(SendStateAction sendStateToMember);
-
-    MemberStateDelta GetMemberStateDelta(string targetMemberId);
 }
 
 internal interface IGossipConsensusChecker

@@ -170,7 +170,9 @@ public class GossipActor : IActor
 
     private Task OnSendGossipState(IContext context)
     {
-        _internal.SendState((memberState, member, logger) => SendGossipForMember(context, member, memberState));
+        void SendStateToMember(MemberStateDelta memberState, Member member, InstanceLogger? logger) => SendGossipForMember(context, member, memberState);
+
+        _internal.SendState(SendStateToMember);
         context.Respond(new SendGossipStateResponse());
 
         return Task.CompletedTask;
@@ -190,10 +192,11 @@ public class GossipActor : IActor
         var gossipRequest = new GossipRequest
         {
             MemberId = context.System.Id,
-            State = memberStateDelta.State.Clone() //ensure we have a copy and not send state that might mutate
+            State = memberStateDelta.State.Clone(), //ensure we have a copy and not send state that might mutate
         };
         if (context.Cluster().Config.GossipDebugLogging)
         {
+            gossipRequest.RequestId = Guid.NewGuid().ToString("N");
             Logger.LogInformation("Sending GossipRequest {Request} to {MemberId}", gossipRequest, targetMember.Id);
         }
         context.RequestReenter<GossipResponse>(pid, gossipRequest,
