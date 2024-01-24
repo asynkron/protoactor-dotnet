@@ -60,14 +60,16 @@ public record MemberList
 
     private TaskCompletionSource<bool> _startedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private IConsensusHandle<ulong>? _topologyConsensus;
-    private readonly bool _asClient;
+    private readonly bool _isClient;
 
-    public MemberList(Cluster cluster, bool asClient = false)
+    public bool IsClient => _isClient;
+
+    public MemberList(Cluster cluster, bool isClient = false)
     {
         _cluster = cluster;
         _system = _cluster.System;
         _root = _system.Root;
-        _asClient = asClient;
+        _isClient = isClient;
         var (host, port) = _cluster.System.GetAddress();
 
         Self = new Member
@@ -239,7 +241,7 @@ public record MemberList
 
             if (!_startedTcs.Task.IsCompleted)
             {
-                if (_asClient || activeMembers.Contains(_system.Id))
+                if (_isClient || activeMembers.Contains(_system.Id))
                 {
                     _startedTcs.TrySetResult(true);
                 }
