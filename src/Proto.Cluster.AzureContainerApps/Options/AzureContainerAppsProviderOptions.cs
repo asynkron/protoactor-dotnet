@@ -32,4 +32,9 @@ public class AzureContainerAppsProviderOptions
     /// The actual TTL is determined by the <see cref="PollInterval"/> and the <see cref="MemberTimeToLive"/> by adding them together.
     /// </summary>
     public TimeSpan MemberTimeToLive { get; set; } = TimeSpan.FromMinutes(1);
+    /// <summary>
+    /// If set to true, the provider will verify that the revision that this replica is part of has 1 or more percent of the traffic.
+    /// If not it won't be added to the cluster, and if already added it will be removed.
+    /// </summary>
+    public bool IsVerifyRevisionHasTrafficEnabled { get; set; } = true;
 }

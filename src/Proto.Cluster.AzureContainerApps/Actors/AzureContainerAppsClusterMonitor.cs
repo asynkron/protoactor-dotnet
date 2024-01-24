@@ -180,21 +180,24 @@ public class AzureContainerAppsClusterMonitor : IActor
 
         if (currentMember is not null)
         {
-            var canReceiveTraffic = await CanReceiveTrafficAsync().ConfigureAwait(false);
-            var revisionName = _containerAppMetadata.RevisionName;
+            if (_options.Value.IsVerifyRevisionHasTrafficEnabled)
+            {
+                var canReceiveTraffic = await CanReceiveTrafficAsync().ConfigureAwait(false);
 
-            if (!canReceiveTraffic)
-            {
-                _logger.LogInformation("Revision {RevisionName} is not active", revisionName);
-                activeMembers.Remove(currentMember);
-                expiredMembers.Add(currentMember);
+                if (!canReceiveTraffic)
+                {
+                    var revisionName = _containerAppMetadata.RevisionName;
+
+                    _logger.LogInformation("Revision {RevisionName} is not active", revisionName);
+                    activeMembers.Remove(currentMember);
+                    expiredMembers.Add(currentMember);
+                    return;
+                }
             }
-            else
-            {
-                _logger.LogInformation("Updating current member {MemberId} on {MemberAddress}", currentMember.Id, currentMember.Address);
-                currentMember = currentMember with { UpdatedAt = now };
-                await _clusterMemberStore.UpdateAsync(currentMember).ConfigureAwait(false);
-            }
+
+            _logger.LogInformation("Updating current member {MemberId} on {MemberAddress}", currentMember.Id, currentMember.Address);
+            currentMember = currentMember with { UpdatedAt = now };
+            await _clusterMemberStore.UpdateAsync(currentMember).ConfigureAwait(false);
         }
     }
 
@@ -228,12 +231,15 @@ public class AzureContainerAppsClusterMonitor : IActor
 
     private async Task AddMemberInternal()
     {
-        var canReceiveTraffic = await CanReceiveTrafficAsync().ConfigureAwait(false);
-
-        if (!canReceiveTraffic)
+        if (_options.Value.IsVerifyRevisionHasTrafficEnabled)
         {
-            _logger.LogInformation("Revision {RevisionName} is not active", _containerAppMetadata.RevisionName);
-            return;
+            var canReceiveTraffic = await CanReceiveTrafficAsync().ConfigureAwait(false);
+
+            if (!canReceiveTraffic)
+            {
+                _logger.LogInformation("Revision {RevisionName} is not active", _containerAppMetadata.RevisionName);
+                return;
+            }
         }
 
         var member = new Member
