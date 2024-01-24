@@ -329,6 +329,12 @@ public record ClusterConfig
     public ClusterConfig WithGossipRequestTimeout(TimeSpan timeout) => this with { GossipRequestTimeout = timeout };
 
     /// <summary>
+    ///     Enables debug logging for the gossip protocol.
+    /// </summary>
+    /// <param name="enabled"></param>
+    /// <returns></returns>
+    public ClusterConfig WithGossipDebugLogging(bool enabled = true) => this with { GossipDebugLogging = enabled };
+    /// <summary>
     ///     TTL for remote PID cache. Default is 15min. Set to <see cref="TimeSpan.Zero" /> to disable.
     /// </summary>
     /// <param name="timeout"></param>

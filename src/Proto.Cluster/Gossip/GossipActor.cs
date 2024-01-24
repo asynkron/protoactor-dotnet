@@ -134,6 +134,11 @@ public class GossipActor : IActor
         
         ReceiveState(context, gossipRequest.State);
 
+        
+        if (context.Cluster().Config.GossipDebugLogging)
+        {
+            Logger.LogInformation("Responding to GossipRequest {Request} to {MemberId}", gossipRequest, gossipRequest.MemberId);
+        }
         context.Respond(new GossipResponse());
 
 
