@@ -52,11 +52,16 @@ public class DefaultClusterContext : IClusterContext
     public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context,
         CancellationToken ct)
     {
-        if (!_cluster.JoinedCluster.IsCompletedSuccessfully)
-        {
-            await _cluster.JoinedCluster;
-        }
         
+        //for member requests, we need to wait for the cluster to be ready
+        if (!_cluster.MemberList.IsClient)
+        {
+            if (!_cluster.JoinedCluster.IsCompletedSuccessfully)
+            {
+                await _cluster.JoinedCluster;
+            }
+        }
+
         var i = 0;
 
         var future = context.GetFuture();
