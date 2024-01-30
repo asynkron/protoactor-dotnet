@@ -318,13 +318,24 @@ internal class Gossip
         //find all members that have sent topology
         var members = _getMembers();
         
-        //TODO: what to do with _committedOffsets ?
-
+        //purge member states
         foreach (var memberId in _state.Members.Keys.ToArray())
         {
             if (!members.Contains(memberId))
             {
                 _state.Members.Remove(memberId);
+            }
+        }
+
+        //purge committed offsets
+        foreach (var x in _committedOffsets.Keys.ToArray())
+        {
+            var parts = x.Split(".");
+            var from = parts[0];
+            var to = parts[1];
+            if (!members.Contains(from) || !members.Contains(to))
+            {
+                _committedOffsets = _committedOffsets.Remove(x);
             }
         }
     }
