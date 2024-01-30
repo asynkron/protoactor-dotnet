@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
+using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Seed;
 using Proto.Remote;
@@ -32,7 +33,7 @@ public static class RunDummyCluster
 
         var clusterConfig =
             ClusterConfig
-                .Setup("MyCluster", new SeedNodeClusterProvider(),
+                .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()),
                     new PartitionIdentityLookup()
                 );
 
@@ -62,7 +63,7 @@ public static class RunDummyCluster
         var clusterConfig2 =
             ClusterConfig
                 .Setup("MyCluster",
-                    new SeedNodeClusterProvider(new SeedNodeClusterProviderOptions(system.GetAddress())),
+                    new ConsulProvider(new ConsulProviderConfig()),
                     new PartitionIdentityLookup()
                 )
                 .WithClusterKind("somekind", props);
