@@ -281,6 +281,8 @@ internal class Gossip
         //find all members that have sent topology
         var members = _getMembers();
         
+        //TODO: also remove any stateentries for members that are not in the cluster anymore
+        
         foreach (var memberId in _state.Members.Keys.ToArray())
         {
             if (!members.Contains(memberId))
