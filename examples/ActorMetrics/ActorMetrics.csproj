@@ -18,6 +18,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
         <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
         <ProjectReference Include="..\..\src\Proto.OpenTelemetry\Proto.OpenTelemetry.csproj" />
         <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />

@@ -10,9 +10,8 @@ using ClusterHelloWorld.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Partition;
+using Proto.Cluster.Consul;
 using Proto.Cluster.PartitionActivator;
-using Proto.Cluster.Seed;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using static System.Threading.Tasks.Task;
@@ -27,7 +26,7 @@ Log.SetLoggerFactory(
 var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
     .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(8090).WithProtoMessages(ProtosReflection.Descriptor))
     .WithCluster(ClusterConfig
-        .Setup("MyCluster", SeedNodeClusterProvider.StartSeedNode(), new PartitionActivatorLookup())
+        .Setup("MyCluster", new ConsulProvider(new ConsulProviderConfig()), new PartitionActivatorLookup())
         .WithClusterKind(
             HelloGrainActor.GetClusterKind((ctx, identity) => new HelloGrain(ctx, identity.Identity)))
     );

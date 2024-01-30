@@ -5,14 +5,12 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading.Tasks;
 using ClusterHelloWorld.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Partition;
+using Proto.Cluster.Consul;
 using Proto.Cluster.PartitionActivator;
-using Proto.Cluster.Seed;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using static Proto.CancellationTokens;
@@ -28,7 +26,7 @@ var system = new ActorSystem()
     .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
     .WithCluster(ClusterConfig
         .Setup("MyCluster",
-            SeedNodeClusterProvider.JoinSeedNode("127.0.0.1",8090),
+            new ConsulProvider(new ConsulProviderConfig()),
             new PartitionActivatorLookup()));
 
 system.EventStream.Subscribe<ClusterTopology>(
