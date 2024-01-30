@@ -4,6 +4,43 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+
+/*
+   Member abc state:
+       GossipState
+           MemberState abc
+               Key123 - sequence id 1
+               Key456 - sequence id 2
+   
+           MemberState def
+               Key123 - sequence id 1
+               Key456 - sequence id 2
+   
+       committed offsets
+           "abc.def" 1
+   
+   Member def state:
+       GossipState
+           MemberState abc
+               Key123 - sequence id 1
+               Key456 - sequence id 2
+   
+           MemberState def
+               Key123 - sequence id 3
+               Key456 - sequence id 2
+   
+       committed offsets
+           "abc.def" 2
+   
+   
+   gossip from def to abc
+   scan all entries for all member states _except_ for abc (we shouldn´t send their state to them)
+   find all entries that are higher than the committed offset for the member state
+   send all entries to the target member
+   
+   committed offsets is local per member, meaning we will send excessive and needless data to other members
+   maybe this could be improved by having each nodes committed offsets as part of the MemberState (?)   
+ */
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -281,8 +318,8 @@ internal class Gossip
         //find all members that have sent topology
         var members = _getMembers();
         
-        //TODO: also remove any stateentries for members that are not in the cluster anymore
-        
+        //TODO: what to do with _committedOffsets ?
+
         foreach (var memberId in _state.Members.Keys.ToArray())
         {
             if (!members.Contains(memberId))
