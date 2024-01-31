@@ -14,7 +14,7 @@ namespace Proto.Cluster.Seed;
 
 public class SeedClientNodeActor : IActor
 {
-    public const string Name = "$premium_client_seed";
+    public const string Name = "$client_seed";
     private readonly ILogger _logger;
     private readonly SeedNodeClusterProviderOptions _options;
     private ClusterTopology? _clusterTopology;
@@ -61,7 +61,7 @@ public class SeedClientNodeActor : IActor
         //
         //     try
         //     {
-        //         var pid = PID.FromAddress(host + ":" + port, PremiumSeedNodeActor.Name);
+        //         var pid = PID.FromAddress(host + ":" + port, SeedNodeActor.Name);
         //
         //         var res = await context.System.Root
         //             .RequestAsync<JoinResponse>(

@@ -17,7 +17,7 @@ namespace Proto.Cluster.Seed;
 
 public class SeedNodeActor : IActor
 {
-    public const string Name = "$premium_server_seed";
+    public const string Name = "$server_seed";
     private readonly ILogger _logger;
     private readonly SeedNodeClusterProviderOptions _options;
     private ImmutableList<PID> _clients = ImmutableList<PID>.Empty;
