@@ -8,21 +8,4 @@ using System.Collections.Immutable;
 
 namespace Proto.Cluster.Seed;
 
-public record SeedNodeClusterProviderOptions
-{
-    public SeedNodeClusterProviderOptions(params (string, int)[] seeds)
-    {
-        SeedNodes = seeds.ToImmutableList();
-        Discovery = null;
-    }
-    
-    public SeedNodeClusterProviderOptions(ISeedNodeDiscovery discovery)
-    {
-        Discovery = discovery;
-    }
-
-    public ISeedNodeDiscovery? Discovery { get;  }
-
-    public ImmutableList<(string host, int port)> SeedNodes { get; } =
-        ImmutableList<(string host, int port)>.Empty;
-}
+public record SeedNodeClusterProviderOptions(ISeedNodeDiscovery Discovery);

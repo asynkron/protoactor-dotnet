@@ -14,61 +14,84 @@ namespace Proto.Cluster.Seed;
 
 public class SeedClientNodeActor : IActor
 {
-    public const string Name = "$client_seed";
-    private static readonly ILogger Logger = Log.CreateLogger<SeedClientNodeActor>();
+    public const string Name = "$premium_client_seed";
+    private readonly ILogger _logger;
     private readonly SeedNodeClusterProviderOptions _options;
     private ClusterTopology? _clusterTopology;
-    private ImmutableDictionary<string, Member> _members = ImmutableDictionary<string, Member>.Empty;
+    private ImmutableDictionary<string, Member> _members = ImmutableDictionary<
+        string,
+        Member
+    >.Empty;
 
-    private SeedClientNodeActor(SeedNodeClusterProviderOptions options)
+    private SeedClientNodeActor(
+        SeedNodeClusterProviderOptions options,
+        ILogger logger
+    )
     {
         _options = options;
+        _logger = logger;
     }
 
-    public Task ReceiveAsync(IContext context) =>
-        context.Message switch
+    public Task ReceiveAsync(IContext context)
+    {
+        return context.Message switch
         {
-            Started                         => OnStarted(),
-            Connect _                       => OnConnect(context),
+            Started => OnStarted(),
+            Connect _ => OnConnect(context),
             ClusterTopology clusterTopology => OnClusterTopology(context, clusterTopology),
-            _                               => Task.CompletedTask
+            _ => Task.CompletedTask
         };
+    }
 
-    public static Props Props(SeedNodeClusterProviderOptions options) =>
-        Proto.Props.FromProducer(() => new SeedClientNodeActor(options));
+    public static Props Props(SeedNodeClusterProviderOptions options, ILogger logger)
+    {
+        return Proto.Props.FromProducer(() => new SeedClientNodeActor(options, logger));
+    }
 
     private async Task OnConnect(IContext context)
     {
         var (selfHost, selfPort) = context.System.GetAddress();
 
-        foreach (var (host, port) in _options.SeedNodes)
+        bool connected = false;
+        // foreach (var (host, port) in _options.SeedNodes)
+        // {
+        //     //never connect to yourself
+        //     if (host == selfHost && port == selfPort)
+        //         continue;
+        //
+        //     try
+        //     {
+        //         var pid = PID.FromAddress(host + ":" + port, PremiumSeedNodeActor.Name);
+        //
+        //         var res = await context.System.Root
+        //             .RequestAsync<JoinResponse>(
+        //                 pid,
+        //                 new JoinAsClientRequest { SystemId = context.System.Id }
+        //             )
+        //             .ConfigureAwait(false);
+        //
+        //         _members = _members.Add(res.Member.Id, res.Member);
+        //
+        //         connected = true;
+        //         _logger.LogInformation("Connected to seed node {Host}:{Port}", host, port);
+        //
+        //         break;
+        //     }
+        //     catch (Exception x)
+        //     {
+        //         x.CheckFailFast();
+        //         _logger.LogError(x, "Failed to connect to seed node {Host}:{Port}", host, port);
+        //     }
+        // }
+
+        if (connected)
         {
-            //never connect to yourself
-            if (host == selfHost && port == selfPort)
-            {
-                continue;
-            }
-
-            try
-            {
-                var pid = PID.FromAddress(host + ":" + port, SeedNodeActor.Name);
-
-                var res = await context.System.Root.RequestAsync<JoinResponse>(pid,
-                    new JoinAsClientRequest { SystemId = context.System.Id }).ConfigureAwait(false);
-
-                _members = _members.Add(res.Member.Id, res.Member);
-                context.Respond(new Connected(res.Member));
-
-                break;
-            }
-            catch (Exception x)
-            {
-                x.CheckFailFast();
-                Logger.LogError(x, "Failed to connect to seed node {Host}:{Port}", host, port);
-            }
+            context.Respond(new Connected());
         }
-
-        context.Respond(new FailedToConnect());
+        else
+        {
+            context.Respond(new FailedToConnect());
+        }
     }
 
     private async Task OnClusterTopology(IContext context, ClusterTopology clusterTopology)
@@ -80,35 +103,35 @@ public class SeedClientNodeActor : IActor
             foreach (var member in clusterTopology.Left)
             {
                 if (_members.ContainsKey(member.Id))
-                {
                     _members = _members.Remove(member.Id);
-                }
 
-                Logger.LogInformation("Removed member {member}", member);
+                _logger.LogInformation("Removed member {Member}", member);
             }
 
             foreach (var member in clusterTopology.Members)
             {
                 if (_members.ContainsKey(member.Id))
-                {
                     continue;
-                }
 
                 var pid = PID.FromAddress(member.Address, SeedNodeActor.Name);
 
                 try
                 {
-                    var res = await context.RequestAsync<JoinResponse>(pid,
-                        new JoinAsClientRequest { SystemId = context.System.Id },
-                        new CancellationTokenSource(5000).Token).ConfigureAwait(false);
+                    var res = await context
+                        .RequestAsync<JoinResponse>(
+                            pid,
+                            new JoinAsClientRequest { SystemId = context.System.Id },
+                            new CancellationTokenSource(5000).Token
+                        )
+                        .ConfigureAwait(false);
 
                     _members = _members.Add(res.Member.Id, res.Member);
-                    Logger.LogInformation("Connected to seed node {Member}", member.Address);
+                    _logger.LogInformation("Connected to seed node {Member}", member.Address);
                 }
                 catch (Exception e)
                 {
                     e.CheckFailFast();
-                    Logger.LogError(e, "Failed to connect to seed node {Member}", member.Address);
+                    _logger.LogError(e, "Failed to connect to seed node {Member}", member.Address);
                 }
             }
 
@@ -116,9 +139,9 @@ public class SeedClientNodeActor : IActor
         }
     }
 
-    private static Task OnStarted()
+    private Task OnStarted()
     {
-        Logger.LogInformation("Started SeedClientNodeActor");
+        _logger.LogInformation("Started SeedClientNodeActor");
 
         return Task.CompletedTask;
     }
