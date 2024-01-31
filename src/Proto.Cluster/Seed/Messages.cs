@@ -8,6 +8,6 @@ namespace Proto.Cluster.Seed;
 
 public record Connect;
 
-public record Connected(Member Member);
+public record Connected;
 
 public record FailedToConnect;

@@ -9,11 +9,14 @@ using ClusterHelloWorld.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
+using Proto.Cluster.Consul;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Seed;
+using Proto.Cluster.SeedNode.Redis;
 using Proto.Context;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using StackExchange.Redis;
 using static Proto.CancellationTokens;
 using ProtosReflection = ClusterHelloWorld.Messages.ProtosReflection;
 
@@ -45,7 +48,7 @@ class Program
             .WithCluster(
                 ClusterConfig.Setup(
                     "MyCluster",
-                    new SeedNodeClusterProvider(new(("127.0.0.1", 8090))),
+                    new ConsulProvider(new ConsulProviderConfig()),
                     new PartitionIdentityLookup()
                 )
             );

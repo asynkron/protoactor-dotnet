@@ -44,8 +44,12 @@ public static class ServiceCollectionExtensions
 
             var r = GrpcNetRemoteConfig.BindTo(boot.BindToHost, boot.Port);
             r = boot.ConfigureRemote?.Invoke(r) ?? r;
-            boot.ClusterProvider ??= new SeedNodeClusterProvider();
+            
             boot.IdentityLookup ??= new PartitionIdentityLookup();
+            if (boot.ClusterProvider is null)
+            {
+                throw new InvalidOperationException("ClusterProvider must be set");
+            }
 
             var c = ClusterConfig.Setup(boot.ClusterName, boot.ClusterProvider, boot.IdentityLookup);
             c = boot.ConfigureCluster?.Invoke(c) ?? c;
@@ -90,8 +94,11 @@ public static class ServiceCollectionExtensions
 
             var r = GrpcNetRemoteConfig.BindTo(bindToHost, port);
             r = configureRemote?.Invoke(r) ?? r;
-            clusterProvider ??= new SeedNodeClusterProvider();
             identityLookup ??= new PartitionIdentityLookup();
+            if (clusterProvider is null)
+            {
+                throw new InvalidOperationException("ClusterProvider must be set");
+            }
 
             var c = ClusterConfig.Setup(clusterName, clusterProvider, identityLookup);
             c = configureCluster?.Invoke(c) ?? c;

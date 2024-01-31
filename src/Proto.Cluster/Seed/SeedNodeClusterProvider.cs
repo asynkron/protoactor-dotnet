@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -17,78 +16,73 @@ namespace Proto.Cluster.Seed;
 [PublicAPI]
 public class SeedNodeClusterProvider : IClusterProvider
 {
-    [PublicAPI]
-    public static IClusterProvider JoinSeedNode(string address, int port)
-    {
-        return new SeedNodeClusterProvider(new SeedNodeClusterProviderOptions((address, port)));
-    }
-    
-    [PublicAPI]
-    public static IClusterProvider StartSeedNode()
-    {
-        return new SeedNodeClusterProvider();
-    }
-    
-    public static IClusterProvider JoinWithDiscovery(ISeedNodeDiscovery discovery)
-    {
-        var options = new SeedNodeClusterProviderOptions(discovery);
-        var provider = new SeedNodeClusterProvider(options);
-        return provider;
-    }
-    
+#pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<SeedNodeClusterProvider>();
+#pragma warning restore CS0618 // Type or member is obsolete
     private readonly CancellationTokenSource _cts = new();
 
     private readonly SeedNodeClusterProviderOptions _options;
-    private Cluster? _cluster;
+    private Cluster _cluster = null!;
     private PID? _pid;
 
-    public SeedNodeClusterProvider(SeedNodeClusterProviderOptions? options = null)
+    public SeedNodeClusterProvider(SeedNodeClusterProviderOptions options)
     {
-        _options = options ?? new SeedNodeClusterProviderOptions();
+        _options = options;
     }
 
     public async Task StartMemberAsync(Cluster cluster)
     {
         _cluster = cluster;
-        _pid = cluster.System.Root.SpawnNamedSystem(SeedNodeActor.Props(_options), SeedNodeActor.Name);
+        var props = SeedNodeActor.Props(_options, Logger);
+        _pid = cluster.System.Root.SpawnNamedSystem(props, SeedNodeActor.Name);
 
-        cluster.System.EventStream.Subscribe<GossipUpdate>(x => x.Key == GossipKeys.Topology,
-            x => cluster.System.Root.Send(_pid, x));
+        cluster.System.EventStream.Subscribe<GossipUpdate>(
+            x => x.Key == GossipKeys.Topology,
+            x => cluster.System.Root.Send(_pid, x)
+        );
 
         cluster.System.EventStream.Subscribe<ClusterTopology>(cluster.System.Root, _pid);
-        var result = await cluster.System.Root.RequestAsync<object>(_pid, new Connect(), _cts.Token).ConfigureAwait(false);
+        var result = await cluster.System.Root
+            .RequestAsync<object>(_pid, new Connect(), _cts.Token)
+            .ConfigureAwait(false);
 
         switch (result)
         {
             case Connected connected:
-                Logger.LogInformation("Connected to seed node {MemberAddress}", connected.Member.Address);
+                Logger.LogInformation("Connected to seed nodes");
 
                 break;
             default:
                 throw new Exception("Failed to join any seed node");
         }
-        
+
         if (_options.Discovery != null)
         {
             var (selfHost, selfPort) = _cluster.System.GetAddress();
-            
+
             await _options.Discovery.Register(_cluster.System.Id, selfHost, selfPort);
-            Logger.LogInformation("Registering self in SeedNode Discovery {Id} {Host}:{Port}",
-                cluster.System.Id, selfHost, selfPort);
+            Logger.LogInformation(
+                "Registering self in SeedNode Discovery {Id} {Host}:{Port}",
+                cluster.System.Id,
+                selfHost,
+                selfPort
+            );
         }
     }
 
     public async Task StartClientAsync(Cluster cluster)
     {
         _cluster = cluster;
-        _pid = cluster.System.Root.SpawnNamedSystem(SeedClientNodeActor.Props(_options), SeedClientNodeActor.Name);
-        var result = await cluster.System.Root.RequestAsync<object>(_pid, new Connect(), _cts.Token).ConfigureAwait(false);
+        var props = SeedClientNodeActor.Props(_options, Logger);
+        _pid = cluster.System.Root.SpawnNamedSystem(props, SeedClientNodeActor.Name);
+        var result = await cluster.System.Root
+            .RequestAsync<object>(_pid, new Connect(), _cts.Token)
+            .ConfigureAwait(false);
 
         switch (result)
         {
             case Connected connected:
-                Logger.LogInformation("Connected to seed node {MemberAddress}", connected.Member.Address);
+                Logger.LogInformation("Connected to seed node");
 
                 break;
             default:
@@ -99,17 +93,24 @@ public class SeedNodeClusterProvider : IClusterProvider
     public async Task ShutdownAsync(bool graceful)
     {
         if (_pid is not null && _cluster is not null)
-        {
             await _cluster.System.Root.StopAsync(_pid).ConfigureAwait(false);
-        }
-        if (_options.Discovery is not null)
-        {
-            var (selfHost, selfPort) = _cluster.System.GetAddress();
-            await _options.Discovery.Remove(_cluster!.System.Id);
-            Logger.LogInformation("Removing self from SeedNode Discovery {Id} {Host}:{Port}",
-                _cluster.System.Id, selfHost, selfPort);
-        }
+        
+        var (selfHost, selfPort) = _cluster.System.GetAddress();
+        await _options.Discovery.Remove(_cluster!.System.Id);
+        Logger.LogInformation(
+            "Removing self from SeedNode Discovery {Id} {Host}:{Port}",
+            _cluster.System.Id,
+            selfHost,
+            selfPort
+        );
 
         _cts.Cancel();
+    }
+
+    public static IClusterProvider JoinWithDiscovery(ISeedNodeDiscovery discovery)
+    {
+        var options = new SeedNodeClusterProviderOptions(discovery);
+        var provider = new SeedNodeClusterProvider(options);
+        return provider;
     }
 }
