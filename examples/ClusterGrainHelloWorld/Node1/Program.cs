@@ -9,8 +9,8 @@ using ClusterHelloWorld.Messages;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Cluster.Consul;
 using Proto.Cluster.PartitionActivator;
+using Proto.Cluster.Seed;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using static Proto.CancellationTokens;
@@ -26,7 +26,7 @@ var system = new ActorSystem()
     .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
     .WithCluster(ClusterConfig
         .Setup("MyCluster",
-            new ConsulProvider(new ConsulProviderConfig()),
+            FixedServerSeedNode.JoinSeedNode("localhost", 8090),
             new PartitionActivatorLookup()));
 
 system.EventStream.Subscribe<ClusterTopology>(
