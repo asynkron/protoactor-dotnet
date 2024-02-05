@@ -159,30 +159,6 @@ public class KubernetesProvider : IClusterProvider
 
         AppendHostToPodLabels(pod, labels);
 
-        // Check ownerReferences to determine if it's a StatefulSet or Deployment
-        var ownerReferences = pod.Metadata.OwnerReferences;
-        var workloadType = ""; // StatefulSet or Deployment
-        var workloadName = "";
-
-        foreach (var ownerRef in ownerReferences)
-        {
-            if (ownerRef.Kind == "StatefulSet")
-            {
-                workloadType = "StatefulSet";
-                workloadName = ownerRef.Name;
-                break;
-            }
-            else if (ownerRef.Kind == "Deployment")
-            {
-                workloadType = "Deployment";
-                break;
-            }
-        }
-
-        Logger.LogInformation(
-            "[Cluster][KubernetesProvider] Using Kubernetes workload type: {WorkloadType}, {WorkloadName}",
-            workloadType, workloadName ?? "N/A");
-
         foreach (var existing in pod.Metadata.Labels)
         {
             labels.TryAdd(existing.Key, existing.Value);
