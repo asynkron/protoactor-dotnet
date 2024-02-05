@@ -1,0 +1,37 @@
+# protoactor-widget-actor-deployment.yaml
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: protoactor-k8s-grains-node1
+  namespace: {{ .Values.namespace }}
+spec:
+  serviceName: {{ .Values.protoActorCluster.subdomain }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: protoactor-k8s-grains-node1
+  template:
+    metadata:
+      labels:
+        app: protoactor-k8s-grains-node1
+        protoActorMember: "true"
+    spec:
+      serviceAccountName: protoactor-k8s-grains-serviceaccount
+      containers:
+      - name: protoactor-k8s-grains-node1
+        image: {{ .Values.node1.image }}
+        ports:
+         - containerPort: 4020
+           name: protoactor
+        env:
+          - name: ProtoActor__PodIP
+            valueFrom:
+              fieldRef:
+                # Deployment workload need to use the IP of the pod
+                # StatefulSet workloads need to use the Pod Name.
+                fieldPath: metadata.name
+          - name: ProtoActor__ServiceName
+            value: "{{ .Values.protoActorCluster.subdomain }}.{{ .Values.namespace }}.svc.{{ .Values.protoActorCluster.dnsZone}}"
+          - name: "ProtoActor__ClusterName"
+            value: {{ .Values.protoActorCluster.name }}

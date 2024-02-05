@@ -57,9 +57,10 @@ internal static class KubernetesExtensions
     ///     Get the pod status. The pod must be running in order to be considered as a candidate.
     /// </summary>
     /// <param name="pod">Kubernetes Pod object</param>
+    /// <param name="config">Kubernetes provider configuration</param>
     /// <returns></returns>
     [CanBeNull]
-    internal static MemberStatus GetMemberStatus(this V1Pod pod)
+    internal static MemberStatus GetMemberStatus(this V1Pod pod, KubernetesProviderConfig config)
     {
         var isRunning = pod.Status is { Phase: "Running", PodIP: not null };
 
@@ -75,8 +76,23 @@ internal static class KubernetesExtensions
             .Where(l => l.Key.StartsWith(AnnotationKinds))
             .SelectMany(l => l.Value.Split(';'))
             .ToArray();
-
+        
         var host = pod.Status.PodIP ?? "";
+        if(pod.Metadata.Labels.TryGetValue(LabelHost, out var hostOverride))
+            host = hostOverride;
+        else if (pod.Metadata.Labels.TryGetValue(LabelHostPrefix, out var hostPrefix))
+        {
+            var dnsPostfix = $".{pod.Namespace()}.svc.{config.ClusterDomain}";
+
+            // If we have a subdomain, then we can add that to the dnsPostfix, as it will be known to the cluster
+            if (!string.IsNullOrEmpty(pod.Spec.Subdomain))
+            {
+                dnsPostfix = $".{pod.Spec.Subdomain}{dnsPostfix}";
+            }
+
+            host = hostPrefix + dnsPostfix;
+        }
+        
         var port = Convert.ToInt32(pod.Metadata.Labels[LabelPort]);
         var mid = pod.Metadata.Labels[LabelMemberId];
         var alive = pod.Status.ContainerStatuses.All(x => x.Ready);

@@ -149,13 +149,39 @@ public class KubernetesProvider : IClusterProvider
         Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: {Namespace}", pod.Namespace());
 
         Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: {Port}", _port);
-
+        
         var labels = new Dictionary<string, string>
         {
             [LabelCluster] = _clusterName,
             [LabelPort] = _port.ToString(),
-            [LabelMemberId] = _cluster.System.Id
+            [LabelMemberId] = _cluster.System.Id,
         };
+
+        AppendHostToPodLabels(pod, labels);
+
+        // Check ownerReferences to determine if it's a StatefulSet or Deployment
+        var ownerReferences = pod.Metadata.OwnerReferences;
+        var workloadType = ""; // StatefulSet or Deployment
+        var workloadName = "";
+
+        foreach (var ownerRef in ownerReferences)
+        {
+            if (ownerRef.Kind == "StatefulSet")
+            {
+                workloadType = "StatefulSet";
+                workloadName = ownerRef.Name;
+                break;
+            }
+            else if (ownerRef.Kind == "Deployment")
+            {
+                workloadType = "Deployment";
+                break;
+            }
+        }
+
+        Logger.LogInformation(
+            "[Cluster][KubernetesProvider] Using Kubernetes workload type: {WorkloadType}, {WorkloadName}",
+            workloadType, workloadName ?? "N/A");
 
         foreach (var existing in pod.Metadata.Labels)
         {
@@ -186,6 +212,46 @@ public class KubernetesProvider : IClusterProvider
                 labels);
 
             throw;
+        }
+    }
+
+    /// <summary>
+    /// k8s labels have a limit of 63 characters, so we need to be careful about what we add to the labels.
+    /// </summary>
+    protected void AppendHostToPodLabels(V1Pod pod, Dictionary<string, string> labels)
+    {
+        // If our advertised host is something other then our pod IP, we need to add a label to the pod
+        // So others can find us by our advertised host.
+        var podId = pod.Status.PodIP;
+        if (!_host.Equals(podId, StringComparison.OrdinalIgnoreCase))
+        {
+            if (_host.Length <= 63)
+            {
+                labels[LabelHost] = _host;
+            }
+            else
+            {
+                var dnsPostfix = $".{pod.Namespace()}.svc.{_config.ClusterDomain}";
+
+                // If we have a subdomain, then we can add that to the dnsPostfix, as it will be known to the cluster
+                if (!string.IsNullOrEmpty(pod.Spec.Subdomain))
+                {
+                    dnsPostfix = $".{pod.Spec.Subdomain}{dnsPostfix}";
+                }
+
+                if (_host.EndsWith(dnsPostfix))
+                {
+                    labels[LabelHostPrefix] = _host[..^dnsPostfix.Length];
+                }
+                else
+                {
+                    // TODO: what else could we do here?
+                    // Going to fall back to the IP address, and hope that works...
+                    Logger.LogWarning(
+                        "[Cluster][KubernetesProvider] AdvertisedHost is too long to be used as a label, falling back to PodID, host: {Host}",
+                        _host);
+                }
+            }
         }
     }
 
