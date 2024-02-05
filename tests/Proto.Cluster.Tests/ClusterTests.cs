@@ -301,6 +301,54 @@ public abstract class ClusterTests : ClusterTestBase
         _testOutputHelper.WriteLine("Got response from {0} nodes in {1}", nodes.Count(), timer.Elapsed);
     }
 
+    /// <summary>
+    /// Make sure we timeout if the target virtual actor is not joined the cluster
+    /// </summary>
+    [Fact]
+    public async Task TimeoutVirtualActorsNotJoined()
+    {
+        await Trace(async () =>
+        {
+            var tcs = new CancellationTokenSource();
+            var entryNode = Members.First();
+            var timer = Stopwatch.StartNew();
+            var task = entryNode.RequestAsync<Ping>("non-existing", "gen-actor", new Ping(), tcs.Token);
+            try
+            {
+                await Task.WhenAny(task, Task.Delay(entryNode.Config.ActorRequestTimeout.Add(TimeSpan.FromSeconds(2)), CancellationToken.None));
+
+                if (task.IsFaulted)
+                {
+                    // This is what we are looking for, let's raise the Exception and see if it's a TimeoutException.
+                    await task;
+                }
+            }
+            catch (TimeoutException e)
+            {
+                _testOutputHelper.WriteLine("Got expected timeout after " + timer.ElapsedMilliseconds + "ms");
+                return;
+            }
+            
+            // If the task completed, then the test was not conclusive, as we ether need a time out or infinite delay.
+            if(task.IsCompletedSuccessfully)
+                throw new Exception("Should not get here");
+            
+            // If still running, then let's set our cancellation token to cancel the task, and it should then exit
+            _testOutputHelper.WriteLine("Canceling task via CancellationTokenSource");
+            tcs.Cancel();
+            try
+            {
+                await task;
+                throw new Exception("RequestAsync ran until cancellation, we expected a timeout");
+            }
+            catch (TimeoutException e)
+            {
+                throw new Exception("RequestAsync didn't timeout as expected");
+            }
+     
+        }, _testOutputHelper);
+    }
+    
     [Theory]
     [InlineData(10, 10000)]
     public async Task CanSpawnVirtualActorsSequentially(int actorCount, int timeoutMs)

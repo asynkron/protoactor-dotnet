@@ -69,6 +69,8 @@ public class DefaultClusterContext : IClusterContext
 
         try
         {
+            var lookupTimer = Stopwatch.StartNew();
+                
             while (!ct.IsCancellationRequested && !context.System.Shutdown.IsCancellationRequested)
             {
                 i++;
@@ -95,6 +97,11 @@ public class DefaultClusterContext : IClusterContext
                             clusterIdentity);
                     }
 
+                    if (lookupTimer.Elapsed.TotalSeconds > _requestTimeoutSeconds)
+                    {
+                        return TimeoutOrThrow();
+                    }
+                    
                     await Task.Delay(i * 20, CancellationToken.None).ConfigureAwait(false);
 
                     continue;
