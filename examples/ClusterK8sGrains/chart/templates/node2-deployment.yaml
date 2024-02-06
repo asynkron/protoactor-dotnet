@@ -1,0 +1,25 @@
+# protoactor-widget-actor-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: protoactor-k8s-grains-node2
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: protoactor-k8s-grains-node2
+  template:
+    metadata:
+      labels:
+        app: protoactor-k8s-grains-node2
+        protoActorMember: "true"
+    spec:
+      serviceAccountName: protoactor-k8s-grains-serviceaccount
+      subdomain: {{ .Values.protoActorCluster.subdomain }}
+      containers:
+      - name: protoactor-k8s-grains-node2
+        image: {{ .Values.node2.image }}
+        ports:
+         - containerPort: 4020
+           name: protoactor

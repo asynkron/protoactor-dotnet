@@ -1,0 +1,13 @@
+# values.yaml
+namespace: protoactor-example-k8s-grains
+  
+protoActorCluster:
+  subdomain: protoactor-cluster
+  name: protoactor-example-cluster
+
+node1:
+  image: localhost:5000/protoactor.example.k8s.grains.node1:latest
+  
+node2:
+  image: localhost:5000/protoactor.example.k8s.grains.node2:latest
+

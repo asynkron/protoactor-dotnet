@@ -278,6 +278,34 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.SeedNode.Mong
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GossipDecoder", "benchmarks\GossipDecoder\GossipDecoder.csproj", "{FC144547-78F5-4C0B-B886-B7BC1563893B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterK8sGrains", "ClusterK8sGrains", "{ADE7A14E-FFE9-4137-AC25-E2F2A82B0A8C}"
+	ProjectSection(SolutionItems) = preProject
+		examples\ClusterK8sGrains\readme.md = examples\ClusterK8sGrains\readme.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\ClusterK8sGrains\Messages\Messages.csproj", "{44B8EBA7-5A47-4D20-B62F-48413B676473}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node1", "examples\ClusterK8sGrains\Node1\Node1.csproj", "{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node2", "examples\ClusterK8sGrains\Node2\Node2.csproj", "{B196FBFE-0DAA-4533-9A56-BB5826A57923}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "chart", "chart", "{CDCE3D4C-1BDD-460F-93B8-75123A258183}"
+	ProjectSection(SolutionItems) = preProject
+		examples\ClusterK8sGrains\chart\Chart.yaml = examples\ClusterK8sGrains\chart\Chart.yaml
+		examples\ClusterK8sGrains\chart\values.yaml = examples\ClusterK8sGrains\chart\values.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "template", "template", "{087E5441-1582-4D55-8233-014C0FB06FF0}"
+	ProjectSection(SolutionItems) = preProject
+		examples\ClusterK8sGrains\chart\templates\namespace.yaml = examples\ClusterK8sGrains\chart\templates\namespace.yaml
+		examples\ClusterK8sGrains\chart\templates\node1-deployment.yaml = examples\ClusterK8sGrains\chart\templates\node1-deployment.yaml
+		examples\ClusterK8sGrains\chart\templates\node2-deployment.yaml = examples\ClusterK8sGrains\chart\templates\node2-deployment.yaml
+		examples\ClusterK8sGrains\chart\templates\protoactor-k8s-cluster-port-service.yaml = examples\ClusterK8sGrains\chart\templates\protoactor-k8s-cluster-port-service.yaml
+		examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-role.yaml = examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-role.yaml
+		examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-rolebinding.yaml = examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-rolebinding.yaml
+		examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-serviceaccount.yaml = examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-serviceaccount.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1416,6 +1444,42 @@ Global
 		{FC144547-78F5-4C0B-B886-B7BC1563893B}.Release|x64.Build.0 = Release|Any CPU
 		{FC144547-78F5-4C0B-B886-B7BC1563893B}.Release|x86.ActiveCfg = Release|Any CPU
 		{FC144547-78F5-4C0B-B886-B7BC1563893B}.Release|x86.Build.0 = Release|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Debug|x64.Build.0 = Debug|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Debug|x86.Build.0 = Debug|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Release|x64.ActiveCfg = Release|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Release|x64.Build.0 = Release|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Release|x86.ActiveCfg = Release|Any CPU
+		{44B8EBA7-5A47-4D20-B62F-48413B676473}.Release|x86.Build.0 = Release|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Debug|x64.Build.0 = Debug|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Debug|x86.Build.0 = Debug|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Release|x64.ActiveCfg = Release|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Release|x64.Build.0 = Release|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Release|x86.ActiveCfg = Release|Any CPU
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}.Release|x86.Build.0 = Release|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Debug|x64.Build.0 = Debug|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Debug|x86.Build.0 = Debug|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Release|x64.ActiveCfg = Release|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Release|x64.Build.0 = Release|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Release|x86.ActiveCfg = Release|Any CPU
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1545,6 +1609,12 @@ Global
 		{5FECD1A8-A873-4927-81C3-E5C5A37D80C5} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{6611DA4A-6471-45CE-A288-45BC7BF00B52} = {3D12F5E5-9774-4D7E-8A5B-B1F64544925B}
 		{FC144547-78F5-4C0B-B886-B7BC1563893B} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
+		{ADE7A14E-FFE9-4137-AC25-E2F2A82B0A8C} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
+		{44B8EBA7-5A47-4D20-B62F-48413B676473} = {ADE7A14E-FFE9-4137-AC25-E2F2A82B0A8C}
+		{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A} = {ADE7A14E-FFE9-4137-AC25-E2F2A82B0A8C}
+		{B196FBFE-0DAA-4533-9A56-BB5826A57923} = {ADE7A14E-FFE9-4137-AC25-E2F2A82B0A8C}
+		{CDCE3D4C-1BDD-460F-93B8-75123A258183} = {ADE7A14E-FFE9-4137-AC25-E2F2A82B0A8C}
+		{087E5441-1582-4D55-8233-014C0FB06FF0} = {CDCE3D4C-1BDD-460F-93B8-75123A258183}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}
