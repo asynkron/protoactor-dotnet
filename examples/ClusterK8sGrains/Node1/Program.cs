@@ -26,8 +26,6 @@ using Extensions = Proto.Remote.GrpcNet.Extensions;
 var cts = new CancellationTokenSource();
 AssemblyLoadContext.Default.Unloading += ctx => cts.Cancel();
 
-var config = new ConfigurationBuilder().AddEnvironmentVariables().Build();
-
 Log.SetLoggerFactory(
     LoggerFactory.Create(l => l.AddConsole(options =>
         {
@@ -39,14 +37,8 @@ Log.SetLoggerFactory(
 // Required to allow unencrypted GrpcNet connections
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-var serviceName = config["ProtoActor:ServiceName"];
-var podIp = config["ProtoActor:PodIP"];
-var advertisedHost = config["ProtoActor:AdvertisedHost"];
-if (!string.IsNullOrEmpty(serviceName) && !string.IsNullOrEmpty(podIp))
-{
-    podIp = podIp.Replace('.', '-');
-    advertisedHost = $"{podIp}.{serviceName}";
-}
+var kubernetesProvider = new KubernetesProvider();
+var advertisedHost = await kubernetesProvider.GetPodFqdn();
 
 var system = new ActorSystem()
     .WithRemote(GrpcNetRemoteConfig
@@ -54,7 +46,7 @@ var system = new ActorSystem()
         .WithProtoMessages(ProtosReflection.Descriptor))
     .WithCluster(ClusterConfig
         .Setup("MyCluster",
-            new KubernetesProvider(),
+            kubernetesProvider,
             new PartitionActivatorLookup())
     );
 

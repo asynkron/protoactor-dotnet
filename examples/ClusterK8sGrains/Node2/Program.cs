@@ -25,8 +25,6 @@ using ProtosReflection = ClusterHelloWorld.Messages.ProtosReflection;
 var cts = new CancellationTokenSource();
 AssemblyLoadContext.Default.Unloading += ctx => cts.Cancel();
 
-var config = new ConfigurationBuilder().AddEnvironmentVariables().Build();
-
 Log.SetLoggerFactory(
     LoggerFactory.Create(l => l.AddConsole(options =>
         {
@@ -38,21 +36,17 @@ Log.SetLoggerFactory(
 // Required to allow unencrypted GrpcNet connections
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-var serviceName = config["ProtoActor:ServiceName"];
-var podIp = config["ProtoActor:PodIP"];
-var advertisedHost = config["ProtoActor:AdvertisedHost"];
-if (!string.IsNullOrEmpty(serviceName) && !string.IsNullOrEmpty(podIp))
-{
-    podIp = podIp.Replace('.', '-');
-    advertisedHost = $"{podIp}.{serviceName}";
-}
+var kubernetesProvider = new KubernetesProvider();
+var advertisedHost = await kubernetesProvider.GetPodFqdn();
 
 var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
     .WithRemote(GrpcNetRemoteConfig
         .BindToAllInterfaces(advertisedHost: advertisedHost, port: 4020)
         .WithProtoMessages(ProtosReflection.Descriptor))
     .WithCluster(ClusterConfig
-        .Setup("MyCluster", new KubernetesProvider(), new PartitionActivatorLookup())
+        .Setup("MyCluster",
+            kubernetesProvider,
+            new PartitionActivatorLookup())
         .WithClusterKind(
             HelloGrainActor.GetClusterKind((ctx, identity) => new HelloGrain(ctx, identity.Identity)))
     );

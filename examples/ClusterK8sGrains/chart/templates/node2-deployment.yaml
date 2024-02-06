@@ -23,14 +23,3 @@ spec:
         ports:
          - containerPort: 4020
            name: protoactor
-        env:
-          - name: ProtoActor__PodIP
-            valueFrom:
-              fieldRef:
-                # Deployment workload need to use the IP of the pod
-                # StatefulSet workloads need to use the Pod Name.
-                fieldPath: status.podIP
-          - name: ProtoActor__ServiceName
-            value: "{{ .Values.protoActorCluster.subdomain }}.{{ .Values.namespace }}.svc.{{ .Values.protoActorCluster.dnsZone}}"
-          - name: "ProtoActor__ClusterName"
-            value: {{ .Values.protoActorCluster.name }}

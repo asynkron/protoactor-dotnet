@@ -48,7 +48,7 @@ public record KubernetesProviderConfig
 
     internal LogLevel DebugLogLevel => DeveloperLogging ? LogLevel.Information : LogLevel.Debug;
 
-    private static IKubernetes DefaultFactory() => new k8s.Kubernetes(KubernetesClientConfiguration.InClusterConfig());
+    internal static IKubernetes DefaultFactory() => new k8s.Kubernetes(KubernetesClientConfiguration.InClusterConfig());
     
     /// <summary>
     /// The k8s Cluster Domain (TLD), defaults to "cluster.local"

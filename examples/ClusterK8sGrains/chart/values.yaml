@@ -4,7 +4,6 @@ namespace: protoactor-example-k8s-grains
 protoActorCluster:
   subdomain: protoactor-cluster
   name: protoactor-example-cluster
-  dnsZone: cluster.local
 
 node1:
   image: localhost:5000/protoactor.example.k8s.grains.node1:latest

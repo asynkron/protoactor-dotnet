@@ -39,6 +39,8 @@ public class KubernetesProvider : IClusterProvider
     private string _podName;
     private int _port;
 
+    internal KubernetesProviderConfig Config => _config;
+    
     public async Task<DiagnosticsEntry[]> GetDiagnostics()
     {
         try
@@ -67,7 +69,7 @@ public class KubernetesProvider : IClusterProvider
 
     public KubernetesProvider(KubernetesProviderConfig config)
     {
-        if (KubernetesExtensions.GetKubeNamespace() is null)
+        if (!KubernetesExtensions.TryGetKubeNamespace(out _))
         {
             throw new InvalidOperationException("The application doesn't seem to be running in Kubernetes");
         }
