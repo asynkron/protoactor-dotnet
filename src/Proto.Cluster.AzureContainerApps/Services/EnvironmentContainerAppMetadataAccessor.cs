@@ -21,7 +21,7 @@ public class EnvironmentContainerAppMetadataAccessor : IContainerAppMetadataAcce
     {
         var containerAppName = Environment.GetEnvironmentVariable("CONTAINER_APP_NAME") ?? throw new Exception("No app name provided");
         var revisionName = Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? throw new Exception("No app revision provided");
-        var replicaName = Environment.GetEnvironmentVariable("HOSTNAME") ?? throw new Exception("No replica name provided");
+        var replicaName = Environment.GetEnvironmentVariable("CONTAINER_APP_REPLICA_NAME") ?? throw new Exception("No replica name provided");
 
         return new(new ContainerAppMetadata(containerAppName, revisionName, replicaName));
     }
