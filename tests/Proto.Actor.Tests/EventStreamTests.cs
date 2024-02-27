@@ -91,5 +91,11 @@ public class EventStreamTests
         
         var channel = Channel.CreateUnbounded<string>();
         eventStream.Subscribe(channel);
+        eventStream.Publish(123);
+        eventStream.Publish(false);
+        eventStream.Publish("hello");
+
+        var res = await channel.Reader.ReadAsync();
+        Assert.Equal("hello",res);
     }
 }
