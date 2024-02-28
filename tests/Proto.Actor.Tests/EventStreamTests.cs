@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Proto.Mailbox;
 using Xunit;
@@ -79,5 +80,22 @@ public class EventStreamTests
         );
 
         eventStream.Publish("hello");
+    }
+
+    [Fact]
+    public async Task EventStream_CanSubscribeUsingChannel()
+    {
+        var system = new ActorSystem();
+        await using var _ = system;
+        var eventStream = system.EventStream;
+        
+        var channel = Channel.CreateUnbounded<string>();
+        eventStream.Subscribe(channel);
+        eventStream.Publish(123);
+        eventStream.Publish(false);
+        eventStream.Publish("hello");
+
+        var res = await channel.Reader.ReadAsync();
+        Assert.Equal("hello",res);
     }
 }

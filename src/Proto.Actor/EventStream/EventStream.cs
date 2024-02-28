@@ -119,6 +119,31 @@ public class EventStream<T>
 
         return sub;
     }
+    
+    /// <summary>
+    ///     Subscribe to messages and yields the result onto a Channel
+    /// </summary>
+    /// <param name="channel">a Channel which receives the event</param>
+    /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
+    /// <returns>A new subscription that can be used to unsubscribe</returns>
+    public EventStreamSubscription<T> Subscribe<TMsg>(Channel<TMsg> channel, IDispatcher? dispatcher = null) where TMsg:T
+    {
+        var sub = new EventStreamSubscription<T>(
+            this,
+            dispatcher ?? Dispatchers.SynchronousDispatcher,
+            async x =>
+            {
+                if (x is TMsg tc)
+                {
+                    await channel.Writer.WriteAsync(tc).ConfigureAwait(false);
+                }
+            }
+        );
+
+        _subscriptions.TryAdd(sub.Id, sub);
+
+        return sub;
+    }
 
     /// <summary>
     ///     Subscribe to messages with an asynchronous handler
