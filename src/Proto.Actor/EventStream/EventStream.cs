@@ -126,14 +126,14 @@ public class EventStream<T>
     /// <param name="channel">a Channel which receives the event</param>
     /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
     /// <returns>A new subscription that can be used to unsubscribe</returns>
-    public EventStreamSubscription<T> Subscribe<TC>(Channel<TC> channel, IDispatcher? dispatcher = null) where TC:T
+    public EventStreamSubscription<T> Subscribe<TMsg>(Channel<TMsg> channel, IDispatcher? dispatcher = null) where TMsg:T
     {
         var sub = new EventStreamSubscription<T>(
             this,
             dispatcher ?? Dispatchers.SynchronousDispatcher,
             async x =>
             {
-                if (x is TC tc)
+                if (x is TMsg tc)
                 {
                     await channel.Writer.WriteAsync(tc).ConfigureAwait(false);
                 }
