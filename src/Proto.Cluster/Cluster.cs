@@ -284,14 +284,14 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// <param name="reason">Provide the reason for the shutdown, that can be used for diagnosing problems</param>
     public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
-        // Logger.LogInformation("Stopping Cluster {Id}", System.Id);
-        //
-        // // Inform all members of the cluster that this node intends to leave. Also, let the MemberList know that this
-        // // node was the one that initiated the shutdown to prevent another shutdown from being called.
-        // Logger.LogInformation("Setting GracefullyLeft gossip state for {Id}", System.Id);
-        // MemberList.Stopping = true;
-        // await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty()).ConfigureAwait(false);
-        //
+        Logger.LogInformation("Stopping Cluster {Id}", System.Id);
+        
+        // Inform all members of the cluster that this node intends to leave. Also, let the MemberList know that this
+        // node was the one that initiated the shutdown to prevent another shutdown from being called.
+        Logger.LogInformation("Setting GracefullyLeft gossip state for {Id}", System.Id);
+        MemberList.Stopping = true;
+        await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty()).ConfigureAwait(false);
+        
         // Logger.LogInformation("Waiting for two gossip intervals to pass for {Id}", System.Id);
         // // In case provider shutdown is quick, let's wait at least 2 gossip intervals.
         // await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2).ConfigureAwait(false);
