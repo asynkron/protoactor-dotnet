@@ -292,10 +292,10 @@ public class Cluster : IActorSystemExtension<Cluster>
         MemberList.Stopping = true;
         await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty()).ConfigureAwait(false);
         
-        // Logger.LogInformation("Waiting for two gossip intervals to pass for {Id}", System.Id);
-        // // In case provider shutdown is quick, let's wait at least 2 gossip intervals.
-        // await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2).ConfigureAwait(false);
-        //
+        Logger.LogInformation("Waiting for two gossip intervals to pass for {Id}", System.Id);
+        // In case provider shutdown is quick, let's wait at least 2 gossip intervals.
+        await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2).ConfigureAwait(false);
+        
         // Logger.LogInformation("Stopping cluster provider for {Id}", System.Id);
         // // Deregister from configured cluster provider.
         // await Provider.ShutdownAsync(graceful);
@@ -313,18 +313,18 @@ public class Cluster : IActorSystemExtension<Cluster>
         // }
         //
         // // Cancel the primary CancellationToken first which will shut down a number of concurrent systems simultaneously.
-        // await System.ShutdownAsync(reason).ConfigureAwait(false);
+        await System.ShutdownAsync(reason).ConfigureAwait(false);
         //
         // Shut down the rest of the dependencies in reverse order that they were started.
-        await Gossip.ShutdownAsync().ConfigureAwait(false);
-        
-         if (graceful)
-         {
-             await IdentityLookup.ShutdownAsync().ConfigureAwait(false);
-         }
-        
-        await Remote.ShutdownAsync(graceful).ConfigureAwait(false);
-        
+        // await Gossip.ShutdownAsync().ConfigureAwait(false);
+        //
+        //  if (graceful)
+        //  {
+        //      await IdentityLookup.ShutdownAsync().ConfigureAwait(false);
+        //  }
+        //
+        // await Remote.ShutdownAsync(graceful).ConfigureAwait(false);
+        //
         _shutdownCompletedTcs.TrySetResult(true);
         Logger.LogInformation("Stopped Cluster {Id}", System.Id);
     }
