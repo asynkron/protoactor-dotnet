@@ -296,10 +296,10 @@ public class Cluster : IActorSystemExtension<Cluster>
         // In case provider shutdown is quick, let's wait at least 2 gossip intervals.
         await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2).ConfigureAwait(false);
         
-        // Logger.LogInformation("Stopping cluster provider for {Id}", System.Id);
+        Logger.LogInformation("Stopping cluster provider for {Id}", System.Id);
         // // Deregister from configured cluster provider.
-        // await Provider.ShutdownAsync(graceful);
-        //
+        await Provider.ShutdownAsync(graceful);
+        
         if (_clusterKindObserver != null)
         {
             ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
