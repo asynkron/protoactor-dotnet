@@ -182,12 +182,14 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         if (Members.Contains(member))
         {
             Members.Remove(member);
-            await member.ShutdownAsync(graceful, "Stopped by ClusterFixture");
+            var t = member.ShutdownAsync(graceful, "Stopped by ClusterFixture");
+            await t.WaitAsync(TimeSpan.FromSeconds(5));
         }
         else if (Clients.Contains(member))
         {
             Clients.Remove(member);
-            await member.ShutdownAsync(graceful, "Stopped by ClusterFixture");
+            var t =  member.ShutdownAsync(graceful, "Stopped by ClusterFixture");
+            await t.WaitAsync(TimeSpan.FromSeconds(5));
         }
         else
         {

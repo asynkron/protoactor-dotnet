@@ -5,8 +5,6 @@ on: [pull_request]
 env:
   DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
   TERM: xterm
-  OPENTELEMETRY_URL: http://otel.ornell.io:30798
-  TRACEVIEW_URL: http://traceview.ornell.io
   
 jobs:
   build:

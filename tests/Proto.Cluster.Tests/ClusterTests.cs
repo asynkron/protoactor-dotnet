@@ -565,7 +565,7 @@ public abstract class ClusterTests : ClusterTestBase
 
             if (response == null)
             {
-                await Task.Delay(200, token);
+                await Task.Delay(200);
             }
         } while (response == null && !token.IsCancellationRequested);
 
