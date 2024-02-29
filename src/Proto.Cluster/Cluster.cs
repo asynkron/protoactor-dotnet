@@ -299,14 +299,14 @@ public class Cluster : IActorSystemExtension<Cluster>
         Logger.LogInformation("Stopping cluster provider for {Id}", System.Id);
         // Deregister from configured cluster provider.
 
-        //TODO: find out why this changes anything....
-        //Provider.ShutdownAsync seems to freeze the system, sometimes....
-        var t = Task.Run(async () =>
-        {
-            await Task.Delay(100);
-            await Provider.ShutdownAsync(graceful);
-        });
-        await t.WaitAsync(TimeSpan.FromSeconds(2));
+        // //TODO: find out why this changes anything....
+        // //Provider.ShutdownAsync seems to freeze the system, sometimes....
+        // var t = Task.Run(async () =>
+        // {
+        //     await Task.Delay(100);
+        //     await Provider.ShutdownAsync(graceful);
+        // });
+        // await t.WaitAsync(TimeSpan.FromSeconds(2));
         
 
         if (_clusterKindObserver != null)
