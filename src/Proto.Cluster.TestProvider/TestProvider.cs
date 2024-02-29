@@ -28,8 +28,9 @@ public class TestProvider : IClusterProvider
         _agent = agent;
     }
 
-    public Task StartMemberAsync(Cluster cluster)
+    public async Task StartMemberAsync(Cluster cluster)
     {
+        await Task.Yield();
         var memberList = cluster.MemberList;
         var (host, port) = cluster.System.GetAddress();
         var kinds = cluster.GetClusterKinds();
@@ -46,30 +47,26 @@ public class TestProvider : IClusterProvider
                 Port = port
             }
         );
-
-        return Task.CompletedTask;
     }
 
-    public Task StartClientAsync(Cluster cluster)
+    public async Task StartClientAsync(Cluster cluster)
     {
+        await Task.Yield();
         var memberList = cluster.MemberList;
 
         _id = cluster.System.Id;
         _memberList = memberList;
         _agent.StatusUpdate += AgentOnStatusUpdate;
         _agent.ForceUpdate();
-
-        return Task.CompletedTask;
     }
 
-    public Task ShutdownAsync(bool graceful)
+    public async Task ShutdownAsync(bool graceful)
     {
+        await Task.Delay(100);
         Logger.LogDebug("Unregistering service {Service}", _id);
 
         _ttlReportTimer?.Stop();
         _agent.DeregisterService(_id);
-
-        return Task.CompletedTask;
     }
 
     private void AgentOnStatusUpdate(object sender, EventArgs e) => NotifyStatuses();

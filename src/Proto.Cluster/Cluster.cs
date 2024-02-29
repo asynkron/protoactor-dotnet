@@ -285,46 +285,55 @@ public class Cluster : IActorSystemExtension<Cluster>
     public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
         Logger.LogInformation("Stopping Cluster {Id}", System.Id);
-
+        
         // Inform all members of the cluster that this node intends to leave. Also, let the MemberList know that this
         // node was the one that initiated the shutdown to prevent another shutdown from being called.
         Logger.LogInformation("Setting GracefullyLeft gossip state for {Id}", System.Id);
         MemberList.Stopping = true;
         await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty()).ConfigureAwait(false);
-
+        
         Logger.LogInformation("Waiting for two gossip intervals to pass for {Id}", System.Id);
         // In case provider shutdown is quick, let's wait at least 2 gossip intervals.
         await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2).ConfigureAwait(false);
         
         Logger.LogInformation("Stopping cluster provider for {Id}", System.Id);
         // Deregister from configured cluster provider.
-        await Provider.ShutdownAsync(graceful).ConfigureAwait(false);
+
+        //TODO: find out why this changes anything....
+        //Provider.ShutdownAsync seems to freeze the system, sometimes....
+        var t = Task.Run(async () =>
+        {
+            await Task.Delay(100);
+            await Provider.ShutdownAsync(graceful);
+        });
+        await t.WaitAsync(TimeSpan.FromSeconds(2));
+        
 
         if (_clusterKindObserver != null)
         {
             ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
             _clusterKindObserver = null;
         }
-
+        
         if (_clusterMembersObserver != null)
         {
             ClusterMetrics.ClusterMembersCount.RemoveObserver(_clusterMembersObserver);
             _clusterMembersObserver = null;
         }
-
+        
         // Cancel the primary CancellationToken first which will shut down a number of concurrent systems simultaneously.
         await System.ShutdownAsync(reason).ConfigureAwait(false);
-
+        
         // Shut down the rest of the dependencies in reverse order that they were started.
         await Gossip.ShutdownAsync().ConfigureAwait(false);
-
-        if (graceful)
-        {
-            await IdentityLookup.ShutdownAsync().ConfigureAwait(false);
-        }
-
+        
+         if (graceful)
+         {
+             await IdentityLookup.ShutdownAsync().ConfigureAwait(false);
+         }
+        
         await Remote.ShutdownAsync(graceful).ConfigureAwait(false);
-
+        
         _shutdownCompletedTcs.TrySetResult(true);
         Logger.LogInformation("Stopped Cluster {Id}", System.Id);
     }

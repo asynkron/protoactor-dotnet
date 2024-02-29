@@ -243,8 +243,9 @@ public abstract class ClusterTests : ClusterTestBase
             await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
 
             var toBeRemoved = Members.Last();
+            _testOutputHelper.WriteLine("provider " + Members.First().Provider.GetType().Name);
             _testOutputHelper.WriteLine("Removing node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
-            await ClusterFixture.RemoveNode(toBeRemoved);
+            await ClusterFixture.RemoveNode(toBeRemoved).ConfigureAwait(false);
             _testOutputHelper.WriteLine("Removed node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
             await ClusterFixture.SpawnMember();
 
