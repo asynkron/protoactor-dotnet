@@ -312,19 +312,19 @@ public class Cluster : IActorSystemExtension<Cluster>
             _clusterMembersObserver = null;
         }
         
+        // Shut down the rest of the dependencies in reverse order that they were started.
+        await Gossip.ShutdownAsync().ConfigureAwait(false);
+        
+         if (graceful)
+         {
+             await IdentityLookup.ShutdownAsync().ConfigureAwait(false);
+         }
+        
+        await Remote.ShutdownAsync(graceful).ConfigureAwait(false);
+        
         // Cancel the primary CancellationToken first which will shut down a number of concurrent systems simultaneously.
         await System.ShutdownAsync(reason).ConfigureAwait(false);
-        //
-        // Shut down the rest of the dependencies in reverse order that they were started.
-        // await Gossip.ShutdownAsync().ConfigureAwait(false);
-        //
-        //  if (graceful)
-        //  {
-        //      await IdentityLookup.ShutdownAsync().ConfigureAwait(false);
-        //  }
-        //
-        // await Remote.ShutdownAsync(graceful).ConfigureAwait(false);
-        //
+        
         _shutdownCompletedTcs.TrySetResult(true);
         Logger.LogInformation("Stopped Cluster {Id}", System.Id);
     }

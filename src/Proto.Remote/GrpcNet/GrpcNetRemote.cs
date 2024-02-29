@@ -161,7 +161,7 @@ public class GrpcNetRemote : IRemote
 
                     if (_host is not null)
                     {
-                        await _host.StopAsync().ConfigureAwait(false);
+                        await _host.StopAsync().WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
                     }
                 }
             }
