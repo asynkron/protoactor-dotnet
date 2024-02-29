@@ -300,19 +300,19 @@ public class Cluster : IActorSystemExtension<Cluster>
         // // Deregister from configured cluster provider.
         // await Provider.ShutdownAsync(graceful);
         //
-        // if (_clusterKindObserver != null)
-        // {
-        //     ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
-        //     _clusterKindObserver = null;
-        // }
-        //
-        // if (_clusterMembersObserver != null)
-        // {
-        //     ClusterMetrics.ClusterMembersCount.RemoveObserver(_clusterMembersObserver);
-        //     _clusterMembersObserver = null;
-        // }
-        //
-        // // Cancel the primary CancellationToken first which will shut down a number of concurrent systems simultaneously.
+        if (_clusterKindObserver != null)
+        {
+            ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
+            _clusterKindObserver = null;
+        }
+        
+        if (_clusterMembersObserver != null)
+        {
+            ClusterMetrics.ClusterMembersCount.RemoveObserver(_clusterMembersObserver);
+            _clusterMembersObserver = null;
+        }
+        
+        // Cancel the primary CancellationToken first which will shut down a number of concurrent systems simultaneously.
         await System.ShutdownAsync(reason).ConfigureAwait(false);
         //
         // Shut down the rest of the dependencies in reverse order that they were started.
