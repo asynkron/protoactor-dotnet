@@ -48,4 +48,6 @@ public static class ProtoTags
     ///     Name of the current action
     /// </summary>
     public const string ActionType = "proto.action";
+    
+    public const string EventSubscriber = "proto.eventsubscriber";
 }
