@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -31,6 +32,8 @@ public sealed class ActorSystem : IAsyncDisposable
 #pragma warning restore CS0618 // Type or member is obsolete
     private string _host = NoHost;
     private int _port;
+    
+    public static readonly ActivitySource ActivitySource = new("Proto.Actor");
 
     public ActorSystem() : this(new ActorSystemConfig())
     {

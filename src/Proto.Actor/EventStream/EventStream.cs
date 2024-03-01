@@ -8,12 +8,14 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Extensions;
 using Proto.Mailbox;
+using Proto.OpenTelemetry;
 using Proto.Utils;
 
 namespace Proto;
@@ -146,20 +148,6 @@ public class EventStream<T>
     }
 
     /// <summary>
-    ///     Subscribe to messages with an asynchronous handler
-    /// </summary>
-    /// <param name="action">Asynchronous message handler</param>
-    /// <param name="dispatcher">Optional: the dispatcher, will use <see cref="Dispatchers.SynchronousDispatcher" /> by default</param>
-    /// <returns>A new subscription that can be used to unsubscribe</returns>
-    public EventStreamSubscription<T> Subscribe(Func<T, Task> action, IDispatcher? dispatcher = null)
-    {
-        var sub = new EventStreamSubscription<T>(this, dispatcher ?? Dispatchers.SynchronousDispatcher, action);
-        _subscriptions.TryAdd(sub.Id, sub);
-
-        return sub;
-    }
-
-    /// <summary>
     ///     Subscribe to a message type, which is a derived type from <see cref="T" />
     /// </summary>
     /// <param name="action">Synchronous message handler</param>
@@ -277,11 +265,14 @@ public class EventStream<T>
     {
         foreach (var sub in _subscriptions.Values)
         {
+            var parent = Activity.Current;
             sub.Dispatcher.Schedule(
                 () =>
                 {
                     try
                     {
+                        using var a = ActorSystem.ActivitySource.StartActivity($"{nameof(EventStream)}.{nameof(Publish)} {msg?.GetType().Name??"null"}",ActivityKind.Internal,parent?.Id);
+                        a?.AddTag(ProtoTags.MessageType, msg?.GetType().Name??"null");
                         sub.Action(msg);
                     }
                     catch (Exception ex)
