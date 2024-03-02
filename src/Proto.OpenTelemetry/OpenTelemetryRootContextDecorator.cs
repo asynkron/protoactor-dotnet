@@ -7,11 +7,12 @@ namespace Proto.OpenTelemetry;
 
 internal class OpenTelemetryRootContextDecorator : RootContextDecorator
 {
-    private readonly ActivitySetup _activitySetup;
+    private readonly ActivitySetup _sendActivitySetup;
+    private readonly ActivitySetup _spawnActivitySetup;
 
     public OpenTelemetryRootContextDecorator(IRootContext context, ActivitySetup sendActivitySetup) : base(context)
     {
-        _activitySetup = (activity, message)
+        _sendActivitySetup = (activity, message)
             =>
         {
             activity?.SetTag(ProtoTags.ActorType, "<None>");
@@ -21,27 +22,33 @@ internal class OpenTelemetryRootContextDecorator : RootContextDecorator
                 sendActivitySetup(activity, message);
             }
         };
+        
+        _spawnActivitySetup = (activity, message)
+            =>
+        {
+           
+        };
     }
 
     private static string Source => "Root";
 
     public override void Send(PID target, object message) =>
-        OpenTelemetryMethodsDecorators.Send(Source, target, message, _activitySetup,
+        OpenTelemetryMethodsDecorators.Send(Source, target, message, _sendActivitySetup,
             () => base.Send(target, message));
 
     public override void Request(PID target, object message) =>
-        OpenTelemetryMethodsDecorators.Request(Source, target, message, _activitySetup,
+        OpenTelemetryMethodsDecorators.Request(Source, target, message, _sendActivitySetup,
             () => base.Request(target, message));
 
     public override void Request(PID target, object message, PID? sender) =>
-        OpenTelemetryMethodsDecorators.Request(Source, target, message, sender, _activitySetup,
+        OpenTelemetryMethodsDecorators.Request(Source, target, message, sender, _sendActivitySetup,
             () => base.Request(target, message, sender));
 
     public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
-        OpenTelemetryMethodsDecorators.RequestAsync(Source, target, message, _activitySetup,
+        OpenTelemetryMethodsDecorators.RequestAsync(Source, target, message, _sendActivitySetup,
             () => base.RequestAsync<T>(target, message, cancellationToken)
         );
     
     public override PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) =>
-        OpenTelemetryMethodsDecorators.SpawnNamed(Source,_activitySetup, () => base.SpawnNamed(props, name, callback),name);
+        OpenTelemetryMethodsDecorators.SpawnNamed(Source,_sendActivitySetup, () => base.SpawnNamed(props, name, callback),name);
 }

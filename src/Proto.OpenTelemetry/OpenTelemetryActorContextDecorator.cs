@@ -9,6 +9,7 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
 {
     private readonly ActivitySetup _receiveActivitySetup;
     private readonly ActivitySetup _sendActivitySetup;
+    private readonly ActivitySetup _spawnActivitySetup;
 
     public OpenTelemetryActorContextDecorator(
         IContext context,
@@ -29,6 +30,11 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
             {
                 sendActivitySetup(activity, message);
             }
+        };
+        
+        _spawnActivitySetup = (activity, message) =>
+        {
+  
         };
 
         _receiveActivitySetup = (activity, message) =>
@@ -99,5 +105,6 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
         base.ReenterAfter(target, a2);
     }
 
-    public override PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) => OpenTelemetryMethodsDecorators.SpawnNamed(Source,_sendActivitySetup, () => base.SpawnNamed(props, name, callback),name);
+    public override PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) => 
+        OpenTelemetryMethodsDecorators.SpawnNamed(Source,_spawnActivitySetup, () => base.SpawnNamed(props, name, callback),name);
 }

@@ -53,6 +53,29 @@ internal static class OpenTelemetryHelpers
 
         return activity;
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Activity? BuildStartedSpawnActivity(
+        ActivityContext parent,
+        string source,
+        string verb,
+        string actorName,
+        ActivitySetup activitySetup,
+        ActivityKind activityKind = ActivityKind.Internal
+    )
+    {
+        
+        var name = $"Proto {source}.{verb} {actorName}";
+        var tags = Array.Empty<KeyValuePair<string, object?>>();
+        var activity = ActivitySource.StartActivity(name, activityKind, parent, tags);
+
+        if (activity is not null)
+        {
+            activitySetup(activity, actorName!);
+        }
+
+        return activity;
+    }
 
     public static IEnumerable<KeyValuePair<string, string>> GetPropagationHeaders(this ActivityContext activityContext)
     {

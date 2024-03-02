@@ -33,19 +33,23 @@ internal static class OpenTelemetryMethodsDecorators
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static PID SpawnNamed(string source, ActivitySetup sendActivitySetup, Func<PID> spawn, string name)
+    public static PID SpawnNamed(string source, ActivitySetup spawnActivitySetup, Func<PID> spawn, string actorName)
     {
-        using var activity =
-            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, source, nameof(IContext.SpawnNamed),
-                "", sendActivitySetup);
+        if (string.IsNullOrEmpty(actorName))
+        {
+            actorName = "Unnamed";
+        }
 
+        using var activity =
+            OpenTelemetryHelpers.BuildStartedSpawnActivity(Activity.Current?.Context ?? default, source, nameof(IContext.SpawnNamed),
+                actorName, spawnActivitySetup);
         try
         {
             activity?.SetTag(ProtoTags.ActionType, nameof(IContext.SpawnNamed));
             
             var pid = spawn();
             activity?.SetTag(ProtoTags.TargetPID, pid.ToString());
-            activity?.SetTag(ProtoTags.TargetName, name);
+            activity?.SetTag(ProtoTags.TargetName, actorName );
             return pid;
         }
         catch (Exception ex)
