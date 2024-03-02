@@ -17,7 +17,6 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Extensions;
 using Proto.Mailbox;
-using Proto.OpenTelemetry;
 using Proto.Utils;
 
 namespace Proto;
@@ -28,7 +27,9 @@ namespace Proto;
 [PublicAPI]
 public class EventStream : EventStream<object>
 {
+#pragma warning disable CS0618 // Type or member is obsolete
     private readonly ILogger _logger = Log.CreateLogger<EventStream>();
+#pragma warning restore CS0618 // Type or member is obsolete
 
     internal EventStream(ActorSystem system)
     {
@@ -280,8 +281,9 @@ public class EventStream<T>
                     try
                     {
                         using var subscriberActivity = ActorSystem.ActivitySource.StartActivity($"Subscriber {msg?.GetType().Name??"null"} {sub.Name}",ActivityKind.Internal,publishActivity?.Id);
-                        subscriberActivity?.AddTag(ProtoTags.MessageType, msg?.GetType().Name??"null");
-                        subscriberActivity?.AddTag(ProtoTags.EventSubscriber, sub.Name);
+                        subscriberActivity?
+                            .AddTag(ProtoTags.MessageType, msg?.GetType().Name??"null")
+                            .AddTag(ProtoTags.EventSubscriber, sub.Name);
                         sub.Action(msg);
                     }
                     catch (Exception ex)

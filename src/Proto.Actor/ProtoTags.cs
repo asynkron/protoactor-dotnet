@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Proto.OpenTelemetry;
+namespace Proto;
 
 /// <summary>
 ///     Proto.actor specific tags on the <see cref="Activity" />
@@ -50,4 +50,5 @@ public static class ProtoTags
     public const string ActionType = "proto.action";
     
     public const string EventSubscriber = "proto.eventsubscriber";
+    public const string TargetName = "proto.targetname";
 }

@@ -27,9 +27,23 @@ internal static class OpenTelemetryHelpers
     )
     {
         var messageType = message.GetMessageTypeName();
+        return BuildStartedActivity(parent, source, verb, messageType, activitySetup, activityKind);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Activity? BuildStartedActivity(
+        ActivityContext parent,
+        string source,
+        string verb,
+        string message,
+        ActivitySetup activitySetup,
+        ActivityKind activityKind = ActivityKind.Internal
+    )
+    {
+        
 
-        var name = $"Proto {source}.{verb} {messageType}";
-        var tags = new[] { new KeyValuePair<string, object?>(ProtoTags.MessageType, messageType) };
+        var name = $"Proto {source}.{verb} {message}";
+        var tags = new[] { new KeyValuePair<string, object?>(ProtoTags.MessageType, message) };
         var activity = ActivitySource.StartActivity(name, activityKind, parent, tags);
 
         if (activity is not null)

@@ -1,146 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 using OpenTelemetry.Trace;
 using Proto.Extensions;
 using Proto.Mailbox;
 
 namespace Proto.OpenTelemetry;
-
-internal class OpenTelemetryRootContextDecorator : RootContextDecorator
-{
-    private readonly ActivitySetup _sendActivitySetup;
-
-    public OpenTelemetryRootContextDecorator(IRootContext context, ActivitySetup sendActivitySetup) : base(context)
-    {
-        _sendActivitySetup = (activity, message)
-            =>
-        {
-            activity?.SetTag(ProtoTags.ActorType, "<None>");
-
-            if (activity != null)
-            {
-                sendActivitySetup(activity, message);
-            }
-        };
-    }
-
-    private static string Source => "Root";
-
-    public override void Send(PID target, object message) =>
-        OpenTelemetryMethodsDecorators.Send(Source, target, message, _sendActivitySetup,
-            () => base.Send(target, message));
-
-    public override void Request(PID target, object message) =>
-        OpenTelemetryMethodsDecorators.Request(Source, target, message, _sendActivitySetup,
-            () => base.Request(target, message));
-
-    public override void Request(PID target, object message, PID? sender) =>
-        OpenTelemetryMethodsDecorators.Request(Source, target, message, sender, _sendActivitySetup,
-            () => base.Request(target, message, sender));
-
-    public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
-        OpenTelemetryMethodsDecorators.RequestAsync(Source, target, message, _sendActivitySetup,
-            () => base.RequestAsync<T>(target, message, cancellationToken)
-        );
-}
-
-internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
-{
-    private readonly ActivitySetup _receiveActivitySetup;
-    private readonly ActivitySetup _sendActivitySetup;
-
-    public OpenTelemetryActorContextDecorator(
-        IContext context,
-        ActivitySetup sendActivitySetup,
-        ActivitySetup receiveActivitySetup
-    ) : base(context)
-    {
-        var actorType = Source;
-        var self = context.Self.ToString();
-
-        _sendActivitySetup = (activity, message) =>
-        {
-            activity?.SetTag(ProtoTags.ActorType, actorType);
-            activity?.SetTag(ProtoTags.ActorPID, self);
-            activity?.SetTag(ProtoTags.SenderPID, self);
-
-            if (activity != null)
-            {
-                sendActivitySetup(activity, message);
-            }
-        };
-
-        _receiveActivitySetup = (activity, message) =>
-        {
-            activity?.SetTag(ProtoTags.ActorType, actorType);
-            activity?.SetTag(ProtoTags.ActorPID, self);
-            activity?.SetTag(ProtoTags.TargetPID, self);
-
-            if (activity != null)
-            {
-                receiveActivitySetup(activity, message);
-            }
-        };
-    }
-
-    private string Source => base.Actor?.GetType().Name ?? "<None>";
-
-    public override void Send(PID target, object message) =>
-        OpenTelemetryMethodsDecorators.Send(Source, target, message, _sendActivitySetup,
-            () => base.Send(target, message));
-
-    public override Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken) =>
-        OpenTelemetryMethodsDecorators.RequestAsync(Source, target, message, _sendActivitySetup,
-            () => base.RequestAsync<T>(target, message, cancellationToken)
-        );
-
-    public override void Request(PID target, object message, PID? sender) =>
-        OpenTelemetryMethodsDecorators.Request(Source, target, message, sender, _sendActivitySetup,
-            () => base.Request(target, message, sender));
-
-    public override void Forward(PID target) =>
-        OpenTelemetryMethodsDecorators.Forward(Source, target, base.Message!, _sendActivitySetup,
-            () => base.Forward(target));
-
-    public override Task Receive(MessageEnvelope envelope) =>
-        OpenTelemetryMethodsDecorators.Receive(Source, envelope, _receiveActivitySetup,
-            () => base.Receive(envelope));
-
-    public override void Respond(object message)=>
-        OpenTelemetryMethodsDecorators.Respond(message,
-            () => base.Respond(message));
-
-    public override void ReenterAfter(Task target, Action action)
-    {
-        var current = Activity.Current?.Context ?? default;
-        var message = base.Message!;
-        var a2 = () =>
-        {
-            using var x = OpenTelemetryHelpers.BuildStartedActivity(current, Source, nameof(ReenterAfter), message,
-                _sendActivitySetup);
-            x?.SetTag(ProtoTags.ActionType, nameof(ReenterAfter));
-            action();
-        };
-        base.ReenterAfter(target, a2);
-    }
-
-    public override void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
-    {
-        var current = Activity.Current?.Context ?? default;
-        var message = base.Message!;
-        Func<Task<T>, Task> a2 = async t =>
-        {
-            using var x = OpenTelemetryHelpers.BuildStartedActivity(current, Source, nameof(ReenterAfter), message,
-                _sendActivitySetup);
-            x?.SetTag(ProtoTags.ActionType, nameof(ReenterAfter));
-            await action(t).ConfigureAwait(false);
-        };
-        base.ReenterAfter(target, a2);
-    }
-}
 
 internal static class OpenTelemetryMethodsDecorators
 {
@@ -156,6 +22,31 @@ internal static class OpenTelemetryMethodsDecorators
             activity?.SetTag(ProtoTags.ActionType, nameof(Send));
             activity?.SetTag(ProtoTags.TargetPID, target.ToString());
             send();
+        }
+        catch (Exception ex)
+        {
+            activity?.RecordException(ex);
+            activity?.SetStatus(Status.Error);
+
+            throw;
+        }
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PID SpawnNamed(string source, ActivitySetup sendActivitySetup, Func<PID> spawn, string name)
+    {
+        using var activity =
+            OpenTelemetryHelpers.BuildStartedActivity(Activity.Current?.Context ?? default, source, nameof(IContext.SpawnNamed),
+                "", sendActivitySetup);
+
+        try
+        {
+            activity?.SetTag(ProtoTags.ActionType, nameof(IContext.SpawnNamed));
+            
+            var pid = spawn();
+            activity?.SetTag(ProtoTags.TargetPID, pid.ToString());
+            activity?.SetTag(ProtoTags.TargetName, name);
+            return pid;
         }
         catch (Exception ex)
         {
