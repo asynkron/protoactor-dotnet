@@ -50,5 +50,5 @@ internal class OpenTelemetryRootContextDecorator : RootContextDecorator
         );
     
     public override PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) =>
-        OpenTelemetryMethodsDecorators.SpawnNamed(Source,_sendActivitySetup, () => base.SpawnNamed(props, name, callback),name);
+        OpenTelemetryMethodsDecorators.SpawnNamed(Source,_spawnActivitySetup, () => base.SpawnNamed(props, name, callback),name);
 }

@@ -23,7 +23,9 @@ namespace Proto.Context;
 
 public class ActorContext : IMessageInvoker, IContext, ISupervisor
 {
+#pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<ActorContext>();
+#pragma warning restore CS0618 // Type or member is obsolete
     private static readonly ImmutableHashSet<PID> EmptyChildren = ImmutableHashSet<PID>.Empty;
     private readonly IMailbox _mailbox;
     private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
@@ -32,13 +34,13 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     private object? _messageOrEnvelope;
     private ContextState _state;
     
-    private ShouldThrottle shouldThrottleStartLogs = Throttle.Create(1000,TimeSpan.FromSeconds(1), droppedLogs =>
+    private readonly ShouldThrottle _shouldThrottleStartLogs = Throttle.Create(1000,TimeSpan.FromSeconds(1), droppedLogs =>
     {
         Logger.LogInformation("[ActorContext] Throttled {LogCount} logs", droppedLogs);
     } );
-    
 
-    public ActorContext(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)
+
+    private ActorContext(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)
     {
         System = system;
         _props = props;
@@ -199,7 +201,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     public void Request(PID target, object message, PID? sender)
     {
-        var messageEnvelope = MessageEnvelope.WithSender(message, sender);
+        var messageEnvelope = MessageEnvelope.WithSender(message, sender!);
         SendUserMessage(target, messageEnvelope);
     }
 
@@ -390,7 +392,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         {
             return msg switch
             {
-                Started s                       => HandleStartedAsync(),
+                Started                         => HandleStartedAsync(),
                 Stop _                          => HandleStopAsync(),
                 Terminated t                    => HandleTerminatedAsync(t),
                 Watch w                         => HandleWatch(w),
@@ -428,7 +430,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             sw.Stop();
             if (sw.Elapsed > _props.StartDeadline)
             {
-                if (shouldThrottleStartLogs().IsOpen())
+                if (_shouldThrottleStartLogs().IsOpen())
                 {
                     Logger.LogCritical(
                         "Actor {Self} took too long to start, deadline is {Deadline}, actual start time is {ActualStart}, your system might suffer from incorrect design, please consider reaching out to https://proto.actor/docs/training/ for help",
