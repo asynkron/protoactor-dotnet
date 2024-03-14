@@ -79,8 +79,8 @@ public class BatchingMailbox : IMailbox
             {
                 batch.Clear();
 
-                while ((msg = _userMessages.Pop()) is not null ||
-                       batch.Count >= _batchSize)
+                while (batch.Count < _batchSize &&
+                    (msg = _userMessages.Pop()) is not null)
                 {
                     batch.Add(msg!);
                 }
