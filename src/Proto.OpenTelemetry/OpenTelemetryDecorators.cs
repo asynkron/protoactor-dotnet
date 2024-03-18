@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using OpenTelemetry;
 using OpenTelemetry.Trace;
 using Proto.Extensions;
 using Proto.Mailbox;
@@ -109,7 +110,7 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
         OpenTelemetryMethodsDecorators.Receive(Source, envelope, _receiveActivitySetup,
             () => base.Receive(envelope));
 
-    public override void Respond(object message)=>
+    public override void Respond(object message) =>
         OpenTelemetryMethodsDecorators.Respond(message,
             () => base.Respond(message));
 
@@ -275,7 +276,7 @@ internal static class OpenTelemetryMethodsDecorators
             throw;
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void Respond(object message,
         Action respond)
@@ -311,6 +312,11 @@ internal static class OpenTelemetryMethodsDecorators
         }
 
         var propagationContext = envelope.Header.ExtractPropagationContext();
+
+        if (propagationContext.Baggage.Count > 0)
+        {
+            Baggage.Current = propagationContext.Baggage;
+        }
 
         using var activity =
             OpenTelemetryHelpers.BuildStartedActivity(propagationContext.ActivityContext, source, nameof(Receive),
