@@ -110,7 +110,7 @@ internal class DeDuplicator<T> where T : IEquatable<T>
             _cleanedAt = now;
             _oldest = 0;
         }
-        else if (_processed.Count >= 50 && _cleanedAt < _oldest)
+        else if (_processed.Count >= 50 && _cleanedAt <= _oldest)
         {
             var oldest = long.MaxValue;
 
