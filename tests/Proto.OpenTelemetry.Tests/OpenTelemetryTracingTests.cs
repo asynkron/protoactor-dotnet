@@ -188,9 +188,10 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
                     await next(context, target, updatedEnvelope);
                 });
                 var future = new FutureProcess(middleContext.System);
+                Baggage.Current = TestBaggage;
                 middleContext.Request(target, new TraceMe(SendAs.Request), future.Pid);
                 var response = (MessageEnvelope)await future.Task;
-                response.Message.Should().Be(new TraceResponse());
+                response.Message.Should().Be(new TraceResponse(TestBaggage));
             }
         );
     

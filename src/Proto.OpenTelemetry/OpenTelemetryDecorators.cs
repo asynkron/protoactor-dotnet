@@ -313,7 +313,8 @@ internal static class OpenTelemetryMethodsDecorators
 
         var propagationContext = envelope.Header.ExtractPropagationContext();
 
-        if (propagationContext.Baggage.Count > 0)
+        bool hasBaggage = propagationContext.Baggage.Count > 0 || Baggage.Current.Count > 0;
+        if (hasBaggage)
         {
             Baggage.Current = propagationContext.Baggage;
         }
