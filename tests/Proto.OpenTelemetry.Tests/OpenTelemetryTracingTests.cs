@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using OpenTelemetry;
 using OpenTelemetry.Trace;
 using Proto.Future;
 using Xunit;
@@ -12,6 +13,11 @@ namespace Proto.OpenTelemetry.Tests;
 
 public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 {
+    private static readonly Baggage TestBaggage = Baggage.Create(new Dictionary<string, string?>
+    {
+        {"baggageKey", "baggageValue"}
+    });
+    
     private static readonly Props ProxyTraceActorProps = Props.FromProducer(() => new TraceTestActor()).WithTracing();
 
     private static readonly Props InnerTraceActorProps = Props.FromFunc(context =>
@@ -22,7 +28,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 
                     if (context.Sender is not null)
                     {
-                        context.Respond(new TraceResponse());
+                        context.Respond(GetTraceResponse() );
                     }
                 }
 
@@ -31,6 +37,13 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         )
         .WithTracing();
 
+    static TraceResponse GetTraceResponse()
+    {
+        return Baggage.Current.Count > 0
+            ? new TraceResponse(Baggage.Current)
+            : new TraceResponse();
+    }
+    
     private static readonly ActivitySource TestSource = new("Proto.Actor.Tests");
 
     private readonly ActivityFixture _fixture;
@@ -122,6 +135,68 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         inner.Should().NotBeNull();
     }
 
+    
+    [Fact]
+    public async Task TracesPropagateCorrectlyWithBaggageForRequestAsync() =>
+        await VerifyTrace(async (rootContext, target) =>
+            {
+                Baggage.Current = TestBaggage;
+                var response = await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.RequestAsync));
+                response.Should().BeEquivalentTo(new TraceResponse(TestBaggage));
+            }
+        );
+
+    [Fact]
+    public async Task TracesPropagateCorrectlyWithBaggageForRequest() =>
+        await VerifyTrace(async (rootContext, target) =>
+            {
+                Baggage.Current = TestBaggage;
+                rootContext.Request(target, new TraceMe(SendAs.Request));
+                await Task.Delay(100);
+            }
+        );
+
+    [Fact]
+    public async Task TracesPropagateCorrectlyWithBaggageForRequestWithForward() =>
+        await VerifyTrace(async (rootContext, target) =>
+            {
+                Baggage.Current = TestBaggage;
+                var response = await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.Forward));
+                response.Should().BeEquivalentTo(new TraceResponse(TestBaggage));
+            }
+        );
+
+    [Fact]
+    public async Task TracesPropagateCorrectlyWithBaggageForRequestWithSender() =>
+        await VerifyTrace(async (rootContext, target) =>
+            {
+                Baggage.Current = TestBaggage;
+                var future = new FutureProcess(rootContext.System);
+                rootContext.Request(target, new TraceMe(SendAs.Request), future.Pid);
+                var response = (MessageEnvelope)await future.Task;
+                response.Message.Should().Be(new TraceResponse(TestBaggage));
+            }
+        );
+
+    [Fact]
+    public async Task TracesPropagateCorrectlyWithBaggageForRequestWithSenderWithAdditionalMiddleware() =>
+        await VerifyTrace(async (tracedRoot, target) =>
+            {
+                var middleContext = tracedRoot.WithSenderMiddleware(next => async (context, _, envelope) =>
+                {
+                    var updatedEnvelope = envelope.WithHeader("test", "value");
+                    await next(context, target, updatedEnvelope);
+                });
+                var future = new FutureProcess(middleContext.System);
+                Baggage.Current = TestBaggage;
+                middleContext.Request(target, new TraceMe(SendAs.Request), future.Pid);
+                var response = (MessageEnvelope)await future.Task;
+                response.Message.Should().Be(new TraceResponse(TestBaggage));
+            }
+        );
+    
+    // End
+    
     private async Task VerifyTrace(Func<IRootContext, PID, Task> action)
     {
         var tracedRoot = new ActorSystem().Root.WithTracing();
@@ -175,7 +250,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 
     private record TraceMe(SendAs Method);
 
-    private record TraceResponse;
+    private record TraceResponse(Baggage? Baggage = null);
 
     public class TraceTestActor : IActor
     {
