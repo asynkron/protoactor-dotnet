@@ -4,7 +4,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-        <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Proto.Persistence\Proto.Persistence.csproj" />
