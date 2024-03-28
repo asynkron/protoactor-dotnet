@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 using static System.Data.SqlDbType;
 
@@ -55,8 +55,7 @@ public class SqlServerProvider : IProvider
         _sqlDeleteSnapshots =
             $@"DELETE FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName AND SnapshotIndex <= @SnapshotIndex";
 
-        _sqlReadEvents =
-            $@"SELECT EventIndex, EventData FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex >= @IndexStart AND EventIndex <= @IndexEnd ORDER BY EventIndex ASC";
+        _sqlReadEvents = $@"SELECT EventIndex, EventData FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex >= @IndexStart AND EventIndex <= @IndexEnd ORDER BY EventIndex ASC";
 
         _sqlReadSnapshot =
             $@"SELECT TOP 1 SnapshotIndex, SnapshotData FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName ORDER BY SnapshotIndex DESC";
@@ -84,9 +83,9 @@ public class SqlServerProvider : IProvider
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
-        using var connection = new SqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
 
-        using var command = new SqlCommand(_sqlReadEvents, connection);
+        await using var command = new SqlCommand(_sqlReadEvents, connection);
 
         await connection.OpenAsync().ConfigureAwait(false);
 
