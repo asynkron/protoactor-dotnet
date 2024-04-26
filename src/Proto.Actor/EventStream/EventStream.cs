@@ -219,7 +219,7 @@ public class EventStream<T>
     /// <returns>A new subscription that can be used to unsubscribe</returns>
     public EventStreamSubscription<T> Subscribe<TMsg>(ISenderContext context, params PID[] pids) where TMsg : T
     {
-        var caller = pids.First().ToDiagnosticString();
+        var caller = pids.First().ToDiagnosticString().Split("/").Last();
         var sub = new EventStreamSubscription<T>(
             this,
             Dispatchers.SynchronousDispatcher,
