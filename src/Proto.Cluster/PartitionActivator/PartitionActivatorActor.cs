@@ -46,12 +46,19 @@ public class PartitionActivatorActor : IActor
         context.Message switch
         {
             Started                   => OnStarted(context),
+            Stopping                  => OnStopping(context),
             ActivationRequest msg     => OnActivationRequest(msg, context),
             ActivationTerminated msg  => OnActivationTerminated(msg),
             ActivationTerminating msg => OnActivationTerminating(msg),
             ClusterTopology msg       => OnClusterTopology(msg, context),
             _                         => Task.CompletedTask
         };
+
+    private async Task OnStopping(IContext context)
+    {
+        var pids = _actors.Values;
+        await pids.StopMany(context);
+    }
 
     private Task OnStarted(IContext context)
     {

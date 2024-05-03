@@ -6,8 +6,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Mailbox;
+using Proto.Utils;
 
 namespace Proto;
 
@@ -20,10 +23,19 @@ public static class UtilExtensions
             pid.SendSystemMessage(system, message);
         }
     }
+    
+    public static async Task StopMany(this IEnumerable<PID> self, IContext context)
+    {
+        foreach (var chunk in self.Chunk(20))
+        {
+            var tasks = chunk.Select(context.StopAsync);
+            await Task.WhenAll(tasks).WaitUpTo(TimeSpan.FromSeconds(10));
+        }
+    }
 
     [UsedImplicitly]
     public static void Deconstruct<TKey, TValue>(
-        //DONT TOUCH THIS, it tries to deconstruct the deconstruct method...
+        //DON'T TOUCH THIS, it tries to deconstruct the deconstruct method...
         // ReSharper disable once UseDeconstructionOnParameter
         this KeyValuePair<TKey, TValue> self,
         out TKey key,

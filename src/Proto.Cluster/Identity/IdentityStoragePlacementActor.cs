@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,9 @@ namespace Proto.Cluster.Identity;
 internal class IdentityStoragePlacementActor : IActor
 {
     private const int PersistenceRetries = 3;
+#pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<IdentityStoragePlacementActor>();
+#pragma warning restore CS0618 // Type or member is obsolete
 
     //pid -> the actor that we have created here
     //kind -> the actor kind
@@ -39,7 +42,7 @@ internal class IdentityStoragePlacementActor : IActor
         context.Message switch
         {
             Started                   => OnStarted(context),
-            Stopping _                => Stopping(),
+            Stopping _                => Stopping(context),
             Stopped _                 => Stopped(),
             ActivationTerminating msg => OnActivationTerminating(context, msg),
             ActivationRequest msg     => OnActivationRequest(context, msg),
@@ -53,12 +56,11 @@ internal class IdentityStoragePlacementActor : IActor
         return Task.CompletedTask;
     }
 
-    private Task Stopping()
+    private async Task Stopping(IContext context)
     {
         Logger.LogInformation("Stopping placement actor");
         _subscription?.Unsubscribe();
-
-        return Task.CompletedTask;
+        await _actors.Values.StopMany(context);
     }
 
     private Task Stopped()

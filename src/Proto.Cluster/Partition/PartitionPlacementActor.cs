@@ -18,7 +18,9 @@ namespace Proto.Cluster.Partition;
 
 internal class PartitionPlacementActor : IActor, IDisposable
 {
+#pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<PartitionPlacementActor>();
+#pragma warning restore CS0618 // Type or member is obsolete
 
     //pid -> the actor that we have created here
     //kind -> the actor kind
@@ -40,12 +42,19 @@ internal class PartitionPlacementActor : IActor, IDisposable
         context.Message switch
         {
             Started                     => OnStarted(context),
+            Stopping => OnStopping(context),
             ActivationTerminating msg   => OnActivationTerminating(msg),
             IdentityHandoverRequest msg => OnIdentityHandoverRequest(context, msg),
             ClusterTopology msg         => OnClusterTopology(context, msg),
             ActivationRequest msg       => OnActivationRequest(context, msg),
             _                           => Task.CompletedTask
         };
+
+    private async Task OnStopping(IContext context)
+    {
+        var pids = _actors.Values;
+        await pids.StopMany(context);
+    }
 
     public void Dispose() => _subscription?.Unsubscribe();
 
