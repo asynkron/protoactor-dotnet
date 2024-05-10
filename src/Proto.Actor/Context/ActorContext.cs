@@ -435,7 +435,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             {
                 if (_shouldThrottleStartLogs().IsOpen())
                 {
-                    Logger.LogCritical(
+                    Logger.LogWarning(
                         "Actor {Self} took too long to start, deadline is {Deadline}, actual start time is {ActualStart}, your system might suffer from incorrect design, please consider reaching out to https://proto.actor/docs/training/ for help",
                         Self, _props.StartDeadline, sw.Elapsed);
                 }
