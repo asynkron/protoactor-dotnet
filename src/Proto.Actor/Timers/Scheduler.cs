@@ -11,7 +11,7 @@ namespace Proto.Timers;
 /// </summary>
 /// <remarks>
 ///     The user is responsible for cancelling sends. They will not be automatically
-///     cancelled when this object is distroyed and will be left around in the background.
+///     cancelled when this object is destroyed and will be left around in the background.
 /// </remarks>
 [PublicAPI]
 public class Scheduler
@@ -37,13 +37,14 @@ public class Scheduler
     public CancellationTokenSource SendOnce(TimeSpan delay, PID target, object message)
     {
         var cts = new CancellationTokenSource();
+        var token = cts.Token;
 
         _ = SafeTask.Run(async () =>
             {
-                await Task.Delay(delay, cts.Token).ConfigureAwait(false);
+                await Task.Delay(delay, token).ConfigureAwait(false);
 
                 _context.Send(target, message);
-            }, cts.Token
+            }, token
         );
 
         return cts;
@@ -70,28 +71,19 @@ public class Scheduler
     public CancellationTokenSource SendRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
     {
         var cts = new CancellationTokenSource();
+        var token = cts.Token;
 
         _ = SafeTask.Run(async () =>
             {
-                await Task.Delay(delay, cts.Token).ConfigureAwait(false);
+                await Task.Delay(delay, token).ConfigureAwait(false);
 
-                async Task Trigger()
+                while (!cts.IsCancellationRequested)
                 {
-                    while (true)
-                    {
-                        if (cts.IsCancellationRequested)
-                        {
-                            return;
-                        }
+                    _context.Send(target, message);
 
-                        _context.Send(target, message);
-
-                        await Task.Delay(interval, cts.Token).ConfigureAwait(false);
-                    }
+                    await Task.Delay(interval, token).ConfigureAwait(false);
                 }
-
-                await Trigger().ConfigureAwait(false);
-            }, cts.Token
+            }, token
         );
 
         return cts;
@@ -109,28 +101,19 @@ public class Scheduler
     public CancellationTokenSource RequestRepeatedly(TimeSpan delay, TimeSpan interval, PID target, object message)
     {
         var cts = new CancellationTokenSource();
+        var token = cts.Token;
 
         _ = SafeTask.Run(async () =>
             {
-                await Task.Delay(delay, cts.Token).ConfigureAwait(false);
+                await Task.Delay(delay, token).ConfigureAwait(false);
 
-                async Task Trigger()
+                while (!cts.IsCancellationRequested)
                 {
-                    while (true)
-                    {
-                        if (cts.IsCancellationRequested)
-                        {
-                            return;
-                        }
+                    _context.Request(target, message);
 
-                        _context.Request(target, message);
-
-                        await Task.Delay(interval, cts.Token).ConfigureAwait(false);
-                    }
+                    await Task.Delay(interval, token).ConfigureAwait(false);
                 }
-
-                await Trigger().ConfigureAwait(false);
-            }, cts.Token
+            }, token
         );
 
         return cts;
