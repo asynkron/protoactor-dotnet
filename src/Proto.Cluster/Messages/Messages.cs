@@ -15,7 +15,7 @@ namespace Proto.Cluster;
 
 public sealed partial class ClusterIdentity : ICustomDiagnosticMessage
 {
-    internal PID? CachedPid { get; set; }
+    public PID? CachedPid { get; set; }
 
     public string ToDiagnosticString() => $"{Kind}/{Identity}";
 

@@ -14,7 +14,7 @@ using Proto.Remote;
 
 namespace Proto.Cluster;
 
-internal class PidCache
+public class PidCache
 {
     private readonly ICollection<KeyValuePair<ClusterIdentity, PID>> _cacheCollection;
     private readonly ConcurrentDictionary<ClusterIdentity, PID> _cacheDict;
