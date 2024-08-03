@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="ProtoHack.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 

@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <NoWarn>8981</NoWarn>
-        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
         <OutputType>Exe</OutputType>
         <LangVersion>10</LangVersion>
         <RootNamespace>ClusterExperiment1</RootNamespace>

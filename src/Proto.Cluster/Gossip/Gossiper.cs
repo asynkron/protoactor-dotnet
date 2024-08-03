@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="ClusterHeartBeat.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -116,13 +116,17 @@ public class Gossiper
         try
         {
             var res = await _context.RequestAsync<GetGossipStateEntryResponse>(_pid,
-                new GetGossipStateEntryRequest(key),CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
+                new GetGossipStateEntryRequest(key), CancellationTokens.FromSeconds(5)).ConfigureAwait(false);
 
             return res.State;
         }
         catch (DeadLetterException)
         {
             //ignore, we are shutting down  
+        }
+        catch (Exception x)
+        {
+            Logger.LogError(x, "Failed to get gossip state entry");
         }
 
         return ImmutableDictionary<string, GossipKeyValue>.Empty;

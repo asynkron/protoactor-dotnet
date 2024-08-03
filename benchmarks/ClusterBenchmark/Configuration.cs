@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="Configuration.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -191,10 +191,12 @@ public static class Configuration
     private static ActorSystemConfig GetMemberActorSystemConfig()
     {
         var config = new ActorSystemConfig()
-            .WithSharedFutures()
+           // .WithSharedFutures()
             .WithDeadLetterThrottleCount(3)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
             .WithDeadLetterRequestLogging(false);
+
+        config = config with { SharedFutures = false };
         // .WithDeveloperSupervisionLogging(false)
         // .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1));
 
@@ -206,9 +208,12 @@ public static class Configuration
         InitTracing();
         var config = new ActorSystemConfig()
             .WithDeadLetterThrottleCount(3)
-            .WithSharedFutures()
+           // .WithSharedFutures()
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
             .WithDeadLetterRequestLogging(false);
+
+        config = config with { SharedFutures = false };
+        
         var system = new ActorSystem(
             EnableTracing ? config.WithConfigureProps(props => props.WithTracing()) : config
         );
