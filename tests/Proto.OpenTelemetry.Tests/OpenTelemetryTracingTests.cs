@@ -226,7 +226,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         var (_, activityTraceId) = await Trace(async () =>
             {
                 tracedRoot.Send(testRoot, new TraceMe(SendAs.Invalid));
-                await Task.Delay(100);
+                await Task.Delay(500);
             }
         );
 
@@ -234,6 +234,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
             .GetActivitiesByTraceId(activityTraceId)
             .Single(it => it.OperationName.Contains("Receive TraceMe", StringComparison.Ordinal));
 
+        
         receiveActivity.GetStatus().Should().Be(Status.Error);
         receiveActivity.Events.Should().HaveCount(1);
         receiveActivity.Events.Single().Tags.Where(tag => tag.Key.StartsWith("exception")).Should().NotBeEmpty();
