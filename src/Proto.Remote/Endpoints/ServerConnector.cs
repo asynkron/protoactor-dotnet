@@ -174,7 +174,7 @@ public sealed class ServerConnector
 
                 var writer = StartWriter(combinedToken, call, cancellationTokenSource);
 
-                var reader = StartReader(call, actorSystemId, cancellationTokenSource);
+                var reader = StartReader(combinedToken, call, actorSystemId, cancellationTokenSource);
 
                 _logger.LogInformation("[ServerConnector][{SystemAddress}] Connected to {Address}", _system.Address,
                     _address);
@@ -299,13 +299,13 @@ public sealed class ServerConnector
         });
     }
 
-    private Task StartReader(AsyncDuplexStreamingCall<RemoteMessage, RemoteMessage> call, string actorSystemId, CancellationTokenSource cancellationTokenSource)
+    private Task StartReader(CancellationToken combinedToken, AsyncDuplexStreamingCall<RemoteMessage, RemoteMessage> call, string actorSystemId, CancellationTokenSource cancellationTokenSource)
     {
         return Task.Run(async () =>
         {
             try
             {
-                while (await call.ResponseStream.MoveNext().ConfigureAwait(false))
+                while (await call.ResponseStream.MoveNext(combinedToken).ConfigureAwait(false))
                 {
                     // if (_endpoint.CancellationToken.IsCancellationRequested) continue;
                     var currentMessage = call.ResponseStream.Current;
