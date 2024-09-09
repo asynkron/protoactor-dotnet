@@ -3,7 +3,7 @@
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.12" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.8" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     </ItemGroup>
     <ItemGroup>

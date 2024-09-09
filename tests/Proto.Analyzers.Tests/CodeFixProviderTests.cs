@@ -12,7 +12,7 @@ public abstract class CodeFixProviderTests<TAnalyzer, TCodeFix> : AnalyzerTest<T
 {
     protected Task VerifyCodeFixAsync(string source, string expectedResult, DiagnosticResult diagnosticResult)
     {
-        var test = new CSharpCodeFixTest<TAnalyzer, TCodeFix, XUnitVerifier>
+        var test = new CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>
         {
             TestCode = source,
             TestState =

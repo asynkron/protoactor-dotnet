@@ -8,6 +8,7 @@
         <LangVersion>10</LangVersion>
         <NoPackageAnalysis>true</NoPackageAnalysis>
         <IncludeSymbols>false</IncludeSymbols>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     </PropertyGroup>
 
     <ItemGroup>

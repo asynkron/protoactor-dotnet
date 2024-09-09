@@ -3,7 +3,7 @@
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="RavenDB.Client" Version="5.3.100" />
+        <PackageReference Include="RavenDB.Client" Version="6.0.105" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Proto.Persistence\Proto.Persistence.csproj" />

@@ -32,7 +32,7 @@ public class FutureTests
             )
         );
 
-        var reply = context.RequestAsync<object>(pid, "hello").Result;
+        var reply = await context.RequestAsync<object>(pid, "hello");
 
         Assert.Equal("hey", reply);
     }
@@ -66,7 +66,7 @@ public class FutureTests
             )
         );
 
-        var reply2 = context.RequestAsync<string>(pid2, "hello").Result;
+        var reply2 = await context.RequestAsync<string>(pid2, "hello");
 
         Assert.Equal("hellohey", reply2);
     }
@@ -89,13 +89,13 @@ public class FutureTests
             )
         );
 
-        var reply = context.RequestAsync<object>(pid, "hello", TimeSpan.FromSeconds(1)).Result;
+        var reply = await context.RequestAsync<object>(pid, "hello", TimeSpan.FromSeconds(1));
 
         Assert.Null(reply);
     }
 
     [Fact]
-    public void TestInATask() =>
+    public Task TestInATask() =>
         SafeTask.Run(async () =>
                 {
                     await using var system = new ActorSystem();
@@ -119,15 +119,14 @@ public class FutureTests
                     var reply1 = await context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(10));
                     Assert.Null(reply1);
                     _output.WriteLine("got response 1");
-                    var reply2 = context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(10)).Result;
+                    var reply2 = await context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(10));
                     Assert.Null(reply2);
                     _output.WriteLine("got response 2");
                 }
-            )
-            .Wait();
+            );
 
     [Fact]
-    public void TestInATaskIndirect() =>
+    public Task TestInATaskIndirect() =>
         Task.Run(async () =>
                 {
                     await using var system = new ActorSystem();
@@ -165,10 +164,9 @@ public class FutureTests
                     var reply1 = await context.RequestAsync<object>(pid, "hello1", TimeSpan.FromSeconds(2));
                     Assert.Null(reply1);
                     _output.WriteLine("got response 1");
-                    var reply2 = context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(2)).Result;
+                    var reply2 = await context.RequestAsync<object>(pid, "hello2", TimeSpan.FromSeconds(2));
                     Assert.Null(reply2);
                     _output.WriteLine("got response 2");
                 }
-            )
-            .Wait();
+            );
 }

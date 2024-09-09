@@ -3,7 +3,7 @@
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.101.8" />
+        <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.400.16" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Proto.Persistence\Proto.Persistence.csproj" />

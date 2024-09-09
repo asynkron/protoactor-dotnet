@@ -17,7 +17,7 @@ public abstract class AnalyzerTest<TAnalyzer> where TAnalyzer : DiagnosticAnalyz
 
     protected Task VerifyAnalyzerAsync(string source, params DiagnosticResult[] expected)
     {
-        var test = new CSharpAnalyzerTest<TAnalyzer, XUnitVerifier>
+        var test = new CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>
         {
             TestState =
             {

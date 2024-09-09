@@ -3,8 +3,8 @@
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-        <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Proto.Persistence\Proto.Persistence.csproj" />
