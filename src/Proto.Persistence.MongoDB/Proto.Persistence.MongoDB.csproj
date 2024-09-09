@@ -3,7 +3,7 @@
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="MongoDB.Driver" Version="2.19.0" />
+        <PackageReference Include="MongoDB.Driver" Version="2.28.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Proto.Persistence\Proto.Persistence.csproj" />

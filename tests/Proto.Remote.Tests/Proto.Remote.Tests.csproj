@@ -4,7 +4,7 @@
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
+        <PackageReference Include="Neovolve.Logging.Xunit" Version="6.1.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />

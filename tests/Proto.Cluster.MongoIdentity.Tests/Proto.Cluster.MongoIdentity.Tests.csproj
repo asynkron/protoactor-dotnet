@@ -14,7 +14,7 @@
         <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Divergic.Logging.Xunit" Version="4.0.0" />
+        <PackageReference Include="Neovolve.Logging.Xunit" Version="6.1.0" />
     </ItemGroup>
     <ItemGroup>
         <None Update="*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />

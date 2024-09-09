@@ -9,13 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.Tools" Version="2.51.0">
+        <PackageReference Include="Grpc.Tools" Version="2.66.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="OpenTelemetry" Version="1.6.0" />
+        <PackageReference Include="OpenTelemetry" Version="1.9.0" />
         
-        <PackageReference Include="coverlet.collector" Version="3.1.1">
+        <PackageReference Include="coverlet.collector" Version="6.0.2">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>

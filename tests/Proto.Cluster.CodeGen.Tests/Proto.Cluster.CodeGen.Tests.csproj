@@ -8,7 +8,7 @@
 
     <ItemGroup>
         <PackageReference Include="Handlebars.Net" Version="2.0.9" />
-        <PackageReference Include="protobuf-net.Reflection" Version="3.0.101" />
+        <PackageReference Include="protobuf-net.Reflection" Version="3.2.12" />
     </ItemGroup>
 
     <ItemGroup>

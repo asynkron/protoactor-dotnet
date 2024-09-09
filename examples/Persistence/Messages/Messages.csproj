@@ -3,9 +3,9 @@
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.22.0" />
+        <PackageReference Include="Google.Protobuf" Version="3.28.0" />
         <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-        <PackageReference Include="Grpc.Tools" Version="2.51.0" PrivateAssets="All" />
+        <PackageReference Include="Grpc.Tools" Version="2.66.0" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
         <Protobuf Include="Protos.proto" GrpcServices="Server,Client" />

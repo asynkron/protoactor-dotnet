@@ -16,11 +16,11 @@
                 ServerData="LoadServerData"
                 Items="_root.Children"
                 MultiSelection="false"
-                CanHover="true"
+                Hover="true"
                 SelectedValueChanged="(TreeNode node) => SelectedValueChanged(node)">
                 <ItemTemplate>
                     <MudTreeViewItem
-                        Icon="@(context.Pid == null ? Icons.Filled.Computer : Icons.Filled.Circle)"
+                        Icon="@(context.Pid == null ? Icons.Material.Filled.Computer : Icons.Material.Filled.Circle)"
                         IconColor="Color.Success"
                         Value="@context"
                         LoadingIconColor="Color.Info"

@@ -5,13 +5,13 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="Testcontainers" Version="3.3.0" />
-        <PackageReference Include="Testcontainers.PostgreSql" Version="3.3.0" />
-        <PackageReference Include="Testcontainers.CouchDb" Version="3.3.0" />
-        <PackageReference Include="Testcontainers.MsSql" Version="3.3.0" />
-        <PackageReference Include="Testcontainers.DynamoDb" Version="3.3.0" />
-        <PackageReference Include="Testcontainers.RavenDb" Version="3.3.0" />
-        <PackageReference Include="Testcontainers.MongoDb" Version="3.3.0" />
+        <PackageReference Include="Testcontainers" Version="3.10.0" />
+        <PackageReference Include="Testcontainers.PostgreSql" Version="3.10.0" />
+        <PackageReference Include="Testcontainers.CouchDb" Version="3.10.0" />
+        <PackageReference Include="Testcontainers.MsSql" Version="3.10.0" />
+        <PackageReference Include="Testcontainers.DynamoDb" Version="3.10.0" />
+        <PackageReference Include="Testcontainers.RavenDb" Version="3.10.0" />
+        <PackageReference Include="Testcontainers.MongoDb" Version="3.10.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Persistence.Couchbase\Proto.Persistence.Couchbase.csproj" />
