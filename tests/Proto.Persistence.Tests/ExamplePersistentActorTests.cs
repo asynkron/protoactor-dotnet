@@ -12,30 +12,24 @@ using Proto.Persistence.MongoDB;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 using Proto.TestFixtures;
-using Testcontainers.MongoDb;
-using Testcontainers.MsSql;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Proto.Persistence.Tests;
 
 
 
-public class ExamplePersistentActorTests: IAsyncLifetime
+public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
 {
     private const int InitialState = 1;
-    private readonly PostgreSqlContainer _postgreSqlContainer = new PostgreSqlBuilder()
-        .WithDatabase("IntegrationTests")
-        .WithUsername("postgres")
-        .WithPassword("root")
-        .WithCommand(new[] { "-c", "log_statement=all" })
-        .Build();
 
-    readonly MsSqlContainer _msSqlContainer = new MsSqlBuilder()
-        .Build();
-    readonly MongoDbContainer _mongoDbContainer = new MongoDbBuilder()
-        .Build();
     
+    private readonly ContainersFixture _fixture;
+
+    public ExamplePersistentActorTests(ContainersFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
     private IProvider GetProvider(TestProvider providerType)
     {
         switch (providerType)
@@ -43,12 +37,12 @@ public class ExamplePersistentActorTests: IAsyncLifetime
             case TestProvider.InMemory:
                 return new InMemoryProvider();
             case TestProvider.Marten:
-                return new MartenProvider(DocumentStore.For(_postgreSqlContainer.GetConnectionString()));
+                return new MartenProvider(DocumentStore.For(_fixture.Postgres.GetConnectionString()));
             case TestProvider.Sqlite:
                 return new SqliteProvider(
                     new SqliteConnectionStringBuilder($"Data Source=file:{Guid.NewGuid()}?mode=memory"));
             case TestProvider.SqlServer:
-                return new SqlServerProvider(_msSqlContainer.GetConnectionString(), true);
+                return new SqlServerProvider(_fixture.MsSql.GetConnectionString(), true);
             case TestProvider.MongoDb:
                 try
                 {
@@ -60,7 +54,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
                 catch (BsonSerializationException e)
                 {
                 }
-                return new MongoDBProvider(new MongoClient(_mongoDbContainer.GetConnectionString())
+                return new MongoDBProvider(new MongoClient(_fixture.MongoDb.GetConnectionString())
                     .GetDatabase("Test"));
             default:
                 throw new ArgumentOutOfRangeException(nameof(providerType), providerType, null);
@@ -439,19 +433,7 @@ public class ExamplePersistentActorTests: IAsyncLifetime
     }
 
    
-    public async Task InitializeAsync()
-    {
-        await  _postgreSqlContainer.StartAsync();
-        await  _msSqlContainer.StartAsync();
-        await  _mongoDbContainer.StartAsync();
-    }
 
-    public async Task DisposeAsync()
-    {
-        await  _postgreSqlContainer.StopAsync();
-        await  _msSqlContainer.StopAsync();
-        await  _mongoDbContainer.StopAsync();
-    }
 }
 
 
