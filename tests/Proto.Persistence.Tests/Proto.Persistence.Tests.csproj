@@ -1,17 +1,17 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <LangVersion>10</LangVersion>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="Testcontainers" Version="3.10.0" />
-        <PackageReference Include="Testcontainers.PostgreSql" Version="3.10.0" />
-        <PackageReference Include="Testcontainers.CouchDb" Version="3.10.0" />
-        <PackageReference Include="Testcontainers.MsSql" Version="3.10.0" />
-        <PackageReference Include="Testcontainers.DynamoDb" Version="3.10.0" />
-        <PackageReference Include="Testcontainers.RavenDb" Version="3.10.0" />
-        <PackageReference Include="Testcontainers.MongoDb" Version="3.10.0" />
+        <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="Testcontainers" />
+        <PackageReference Include="Testcontainers.PostgreSql" />
+        <PackageReference Include="Testcontainers.CouchDb" />
+        <PackageReference Include="Testcontainers.MsSql" />
+        <PackageReference Include="Testcontainers.DynamoDb" />
+        <PackageReference Include="Testcontainers.RavenDb" />
+        <PackageReference Include="Testcontainers.MongoDb" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Persistence.Couchbase\Proto.Persistence.Couchbase.csproj" />

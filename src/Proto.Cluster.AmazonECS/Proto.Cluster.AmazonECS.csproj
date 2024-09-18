@@ -6,8 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.ECS" Version="3.7.402.10" />
-        <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="8.0.8" />
+        <PackageReference Include="AWSSDK.ECS" />
+        <PackageReference Include="Microsoft.AspNetCore.JsonPatch" />
     </ItemGroup>
 
     <ItemGroup>

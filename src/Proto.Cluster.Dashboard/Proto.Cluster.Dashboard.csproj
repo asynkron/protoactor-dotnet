@@ -8,8 +8,8 @@
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Update="MinVer" Version="3.0.0" />
-        <PackageReference Include="MudBlazor" Version="6.21.0" />
+        
+        <PackageReference Include="MudBlazor" />
     </ItemGroup>
 
     <ItemGroup>

@@ -107,6 +107,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".meta", ".meta", "{222D5932
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		.github\PULL_REQUEST_TEMPLATE.md = .github\PULL_REQUEST_TEMPLATE.md
+		Directory.Packages.props = Directory.Packages.props
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Identity.Redis", "src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj", "{B0F9003C-BA53-4948-8FB7-1F7F230F9310}"

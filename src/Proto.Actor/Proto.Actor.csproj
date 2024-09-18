@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
     <PropertyGroup>
         <NoWarn>8981</NoWarn>
         <RootNamespace>Proto</RootNamespace>
@@ -9,15 +9,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.28.0" />
-        <PackageReference Include="Grpc.Tools" Version="2.66.0" PrivateAssets="All" />
-        <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-        <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
-        <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
-        <PackageReference Include="System.Text.Json" Version="8.0.4" />
-        <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
+        <PackageReference Include="Google.Protobuf" />
+        <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+        <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="System.Collections.Immutable" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+        <PackageReference Include="System.Diagnostics.DiagnosticSource" />
+        <PackageReference Include="System.Text.Json" />
+        <PackageReference Include="System.Threading.Channels" />
     </ItemGroup>
 
     <ItemGroup>

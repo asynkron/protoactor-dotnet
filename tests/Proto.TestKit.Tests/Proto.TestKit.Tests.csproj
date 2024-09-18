@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>9</LangVersion>
@@ -9,6 +9,6 @@
   </ItemGroup>
   <ItemGroup>
 
-    <PackageReference Update="FluentAssertions" Version="6.1.0" />
+    
   </ItemGroup>
 </Project>

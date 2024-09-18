@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
@@ -7,6 +7,6 @@
     <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotnet" Version="0.14.0" />
+    <PackageReference Include="BenchmarkDotnet" />
   </ItemGroup>
 </Project>

@@ -1,11 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
     <PropertyGroup>
         <LangVersion>10</LangVersion>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Consul" Version="1.7.14.4" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
+        <PackageReference Include="Consul" />
+        <PackageReference Include="Microsoft.Extensions.Options" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <IsPackable>false</IsPackable>
@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Handlebars.Net" Version="2.0.9" />
-        <PackageReference Include="protobuf-net.Reflection" Version="3.2.12" />
+        <PackageReference Include="Handlebars.Net" />
+        <PackageReference Include="protobuf-net.Reflection" />
     </ItemGroup>
 
     <ItemGroup>

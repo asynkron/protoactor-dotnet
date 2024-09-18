@@ -24,15 +24,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DotNet.Testcontainers" Version="1.6.0" />
-        <PackageReference Include="Grpc.Tools" Version="2.66.0" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-        <PackageReference Include="MongoDB.Driver" Version="2.28.0" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-        <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.5.1" />
-        <PackageReference Include="Serilog" Version="4.0.1" />
-        <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+        <PackageReference Include="DotNet.Testcontainers" />
+        <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+        <PackageReference Include="MongoDB.Driver" />
+        <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="OpenTelemetry.Exporter.Jaeger" />
+        <PackageReference Include="Serilog" />
+        <PackageReference Include="Serilog.Extensions.Logging" />
+        <PackageReference Include="Serilog.Sinks.Console" />
     </ItemGroup>
 
     <ItemGroup>

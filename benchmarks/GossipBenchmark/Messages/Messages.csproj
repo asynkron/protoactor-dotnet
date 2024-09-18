@@ -1,13 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <NoWarn>8981</NoWarn>
     <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.28.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.66.0" PrivateAssets="All" />
-    <PackageReference Include="Proto.Cluster.CodeGen" Version="1.7.0" />
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+    <PackageReference Include="Proto.Cluster.CodeGen" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Protos.proto" />

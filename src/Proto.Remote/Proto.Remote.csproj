@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
     <PropertyGroup>
         <NoWarn>8981</NoWarn>
         <IsPackable>true</IsPackable>
@@ -8,12 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.AspNetCore" Version="2.65.0" />
-        <PackageReference Include="Grpc.Core.Api" Version="2.65.0" />
-        <PackageReference Include="Grpc.HealthCheck" Version="2.65.0" />
-        <PackageReference Include="Grpc.Net.Common" Version="2.65.0" />
-        <PackageReference Include="Grpc.Tools" Version="2.66.0" PrivateAssets="All" />
-        <PackageReference Include="System.Text.Json" Version="8.0.4" />
+        <PackageReference Include="Grpc.AspNetCore" />
+        <PackageReference Include="Grpc.Core.Api" />
+        <PackageReference Include="Grpc.HealthCheck" />
+        <PackageReference Include="Grpc.Net.Common" />
+        <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+        <PackageReference Include="System.Text.Json" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />

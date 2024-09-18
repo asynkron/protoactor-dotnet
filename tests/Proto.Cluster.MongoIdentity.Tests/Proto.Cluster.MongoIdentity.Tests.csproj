@@ -14,7 +14,7 @@
         <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Neovolve.Logging.Xunit" Version="6.1.0" />
+        <PackageReference Include="Neovolve.Logging.Xunit" />
     </ItemGroup>
     <ItemGroup>
         <None Update="*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />

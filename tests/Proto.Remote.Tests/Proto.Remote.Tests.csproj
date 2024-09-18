@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <LangVersion>10</LangVersion>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Neovolve.Logging.Xunit" Version="6.1.0" />
+        <PackageReference Include="Neovolve.Logging.Xunit" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />

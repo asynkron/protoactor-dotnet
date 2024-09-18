@@ -1,21 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <IsTestProject>false</IsTestProject>
         <LangVersion>10</LangVersion>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Remove="AutoFixture.Xunit2"/>
-        <PackageReference Remove="FluentAssertions"/>
-        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
-        <PackageReference Remove="xunit"/>
-        <PackageReference Remove="xunit.runner.visualstudio"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0"/>
+        <PackageReference Remove="AutoFixture.Xunit2" />
+        <PackageReference Remove="FluentAssertions" />
+        <PackageReference Remove="Microsoft.NET.Test.Sdk" />
+        <PackageReference Remove="xunit" />
+        <PackageReference Remove="xunit.runner.visualstudio" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj"/>
+        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     </ItemGroup>
 </Project>

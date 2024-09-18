@@ -1,12 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <LangVersion>10</LangVersion>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="OpenTelemetry" Version="1.9.0" />
-        <PackageReference Include="OpenTelemetry.Api" Version="1.9.0" />
+        <PackageReference Include="OpenTelemetry" />
+        <PackageReference Include="OpenTelemetry.Api" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
