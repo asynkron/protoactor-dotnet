@@ -56,7 +56,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
     public void Stop()
     {
         lock (_synLock)
-        {
+        {            
             if (CancellationToken.IsCancellationRequested)
             {
                 return;
@@ -67,27 +67,28 @@ public sealed class EndpointManager : IDiagnosticsProvider
             _system.EventStream.Unsubscribe(_endpointTerminatedEvnSub);
 
             _cancellationTokenSource.Cancel();
-
-            foreach (var endpoint in _serverEndpoints.Values)
-            {
-                endpoint.DisposeAsync().GetAwaiter().GetResult();
-            }
-
-            foreach (var endpoint in _clientEndpoints.Values)
-            {
-                endpoint.DisposeAsync().GetAwaiter().GetResult();
-            }
-
-            _serverEndpoints.Clear();
-            _clientEndpoints.Clear();
-
-            StopActivator();
-
-            Logger.LogDebug("[{SystemAddress}] Stopped", _system.Address);
         }
+        
+        // release the lock while we dispose, other threads will see the cancellation token and return blocked endpoint.
+        foreach (var endpoint in _serverEndpoints.Values)
+        {
+            endpoint.DisposeAsync().GetAwaiter().GetResult();
+        }
+
+        foreach (var endpoint in _clientEndpoints.Values)
+        {
+            endpoint.DisposeAsync().GetAwaiter().GetResult();
+        }
+
+        _serverEndpoints.Clear();
+        _clientEndpoints.Clear();
+
+        StopActivator();
+
+        Logger.LogDebug("[{SystemAddress}] Stopped", _system.Address);
     }
 
-    private void OnEndpointTerminated(EndpointTerminatedEvent evt)
+    private async Task OnEndpointTerminated(EndpointTerminatedEvent evt)
     {
         if (Logger.IsEnabled(LogLevel.Debug))
         {
@@ -95,41 +96,43 @@ public sealed class EndpointManager : IDiagnosticsProvider
                 evt.Address ?? evt.ActorSystemId);
         }
 
+        Action? unblock = null;
+        IEndpoint? endpoint = null;
         lock (_synLock)
         {
-            if (evt.Address is not null && _serverEndpoints.TryRemove(evt.Address, out var endpoint))
+            if (_cancellationTokenSource.IsCancellationRequested)
             {
-                endpoint.DisposeAsync().GetAwaiter().GetResult();
-
-                if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue &&
-                    _blockedAddresses.TryAdd(evt.Address, DateTime.UtcNow))
-                {
-                    _ = SafeTask.Run(async () =>
-                    {
-                        await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value)
-                            .ConfigureAwait(false);
-
-                        _blockedAddresses.TryRemove(evt.Address, out _);
-                    });
-                }
+                return;
+            }
+            
+            if (evt.Address is not null && _serverEndpoints.TryRemove(evt.Address, out endpoint))
+            {
+                _blockedAddresses.TryAdd(evt.Address, DateTime.UtcNow);
+                unblock = () => _blockedAddresses.TryRemove(evt.Address, out _);
             }
 
             if (evt.ActorSystemId is not null && _clientEndpoints.TryRemove(evt.ActorSystemId, out endpoint))
             {
-                endpoint.DisposeAsync().GetAwaiter().GetResult();
-
-                if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue &&
-                    _blockedClientSystemIds.TryAdd(evt.ActorSystemId, DateTime.UtcNow))
+                _blockedClientSystemIds.TryAdd(evt.ActorSystemId, DateTime.UtcNow);
+                unblock = () => _blockedClientSystemIds.TryRemove(evt.ActorSystemId, out _);
+            }
+        }
+        
+        if (endpoint != null)
+        {
+            // leave the lock to dispose the endpoint, so that requests can't build up behind the lock
+            // the address will always be blocked while we dispose, at a minimum
+            await endpoint.DisposeAsync().ConfigureAwait(false);
+            if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue)
+            {
+                await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value, CancellationToken).ConfigureAwait(false);
+                if (_cancellationTokenSource.IsCancellationRequested)
                 {
-                    _ = SafeTask.Run(async () =>
-                    {
-                        await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value)
-                            .ConfigureAwait(false);
-
-                        _blockedClientSystemIds.TryRemove(evt.ActorSystemId, out _);
-                    });
+                    return;
                 }
             }
+
+            unblock?.Invoke();
         }
 
         Logger.LogDebug("[{SystemAddress}] Endpoint {Address} terminated", _system.Address,
@@ -157,11 +160,16 @@ public sealed class EndpointManager : IDiagnosticsProvider
 
         lock (_synLock)
         {
+            if (_cancellationTokenSource.IsCancellationRequested || _blockedAddresses.ContainsKey(address))
+            {
+                return _blockedEndpoint;
+            }
+            
             if (_serverEndpoints.TryGetValue(address, out endpoint))
             {
                 return endpoint;
             }
-
+            
             if (_system.Address.StartsWith(ActorSystem.Client, StringComparison.Ordinal))
             {
                 if (Logger.IsEnabled(LogLevel.Debug))
@@ -212,6 +220,11 @@ public sealed class EndpointManager : IDiagnosticsProvider
 
         lock (_synLock)
         {
+            if (_cancellationTokenSource.IsCancellationRequested || _blockedClientSystemIds.ContainsKey(systemId))
+            {
+                return _blockedEndpoint;
+            }
+            
             if (_clientEndpoints.TryGetValue(systemId, out endpoint))
             {
                 return endpoint;
