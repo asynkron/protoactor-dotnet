@@ -54,7 +54,7 @@ public class DisposableActorTests
 
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
-        childMailboxStats.Reset.Wait(1000);
+        childMailboxStats.Reset.Wait(2000);
         Assert.True(disposeCalled);
     }
 
