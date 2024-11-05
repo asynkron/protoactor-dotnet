@@ -42,13 +42,13 @@ public class GrpcNetClientRemote : IRemote
     public BlockList BlockList { get; }
     public bool Started { get; private set; }
 
-    public Task ShutdownAsync(bool graceful = true)
+    public async Task ShutdownAsync(bool graceful = true)
     {
         lock (_lock)
         {
             if (!Started)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             Started = false;
@@ -58,7 +58,7 @@ public class GrpcNetClientRemote : IRemote
         {
             if (graceful)
             {
-                _endpointManager.Stop();
+                await _endpointManager.StopAsync();
             }
 
             _logger.LogInformation(
@@ -73,8 +73,6 @@ public class GrpcNetClientRemote : IRemote
                 System.Id, ex.Message
             );
         }
-
-        return Task.CompletedTask;
     }
 
     public Task StartAsync()

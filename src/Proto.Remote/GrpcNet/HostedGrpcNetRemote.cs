@@ -66,37 +66,35 @@ public class HostedGrpcNetRemote : IRemote
         }
     }
 
-    public Task ShutdownAsync(bool graceful = true)
+    public async Task ShutdownAsync(bool graceful = true)
     {
         lock (_lock)
         {
             if (!Started)
             {
-                return Task.CompletedTask;
-            }
-
-            try
-            {
-                _endpointManager.Stop();
-
-                _logger.LogInformation(
-                    "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
-                    System.Address, graceful
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex, "Proto.Actor server stopped on {Address} with error: {MessagePayload}",
-                    System.Address, ex.Message
-                );
-
-                throw;
+                return;
             }
 
             Started = false;
+        }
 
-            return Task.CompletedTask;
+        try
+        {
+            await _endpointManager.StopAsync();
+
+            _logger.LogInformation(
+                "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
+                System.Address, graceful
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex, "Proto.Actor server stopped on {Address} with error: {MessagePayload}",
+                System.Address, ex.Message
+            );
+
+            throw;
         }
     }
 }

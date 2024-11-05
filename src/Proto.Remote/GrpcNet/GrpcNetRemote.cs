@@ -157,7 +157,7 @@ public class GrpcNetRemote : IRemote
             {
                 if (graceful)
                 {
-                    _endpointManager.Stop();
+                    await _endpointManager.StopAsync();
 
                     if (_host is not null)
                     {

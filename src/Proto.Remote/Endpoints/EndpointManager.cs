@@ -53,7 +53,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
 
     public void Start() => SpawnActivator();
 
-    public void Stop()
+    public async Task StopAsync()
     {
         lock (_synLock)
         {            
@@ -72,12 +72,12 @@ public sealed class EndpointManager : IDiagnosticsProvider
         // release the lock while we dispose, other threads will see the cancellation token and return blocked endpoint.
         foreach (var endpoint in _serverEndpoints.Values)
         {
-            endpoint.DisposeAsync().GetAwaiter().GetResult();
+            await endpoint.DisposeAsync();
         }
 
         foreach (var endpoint in _clientEndpoints.Values)
         {
-            endpoint.DisposeAsync().GetAwaiter().GetResult();
+            await endpoint.DisposeAsync();
         }
 
         _serverEndpoints.Clear();
