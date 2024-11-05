@@ -42,6 +42,8 @@ public sealed class EndpointReader : Remoting.RemotingBase
             throw new RpcException(Status.DefaultCancelled, "Suspended");
         }
 
+        var cancellationTokenSource = new CancellationTokenSource();
+
         async void Disconnect()
         {
             try
@@ -59,6 +61,13 @@ public sealed class EndpointReader : Remoting.RemotingBase
 
                 Logger.LogWarning("[EndpointReader][{SystemAddress}] Failed to write disconnect message to the stream",
                     _system.Address);
+            }
+            finally
+            {
+                // When we disconnect, cancel the token, so the reader and writer both stop, and this method returns,
+                // so that the stream actually closes. Without this, when kestrel begins shutdown, it's possible the 
+                // connection will stay open until the kestrel shutdown timeout is reached.
+                cancellationTokenSource.Cancel();
             }
         }
 
@@ -80,8 +89,6 @@ public sealed class EndpointReader : Remoting.RemotingBase
             }
 
             var connectRequest = requestStream.Current.ConnectRequest;
-
-            var cancellationTokenSource = new CancellationTokenSource();
 
             switch (connectRequest.ConnectionTypeCase)
             {
@@ -205,7 +212,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
     {
         try
         {
-            while (await requestStream.MoveNext(CancellationToken.None).ConfigureAwait(false))
+            while (await requestStream.MoveNext(cancellationTokenSource.Token).ConfigureAwait(false))
             {
                 var currentMessage = requestStream.Current;
 

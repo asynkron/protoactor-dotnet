@@ -72,12 +72,12 @@ public sealed class EndpointManager : IDiagnosticsProvider
         // release the lock while we dispose, other threads will see the cancellation token and return blocked endpoint.
         foreach (var endpoint in _serverEndpoints.Values)
         {
-            await endpoint.DisposeAsync();
+            await endpoint.DisposeAsync().ConfigureAwait(false);
         }
 
         foreach (var endpoint in _clientEndpoints.Values)
         {
-            await endpoint.DisposeAsync();
+            await endpoint.DisposeAsync().ConfigureAwait(false);
         }
 
         _serverEndpoints.Clear();
