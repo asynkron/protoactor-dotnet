@@ -17,7 +17,7 @@ public static class SafeTask
     private static readonly ILogger Logger = Log.CreateLogger<TaskFactory>();
 
     /// <summary>
-    ///     Runs a task and handles exceptions. If <see cref="TaskCanceledException" /> is thrown, it is ignored.
+    ///     Runs a task and handles exceptions. If <see cref="TaskCanceledException" /> or <see cref="OperationCanceledException"/> is thrown, it is ignored.
     ///     If any other exception is thrown, it is logged.
     /// </summary>
     /// <param name="body"></param>
@@ -33,6 +33,10 @@ public static class SafeTask
         catch (TaskCanceledException)
         {
             // Pass. Do not log when the task is canceled.
+        }
+        catch (OperationCanceledException)
+        {
+            // Pass. Do not log when the operation is canceled.
         }
         catch (Exception x)
         {
