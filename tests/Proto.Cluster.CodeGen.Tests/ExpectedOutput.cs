@@ -42,7 +42,7 @@ namespace Acme.OtherSystem.Foo
             }
             catch (Exception x)
             {
-                onError(x.ToString());
+                OnError(x);
             }
         }
         public virtual async Task SendCommand(Acme.Mysystem.Bar.SomeCommand request, Action respond, Action<string> onError)
@@ -54,7 +54,7 @@ namespace Acme.OtherSystem.Foo
             }
             catch (Exception x)
             {
-                onError(x.ToString());
+                OnError(x);
             }
         }
         public virtual async Task RequestResponse(Acme.Mysystem.Bar.Query request, Action<Acme.Mysystem.Bar.Response> respond, Action<string> onError)
@@ -66,7 +66,7 @@ namespace Acme.OtherSystem.Foo
             }
             catch (Exception x)
             {
-                onError(x.ToString());
+                OnError(x);
             }
         }
         public virtual async Task NoParameterOrReturn(Action respond, Action<string> onError)
@@ -78,7 +78,7 @@ namespace Acme.OtherSystem.Foo
             }
             catch (Exception x)
             {
-                onError(x.ToString());
+                OnError(x);
             }
         }
     
@@ -86,6 +86,11 @@ namespace Acme.OtherSystem.Foo
         public abstract Task SendCommand(Acme.Mysystem.Bar.SomeCommand request);
         public abstract Task<Acme.Mysystem.Bar.Response> RequestResponse(Acme.Mysystem.Bar.Query request);
         public abstract Task NoParameterOrReturn();
+
+        public virtual void OnError(Exception ex)
+        { 
+            Context!.Respond(new global::Proto.Cluster.GrainErrorResponse { Err = ex.ToString() });
+        }
     }
 
     public class TestGrainClient
