@@ -83,6 +83,9 @@ public class PartitionIdentityTests
         timer.Restart();
         await fixture.DisposeAsync();
         _output.WriteLine($"Stopped cluster in {timer.Elapsed}");
+        
+        // delay to reduce flakiness
+        await Task.Delay(2000);
 
         var actorStates = fixture.Repository.Contents.ToList();
 
