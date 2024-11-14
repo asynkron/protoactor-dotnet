@@ -196,6 +196,13 @@ public sealed class EndpointReader : Remoting.RemotingBase
                     address = serverConnection.Address;
                     systemId = serverConnection.MemberId;
                     endpoint = _endpointManager.GetOrAddServerEndpoint(address);
+                    if (!endpoint.IsActive)
+                    {
+                        Logger.LogWarning(
+                            "[EndpointReader][{SystemAddress}] Failed to connect back to remote member {MemberId} address {Address} for writes",
+                            _system.Address, connectRequest.ServerConnection.MemberId,
+                            connectRequest.ServerConnection.Address);
+                    }
                 }
 
                     break;

@@ -97,46 +97,62 @@ public sealed class EndpointManager : IDiagnosticsProvider
         }
 
         Action? unblock = null;
-        IEndpoint? endpoint = null;
-        lock (_synLock)
+        try
         {
-            if (_cancellationTokenSource.IsCancellationRequested)
+            IEndpoint? endpoint = null;
+            lock (_synLock)
             {
-                return;
-            }
-            
-            if (evt.Address is not null && _serverEndpoints.TryRemove(evt.Address, out endpoint))
-            {
-                _blockedAddresses.TryAdd(evt.Address, DateTime.UtcNow);
-                unblock = () => _blockedAddresses.TryRemove(evt.Address, out _);
-            }
-
-            if (evt.ActorSystemId is not null && _clientEndpoints.TryRemove(evt.ActorSystemId, out endpoint))
-            {
-                _blockedClientSystemIds.TryAdd(evt.ActorSystemId, DateTime.UtcNow);
-                unblock = () => _blockedClientSystemIds.TryRemove(evt.ActorSystemId, out _);
-            }
-        }
-        
-        if (endpoint != null)
-        {
-            // leave the lock to dispose the endpoint, so that requests can't build up behind the lock
-            // the address will always be blocked while we dispose, at a minimum
-            await endpoint.DisposeAsync().ConfigureAwait(false);
-            if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue)
-            {
-                await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value, CancellationToken).ConfigureAwait(false);
                 if (_cancellationTokenSource.IsCancellationRequested)
                 {
                     return;
                 }
+
+                if (evt.Address is not null && _serverEndpoints.TryRemove(evt.Address, out endpoint))
+                {
+                    _blockedAddresses.TryAdd(evt.Address, DateTime.UtcNow);
+                    unblock = () => _blockedAddresses.TryRemove(evt.Address, out _);
+                }
+                else if (evt.ActorSystemId is not null && _clientEndpoints.TryRemove(evt.ActorSystemId, out endpoint))
+                {
+                    _blockedClientSystemIds.TryAdd(evt.ActorSystemId, DateTime.UtcNow);
+                    unblock = () => _blockedClientSystemIds.TryRemove(evt.ActorSystemId, out _);
+                }
             }
 
+            if (endpoint != null)
+            {
+                // leave the lock to dispose the endpoint, so that requests can't build up behind the lock
+                // the address will always be blocked while we dispose, at a minimum
+                await endpoint.DisposeAsync().ConfigureAwait(false);
+
+                Logger.LogInformation("[{SystemAddress}] Endpoint {Address} terminated", _system.Address,
+                    evt.Address ?? evt.ActorSystemId);
+
+                if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue)
+                {
+                    await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value, CancellationToken).ConfigureAwait(false);
+                }
+
+            }
+            else
+            {
+                Logger.LogDebug("[{SystemAddress}] Endpoint {Address} already removed.", _system.Address,
+                    evt.Address ?? evt.ActorSystemId);
+            }
+        }
+        catch (Exception ex)
+        {
+            // since these async EventStream subscription handlers are fire and forget, we need to
+            // log if something goes wrong, or we'll never know
+            Logger.LogError(ex, "[{SystemAddress}] Error during endpoint {Address} termination", _system.Address,
+                evt.Address ?? evt.ActorSystemId);
+        }
+        finally
+        {
+            // make sure that the unblock action runs if it was set, or we can end up with a forever blocked address
+            // which is bad if a new endpoint is started with the same address, or the same one restarts and reconnects
             unblock?.Invoke();
         }
-
-        Logger.LogDebug("[{SystemAddress}] Endpoint {Address} terminated", _system.Address,
-            evt.Address ?? evt.ActorSystemId);
     }
 
     internal IEndpoint GetOrAddServerEndpoint(string? address)

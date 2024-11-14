@@ -74,6 +74,7 @@ public sealed class ServerConnector
 
         while (!_cts.IsCancellationRequested)
         {
+            var cancellationTokenSource = new CancellationTokenSource();
             try
             {
                 _logger.LogInformation("[ServerConnector][{SystemAddress}] Connecting to {Address}", _system.Address,
@@ -142,7 +143,7 @@ public sealed class ServerConnector
                     _logger.LogError(
                         "[ServerConnector][{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, we are blocked",
                         _system.Address, connectResponse.MemberId, _address);
-                    
+
                     //block self
                     _system.Remote().BlockList.Block(new[] { _system.Id }, "Blocked by remote member");
                     var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
@@ -166,7 +167,6 @@ public sealed class ServerConnector
                 }
 
                 rs.Reset();
-                var cancellationTokenSource = new CancellationTokenSource();
 
                 var combinedToken = CancellationTokenSource
                     .CreateLinkedTokenSource(_cts.Token, cancellationTokenSource.Token)
@@ -237,6 +237,14 @@ public sealed class ServerConnector
                 _logger.LogWarning(
                     "[ServerConnector][{SystemAddress}] Restarting endpoint connection to {Address} after {Duration} because of {Reason} ({Retries} / {MaxRetries})",
                     _system.Address, _address, duration, e.GetType().Name, rs.FailureCount, _maxNrOfRetries);
+            }
+            finally
+            {
+                // always cancel the token for this writer/reader, otherwise their loops can continue
+                // running indefinitely, depending on how we got here. the call does get disposed via
+                // a using above, but we want to be certain these loops don't continue running, especially
+                // since these can build up when there are multiple reconnect attempts
+                cancellationTokenSource.Cancel();
             }
         }
     }
