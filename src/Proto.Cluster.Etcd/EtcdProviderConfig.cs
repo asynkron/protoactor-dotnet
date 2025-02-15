@@ -13,13 +13,6 @@ public record EtcdProviderConfig
 
     public string LeaderGossipKey { get; init; } = "cluster:leader";
 
-    public JsonSerializerOptions? JsonSerializerOptions { get; init; } = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        NumberHandling = JsonNumberHandling.AllowReadingFromString
-    };
-
     public List<Action<Cluster>> MemberElectedHandlers = new();
 
     public EtcdProviderConfig WithLeaseTtl(int leaseTtl) => this with { LeaseTtl = leaseTtl };
@@ -29,8 +22,6 @@ public record EtcdProviderConfig
     public EtcdProviderConfig WithCampaignKey(string key) => this with { CampaignKey = key };
 
     public EtcdProviderConfig WithLeaderGossipKey(string key) => this with { LeaderGossipKey = key };
-
-    public EtcdProviderConfig WithJsonSerializerOptions(JsonSerializerOptions options) => this with { JsonSerializerOptions = options };
 
     public EtcdProviderConfig WithElectedCallback(Action<Cluster> handler)
     {

@@ -94,8 +94,7 @@ public class EtcdProvider : IClusterProvider
         {
             Lease = leaseId,
             Key = ByteString.CopyFromUtf8(MemberKey),
-            Value = ByteString.CopyFromUtf8(JsonSerializer.Serialize(
-                new { id = memberId, host, port, kinds }, _config.JsonSerializerOptions))
+            Value = ByteString.CopyFromUtf8(JsonSerializer.Serialize(new { id = memberId, host, port, kinds }))
         };
 
         await _client.PutAsync(request, cancellationToken: _cluster.System.Shutdown);
@@ -113,7 +112,7 @@ public class EtcdProvider : IClusterProvider
 
                 var rangeResponse = _client.GetRange(_config.MembersKeyPrefix, cancellationToken: _stoppingCts.Token);
                 var members = rangeResponse.Kvs
-                    .Select(kv => JsonSerializer.Deserialize<Member>(kv.Value.ToStringUtf8(), _config.JsonSerializerOptions))
+                    .Select(kv => JsonParser.Default.Parse<Member>(kv.Value.ToStringUtf8()))
                     .Where(m => m != null)
                     .Select(m => m!).ToList();
 
