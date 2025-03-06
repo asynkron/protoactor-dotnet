@@ -15,7 +15,8 @@ public record MemberBlocked(string MemberId, string Reason);
 
 /// <summary>
 ///     <see cref="BlockList" /> contains all members that have been blocked from communication, e.g. due to
-///     unresponsiveness.
+///     unresponsiveness. Entries on this list expire after <see cref="ActorSystemConfig.BlockedMemberDuration"/>,
+///     defaults to 1 hour.
 /// </summary>
 public class BlockList
 {
@@ -30,10 +31,11 @@ public class BlockList
     }
 
     /// <summary>
-    ///     List of all blocked members ids (their <see cref="ActorSystem.Id" />). Entries on this list expire within an hour.
+    ///     List of all blocked members ids (their <see cref="ActorSystem.Id" />). Entries on this list expire after
+    ///     <see cref="ActorSystemConfig.BlockedMemberDuration"/>, defaults to 1 hour.
     /// </summary>
     public ImmutableHashSet<string> BlockedMembers => _blockedMembers
-        .Where(kvp => kvp.Value > DateTime.UtcNow.AddHours(-1))
+        .Where(kvp => kvp.Value > DateTime.UtcNow.Add(-_system.Config.BlockedMemberDuration))
         .Select(kvp => kvp.Key)
         .ToImmutableHashSet();
 
@@ -57,9 +59,10 @@ public class BlockList
     }
 
     /// <summary>
-    ///     Checks if the specified member is blocked
+    ///     Checks if the specified member is blocked. A blocked member will remain blocked for
+    ///     <see cref="ActorSystemConfig.BlockedMemberDuration"/>, defaults to 1 hour.
     /// </summary>
     /// <param name="memberId">Member id - same as member's <see cref="ActorSystem.Id" /></param>
     /// <returns></returns>
-    public bool IsBlocked(string memberId) => _blockedMembers.ContainsKey(memberId);
+    public bool IsBlocked(string memberId) => BlockedMembers.Contains(memberId);
 }

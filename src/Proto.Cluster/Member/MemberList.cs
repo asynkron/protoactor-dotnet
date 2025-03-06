@@ -274,6 +274,8 @@ public record MemberList
                 {
                     _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
                 }
+
+                _metaMembers = _metaMembers.Remove(memberThatLeft.Id);
             }
             //Log?
         }
