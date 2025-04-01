@@ -46,6 +46,7 @@ public sealed class TopicActor : IActor
             PubSubBatch batch                        => OnPubSubBatch(context, batch),
             NotifyAboutFailingSubscribersRequest msg => OnNotifyAboutFailingSubscribers(context, msg),
             ClusterTopology msg                      => OnClusterTopologyChanged(context, msg),
+            DeadLetterResponse msg                   => OnDeadLetterResponse(msg),
             _                                        => Task.CompletedTask
         };
 
@@ -113,7 +114,12 @@ public sealed class TopicActor : IActor
 
             foreach (var md in memberDeliveries)
             {
-                context.Send(md.Pid, md.Message);
+                // use request instead of send. The delivery actor doesn't respond, but we'll get a DeadLetterResponse if we can't reach it.
+                // it's possible for a proto actor client to subscribe, and then shutdown without unsubscribing, and without us knowing that it left,
+                // since as a client it was never in the topology. This will allow us to stop sending to a subscriber that no longer exists.
+                // in theory, it's possible to unsubscribe a subscriber that's still alive, if they are unreachable for a short time,
+                // but regardless, application level logic is always required to ensure the subscription remains alive anyway.
+                context.Request(md.Pid, md.Message);
             }
 
             context.Respond(new PublishResponse());
@@ -297,5 +303,16 @@ public sealed class TopicActor : IActor
         Logger.LogDebug("Topic {Topic} - {Subscriber} subscribed", _topic, sub);
         await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } }).ConfigureAwait(false);
         context.Respond(new SubscribeResponse());
+    }
+
+    private async Task OnDeadLetterResponse(DeadLetterResponse msg)
+    {
+        var deadLetterSub = msg.Target == null ? null : _subscribers.FirstOrDefault(s => s.Pid.Address == msg.Target.Address);
+        if (deadLetterSub != null)
+        {
+            _subscribers = _subscribers.Remove(deadLetterSub);
+            Logger.LogDebug("Topic {Topic} - {Subscriber} unsubscribed due to dead letter", _topic, deadLetterSub);
+            await SaveSubscriptions(_topic, new Subscribers { Subscribers_ = { _subscribers } }).ConfigureAwait(false);
+        }
     }
 }

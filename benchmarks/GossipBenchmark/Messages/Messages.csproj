@@ -18,5 +18,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="Actors.proto" />
+  </ItemGroup>
 
 </Project>

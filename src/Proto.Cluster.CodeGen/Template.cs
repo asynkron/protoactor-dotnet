@@ -73,6 +73,12 @@ namespace {{CsNamespace}}
 
         public virtual void OnError(Exception ex)
         { 
+            if (ex is global::Proto.Cluster.GrainException ge)
+            {
+                Context!.Respond(new global::Proto.Cluster.GrainErrorResponse { Err = ge.Message ?? ge.ToString(), Code = ge.Code ?? string.Empty });
+                return;
+            }
+
             Context!.Respond(new global::Proto.Cluster.GrainErrorResponse { Err = ex.ToString() });
         }
     }
@@ -102,7 +108,7 @@ namespace {{CsNamespace}}
                 // enveloped response
                 global::Proto.Cluster.GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}global::Proto.Nothing.Instance{{/if}},
                 // error response
-                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new global::Proto.Cluster.GrainException(grainErrorResponse.Err, grainErrorResponse.Code),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -123,7 +129,7 @@ namespace {{CsNamespace}}
                 // enveloped response
                 global::Proto.Cluster.GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}global::Proto.Nothing.Instance{{/if}},
                 // error response
-                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new global::Proto.Cluster.GrainException(grainErrorResponse.Err, grainErrorResponse.Code),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response

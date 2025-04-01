@@ -129,6 +129,11 @@ public record ActorSystemConfig
     public LogLevel DiagnosticsLogLevel { get; set; } = LogLevel.Information;
 
     /// <summary>
+    ///     Once a member is blocked, it will remain blocked for this duration. Defaults to 1 hour.
+    /// </summary>
+    public TimeSpan BlockedMemberDuration { get; init; } = TimeSpan.FromHours(1);
+
+    /// <summary>
     ///     Creates a new default ActorSystemConfig
     /// </summary>
     /// <returns>The new ActorSystemConfig</returns>
@@ -238,6 +243,12 @@ public record ActorSystemConfig
     /// <returns></returns>
     public ActorSystemConfig WithDiagnosticsLogLevel(LogLevel diagnosticsLogLevel) =>
         this with { DiagnosticsLogLevel = diagnosticsLogLevel };
+
+    /// <summary>
+    ///     Once a member is blocked, it will remain blocked for this duration. Defaults to 1 hour.
+    /// </summary>
+    public ActorSystemConfig WithBlockedMemberDuration(TimeSpan blockedMemberDuration) =>
+        this with { BlockedMemberDuration = blockedMemberDuration };
 
 
     /// <summary>

@@ -231,8 +231,10 @@ public class BatchingProducer : IAsyncDisposable
             {
                 retries++;
 
-                var response = await _publisher.PublishBatch(_topic, batchWrapper.Batch,
-                    CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds)).ConfigureAwait(false);
+                // timeout immediately if the producer is stopped
+                using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+                    _cts.Token, CancellationTokens.FromSeconds(_config.PublishTimeoutInSeconds));
+                var response = await _publisher.PublishBatch(_topic, batchWrapper.Batch, tokenSource.Token).ConfigureAwait(false);
 
                 if (response == null)
                 {
@@ -244,6 +246,12 @@ public class BatchingProducer : IAsyncDisposable
             }
             catch (Exception e)
             {
+                if (_cts.Token.IsCancellationRequested)
+                {
+                    // we are stopping
+                    break;
+                }
+                
                 var decision = await _config.OnPublishingError(retries, e, batchWrapper.Batch).ConfigureAwait(false);
 
                 if (decision == PublishingErrorDecision.FailBatchAndStop)

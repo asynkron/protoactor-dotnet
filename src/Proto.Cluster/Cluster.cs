@@ -284,43 +284,54 @@ public class Cluster : IActorSystemExtension<Cluster>
     /// <param name="reason">Provide the reason for the shutdown, that can be used for diagnosing problems</param>
     public async Task ShutdownAsync(bool graceful = true, string reason = "")
     {
-        Logger.LogInformation("Stopping Cluster {Id}", System.Id);
+        Logger.LogInformation("Stopping Cluster {Id}. Graceful: {Graceful}. Reason: {Reason}", System.Id, graceful, reason);
 
-        // Inform all members of the cluster that this node intends to leave. Also, let the MemberList know that this
-        // node was the one that initiated the shutdown to prevent another shutdown from being called.
-        Logger.LogInformation("Setting GracefullyLeft gossip state for {Id}", System.Id);
-        MemberList.Stopping = true;
-        await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty()).ConfigureAwait(false);
-
-        Logger.LogInformation("Waiting for two gossip intervals to pass for {Id}", System.Id);
-        // In case provider shutdown is quick, let's wait at least 2 gossip intervals.
-        await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2).ConfigureAwait(false);
-
-        Logger.LogInformation("Stopping cluster provider for {Id}", System.Id);
-        // Deregister from configured cluster provider.
-        await Provider.ShutdownAsync(graceful);
-
-        if (_clusterKindObserver != null)
+        try
         {
-            ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
-            _clusterKindObserver = null;
-        }
+            // Inform all members of the cluster that this node intends to leave. Also, let the MemberList know that this
+            // node was the one that initiated the shutdown to prevent another shutdown from being called.
+            Logger.LogInformation("Setting GracefullyLeft gossip state for {Id}", System.Id);
+            MemberList.Stopping = true;
+            await Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty()).ConfigureAwait(false);
 
-        if (_clusterMembersObserver != null)
+            Logger.LogInformation("Waiting for two gossip intervals to pass for {Id}", System.Id);
+            // In case provider shutdown is quick, let's wait at least 2 gossip intervals.
+            await Task.Delay((int)Config.GossipInterval.TotalMilliseconds * 2).ConfigureAwait(false);
+
+            Logger.LogInformation("Stopping cluster provider for {Id}", System.Id);
+            // Deregister from configured cluster provider.
+            await Provider.ShutdownAsync(graceful);
+
+            if (_clusterKindObserver != null)
+            {
+                ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
+                _clusterKindObserver = null;
+            }
+
+            if (_clusterMembersObserver != null)
+            {
+                ClusterMetrics.ClusterMembersCount.RemoveObserver(_clusterMembersObserver);
+                _clusterMembersObserver = null;
+            }
+
+            // Shut down the rest of the dependencies in reverse order that they were started.
+            await Gossip.ShutdownAsync().ConfigureAwait(false);
+
+            if (graceful)
+            {
+                await IdentityLookup.ShutdownAsync().ConfigureAwait(false);
+            }
+
+            await Remote.ShutdownAsync(graceful).ConfigureAwait(false);
+        }
+        catch (Exception ex)
         {
-            ClusterMetrics.ClusterMembersCount.RemoveObserver(_clusterMembersObserver);
-            _clusterMembersObserver = null;
+            // if we have any issues during shutdown, simply log, then complete shutdown.
+            // various services depend on the System.Shutdown token and Cluster.ShutdownCompleted task, such as
+            // ProtoActorLifecycleHost. If we error out and don't complete these, the host can enter a
+            // zombie state where it keeps running but is blocked by other members.
+            Logger.LogInformation(ex, "Error during cluster shutdown.");
         }
-
-        // Shut down the rest of the dependencies in reverse order that they were started.
-        await Gossip.ShutdownAsync().ConfigureAwait(false);
-
-        if (graceful)
-        {
-         await IdentityLookup.ShutdownAsync().ConfigureAwait(false);
-        }
-
-        await Remote.ShutdownAsync(graceful).ConfigureAwait(false);
 
         // Cancel the primary CancellationToken first which will shut down a number of concurrent systems simultaneously.
         await System.ShutdownAsync(reason).ConfigureAwait(false);
