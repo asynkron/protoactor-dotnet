@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="dotnet-etcd" Version="7.2.0" />
+      <PackageReference Include="dotnet-etcd" />
     </ItemGroup>
 
     <ItemGroup>
