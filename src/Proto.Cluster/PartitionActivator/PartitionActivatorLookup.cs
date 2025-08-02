@@ -93,7 +93,7 @@ public class PartitionActivatorLookup : IIdentityLookup
             e.CheckFailFast();
 
             Logger.LogError(e,
-                "[PartitionActivator] Error occured requesting remote PID {@Request}, identity Owner {Owner}", req,
+                "[PartitionActivator] Error occurred requesting remote PID {@Request}, identity Owner {Owner}", req,
                 owner);
 
             return null;
