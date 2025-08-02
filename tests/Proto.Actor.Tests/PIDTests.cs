@@ -17,8 +17,10 @@ public class PidTests
         var pid = context.Spawn(Props.FromFunc(EmptyReceive));
 
         var p = pid.Ref(system);
+        var p2 = pid.Ref(system);
 
         Assert.NotNull(p);
+        Assert.Same(p, p2);
     }
 
     [Fact]
@@ -32,8 +34,10 @@ public class PidTests
         await context.StopAsync(pid);
 
         var p = pid.Ref(system);
+        var p2 = pid.Ref(system);
 
         Assert.Null(p);
+        Assert.Null(p2);
     }
 
     [Fact]
@@ -49,5 +53,6 @@ public class PidTests
         var p2 = pid.Ref(system);
 
         Assert.Same(p, p2);
+        Assert.Equal(id, pid.Id);
     }
 }
