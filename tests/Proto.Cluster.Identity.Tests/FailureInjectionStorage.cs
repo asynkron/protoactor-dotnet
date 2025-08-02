@@ -53,7 +53,7 @@ public sealed class FailureInjectionStorage : IIdentityStorage
             RemoveLock(spawnLock, ct);
 
             throw Mayhem.Next() % 2 == 0
-                ? new Exception("Activation fail")
+                ? new Exception("Activation failed")
                 : new LockNotFoundException("fake lock");
         }
 

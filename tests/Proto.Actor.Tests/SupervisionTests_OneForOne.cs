@@ -306,8 +306,13 @@ public class SupervisionTestsOneForOne
         context.Spawn(grandParentProps);
 
         parentMailboxStats.Reset.Wait(1000);
-        Thread.Sleep(1000); //parentMailboxStats.Received could still be modified without a wait here
-        Assert.Contains(parentMailboxStats.Received, msg => msg is Restart);
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(1);
+        while (!parentMailboxStats.Received.ToArray().Any(msg => msg is Restart) && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(10);
+        }
+
+        Assert.Contains(parentMailboxStats.Received.ToArray(), msg => msg is Restart);
     }
 
     private class ParentActor : IActor

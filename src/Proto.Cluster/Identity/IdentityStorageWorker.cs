@@ -319,7 +319,7 @@ internal class IdentityStorageWorker : IActor
             if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen() &&
                 _memberList.ContainsMemberId(activator.Id))
             {
-                _logger.LogError(e, "[SpawnActivationAsync] Error occured requesting remote PID {@Request}", req);
+                _logger.LogError(e, "[SpawnActivationAsync] Error occurred requesting remote PID {@Request}", req);
             }
         }
 
