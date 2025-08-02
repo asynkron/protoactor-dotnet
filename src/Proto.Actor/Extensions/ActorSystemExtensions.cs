@@ -31,8 +31,9 @@ public class ActorSystemExtensions
     public T? Get<T>() where T : IActorSystemExtension
     {
         var id = IActorSystemExtension<T>.Id;
-
-        return (T)_extensions[id];
+        if (id < _extensions.Length)
+            return (T) _extensions[id];
+        return default;
     }
 
     /// <summary>
