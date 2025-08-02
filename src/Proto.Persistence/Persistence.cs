@@ -58,7 +58,7 @@ public class Persistence
     ///     replayed.
     /// </param>
     /// <returns></returns>
-    /// <exception cref="ArgumentNullException">Thrown when evenStore of applyEvent are null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when eventStore or applyEvent are null</exception>
     public static Persistence WithEventSourcing(IEventStore eventStore, string actorId, Action<Event> applyEvent)
     {
         if (eventStore is null)
