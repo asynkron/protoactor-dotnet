@@ -43,6 +43,7 @@ public class SpawnTests
         context.SpawnNamed(props, uniqueName);
         var x = Assert.Throws<ProcessNameExistException>(() => { context.SpawnNamed(props, uniqueName); });
         Assert.Equal(uniqueName, x.Name);
+        Assert.Contains(uniqueName, x.Message);
     }
 
     [Fact]
@@ -57,5 +58,7 @@ public class SpawnTests
         context.SpawnNamed(props, "existing");
         var pid = context.SpawnPrefix(props, "existing");
         Assert.NotNull(pid);
+        Assert.StartsWith("existing", pid.Id);
+        Assert.NotEqual("existing", pid.Id);
     }
 }

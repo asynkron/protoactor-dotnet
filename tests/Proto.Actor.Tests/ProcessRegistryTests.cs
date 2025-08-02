@@ -20,6 +20,7 @@ public class ProcessRegistryTests
 
         Assert.True(ok);
         Assert.Equal(system.Address, pid.Address);
+        Assert.Equal(id, pid.Id);
     }
 
     [Fact]
@@ -30,11 +31,13 @@ public class ProcessRegistryTests
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);
         var reg = new ProcessRegistry(system);
-        reg.TryAdd(id, p);
+        var (pid1, _) = reg.TryAdd(id, p);
 
-        var (_, ok) = reg.TryAdd(id, p);
+        var (pid2, ok) = reg.TryAdd(id, p);
 
         Assert.False(ok);
+        Assert.Equal(pid1.Id, pid2.Id);
+        Assert.Equal(pid1.Address, pid2.Address);
     }
 
     [Fact]
@@ -51,6 +54,7 @@ public class ProcessRegistryTests
         var p2 = reg.Get(pid);
 
         Assert.Same(p, p2);
+        Assert.Equal(id, pid.Id);
     }
 
     [Fact]
