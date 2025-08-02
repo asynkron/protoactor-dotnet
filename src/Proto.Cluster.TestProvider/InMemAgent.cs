@@ -56,10 +56,28 @@ public sealed class InMemAgent
 
     public void RefreshServiceTTL(string id)
     {
-        //TODO: this is racy, but yolo for now
-        if (_services.TryGetValue(id, out var service))
+        while (true)
         {
-            service.TTL = DateTimeOffset.Now;
+            if (!_services.TryGetValue(id, out var current))
+            {
+                return;
+            }
+
+            var updated = new AgentServiceStatus
+            {
+                ID = current.ID,
+                TTL = DateTimeOffset.Now,
+                Host = current.Host,
+                Port = current.Port,
+                Kinds = current.Kinds
+            };
+
+            if (_services.TryUpdate(id, updated, current))
+            {
+                return;
+            }
+
+            // Service was modified or removed concurrently; retry if it still exists
         }
     }
 
