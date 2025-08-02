@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file = "IdentityBlockedException.cs" company = "Asynkron AB">
+// <copyright file = "IdentityIsBlockedException.cs" company = "Asynkron AB">
 //      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
