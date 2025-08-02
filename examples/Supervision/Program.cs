@@ -6,14 +6,13 @@
 
 using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
 
 internal class Program
 {
-    private static void Main()
+    private static async Task Main()
     {
         var context = new RootContext(new ActorSystem());
         Log.SetLoggerFactory(LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Debug)));
@@ -36,7 +35,7 @@ internal class Program
         //Stop is a system message and is not processed through the user message mailbox
         //thus, it will be handled _before_ any user message
         //we only do this to show the correct order of events in the console
-        Thread.Sleep(TimeSpan.FromSeconds(1));
+        await Task.Delay(TimeSpan.FromSeconds(1));
         context.Stop(actor);
         Console.ReadLine();
     }

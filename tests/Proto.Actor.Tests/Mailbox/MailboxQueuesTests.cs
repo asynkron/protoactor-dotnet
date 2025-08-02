@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Proto.Mailbox.Tests;
@@ -45,7 +46,7 @@ public class MailboxQueuesTests
     [Theory]
     [InlineData(MailboxQueueKind.Unbounded)]
     //[InlineData(MailboxQueueKind.Bounded)] -- temporarily disabled because the Bounded queue doesn't seem to work correctly
-    public void
+    public async Task
         Given_MailboxQueue_when_enqueue_and_dequeue_in_different_threads_Then_we_get_the_elements_in_the_FIFO_order(
             MailboxQueueKind kind)
     {
@@ -54,8 +55,8 @@ public class MailboxQueuesTests
 
         var sut = GetMailboxQueue(kind);
 
-        var producer = new Thread(
-            _ =>
+        var producer = Task.Run(
+            () =>
             {
                 for (var i = 0; i < msgCount; i++)
                 {
@@ -71,11 +72,9 @@ public class MailboxQueuesTests
 
         var consumerList = new List<int>();
 
-        var consumer = new Thread(
-            l =>
+        var consumer = Task.Run(
+            async () =>
             {
-                var list = (List<int>)l!;
-
                 for (var i = 0; i < msgCount; i++)
                 {
                     var popped = sut.Pop();
@@ -87,19 +86,16 @@ public class MailboxQueuesTests
                             return;
                         }
 
-                        Thread.Sleep(1);
+                        await Task.Delay(1, cancelSource.Token);
                         popped = sut.Pop();
                     }
 
-                    list.Add((int)popped);
+                    consumerList.Add((int)popped);
                 }
             }
         );
 
-        producer.Start();
-        consumer.Start(consumerList);
-        producer.Join(1000);
-        consumer.Join(1000);
+        await Task.WhenAll(producer, consumer).WaitAsync(TimeSpan.FromSeconds(1));
         cancelSource.Cancel();
 
         Assert.Equal(msgCount, consumerList.Count);

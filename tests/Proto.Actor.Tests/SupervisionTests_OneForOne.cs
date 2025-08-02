@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
 using Proto.TestFixtures;
@@ -109,8 +108,8 @@ public class SupervisionTestsOneForOne
         context.Send(parent, "2nd restart");
         context.Send(parent, "3rd restart");
 
-        // wait more than the time period 
-        Thread.Sleep(500);
+        // wait more than the time period
+        await Task.Delay(500);
         Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
         Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received);
 

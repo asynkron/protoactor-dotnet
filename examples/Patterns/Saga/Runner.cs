@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 using Saga.Factories;
@@ -50,28 +49,28 @@ public class Runner : IActor
         _verbose = verbose;
     }
 
-    public Task ReceiveAsync(IContext context)
+    public async Task ReceiveAsync(IContext context)
     {
         switch (context.Message)
         {
             case Result.SuccessResult msg:
                 _successResults++;
-                CheckForCompletion(msg.Pid);
+                await CheckForCompletion(msg.Pid);
 
                 break;
             case UnknownResult msg:
                 _unknownResults++;
-                CheckForCompletion(msg.Pid);
+                await CheckForCompletion(msg.Pid);
 
                 break;
             case Result.FailedAndInconsistent msg:
                 _failedAndInconsistentResults++;
-                CheckForCompletion(msg.Pid);
+                await CheckForCompletion(msg.Pid);
 
                 break;
             case Result.FailedButConsistentResult msg:
                 _failedButConsistentResults++;
-                CheckForCompletion(msg.Pid);
+                await CheckForCompletion(msg.Pid);
 
                 break;
             case Started _:
@@ -104,8 +103,6 @@ public class Runner : IActor
 
                 break;
         }
-
-        return Task.CompletedTask;
     }
 
     private PID CreateAccount(IContext context, string name, Random random)
@@ -117,7 +114,7 @@ public class Runner : IActor
         return context.SpawnNamed(accountProps, name);
     }
 
-    private void CheckForCompletion(PID pid)
+    private async Task CheckForCompletion(PID pid)
     {
         _transfers.Remove(pid);
 
@@ -140,7 +137,7 @@ public class Runner : IActor
 
         if (remaining == 0)
         {
-            Thread.Sleep(250);
+            await Task.Delay(250);
             Console.WriteLine();
 
             Console.WriteLine(
