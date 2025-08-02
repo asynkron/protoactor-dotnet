@@ -12,7 +12,7 @@ You access such actors by identity/name, if they do not already exist, the clust
 
 #### Grain
 
-Grains are a synomym with Virtual Actors, in Project Orleans, Grains live inside a Silo (a host).
+Grains are a synonym with Virtual Actors, in Project Orleans, Grains live inside a Silo (a host).
 
 #### Remote
 
