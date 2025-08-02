@@ -69,7 +69,7 @@ public class SingleNodeLookup : IIdentityLookup
         catch (Exception e) when (e is not IdentityIsBlockedException)
         {
             e.CheckFailFast();
-            Logger.LogError(e, "[SingleNode] Error occured requesting remote PID {@Request}", req);
+            Logger.LogError(e, "[SingleNode] Error occurred requesting remote PID {@Request}", req);
 
             return null;
         }
