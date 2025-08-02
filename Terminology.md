@@ -21,7 +21,7 @@ It basically provides the actor system to resolve `PIDs` that point to another a
 
 #### Cluster
 
-Proto.Cluster, is a orechestration mechanism built ontop of Proto.Remote, it makes it possible to work with Virtual Actors. see above.
+Proto.Cluster, is an orchestration mechanism built on top of Proto.Remote, it makes it possible to work with Virtual Actors. see above.
 
 #### Router
 
