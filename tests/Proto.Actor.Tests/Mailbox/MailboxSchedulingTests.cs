@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Xunit;
 
@@ -22,15 +23,16 @@ public class MailboxSchedulingTests
         mailbox.PostUserMessage(msg2);
 
         Assert.True(userMailbox.HasMessages,
-            "Mailbox should not have processed msg2 because processing of msg1 is not completed."
+            "Mailbox should not have processed msg2 because processing of msg1 is not completed.",
         );
 
         msg2.TaskCompletionSource.SetResult(0);
         msg1.TaskCompletionSource.SetResult(0);
         await Task.WhenAll(msg2.TaskCompletionSource.Task, msg1.TaskCompletionSource.Task);
+        SpinWait.SpinUntil(() => !userMailbox.HasMessages, 1000);
 
         Assert.False(userMailbox.HasMessages,
-            "Mailbox should have processed msg2 because processing of msg1 is completed."
+            "Mailbox should have processed msg2 because processing of msg1 is completed.",
         );
     }
 
@@ -54,7 +56,7 @@ public class MailboxSchedulingTests
         await Task.WhenAll(msg1.TaskCompletionSource.Task, msg2.TaskCompletionSource.Task);
 
         Assert.False(userMailbox.HasMessages,
-            "Mailbox should have processed both messages because they were already completed."
+            "Mailbox should have processed both messages because they were already completed.",
         );
     }
 
@@ -74,15 +76,16 @@ public class MailboxSchedulingTests
         mailbox.PostSystemMessage(msg2);
 
         Assert.True(systemMessages.HasMessages,
-            "Mailbox should not have processed msg2 because processing of msg1 is not completed."
+            "Mailbox should not have processed msg2 because processing of msg1 is not completed.",
         );
 
         msg2.TaskCompletionSource.SetResult(0);
         msg1.TaskCompletionSource.SetResult(0);
         await Task.WhenAll(msg2.TaskCompletionSource.Task, msg1.TaskCompletionSource.Task);
+        SpinWait.SpinUntil(() => !systemMessages.HasMessages, 1000);
 
         Assert.False(systemMessages.HasMessages,
-            "Mailbox should have processed msg2 because processing of msg1 is completed."
+            "Mailbox should have processed msg2 because processing of msg1 is completed.",
         );
     }
 
@@ -105,7 +108,7 @@ public class MailboxSchedulingTests
         await Task.WhenAll(msg1.TaskCompletionSource.Task, msg2.TaskCompletionSource.Task);
 
         Assert.False(systemMessages.HasMessages,
-            "Mailbox should have processed both messages because they were already completed."
+            "Mailbox should have processed both messages because they were already completed.",
         );
     }
 
@@ -124,9 +127,11 @@ public class MailboxSchedulingTests
         Assert.Equal(MailboxStatus.Busy, mailbox.Status);
         msg1.TaskCompletionSource.SetResult(0);
         await msg1.TaskCompletionSource.Task;
+        SpinWait.SpinUntil(() => mailbox.Status == MailboxStatus.Idle, 1000);
 
         Assert.True(mailbox.Status == MailboxStatus.Idle,
-            "Mailbox should be set back to Idle after completion of message."
+            "Mailbox should be set back to Idle after completion of message.",
         );
     }
 }
+
