@@ -44,7 +44,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
 
         var cancellationTokenSource = new CancellationTokenSource();
 
-        async void Disconnect()
+        async Task DisconnectAsync()
         {
             try
             {
@@ -65,13 +65,13 @@ public sealed class EndpointReader : Remoting.RemotingBase
             finally
             {
                 // When we disconnect, cancel the token, so the reader and writer both stop, and this method returns,
-                // so that the stream actually closes. Without this, when kestrel begins shutdown, it's possible the 
+                // so that the stream actually closes. Without this, when kestrel begins shutdown, it's possible the
                 // connection will stay open until the kestrel shutdown timeout is reached.
                 cancellationTokenSource.Cancel();
             }
         }
 
-        await using (_endpointManager.CancellationToken.Register(Disconnect).ConfigureAwait(false))
+        await using (_endpointManager.CancellationToken.Register(() => DisconnectAsync()).ConfigureAwait(false))
         {
             IEndpoint endpoint;
             string? address = null;
