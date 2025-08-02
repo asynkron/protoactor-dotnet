@@ -82,7 +82,7 @@ public class MPMCQueue
             }
 
             Task.Delay(1)
-                .Wait(); // Could be Thread.Sleep(1) or Thread.SpinWait() if the assembly is not portable lib.
+                .Wait(); // Could be Task.Delay(1) or Thread.SpinWait() if the assembly is not portable lib.
         }
     }
 

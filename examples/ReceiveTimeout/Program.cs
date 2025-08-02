@@ -5,13 +5,12 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 
 internal class Program
 {
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         var rootContext = new RootContext(new ActorSystem());
         var c = 0;
@@ -49,7 +48,7 @@ internal class Program
         for (var i = 0; i < 6; i++)
         {
             rootContext.Send(pid, "hello");
-            Thread.Sleep(500);
+            await Task.Delay(500);
         }
 
         Console.WriteLine("Hit [return] to send no-influence messages");
@@ -58,7 +57,7 @@ internal class Program
         for (var i = 0; i < 6; i++)
         {
             rootContext.Send(pid, new NoInfluence());
-            Thread.Sleep(500);
+            await Task.Delay(500);
         }
 
         Console.WriteLine("Hit [return] to send a message to cancel the timeout");

@@ -134,7 +134,7 @@ When a `Credit` or `Debit` request is received, we attempt to adjust the balance
 for a number of reasons:
 
 ```c#
-private Task AdjustBalance(PID replyTo, decimal amount)
+private async Task AdjustBalance(PID replyTo, decimal amount)
 {
     if (RefusePermanently())
     {
@@ -146,21 +146,20 @@ private Task AdjustBalance(PID replyTo, decimal amount)
         replyTo.Tell(new ServiceUnavailable());
     
     var behaviour = DetermineProcessingBehavior();
-    if (behaviour == Behavior.FailBeforeProcessing)
-        return Failure(replyTo);
+      if (behaviour == Behavior.FailBeforeProcessing)
+          return await Failure(replyTo);
     
     // simulate potential slow service
-    Thread.Sleep(_random.Next(0, 150));
+    await Task.Delay(_random.Next(0, 150));
     
     _balance += amount;
     _processedMessages.Add(replyTo, new OK());
     
-    if (behaviour == Behavior.FailAfterProcessing)
-        return Failure(replyTo);
-    
-    replyTo.Tell(new OK());
-    return Actor.Done;
-}
+      if (behaviour == Behavior.FailAfterProcessing)
+          return await Failure(replyTo);
+
+      replyTo.Tell(new OK());
+  }
 ```
 
 This allows us to introduce a degree of randomness to the saga to simulate various types of failures.
@@ -921,7 +920,7 @@ RESULTS for 50% uptime, 20.1% chance of refusal, 0.2% of being busy and 15 retry
 ```
 
 The biggest effect comes from not retrying at all, as we are in danger of timing out on our requests (`Account` actor
-has `Thread.Sleep(_random.Next(0,150)` in it, whilst the `AccountProxy` expects a response back within 100
+has `await Task.Delay(_random.Next(0,150))` in it, whilst the `AccountProxy` expects a response back within 100
 milliseconds):
 
  ```

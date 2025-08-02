@@ -47,7 +47,7 @@ public static class Program
             {
                 worker.ShutdownAsync().Wait();
             };
-            Thread.Sleep(Timeout.Infinite);
+            await Task.Delay(Timeout.InfiniteTimeSpan);
 
             return;
         }

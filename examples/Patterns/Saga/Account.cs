@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Proto;
 using Saga.Messages;
@@ -79,7 +78,7 @@ internal class Account : IActor
     ///     * slow processing
     ///     * successful processing
     /// </summary>
-    private Task AdjustBalance(IContext context, PID replyTo, decimal amount)
+    private async Task AdjustBalance(IContext context, PID replyTo, decimal amount)
     {
         if (RefusePermanently())
         {
@@ -97,11 +96,12 @@ internal class Account : IActor
 
         if (behaviour == Behavior.FailBeforeProcessing)
         {
-            return Failure();
+            await Failure();
+            return;
         }
 
         // simulate potential long-running process
-        Thread.Sleep(_random.Next(0, 150));
+        await Task.Delay(_random.Next(0, 150));
 
         _balance += amount;
         _processedMessages.Add(replyTo, new OK());
@@ -111,12 +111,13 @@ internal class Account : IActor
         // is idempotent
         if (behaviour == Behavior.FailAfterProcessing)
         {
-            return Failure();
+            await Failure();
+            return;
         }
 
         context.Send(replyTo, new OK());
 
-        return Task.CompletedTask;
+        return;
 
         Task Failure()
         {

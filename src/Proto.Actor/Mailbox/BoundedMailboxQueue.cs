@@ -6,6 +6,7 @@
 
 using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace Proto.Mailbox;
 
@@ -27,10 +28,7 @@ public class BoundedMailboxQueue : IMailboxQueue
 
     public void Push(object message)
     {
-        while (!_messages.Writer.TryWrite(message))
-        {
-            Thread.Sleep(50);
-        }
+        _messages.Writer.WriteAsync(message).AsTask().GetAwaiter().GetResult();
 
         Interlocked.Increment(ref _length);
     }
