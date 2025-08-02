@@ -44,6 +44,8 @@ public interface IClusterFixture
 
     Task RemoveNode(Cluster member, bool graceful = true);
 
+    Task WaitForMemberAsync(string memberId, bool shouldExist, CancellationToken ct = default);
+
     Task Trace(Func<Task> test, [CallerMemberName] string testName = "");
 }
 
@@ -195,6 +197,33 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         {
             throw new ArgumentException("No such member");
         }
+    }
+
+    public async Task WaitForMemberAsync(string memberId, bool shouldExist, CancellationToken ct = default)
+    {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        if (ct == default)
+        {
+            cts.CancelAfter(TimeSpan.FromSeconds(10));
+        }
+
+        while (!cts.IsCancellationRequested)
+        {
+            var all = Members.All(m =>
+            {
+                var ids = m.MemberList.GetMembers();
+                return shouldExist ? ids.Contains(memberId) : !ids.Contains(memberId);
+            });
+
+            if (all)
+            {
+                return;
+            }
+
+            await Task.Delay(100, cts.Token);
+        }
+
+        throw new TimeoutException($"Timed out waiting for member {(shouldExist ? "join" : "leave")}: {memberId}");
     }
 
     public Task Trace(Func<Task> test, [CallerMemberName] string testName = "")
