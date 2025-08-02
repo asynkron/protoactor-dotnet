@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
 
     <PropertyGroup>
         <LangVersion>10</LangVersion>
@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="dotnet-etcd" Version="7.2.0" />
+      <PackageReference Include="dotnet-etcd"  />
     </ItemGroup>
 
     <ItemGroup>
