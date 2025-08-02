@@ -57,9 +57,9 @@ public abstract class IdentityStorageTests : IDisposable
             .Select(i => _storage.TryAcquireLock(identity, timeout))
         );
 
-        var successFullLock = locks.Where(it => it != null).ToList();
-        successFullLock.Should().HaveCount(1);
-        successFullLock.Single()!.ClusterIdentity.Should().BeEquivalentTo(identity);
+        var successfulLocks = locks.Where(it => it != null).ToList();
+        successfulLocks.Should().HaveCount(1);
+        successfulLocks.Single()!.ClusterIdentity.Should().BeEquivalentTo(identity);
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public abstract class IdentityStorageTests : IDisposable
     }
 
     [Fact]
-    public async Task WillNotRemoveCurrentActivationByPrevMember()
+    public async Task WillNotRemoveCurrentActivationByPreviousMember()
     {
         var timeout = new CancellationTokenSource(TimeoutMs).Token;
         var (originalActivator, identity, origPid) = await GetActivatedClusterIdentity(timeout);
