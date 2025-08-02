@@ -10,7 +10,6 @@ using Proto.Cluster.Gossip;
 
 namespace Proto.Cluster;
 
-//TODO clear _actorCounts for members not in memberlist
 public class GossipMemberStrategy : IMemberStrategy
 {
     private readonly Cluster _cluster;
@@ -27,26 +26,58 @@ public class GossipMemberStrategy : IMemberStrategy
         SubscribeToGossipEvents();
     }
 
-    private void SubscribeToGossipEvents() => _cluster.System.EventStream.Subscribe<GossipUpdate>(x => x.Key == GossipKeys.Heartbeat, x => {
+    private void SubscribeToGossipEvents() => _cluster.System.EventStream.Subscribe<GossipUpdate>(x => x.Key == GossipKeys.Heartbeat, x =>
+        {
+            var memberId = x.MemberId;
+
+            if (!_members.ContainsKey(memberId))
+            {
+                _actorCounts.TryRemove(memberId, out _);
+                return;
+            }
+
             var heartbeat = x.Value.Unpack<MemberHeartbeat>();
             var actorCount = heartbeat.ActorStatistics.ActorCount.Where(m => m.Key == _kind).Select(m => m.Value).FirstOrDefault();
-            _actorCounts[x.MemberId] = actorCount;
+            _actorCounts[memberId] = actorCount;
+
+            CleanupActorCounts();
         }
     );
 
-    private string GetLeastActorsMember() => _actorCounts
-        .Where(kvp => _members.ContainsKey(kvp.Key))
-        .OrderBy(kvp => kvp.Value)
-        .FirstOrDefault().Key;
+    private void CleanupActorCounts()
+    {
+        foreach (var memberId in _actorCounts.Keys)
+        {
+            if (!_members.ContainsKey(memberId))
+            {
+                _actorCounts.TryRemove(memberId, out _);
+            }
+        }
+    }
+
+    private string GetLeastActorsMember()
+    {
+        CleanupActorCounts();
+
+        return _actorCounts
+            .Where(kvp => _members.ContainsKey(kvp.Key))
+            .OrderBy(kvp => kvp.Value)
+            .FirstOrDefault().Key;
+    }
 
     public ImmutableList<Member> GetAllMembers() => _members.Values.ToImmutableList();
 
-    public void AddMember(Member member) => _members.TryAdd(member.Id, member);
+    public void AddMember(Member member)
+    {
+        _members.TryAdd(member.Id, member);
+        CleanupActorCounts();
+    }
 
     public void RemoveMember(Member member)
     {
         _actorCounts.TryRemove(member.Id, out _);
         _members.TryRemove(member.Id, out _);
+        CleanupActorCounts();
     }
 
     public Member? GetActivator(string senderAddress)
