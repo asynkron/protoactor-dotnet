@@ -17,6 +17,9 @@ namespace Proto.Timers;
 public class Scheduler
 {
     private readonly ISenderContext _context;
+#if NET8_0_OR_GREATER
+    private readonly TimeProvider _timeProvider;
+#endif
 
     /// <summary>
     ///     Creates a new scheduler.
@@ -25,7 +28,24 @@ public class Scheduler
     public Scheduler(ISenderContext context)
     {
         _context = context;
+
+#if NET8_0_OR_GREATER
+        _timeProvider = TimeProvider.System;
+#endif
     }
+
+#if NET8_0_OR_GREATER
+    /// <summary>
+    ///     Creates a new scheduler.
+    /// </summary>
+    /// <param name="context">Context to send the scheduled message through</param>
+    /// <param name="timeProvider">TimeProvider to use for scheduling (FakeTimeProvider can be used for testing)</param>
+    public Scheduler(ISenderContext context, TimeProvider timeProvider)
+    {
+        _context = context;
+        _timeProvider = timeProvider;
+    }
+#endif
 
     /// <summary>
     ///     Schedules a single message to be sent in the future.
@@ -41,7 +61,7 @@ public class Scheduler
 
         _ = SafeTask.Run(async () =>
             {
-                await Task.Delay(delay, token).ConfigureAwait(false);
+                await Delay(delay, token).ConfigureAwait(false);
 
                 _context.Send(target, message);
             }, token
@@ -75,7 +95,7 @@ public class Scheduler
 
         _ = SafeTask.Run(async () =>
             {
-                await Task.Delay(delay, token).ConfigureAwait(false);
+                await Delay(delay, token).ConfigureAwait(false);
 
                 while (!cts.IsCancellationRequested)
                 {
@@ -105,17 +125,26 @@ public class Scheduler
 
         _ = SafeTask.Run(async () =>
             {
-                await Task.Delay(delay, token).ConfigureAwait(false);
+                await Delay(delay, token).ConfigureAwait(false);
 
                 while (!cts.IsCancellationRequested)
                 {
                     _context.Request(target, message);
 
-                    await Task.Delay(interval, token).ConfigureAwait(false);
+                    await Delay(interval, token).ConfigureAwait(false);
                 }
             }, token
         );
 
         return cts;
+    }
+
+    private async Task Delay(TimeSpan delay, CancellationToken token)
+    {
+#if NET8_0_OR_GREATER
+    await Task.Delay(delay, _timeProvider, token).ConfigureAwait(false);
+#else
+        await Task.Delay(delay, token).ConfigureAwait(false);
+#endif
     }
 }

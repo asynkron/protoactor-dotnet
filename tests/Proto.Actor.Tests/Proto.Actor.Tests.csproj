@@ -8,7 +8,13 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
-        <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj"/>
+        <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj"/>
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+      <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     </ItemGroup>
 </Project>
