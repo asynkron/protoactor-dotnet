@@ -30,7 +30,7 @@ public class SupervisionTestsOneForOne
 
         context.Send(parent, "hello");
 
-        Assert.True(childMailboxStats.Reset.Wait(1000));
+        Assert.True(childMailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
         Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Posted);
         Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Received);
     }
@@ -55,7 +55,7 @@ public class SupervisionTestsOneForOne
 
         context.Send(parent, "hello");
 
-        childMailboxStats.Reset.Wait(1000);
+        Assert.True(childMailboxStats.Reset.Wait(TimeSpan.FromSeconds(2)));
         Assert.Contains(Stop.Instance, childMailboxStats.Posted);
         Assert.Contains(Stop.Instance, childMailboxStats.Received);
     }
@@ -66,7 +66,7 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStatistics(msg => msg is Restart);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
 
         var childProps = Props.FromProducer(() => new ChildActor())
@@ -79,7 +79,7 @@ public class SupervisionTestsOneForOne
 
         context.Send(parent, "hello");
 
-        childMailboxStats.Reset.Wait(2000);
+        Assert.True(childMailboxStats.Reset.Wait(TimeSpan.FromSeconds(2)));
         Assert.Contains(childMailboxStats.Posted, msg => msg is Restart);
         Assert.Contains(childMailboxStats.Received, msg => msg is Restart);
     }

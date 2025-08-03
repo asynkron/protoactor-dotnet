@@ -34,7 +34,7 @@ public class SupervisionTestsAllForOne
 
         context.Send(parent, "hello");
 
-        Assert.True(child1MailboxStats.Reset.Wait(5000));
+        Assert.True(child1MailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
         Assert.Contains(ResumeMailbox.Instance, child1MailboxStats.Posted);
         Assert.Contains(ResumeMailbox.Instance, child1MailboxStats.Received);
         Assert.DoesNotContain(ResumeMailbox.Instance, child2MailboxStats.Posted);
@@ -47,8 +47,8 @@ public class SupervisionTestsAllForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-        var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stop);
+        var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stop);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
@@ -64,8 +64,8 @@ public class SupervisionTestsAllForOne
 
         context.Send(parent, "hello");
 
-        child1MailboxStats.Reset.Wait(1000);
-        child2MailboxStats.Reset.Wait(1000);
+        Assert.True(child1MailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(child2MailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
         Assert.Contains(Stop.Instance, child1MailboxStats.Posted);
         Assert.Contains(Stop.Instance, child1MailboxStats.Received);
         Assert.Contains(Stop.Instance, child2MailboxStats.Posted);
@@ -78,8 +78,8 @@ public class SupervisionTestsAllForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-        var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var child1MailboxStats = new TestMailboxStatistics(msg => msg is Restart);
+        var child2MailboxStats = new TestMailboxStatistics(msg => msg is Restart);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
@@ -95,8 +95,8 @@ public class SupervisionTestsAllForOne
 
         context.Send(parent, "hello");
 
-        child1MailboxStats.Reset.Wait(1000);
-        child2MailboxStats.Reset.Wait(1000);
+        Assert.True(child1MailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(child2MailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
         Assert.Contains(child1MailboxStats.Posted, msg => msg is Restart);
         Assert.Contains(child1MailboxStats.Received, msg => msg is Restart);
         Assert.Contains(child2MailboxStats.Posted, msg => msg is Restart);
@@ -109,8 +109,8 @@ public class SupervisionTestsAllForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-        var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var child1MailboxStats = new TestMailboxStatistics(msg => msg is Restart);
+        var child2MailboxStats = new TestMailboxStatistics(msg => msg is Restart);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
@@ -126,8 +126,8 @@ public class SupervisionTestsAllForOne
 
         context.Send(parent, "hello");
 
-        child1MailboxStats.Reset.Wait(1000);
-        child2MailboxStats.Reset.Wait(1000);
+        Assert.True(child1MailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(child2MailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
         Assert.Contains(child1MailboxStats.Posted, msg => msg is Restart r && r.Reason == Exception);
         Assert.Contains(child1MailboxStats.Received, msg => msg is Restart r && r.Reason == Exception);
         Assert.Contains(child2MailboxStats.Posted, msg => msg is Restart r && r.Reason == Exception);
@@ -140,7 +140,7 @@ public class SupervisionTestsAllForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var parentMailboxStats = new TestMailboxStatistics(msg => msg is Failure);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
         var childProps = Props.FromProducer(() => new ChildActor());
 
@@ -152,7 +152,7 @@ public class SupervisionTestsAllForOne
 
         context.Send(parent, "hello");
 
-        parentMailboxStats.Reset.Wait(1000);
+        Assert.True(parentMailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
         var failure = parentMailboxStats.Received.OfType<Failure>().Single();
         Assert.IsType<Exception>(failure.Reason);
     }

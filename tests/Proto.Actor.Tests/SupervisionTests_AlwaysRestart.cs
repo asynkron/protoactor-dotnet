@@ -1,12 +1,15 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Proto.Mailbox;
+using Proto.TestFixtures;
 using Xunit;
 
 namespace Proto.Tests;
 
 public class SupervisionTestsAlwaysRestart
 {
-    private static readonly Exception Exception = new("boo hoo");
+    private static readonly Exception Exception = new("boom");
 
     [Fact]
     public async Task AlwaysRestartStrategy_Should_RestartFailingChildOnly()
@@ -34,31 +37,61 @@ public class SupervisionTestsAlwaysRestart
         Assert.Equal(1, child2Started);
     }
 
+    [Fact]
+    public async Task AlwaysRestartStrategy_Should_RestartChildOnEveryFailure()
+    {
+        await using var system = new ActorSystem();
+        var context = system.Root;
+
+        var restartCount = 0;
+        var childMailboxStats = new TestMailboxStatistics(msg =>
+        {
+            if (msg is Restart)
+            {
+                restartCount++;
+                return restartCount == 3;
+            }
+
+            return false;
+        });
+
+        var childProps = Props.FromProducer(() => new ChildActor())
+            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+
+        var parentProps = Props.FromProducer(() => new ParentActor(childProps))
+            .WithChildSupervisorStrategy(Supervision.AlwaysRestartStrategy);
+
+        var parent = context.Spawn(parentProps);
+
+        context.Send(parent, "1");
+        context.Send(parent, "2");
+        context.Send(parent, "3");
+
+        Assert.True(childMailboxStats.Reset.Wait(TimeSpan.FromSeconds(2)));
+        Assert.Equal(3, childMailboxStats.Received.OfType<Restart>().Count());
+        Assert.DoesNotContain(childMailboxStats.Posted, msg => msg is Stop);
+    }
+
     private class ParentActor : IActor
     {
-        private readonly Props _child1Props;
-        private readonly Props _child2Props;
+        private readonly Props[] _childProps;
+        private PID[]? _children;
 
-        public ParentActor(Props child1Props, Props child2Props)
+        public ParentActor(params Props[] childProps)
         {
-            _child1Props = child1Props;
-            _child2Props = child2Props;
+            _childProps = childProps;
         }
-
-        private PID? Child1 { get; set; }
-        private PID? Child2 { get; set; }
 
         public Task ReceiveAsync(IContext context)
         {
-            if (context.Message is Started)
+            switch (context.Message)
             {
-                Child1 = context.Spawn(_child1Props);
-                Child2 = context.Spawn(_child2Props);
-            }
-
-            if (context.Message is string)
-            {
-                context.Forward(Child1!);
+                case Started:
+                    _children = _childProps.Select(context.Spawn).ToArray();
+                    break;
+                case string when _children != null:
+                    context.Forward(_children[0]);
+                    break;
             }
 
             return Task.CompletedTask;
@@ -67,9 +100,9 @@ public class SupervisionTestsAlwaysRestart
 
     private class ChildActor : IActor
     {
-        private readonly Action _onStarted;
+        private readonly Action? _onStarted;
 
-        public ChildActor(Action onStarted)
+        public ChildActor(Action? onStarted = null)
         {
             _onStarted = onStarted;
         }
@@ -79,7 +112,7 @@ public class SupervisionTestsAlwaysRestart
             switch (context.Message)
             {
                 case Started:
-                    _onStarted();
+                    _onStarted?.Invoke();
                     break;
                 case string:
                     throw Exception;
@@ -89,4 +122,3 @@ public class SupervisionTestsAlwaysRestart
         }
     }
 }
-
