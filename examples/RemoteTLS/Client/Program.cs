@@ -1,7 +1,6 @@
 using System;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
-using Grpc.Net.Client;
 using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
@@ -13,11 +12,7 @@ var handler = new HttpClientHandler();
 handler.ServerCertificateCustomValidationCallback = (request, cert, chain, errors) =>
     cert != null && cert.Thumbprint == certificate.Thumbprint;
 
-var remoteConfig = BindToLocalhost() with
-{
-    UseHttps = true,
-    ChannelOptions = new GrpcChannelOptions { HttpHandler = handler }
-};
+var remoteConfig = BindToLocalhost().WithTLS(httpHandler: handler);
 
 var system = new ActorSystem().WithRemote(remoteConfig);
 await system.Remote().StartAsync();

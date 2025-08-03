@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 using Grpc.HealthCheck;
 using Grpc.Net.Client;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -28,6 +31,37 @@ public static class Extensions
     public static GrpcNetRemoteConfig WithUriChooser(this GrpcNetRemoteConfig config,
         Func<IEnumerable<Uri>?, Uri?> uriChooser) =>
         config with { UriChooser = uriChooser };
+
+    public static GrpcNetRemoteConfig WithTLS(this GrpcNetRemoteConfig remoteConfig,
+        X509Certificate2? certificate = null,
+        HttpMessageHandler? httpHandler = null)
+    {
+        var channelOptions = remoteConfig.ChannelOptions;
+        if (httpHandler is not null)
+        {
+            channelOptions.HttpHandler = httpHandler;
+        }
+
+        var existingConfigureKestrel = remoteConfig.ConfigureKestrel;
+
+        Action<ListenOptions>? configure = existingConfigureKestrel;
+        if (certificate is not null)
+        {
+            configure = options =>
+            {
+                options.Protocols = HttpProtocols.Http2;
+                options.UseHttps(certificate);
+                existingConfigureKestrel?.Invoke(options);
+            };
+        }
+
+        return remoteConfig with
+        {
+            UseHttps = true,
+            ChannelOptions = channelOptions,
+            ConfigureKestrel = configure
+        };
+    }
 
     /// <summary>
     ///     Registers the Remote extension in the <see cref="ActorSystem" />. This mode opens connections both ways between the

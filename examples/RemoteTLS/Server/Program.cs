@@ -1,6 +1,5 @@
 using System;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
@@ -9,15 +8,7 @@ using Common;
 
 var certificate = new X509Certificate2("../localhost.pfx", "password");
 
-var remoteConfig = BindToLocalhost(8000) with
-{
-    UseHttps = true,
-    ConfigureKestrel = options =>
-    {
-        options.Protocols = HttpProtocols.Http2;
-        options.UseHttps(certificate);
-    }
-};
+var remoteConfig = BindToLocalhost(8000).WithTLS(certificate: certificate);
 
 var system = new ActorSystem().WithRemote(remoteConfig);
 
