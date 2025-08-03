@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.TestFixtures;
+using Proto.Utils;
 using Xunit;
 
 namespace Proto.Tests;
@@ -71,6 +72,50 @@ public class WatchTests
         await context.StopAsync(watchee);
         var terminatedMessageReceived = await context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
         Assert.True(terminatedMessageReceived);
+    }
+
+    [Fact]
+    public async Task UnwatchPreventsTerminatedMessage()
+    {
+        await using var system = new ActorSystem();
+        var context = system.Root;
+
+        var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor())
+            .WithMailbox(() => new TestMailbox())
+        );
+
+        var terminated = new TaskCompletionSource<bool>();
+
+        var watcher = context.Spawn(Props.FromFunc(ctx =>
+            {
+                switch (ctx.Message)
+                {
+                    case Started _:
+                        ctx.Watch(watchee);
+                        ctx.Unwatch(watchee);
+
+                        break;
+                    case "ready":
+                        ctx.Respond(true);
+
+                        break;
+                    case Terminated _:
+                        terminated.TrySetResult(true);
+
+                        break;
+                }
+
+                return Task.CompletedTask;
+            }
+        ).WithMailbox(() => new TestMailbox())
+        );
+
+        await context.RequestAsync<bool>(watcher, "ready", TimeSpan.FromSeconds(5));
+
+        await context.StopAsync(watchee);
+
+        var (completed, _) = await terminated.Task.WaitUpTo(TimeSpan.FromMilliseconds(500));
+        Assert.False(completed);
     }
 
     public class LocalActor : IActor
