@@ -9,8 +9,8 @@
         <RepositoryUrl>https://github.com/AsynkronIT/protoactor-dotnet</RepositoryUrl>
         <PackageTags>actors actor model concurrency proto protoactor</PackageTags>
         <LangVersion>10</LangVersion>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <IncludeSymbols Condition="'$(CI)' == 'true'">true</IncludeSymbols>
+        <SymbolPackageFormat Condition="'$(CI)' == 'true'">snupkg</SymbolPackageFormat>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
         <DefineConstants>TRACE;DEBUG</DefineConstants>
