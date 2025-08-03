@@ -30,7 +30,7 @@ public class SupervisionTestsOneForOne
 
         context.Send(parent, "hello");
 
-        childMailboxStats.Reset.Wait(1000);
+        Assert.True(childMailboxStats.Reset.Wait(1000));
         Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Posted);
         Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Received);
     }
