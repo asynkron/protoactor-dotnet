@@ -25,8 +25,6 @@ jobs:
       matrix:
         dotnet:
           - net8.0
-          - net7.0
-          - net6.0
         test:
           - "tests/Proto.Cluster.Tests/*.csproj"
           - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
@@ -41,8 +39,6 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            7.0.x
-            6.0.x
           cache: true
           cache-dependency-path: |
             Directory.Packages.props
@@ -78,8 +74,6 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            7.0.x
-            6.0.x
           cache: true
           cache-dependency-path: |
             Directory.Packages.props
@@ -104,8 +98,6 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            7.0.x
-            6.0.x
           cache: true
           cache-dependency-path: |
             Directory.Packages.props
