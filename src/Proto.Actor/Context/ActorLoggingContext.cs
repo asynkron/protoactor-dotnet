@@ -131,7 +131,7 @@ public class ActorLoggingContext : ActorContextDecorator
 
             return response;
         }
-        catch (Exception x)
+        catch (Exception)
         {
             if (_exceptionLogLevel != LogLevel.None && _logger.IsEnabled(_exceptionLogLevel))
             {
