@@ -153,7 +153,7 @@ public class SupervisionTestsAllForOne
         context.Send(parent, "hello");
 
         Assert.True(parentMailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
-        var failure = parentMailboxStats.Received.OfType<Failure>().Single();
+        var failure = parentMailboxStats.Received.ToArray().OfType<Failure>().Single();
         Assert.IsType<Exception>(failure.Reason);
     }
 
