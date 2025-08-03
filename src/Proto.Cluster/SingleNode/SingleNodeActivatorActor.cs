@@ -155,6 +155,8 @@ internal class SingleNodeActivatorActor : IActor
                     Failed = true
                 }
             );
+
+            return;
         }
 
         var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity,

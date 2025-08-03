@@ -150,6 +150,8 @@ internal class IdentityStoragePlacementActor : IActor
                     Failed = true
                 }
             );
+
+            return;
         }
 
         var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity,
