@@ -47,12 +47,15 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore ProtoActor.sln
 
+      - name: Build
+        run: dotnet build ProtoActor.sln -c Release --no-restore
+
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
         env:
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions
+          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --no-build --no-restore --logger GitHubActions
           
   test-fast:  # fast tests where setting up a parallel job run is more overhead than just running the tests side by side
     runs-on: ubuntu-latest
@@ -81,10 +84,13 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore ProtoActor.sln
+
+      - name: Build
+        run: dotnet build ProtoActor.sln -c Release --no-restore
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
         run: |
-          dotnet test ${{ matrix.test }} -c Release --logger GitHubActions
+          dotnet test ${{ matrix.test }} -c Release --no-build --no-restore --logger GitHubActions
 
   nuget:
     runs-on: ubuntu-latest
