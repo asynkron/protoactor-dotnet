@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Xunit;
@@ -86,5 +87,52 @@ public class ProcessRegistryTests
         var p2 = reg.Get(pid);
 
         Assert.Same(p, p2);
+    }
+
+    [Fact]
+    public async Task Given_UnknownHost_GetShouldThrowNotSupportedException()
+    {
+        var system = new ActorSystem();
+        await using var _ = system;
+        var reg = new ProcessRegistry(system);
+        var pid = PID.FromAddress("some-other-host", "id");
+
+        Assert.Throws<NotSupportedException>(() => reg.Get(pid));
+    }
+
+    [Fact]
+    public async Task Given_MultipleCalls_NextIdShouldReturnUniqueDollarPrefixedIds()
+    {
+        var system = new ActorSystem();
+        await using var _ = system;
+        var reg = new ProcessRegistry(system);
+
+        var id1 = reg.NextId();
+        var id2 = reg.NextId();
+
+        Assert.StartsWith("$", id1);
+        Assert.StartsWith("$", id2);
+        Assert.NotEqual(id1, id2);
+        var num1 = int.Parse(id1.TrimStart('$'));
+        var num2 = int.Parse(id2.TrimStart('$'));
+        Assert.Equal(num1 + 1, num2);
+    }
+
+    [Fact]
+    public async Task Given_FindIsCalledWithPattern_ShouldReturnMatchingPIDs()
+    {
+        var system = new ActorSystem();
+        await using var _ = system;
+        var reg = new ProcessRegistry(system);
+        var p1 = new TestProcess(system);
+        var p2 = new TestProcess(system);
+        reg.TryAdd("abc", p1);
+        reg.TryAdd("def", p2);
+
+        var result = reg.Find("ab");
+
+        var list = result.ToList();
+        Assert.Single(list);
+        Assert.Equal("abc", list[0].Id);
     }
 }
