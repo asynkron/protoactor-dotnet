@@ -26,8 +26,8 @@ internal static class OpenTelemetryMethodsDecorators
         }
         catch (Exception ex)
         {
-            activity?.RecordException(ex);
-            activity?.SetStatus(Status.Error);
+            activity?.AddException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
 
             throw;
         }
@@ -56,8 +56,8 @@ internal static class OpenTelemetryMethodsDecorators
         }
         catch (Exception ex)
         {
-            activity?.RecordException(ex);
-            activity?.SetStatus(Status.Error);
+            activity?.AddException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
 
             throw;
         }
@@ -79,8 +79,8 @@ internal static class OpenTelemetryMethodsDecorators
         }
         catch (Exception ex)
         {
-            activity?.RecordException(ex);
-            activity?.SetStatus(Status.Error);
+            activity?.AddException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
 
             throw;
         }
@@ -108,8 +108,8 @@ internal static class OpenTelemetryMethodsDecorators
         }
         catch (Exception ex)
         {
-            activity?.RecordException(ex);
-            activity?.SetStatus(Status.Error);
+            activity?.AddException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
 
             throw;
         }
@@ -135,16 +135,16 @@ internal static class OpenTelemetryMethodsDecorators
         catch (TimeoutException ex)
         {
             activity?.SetTag(ProtoTags.ActionType, nameof(RequestAsync));
-            activity?.RecordException(ex);
-            activity?.SetStatus(Status.Error);
+            activity?.AddException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
             activity?.AddEvent(new ActivityEvent("Request Timeout"));
 
             throw;
         }
         catch (Exception ex)
         {
-            activity?.RecordException(ex);
-            activity?.SetStatus(Status.Error);
+            activity?.AddException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
 
             throw;
         }
@@ -166,8 +166,8 @@ internal static class OpenTelemetryMethodsDecorators
         }
         catch (Exception ex)
         {
-            activity?.RecordException(ex);
-            activity?.SetStatus(Status.Error);
+            activity?.AddException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
 
             throw;
         }
@@ -187,8 +187,8 @@ internal static class OpenTelemetryMethodsDecorators
         }
         catch (Exception ex)
         {
-            activity?.RecordException(ex);
-            activity?.SetStatus(Status.Error);
+            activity?.AddException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
 
             throw;
         }
@@ -236,8 +236,8 @@ internal static class OpenTelemetryMethodsDecorators
         }
         catch (Exception ex)
         {
-            activity?.RecordException(ex);
-            activity?.SetStatus(Status.Error);
+            activity?.AddException(ex);
+            activity?.SetStatus(ActivityStatusCode.Error);
 
             throw;
         }
