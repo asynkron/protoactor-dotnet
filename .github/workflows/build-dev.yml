@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 1
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
@@ -69,7 +69,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 1
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
@@ -93,7 +93,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Full history required for versioning
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
