@@ -127,8 +127,6 @@ public class MailboxSchedulingTests
         msg1.TaskCompletionSource.SetResult(0);
         await Task.Delay(1000);
 
-        Assert.True(mailbox.Status == MailboxStatus.Idle,
-            "Mailbox should be set back to Idle after completion of message."
-        );
+        Assert.Equal(MailboxStatus.Idle, mailbox.Status);
     }
 }
