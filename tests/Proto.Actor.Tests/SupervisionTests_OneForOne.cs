@@ -41,7 +41,8 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        // wait specifically for the Stop system message to ensure assertions run
+        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stop);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
 
         var childProps = Props.FromProducer(() => new ChildActor())
