@@ -16,6 +16,9 @@
         <PackageReference Include="System.Text.Json" />
     </ItemGroup>
     <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+    <ItemGroup>
         <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
     </ItemGroup>
     <ItemGroup>
