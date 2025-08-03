@@ -281,12 +281,13 @@ public abstract class ClusterTests : ClusterTestBase
                 }
             );
 
-            await Task.Delay(1000);
+            await ClusterFixture.WaitForMemberAsync(victim.System.Id, true);
             _testOutputHelper.WriteLine("Terminating node");
             await ClusterFixture.RemoveNode(victim);
+            await ClusterFixture.WaitForMemberAsync(victim.System.Id, false);
             _testOutputHelper.WriteLine("Spawning node");
-            await ClusterFixture.SpawnMember();
-            await Task.Delay(1000);
+            var newMember = await ClusterFixture.SpawnMember();
+            await ClusterFixture.WaitForMemberAsync(newMember.System.Id, true);
             cts.Cancel();
             await worker;
         }, _testOutputHelper);
