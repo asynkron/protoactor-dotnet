@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
-using System.Reflection;
 using Grpc.HealthCheck;
 using Grpc.Net.Client;
 using JetBrains.Annotations;
@@ -10,7 +9,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Server.Kestrel.Https;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -49,15 +48,10 @@ public static class Extensions
         Action<ListenOptions>? configure = existingConfigureKestrel;
         if (certificate is not null)
         {
-            var useHttps = Type
-                .GetType(
-                    "Microsoft.AspNetCore.Server.Kestrel.Https.ListenOptionsHttpsExtensions, Microsoft.AspNetCore.Server.Kestrel.Https")
-                ?.GetMethod("UseHttps", new[] { typeof(ListenOptions), typeof(X509Certificate2) });
-
             configure = options =>
             {
                 options.Protocols = HttpProtocols.Http2;
-                useHttps?.Invoke(null, new object[] { options, certificate });
+                options.UseHttps(certificate);
                 existingConfigureKestrel?.Invoke(options);
             };
         }
