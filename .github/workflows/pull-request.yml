@@ -34,11 +34,29 @@ jobs:
             Directory.Packages.props
             **/*.csproj
 
+      - name: Restore bin/obj cache
+        id: cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            **/bin
+            **/obj
+          key: ${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+
       - name: Restore dependencies
         run: dotnet restore ProtoActor.sln
 
       - name: Build
         run: dotnet build ProtoActor.sln -c Release
+
+      - name: Save bin/obj cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            **/bin
+            **/obj
+          key: ${{ steps.cache.outputs.cache-primary-key }}
 
   test-slow:  # slow tests that should run in parallel
     runs-on: ubuntu-latest
@@ -73,6 +91,15 @@ jobs:
             Directory.Packages.props
             **/*.csproj
 
+      - name: Restore bin/obj cache
+        id: cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            **/bin
+            **/obj
+          key: ${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+
       - name: Restore dependencies
         run: dotnet restore ProtoActor.sln
 
@@ -82,6 +109,15 @@ jobs:
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
           dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions
+
+      - name: Save bin/obj cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            **/bin
+            **/obj
+          key: ${{ steps.cache.outputs.cache-primary-key }}
 
   test-fast:  # fast tests where setting up a parallel job run is more overhead than just running the tests side by side
     runs-on: ubuntu-latest
@@ -108,9 +144,27 @@ jobs:
             Directory.Packages.props
             **/*.csproj
 
+      - name: Restore bin/obj cache
+        id: cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            **/bin
+            **/obj
+          key: ${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+
       - name: Restore dependencies
         run: dotnet restore ProtoActor.sln
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
         run: |
           dotnet test ${{ matrix.test }} -c Release --logger GitHubActions
+
+      - name: Save bin/obj cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            **/bin
+            **/obj
+          key: ${{ steps.cache.outputs.cache-primary-key }}
