@@ -89,6 +89,59 @@ public class ReceiveTimeoutTests
     }
 
     [Fact]
+    public async Task receive_timeout_is_reset_by_influencing_messages()
+    {
+        await using var system = new ActorSystem();
+        var context = system.Root;
+
+        var timeoutReceived = false;
+        var receiveTimeoutWaiter = GetExpiringTaskCompletionSource(2000);
+
+        var props = Props.FromFunc(ctx =>
+            {
+                switch (ctx.Message)
+                {
+                    case Started _:
+                        ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(200));
+
+                        break;
+                    case string _:
+                        // regular messages reset the receive timeout
+                        break;
+                    case ReceiveTimeout _:
+                        timeoutReceived = true;
+                        receiveTimeoutWaiter.TrySetResult(0);
+
+                        break;
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+
+        var pid = context.Spawn(props);
+
+        using var cts = new CancellationTokenSource();
+
+        _ = Task.Run(async () =>
+        {
+            while (!cts.IsCancellationRequested && !receiveTimeoutWaiter.Task.IsCompleted)
+            {
+                context.Send(pid, "tick");
+                await Task.Delay(50);
+            }
+        });
+
+        await Task.Delay(400);
+        Assert.False(timeoutReceived);
+
+        cts.Cancel();
+
+        await GetSafeAwaitableTask(receiveTimeoutWaiter);
+        Assert.True(timeoutReceived);
+    }
+
+    [Fact]
     public async Task receive_timeout_not_received_within_expected_time()
     {
         var system = new ActorSystem();
