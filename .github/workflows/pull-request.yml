@@ -31,6 +31,13 @@ jobs:
             8.0.x
             7.0.x
             6.0.x
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+
+      - name: Restore dependencies
+        run: dotnet restore ProtoActor.sln
 
       - name: Build
         run: dotnet build ProtoActor.sln -c Release
@@ -67,6 +74,13 @@ jobs:
             8.0.x
             7.0.x
             6.0.x
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+
+      - name: Restore dependencies
+        run: dotnet restore ProtoActor.sln
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
@@ -97,6 +111,13 @@ jobs:
             8.0.x
             7.0.x
             6.0.x
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+
+      - name: Restore dependencies
+        run: dotnet restore ProtoActor.sln
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
         run: |

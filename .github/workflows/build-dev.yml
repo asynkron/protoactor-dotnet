@@ -43,6 +43,13 @@ jobs:
             8.0.x
             7.0.x
             6.0.x
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+
+      - name: Restore dependencies
+        run: dotnet restore ProtoActor.sln
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
@@ -73,6 +80,13 @@ jobs:
             8.0.x
             7.0.x
             6.0.x
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+
+      - name: Restore dependencies
+        run: dotnet restore ProtoActor.sln
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
         run: |
@@ -92,7 +106,14 @@ jobs:
             8.0.x
             7.0.x
             6.0.x
-          
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+
+      - name: Restore dependencies
+        run: dotnet restore ProtoActor.sln
+
       - name: Create and push NuGet package
         run: |
           dotnet pack ProtoActor.sln -c Release -o nuget -p:SymbolPackageFormat=snupkg -p:GenerateDocumentationFile=true -p:NoWarn=CS1591
