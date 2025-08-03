@@ -12,6 +12,32 @@ public class SupervisionTestsAlwaysRestart
     private static readonly Exception Exception = new("boom");
 
     [Fact]
+    public async Task AlwaysRestartStrategy_Should_RestartFailingChildOnly()
+    {
+        await using var system = new ActorSystem();
+        var context = system.Root;
+
+        var child1Started = 0;
+        var child2Started = 0;
+        var strategy = new AlwaysRestartStrategy();
+
+        var child1Props = Props.FromProducer(() => new ChildActor(() => child1Started++));
+        var child2Props = Props.FromProducer(() => new ChildActor(() => child2Started++));
+
+        var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
+            .WithChildSupervisorStrategy(strategy);
+
+        var parent = context.Spawn(parentProps);
+
+        context.Send(parent, "fail");
+
+        await Task.Delay(1000);
+
+        Assert.Equal(2, child1Started);
+        Assert.Equal(1, child2Started);
+    }
+
+    [Fact]
     public async Task AlwaysRestartStrategy_Should_RestartChildOnEveryFailure()
     {
         await using var system = new ActorSystem();
@@ -48,27 +74,23 @@ public class SupervisionTestsAlwaysRestart
 
     private class ParentActor : IActor
     {
-        private readonly Props _childProps;
+        private readonly Props[] _childProps;
+        private PID[]? _children;
 
-        public ParentActor(Props childProps)
+        public ParentActor(params Props[] childProps)
         {
             _childProps = childProps;
         }
-
-        private PID? _child;
 
         public Task ReceiveAsync(IContext context)
         {
             switch (context.Message)
             {
                 case Started:
-                    _child = context.Spawn(_childProps);
+                    _children = _childProps.Select(context.Spawn).ToArray();
                     break;
-                default:
-                    if (_child != null)
-                    {
-                        context.Forward(_child);
-                    }
+                case string when _children != null:
+                    context.Forward(_children[0]);
                     break;
             }
 
@@ -78,14 +100,26 @@ public class SupervisionTestsAlwaysRestart
 
     private class ChildActor : IActor
     {
+        private readonly Action? _onStarted;
+
+        public ChildActor(Action? onStarted = null)
+        {
+            _onStarted = onStarted;
+        }
+
         public Task ReceiveAsync(IContext context)
         {
-            if (context.Message is string)
+            switch (context.Message)
             {
-                throw Exception;
+                case Started:
+                    _onStarted?.Invoke();
+                    break;
+                case string:
+                    throw Exception;
             }
 
             return Task.CompletedTask;
         }
     }
 }
+

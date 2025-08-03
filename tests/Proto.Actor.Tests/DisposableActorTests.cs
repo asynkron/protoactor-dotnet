@@ -16,10 +16,10 @@ public class DisposableActorTests
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-        var disposeCalled = false;
+        var disposed = new TaskCompletionSource<bool>();
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
 
-        var childProps = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
+        var childProps = Props.FromProducer(() => new DisposableActor(() => disposed.TrySetResult(true)))
             .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
             .WithChildSupervisorStrategy(strategy);
 
@@ -30,7 +30,7 @@ public class DisposableActorTests
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
         childMailboxStats.Reset.Wait(1000);
-        Assert.True(disposeCalled);
+        Assert.True(await disposed.Task.WaitAsync(TimeSpan.FromSeconds(1)));
     }
 
     [Fact]
@@ -41,10 +41,10 @@ public class DisposableActorTests
         var context = system.Root;
 
         var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-        var disposeCalled = false;
+        var disposed = new TaskCompletionSource<bool>();
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
 
-        var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
+        var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposed.TrySetResult(true)))
             .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
             .WithChildSupervisorStrategy(strategy);
 
@@ -55,7 +55,7 @@ public class DisposableActorTests
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
         childMailboxStats.Reset.Wait(2000);
-        Assert.True(disposeCalled);
+        Assert.True(await disposed.Task.WaitAsync(TimeSpan.FromSeconds(1)));
     }
 
     [Fact]
