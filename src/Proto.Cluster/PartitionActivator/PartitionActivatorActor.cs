@@ -210,6 +210,8 @@ public class PartitionActivatorActor : IActor
                     Failed = true
                 }
             );
+
+            return;
         }
 
         var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity,

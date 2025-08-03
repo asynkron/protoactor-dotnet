@@ -366,6 +366,8 @@ internal class PartitionPlacementActor : IActor, IDisposable
                     TopologyHash = msg.TopologyHash
                 }
             );
+
+            return;
         }
 
         var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity,
