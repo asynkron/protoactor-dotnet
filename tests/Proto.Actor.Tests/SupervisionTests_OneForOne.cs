@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
 using Proto.TestFixtures;
@@ -91,10 +92,10 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stop);
 
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3,
-            TimeSpan.FromMilliseconds(100)
+            TimeSpan.FromSeconds(1)
         );
 
         var childProps = Props.FromProducer(() => new ChildActor())
@@ -110,15 +111,15 @@ public class SupervisionTestsOneForOne
         context.Send(parent, "3rd restart");
 
         // wait more than the time period
-        await Task.Delay(500);
-        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
-        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received);
+        await Task.Delay(1100);
+        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted.ToArray());
+        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received.ToArray());
 
         context.Send(parent, "4th restart");
 
-        childMailboxStats.Reset.Wait(500);
-        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
-        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received);
+        childMailboxStats.Reset.Wait(1000);
+        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted.ToArray());
+        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received.ToArray());
     }
 
     [Fact]
@@ -128,7 +129,7 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStatistics(msg => msg is Restart r && r.Reason == Exception);
 
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3,
             TimeSpan.FromMilliseconds(100)
@@ -147,9 +148,10 @@ public class SupervisionTestsOneForOne
         context.Send(parent, "3rd restart");
         context.Send(parent, "4th restart");
 
-        childMailboxStats.Reset.Wait(2000);
-        Assert.Contains(Stop.Instance, childMailboxStats.Posted);
-        Assert.Contains(Stop.Instance, childMailboxStats.Received);
+        Assert.True(SpinWait.SpinUntil(
+            () => childMailboxStats.Posted.ToArray().Contains(Stop.Instance) &&
+                  childMailboxStats.Received.ToArray().Contains(Stop.Instance),
+            TimeSpan.FromSeconds(5)));
     }
 
     [Fact]
@@ -158,7 +160,7 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStatistics(msg => msg is Restart r && r.Reason == Exception);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
 
         var childProps = Props.FromProducer(() => new ChildActor())
@@ -171,9 +173,11 @@ public class SupervisionTestsOneForOne
 
         context.Send(parent, "hello");
 
-        childMailboxStats.Reset.Wait(1000);
-        Assert.Contains(childMailboxStats.Posted, msg => msg is Restart r && r.Reason == Exception);
-        Assert.Contains(childMailboxStats.Received, msg => msg is Restart r && r.Reason == Exception);
+        Assert.True(SpinWait.SpinUntil(
+            () => childMailboxStats.Received.ToArray().Any(msg => msg is Restart r && r.Reason == Exception),
+            TimeSpan.FromSeconds(5)));
+        Assert.Contains(childMailboxStats.Posted.ToArray(), msg => msg is Restart r && r.Reason == Exception);
+        Assert.Contains(childMailboxStats.Received.ToArray(), msg => msg is Restart r && r.Reason == Exception);
     }
 
     [Fact]

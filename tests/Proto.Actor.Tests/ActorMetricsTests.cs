@@ -12,9 +12,10 @@ public class ActorMetricsTests
     {
         var measurements = new List<long>();
         using var listener = new MeterListener();
+        const string spawnCounterName = "protoactor_actor_spawn_count";
         listener.InstrumentPublished = (instrument, l) =>
         {
-            if (instrument.Name == ActorMetrics.ActorSpawnCount.Name)
+            if (instrument.Name == spawnCounterName)
             {
                 l.EnableMeasurementEvents(instrument);
             }
