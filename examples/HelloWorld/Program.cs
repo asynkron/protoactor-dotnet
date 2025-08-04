@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
@@ -8,43 +8,25 @@ using System;
 using System.Threading.Tasks;
 using Proto;
 
-namespace HelloWorld;
+var system = new ActorSystem();
+var props = Props.FromProducer(() => new HelloActor());
+var pid = system.Root.Spawn(props);
+system.Root.Send(pid, new Hello("ProtoActor"));
+Console.ReadLine();
 
-internal class Program
+// Messages should be immutable to prevent race conditions between multiple actors
+internal record Hello(string Who);
+
+// This is a standard actor
+internal class HelloActor : IActor
 {
-    private static void Main(string[] args)
+    public Task ReceiveAsync(IContext context)
     {
-        var system = new ActorSystem();
-        var props = Props.FromProducer(() => new HelloActor());
-        var pid = system.Root.Spawn(props);
-        system.Root.Send(pid, new Hello("ProtoActor"));
-        Console.ReadLine();
-    }
-
-    //Messages should be immutable to prevent race conditions between multiple actors
-    private class Hello
-    {
-        public Hello(string who)
+        if (context.Message is Hello r)
         {
-            Who = who;
+            Console.WriteLine($"Hello {r.Who}");
         }
 
-        public string Who { get; }
-    }
-
-    //This is a standard actor
-    private class HelloActor : IActor
-    {
-        public Task ReceiveAsync(IContext context)
-        {
-            var msg = context.Message;
-
-            if (msg is Hello r)
-            {
-                Console.WriteLine($"Hello {r.Who}");
-            }
-
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
     }
 }
