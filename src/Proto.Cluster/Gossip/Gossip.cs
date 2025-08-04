@@ -84,9 +84,23 @@ internal class Gossip
 
     public Task UpdateClusterTopology(ClusterTopology clusterTopology)
     {
-        //TODO: optimize
-        _otherMembers = clusterTopology.Members.Where(m => m.Id != _myId).ToArray();
-        _activeMemberIds = clusterTopology.Members.Select(m => m.Id).ToImmutableHashSet();
+        var others = new List<Member>();
+        var activeIds = ImmutableHashSet.CreateBuilder<string>();
+
+        foreach (var m in clusterTopology.Members)
+        {
+            activeIds.Add(m.Id);
+
+            if (m.Id != _myId)
+            {
+                others.Add(m);
+            }
+        }
+
+        _otherMembers = others.ToArray();
+        _activeMemberIds = activeIds.ToImmutable();
+
+        Purge();
         SetState(GossipKeys.Topology, clusterTopology);
 
         return Task.CompletedTask;
@@ -164,12 +178,13 @@ internal class Gossip
         CheckConsensus(key);
     }
 
-    //TODO: this does not need to use a callback, it can return a list of MemberStates
-    public void SendState(SendStateAction sendStateToMember)
+    public IEnumerable<(Member member, MemberStateDelta memberState)> SendState()
     {
+        var sends = new List<(Member member, MemberStateDelta memberState)>();
+
         try
         {
-            var logger = _logger?.BeginMethodScope();
+            _logger?.BeginMethodScope();
 
             foreach (var member in _otherMembers)
             {
@@ -179,7 +194,7 @@ internal class Gossip
             var randomMembers = _otherMembers.OrderByRandom(_rnd).ToArray();
 
             var fanoutCount = 0;
-            
+
             if (_gossipDebugLogging)
             {
                 var ids = randomMembers.Select(m => m.Id).ToArray();
@@ -188,8 +203,6 @@ internal class Gossip
 
             foreach (var member in randomMembers)
             {
-                //TODO: we can chunk up sends here
-                //instead of sending less state, we can send all of it, but in chunks
                 var memberState = GetMemberStateDelta(member.Id);
 
                 if (!memberState.HasState)
@@ -197,8 +210,7 @@ internal class Gossip
                     continue;
                 }
 
-                //fire and forget, we handle results in ReenterAfter
-                sendStateToMember(memberState, member, logger);
+                sends.Add((member, memberState));
 
                 fanoutCount++;
 
@@ -212,6 +224,8 @@ internal class Gossip
         {
             Logger.LogError(x, "SendState failed");
         }
+
+        return sends;
     }
 
     public MemberStateDelta GetMemberStateDelta(string targetMemberId)
@@ -293,9 +307,6 @@ internal class Gossip
 
     private void CheckConsensus(string updatedKey)
     {
-        //TODO: Optimize
-        Purge();
-
         foreach (var consensusCheck in _consensusChecks.GetByUpdatedKey(updatedKey))
         {
             consensusCheck.Check(_state, _activeMemberIds);
@@ -304,9 +315,6 @@ internal class Gossip
 
     private void CheckConsensus(IEnumerable<string> updatedKeys)
     {
-        //TODO: Optimize
-        Purge();
-
         foreach (var consensusCheck in _consensusChecks.GetByUpdatedKeys(updatedKeys))
         {
             consensusCheck.Check(_state, _activeMemberIds);
@@ -344,12 +352,7 @@ internal class Gossip
     {
         foreach (var (key, sequenceNumber) in pendingOffsets)
         {
-            //TODO: this needs to be improved with filter state on sender side, and then Ack from here
-            //update our state with the data from the remote node
-            //GossipStateManagement.MergeState(_state, response.State, out var newState);
-            //_state = newState;
-
-            if (!_committedOffsets.ContainsKey(key) || _committedOffsets[key] < pendingOffsets[key])
+            if (!_committedOffsets.TryGetValue(key, out var current) || current < sequenceNumber)
             {
                 _committedOffsets = _committedOffsets.SetItem(key, sequenceNumber);
             }
