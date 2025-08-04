@@ -26,6 +26,16 @@ Other implementations:
 
 - Go: [https://github.com/AsynkronIT/protoactor-go](https://github.com/AsynkronIT/protoactor-go)
 
+## Documentation
+
+Additional root-level documents provide deeper insights into the project:
+
+- [CODEBASE_OVERVIEW.md](CODEBASE_OVERVIEW.md) – overview of the repository structure and key concepts.
+- [CLUSTER_MEMBERSHIP_GOSSIP.md](CLUSTER_MEMBERSHIP_GOSSIP.md) – explains how cluster membership is detected and propagated via gossip.
+- [EVENTSTREAM_EVENTS.md](EVENTSTREAM_EVENTS.md) – lists key EventStream events and their publishers/subscribers.
+- [SECURITY.md](SECURITY.md) – security policy and supported versions.
+- [Terminology.md](Terminology.md) – definitions of common Proto.Actor terms.
+
 ## Design principles
 
 **Minimalistic API** - The API should be small and easy to use. Avoid enterprisey containers and configurations.
