@@ -70,7 +70,6 @@ internal class Gossip
     private long _localSequenceNo;
     private Member[] _otherMembers = Array.Empty<Member>();
     private GossipState _state = new();
-    private bool _needsPurge;
 
     public Gossip(string myId, int gossipFanout, int gossipMaxSend, InstanceLogger? logger,
         Func<ImmutableHashSet<string>> getMembers, bool gossipDebugLogging)
@@ -100,8 +99,8 @@ internal class Gossip
 
         _otherMembers = others.ToArray();
         _activeMemberIds = activeIds.ToImmutable();
-        _needsPurge = true;
 
+        Purge();
         SetState(GossipKeys.Topology, clusterTopology);
 
         return Task.CompletedTask;
@@ -308,11 +307,6 @@ internal class Gossip
 
     private void CheckConsensus(string updatedKey)
     {
-        if (_needsPurge)
-        {
-            Purge();
-        }
-
         foreach (var consensusCheck in _consensusChecks.GetByUpdatedKey(updatedKey))
         {
             consensusCheck.Check(_state, _activeMemberIds);
@@ -321,11 +315,6 @@ internal class Gossip
 
     private void CheckConsensus(IEnumerable<string> updatedKeys)
     {
-        if (_needsPurge)
-        {
-            Purge();
-        }
-
         foreach (var consensusCheck in _consensusChecks.GetByUpdatedKeys(updatedKeys))
         {
             consensusCheck.Check(_state, _activeMemberIds);
@@ -357,8 +346,6 @@ internal class Gossip
                 _committedOffsets = _committedOffsets.Remove(x);
             }
         }
-
-        _needsPurge = false;
     }
 
     private void CommitPendingOffsets(ImmutableDictionary<string, long> pendingOffsets)
