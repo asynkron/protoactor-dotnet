@@ -4,20 +4,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
-using Proto.Logging;
 
 namespace Proto.Cluster.Gossip;
-
-/// <summary>
-///     memberStateDelta is the delta state
-///     member is the target member
-///     logger is the instance logger
-/// </summary>
-public delegate void SendStateAction(MemberStateDelta memberStateDelta, Member member, InstanceLogger? logger);
 
 internal interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
 {
@@ -35,10 +28,9 @@ internal interface IGossipCore
     ImmutableList<GossipUpdate> ReceiveState(GossipState remoteState);
 
     /// <summary>
-    ///     Sends the gossip to a random set of receiving members
+    ///     Produces the gossip state for a random set of receiving members
     /// </summary>
-    /// <param name="sendStateToMember"></param>
-    void SendState(SendStateAction sendStateToMember);
+    IEnumerable<(Member member, MemberStateDelta memberState)> SendState();
 }
 
 internal interface IGossipConsensusChecker

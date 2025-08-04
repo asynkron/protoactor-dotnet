@@ -184,9 +184,11 @@ public class GossipActor : IActor
 
     private Task OnSendGossipState(IContext context)
     {
-        void SendStateToMember(MemberStateDelta memberState, Member member, InstanceLogger? logger) => SendGossipForMember(context, member, memberState);
+        foreach (var (member, memberState) in _internal.SendState())
+        {
+            SendGossipForMember(context, member, memberState);
+        }
 
-        _internal.SendState(SendStateToMember);
         context.Respond(new SendGossipStateResponse());
 
         return Task.CompletedTask;

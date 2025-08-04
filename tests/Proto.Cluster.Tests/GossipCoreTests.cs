@@ -11,7 +11,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Proto.Cluster.Gossip;
-using Proto.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -50,14 +49,6 @@ public class GossipCoreTests
 
         var sends = 0L;
 
-        void SendState(MemberStateDelta memberStateDelta, Member targetMember, InstanceLogger _)
-        {
-            Interlocked.Increment(ref sends);
-            var target = environment[targetMember.Id];
-            target.Gossip.ReceiveState(memberStateDelta.State);
-            memberStateDelta.CommitOffsets();
-        }
-
         var topology = new ClusterTopology
         {
             TopologyHash = Member.TopologyHash(members),
@@ -91,7 +82,13 @@ public class GossipCoreTests
 
                     foreach (var m in environment.Values)
                     {
-                        m.Gossip.SendState(SendState);
+                        foreach (var (member, delta) in m.Gossip.SendState())
+                        {
+                            Interlocked.Increment(ref sends);
+                            var target = environment[member.Id];
+                            target.Gossip.ReceiveState(delta.State);
+                            delta.CommitOffsets();
+                        }
                     }
                 }
             }
