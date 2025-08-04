@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
@@ -13,129 +13,94 @@ using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using static Proto.Remote.GrpcNet.GrpcNetRemoteConfig;
 
-namespace Client;
+Log.SetLoggerFactory(LoggerFactory.Create(c => c
+    .SetMinimumLevel(LogLevel.Information)
+    .AddConsole()
+));
 
-internal static class Program
+var config =
+    BindToLocalhost()
+        .WithProtoMessages(ChatReflection.Descriptor);
+
+var system = new ActorSystem().WithClientRemote(config);
+await system.Remote().StartAsync();
+
+var context = system.Root;
+
+var client = context.Spawn(
+    Props.FromFunc(
+        ctx =>
+        {
+            switch (ctx.Message)
+            {
+                case Connected connected:
+                    Console.WriteLine(connected.Message);
+                    break;
+                case SayResponse sayResponse:
+                    Console.WriteLine($"{sayResponse.UserName} {sayResponse.Message}");
+                    break;
+                case NickResponse nickResponse:
+                    Console.WriteLine($"{nickResponse.OldUserName} is now {nickResponse.NewUserName}");
+                    break;
+            }
+
+            return Task.CompletedTask;
+        }
+    )
+);
+
+var server = PID.FromAddress("127.0.0.1:8000", "chatserver");
+
+context.Send(
+    server,
+    new Connect
+    {
+        Sender = client
+    }
+);
+
+var nick = "Alex";
+
+while (true)
 {
-    private static IRootContext context;
+    var text = Console.ReadLine();
 
-    private static PID client;
-
-    private static PID server;
-
-    private static void Main()
+    if (string.IsNullOrWhiteSpace(text))
     {
-        Log.SetLoggerFactory(LoggerFactory.Create(c => c
-            .SetMinimumLevel(LogLevel.Information)
-            .AddConsole()
-        ));
-
-        InitializeActorSystem();
-        SpawnClient();
-        ObtainServerPid();
-        ConnectToServer();
-        EvaluateCommands();
-        context.System.Remote().ShutdownAsync().GetAwaiter().GetResult();
+        continue;
     }
 
-    private static void InitializeActorSystem()
+    if (text.Equals("/exit"))
     {
-        var config =
-            BindToLocalhost()
-                .WithProtoMessages(ChatReflection.Descriptor);
-
-        var system =
-            new ActorSystem()
-                .WithClientRemote(config);
-
-        system
-            .Remote()
-            .StartAsync();
-
-        context = system.Root;
+        break;
     }
 
-    private static void SpawnClient() =>
-        client = context.Spawn(
-            Props.FromFunc(
-                ctx =>
-                {
-                    switch (ctx.Message)
-                    {
-                        case Connected connected:
-                            Console.WriteLine(connected.Message);
+    if (text.StartsWith("/nick "))
+    {
+        var t = text.Split(' ')[1];
 
-                            break;
-                        case SayResponse sayResponse:
-                            Console.WriteLine($"{sayResponse.UserName} {sayResponse.Message}");
-
-                            break;
-                        case NickResponse nickResponse:
-                            Console.WriteLine($"{nickResponse.OldUserName} is now {nickResponse.NewUserName}");
-
-                            break;
-                    }
-
-                    return Task.CompletedTask;
-                }
-            )
-        );
-
-    private static void ObtainServerPid() => server = PID.FromAddress("127.0.0.1:8000", "chatserver");
-
-    private static void ConnectToServer() =>
         context.Send(
             server,
-            new Connect
+            new NickRequest
             {
-                Sender = client
+                OldUserName = nick,
+                NewUserName = t
             }
         );
 
-    private static void EvaluateCommands()
-    {
-        var nick = "Alex";
+        nick = t;
 
-        while (true)
-        {
-            var text = Console.ReadLine();
-
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                continue;
-            }
-
-            if (text.Equals("/exit"))
-            {
-                return;
-            }
-
-            if (text.StartsWith("/nick "))
-            {
-                var t = text.Split(' ')[1];
-
-                context.Send(
-                    server,
-                    new NickRequest
-                    {
-                        OldUserName = nick,
-                        NewUserName = t
-                    }
-                );
-
-                nick = t;
-
-                continue;
-            }
-
-            context.Send(
-                server,
-                new SayRequest
-                {
-                    UserName = nick,
-                    Message = text
-                }
-            );
-        }
+        continue;
     }
+
+    context.Send(
+        server,
+        new SayRequest
+        {
+            UserName = nick,
+            Message = text
+        }
+    );
 }
+
+await system.Remote().ShutdownAsync();
