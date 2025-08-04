@@ -608,11 +608,12 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         _ = Continue(target, cont, this);
     }
 
-    private static Task HandleUnknownSystemMessage(object msg)
+    private Task HandleUnknownSystemMessage(SystemMessage msg)
     {
-        //TODO: sounds like a pretty severe issue if we end up here? what todo?
+        // Escalate to supervision so the failure can be handled by the actor's supervisor
+        var exception = new InvalidOperationException($"Unknown system message {msg}");
         Logger.UnknownSystemMessage(msg);
-
+        EscalateFailure(exception, msg);
         return Task.CompletedTask;
     }
 

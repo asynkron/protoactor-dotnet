@@ -29,6 +29,8 @@
 4. **Extensibility**
    - Extension points (`ActorSystemExtensions`, etc.) allow custom components.
    - Roslyn analyzers and code generators help with strongly typed grains and error detection.
+5. **System Messages and Supervision**
+   - Unrecognized system messages cause the actor to escalate a failure to its supervisor.
 
 ## Next Steps
 
