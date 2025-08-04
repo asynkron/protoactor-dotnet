@@ -3,6 +3,8 @@
 This document explains how cluster membership events are detected and how
 membership state is propagated through gossip.
 
+For a runnable demonstration, see [examples/ClusterGossip](examples/ClusterGossip).
+
 ## Detecting members
 
 Cluster providers (e.g., Kubernetes) watch the environment for running nodes and
