@@ -86,7 +86,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         if (Sender is not null)
         {
-            Logger.ActorResponds(Self, Sender, Message);
+            Logger.ActorResponds(Self, Sender, message);
             SendUserMessage(Sender, message);
         }
         else
