@@ -11,7 +11,7 @@ namespace Proto.Remote;
 /// </summary>
 public sealed class ServerSideClientEndpoint : Endpoint
 {
-    public ServerSideClientEndpoint(ActorSystem system, RemoteConfigBase remoteConfig, string remoteAddress) : base(
+    public ServerSideClientEndpoint(ActorSystem system, RemoteConfig remoteConfig, string remoteAddress) : base(
         remoteAddress, system, remoteConfig)
     {
     }

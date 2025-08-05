@@ -8,14 +8,14 @@ namespace Proto.Remote.GrpcNet;
 
 public class HostedGrpcNetRemote : IRemote
 {
-    private readonly GrpcNetRemoteConfig _config;
+    private readonly RemoteConfig _config;
     private readonly EndpointManager _endpointManager;
     private readonly object _lock = new();
     private readonly ILogger _logger;
 
     public HostedGrpcNetRemote(
         ActorSystem system,
-        GrpcNetRemoteConfig config,
+        RemoteConfig config,
         EndpointManager endpointManager,
         ILogger<HostedGrpcNetRemote> logger
     )
@@ -30,7 +30,7 @@ public class HostedGrpcNetRemote : IRemote
     }
 
     public IServerAddressesFeature? ServerAddressesFeature { get; set; }
-    public RemoteConfigBase Config => _config;
+    public RemoteConfig Config => _config;
     public ActorSystem System { get; }
     public bool Started { get; private set; }
 

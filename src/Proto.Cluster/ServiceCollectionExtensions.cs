@@ -8,6 +8,7 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Seed;
 using Proto.DependencyInjection;
+using Proto.Remote;
 using Proto.Remote.GrpcNet;
 
 namespace Proto.Cluster;
@@ -19,7 +20,7 @@ public class HostedClusterConfig
     public string BindToHost { get; set; }= "localhost";
     public int Port{ get; set; } = 0;
     public Func<ActorSystemConfig, ActorSystemConfig>? ConfigureSystem { get; set; }
-    public Func<GrpcNetRemoteConfig, GrpcNetRemoteConfig>? ConfigureRemote { get; set; }
+    public Func<RemoteConfig, RemoteConfig>? ConfigureRemote { get; set; }
     public Func<ClusterConfig, ClusterConfig>? ConfigureCluster { get; set; }
     public IClusterProvider? ClusterProvider { get; set; }
     public IIdentityLookup? IdentityLookup { get; set; }
@@ -42,7 +43,7 @@ public static class ServiceCollectionExtensions
             var s = new ActorSystemConfig();
             s = boot.ConfigureSystem?.Invoke(s) ?? s;
 
-            var r = GrpcNetRemoteConfig.BindTo(boot.BindToHost, boot.Port);
+            var r = RemoteConfig.BindTo(boot.BindToHost, boot.Port);
             r = boot.ConfigureRemote?.Invoke(r) ?? r;
             
             boot.IdentityLookup ??= new PartitionIdentityLookup();
@@ -77,7 +78,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddProtoCluster(this IServiceCollection self, string clusterName,
         string bindToHost = "localhost", int port = 0,
         Func<ActorSystemConfig, ActorSystemConfig>? configureSystem = null,
-        Func<GrpcNetRemoteConfig, GrpcNetRemoteConfig>? configureRemote = null,
+        Func<RemoteConfig, RemoteConfig>? configureRemote = null,
         Func<ClusterConfig, ClusterConfig>? configureCluster = null,
         IClusterProvider? clusterProvider = null,
         IIdentityLookup? identityLookup = null,
@@ -92,7 +93,7 @@ public static class ServiceCollectionExtensions
             var s = new ActorSystemConfig();
             s = configureSystem?.Invoke(s) ?? s;
 
-            var r = GrpcNetRemoteConfig.BindTo(bindToHost, port);
+            var r = RemoteConfig.BindTo(bindToHost, port);
             r = configureRemote?.Invoke(r) ?? r;
             identityLookup ??= new PartitionIdentityLookup();
             if (clusterProvider is null)

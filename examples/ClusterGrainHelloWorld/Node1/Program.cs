@@ -13,6 +13,7 @@ using Proto.Cluster.PartitionActivator;
 using Proto.Cluster.Seed;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 using static Proto.CancellationTokens;
 using ProtosReflection = ClusterHelloWorld.Messages.ProtosReflection;
 
@@ -23,7 +24,7 @@ Log.SetLoggerFactory(
 // AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
 var system = new ActorSystem()
-    .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
+    .WithRemote(RemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor))
     .WithCluster(ClusterConfig
         .Setup("MyCluster",
             FixedServerSeedNode.JoinSeedNode("localhost", 8090),

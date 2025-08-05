@@ -25,7 +25,7 @@ public sealed class RemoteMessageHandler
     private readonly IRootContext _sendContext;
 
     public RemoteMessageHandler(EndpointManager endpointManager, ActorSystem system, Serialization serialization,
-        RemoteConfigBase remoteConfig)
+        RemoteConfig remoteConfig)
     {
         _endpointManager = endpointManager;
         _system = system;

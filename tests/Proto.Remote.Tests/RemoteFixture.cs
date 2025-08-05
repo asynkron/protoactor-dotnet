@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
+using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using Xunit;
 
@@ -55,13 +56,13 @@ public abstract class RemoteFixture : IRemoteFixture
         );
 
     protected static TRemoteConfig ConfigureServerRemoteConfig<TRemoteConfig>(TRemoteConfig serverRemoteConfig)
-        where TRemoteConfig : RemoteConfigBase =>
+        where TRemoteConfig : RemoteConfig =>
         serverRemoteConfig
             .WithProtoMessages(Messages.ProtosReflection.Descriptor)
             .WithRemoteKinds(("EchoActor", EchoActorProps));
 
     protected static TRemoteConfig ConfigureClientRemoteConfig<TRemoteConfig>(TRemoteConfig clientRemoteConfig)
-        where TRemoteConfig : RemoteConfigBase =>
+        where TRemoteConfig : RemoteConfig =>
         clientRemoteConfig
             .WithEndpointWriterMaxRetries(2)
             .WithEndpointWriterRetryBackOff(TimeSpan.FromMilliseconds(10))
@@ -69,7 +70,7 @@ public abstract class RemoteFixture : IRemoteFixture
             .WithProtoMessages(Messages.ProtosReflection.Descriptor)
             .WithRemoteKinds(("EchoActor", EchoActorProps));
 
-    protected static (IHost, HostedGrpcNetRemote) GetHostedGrpcNetRemote(GrpcNetRemoteConfig config)
+    protected static (IHost, HostedGrpcNetRemote) GetHostedGrpcNetRemote(RemoteConfig config)
     {
 #if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -117,7 +118,7 @@ public abstract class RemoteFixture : IRemoteFixture
         return (host, host.Services.GetRequiredService<HostedGrpcNetRemote>());
     }
 
-    protected static GrpcNetRemote GetGrpcNetRemote(GrpcNetRemoteConfig config)
+    protected static GrpcNetRemote GetGrpcNetRemote(RemoteConfig config)
     {
 #if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -125,7 +126,7 @@ public abstract class RemoteFixture : IRemoteFixture
         return new GrpcNetRemote(new ActorSystem(), config);
     }
 
-    protected static GrpcNetClientRemote GetGrpcNetClientRemote(GrpcNetRemoteConfig config)
+    protected static GrpcNetClientRemote GetGrpcNetClientRemote(RemoteConfig config)
     {
 #if NETCOREAPP3_1
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);

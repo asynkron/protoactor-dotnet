@@ -17,7 +17,7 @@ public static class Extensions
     /// <summary>
     ///     Channel options for the gRPC channel
     /// </summary>
-    public static GrpcNetRemoteConfig WithChannelOptions(this GrpcNetRemoteConfig config, GrpcChannelOptions options) =>
+    public static RemoteConfig WithChannelOptions(this RemoteConfig config, GrpcChannelOptions options) =>
         config with { ChannelOptions = options };
 
     /// <summary>
@@ -25,7 +25,7 @@ public static class Extensions
     ///     listens on.
     ///     By default, the first address is used.
     /// </summary>
-    public static GrpcNetRemoteConfig WithUriChooser(this GrpcNetRemoteConfig config,
+    public static RemoteConfig WithUriChooser(this RemoteConfig config,
         Func<IEnumerable<Uri>?, Uri?> uriChooser) =>
         config with { UriChooser = uriChooser };
 
@@ -37,7 +37,7 @@ public static class Extensions
     /// <param name="system"></param>
     /// <param name="remoteConfig">Remote extension config</param>
     /// <returns></returns>
-    public static ActorSystem WithRemote(this ActorSystem system, GrpcNetRemoteConfig remoteConfig)
+    public static ActorSystem WithRemote(this ActorSystem system, RemoteConfig remoteConfig)
     {
         var _ = new GrpcNetRemote(system, remoteConfig);
 
@@ -53,7 +53,7 @@ public static class Extensions
     /// <param name="system"></param>
     /// <param name="remoteConfig">Remote extension config</param>
     /// <returns></returns>
-    public static ActorSystem WithClientRemote(this ActorSystem system, GrpcNetRemoteConfig remoteConfig)
+    public static ActorSystem WithClientRemote(this ActorSystem system, RemoteConfig remoteConfig)
     {
         var _ = new GrpcNetClientRemote(system, remoteConfig);
 
@@ -61,7 +61,7 @@ public static class Extensions
     }
 
     internal static IServiceCollection AddRemote(this IServiceCollection services,
-        Func<IServiceProvider, GrpcNetRemoteConfig> configure)
+        Func<IServiceProvider, RemoteConfig> configure)
     {
         services.AddSingleton(configure);
         AddAllServices(services);
@@ -71,7 +71,7 @@ public static class Extensions
 
     internal static IServiceCollection AddRemote(
         this IServiceCollection services,
-        GrpcNetRemoteConfig config
+        RemoteConfig config
     )
     {
         services.AddSingleton(config);
@@ -82,7 +82,7 @@ public static class Extensions
 
     internal static IServiceCollection AddClientRemote(
         this IServiceCollection services,
-        GrpcNetRemoteConfig config
+        RemoteConfig config
     )
     {
         services.AddSingleton(config);
@@ -101,11 +101,8 @@ public static class Extensions
         services.AddSingleton<IRemote, HostedGrpcNetRemote>(sp => sp.GetRequiredService<HostedGrpcNetRemote>());
         services.AddSingleton<EndpointManager>();
 
-        services.AddSingleton<RemoteConfigBase, GrpcNetRemoteConfig>(sp =>
-            sp.GetRequiredService<GrpcNetRemoteConfig>());
-
         services.AddSingleton<EndpointReader, EndpointReader>();
-        services.AddSingleton(sp => sp.GetRequiredService<GrpcNetRemoteConfig>().Serialization);
+        services.AddSingleton(sp => sp.GetRequiredService<RemoteConfig>().Serialization);
         services.AddSingleton<Remoting.RemotingBase, EndpointReader>(sp => sp.GetRequiredService<EndpointReader>());
     }
 

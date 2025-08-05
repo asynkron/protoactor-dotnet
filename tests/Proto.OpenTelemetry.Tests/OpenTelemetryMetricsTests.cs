@@ -98,7 +98,7 @@ public class OpenTelemetryMetricsTests : IAsyncLifetime
 
         var cluster = system
             .WithRemote(
-                GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor)
+                RemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor)
             )
             .WithCluster(
                 ClusterConfig.Setup(

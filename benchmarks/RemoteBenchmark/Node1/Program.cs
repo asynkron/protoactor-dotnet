@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 using ProtosReflection = Messages.ProtosReflection;
 
 class Program
@@ -67,7 +68,7 @@ class Program
 
         IRemote remote;
 
-        var remoteConfig = GrpcNetRemoteConfig
+        var remoteConfig = RemoteConfig
             .BindTo(advertisedHost)
             .WithChannelOptions(
                 new GrpcChannelOptions

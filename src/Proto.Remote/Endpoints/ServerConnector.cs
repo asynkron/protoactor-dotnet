@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
-using Proto.Remote.GrpcNet;
 using Proto.Remote.Metrics;
 
 namespace Proto.Remote;
@@ -36,13 +35,13 @@ public sealed class ServerConnector
     private readonly int _maxNrOfRetries;
     private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
     private readonly Random _random = new();
-    private readonly GrpcNetRemoteConfig _remoteConfig;
+    private readonly RemoteConfig _remoteConfig;
     private readonly RemoteMessageHandler _remoteMessageHandler;
     private readonly Task _runner;
     private readonly ActorSystem _system;
 
     public ServerConnector(string address, Type connectorType, IEndpoint endpoint,
-        ActorSystem system, GrpcNetRemoteConfig remoteConfig, RemoteMessageHandler remoteMessageHandler)
+        ActorSystem system, RemoteConfig remoteConfig, RemoteMessageHandler remoteMessageHandler)
     {
         _system = system;
         _remoteConfig = remoteConfig;

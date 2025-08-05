@@ -8,7 +8,7 @@ public interface IRemote : IActorSystemExtension<IRemote>
     /// <summary>
     ///     Remote extension configuration
     /// </summary>
-    RemoteConfigBase Config { get; }
+    RemoteConfig Config { get; }
 
     /// <summary>
     ///     Actor system that this extension is attached to

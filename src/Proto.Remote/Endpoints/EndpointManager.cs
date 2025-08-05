@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Diagnostics;
 using Proto.Mailbox;
-using Proto.Remote.GrpcNet;
 
 namespace Proto.Remote;
 
@@ -27,12 +26,12 @@ public sealed class EndpointManager : IDiagnosticsProvider
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly ConcurrentDictionary<string, IEndpoint> _clientEndpoints = new();
     private readonly EventStreamSubscription<object>? _endpointTerminatedEvnSub;
-    private readonly RemoteConfigBase _remoteConfig;
+    private readonly RemoteConfig _remoteConfig;
     private readonly ConcurrentDictionary<string, IEndpoint> _serverEndpoints = new();
     private readonly object _synLock = new();
     private readonly ActorSystem _system;
 
-    public EndpointManager(ActorSystem system, RemoteConfigBase remoteConfig)
+    public EndpointManager(ActorSystem system, RemoteConfig remoteConfig)
     {
         _system = system;
         _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(_system, this, pid));
@@ -195,7 +194,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
                 }
 
                 endpoint = _serverEndpoints.GetOrAdd(address,
-                    v => new ServerEndpoint(_system, (GrpcNetRemoteConfig)_remoteConfig, v,
+                    v => new ServerEndpoint(_system, _remoteConfig, v,
                         ServerConnector.Type.ClientSide, RemoteMessageHandler));
             }
             else
@@ -207,7 +206,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
                 }
 
                 endpoint = _serverEndpoints.GetOrAdd(address,
-                    v => new ServerEndpoint(_system, (GrpcNetRemoteConfig)_remoteConfig, v,
+                    v => new ServerEndpoint(_system, _remoteConfig, v,
                         ServerConnector.Type.ServerSide, RemoteMessageHandler));
             }
 

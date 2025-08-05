@@ -16,6 +16,7 @@ using Proto.Cluster.SeedNode.Redis;
 using Proto.Context;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 using StackExchange.Redis;
 using static Proto.CancellationTokens;
 using ProtosReflection = ClusterHelloWorld.Messages.ProtosReflection;
@@ -43,7 +44,7 @@ class Program
                 )
         )
             .WithRemote(
-                GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor)
+                RemoteConfig.BindToLocalhost().WithProtoMessages(ProtosReflection.Descriptor)
             )
             .WithCluster(
                 ClusterConfig.Setup(

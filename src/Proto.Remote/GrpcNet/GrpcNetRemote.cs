@@ -16,7 +16,7 @@ namespace Proto.Remote.GrpcNet;
 
 public class GrpcNetRemote : IRemote
 {
-    private readonly GrpcNetRemoteConfig _config;
+    private readonly RemoteConfig _config;
     private readonly object _lock = new();
     private readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
     private EndpointManager _endpointManager = null!;
@@ -24,7 +24,7 @@ public class GrpcNetRemote : IRemote
     private HealthServiceImpl _healthCheck = null!;
     private IWebHost? _host;
 
-    public GrpcNetRemote(ActorSystem system, GrpcNetRemoteConfig config)
+    public GrpcNetRemote(ActorSystem system, RemoteConfig config)
     {
         System = system;
         BlockList = new BlockList(system);
@@ -37,7 +37,7 @@ public class GrpcNetRemote : IRemote
 
     public BlockList BlockList { get; }
 
-    public RemoteConfigBase Config => _config;
+    public RemoteConfig Config => _config;
     public ActorSystem System { get; }
 
     public async Task<DiagnosticsEntry[]> GetDiagnostics()

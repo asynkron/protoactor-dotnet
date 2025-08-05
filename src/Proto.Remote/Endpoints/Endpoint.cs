@@ -31,10 +31,10 @@ public abstract class Endpoint : IEndpoint
     private readonly object _synLock = new();
     private readonly Dictionary<string, HashSet<PID>> _watchedActors = new();
     protected readonly string RemoteAddress;
-    protected readonly RemoteConfigBase RemoteConfig;
+    protected readonly RemoteConfig RemoteConfig;
     protected readonly ActorSystem System;
 
-    internal Endpoint(string remoteAddress, ActorSystem system, RemoteConfigBase remoteConfig)
+    internal Endpoint(string remoteAddress, ActorSystem system, RemoteConfig remoteConfig)
     {
         RemoteAddress = remoteAddress;
         System = system;

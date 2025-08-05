@@ -23,7 +23,7 @@ public static class RemoteConfigExtensions
     /// </summary>
     /// <param name="remoteConfig"></param>
     /// <returns></returns>
-    public static string[] GetRemoteKinds(this RemoteConfigBase remoteConfig) =>
+    public static string[] GetRemoteKinds(this RemoteConfig remoteConfig) =>
         remoteConfig.RemoteKinds.Keys.ToArray();
 
     /// <summary>
@@ -33,7 +33,7 @@ public static class RemoteConfigExtensions
     /// <param name="kind">Actor kind to get</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public static Props GetRemoteKind(this RemoteConfigBase remoteConfig, string kind)
+    public static Props GetRemoteKind(this RemoteConfig remoteConfig, string kind)
     {
         if (!remoteConfig.RemoteKinds.TryGetValue(kind, out var props))
         {
@@ -47,7 +47,7 @@ public static class RemoteConfigExtensions
     ///     Sets the CallOptions for the gRPC channel.
     /// </summary>
     public static TRemoteConfig WithCallOptions<TRemoteConfig>(this TRemoteConfig remoteConfig, CallOptions options)
-        where TRemoteConfig : RemoteConfigBase =>
+        where TRemoteConfig : RemoteConfig =>
         remoteConfig with { CallOptions = options };
 
     /// <summary>
@@ -61,7 +61,7 @@ public static class RemoteConfigExtensions
     /// <returns></returns>
     public static TRemoteConfig WithAdvertisedHost<TRemoteConfig>(this TRemoteConfig remoteConfig,
         string? advertisedHostname)
-        where TRemoteConfig : RemoteConfigBase =>
+        where TRemoteConfig : RemoteConfig =>
         remoteConfig with { AdvertisedHost = advertisedHostname };
 
     /// <summary>
@@ -74,7 +74,7 @@ public static class RemoteConfigExtensions
     /// <param name="advertisedPort"></param>
     /// <returns></returns>
     public static TRemoteConfig WithAdvertisedPort<TRemoteConfig>(this TRemoteConfig remoteConfig, int? advertisedPort)
-        where TRemoteConfig : RemoteConfigBase =>
+        where TRemoteConfig : RemoteConfig =>
         remoteConfig with { AdvertisedPort = advertisedPort };
 
     /// <summary>
@@ -83,7 +83,7 @@ public static class RemoteConfigExtensions
     /// </summary>
     public static TRemoteConfig WithEndpointWriterBatchSize<TRemoteConfig>(this TRemoteConfig remoteConfig,
         int endpointWriterBatchSize)
-        where TRemoteConfig : RemoteConfigBase
+        where TRemoteConfig : RemoteConfig
     {
         remoteConfig.EndpointWriterOptions.EndpointWriterBatchSize = endpointWriterBatchSize;
 
@@ -95,7 +95,7 @@ public static class RemoteConfigExtensions
     /// </summary>
     public static TRemoteConfig WithEndpointWriterMaxRetries<TRemoteConfig>(this TRemoteConfig remoteConfig,
         int endpointWriterMaxRetries)
-        where TRemoteConfig : RemoteConfigBase
+        where TRemoteConfig : RemoteConfig
     {
         remoteConfig.EndpointWriterOptions.MaxRetries = endpointWriterMaxRetries;
 
@@ -111,7 +111,7 @@ public static class RemoteConfigExtensions
         this TRemoteConfig remoteConfig,
         TimeSpan endpointWriterRetryTimeSpan
     )
-        where TRemoteConfig : RemoteConfigBase
+        where TRemoteConfig : RemoteConfig
     {
         remoteConfig.EndpointWriterOptions.RetryTimeSpan = endpointWriterRetryTimeSpan;
 
@@ -126,7 +126,7 @@ public static class RemoteConfigExtensions
         this TRemoteConfig remoteConfig,
         TimeSpan endpointWriterRetryBackoff
     )
-        where TRemoteConfig : RemoteConfigBase
+        where TRemoteConfig : RemoteConfig
     {
         remoteConfig.EndpointWriterOptions.RetryBackOff = endpointWriterRetryBackoff;
 
@@ -143,14 +143,14 @@ public static class RemoteConfigExtensions
     /// <example>
     ///     Assuming that you have a proto file called "MyMessages.proto" and it is properly wired in the csproj file:
     ///     <code>
-    /// var remoteConfig = GrpcNetRemoteConfig
+    /// var remoteConfig = RemoteConfig
     ///    .BindToAllInterfaces()
     ///    .WithProtoMessages(MyMessagesReflection.Descriptor);
     /// </code>
     /// </example>
     public static TRemoteConfig WithProtoMessages<TRemoteConfig>(this TRemoteConfig remoteConfig,
         params FileDescriptor[] fileDescriptors)
-        where TRemoteConfig : RemoteConfigBase
+        where TRemoteConfig : RemoteConfig
     {
         foreach (var fd in fileDescriptors)
         {
@@ -169,7 +169,7 @@ public static class RemoteConfigExtensions
     /// <typeparam name="TRemoteConfig"></typeparam>
     /// <returns></returns>
     public static TRemoteConfig WithRemoteKind<TRemoteConfig>(this TRemoteConfig remoteConfig, string kind, Props prop)
-        where TRemoteConfig : RemoteConfigBase =>
+        where TRemoteConfig : RemoteConfig =>
         remoteConfig with { RemoteKinds = remoteConfig.RemoteKinds.Add(kind, prop) };
 
     /// <summary>
@@ -181,7 +181,7 @@ public static class RemoteConfigExtensions
     /// <returns></returns>
     public static TRemoteConfig WithRemoteKinds<TRemoteConfig>(this TRemoteConfig remoteConfig,
         params (string kind, Props prop)[] knownKinds)
-        where TRemoteConfig : RemoteConfigBase =>
+        where TRemoteConfig : RemoteConfig =>
         remoteConfig with
         {
             RemoteKinds =
@@ -207,7 +207,7 @@ public static class RemoteConfigExtensions
     /// <returns></returns>
     public static TRemoteConfig WithSerializer<TRemoteConfig>(this TRemoteConfig remoteConfig, int serializerId,
         int priority, ISerializer serializer)
-        where TRemoteConfig : RemoteConfigBase
+        where TRemoteConfig : RemoteConfig
     {
         remoteConfig.Serialization.RegisterSerializer(serializerId, priority, serializer);
 
@@ -223,7 +223,7 @@ public static class RemoteConfigExtensions
     /// <returns></returns>
     public static TRemoteConfig WithJsonSerializerOptions<TRemoteConfig>(this TRemoteConfig remoteConfig,
         JsonSerializerOptions options)
-        where TRemoteConfig : RemoteConfigBase
+        where TRemoteConfig : RemoteConfig
     {
         remoteConfig.Serialization.JsonSerializerOptions = options;
 
@@ -239,13 +239,13 @@ public static class RemoteConfigExtensions
     /// <returns></returns>
     public static TRemoteConfig WithLogLevelForDeserializationErrors<TRemoteConfig>(this TRemoteConfig remoteConfig,
         LogLevel level)
-        where TRemoteConfig : RemoteConfigBase =>
+        where TRemoteConfig : RemoteConfig =>
         remoteConfig with { DeserializationErrorLogLevel = level };
 
     /// <summary>
     ///     Enables remote retrieval of process information and statistics from this node
     /// </summary>
     public static TRemoteConfig WithRemoteDiagnostics<TRemoteConfig>(this TRemoteConfig remoteConfig, bool enabled)
-        where TRemoteConfig : RemoteConfigBase =>
+        where TRemoteConfig : RemoteConfig =>
         remoteConfig with { RemoteDiagnostics = enabled };
 }

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
-using static Proto.Remote.GrpcNet.GrpcNetRemoteConfig;
+using static Proto.Remote.RemoteConfig;
 using Common;
 
 var certificate = new X509Certificate2("../localhost.pfx", "password");
