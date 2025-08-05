@@ -12,8 +12,8 @@ namespace Proto.Remote;
 
 public interface IEndpoint : IAsyncDisposable
 {
-    Channel<RemoteMessage> Outgoing { get; }
-    ConcurrentStack<RemoteMessage> OutgoingStash { get; }
+    Channel<RemoteDeliver[]> Outgoing { get; }
+    ConcurrentStack<RemoteDeliver[]> OutgoingStash { get; }
     bool IsActive { get; }
 
     void SendMessage(PID pid, object message);

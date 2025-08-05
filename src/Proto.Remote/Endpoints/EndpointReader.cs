@@ -251,15 +251,18 @@ public sealed class EndpointReader : Remoting.RemotingBase
             {
                 //consume stash
                 while (!cancellationTokenSource.Token.IsCancellationRequested &&
-                       endpoint.OutgoingStash.TryPop(out var message))
+                       endpoint.OutgoingStash.TryPop(out var messages))
                 {
+                    var batch = ((Endpoint)endpoint).CreateBatch(messages);
+
                     try
                     {
-                        await responseStream.WriteAsync(message).ConfigureAwait(false);
+                        await responseStream.WriteAsync(new RemoteMessage { MessageBatch = batch })
+                            .ConfigureAwait(false);
                     }
                     catch (Exception)
                     {
-                        _ = endpoint.OutgoingStash.Append(message);
+                        _ = endpoint.OutgoingStash.Append(messages);
 
                         throw;
                     }
@@ -268,17 +271,19 @@ public sealed class EndpointReader : Remoting.RemotingBase
                 //
                 while (endpoint.OutgoingStash.IsEmpty && !cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    var message = await endpoint.Outgoing.Reader.ReadAsync(cancellationTokenSource.Token)
+                    var messages = await endpoint.Outgoing.Reader.ReadAsync(cancellationTokenSource.Token)
                         .ConfigureAwait(false);
+
+                    var batch = ((Endpoint)endpoint).CreateBatch(messages);
 
                     try
                     {
-                        // Logger.LogInformation($"Sending {message}");
-                        await responseStream.WriteAsync(message).ConfigureAwait(false);
+                        await responseStream.WriteAsync(new RemoteMessage { MessageBatch = batch })
+                            .ConfigureAwait(false);
                     }
                     catch (Exception)
                     {
-                        _ = endpoint.OutgoingStash.Append(message);
+                        _ = endpoint.OutgoingStash.Append(messages);
 
                         throw;
                     }
