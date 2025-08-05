@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Reflection;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Proto;
@@ -52,8 +51,7 @@ public class GossipRequestValidationTests
         var blocked = clusterFixture.Members[1];
 
         var blockList = target.System.Remote().BlockList;
-        var blockMethod = typeof(BlockList).GetMethod("Block", BindingFlags.Instance | BindingFlags.NonPublic);
-        blockMethod!.Invoke(blockList, new object[] { new[] { blocked.System.Id }, "test" });
+        blockList.Block(new[] { blocked.System.Id }, "test");
 
         var pid = PID.FromAddress(target.System.Address, Gossiper.GossipActorName);
         var response = await target.System.Root.RequestAsync<GossipResponse>(
