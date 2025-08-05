@@ -136,6 +136,72 @@ public class GossipTests
 
     }
 
+    [Fact]
+    public async Task Gossip_should_replicate_large_state_with_small_batches()
+    {
+        const int memberCount = 5;
+        const int fanout = 2;
+        const int maxSend = 2;
+        const int keysPerMember = 5;
+
+        var clusterFixture = new GossipClusterFixture(memberCount, fanout, maxSend);
+        await using var _ = clusterFixture;
+        await clusterFixture.InitializeAsync();
+
+        var expected = clusterFixture.Members.ToDictionary(
+            m => m.System.Id,
+            _ => new Dictionary<string, string>()
+        );
+
+        foreach (var (member, index) in clusterFixture.Members.Select((m, i) => (m, i)))
+        {
+            for (var i = 0; i < keysPerMember; i++)
+            {
+                var key = $"k{index}-{i}";
+                var value = $"v{index}-{i}";
+                await member.Gossip.SetStateAsync(key, new SomeGossipState { Key = value });
+                expected[member.System.Id][key] = value;
+            }
+        }
+
+        var ct = CancellationTokens.FromSeconds(20);
+        while (!ct.IsCancellationRequested && !await AllReplicated())
+        {
+            await Task.Delay(50, ct);
+        }
+
+        (await AllReplicated()).Should().BeTrue();
+
+        async Task<bool> AllReplicated()
+        {
+            var snap = await clusterFixture.Members[0].Gossip.GetStateSnapshot();
+            if (snap.Members.Count != memberCount)
+            {
+                return false;
+            }
+
+            foreach (var (ownerId, kvs) in expected)
+            {
+                if (!snap.Members.TryGetValue(ownerId, out var ms))
+                {
+                    return false;
+                }
+
+                foreach (var (key, value) in kvs)
+                {
+                    if (!ms.Values.TryGetValue(key, out var any) ||
+                        !any.Value.TryUnpack<SomeGossipState>(out var state) ||
+                        state.Key != value)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
+
     private static async Task ShouldBeInConsensusAboutValue(List<IConsensusHandle<string>> consensusChecks,
         string initialValue)
     {
@@ -201,5 +267,16 @@ public class GossipTests
         using var check = CreateConsensusCheck(member);
 
         return await check.TryGetConsensus(timeout, CancellationToken.None);
+    }
+
+    private sealed class GossipClusterFixture : BaseInMemoryClusterFixture
+    {
+        public GossipClusterFixture(int clusterSize, int fanout, int maxSend)
+            : base(clusterSize, config => config
+                .WithActorRequestTimeout(TimeSpan.FromSeconds(4))
+                .WithGossipFanOut(fanout)
+                .WithGossipMaxSend(maxSend))
+        {
+        }
     }
 }
