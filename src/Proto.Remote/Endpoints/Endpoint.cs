@@ -196,7 +196,7 @@ public abstract class Endpoint : IEndpoint
 
                 for (var i = 0; i < batch.Targets.Count; i++)
                 {
-                    var target = new PID(System.Address, batch.Targets[i]);
+                    var target = new PID(RemoteAddress, batch.Targets[i]);
 
                     if (target.TryTranslateToLocalClientPID(out var pid))
                     {
@@ -215,7 +215,7 @@ public abstract class Endpoint : IEndpoint
 
                     if (string.IsNullOrEmpty(s.Address))
                     {
-                        s.Address = RemoteAddress;
+                        s.Address = System.Address;
                     }
 
                     s.Ref(System);
