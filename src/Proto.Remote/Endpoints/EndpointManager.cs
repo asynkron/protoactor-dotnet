@@ -39,7 +39,8 @@ public sealed class EndpointManager : IDiagnosticsProvider
         _remoteConfig = remoteConfig;
 
         _endpointTerminatedEvnSub =
-            _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated, Dispatchers.DefaultDispatcher);
+            _system.EventStream
+            .Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated, Dispatchers.DefaultDispatcher);
 
         _blockedEndpoint = new BlockedEndpoint(system);
         RemoteMessageHandler = new RemoteMessageHandler(this, _system, _remoteConfig.Serialization, _remoteConfig);
