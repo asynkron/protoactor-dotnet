@@ -6,7 +6,6 @@
 
 using System;
 using System.Threading.Tasks;
-using Proto.Remote.GrpcNet;
 
 namespace Proto.Remote;
 
@@ -15,7 +14,7 @@ namespace Proto.Remote;
 /// </summary>
     public sealed class ServerEndpoint : Endpoint
     {
-        public ServerEndpoint(ActorSystem system, GrpcNetRemoteConfig remoteConfig, string remoteAddress,
+        public ServerEndpoint(ActorSystem system, RemoteConfig remoteConfig, string remoteAddress,
             ServerConnector.Type type, RemoteMessageHandler remoteMessageHandler) : base(remoteAddress, system, remoteConfig)
         {
             Connector = new ServerConnector(RemoteAddress, type, this, System, remoteConfig, remoteMessageHandler);

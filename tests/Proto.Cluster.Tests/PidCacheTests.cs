@@ -7,6 +7,7 @@ using FluentAssertions;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
+using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using Xunit;
 
@@ -66,7 +67,7 @@ public class PidCacheTests
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
         var system = new ActorSystem()
-            .WithRemote(GrpcNetRemoteConfig.BindToLocalhost())
+            .WithRemote(RemoteConfig.BindToLocalhost())
             .WithCluster(GetClusterConfig());
 
         var cluster = system.Cluster();

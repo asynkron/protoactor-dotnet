@@ -12,10 +12,10 @@ namespace Proto.Remote;
 
 public class Activator : IActor
 {
-    private readonly RemoteConfigBase _remoteConfig;
+    private readonly RemoteConfig _remoteConfig;
     private readonly ActorSystem _system;
 
-    public Activator(RemoteConfigBase remoteConfig, ActorSystem system)
+    public Activator(RemoteConfig remoteConfig, ActorSystem system)
     {
         _remoteConfig = remoteConfig;
         _system = system;

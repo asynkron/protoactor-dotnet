@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Microsoft.Extensions.Hosting;
+using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using Xunit;
 
@@ -43,15 +44,15 @@ public class HostedGrpcNetWithCustomSerializerTests
 
         public Fixture()
         {
-            var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
+            var clientConfig = ConfigureClientRemoteConfig(RemoteConfig.BindToLocalhost())
                 .WithSerializer(2, 1000, new CustomSerializer());
 
             (_clientHost, Remote) = GetHostedGrpcNetRemote(clientConfig);
 
-            var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
+            var serverConfig = ConfigureServerRemoteConfig(RemoteConfig.BindToLocalhost())
                 .WithSerializer(2, 1000, new CustomSerializer());
 
-            var serverConfig2 = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
+            var serverConfig2 = ConfigureServerRemoteConfig(RemoteConfig.BindToLocalhost())
                 .WithSerializer(2, 1000, new CustomSerializer());
 
             (_serverHost, ServerRemote1) = GetHostedGrpcNetRemote(serverConfig);

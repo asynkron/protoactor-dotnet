@@ -352,7 +352,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e); }
         );
 
-        var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
+        var remoteConfig = RemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
         var _ = new GrpcNetRemote(system, remoteConfig);
 
         var cluster = new Cluster(system, config);
@@ -381,7 +381,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e); }
         );
 
-        var remoteConfig = GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
+        var remoteConfig = RemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
         var _ = new GrpcNetRemote(system, remoteConfig);
 
         var cluster = new Cluster(system, config);

@@ -1,3 +1,4 @@
+using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using Xunit;
 
@@ -17,10 +18,10 @@ public class GrpcNetClient_Client_With_GrpcNet_ServerTests
     {
         public Fixture()
         {
-            var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
+            var clientConfig = ConfigureClientRemoteConfig(RemoteConfig.BindToLocalhost());
             Remote = GetGrpcNetClientRemote(clientConfig);
-            var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
-            var serverConfig2 = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
+            var serverConfig = ConfigureServerRemoteConfig(RemoteConfig.BindToLocalhost());
+            var serverConfig2 = ConfigureServerRemoteConfig(RemoteConfig.BindToLocalhost());
             ServerRemote1 = GetGrpcNetRemote(serverConfig);
             ServerRemote2 = GetGrpcNetRemote(serverConfig2);
         }
