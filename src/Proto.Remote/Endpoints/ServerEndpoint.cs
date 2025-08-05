@@ -6,23 +6,22 @@
 
 using System;
 using System.Threading.Tasks;
+using Proto.Remote.GrpcNet;
 
 namespace Proto.Remote;
 
 /// <summary>
 ///     Handles a connection to a remote endpoint.
 /// </summary>
-public sealed class ServerEndpoint : Endpoint
-{
-    public ServerEndpoint(ActorSystem system, RemoteConfigBase remoteConfig, string remoteAddress,
-        IChannelProvider channelProvider, ServerConnector.Type type, RemoteMessageHandler remoteMessageHandler) : base(
-        remoteAddress, system, remoteConfig)
+    public sealed class ServerEndpoint : Endpoint
     {
-        Connector = new ServerConnector(RemoteAddress, type, this, channelProvider, System, RemoteConfig,
-            remoteMessageHandler);
-    }
+        public ServerEndpoint(ActorSystem system, GrpcNetRemoteConfig remoteConfig, string remoteAddress,
+            ServerConnector.Type type, RemoteMessageHandler remoteMessageHandler) : base(remoteAddress, system, remoteConfig)
+        {
+            Connector = new ServerConnector(RemoteAddress, type, this, System, remoteConfig, remoteMessageHandler);
+        }
 
-    public ServerConnector Connector { get; }
+        public ServerConnector Connector { get; }
 
     public override async ValueTask DisposeAsync()
     {

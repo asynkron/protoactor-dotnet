@@ -56,8 +56,7 @@ public class GrpcNetRemote : IRemote
                 return Task.CompletedTask;
             }
 
-            var channelProvider = new GrpcNetChannelProvider(_config);
-            _endpointManager = new EndpointManager(System, Config, channelProvider);
+            _endpointManager = new EndpointManager(System, Config);
             _endpointReader = new EndpointReader(System, _endpointManager);
             _healthCheck = new HealthServiceImpl();
 
