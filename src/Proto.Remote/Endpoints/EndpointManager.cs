@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Diagnostics;
 using Proto.Mailbox;
+using Proto.Remote.GrpcNet;
 
 namespace Proto.Remote;
 
@@ -24,7 +25,6 @@ public sealed class EndpointManager : IDiagnosticsProvider
     private readonly ConcurrentDictionary<string, DateTime> _blockedClientSystemIds = new();
     private readonly IEndpoint _blockedEndpoint;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly IChannelProvider _channelProvider;
     private readonly ConcurrentDictionary<string, IEndpoint> _clientEndpoints = new();
     private readonly EventStreamSubscription<object>? _endpointTerminatedEvnSub;
     private readonly RemoteConfigBase _remoteConfig;
@@ -32,15 +32,15 @@ public sealed class EndpointManager : IDiagnosticsProvider
     private readonly object _synLock = new();
     private readonly ActorSystem _system;
 
-    public EndpointManager(ActorSystem system, RemoteConfigBase remoteConfig, IChannelProvider channelProvider)
+    public EndpointManager(ActorSystem system, RemoteConfigBase remoteConfig)
     {
         _system = system;
         _system.ProcessRegistry.RegisterHostResolver(pid => new RemoteProcess(_system, this, pid));
         _remoteConfig = remoteConfig;
-        _channelProvider = channelProvider;
 
         _endpointTerminatedEvnSub =
-            _system.EventStream.Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated, Dispatchers.DefaultDispatcher);
+            _system.EventStream
+            .Subscribe<EndpointTerminatedEvent>(OnEndpointTerminated, Dispatchers.DefaultDispatcher);
 
         _blockedEndpoint = new BlockedEndpoint(system);
         RemoteMessageHandler = new RemoteMessageHandler(this, _system, _remoteConfig.Serialization, _remoteConfig);
@@ -195,7 +195,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
                 }
 
                 endpoint = _serverEndpoints.GetOrAdd(address,
-                    v => new ServerEndpoint(_system, _remoteConfig, v, _channelProvider,
+                    v => new ServerEndpoint(_system, (GrpcNetRemoteConfig)_remoteConfig, v,
                         ServerConnector.Type.ClientSide, RemoteMessageHandler));
             }
             else
@@ -207,7 +207,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
                 }
 
                 endpoint = _serverEndpoints.GetOrAdd(address,
-                    v => new ServerEndpoint(_system, _remoteConfig, v, _channelProvider,
+                    v => new ServerEndpoint(_system, (GrpcNetRemoteConfig)_remoteConfig, v,
                         ServerConnector.Type.ServerSide, RemoteMessageHandler));
             }
 

@@ -32,8 +32,7 @@ public class GrpcNetClientRemote : IRemote
         System.Extensions.Register(config.Serialization);
         System.Diagnostics.RegisterObject("Remote", "Config", Config);
         config.Serialization.Init(system);
-        var channelProvider = new GrpcNetChannelProvider(_config);
-        _endpointManager = new EndpointManager(System, Config, channelProvider);
+        _endpointManager = new EndpointManager(System, Config);
     }
 
     public RemoteConfigBase Config => _config;

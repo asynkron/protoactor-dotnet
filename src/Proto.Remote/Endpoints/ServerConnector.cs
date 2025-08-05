@@ -11,7 +11,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
+using Proto.Remote.GrpcNet;
 using Proto.Remote.Metrics;
 
 namespace Proto.Remote;
@@ -26,7 +28,6 @@ public sealed class ServerConnector
 
     private readonly string _address;
     private readonly TimeSpan _backoff;
-    private readonly IChannelProvider _channelProvider;
     private readonly Type _connectorType;
     private readonly CancellationTokenSource _cts = new();
     private readonly IEndpoint _endpoint;
@@ -35,15 +36,14 @@ public sealed class ServerConnector
     private readonly int _maxNrOfRetries;
     private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
     private readonly Random _random = new();
-    private readonly RemoteConfigBase _remoteConfig;
+    private readonly GrpcNetRemoteConfig _remoteConfig;
     private readonly RemoteMessageHandler _remoteMessageHandler;
     private readonly Task _runner;
     private readonly ActorSystem _system;
 
-    public ServerConnector(string address, Type connectorType, IEndpoint endpoint, IChannelProvider channelProvider,
-        ActorSystem system, RemoteConfigBase remoteConfig, RemoteMessageHandler remoteMessageHandler)
+    public ServerConnector(string address, Type connectorType, IEndpoint endpoint,
+        ActorSystem system, GrpcNetRemoteConfig remoteConfig, RemoteMessageHandler remoteMessageHandler)
     {
-        _channelProvider = channelProvider;
         _system = system;
         _remoteConfig = remoteConfig;
         _remoteMessageHandler = remoteMessageHandler;
@@ -80,7 +80,9 @@ public sealed class ServerConnector
                 _logger.LogInformation("[ServerConnector][{SystemAddress}] Connecting to {Address}", _system.Address,
                     _address);
 
-                var channel = _channelProvider.GetChannel(_address);
+                var addressWithProtocol =
+                    $"{(_remoteConfig.UseHttps ? "https://" : "http://")}{_address}";
+                var channel = GrpcChannel.ForAddress(addressWithProtocol, _remoteConfig.ChannelOptions);
                 var client = new Remoting.RemotingClient(channel);
                 using var call = client.Receive(_remoteConfig.CallOptions);
 
