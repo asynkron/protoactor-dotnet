@@ -17,6 +17,7 @@ using Proto.Cluster.Kubernetes;
 using Proto.Cluster.PartitionActivator;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 using static System.Threading.Tasks.Task;
 using ProtosReflection = ClusterHelloWorld.Messages.ProtosReflection;
 
@@ -40,7 +41,7 @@ var kubernetesProvider = new KubernetesProvider();
 var advertisedHost = await kubernetesProvider.GetPodFqdn();
 
 var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
-    .WithRemote(GrpcNetRemoteConfig
+    .WithRemote(RemoteConfig
         .BindToAllInterfaces(advertisedHost: advertisedHost, port: 4020)
         .WithProtoMessages(ProtosReflection.Descriptor))
     .WithCluster(ClusterConfig

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
-using static Proto.Remote.GrpcNet.GrpcNetRemoteConfig;
+using static Proto.Remote.RemoteConfig;
 
 Log.SetLoggerFactory(LoggerFactory.Create(c => c
     .SetMinimumLevel(LogLevel.Information)

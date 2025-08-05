@@ -3,7 +3,7 @@
 // using System.Threading.Tasks;
 // using Divergic.Logging.Xunit;
 // using Microsoft.Extensions.Logging;
-// using Proto.Remote.GrpcNet;
+// using Proto.Remote;
 // using Proto.Remote.Tests.Messages;
 // using Xunit;
 // using Xunit.Abstractions;
@@ -22,7 +22,7 @@
 //         [Fact, DisplayTestMethodName]
 //         public async Task CanRecoverFromConnectionFailureAsync()
 //         {
-//             var system = new ActorSystem().WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(Tests.Messages.ProtosReflection.Descriptor));
+//             var system = new ActorSystem().WithRemote(RemoteConfig.BindToLocalhost().WithProtoMessages(Tests.Messages.ProtosReflection.Descriptor));
 //             await system.Remote().StartAsync();
 //             
 //             var logger = Log.CreateLogger("ConnectionFail");
@@ -71,7 +71,7 @@
 //         [Fact, DisplayTestMethodName]
 //         public async Task MessagesGoToDeadLetterAfterConnectionFail()
 //         {
-//             var system = new ActorSystem().WithRemote(GrpcNetRemoteConfig.BindToLocalhost());
+//             var system = new ActorSystem().WithRemote(RemoteConfig.BindToLocalhost());
 //             await system.Remote().StartAsync();
 //             var logger = Log.CreateLogger("ConnectionFail");
 //

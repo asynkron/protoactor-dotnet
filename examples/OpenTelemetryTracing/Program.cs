@@ -9,6 +9,7 @@ using Proto;
 using Proto.OpenTelemetry;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 
 var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 Log.SetLoggerFactory(loggerFactory);
@@ -19,8 +20,8 @@ using var tracerProvider = Sdk.CreateTracerProviderBuilder()
     .AddJaegerExporter()
     .Build();
 
-var system1 = new ActorSystem().WithRemote(GrpcNetRemoteConfig.BindToLocalhost(12000));
-var system2 = new ActorSystem().WithRemote(GrpcNetRemoteConfig.BindToLocalhost(12001));
+var system1 = new ActorSystem().WithRemote(RemoteConfig.BindToLocalhost(12000));
+var system2 = new ActorSystem().WithRemote(RemoteConfig.BindToLocalhost(12001));
 
 await system1.Remote().StartAsync();
 await system2.Remote().StartAsync();

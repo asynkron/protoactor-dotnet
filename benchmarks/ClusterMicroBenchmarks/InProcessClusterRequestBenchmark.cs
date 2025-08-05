@@ -11,6 +11,7 @@ using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
+using Proto.Remote;
 using Proto.Remote.GrpcNet;
 
 namespace ClusterMicroBenchmarks;
@@ -56,7 +57,7 @@ public class InProcessClusterRequestBenchmark
         }
 
         var sys = new ActorSystem(new ActorSystemConfig { SharedFutures = SharedFutures })
-            .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))
+            .WithRemote(RemoteConfig.BindToLocalhost(9090))
             .WithCluster(ClusterConfig().WithClusterKind(echoKind));
 
         pid = sys.Root.SpawnNamed(echoProps, "thing");

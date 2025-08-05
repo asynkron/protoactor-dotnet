@@ -12,6 +12,7 @@ using Proto.Cluster.PartitionActivator;
 using Proto.DependencyInjection;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 using ProtoActorSut.Shared;
 
 namespace SkyriseMini;
@@ -33,7 +34,7 @@ public static class ProtoActorExtensions
 
             var system = new ActorSystem(actorSystemConfig);
 
-            var remoteConfig = GrpcNetRemoteConfig
+            var remoteConfig = RemoteConfig
                 .BindToLocalhost()
                 .WithProtoMessages(ProtoActorSut.Contracts.ProtosReflection.Descriptor)
                 // .WithChannelOptions(new GrpcChannelOptions

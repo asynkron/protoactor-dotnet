@@ -10,6 +10,7 @@ using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.Redis;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 using StackExchange.Redis;
 
 namespace KafkaVirtualActorIngress;
@@ -111,8 +112,8 @@ internal class Program
     //TODO: Uncomment to enable metrics
     //  .WithMetricsProviders(new StatsdConfigurator(new[] { new Label("service", "my-system-name") }));
 
-    private static GrpcNetRemoteConfig GetRemoteConfig() =>
-        GrpcNetRemoteConfig
+    private static RemoteConfig GetRemoteConfig() =>
+        RemoteConfig
             .BindTo("127.0.0.1")
             //   .WithAdvertisedHost("the hostname or ip of this pod")
             .WithProtoMessages(MyMessagesReflection.Descriptor);

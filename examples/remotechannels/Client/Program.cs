@@ -5,7 +5,7 @@ using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using static System.Threading.Channels.Channel;
-using static Proto.Remote.GrpcNet.GrpcNetRemoteConfig;
+using static Proto.Remote.RemoteConfig;
 
 var system = new ActorSystem().WithRemote(BindToLocalhost());
 await system.Remote().StartAsync();

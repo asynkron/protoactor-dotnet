@@ -19,7 +19,6 @@ using static Proto.CancellationTokens;
 using ProtosReflection = ClusterHelloWorld.Messages.ProtosReflection;
 using System.Runtime.Loader;
 using Microsoft.Extensions.Configuration;
-using Extensions = Proto.Remote.GrpcNet.Extensions;
 
 // Hook SIGTERM to a cancel token to know when k8s is shutting us down
 // hostBuilder should be used in production
@@ -41,7 +40,7 @@ var kubernetesProvider = new KubernetesProvider();
 var advertisedHost = await kubernetesProvider.GetPodFqdn();
 
 var system = new ActorSystem()
-    .WithRemote(GrpcNetRemoteConfig
+    .WithRemote(RemoteConfig
         .BindToAllInterfaces(advertisedHost: advertisedHost, port: 4020)
         .WithProtoMessages(ProtosReflection.Descriptor))
     .WithCluster(ClusterConfig

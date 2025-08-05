@@ -14,6 +14,7 @@ using Proto.Cluster.Partition;
 using Proto.Cluster.Seed;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 using Some.Namespace;
 
 namespace ActorMetrics;
@@ -26,7 +27,7 @@ public static class RunDummyCluster
         Log.SetLoggerFactory(l);
         var config = ActorSystemConfig.Setup().WithMetrics();
 
-        var remoteConfig = GrpcNetRemoteConfig
+        var remoteConfig = RemoteConfig
             .BindToLocalhost()
             .WithProtoMessages(MessagesReflection.Descriptor)
             .WithProtoMessages(SeedContractsReflection.Descriptor);
@@ -55,7 +56,7 @@ public static class RunDummyCluster
 
         var config2 = ActorSystemConfig.Setup().WithMetrics();
 
-        var remoteConfig2 = GrpcNetRemoteConfig
+        var remoteConfig2 = RemoteConfig
             .BindToLocalhost()
             .WithProtoMessages(MessagesReflection.Descriptor)
             .WithProtoMessages(SeedContractsReflection.Descriptor);

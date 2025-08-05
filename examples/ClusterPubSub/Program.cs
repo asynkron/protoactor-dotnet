@@ -9,6 +9,7 @@ using Proto.Cluster.PubSub;
 using Proto.Cluster.Testing;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 using Proto.Timers;
 
 namespace ClusterPubSub;
@@ -42,8 +43,8 @@ internal static class Program
             .WithRemote(GetRemoteConfig())
             .WithCluster(GetClusterConfig());
 
-    private static GrpcNetRemoteConfig GetRemoteConfig() =>
-        GrpcNetRemoteConfig
+    private static RemoteConfig GetRemoteConfig() =>
+        RemoteConfig
             .BindToLocalhost()
             .WithProtoMessages(ProtosReflection.Descriptor);
 

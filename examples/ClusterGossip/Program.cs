@@ -9,6 +9,7 @@ using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 using System.Linq;
 
 namespace ClusterGossip;
@@ -61,7 +62,7 @@ internal static class Program
     private static Cluster CreateCluster(InMemAgent agent)
     {
         var system = new ActorSystem()
-            .WithRemote(GrpcNetRemoteConfig.BindToLocalhost().WithProtoMessages(WrappersReflection.Descriptor))
+            .WithRemote(RemoteConfig.BindToLocalhost().WithProtoMessages(WrappersReflection.Descriptor))
             .WithCluster(
                 ClusterConfig.Setup("gossip-cluster", new TestProvider(new TestProviderOptions(), agent),
                         new PartitionIdentityLookup())

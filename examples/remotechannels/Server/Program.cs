@@ -4,7 +4,7 @@ using Common;
 using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
-using static Proto.Remote.GrpcNet.GrpcNetRemoteConfig;
+using static Proto.Remote.RemoteConfig;
 using static System.Threading.Channels.Channel;
 
 var system = new ActorSystem().WithRemote(BindToLocalhost(8000));

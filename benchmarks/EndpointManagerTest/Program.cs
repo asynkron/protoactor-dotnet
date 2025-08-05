@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.Remote;
 
 namespace EndpointManagerTest;
 
@@ -58,10 +59,10 @@ class Program
 			}
 		});
 		
-		var sys1 = new ActorSystem().WithRemote(GrpcNetRemoteConfig.BindTo("localhost", 12000).WithRemoteKind("noop", Props.FromProducer(() => new NoopActor())));
+		var sys1 = new ActorSystem().WithRemote(RemoteConfig.BindTo("localhost", 12000).WithRemoteKind("noop", Props.FromProducer(() => new NoopActor())));
 		await sys1.Remote().StartAsync();
 		
-		var sys2 = new ActorSystem().WithRemote(GrpcNetRemoteConfig.BindTo("localhost", 12001).WithRemoteKind("noop", Props.FromProducer(() => new NoopActor())));
+		var sys2 = new ActorSystem().WithRemote(RemoteConfig.BindTo("localhost", 12001).WithRemoteKind("noop", Props.FromProducer(() => new NoopActor())));
 		await sys2.Remote().StartAsync();
 		
 		var echoActorOn2 = (await sys1.Remote().SpawnAsync("localhost:12001", "noop", TimeSpan.FromSeconds(1))).Pid;

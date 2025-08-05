@@ -1,6 +1,6 @@
 // using System.Threading.Tasks;
 // using Microsoft.Extensions.Hosting;
-// using Proto.Remote.GrpcNet;
+// using Proto.Remote;
 // using Xunit;
 //
 // // ReSharper disable MethodHasAsyncOverload
@@ -20,10 +20,10 @@
 //
 //             public Fixture()
 //             {
-//                 var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
+//                 var clientConfig = ConfigureClientRemoteConfig(RemoteConfig.BindToLocalhost());
 //                 clientConfig.Serialization.DefaultSerializerId = 1;
 //                 (_clientHost, Remote) = GetHostedGrpcNetRemote(clientConfig);
-//                 var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost());
+//                 var serverConfig = ConfigureServerRemoteConfig(RemoteConfig.BindToLocalhost());
 //                 (_serverHost, ServerRemote) = GetHostedGrpcNetRemote(serverConfig);
 //             }
 //

@@ -73,15 +73,15 @@ public static class Configuration
             .WithGossipFanOut(3);
     }
 
-    private static GrpcNetRemoteConfig GetRemoteConfig()
+    private static RemoteConfig GetRemoteConfig()
     {
         var portStr =
-            Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
+            Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfig.AnyFreePort}";
         var port = int.Parse(portStr);
-        var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfigBase.Localhost;
+        var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfig.Localhost;
         var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
-        var remoteConfig = GrpcNetRemoteConfig
+        var remoteConfig = RemoteConfig
             .BindTo(host, port)
             .WithAdvertisedHost(advertisedHost)
             .WithChannelOptions(

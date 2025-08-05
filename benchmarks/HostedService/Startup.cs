@@ -12,6 +12,7 @@ using Proto.Cluster;
 using Proto.Cluster.Consul;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Identity.MongoDb;
+using Proto.Remote;
 using Proto.Remote.GrpcNet;
 
 namespace HostedService;
@@ -49,7 +50,7 @@ public class Startup
                 .WithDeadLetterThrottleCount(3)
                 .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
         )
-            .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))
+            .WithRemote(RemoteConfig.BindToLocalhost(9090))
             .WithCluster(
                 ClusterConfig
                     .Setup("test", clusterProvider, identityLookup)
