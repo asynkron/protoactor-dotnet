@@ -149,7 +149,8 @@ public class Gossiper
 
         if (_pid == null)
         {
-            Logger.LogError("Gossiper is not started, cannot set state");
+            // Use generated logging for attempts to set state before startup
+            Logger.GossiperNotStartedCannotSetState(key);
             return;
         }
 

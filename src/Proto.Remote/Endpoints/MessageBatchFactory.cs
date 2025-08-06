@@ -69,7 +69,8 @@ internal static class MessageBatchFactory
 
             if (message is null)
             {
-                Logger.LogError("Null message passed to EndpointActor, ignoring message");
+                // Use generated structured logging to note the null message and target
+                Logger.EndpointActorReceivedNullMessage(target);
                 continue;
             }
 
