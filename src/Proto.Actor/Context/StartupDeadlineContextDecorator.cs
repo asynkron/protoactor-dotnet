@@ -64,8 +64,7 @@ public class StartupDeadlineContextDecorator : ActorContextDecorator
 
             if (!ok)
             {
-                _logger.LogWarning("Actor {Self} deadline {Deadline}, exceeded on actor Started",
-                    _context.Self, _deadline);
+                _logger.ActorDeadlineExceededOnStart(_context.Self, _deadline);
 
                 // keep waiting, we cannot just ignore and continue as an async task might still be running and updating state of the actor
                 // if we return here, actor concurrency guarantees could break

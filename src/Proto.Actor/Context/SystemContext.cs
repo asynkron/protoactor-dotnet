@@ -25,7 +25,7 @@ public static class SystemContext
     {
         if (!name.StartsWith("$"))
         {
-            Logger.LogError("SystemContext Failed to spawn system actor {Name}", name);
+            Logger.FailedToSpawnSystemActor(name);
 
             throw new ArgumentException("System actor names must start with $", nameof(name));
         }
@@ -40,7 +40,7 @@ public static class SystemContext
         }
         catch (Exception x)
         {
-            Logger.LogError(x, "SystemContext Failed to spawn system actor {Name}", name);
+            Logger.FailedToSpawnSystemActor(x, name);
 
             throw;
         }

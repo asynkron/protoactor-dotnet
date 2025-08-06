@@ -37,4 +37,10 @@ internal static partial class ActorContextLogMessages
 
     [LoggerMessage(9, LogLevel.Error, "{Self} Error while handling Stopping message")]
     internal static partial void ErrorHandlingStopingMessage(this ILogger logger, Exception ex, PID self);
+
+    [LoggerMessage(10, LogLevel.Information, "[ActorContext] Throttled {LogCount} logs")]
+    internal static partial void ActorContextThrottledLogs(this ILogger logger, int logCount);
+
+    [LoggerMessage(11, LogLevel.Warning, "Actor {Self} took too long to start, deadline is {Deadline}, actual start time is {ActualStart}, your system might suffer from incorrect design, please consider reaching out to https://proto.actor/docs/training/ for help")]
+    internal static partial void ActorTookTooLongToStart(this ILogger logger, PID self, TimeSpan deadline, TimeSpan actualStart);
 }

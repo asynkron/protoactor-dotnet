@@ -33,7 +33,7 @@ public sealed class BatchContext : ISenderContext, IDisposable
     {
         if (_futuresCreated > 0)
         {
-            Logger.LogWarning("Batch request got {AdditionalCalls} more calls than provisioned", _futuresCreated);
+            Logger.BatchRequestGotAdditionalCalls(_futuresCreated);
         }
 
         _batchProcess.Dispose();
@@ -52,7 +52,7 @@ public sealed class BatchContext : ISenderContext, IDisposable
             case DeadLetterResponse:
                 if (_context.System.Config.DeadLetterResponseLogging)
                 {
-                    Logger.LogError("BatchContext {Self} got DeadLetterResponse for PID {Pid}", _context.Self, target);
+                    Logger.BatchContextGotDeadLetter(_context.Self, target);
                 }
 
                 throw new DeadLetterException(target);

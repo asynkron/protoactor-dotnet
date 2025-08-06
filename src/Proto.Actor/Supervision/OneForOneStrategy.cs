@@ -91,9 +91,7 @@ public class OneForOneStrategy : ISupervisorStrategy
         {
             if (Logger.IsEnabled(LogLevel.Information))
             {
-                Logger.LogInformation("{Action} {Actor} because of {Reason}", action,
-                    child, reason
-                );
+                Logger.OneForOneStrategyAction(action, child, reason);
             }
         }
     }
