@@ -88,7 +88,7 @@ public class AllForOneStrategy : ISupervisorStrategy
         }
 
         void LogInfo(string action) =>
-            Logger.StrategyAction(action, child, reason);
+            Logger.AllForOneStrategyAction(action, child, reason);
     }
 
     private bool ShouldStop(RestartStatistics rs)
