@@ -102,7 +102,10 @@ public sealed record RootContext : IRootContext
 
     public void Request(PID target, object message, PID? sender)
     {
-        var envelope = MessageEnvelope.WithSender(message, sender);
+        var envelope = sender is null
+            ? MessageEnvelope.Wrap(message)
+            : MessageEnvelope.WithSender(message, sender);
+
         Send(target, envelope);
     }
 

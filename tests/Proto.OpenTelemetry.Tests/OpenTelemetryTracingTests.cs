@@ -13,7 +13,7 @@ namespace Proto.OpenTelemetry.Tests;
 
 public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 {
-    private static readonly Baggage TestBaggage = Baggage.Create(new Dictionary<string, string?>
+    private static readonly Baggage TestBaggage = Baggage.Create(new Dictionary<string, string>
     {
         {"baggageKey", "baggageValue"}
     });

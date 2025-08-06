@@ -52,7 +52,7 @@ public class ProtoGenTask : Task
         return true;
     }
 
-    private static void EnsureDirExistsAndIsEmpty(string? potatoDirectory)
+    private static void EnsureDirExistsAndIsEmpty(string potatoDirectory)
     {
         Directory.CreateDirectory(potatoDirectory);
         var di = new DirectoryInfo(potatoDirectory);
