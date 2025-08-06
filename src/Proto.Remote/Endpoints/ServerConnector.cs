@@ -256,15 +256,18 @@ public sealed class ServerConnector
         {
             while (!combinedToken.IsCancellationRequested)
             {
-                while (_endpoint.OutgoingStash.TryPop(out var message))
+                while (_endpoint.OutgoingStash.TryPop(out var messages))
                 {
+                    var batch = ((Endpoint)_endpoint).CreateBatch(messages);
+
                     try
                     {
-                        await call.RequestStream.WriteAsync(message, combinedToken).ConfigureAwait(false);
+                        await call.RequestStream.WriteAsync(new RemoteMessage { MessageBatch = batch }, combinedToken)
+                            .ConfigureAwait(false);
                     }
                     catch (Exception)
                     {
-                        _ = _endpoint.OutgoingStash.Append(message);
+                        _ = _endpoint.OutgoingStash.Append(messages);
                         cancellationTokenSource.Cancel();
 
                         throw;
@@ -273,26 +276,32 @@ public sealed class ServerConnector
 
                 try
                 {
-                    await foreach (var message in _endpoint.Outgoing.Reader.ReadAllAsync(combinedToken)
+                    await foreach (var messages in _endpoint.Outgoing.Reader.ReadAllAsync(combinedToken)
                                        .ConfigureAwait(false))
                     {
+                        var batch = ((Endpoint)_endpoint).CreateBatch(messages);
+
                         try
                         {
                             if (_system.Metrics.Enabled)
                             {
                                 var sw = Stopwatch.StartNew();
-                                await call.RequestStream.WriteAsync(message, combinedToken).ConfigureAwait(false);
+                                await call.RequestStream
+                                    .WriteAsync(new RemoteMessage { MessageBatch = batch }, combinedToken)
+                                    .ConfigureAwait(false);
                                 sw.Stop();
                                 RemoteMetrics.RemoteWriteDuration.Record(sw.Elapsed.TotalSeconds, _metricTags);
                             }
                             else
                             {
-                                await call.RequestStream.WriteAsync(message, combinedToken).ConfigureAwait(false);
+                                await call.RequestStream
+                                    .WriteAsync(new RemoteMessage { MessageBatch = batch }, combinedToken)
+                                    .ConfigureAwait(false);
                             }
                         }
                         catch (Exception)
                         {
-                            _ = _endpoint.OutgoingStash.Append(message);
+                            _ = _endpoint.OutgoingStash.Append(messages);
                             cancellationTokenSource.Cancel();
 
                             throw;

@@ -45,8 +45,8 @@ public abstract class Endpoint : IEndpoint
 
     private CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
-    public Channel<RemoteMessage> Outgoing { get; } = Channel.CreateBounded<RemoteMessage>(3);
-    public ConcurrentStack<RemoteMessage> OutgoingStash { get; } = new();
+    public Channel<RemoteDeliver[]> Outgoing { get; } = Channel.CreateBounded<RemoteDeliver[]>(3);
+    public ConcurrentStack<RemoteDeliver[]> OutgoingStash { get; } = new();
 
     public virtual async ValueTask DisposeAsync()
     {
@@ -154,14 +154,14 @@ public abstract class Endpoint : IEndpoint
         ClearWatchers();
         var droppedMessageCount = 0;
 
-        while (OutgoingStash.TryPop(out var remoteMessage))
+        while (OutgoingStash.TryPop(out var remoteMessages))
         {
-            droppedMessageCount += DropMessagesInBatch(remoteMessage);
+            droppedMessageCount += DropMessages(remoteMessages);
         }
 
-        while (Outgoing.Reader.TryRead(out var remoteMessage))
+        while (Outgoing.Reader.TryRead(out var remoteMessages))
         {
-            droppedMessageCount += DropMessagesInBatch(remoteMessage);
+            droppedMessageCount += DropMessages(remoteMessages);
         }
 
         while (_remoteDelivers.Reader.TryRead(out var rd))
@@ -177,141 +177,14 @@ public abstract class Endpoint : IEndpoint
         }
     }
 
-    private int DropMessagesInBatch(RemoteMessage remoteMessage)
+    private int DropMessages(RemoteDeliver[] messages)
     {
-        var droppedMessageCount = 0;
-
-        switch (remoteMessage.MessageTypeCase)
+        foreach (var rd in messages)
         {
-            case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
-                _logger.LogWarning("[{SystemAddress}] Dropping disconnect request for {Address}", System.Address,
-                    RemoteAddress);
-
-                break;
-            case RemoteMessage.MessageTypeOneofCase.MessageBatch:
-            {
-                var batch = remoteMessage.MessageBatch;
-
-                var targets = new PID[batch.Targets.Count];
-
-                for (var i = 0; i < batch.Targets.Count; i++)
-                {
-                    var target = new PID(RemoteAddress, batch.Targets[i]);
-
-                    if (target.TryTranslateToLocalClientPID(out var pid))
-                    {
-                        targets[i] = pid;
-                    }
-                    else
-                    {
-                        targets[i] = target;
-                        target.Ref(System);
-                    }
-                }
-
-                for (var i = 0; i < batch.Senders.Count; i++)
-                {
-                    var s = batch.Senders[i];
-
-                    if (string.IsNullOrEmpty(s.Address))
-                    {
-                        s.Address = System.Address;
-                    }
-
-                    s.Ref(System);
-                }
-
-                var typeNames = batch.TypeNames.ToArray();
-
-                foreach (var envelope in batch.Envelopes)
-                {
-                    var target = targets[envelope.Target];
-
-                    if (envelope.TargetRequestId != default)
-                    {
-                        target = target.WithRequestId(envelope.TargetRequestId);
-                    }
-
-                    var sender = envelope.Sender == 0 ? null : batch.Senders[envelope.Sender - 1];
-
-                    if (envelope.SenderRequestId != default)
-                    {
-                        sender = sender?.WithRequestId(envelope.SenderRequestId);
-                    }
-
-                    var typeName = typeNames[envelope.TypeId];
-
-                    if (System.Metrics.Enabled)
-                    {
-                        RemoteMetrics.RemoteDeserializedMessageCount.Add(1,
-                            new KeyValuePair<string, object?>("id", System.Id),
-                            new KeyValuePair<string, object?>("address", System.Address),
-                            new KeyValuePair<string, object?>("messagetype", typeName)
-                        );
-                    }
-
-                    object message;
-
-                    try
-                    {
-                        message = RemoteConfig.Serialization.Deserialize(typeName, envelope.MessageData,
-                            envelope.SerializerId);
-
-                        // _logger.LogDebug("Received (Type) {MessagePayload}", message.GetType(), message);
-
-                        //translate from on-the-wire representation to in-process representation
-                        //this only applies to root level messages, and never on nested child messages
-                        if (message is IRootSerialized serialized)
-                        {
-                            message = serialized.Deserialize(System);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        ex.CheckFailFast();
-
-                        if (_logger.IsEnabled(_deserializationErrorLogLevel))
-                        {
-                            _logger.Log(
-                                _deserializationErrorLogLevel,
-                                ex,
-                                "[{SystemAddress}] Unable to deserialize message with {Type}",
-                                System.Address,
-                                typeName
-                            );
-                        }
-
-                        continue;
-                    }
-
-                    droppedMessageCount++;
-
-                    if (message is PoisonPill or Stop && sender is not null)
-                    {
-                        System.Root.Send(sender,
-                            new Terminated { Who = target, Why = TerminatedReason.AddressTerminated });
-                    }
-                    else if (message is Watch watch)
-                    {
-                        watch.Watcher.SendSystemMessage(System,
-                            new Terminated { Who = target, Why = TerminatedReason.AddressTerminated });
-                    }
-                    else
-                    {
-                        System.EventStream.Publish(new DeadLetterEvent(target, message, sender));
-
-                        if (sender is not null)
-                        {
-                            System.Root.Send(sender, new DeadLetterResponse { Target = target });
-                        }
-                    }
-                }
-            }
-
-                break;
+            RejectRemoteDeliver(rd);
         }
 
-        return droppedMessageCount;
+        return messages.Length;
     }
 
     private void ClearWatchers()
@@ -426,8 +299,8 @@ public abstract class Endpoint : IEndpoint
                         }
                     }
 
-                    var batch = CreateBatch(messages);
-                    await Outgoing.Writer.WriteAsync(new RemoteMessage { MessageBatch = batch }, CancellationToken).ConfigureAwait(false);
+                    var arr = messages.ToArray();
+                    await Outgoing.Writer.WriteAsync(arr, CancellationToken).ConfigureAwait(false);
                     messages.Clear();
                 }
             }
@@ -442,7 +315,7 @@ public abstract class Endpoint : IEndpoint
         }
     }
 
-    private MessageBatch CreateBatch(IReadOnlyCollection<RemoteDeliver> m)
+    internal MessageBatch CreateBatch(IReadOnlyCollection<RemoteDeliver> m)
     {
         var envelopes = new List<MessageEnvelope>(m.Count);
         var typeNames = new Dictionary<string, int>();
