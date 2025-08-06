@@ -11,10 +11,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using Proto.Extensions;
-using Proto.Remote.Metrics;
 
 namespace Proto.Remote;
 
@@ -315,137 +313,6 @@ public abstract class Endpoint : IEndpoint
         }
     }
 
-    internal MessageBatch CreateBatch(IReadOnlyCollection<RemoteDeliver> m)
-    {
-        var envelopes = new List<MessageEnvelope>(m.Count);
-        var typeNames = new Dictionary<string, int>();
-        var targets = new Dictionary<(string address, string id), int>();
-        var targetList = new List<string>();
-        var typeNameList = new List<string>();
-        var senders = new Dictionary<(string address, string id), int>();
-        var senderList = new List<PID>();
-
-        foreach (var rd in m)
-        {
-            var target = rd.Target;
-
-            var targetKey = (target.Address, target.Id);
-
-            if (!targets.TryGetValue(targetKey, out var targetId))
-            {
-                targetId = targets[targetKey] = targets.Count;
-                targetList.Add(target.Id);
-            }
-
-            var senderId = 0;
-
-            var sender = rd.Sender;
-
-            if (sender != null)
-            {
-                var senderKey = (sender.Address, sender.Id);
-
-                if (!senders.TryGetValue(senderKey, out senderId))
-                {
-                    senderId = senders[senderKey] = senders.Count + 1;
-
-                    senderList.Add(sender.Address == System.Address
-                        ? PID.FromAddress("", sender.Id)
-                        : PID.FromAddress(sender.Address, sender.Id));
-                }
-            }
-
-            var message = rd.Message;
-
-            //if the message can be translated to a serialization representation, we do this here
-            //this only apply to root level messages and never to nested child objects inside the message
-            if (message is IRootSerializable deserialized)
-            {
-                message = deserialized.Serialize(System);
-            }
-
-            if (message is null)
-            {
-                _logger.LogError("Null message passed to EndpointActor, ignoring message");
-
-                continue;
-            }
-
-            ByteString bytes;
-            string typeName;
-            int serializerId;
-
-            try
-            {
-                (bytes, typeName, serializerId) = RemoteConfig.Serialization.Serialize(message);
-            }
-            catch (CodedOutputStream.OutOfSpaceException oom)
-            {
-                System.Diagnostics.RegisterEvent("Remote", $"Message is too large {message.GetMessageTypeName()}");
-                _logger.LogError(oom, "Message is too large {MessagePayload}", message.GetMessageTypeName());
-
-                throw;
-            }
-            catch (Exception x)
-            {
-                System.Diagnostics.RegisterEvent("Remote", $"Missing serializer for {message.GetMessageTypeName()}");
-                _logger.LogError(x, "Serialization failed for message {MessagePayload}", message.GetMessageTypeName());
-
-                throw;
-            }
-
-            if (System.Metrics.Enabled)
-            {
-                RemoteMetrics.RemoteSerializedMessageCount.Add(1,
-                    new KeyValuePair<string, object?>("id", System.Id),
-                    new KeyValuePair<string, object?>("address", System.Address),
-                    new KeyValuePair<string, object?>("messagetype", typeName)
-                );
-            }
-
-            if (!typeNames.TryGetValue(typeName, out var typeId))
-            {
-                typeId = typeNames[typeName] = typeNames.Count;
-                typeNameList.Add(typeName);
-            }
-
-            MessageHeader? header = null;
-
-            if (rd.Header?.Count > 0)
-            {
-                header = new MessageHeader();
-                header.HeaderData.Add(rd.Header.ToDictionary());
-            }
-
-            var envelope = new MessageEnvelope
-            {
-                MessageData = bytes,
-                Sender = senderId,
-                Target = targetId,
-                TypeId = typeId,
-                SerializerId = serializerId,
-                MessageHeader = header,
-                TargetRequestId = rd.Target.RequestId,
-                SenderRequestId = sender?.RequestId ?? default
-            };
-
-            // if (Logger.IsEnabled(LogLevel.Trace))
-            //     Logger.LogTrace("[{SystemAddress}] Endpoint adding Envelope {Envelope}", System.Address, envelope);
-            envelopes.Add(envelope);
-        }
-
-        var batch = new MessageBatch
-        {
-            Targets = { targetList },
-            TypeNames = { typeNameList },
-            Envelopes = { envelopes },
-            Senders = { senderList }
-        };
-
-        // if (Logger.IsEnabled(LogLevel.Trace))
-        //     Logger.LogTrace("[{SystemAddress}] Sending {Count} envelopes for {Address}", System.Address, envelopes.Count, Address);
-        return batch;
-    }
     
     /// <summary>
     /// Preserves non completed Tasks between <see cref="WaitAnyAsync"/> calls.

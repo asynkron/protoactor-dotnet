@@ -258,7 +258,7 @@ public sealed class ServerConnector
             {
                 while (_endpoint.OutgoingStash.TryPop(out var messages))
                 {
-                    var batch = ((Endpoint)_endpoint).CreateBatch(messages);
+                    var batch = MessageBatchFactory.CreateBatch(_system, _remoteConfig, messages);
 
                     try
                     {
@@ -279,7 +279,7 @@ public sealed class ServerConnector
                     await foreach (var messages in _endpoint.Outgoing.Reader.ReadAllAsync(combinedToken)
                                        .ConfigureAwait(false))
                     {
-                        var batch = ((Endpoint)_endpoint).CreateBatch(messages);
+                        var batch = MessageBatchFactory.CreateBatch(_system, _remoteConfig, messages);
 
                         try
                         {
