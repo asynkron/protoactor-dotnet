@@ -253,7 +253,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
                 while (!cancellationTokenSource.Token.IsCancellationRequested &&
                        endpoint.OutgoingStash.TryPop(out var messages))
                 {
-                    var batch = ((Endpoint)endpoint).CreateBatch(messages);
+                    var batch = MessageBatchFactory.CreateBatch(_system, _system.Remote().Config, messages);
 
                     try
                     {
@@ -274,7 +274,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
                     var messages = await endpoint.Outgoing.Reader.ReadAsync(cancellationTokenSource.Token)
                         .ConfigureAwait(false);
 
-                    var batch = ((Endpoint)endpoint).CreateBatch(messages);
+                    var batch = MessageBatchFactory.CreateBatch(_system, _system.Remote().Config, messages);
 
                     try
                     {
