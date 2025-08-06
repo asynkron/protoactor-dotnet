@@ -74,9 +74,9 @@ internal class PartitionPlacementActor : IActor, IDisposable
 
         var cancellationToken = msg.TopologyValidityToken!.Value;
 
-        // TODO: Configurable timeout
-        var activationsCompleted =
-            _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(TimeSpan.FromSeconds(10), cancellationToken);
+        // Wait for all in-flight activations using the configured timeout
+        var activationsCompleted = _cluster.Gossip
+            .WaitUntilInFlightActivationsAreCompleted(_config.RebalanceActivationsCompletionTimeout, cancellationToken);
 
         // Waits until all members agree on a cluster topology and have no more in-flight activation requests
         context.ReenterAfter(activationsCompleted, async _ =>
