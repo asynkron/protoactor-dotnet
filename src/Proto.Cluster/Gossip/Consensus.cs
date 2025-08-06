@@ -11,14 +11,14 @@ using Proto.Utils;
 
 namespace Proto.Cluster.Gossip;
 
-public interface IConsensusHandle<T> : IDisposable
+public interface IConsensusHandle<T> : IDisposable where T : notnull
 {
     Task<(bool consensus, T value)> TryGetConsensus(CancellationToken ct);
 
     Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken);
 }
 
-internal class GossipConsensusHandle<T> : IConsensusHandle<T>
+internal class GossipConsensusHandle<T> : IConsensusHandle<T> where T : notnull
 {
     private readonly Action _deregister;
     private TaskCompletionSource<T> _consensusTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -42,7 +42,7 @@ internal class GossipConsensusHandle<T> : IConsensusHandle<T>
             }
         }
 
-        return (false, default);
+        return (false, default!);
     }
 
     public Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken) =>

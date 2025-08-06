@@ -20,7 +20,7 @@ using Proto.Remote;
 
 namespace Proto.Cluster.Gossip;
 
-public delegate (bool, T) ConsensusCheck<T>(GossipState state, IImmutableSet<string> memberIds);
+public delegate (bool, T) ConsensusCheck<T>(GossipState state, IImmutableSet<string> memberIds) where T : notnull;
 
 public record GossipUpdate(string MemberId, string Key, Any Value, long SequenceNumber);
 
@@ -324,6 +324,7 @@ public class Gossiper
     }
 
     public class ConsensusCheckBuilder<T> : IConsensusCheckDefinition<T>
+        where T : notnull
     {
         private readonly Lazy<ConsensusCheck<T>> _check;
         private readonly ImmutableList<(string, Func<Any, T?>)> _getConsensusValues;
@@ -445,7 +446,8 @@ public class Gossiper
     }
 
     public IConsensusHandle<TV> RegisterConsensusCheck<T, TV>(string key, Func<T, TV?> getValue)
-        where T : notnull, IMessage, new() =>
+        where T : notnull, IMessage, new()
+        where TV : notnull =>
         RegisterConsensusCheck(ConsensusCheckBuilder<TV>.Create(key, getValue));
 
     public IConsensusHandle<T> RegisterConsensusCheck<T>(IConsensusCheckDefinition<T> consensusDefinition)

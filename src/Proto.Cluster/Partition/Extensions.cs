@@ -30,7 +30,7 @@ internal static class Extensions
         this Gossiper gossip, Gossiper.ConsensusCheckBuilder<T> check,
         TimeSpan maxWait,
         CancellationToken cancellationToken
-    )
+    ) where T : notnull
     {
         using var consensusCheck = gossip.RegisterConsensusCheck(check);
 
