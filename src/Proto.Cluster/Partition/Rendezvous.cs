@@ -17,6 +17,7 @@ namespace Proto.Cluster.Partition;
 public class Rendezvous
 {
     private MemberData[] _members = Array.Empty<MemberData>();
+    private Dictionary<string, MemberData[]> _membersByKind = new();
 
     public string GetOwnerMemberByIdentity(string identity)
     {
@@ -51,11 +52,19 @@ public class Rendezvous
     }
 
     // ReSharper disable once ParameterTypeCanBeEnumerable.Global
-    public void UpdateMembers(IEnumerable<Member> members) =>
+    public void UpdateMembers(IEnumerable<Member> members)
+    {
         _members = members
             .OrderBy(m => m.Address)
             .Select(x => new MemberData(x))
             .ToArray();
+
+        // cache members by kind to avoid repeated filtering at lookup time
+        _membersByKind = _members
+            .SelectMany(m => m.Info.Kinds.Select(k => (Kind: k, Member: m)))
+            .GroupBy(x => x.Kind)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Member).ToArray());
+    }
 
     private static uint RdvHash(byte[] node, byte[] key)
     {
@@ -83,8 +92,10 @@ public class Rendezvous
 
     public string GetOwnerMemberByIdentity(ClusterIdentity ci)
     {
-        //TODO: memoize
-        var members = _members.Where(m => m.Info.Kinds.Contains(ci.Kind));
+        if (!_membersByKind.TryGetValue(ci.Kind, out var members))
+        {
+            return "";
+        }
 
         var keyBytes = Encoding.UTF8.GetBytes(ci.Identity);
 
