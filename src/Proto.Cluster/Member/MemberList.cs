@@ -107,7 +107,7 @@ public record MemberList
                 //only log if the member is known to us
                 if (TryGetMember(b.MemberId, out _))
                 {
-                    Logger.LogInformation("Blocking member {MemberId} due to {Reason}", b.MemberId, b.Reason);
+                    Logger.BlockingMemberDueToReason(b.MemberId, b.Reason);
                 }
 
                 UpdateClusterTopology(_activeMembers.Members);
@@ -149,7 +149,7 @@ public record MemberList
             return memberStrategy.GetActivator(requestSourceAddress);
         }
 
-        Logger.LogInformation("MemberList did not find any activator for kind '{Kind}'", kind);
+        Logger.DidNotFindActivatorForKind(kind);
 
         return null;
     }
@@ -229,12 +229,12 @@ public record MemberList
 
             if (topology.Joined.Any())
             {
-                Logger.LogInformation("[MemberList] Cluster members joined {MembersJoined}", topology.Joined);
+                Logger.ClusterMembersJoined(topology.Joined);
             }
 
             if (topology.Left.Any())
             {
-                Logger.LogInformation("[MemberList] Cluster members left {MembersLeft}", topology.Left);
+                Logger.ClusterMembersLeft(topology.Left);
             }
 
             BroadcastTopologyChanges(topology);
@@ -320,7 +320,7 @@ public record MemberList
             var youngest = dup.OrderByDescending(m => m.Age).First();
             var rest = dup.Where(m => m.Id != youngest.Id).Select(m => m.Id).ToArray();
 
-            Logger.LogWarning("Duplicate address {Address} found, removing {Rest}", dup.Key, rest);
+            Logger.DuplicateAddressFound(dup.Key, rest);
             activeMembers = activeMembers.Except(rest);
         }
 
@@ -335,7 +335,7 @@ public record MemberList
             return;
         }
 
-        Logger.LogCritical("I have been blocked, exiting {Id}", MemberId);
+        Logger.BlockedExiting(MemberId);
         _ = _cluster.ShutdownAsync(reason: "Blocked by MemberList");
     }
 
