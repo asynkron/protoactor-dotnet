@@ -61,7 +61,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
                 return;
             }
 
-            Logger.LogDebug("[{SystemAddress}] Stopping", _system.Address);
+            Logger.Stopping(_system.Address);
 
             _system.EventStream.Unsubscribe(_endpointTerminatedEvnSub);
 
@@ -84,16 +84,12 @@ public sealed class EndpointManager : IDiagnosticsProvider
 
         StopActivator();
 
-        Logger.LogDebug("[{SystemAddress}] Stopped", _system.Address);
+        Logger.Stopped(_system.Address);
     }
 
     private async Task OnEndpointTerminated(EndpointTerminatedEvent evt)
     {
-        if (Logger.IsEnabled(LogLevel.Debug))
-        {
-            Logger.LogDebug("[{SystemAddress}] Endpoint {Address} terminating", _system.Address,
-                evt.Address ?? evt.ActorSystemId);
-        }
+        Logger.EndpointTerminating(_system.Address, evt.Address ?? evt.ActorSystemId);
 
         Action? unblock = null;
         try
@@ -124,8 +120,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
                 // the address will always be blocked while we dispose, at a minimum
                 await endpoint.DisposeAsync().ConfigureAwait(false);
 
-                Logger.LogInformation("[{SystemAddress}] Endpoint {Address} terminated", _system.Address,
-                    evt.Address ?? evt.ActorSystemId);
+                Logger.EndpointTerminated(_system.Address, evt.Address ?? evt.ActorSystemId);
 
                 if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue)
                 {
@@ -135,16 +130,14 @@ public sealed class EndpointManager : IDiagnosticsProvider
             }
             else
             {
-                Logger.LogDebug("[{SystemAddress}] Endpoint {Address} already removed.", _system.Address,
-                    evt.Address ?? evt.ActorSystemId);
+                Logger.EndpointAlreadyRemoved(_system.Address, evt.Address ?? evt.ActorSystemId);
             }
         }
         catch (Exception ex)
         {
             // since these async EventStream subscription handlers are fire and forget, we need to
             // log if something goes wrong, or we'll never know
-            Logger.LogError(ex, "[{SystemAddress}] Error during endpoint {Address} termination", _system.Address,
-                evt.Address ?? evt.ActorSystemId);
+            Logger.ErrorDuringEndpointTermination(ex, _system.Address, evt.Address ?? evt.ActorSystemId);
         }
         finally
         {
@@ -158,7 +151,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
     {
         if (address is null)
         {
-            Logger.LogError("[{SystemAddress}] Tried to get endpoint for null address", _system.Address);
+            Logger.TriedGetEndpointForNullAddress(_system.Address);
 
             return _blockedEndpoint;
         }
