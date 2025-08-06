@@ -191,8 +191,7 @@ public sealed class ActorSystem : IAsyncDisposable
                     Console.WriteLine($"System {Id} - ThreadPool is running hot, ThreadPool latency {t}");
                 }
 
-                logger.LogWarning("System {Id} - ThreadPool is running hot, ThreadPool latency {ThreadPoolLatency}", Id,
-                    t);
+                logger.ThreadPoolRunningHot(Id, t);
                 
             }, Stopper.Token
         );
@@ -207,7 +206,7 @@ public sealed class ActorSystem : IAsyncDisposable
     {
         try
         {
-            _logger.LogInformation("Shutting down actor system {Id} - Reason {Reason}", Id, reason);
+            _logger.ShuttingDownActorSystem(Id, reason);
             Stopper.Stop(reason);
             Diagnostics.RegisterObject("ActorSystem", "Stopped", reason);
         }

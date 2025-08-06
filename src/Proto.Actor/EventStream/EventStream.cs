@@ -40,7 +40,7 @@ public class EventStream : EventStream<object>
 
         var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount,
             system.Config.DeadLetterThrottleInterval,
-            droppedLogs => _logger.LogInformation("[DeadLetter] Throttled {LogCount} logs", droppedLogs)
+            droppedLogs => _logger.DeadLetterThrottled(droppedLogs)
         );
 
         Subscribe<DeadLetterEvent>(
@@ -54,8 +54,7 @@ public class EventStream : EventStream<object>
                 if (!system.Shutdown.IsCancellationRequested && shouldThrottle().IsOpen() &&
                     dl.Message is not IIgnoreDeadLetterLogging)
                 {
-                    _logger.LogInformation(
-                        "[DeadLetter] could not deliver '{MessageType}:{MessagePayload}' to '{Target}' from '{Sender}'",
+                    _logger.DeadLetter(
                         dl.Message.GetMessageTypeName(),
                         dl.Message,
                         dl.Pid,
@@ -289,7 +288,7 @@ public class EventStream<T>
                     catch (Exception ex)
                     {
                         ex.CheckFailFast();
-                        _logger.LogError(0, ex, "Exception has occurred when publishing a message");
+                        _logger.ExceptionWhenPublishingMessage(ex);
                     }
 
                     return Task.CompletedTask;

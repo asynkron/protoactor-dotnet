@@ -193,7 +193,7 @@ public static class SenderContextExtensions
             case DeadLetterResponse:
                 if (self.System.Config.DeadLetterResponseLogging)
                 {
-                    Logger.LogError("Context {Self} got DeadLetterResponse for PID {Pid}", self.Self, target);
+                    Logger.ContextGotDeadLetterResponse(self.Self, target);
                 }
 
                 throw new DeadLetterException(target);

@@ -67,7 +67,7 @@ public class EventProbe<T>
                 }
             );
 
-            _logger.LogDebug("Setting expectation");
+            _logger.SettingExpectation();
             _currentExpectation = expectation;
             NotifyChanges();
 
@@ -91,13 +91,13 @@ public class EventProbe<T>
         {
             if (_currentExpectation.Evaluate(@event))
             {
-                _logger.LogDebug("Got expected event {@event} ", @event);
+                _logger.GotExpectedEvent(@event);
                 _currentExpectation = null;
 
                 return;
             }
 
-            _logger.LogDebug("Got unexpected {@event}, ignoring", @event);
+            _logger.GotUnexpectedEvent(@event);
         }
     }
 }

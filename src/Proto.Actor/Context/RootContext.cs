@@ -90,7 +90,7 @@ public sealed record RootContext : IRootContext
         }
         catch (Exception x)
         {
-            Logger.LogError(x, "RootContext Failed to spawn root level actor {Name}", name);
+            Logger.FailedToSpawnRootActor(x, name);
 
             throw;
         }

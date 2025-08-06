@@ -31,8 +31,7 @@ public class DependencyResolver : IDependencyResolver
                 }
                 catch (Exception x)
                 {
-                    Logger.LogError(x, "DependencyResolved Failed resolving Props for actor type {ActorType}",
-                        actorType.Name);
+                    Logger.FailedResolvingProps(x, actorType.Name);
 
                     throw;
                 }
@@ -50,8 +49,7 @@ public class DependencyResolver : IDependencyResolver
                 }
                 catch (Exception x)
                 {
-                    Logger.LogError(x, "DependencyResolved Failed resolving Props for actor type {ActorType}",
-                        actorType.Name);
+                    Logger.FailedResolvingProps(x, actorType.Name);
 
                     throw;
                 }

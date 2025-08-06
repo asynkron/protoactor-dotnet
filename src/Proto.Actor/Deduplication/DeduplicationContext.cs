@@ -71,7 +71,7 @@ internal class DeDuplicator<T> where T : IEquatable<T>
 
             if (IsDuplicate(key!, cutoff))
             {
-                _logger.LogInformation("Request de-duplicated");
+                _logger.RequestDeduplicated();
                 // Update timestamp to keep a sliding window of TTL
                 _processed[key!]= now;
 
