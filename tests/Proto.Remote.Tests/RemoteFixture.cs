@@ -72,9 +72,6 @@ public abstract class RemoteFixture : IRemoteFixture
 
     protected static (IHost, HostedGrpcNetRemote) GetHostedGrpcNetRemote(RemoteConfig config)
     {
-#if NETCOREAPP3_1
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-#endif
         var hostBuilder = Host.CreateDefaultBuilder(Array.Empty<string>())
             .ConfigureServices(services =>
                 {
@@ -120,17 +117,12 @@ public abstract class RemoteFixture : IRemoteFixture
 
     protected static GrpcNetRemote GetGrpcNetRemote(RemoteConfig config)
     {
-#if NETCOREAPP3_1
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-#endif
         return new GrpcNetRemote(new ActorSystem(), config);
     }
 
     protected static GrpcNetClientRemote GetGrpcNetClientRemote(RemoteConfig config)
     {
-#if NETCOREAPP3_1
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-#endif
         return new GrpcNetClientRemote(new ActorSystem(), config);
     }
 }
+

@@ -1,4 +1,3 @@
-#if NET8_0_OR_GREATER
 using System;
 using System.Threading.Tasks;
 using System.Threading;
@@ -178,4 +177,4 @@ public class SchedulerTests
         Assert.False(extraResponse.Task.IsCompleted);
     }
 }
-#endif
+

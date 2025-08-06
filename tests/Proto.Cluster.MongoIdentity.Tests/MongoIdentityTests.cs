@@ -18,9 +18,6 @@ public class MongoIdentityClusterFixture : BaseInMemoryClusterFixture
     public MongoIdentityClusterFixture() : base(3,
         config => config with { ActorActivationTimeout = TimeSpan.FromSeconds(10) })
     {
-#if NETCOREAPP3_1
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-#endif
     }
 
     protected override IIdentityLookup GetIdentityLookup(string clusterName)
@@ -96,3 +93,4 @@ public class MongoStorageTests : IdentityStorageTests
     private static IIdentityStorage Init(string clusterName) => new MongoIdentityStorage(clusterName,
         MongoFixture.Database.GetCollection<PidLookupEntity>("pids"));
 }
+

@@ -21,9 +21,6 @@ using ProtosReflection = ClusterHelloWorld.Messages.ProtosReflection;
 Log.SetLoggerFactory(
     LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Information)));
 
-// Required to allow unencrypted GrpcNet connections
-// AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-
 var system = new ActorSystem(new ActorSystemConfig().WithDeveloperSupervisionLogging(true))
     .WithRemote(RemoteConfig.BindToLocalhost(8090).WithProtoMessages(ProtosReflection.Descriptor))
     .WithCluster(ClusterConfig

@@ -17,9 +17,7 @@ namespace Proto.Timers;
 public class Scheduler
 {
     private readonly ISenderContext _context;
-#if NET8_0_OR_GREATER
     private readonly TimeProvider _timeProvider;
-#endif
 
     /// <summary>
     ///     Creates a new scheduler.
@@ -28,13 +26,9 @@ public class Scheduler
     public Scheduler(ISenderContext context)
     {
         _context = context;
-
-#if NET8_0_OR_GREATER
         _timeProvider = TimeProvider.System;
-#endif
     }
 
-#if NET8_0_OR_GREATER
     /// <summary>
     ///     Creates a new scheduler.
     /// </summary>
@@ -45,7 +39,6 @@ public class Scheduler
         _context = context;
         _timeProvider = timeProvider;
     }
-#endif
 
     /// <summary>
     ///     Schedules a single message to be sent in the future.
@@ -141,10 +134,6 @@ public class Scheduler
 
     private async Task Delay(TimeSpan delay, CancellationToken token)
     {
-#if NET8_0_OR_GREATER
-    await Task.Delay(delay, _timeProvider, token).ConfigureAwait(false);
-#else
-        await Task.Delay(delay, token).ConfigureAwait(false);
-#endif
+        await Task.Delay(delay, _timeProvider, token).ConfigureAwait(false);
     }
 }

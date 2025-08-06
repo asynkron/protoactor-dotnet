@@ -19,9 +19,6 @@ public class RedisIdentityClusterFixture : BaseInMemoryClusterFixture
 {
     public RedisIdentityClusterFixture() : base(3)
     {
-#if NETCOREAPP3_1
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-#endif
     }
 
     protected override IIdentityLookup GetIdentityLookup(string clusterName)
@@ -95,3 +92,4 @@ public class RedisStorageTests : IdentityStorageTests
             TimeSpan.FromMilliseconds(1500)
         );
 }
+

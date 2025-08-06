@@ -31,7 +31,6 @@ public static class Program
 
     public static async Task Main(string[] args)
     {
-        //AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         //    ThreadPool.SetMinThreads(500, 500);
         Request = new HelloRequest();
         Configuration.SetupLogger(LogLevel.Error);
