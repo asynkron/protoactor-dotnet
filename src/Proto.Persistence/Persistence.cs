@@ -45,7 +45,7 @@ public class Persistence
     /// </summary>
     public long Index { get; private set; } = -1;
 
-    private bool UsingSnapshotting => _applySnapshot is not null; //TODO: why not used?
+    private bool UsingSnapshotting => _applySnapshot is not null;
     private bool UsingEventSourcing => _applyEvent is not null;
 
     /// <summary>
@@ -218,10 +218,10 @@ public class Persistence
     {
         var (snapshot, lastSnapshotIndex) = await _snapshotStore.GetSnapshotAsync(_actorId).ConfigureAwait(false);
 
-        if (snapshot is not null && _applySnapshot is not null)
+        if (snapshot is not null && UsingSnapshotting)
         {
             Index = lastSnapshotIndex;
-            _applySnapshot(new RecoverSnapshot(snapshot, lastSnapshotIndex));
+            _applySnapshot!(new RecoverSnapshot(snapshot, lastSnapshotIndex));
         }
 
         var fromEventIndex = Index + 1;
