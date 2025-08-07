@@ -105,6 +105,9 @@ public record ActorStarted(string Member, PID Activation, DateTimeOffset When, i
 public record ActorStopped(string Member, PID Activation, DateTimeOffset When, int StoredCount, long GlobalCount)
     : VerificationEvent(Activation, When);
 
+public record ActivationRequested(string Member, DateTimeOffset When)
+    : VerificationEvent(null!, When);
+
 public record ConsistencyError(
         PID Activation,
         DateTimeOffset When,
@@ -138,6 +141,9 @@ public class ActorState
     public bool Inconsistent { get; private set; }
     public long TotalCount => Interlocked.Read(ref _totalCount);
     public ConcurrentBag<VerificationEvent> Events { get; } = new();
+
+    public void RecordActivationRequest(string member) =>
+        Events.Add(new ActivationRequested(member, DateTimeOffset.Now));
 
     public void RecordStarted(IContext context)
     {
@@ -200,6 +206,7 @@ public class ActorState
                 {
                     ActorStarted started     => $"[{started.When:O}] Actor started on member {started.Member}\n",
                     ActorStopped stopped     => $"[{stopped.When:O}] Actor stopped on member {stopped.Member}\n",
+                    ActivationRequested req => $"[{req.When:O}] Activation requested on member {req.Member}\n",
                     ClusterSnapshot snapshot => $"[{snapshot.When:O}] Cluster snapshot:\n{snapshot.Snapshot}\n",
                     ConsistencyError err =>
                         $"[{err.When:O}] Consistency error, actual: {err.ActualCount}, expected: {err.ExpectedCount}, stored: {err.StoredCount}, global: {err.GlobalCount}",

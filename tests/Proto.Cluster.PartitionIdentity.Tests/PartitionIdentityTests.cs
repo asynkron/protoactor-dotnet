@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Proto.Cluster;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Tests;
@@ -91,12 +92,20 @@ public class PartitionIdentityTests
         var actorStates = fixture.Repository.Contents.ToList();
 
         var totalCalls = actorStates.Select(it => it.TotalCount).Sum();
-        var restarts = actorStates.Select(it => it.Events.Count(it => it is ActorStopped) - 1).Sum();
+        var restarts = actorStates.Select(it => it.Events.Count(e => e is ActorStopped) - 1).Sum();
+        var totalActivationRequests =
+            actorStates.Select(it => it.Events.Count(e => e is ActivationRequested)).Sum();
 
-        _output.WriteLine($"{totalCalls} requests, {restarts} restarts against " + actorStates.Count + " identities");
+        _output.WriteLine(
+            $"{totalCalls} requests, {restarts} restarts, {totalActivationRequests} activation requests against " +
+            actorStates.Count + " identities");
 
         foreach (var actorState in actorStates)
         {
+            var activationReqs = actorState.Events.Count(e => e is ActivationRequested);
+            var starts = actorState.Events.Count(e => e is ActorStarted);
+            activationReqs.Should().Be(starts);
+
             if (actorState.Inconsistent)
             {
                 Assert.False(actorState.Inconsistent, actorState.ToString());
@@ -298,12 +307,22 @@ public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
         };
 
     protected override IIdentityLookup GetIdentityLookup(string clusterName) =>
-        new PartitionIdentityLookup(new PartitionConfig
-        {
-            GetPidTimeout = TimeSpan.FromSeconds(5),
-            HandoverChunkSize = _chunkSize,
-            RebalanceRequestTimeout = TimeSpan.FromSeconds(3),
-            Mode = _mode,
-            Send = _send
-        });
+        new PartitionIdentityLookup(
+            new PartitionConfig
+            {
+                GetPidTimeout = TimeSpan.FromSeconds(5),
+                HandoverChunkSize = _chunkSize,
+                RebalanceRequestTimeout = TimeSpan.FromSeconds(3),
+                Mode = _mode,
+                Send = _send
+            },
+            props => props.WithReceiverMiddleware(next => async (ctx, env) =>
+            {
+                if (env.Message is ActivationRequest req)
+                {
+                    Repository.Get(req.Identity, this).RecordActivationRequest(ctx.System.Id);
+                }
+
+                await next(ctx, env);
+            }));
 }
