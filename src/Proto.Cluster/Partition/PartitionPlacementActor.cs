@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
+using Proto.Utils;
 
 namespace Proto.Cluster.Partition;
 
