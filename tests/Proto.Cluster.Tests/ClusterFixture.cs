@@ -162,7 +162,15 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             {
                 _logger.LogInformation("Shutting down cluster member {MemberId}", cluster.System.Id);
 
-                var done = await task.WaitUpTo(TimeSpan.FromSeconds(5));
+                var done = true;
+                try
+                {
+                    await task.WaitAsync(TimeSpan.FromSeconds(5));
+                }
+                catch (TimeoutException)
+                {
+                    done = false;
+                }
                 if (!done)
                 {
                     _logger.LogWarning("Failed to shutdown cluster member {MemberId} gracefully", cluster.System.Id);

@@ -86,15 +86,22 @@ public abstract class ClusterTests : ClusterTestBase
     {
         await Trace(async () =>
         {
-            var consensus = await Task
+            var consensusCompleted = true;
+            try
+            {
+                await Task
                     .WhenAll(Members.Select(member =>
                         member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
-                    .WaitUpTo(TimeSpan.FromSeconds(20))
-                ;
+                    .WaitAsync(TimeSpan.FromSeconds(20));
+            }
+            catch (TimeoutException)
+            {
+                consensusCompleted = false;
+            }
 
             _testOutputHelper.WriteLine(await Members.DumpClusterState());
 
-            consensus.completed.Should().BeTrue("All members should have gotten consensus on the same topology hash");
+            consensusCompleted.Should().BeTrue("All members should have gotten consensus on the same topology hash");
             _testOutputHelper.WriteLine(LogStore.ToFormattedString());
         }, _testOutputHelper);
     }

@@ -8,7 +8,6 @@ using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Proto.Utils;
 
 namespace Proto.Context;
 
@@ -60,9 +59,11 @@ public class StartupDeadlineContextDecorator : ActorContextDecorator
                 return;
             }
 
-            var ok = await t.WaitUpTo(_deadline).ConfigureAwait(false);
-
-            if (!ok)
+            try
+            {
+                await t.WaitAsync(_deadline).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
             {
                 _logger.ActorDeadlineExceededOnStart(_context.Self, _deadline);
 

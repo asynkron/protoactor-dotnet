@@ -114,7 +114,21 @@ internal class PartitionPlacementActor : IActor, IDisposable
             }
 
             var waitingRequests = handoverStates.Values.SelectMany(it => it.WaitingMessages).ToList();
-            await Task.WhenAll(waitingRequests).WaitUpTo(TimeSpan.FromSeconds(30), context.CancellationToken).ConfigureAwait(false);
+            try
+            {
+                await Task
+                    .WhenAll(waitingRequests)
+                    .WaitAsync(TimeSpan.FromSeconds(30), context.CancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                // ignore timeout and continue processing
+            }
+            catch (OperationCanceledException)
+            {
+                // ignore cancellation and continue processing
+            }
 
             // Ensure that we only update last rebalanced topology when all members have received the current activations
             if (waitingRequests.All(task

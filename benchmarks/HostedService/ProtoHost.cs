@@ -6,7 +6,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
-using Proto.Utils;
 
 namespace HostedService;
 
@@ -68,11 +67,20 @@ public class ProtoHost : IHostedService
 
     private void OnStopping()
     {
-        var completedInTime = _cluster
-            .ShutdownAsync()
-            .WaitUpTo(TimeSpan.FromSeconds(15))
-            .GetAwaiter()
-            .GetResult();
+        var completedInTime = true;
+        try
+        {
+            _cluster
+                .ShutdownAsync()
+                .WaitAsync(TimeSpan.FromSeconds(15))
+                .GetAwaiter()
+                .GetResult();
+        }
+        catch (TimeoutException)
+        {
+            completedInTime = false;
+        }
+
         if (!completedInTime)
             _logger.LogError("Shut down cluster timed out...");
     }
