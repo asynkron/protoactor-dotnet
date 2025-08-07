@@ -252,7 +252,7 @@ internal class PartitionIdentityActor : IActor
         SetReadyToRebalanceIfNoMoreWaitingSpawns();
         DiscardInvalidatedActivations();
 
-        _rebalanceTcs ??= new TaskCompletionSource<ulong>();
+        _rebalanceTcs ??= new TaskCompletionSource<ulong>(TaskCreationOptions.RunContinuationsAsynchronously);
         _currentHandover = new HandoverSink(msg, TakeOverIdentities(context));
         _rebalanceTimer = Stopwatch.StartNew();
 
@@ -616,7 +616,7 @@ internal class PartitionIdentityActor : IActor
         // Not in progress, spawn actor
 
         var spawnResponse = SpawnRemoteActor(context, msg, activatorAddress);
-        var setResponse = new TaskCompletionSource<ActivationResponse>();
+        var setResponse = new TaskCompletionSource<ActivationResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
         _spawns.Add(msg.ClusterIdentity, (setResponse, activatorAddress));
 
         if (Logger.IsEnabled(LogLevel.Debug))

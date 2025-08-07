@@ -21,7 +21,7 @@ public static class DiagnosticTools
     /// <returns></returns>
     public static async Task<string> GetDiagnosticsString(ActorSystem system, PID pid)
     {
-        var tcs = new TaskCompletionSource<string>();
+        var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         var request = new ProcessDiagnosticsRequest(tcs);
         pid.SendSystemMessage(system, request);
         var res = await tcs.Task.ConfigureAwait(false);

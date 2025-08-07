@@ -230,7 +230,7 @@ internal class IdentityStoragePlacementActor : IActor
             }
 
             //Do not expose the PID externally before we have persisted the activation
-            var completionCallback = new TaskCompletionSource<PID?>();
+            var completionCallback = new TaskCompletionSource<PID?>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             context.ReenterAfter(Task.Run(() => PersistActivation(context, msg, pid)), persistResult =>
                 {

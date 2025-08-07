@@ -232,7 +232,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             return;
         }
 
-        var tcs = new TaskCompletionSource<bool>();
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var registration = token.Register(() => tcs.SetResult(true));
 
         // Ensures registration is disposed with the actor
