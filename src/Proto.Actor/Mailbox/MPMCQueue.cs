@@ -7,7 +7,6 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Proto.Mailbox;
 
@@ -81,8 +80,7 @@ public class MPMCQueue
                 break;
             }
 
-            Task.Delay(1)
-                .Wait(); // Could be Task.Delay(1) or Thread.SpinWait() if the assembly is not portable lib.
+            Thread.Yield(); // non-blocking backoff under contention
         }
     }
 
