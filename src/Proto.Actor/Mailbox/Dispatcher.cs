@@ -65,7 +65,8 @@ public sealed class SynchronousDispatcher : IDispatcher
 
     public int Throughput { get; }
 
-    public void Schedule(Func<Task> runner) => runner().Wait();
+    // Surface original exceptions instead of wrapping in AggregateException
+    public void Schedule(Func<Task> runner) => runner().GetAwaiter().GetResult();
 }
 
 /// <summary>
@@ -80,7 +81,8 @@ public sealed class ThreadPoolDispatcher : IDispatcher
         Throughput = throughput;
     }
 
-    public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.None);
+    // Run on the thread pool and intentionally ignore the returned Task
+    public void Schedule(Func<Task> runner) => _ = Task.Run(runner);
 
     public int Throughput { get; set; }
 }
@@ -101,7 +103,8 @@ public sealed class CurrentSynchronizationContextDispatcher : IDispatcher
     }
 
     public void Schedule(Func<Task> runner) =>
-        Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler);
+        // Use TaskScheduler for the current sync context and unwrap to avoid Task<Task>
+        _ = Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler).Unwrap();
 
     public int Throughput { get; }
 }
