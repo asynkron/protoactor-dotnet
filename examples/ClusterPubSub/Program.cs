@@ -83,7 +83,7 @@ public class User : UserActorBase
     {
         _schedule = Context.Scheduler()
             .SendRepeatedly(
-                TimeSpan.FromSeconds(new Random().Next(2, 5)),
+                TimeSpan.FromSeconds(Random.Shared.Next(2, 5)),
                 Context.Self,
                 new Tick());
 
@@ -102,7 +102,7 @@ public class User : UserActorBase
         switch (Context.Message)
         {
             case Tick:
-                var message = _messages[new Random().Next(0, _messages.Length)];
+                var message = _messages[Random.Shared.Next(0, _messages.Length)];
                 Console.WriteLine($"{Context.ClusterIdentity()!.Identity} publishes '{message}'");
 
                 _ = Context.Cluster()

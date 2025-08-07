@@ -85,7 +85,7 @@ public static class RunDummyCluster
 
         _ = SafeTask.Run(async () =>
             {
-                var r = new Random();
+                var r = Random.Shared;
 
                 await Task.Delay(5000);
 

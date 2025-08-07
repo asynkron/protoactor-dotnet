@@ -25,7 +25,7 @@ public class WeatherForecastController : ControllerBase
     [HttpGet]
     public IEnumerable<WeatherForecast> Get()
     {
-        var rng = new Random();
+        var rng = Random.Shared;
 
         return Enumerable.Range(1, 5)
             .Select(index => new WeatherForecast

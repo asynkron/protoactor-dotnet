@@ -73,7 +73,7 @@ internal class Program
     {
         //Fake Kafka consumer message generator
         var messages = new List<MyEnvelope>();
-        var rnd = new Random();
+        var rnd = Random.Shared;
 
         for (var i = 0; i < 50; i++)
         {

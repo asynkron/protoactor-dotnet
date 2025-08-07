@@ -241,7 +241,7 @@ internal class Program
             const string vowels = "aeiou";
             const string consonants = "bcdfghjklmnpqrstvwxyz";
 
-            var rnd = new Random();
+            var rnd = Random.Shared;
             var name = new StringBuilder();
 
             length = length % 2 == 0 ? length : length + 1;

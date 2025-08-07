@@ -15,7 +15,8 @@ internal class RandomRouterState : RouterState
 
     public RandomRouterState(ISenderContext senderContext, int? seed)
     {
-        _random = seed.HasValue ? new Random(seed.Value) : new Random();
+        // Use a single random source to avoid identical sequences across router states
+        _random = seed.HasValue ? new Random(seed.Value) : Random.Shared;
         _senderContext = senderContext;
     }
 

@@ -332,7 +332,8 @@ public abstract class RemoteTests
             return;
         }
 
-        var rnd = new Random();
+        // Seeded for deterministic message payloads
+        var rnd = new Random(0);
         var tcs = new TaskCompletionSource<bool>();
         long responseCount = 0;
 

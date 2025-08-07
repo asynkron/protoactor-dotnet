@@ -741,7 +741,7 @@ internal class Program
     public static void Main(string[] args)
     {
         Console.WriteLine("Starting");
-        var random = new Random();
+        var random = Random.Shared;
         var numberOfTransfers = 1000;
         var uptime = 99.99;
         var retryAttempts = 3;
@@ -781,7 +781,7 @@ scatter-gather pattern to spawn `TransferProcess` actors then reports when they 
     {
         //...
         case Started _:
-            var random = new Random();
+            var random = Random.Shared;
             _inMemoryProvider = new InMemoryProvider();
 
             for (int i = 1; i <= _numberOfIterations; i++)

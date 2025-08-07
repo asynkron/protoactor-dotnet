@@ -74,7 +74,7 @@ public class Runner : IActor
 
                 break;
             case Started _:
-                var random = new Random();
+                var random = Random.Shared;
                 _inMemoryProvider = new InMemoryProvider();
 
                 new ForWithProgress(_numberOfIterations, _intervalBetweenConsoleUpdates, true, false).EveryNth(

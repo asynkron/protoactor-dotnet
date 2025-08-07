@@ -43,7 +43,7 @@ public class ProtoHost : IHostedService
     {
         await Task.Yield();
 
-        var rnd = new Random();
+        var rnd = Random.Shared;
 
         while (!_appLifetime.ApplicationStopping.IsCancellationRequested)
         {

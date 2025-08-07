@@ -360,7 +360,7 @@ public static class Program
         _ = SafeTask.Run(async () =>
         {
             var cluster = await Configuration.SpawnClient();
-            var rnd = new Random();
+            var rnd = Random.Shared;
 
             while (true)
             {
@@ -395,7 +395,7 @@ public static class Program
         _ = SafeTask.Run(async () =>
         {
             var cluster = await Configuration.SpawnClient();
-            var rnd = new Random();
+            var rnd = Random.Shared;
 
             while (true)
             {
