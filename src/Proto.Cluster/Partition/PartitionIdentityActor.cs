@@ -602,11 +602,9 @@ internal class PartitionIdentityActor : IActor
                     res, msg.ClusterIdentity);
             }
             // Just waits for the already in-progress activation to complete (or fail)
-            context.ReenterAfter(res.Response.Task, task =>
+            context.ReenterAfter(res.Response.Task, async task =>
                 {
-                    context.Respond(task.Result);
-
-                    return Task.CompletedTask;
+                    context.Respond(await task.ConfigureAwait(false));
                 }
             );
 

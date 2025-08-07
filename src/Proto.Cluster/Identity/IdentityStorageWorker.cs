@@ -71,15 +71,13 @@ internal class IdentityStorageWorker : IActor
         {
             _inProgress.Add(clusterIdentity);
 
-            context.ReenterAfter(GetWithGlobalLock(context.Sender!, clusterIdentity), task =>
+            context.ReenterAfter(GetWithGlobalLock(context.Sender!, clusterIdentity), async task =>
                 {
                     try
                     {
-                        var response = task.Result;
+                        var response = await task.ConfigureAwait(false);
                         context.Respond(response);
                         RespondToWaitingRequests(context, clusterIdentity, response);
-
-                        return Task.CompletedTask;
                     }
                     finally
                     {
