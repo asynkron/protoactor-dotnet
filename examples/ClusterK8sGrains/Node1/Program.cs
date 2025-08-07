@@ -33,9 +33,6 @@ Log.SetLoggerFactory(
         .AddFilter("Proto.Cluster.Gossip", LogLevel.Information)
         .AddFilter("Proto.Context.ActorContext", LogLevel.Information)));
 
-// Required to allow unencrypted GrpcNet connections
-AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-
 var kubernetesProvider = new KubernetesProvider();
 var advertisedHost = await kubernetesProvider.GetPodFqdn();
 

@@ -49,8 +49,6 @@ class Program
 
         var logger = Log.CreateLogger("benchmark");
 
-        // Required to allow unencrypted GrpcNet connections
-        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         var system = new ActorSystem(
             new ActorSystemConfig()
                 .WithDeveloperSupervisionLogging(true)

@@ -2,9 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Proto.Timers;
 using Xunit;
-#if NET8_0_OR_GREATER
 using Microsoft.Extensions.Time.Testing;
-#endif
 
 namespace Proto.Tests;
 
@@ -38,7 +36,6 @@ public class TimerExtensionsTests
         await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
-#if NET8_0_OR_GREATER
     [Fact]
     public async Task SchedulerWithTimeProviderSchedulesMessageAfterDelay()
     {
@@ -67,5 +64,5 @@ public class TimerExtensionsTests
 
         await tcs.Task.WaitAsync(TimeSpan.FromMilliseconds(10));
     }
-#endif
 }
+
