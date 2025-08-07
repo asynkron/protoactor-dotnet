@@ -7,7 +7,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Proto.Utils;
 
 namespace Proto.Cluster.Gossip;
 
@@ -45,8 +44,24 @@ internal class GossipConsensusHandle<T> : IConsensusHandle<T> where T : notnull
         return (false, default!);
     }
 
-    public Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken) =>
-        Volatile.Read(ref _consensusTcs).Task.WaitUpTo(maxWait, cancellationToken);
+    public async Task<(bool consensus, T value)> TryGetConsensus(TimeSpan maxWait, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await Volatile.Read(ref _consensusTcs).Task
+                .WaitAsync(maxWait, cancellationToken)
+                .ConfigureAwait(false);
+            return (true, result);
+        }
+        catch (TimeoutException)
+        {
+            return (false, default!);
+        }
+        catch (OperationCanceledException)
+        {
+            return (false, default!);
+        }
+    }
 
     public void Dispose() => _deregister();
 

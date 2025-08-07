@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.TestFixtures;
-using Proto.Utils;
 using Xunit;
 
 namespace Proto.Tests;
@@ -114,7 +113,15 @@ public class WatchTests
 
         await context.StopAsync(watchee);
 
-        var (completed, _) = await terminated.Task.WaitUpTo(TimeSpan.FromMilliseconds(500));
+        var completed = true;
+        try
+        {
+            await terminated.Task.WaitAsync(TimeSpan.FromMilliseconds(500));
+        }
+        catch (TimeoutException)
+        {
+            completed = false;
+        }
         Assert.False(completed);
     }
 

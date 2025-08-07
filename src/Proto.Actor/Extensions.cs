@@ -10,7 +10,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Mailbox;
-using Proto.Utils;
 
 namespace Proto;
 
@@ -29,7 +28,14 @@ public static class UtilExtensions
         foreach (var chunk in self.Chunk(20))
         {
             var tasks = chunk.Select(context.StopAsync);
-            await Task.WhenAll(tasks).WaitUpTo(TimeSpan.FromSeconds(10));
+            try
+            {
+                await Task.WhenAll(tasks).WaitAsync(TimeSpan.FromSeconds(10));
+            }
+            catch (TimeoutException)
+            {
+                // ignore timeout and continue stopping remaining actors
+            }
         }
     }
 

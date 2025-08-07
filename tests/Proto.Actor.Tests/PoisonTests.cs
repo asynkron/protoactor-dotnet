@@ -7,7 +7,6 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Proto.Utils;
 using Xunit;
 
 namespace Proto.Tests;
@@ -34,7 +33,15 @@ public class PoisonTests
 
         var poisonTask = system.Root.PoisonAsync(deadPid);
 
-        var completed = await poisonTask.WaitUpTo(TimeSpan.FromSeconds(10));
+        var completed = true;
+        try
+        {
+            await poisonTask.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        catch (TimeoutException)
+        {
+            completed = false;
+        }
 
         completed.Should().BeTrue("Or we did not get a response when poisoning a missing pid");
     }
@@ -51,7 +58,15 @@ public class PoisonTests
         (await system.Root.RequestAsync<string>(pid, message)).Should().Be(message);
 
         var poisonTask = system.Root.PoisonAsync(pid);
-        var completed = await poisonTask.WaitUpTo(TimeSpan.FromSeconds(10));
+        var completed = true;
+        try
+        {
+            await poisonTask.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        catch (TimeoutException)
+        {
+            completed = false;
+        }
 
         completed.Should().BeTrue("Or we did not get a response when poisoning a live pid");
 
