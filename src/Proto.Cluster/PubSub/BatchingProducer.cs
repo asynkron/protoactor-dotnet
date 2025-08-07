@@ -214,10 +214,9 @@ public class BatchingProducer : IAsyncDisposable
 
     private void StopAcceptingNewMessages()
     {
-        if (!_publisherChannel.Reader.Completion.IsCompleted)
-        {
-            _publisherChannel.Writer.Complete();
-        }
+        // Attempt to complete the channel without throwing if it has already been closed
+        // The publisher loop and publish error handling might both call this concurrently
+        _publisherChannel.Writer.TryComplete();
     }
 
     private async Task PublishBatch(PubSubBatchWithReceipts batchWrapper)
