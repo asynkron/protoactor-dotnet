@@ -16,7 +16,6 @@ internal class Program
     public static void Main(string[] args)
     {
         Console.WriteLine("Starting");
-        var random = new Random();
         var numberOfTransfers = 5;
         var intervalBetweenConsoleUpdates = 1;
         var uptime = 99.99;

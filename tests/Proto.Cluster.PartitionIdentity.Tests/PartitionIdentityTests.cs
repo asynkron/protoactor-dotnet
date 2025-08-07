@@ -56,13 +56,14 @@ public class PartitionIdentityTests
         var stop = new CancellationTokenSource(runtimeSeconds * 1000);
         // ReSharper disable once AccessToDisposedClosure
 
-        foreach (var _ in Enumerable.Range(0, threads))
+        foreach (var i in Enumerable.Range(0, threads))
         {
-            StartBackgroundRequests(fixture, identities, batchSize, stop.Token);
+            // Seed each worker with a different base to ensure deterministic yet distinct sequences
+            StartBackgroundRequests(fixture, identities, batchSize, stop.Token, new Random(i));
         }
 
-        StartKillingRandomVirtualActors(fixture, identities, stop.Token);
-        StartSpawningAndStoppingMembers(fixture, stop.Token);
+        StartKillingRandomVirtualActors(fixture, identities, stop.Token, new Random(threads));
+        StartSpawningAndStoppingMembers(fixture, stop.Token, new Random(threads + 1));
 
         var timer = Stopwatch.StartNew();
         var prev = Interlocked.Read(ref _requests);
@@ -107,11 +108,11 @@ public class PartitionIdentityTests
         IClusterFixture clusterFixture,
         List<string> identities,
         int batchSize,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        Random rnd
     ) =>
         _ = Task.Run(async () =>
             {
-                var rnd = new Random();
                 var identityIndex = rnd.Next(identities.Count);
                 var tasks = new List<Task>();
 
@@ -159,12 +160,11 @@ public class PartitionIdentityTests
     private void StartKillingRandomVirtualActors(
         IClusterFixture clusterFixture,
         List<string> identities,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        Random rnd
     ) =>
         _ = Task.Run(async () =>
             {
-                var rnd = new Random();
-
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     await Task.Delay(rnd.Next(50), cancellationToken);
@@ -189,13 +189,13 @@ public class PartitionIdentityTests
 
     private void StartSpawningAndStoppingMembers(
         IClusterFixture clusterFixture,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        Random rnd
     ) =>
         _ = Task.Run(async () =>
             {
                 const int maxMembers = 10;
                 const int minMembers = 2;
-                var rnd = new Random();
 
                 try
                 {

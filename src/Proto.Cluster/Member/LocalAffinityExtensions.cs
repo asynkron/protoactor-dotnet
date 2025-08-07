@@ -111,7 +111,8 @@ public static class LocalAffinityExtensions
             return () => true;
         }
 
-        var random = new Random();
+        // Random.Shared ensures thread-safety and avoids reseeding
+        var random = Random.Shared;
 
         return () => random.NextDouble() < relocationFactor;
     }

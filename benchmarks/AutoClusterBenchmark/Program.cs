@@ -133,7 +133,7 @@ public static class Program
 
         _ = SafeTask.Run(async () =>
         {
-            var rnd = new Random();
+            var rnd = Random.Shared;
             var semaphore = new AsyncSemaphore(5);
 
             while (!cluster.System.Shutdown.IsCancellationRequested)
