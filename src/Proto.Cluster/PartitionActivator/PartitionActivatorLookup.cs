@@ -21,16 +21,18 @@ public class PartitionActivatorLookup : IIdentityLookup
 {
     private static readonly ILogger Logger = Log.CreateLogger<PartitionActivatorLookup>();
     private readonly TimeSpan _getPidTimeout;
+    private readonly Func<Props, Props>? _configureProps;
     private Cluster _cluster = null!;
     private PartitionActivatorManager _partitionManager = null!;
 
-    public PartitionActivatorLookup() : this(TimeSpan.FromSeconds(1))
+    public PartitionActivatorLookup(Func<Props, Props>? configureProps = null) : this(TimeSpan.FromSeconds(1), configureProps)
     {
     }
 
-    public PartitionActivatorLookup(TimeSpan getPidTimeout)
+    public PartitionActivatorLookup(TimeSpan getPidTimeout, Func<Props, Props>? configureProps = null)
     {
         _getPidTimeout = getPidTimeout;
+        _configureProps = configureProps;
     }
 
     public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken notUsed)
@@ -116,7 +118,7 @@ public class PartitionActivatorLookup : IIdentityLookup
     public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
     {
         _cluster = cluster;
-        _partitionManager = new PartitionActivatorManager(cluster, isClient);
+        _partitionManager = new PartitionActivatorManager(cluster, isClient, _configureProps);
         _partitionManager.Setup();
 
         return Task.CompletedTask;

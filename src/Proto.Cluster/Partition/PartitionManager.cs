@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -19,16 +20,18 @@ internal class PartitionManager
     private readonly IRootContext _context;
     private readonly bool _isClient;
     private readonly ActorSystem _system;
+    private readonly Func<Props, Props>? _configurePlacementProps;
     private PID _partitionIdentityActor = null!;
     private PID _partitionPlacementActor = null!;
 
-    internal PartitionManager(Cluster cluster, bool isClient, PartitionConfig config)
+    internal PartitionManager(Cluster cluster, bool isClient, PartitionConfig config, Func<Props, Props>? configurePlacementProps = null)
     {
         _cluster = cluster;
         _system = cluster.System;
         _context = _system.Root;
         _isClient = isClient;
         _config = config;
+        _configurePlacementProps = configurePlacementProps;
     }
 
     internal PartitionMemberSelector Selector { get; } = new();
@@ -60,6 +63,12 @@ internal class PartitionManager
             _partitionIdentityActor = _context.SpawnNamedSystem(partitionActorProps, PartitionIdentityActorName);
 
             var partitionActivatorProps = Props.FromProducer(() => new PartitionPlacementActor(_cluster, _config));
+
+            if (_configurePlacementProps is not null)
+            {
+                partitionActivatorProps = _configurePlacementProps(partitionActivatorProps);
+            }
+
             _partitionPlacementActor = _context.SpawnNamedSystem(partitionActivatorProps, PartitionPlacementActorName);
 
             //synchronous subscribe to keep accurate
