@@ -131,10 +131,26 @@ internal class PartitionPlacementActor : IActor, IDisposable
             }
 
             // Ensure that we only update last rebalanced topology when all members have received the current activations
-            if (waitingRequests.All(task
-                    => task.IsCompletedSuccessfully &&
-                       task.Result?.ProcessingState == IdentityHandoverAck.Types.State.Processed
-                ))
+            var allProcessed = true;
+
+            foreach (var task in waitingRequests)
+            {
+                if (!task.IsCompletedSuccessfully)
+                {
+                    allProcessed = false;
+                    break;
+                }
+
+                var ack = await task.ConfigureAwait(false);
+
+                if (ack?.ProcessingState != IdentityHandoverAck.Types.State.Processed)
+                {
+                    allProcessed = false;
+                    break;
+                }
+            }
+
+            if (allProcessed)
             {
                 Logger.LogInformation("[PartitionPlacementActor] Completed rebalance publish for topology {TopologyHash}",
                     msg.TopologyHash);
@@ -318,7 +334,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
             }
         );
 
-    private Task OnActivationRequest(IContext context, ActivationRequest msg)
+    private async Task OnActivationRequest(IContext context, ActivationRequest msg)
     {
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
         {
@@ -336,7 +352,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
 
             context.Respond(response);
 
-            return Task.CompletedTask;
+            return;
         }
 
         var clusterKind = _cluster.TryGetClusterKind(msg.Kind);
@@ -350,23 +366,21 @@ internal class PartitionPlacementActor : IActor, IDisposable
                 TopologyHash = msg.TopologyHash
             });
 
-            return Task.CompletedTask;
+            return;
         }
 
         if (clusterKind.CanSpawnIdentity is not null)
         {
             // Needs to check if the identity is allowed to spawn
-            VerifyAndSpawn(msg, context, clusterKind);
+            await VerifyAndSpawn(msg, context, clusterKind).ConfigureAwait(false);
         }
         else
         {
             Spawn(msg, context, clusterKind);
         }
-
-        return Task.CompletedTask;
     }
 
-    private void VerifyAndSpawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
+    private async Task VerifyAndSpawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
     {
         var clusterIdentity = msg.ClusterIdentity;
 
@@ -389,20 +403,22 @@ internal class PartitionPlacementActor : IActor, IDisposable
 
         if (canSpawn.IsCompleted)
         {
-            OnSpawnDecided(msg, context, clusterKind, canSpawn.Result);
+            var canSpawnIdentity = await canSpawn.AsTask().ConfigureAwait(false);
+            OnSpawnDecided(msg, context, clusterKind, canSpawnIdentity);
 
             return;
         }
 
         _inFlightIdentityChecks.Add(clusterIdentity);
 
-        context.ReenterAfter(canSpawn.AsTask(), task =>
+        context.ReenterAfter(canSpawn.AsTask(), async task =>
             {
                 _inFlightIdentityChecks.Remove(clusterIdentity);
 
                 if (task.IsCompletedSuccessfully)
                 {
-                    OnSpawnDecided(msg, context, clusterKind, task.Result);
+                    var canSpawnIdentity = await task.ConfigureAwait(false);
+                    OnSpawnDecided(msg, context, clusterKind, canSpawnIdentity);
                 }
                 else
                 {
@@ -415,8 +431,6 @@ internal class PartitionPlacementActor : IActor, IDisposable
                         }
                     );
                 }
-
-                return Task.CompletedTask;
             }
         );
     }

@@ -149,7 +149,7 @@ public class PartitionActivatorActor : IActor
         return Task.CompletedTask;
     }
 
-    private Task OnActivationRequest(ActivationRequest msg, IContext context)
+    private async Task OnActivationRequest(ActivationRequest msg, IContext context)
     {
         //who owns this?
         var ownerAddress = _manager.Selector.GetOwnerAddress(msg.ClusterIdentity);
@@ -167,7 +167,7 @@ public class PartitionActivatorActor : IActor
 
             context.Forward(ownerPid);
 
-            return Task.CompletedTask;
+            return;
         }
 
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
@@ -185,18 +185,16 @@ public class PartitionActivatorActor : IActor
             if (clusterKind.CanSpawnIdentity is not null)
             {
                 // Needs to check if the identity is allowed to spawn
-                VerifyAndSpawn(msg, context, clusterKind);
+                await VerifyAndSpawn(msg, context, clusterKind).ConfigureAwait(false);
             }
             else
             {
                 Spawn(msg, context, clusterKind);
             }
         }
-
-        return Task.CompletedTask;
     }
 
-    private void VerifyAndSpawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
+    private async Task VerifyAndSpawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
     {
         var clusterIdentity = msg.ClusterIdentity;
 
@@ -219,20 +217,22 @@ public class PartitionActivatorActor : IActor
 
         if (canSpawn.IsCompleted)
         {
-            OnSpawnDecided(msg, context, clusterKind, canSpawn.Result);
+            var canSpawnIdentity = await canSpawn.AsTask().ConfigureAwait(false);
+            OnSpawnDecided(msg, context, clusterKind, canSpawnIdentity);
 
             return;
         }
 
         _inFlightIdentityChecks.Add(clusterIdentity);
 
-        context.ReenterAfter(canSpawn.AsTask(), task =>
+        context.ReenterAfter(canSpawn.AsTask(), async task =>
             {
                 _inFlightIdentityChecks.Remove(clusterIdentity);
 
                 if (task.IsCompletedSuccessfully)
                 {
-                    OnSpawnDecided(msg, context, clusterKind, task.Result);
+                    var canSpawnIdentity = await task.ConfigureAwait(false);
+                    OnSpawnDecided(msg, context, clusterKind, canSpawnIdentity);
                 }
                 else
                 {
@@ -244,8 +244,6 @@ public class PartitionActivatorActor : IActor
                         }
                     );
                 }
-
-                return Task.CompletedTask;
             }
         );
     }

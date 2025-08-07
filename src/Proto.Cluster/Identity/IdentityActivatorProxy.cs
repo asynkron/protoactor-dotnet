@@ -52,12 +52,15 @@ internal class IdentityActivatorProxy : IActor
         if (context.Sender is not null)
         {
             context.ReenterAfter(target,
-                task =>
+                async task =>
                 {
-                    var pid = task.IsCompletedSuccessfully ? task.Result : null;
-                    Respond(context, pid);
+                    PID? pid = null;
+                    if (task.IsCompletedSuccessfully)
+                    {
+                        pid = await task.ConfigureAwait(false);
+                    }
 
-                    return Task.CompletedTask;
+                    Respond(context, pid);
                 }
             );
         }
@@ -98,9 +101,13 @@ internal class IdentityActivatorProxy : IActor
         }
 
         context.ReenterAfter(GetPid(identity, context.CancellationToken),
-            task =>
+            async task =>
             {
-                var activation = task.IsCompletedSuccessfully ? task.Result : null;
+                PID? activation = null;
+                if (task.IsCompletedSuccessfully)
+                {
+                    activation = await task.ConfigureAwait(false);
+                }
 
                 // Check if retrieved PID is stale. Replace should be called after the original activation has been stopped,
                 // but the identity might not have been purged from IdentityLookup yet.
@@ -118,7 +125,7 @@ internal class IdentityActivatorProxy : IActor
                         context.ReenterAfter(Task.Delay(50 * attempt),
                             () => ReplaceActivation(identity, replacedPid, context, attempt + 1));
 
-                        return Task.CompletedTask;
+                        return;
                     }
 
                     Logger.LogWarning(
@@ -127,8 +134,6 @@ internal class IdentityActivatorProxy : IActor
                 }
 
                 Respond(context, activation);
-
-                return Task.CompletedTask;
             }
         );
 

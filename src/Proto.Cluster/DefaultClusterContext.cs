@@ -131,7 +131,8 @@ public class DefaultClusterContext : IClusterContext
 
                     if (task.IsCompleted)
                     {
-                        var untypedResult = MessageEnvelope.UnwrapMessage(task.Result);
+                        var result = await task.ConfigureAwait(false);
+                        var untypedResult = MessageEnvelope.UnwrapMessage(result);
                         
                         if (untypedResult is DeadLetterResponse)
                         {
@@ -158,7 +159,7 @@ public class DefaultClusterContext : IClusterContext
                         
                         if (typeof(T) == typeof(MessageEnvelope))
                         {
-                            return (T)(object)MessageEnvelope.Wrap(task.Result);
+                            return (T)(object)MessageEnvelope.Wrap(result);
                         }
 
                         Logger.LogError("Unexpected message. Was type {Type} but expected {ExpectedType}",
