@@ -105,6 +105,9 @@ public record ActorStarted(string Member, PID Activation, DateTimeOffset When, i
 public record ActorStopped(string Member, PID Activation, DateTimeOffset When, int StoredCount, long GlobalCount)
     : VerificationEvent(Activation, When);
 
+public record ActivationRequested(DateTimeOffset When)
+    : VerificationEvent(new PID(string.Empty, string.Empty), When);
+
 public record ConsistencyError(
         PID Activation,
         DateTimeOffset When,
@@ -173,6 +176,9 @@ public class ActorState
             _currentlyOnMembers.Remove(context.System.Id);
         }
     }
+
+    public void RecordActivationRequest()
+        => Events.Add(new ActivationRequested(DateTimeOffset.Now));
 
     // do not verify consistency if any of the current members is blocked (which means they are shutting down)
     // in this case we may see duplicated activation, but this is by design and we don't want to report it

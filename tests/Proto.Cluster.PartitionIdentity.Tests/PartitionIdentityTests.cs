@@ -95,6 +95,10 @@ public class PartitionIdentityTests
 
         _output.WriteLine($"{totalCalls} requests, {restarts} restarts against " + actorStates.Count + " identities");
 
+        var activationRequests = actorStates.Sum(it => it.Events.Count(e => e is ActivationRequested));
+        var actorStarts = actorStates.Sum(it => it.Events.Count(e => e is ActorStarted));
+        _output.WriteLine($"Activation requests: {activationRequests}, actors started: {actorStarts}");
+
         foreach (var actorState in actorStates)
         {
             if (actorState.Inconsistent)
@@ -298,12 +302,15 @@ public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
         };
 
     protected override IIdentityLookup GetIdentityLookup(string clusterName) =>
-        new PartitionIdentityLookup(new PartitionConfig
-        {
-            GetPidTimeout = TimeSpan.FromSeconds(5),
-            HandoverChunkSize = _chunkSize,
-            RebalanceRequestTimeout = TimeSpan.FromSeconds(3),
-            Mode = _mode,
-            Send = _send
-        });
+        new RecordingPartitionIdentityLookup(
+            new PartitionIdentityLookup(new PartitionConfig
+            {
+                GetPidTimeout = TimeSpan.FromSeconds(5),
+                HandoverChunkSize = _chunkSize,
+                RebalanceRequestTimeout = TimeSpan.FromSeconds(3),
+                Mode = _mode,
+                Send = _send
+            }),
+            Repository,
+            this);
 }
