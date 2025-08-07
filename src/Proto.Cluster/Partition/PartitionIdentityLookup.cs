@@ -49,25 +49,28 @@ public class PartitionIdentityLookup : IIdentityLookup
     private static readonly ILogger Logger = Log.CreateLogger<PartitionIdentityLookup>();
     private readonly PartitionConfig _config;
     private readonly TimeSpan _getPidTimeout;
+    private readonly Func<Props, Props>? _configurePlacementProps;
     private Cluster _cluster = null!;
     private PartitionManager _partitionManager = null!;
 
-    public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout) : this(new PartitionConfig
-    {
-        GetPidTimeout = getPidTimeout,
-        RebalanceRequestTimeout = identityHandoverTimeout
-    })
-    {
-    }
-
-    public PartitionIdentityLookup() : this(new PartitionConfig())
+    public PartitionIdentityLookup(TimeSpan identityHandoverTimeout, TimeSpan getPidTimeout, Func<Props, Props>? configurePlacementProps = null)
+        : this(new PartitionConfig
+            {
+                GetPidTimeout = getPidTimeout,
+                RebalanceRequestTimeout = identityHandoverTimeout
+            }, configurePlacementProps)
     {
     }
 
-    public PartitionIdentityLookup(PartitionConfig? config)
+    public PartitionIdentityLookup(Func<Props, Props>? configurePlacementProps = null) : this(new PartitionConfig(), configurePlacementProps)
+    {
+    }
+
+    public PartitionIdentityLookup(PartitionConfig? config, Func<Props, Props>? configurePlacementProps = null)
     {
         _config = config ?? new PartitionConfig();
         _getPidTimeout = _config.GetPidTimeout;
+        _configurePlacementProps = configurePlacementProps;
     }
 
     public async Task<PID?> GetAsync(ClusterIdentity clusterIdentity, CancellationToken notUsed)
@@ -189,7 +192,7 @@ public class PartitionIdentityLookup : IIdentityLookup
     public Task SetupAsync(Cluster cluster, string[] kinds, bool isClient)
     {
         _cluster = cluster;
-        _partitionManager = new PartitionManager(cluster, isClient, _config);
+        _partitionManager = new PartitionManager(cluster, isClient, _config, _configurePlacementProps);
         _partitionManager.Setup();
 
         return Task.CompletedTask;
