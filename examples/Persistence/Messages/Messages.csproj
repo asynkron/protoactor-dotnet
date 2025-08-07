@@ -4,7 +4,6 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" />
-        <PackageReference Include="System.ValueTuple" />
         <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
