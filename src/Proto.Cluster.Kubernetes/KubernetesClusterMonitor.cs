@@ -107,7 +107,7 @@ internal class KubernetesClusterMonitor : IActor
 
     private Task Watch()
     {
-        var tcs = new TaskCompletionSource();
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         _watcherTask = GetListTask(_clusterName, true, _config.WatchTimeoutSeconds);
         _watcher = _watcherTask.Watch<V1Pod, V1PodList>(Watch, Error, Closed);
