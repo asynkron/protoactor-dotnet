@@ -136,6 +136,8 @@ public class PartitionIdentityTests
         var sentActivationRequests = activationRequestsSent;
         var receivedActivationRequests = activationRequestsReceived;
         var forwardedActivationRequests = activationRequestsForwarded;
+        var activationStats =
+            $"sent {sentActivationRequests}, received {receivedActivationRequests}, forwarded {forwardedActivationRequests}";
 
         _output.WriteLine(
             $"{totalCalls} requests, {restarts} restarts, {receivedActivationRequests} activation requests against " +
@@ -144,23 +146,24 @@ public class PartitionIdentityTests
         _output.WriteLine($"{forwardedActivationRequests} activation requests forwarded by activators");
 
         // Ensure every activation request sent by lookups was handled by an activator
-        sentActivationRequests.Should().Be(
-            receivedActivationRequests,
-            $"sent {sentActivationRequests}, received {receivedActivationRequests}, forwarded {forwardedActivationRequests}"
+        Assert.True(
+            sentActivationRequests == receivedActivationRequests,
+            activationStats
         );
 
         // Some activation requests may target actors that are already running
         // so the number of received requests can exceed actual actor starts
         receivedActivationRequests.Should().BeGreaterOrEqualTo(
             totalStarts,
-            $"received {receivedActivationRequests}, actor starts {totalStarts}, forwarded {forwardedActivationRequests}"
+            activationStats
         );
 
         foreach (var actorState in actorStates)
         {
             if (actorState.Inconsistent)
             {
-                Assert.False(actorState.Inconsistent, actorState.ToString());
+                // Include activation counts in the failure message for easier debugging
+                Assert.False(actorState.Inconsistent, $"{activationStats}\n{actorState}");
             }
         }
     }
