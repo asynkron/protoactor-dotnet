@@ -63,10 +63,15 @@ public class ConcurrencyVerificationActor : IActor
         else
         {
             _count = (int)totalCount; // Reset to the global total count.
-            _state.RecordInconsistency(count, (int)totalCount, context.Self);
         }
 
         _state.StoredCount = _count;
+
+        if (totalCount != count)
+        {
+            // log inconsistency after updating StoredCount so the event reflects the current value
+            _state.RecordInconsistency(count, (int)totalCount, _state.StoredCount, context.Self);
+        }
 
         return Task.CompletedTask;
     }
@@ -186,9 +191,10 @@ public class ActorState
     private bool AnyOfCurrentMembersIsStopping() =>
         _currentlyOnMembers.Any(cm => _clusterFixture.Members.Any(m => m.Remote.BlockList.IsBlocked(cm)));
 
-    public void RecordInconsistency(int expected, int actual, PID activation)
+    public void RecordInconsistency(int expected, int actual, int stored, PID activation)
     {
-        Events.Add(new ConsistencyError(activation, DateTimeOffset.Now, StoredCount, TotalCount, expected, actual));
+        // include the supplied stored count so logged events reflect the state at the time of inconsistency
+        Events.Add(new ConsistencyError(activation, DateTimeOffset.Now, stored, TotalCount, expected, actual));
         Inconsistent = true;
     }
 
