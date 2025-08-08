@@ -53,13 +53,15 @@ public class PartitionIdentityTests
 
         var activationRequestsSent = 0L;
         var activationRequestsReceived = 0L;
+        var activationRequestsForwarded = 0L;
         using var listener = new MeterListener
         {
             InstrumentPublished = (instrument, l) =>
             {
                 if (instrument.Meter.Name == ProtoMetrics.MeterName &&
                     (instrument.Name == "protocluster_identity_activation_request_sent_count" ||
-                     instrument.Name == "protocluster_activator_activation_request_received_count"))
+                     instrument.Name == "protocluster_activator_activation_request_received_count" ||
+                     instrument.Name == "protocluster_activator_activation_request_forwarded_count"))
                 {
                     l.EnableMeasurementEvents(instrument);
                 }
@@ -75,6 +77,10 @@ public class PartitionIdentityTests
             else if (instrument.Name == "protocluster_activator_activation_request_received_count")
             {
                 Interlocked.Add(ref activationRequestsReceived, measurement);
+            }
+            else if (instrument.Name == "protocluster_activator_activation_request_forwarded_count")
+            {
+                Interlocked.Add(ref activationRequestsForwarded, measurement);
             }
         });
 
@@ -129,18 +135,26 @@ public class PartitionIdentityTests
 
         var sentActivationRequests = activationRequestsSent;
         var receivedActivationRequests = activationRequestsReceived;
+        var forwardedActivationRequests = activationRequestsForwarded;
 
         _output.WriteLine(
             $"{totalCalls} requests, {restarts} restarts, {receivedActivationRequests} activation requests against " +
             actorStates.Count + " identities");
         _output.WriteLine($"{sentActivationRequests} activation requests sent by identity lookups");
+        _output.WriteLine($"{forwardedActivationRequests} activation requests forwarded by activators");
 
         // Ensure every activation request sent by lookups was handled by an activator
-        sentActivationRequests.Should().Be(receivedActivationRequests);
+        sentActivationRequests.Should().Be(
+            receivedActivationRequests,
+            $"sent {sentActivationRequests}, received {receivedActivationRequests}, forwarded {forwardedActivationRequests}"
+        );
 
         // Some activation requests may target actors that are already running
         // so the number of received requests can exceed actual actor starts
-        receivedActivationRequests.Should().BeGreaterOrEqualTo(totalStarts);
+        receivedActivationRequests.Should().BeGreaterOrEqualTo(
+            totalStarts,
+            $"received {receivedActivationRequests}, actor starts {totalStarts}, forwarded {forwardedActivationRequests}"
+        );
 
         foreach (var actorState in actorStates)
         {
