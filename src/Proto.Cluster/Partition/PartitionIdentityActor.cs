@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Proto.Cluster.Identity;
 
 namespace Proto.Cluster.Partition;
 
@@ -750,6 +751,14 @@ internal class PartitionIdentityActor : IActor
 
             var timeout = _cluster.Config.ActorActivationTimeout;
             var activatorPid = PartitionManager.RemotePartitionPlacementActor(activatorAddress);
+
+            if (context.System.Metrics.Enabled)
+            {
+                IdentityMetrics.ActivationRequestSentCount.Add(1,
+                    new KeyValuePair<string, object?>("id", context.System.Id),
+                    new KeyValuePair<string, object?>("address", context.System.Address),
+                    new KeyValuePair<string, object?>("clusterkind", req.Kind));
+            }
 
             var res = await context.RequestAsync<ActivationResponse>(activatorPid, req, timeout).ConfigureAwait(false);
 

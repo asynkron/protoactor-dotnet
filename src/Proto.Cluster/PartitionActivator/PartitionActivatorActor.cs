@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
+using Proto.Cluster.Identity;
 
 namespace Proto.Cluster.PartitionActivator;
 
@@ -165,9 +166,25 @@ public class PartitionActivatorActor : IActor
                 Logger.LogWarning("[PartitionActivator] Tried to spawn on wrong node, forwarding");
             }
 
+            if (context.System.Metrics.Enabled)
+            {
+                IdentityMetrics.ActivationRequestForwardedCount.Add(1,
+                    new KeyValuePair<string, object?>("id", context.System.Id),
+                    new KeyValuePair<string, object?>("address", context.System.Address),
+                    new KeyValuePair<string, object?>("clusterkind", msg.Kind));
+            }
+
             context.Forward(ownerPid);
 
             return;
+        }
+
+        if (context.System.Metrics.Enabled)
+        {
+            IdentityMetrics.ActivationRequestReceivedCount.Add(1,
+                new KeyValuePair<string, object?>("id", context.System.Id),
+                new KeyValuePair<string, object?>("address", context.System.Address),
+                new KeyValuePair<string, object?>("clusterkind", msg.Kind));
         }
 
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))

@@ -106,6 +106,14 @@ internal class IdentityStoragePlacementActor : IActor
 
     private async Task OnActivationRequest(IContext context, ActivationRequest msg)
     {
+        if (context.System.Metrics.Enabled)
+        {
+            IdentityMetrics.ActivationRequestReceivedCount.Add(1,
+                new KeyValuePair<string, object?>("id", context.System.Id),
+                new KeyValuePair<string, object?>("address", context.System.Address),
+                new KeyValuePair<string, object?>("clusterkind", msg.Kind));
+        }
+
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
         {
             //this identity already exists
