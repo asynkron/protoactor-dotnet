@@ -205,7 +205,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     public void Request(PID target, object message, PID? sender)
     {
-        var messageEnvelope = MessageEnvelope.WithSender(message, sender!);
+        var messageEnvelope = MessageEnvelope.WithSender(message, sender);
         SendUserMessage(target, messageEnvelope);
     }
 
