@@ -45,6 +45,7 @@ public static class Log
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    [Obsolete("Inject ILogger<T> instead", false)]
+    //ignore obsolete for now.
+    //[Obsolete("Inject ILogger<T> instead", false)]
     public static ILogger CreateLogger<T>() => _loggerFactory.CreateLogger<T>();
 }
