@@ -137,7 +137,7 @@ public class PartitionIdentityTests
         var receivedActivationRequests = activationRequestsReceived;
         var forwardedActivationRequests = activationRequestsForwarded;
         var activationStats =
-            $"sent {sentActivationRequests}, received {receivedActivationRequests}, forwarded {forwardedActivationRequests}";
+            $"sent {sentActivationRequests}, received {receivedActivationRequests}, forwarded {forwardedActivationRequests}, started {totalStarts}";
 
         _output.WriteLine(
             $"{totalCalls} requests, {restarts} restarts, {receivedActivationRequests} activation requests against " +
