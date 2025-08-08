@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Logging;
 using Proto.Utils;
+using Proto.Cluster.Identity;
 
 namespace Proto.Cluster.Partition;
 
@@ -336,6 +337,14 @@ internal class PartitionPlacementActor : IActor, IDisposable
 
     private async Task OnActivationRequest(IContext context, ActivationRequest msg)
     {
+        if (context.System.Metrics.Enabled)
+        {
+            IdentityMetrics.ActivationRequestReceivedCount.Add(1,
+                new KeyValuePair<string, object?>("id", context.System.Id),
+                new KeyValuePair<string, object?>("address", context.System.Address),
+                new KeyValuePair<string, object?>("clusterkind", msg.Kind));
+        }
+
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
         {
             if (Logger.IsEnabled(LogLevel.Debug))

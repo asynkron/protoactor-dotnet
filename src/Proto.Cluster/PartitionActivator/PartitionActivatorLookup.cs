@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -57,6 +58,14 @@ public class PartitionActivatorLookup : IIdentityLookup
         {
             ClusterIdentity = clusterIdentity
         };
+
+        if (_cluster.System.Metrics.Enabled)
+        {
+            IdentityMetrics.ActivationRequestSentCount.Add(1,
+                new KeyValuePair<string, object?>("id", _cluster.System.Id),
+                new KeyValuePair<string, object?>("address", _cluster.System.Address),
+                new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind));
+        }
 
         if (Logger.IsEnabled(LogLevel.Debug))
         {

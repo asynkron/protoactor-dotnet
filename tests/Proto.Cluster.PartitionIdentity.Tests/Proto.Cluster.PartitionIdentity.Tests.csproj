@@ -12,6 +12,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj" />
         <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
+        <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj" />
     </ItemGroup>
 
 </Project>

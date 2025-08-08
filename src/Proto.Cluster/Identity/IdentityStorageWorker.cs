@@ -282,6 +282,14 @@ internal class IdentityStorageWorker : IActor
             RequestId = spawnLock.LockId
         };
 
+        if (_cluster.System.Metrics.Enabled)
+        {
+            IdentityMetrics.ActivationRequestSentCount.Add(1,
+                new KeyValuePair<string, object?>("id", _cluster.System.Id),
+                new KeyValuePair<string, object?>("address", _cluster.System.Address),
+                new KeyValuePair<string, object?>("clusterkind", spawnLock.ClusterIdentity.Kind));
+        }
+
         try
         {
             var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct).ConfigureAwait(false);

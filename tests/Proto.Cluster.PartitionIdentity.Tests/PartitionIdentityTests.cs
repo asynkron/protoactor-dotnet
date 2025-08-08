@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,8 @@ using Proto.Cluster;
 using Proto.Cluster.Identity;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Tests;
+using Proto;
+using Proto.Metrics;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -47,6 +50,35 @@ public class PartitionIdentityTests
     )
     {
         const int memberCount = 3;
+
+        var activationRequestsSent = 0L;
+        var activationRequestsReceived = 0L;
+        using var listener = new MeterListener
+        {
+            InstrumentPublished = (instrument, l) =>
+            {
+                if (instrument.Meter.Name == ProtoMetrics.MeterName &&
+                    (instrument.Name == "protocluster_identity_activation_request_sent_count" ||
+                     instrument.Name == "protocluster_activator_activation_request_received_count"))
+                {
+                    l.EnableMeasurementEvents(instrument);
+                }
+            }
+        };
+
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) =>
+        {
+            if (instrument.Name == "protocluster_identity_activation_request_sent_count")
+            {
+                Interlocked.Add(ref activationRequestsSent, measurement);
+            }
+            else if (instrument.Name == "protocluster_activator_activation_request_received_count")
+            {
+                Interlocked.Add(ref activationRequestsReceived, measurement);
+            }
+        });
+
+        listener.Start();
 
         Interlocked.Exchange(ref _requests, 0);
         var fixture = await InitClusterFixture(memberCount, mode, send);
@@ -93,19 +125,25 @@ public class PartitionIdentityTests
 
         var totalCalls = actorStates.Select(it => it.TotalCount).Sum();
         var restarts = actorStates.Select(it => it.Events.Count(e => e is ActorStopped) - 1).Sum();
-        var totalActivationRequests =
-            actorStates.Select(it => it.Events.Count(e => e is ActivationRequested)).Sum();
+        var totalStarts = actorStates.Select(it => it.Events.Count(e => e is ActorStarted)).Sum();
+
+        var sentActivationRequests = activationRequestsSent;
+        var receivedActivationRequests = activationRequestsReceived;
 
         _output.WriteLine(
-            $"{totalCalls} requests, {restarts} restarts, {totalActivationRequests} activation requests against " +
+            $"{totalCalls} requests, {restarts} restarts, {receivedActivationRequests} activation requests against " +
             actorStates.Count + " identities");
+        _output.WriteLine($"{sentActivationRequests} activation requests sent by identity lookups");
+
+        // Ensure every activation request sent by lookups was handled by an activator
+        sentActivationRequests.Should().Be(receivedActivationRequests);
+
+        // Some activation requests may target actors that are already running
+        // so the number of received requests can exceed actual actor starts
+        receivedActivationRequests.Should().BeGreaterOrEqualTo(totalStarts);
 
         foreach (var actorState in actorStates)
         {
-            var activationReqs = actorState.Events.Count(e => e is ActivationRequested);
-            var starts = actorState.Events.Count(e => e is ActorStarted);
-            activationReqs.Should().Be(starts);
-
             if (actorState.Inconsistent)
             {
                 Assert.False(actorState.Inconsistent, actorState.ToString());
@@ -299,6 +337,9 @@ public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
         _chunkSize = chunkSize;
     }
 
+    protected override ActorSystemConfig GetActorSystemConfig() =>
+        base.GetActorSystemConfig().WithMetrics();
+
     protected override ClusterKind[] ClusterKinds
         => new[]
         {
@@ -315,14 +356,5 @@ public class PartitionIdentityClusterFixture : BaseInMemoryClusterFixture
                 RebalanceRequestTimeout = TimeSpan.FromSeconds(3),
                 Mode = _mode,
                 Send = _send
-            },
-            props => props.WithReceiverMiddleware(next => async (ctx, env) =>
-            {
-                if (env.Message is ActivationRequest req)
-                {
-                    Repository.Get(req.Identity, this).RecordActivationRequest(ctx.System.Id);
-                }
-
-                await next(ctx, env);
-            }));
+            });
 }
