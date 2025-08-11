@@ -29,12 +29,13 @@ public class SharedFutureTokenReuseTests : ActorTestBase
                 return Task.CompletedTask;
             }));
 
-        const int iterations = 2_000_000;
+        // crank up the load to really stress shared futures
+        const int iterations = 20_000_000;
 
         var options = new ParallelOptions
         {
-            // allow many concurrent futures to overlap
-            MaxDegreeOfParallelism = Environment.ProcessorCount * 4
+            // fixed degree of parallelism to keep pressure constant
+            MaxDegreeOfParallelism = 20
         };
 
         await Parallel.ForEachAsync(Enumerable.Range(0, iterations), options, async (i, _) =>
