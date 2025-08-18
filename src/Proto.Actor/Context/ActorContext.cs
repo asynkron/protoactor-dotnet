@@ -221,7 +221,13 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         if (token.IsCancellationRequested)
         {
-            ReenterAfter(Task.CompletedTask, onCancelled);
+            ReenterAfter(Task.CompletedTask, _ =>
+                {
+                    onCancelled();
+
+                    return Task.CompletedTask;
+                }
+            );
 
             return;
         }
@@ -238,84 +244,35 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         // Ensures registration is disposed with the actor
         var inceptionRegistration = CancellationToken.Register(() => registration.Dispose());
 
-        ReenterAfter(tcs.Task, () =>
+        ReenterAfter(tcs.Task, _ =>
             {
                 inceptionRegistration.Dispose();
                 onCancelled();
+
+                return Task.CompletedTask;
             }
         );
     }
 
-    public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action)
+    private void ContinueReenter<T>(Task<T> target, Func<Task<T>, Task> action)
     {
         var msg = _messageOrEnvelope;
         var cont = new Continuation(() => action(target), msg, Actor);
-
         ScheduleContinuation(target, cont);
     }
 
-    public void ReenterAfter(Task target, Action action)
+    private void ContinueReenter(Task target, Func<Task, Task> action)
     {
         var msg = _messageOrEnvelope;
-
-        var cont = new Continuation(
-            () =>
-            {
-                action();
-
-                return Task.CompletedTask;
-            },
-            msg,
-            Actor);
-
+        var cont = new Continuation(() => action(target), msg, Actor);
         ScheduleContinuation(target, cont);
     }
 
-    public void ReenterAfter(Task target, Action<Task> action)
-    {
-        var msg = _messageOrEnvelope;
+    public void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action) =>
+        ContinueReenter(target, action);
 
-        var cont = new Continuation(
-            () =>
-            {
-                action(target);
-
-                return Task.CompletedTask;
-            },
-            msg,
-            Actor);
-
-        ScheduleContinuation(target, cont);
-    }
-
-    public void ReenterAfter<T>(Task<T> target, Action<Task<T>> action)
-    {
-        var msg = _messageOrEnvelope;
-
-        var cont = new Continuation(
-            () =>
-            {
-                action(target);
-
-                return Task.CompletedTask;
-            },
-            msg,
-            Actor);
-
-        ScheduleContinuation(target, cont);
-    }
-
-    public void ReenterAfter(Task target, Func<Task, Task> action)
-    {
-        var msg = _messageOrEnvelope;
-
-        var cont = new Continuation(
-            () => action(target),
-            msg,
-            Actor);
-
-        ScheduleContinuation(target, cont);
-    }
+    public void ReenterAfter(Task target, Func<Task, Task> action) =>
+        ContinueReenter(target, action);
 
     public Task Receive(MessageEnvelope envelope)
     {

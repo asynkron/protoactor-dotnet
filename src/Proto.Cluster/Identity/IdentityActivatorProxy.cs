@@ -123,7 +123,7 @@ internal class IdentityActivatorProxy : IActor
                         }
 
                         context.ReenterAfter(Task.Delay(50 * attempt),
-                            () => ReplaceActivation(identity, replacedPid, context, attempt + 1));
+                            _ => ReplaceActivation(identity, replacedPid, context, attempt + 1));
 
                         return;
                     }

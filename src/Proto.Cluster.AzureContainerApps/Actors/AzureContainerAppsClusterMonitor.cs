@@ -102,6 +102,8 @@ public class AzureContainerAppsClusterMonitor : IActor
         {
             // Schedule the first update.
             ScheduleUpdate(context);
+
+            return Task.CompletedTask;
         });
 
         return Task.CompletedTask;
@@ -124,6 +126,8 @@ public class AzureContainerAppsClusterMonitor : IActor
         {
             // Schedule the next update.
             ScheduleUpdate(context);
+
+            return Task.CompletedTask;
         });
 
         return Task.CompletedTask;

@@ -126,7 +126,12 @@ internal class PartitionIdentityRebalanceWorker : IActor, IDisposable
                 Logger.LogWarning("[PartitionIdentity] Partition {Member} unreachable", response.MemberAddress);
 
                 context.ReenterAfter(Task.Delay(200, _cancellationToken),
-                    () => StartRebalanceFromMember(_request!, context, response.MemberAddress)
+                    _ =>
+                    {
+                        StartRebalanceFromMember(_request!, context, response.MemberAddress);
+
+                        return Task.CompletedTask;
+                    }
                 );
 
                 break;
@@ -196,10 +201,12 @@ internal class PartitionIdentityRebalanceWorker : IActor, IDisposable
             context.Request(_targetMember, msg);
             context.SetReceiveTimeout(_timeout);
 
-            context.ReenterAfter(_completionSource.Task, () =>
+            context.ReenterAfter(_completionSource.Task, _ =>
                 {
                     context.Send(context.Parent!, _completionSource.Task.Result);
                     context.Stop(context.Self);
+
+                    return Task.CompletedTask;
                 }
             );
         }

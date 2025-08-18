@@ -93,39 +93,8 @@ public interface IContext : ISenderContext, IReceiverContext, ISpawnerContext, I
 
     /// <summary>
     ///     Awaits the given target task and once completed, the given action is then completed within the actors concurrency
-    ///     constraint.
-    ///     The concept is called Reentrancy, where an actor can continue to process messages while also awaiting that some
-    ///     asynchronous operation completes.
-    /// </summary>
-    /// <param name="target">The Task to await</param>
-    /// <param name="action">The continuation to call once the task is completed</param>
-    void ReenterAfter(Task target, Action action);
-
-    /// <summary>
-    ///     Awaits the given target task and once completed, the given action is then completed within the actors concurrency
-    ///     constraint.
-    ///     The concept is called Reentrancy, where an actor can continue to process messages while also awaiting that some
-    ///     asynchronous operation completes.
-    /// </summary>
-    /// <param name="target">The Task to await</param>
-    /// <param name="action">The continuation to call once the task is completed. The awaited task is passed in as a parameter.</param>
-    void ReenterAfter(Task target, Action<Task> action);
-
-    /// <summary>
-    ///     Awaits the given target task and once completed, the given action is then completed within the actors concurrency
-    ///     constraint.
-    ///     The concept is called Reentrancy, where an actor can continue to process messages while also awaiting that some
-    ///     asynchronous operation completes.
-    /// </summary>
-    /// <param name="target">The Task to await</param>
-    /// <param name="action">The continuation to call once the task is completed. The awaited task is passed in as a parameter.</param>
-    void ReenterAfter<T>(Task<T> target, Action<Task<T>> action);
-
-    /// <summary>
-    ///     Awaits the given target task and once completed, the given action is then completed within the actors concurrency
-    ///     constraint.
-    ///     The concept is called Reentrancy, where an actor can continue to process messages while also awaiting that some
-    ///     asynchronous operation completes.
+    ///     constraint. The concept is called Reentrancy, where an actor can continue to process messages while also awaiting
+    ///     that some asynchronous operation completes.
     /// </summary>
     /// <param name="target">The Task to await</param>
     /// <param name="action">The continuation to call once the task is completed. The awaited task is passed in as a parameter.</param>

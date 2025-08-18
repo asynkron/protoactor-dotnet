@@ -149,9 +149,6 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
     [Theory]
     [InlineData(SendAs.ReEnterAfter1)]
     [InlineData(SendAs.ReEnterAfter2)]
-    [InlineData(SendAs.ReEnterAfter3)]
-    [InlineData(SendAs.ReEnterAfter4)]
-    [InlineData(SendAs.ReEnterAfter5)]
     public async Task TracesPropagateCorrectlyWithBaggageForReEnterAfter(SendAs reEnterType) =>
         await VerifyTrace(async (rootContext, target) =>
             {
@@ -263,10 +260,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         Forward,
         Invalid,
         ReEnterAfter1, // void ReenterAfter<T>(Task<T> target, Func<Task<T>, Task> action);
-        ReEnterAfter2, // void ReenterAfter(Task target, Action action);
-        ReEnterAfter3, // void ReenterAfter(Task target, Action<Task> action);
-        ReEnterAfter4, // void ReenterAfter<T>(Task<T> target, Action<Task<T>> action);
-        ReEnterAfter5, // void ReenterAfter(Task target, Func<Task, Task> action);
+        ReEnterAfter2, // void ReenterAfter(Task target, Func<Task, Task> action);
     }
 
     private record TraceMe(SendAs Method);
@@ -320,18 +314,6 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 
                     break;
                 case SendAs.ReEnterAfter2:
-                    context.ReenterAfter(Task.CompletedTask, () => context.Forward(target));
-
-                    break;
-                case SendAs.ReEnterAfter3:
-                    context.ReenterAfter(Task.CompletedTask, _ => context.Forward(target));
-
-                    break;
-                case SendAs.ReEnterAfter4:
-                    context.ReenterAfter(Task.FromResult(1), _ => context.Forward(target));
-
-                    break;
-                case SendAs.ReEnterAfter5:
                     context.ReenterAfter(Task.CompletedTask, _ =>
                     {
                         context.Forward(target);
