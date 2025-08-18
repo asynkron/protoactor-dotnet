@@ -19,43 +19,43 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Actor.Tests", "tests\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Remote", "src\Proto.Remote\Proto.Remote.csproj", "{4494E76E-16AC-4A7B-A2B8-A9B2D0568630}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Router", "examples\Router\Router.csproj", "{571A1CB9-2819-4FCD-A721-DB9AD63CC444}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Router", "examples\actor.router\Router.csproj", "{571A1CB9-2819-4FCD-A721-DB9AD63CC444}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence", "src\Proto.Persistence\Proto.Persistence.csproj", "{30AAE00A-7FB9-43AC-8304-B824C0F097F2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ReceiveTimeout", "ReceiveTimeout", "{C78E50DC-8D65-4117-9B3E-BFA3F4A8101E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReceiveTimeout", "examples\ReceiveTimeout\ReceiveTimeout.csproj", "{AC11D152-F1FD-4A48-A0DC-0B315D507457}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReceiveTimeout", "examples\actor.receive-timeout\ReceiveTimeout.csproj", "{AC11D152-F1FD-4A48-A0DC-0B315D507457}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Middleware", "examples\Middleware\Middleware.csproj", "{3378E8AC-72C6-4A19-8061-C22CC390EE09}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Middleware", "examples\actor.middleware\Middleware.csproj", "{3378E8AC-72C6-4A19-8061-C22CC390EE09}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Futures", "Futures", "{F045416D-2BFA-4048-AB1D-D908F4566F75}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Futures", "examples\Futures\Futures.csproj", "{9DA55746-E70B-4B37-972C-F0745AF151DE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Futures", "examples\actor.futures\Futures.csproj", "{9DA55746-E70B-4B37-972C-F0745AF151DE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HelloWorld", "HelloWorld", "{02D69941-5D89-4F54-9876-D5EC06B214A1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HelloWorld", "examples\HelloWorld\HelloWorld.csproj", "{84180640-21F6-4EB4-AF37-16481F93933E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HelloWorld", "examples\actor.hello-world\HelloWorld.csproj", "{84180640-21F6-4EB4-AF37-16481F93933E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Chat", "Chat", "{7C1624BB-71C7-4F2F-8A2F-84C1E7B034A4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Client", "examples\Chat\Client\Client.csproj", "{DAFD0819-5CE9-40AF-AFAE-D149B4EFB09F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Client", "examples\remote.chat-example\Client\Client.csproj", "{DAFD0819-5CE9-40AF-AFAE-D149B4EFB09F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server", "examples\Chat\Server\Server.csproj", "{BB91F8FB-412B-420F-90DA-6DCB970CEA74}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server", "examples\remote.chat-example\Server\Server.csproj", "{BB91F8FB-412B-420F-90DA-6DCB970CEA74}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chat.Messages", "examples\Chat\Messages\Chat.Messages.csproj", "{08EB688D-2E71-4C78-BB50-797AAC310650}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chat.Messages", "examples\remote.chat-example\Messages\Chat.Messages.csproj", "{08EB688D-2E71-4C78-BB50-797AAC310650}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LifecycleEvents", "LifecycleEvents", "{7C0D5FCB-D7B0-42F7-97D5-86A044927503}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Supervision", "Supervision", "{660167A8-008A-45D1-B489-AF49907895ED}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Supervision", "examples\Supervision\Supervision.csproj", "{84C778CD-2290-4011-8E21-312BE9DC7350}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Supervision", "examples\actor.supervision\Supervision.csproj", "{84C778CD-2290-4011-8E21-312BE9DC7350}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LifecycleEvents", "examples\LifecycleEvents\LifecycleEvents.csproj", "{593AD0C1-687B-4D43-AE3C-A7786B718EB5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LifecycleEvents", "examples\actor.lifecycle-events\LifecycleEvents.csproj", "{593AD0C1-687B-4D43-AE3C-A7786B718EB5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ScheduledMessages", "ScheduledMessages", "{BCA22E13-E154-498A-9989-61639EC6B2AC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScheduledMessages", "examples\ScheduledMessages\ScheduledMessages.csproj", "{BEF7AF52-F9A6-4BF8-881D-636D97234884}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScheduledMessages", "examples\actor.scheduled-messages\ScheduledMessages.csproj", "{BEF7AF52-F9A6-4BF8-881D-636D97234884}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Persistence.Tests", "tests\Proto.Persistence.Tests\Proto.Persistence.Tests.csproj", "{848E5CE2-D894-4321-8961-3521D3F2233C}"
 EndProject
@@ -67,17 +67,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Remote.Tests.Messages
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Remote.Tests", "tests\Proto.Remote.Tests\Proto.Remote.Tests.csproj", "{62D3B49D-F51A-4B80-88C4-76C2CD583DC9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EscalateSupervision", "examples\EscalateSupervision\EscalateSupervision.csproj", "{837CDD41-BEA3-4C7D-957F-3B4AFE3B14DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EscalateSupervision", "examples\actor.supervision-escalate\EscalateSupervision.csproj", "{837CDD41-BEA3-4C7D-957F-3B4AFE3B14DB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster.Tests", "tests\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj", "{9DE48E83-DF4E-4C5F-9BC8-CB05C646FC43}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ContextDecorators", "examples\ContextDecorators\ContextDecorators.csproj", "{8705E498-3F5C-41DE-9CCD-FE99104FFF2D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ContextDecorators", "examples\actor.context-decorators\ContextDecorators.csproj", "{8705E498-3F5C-41DE-9CCD-FE99104FFF2D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ContextDecorators", "ContextDecorators", "{6AD72F65-94AF-49DA-BADC-5647ED48D083}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Patterns", "Patterns", "{3025D606-F487-4A06-A2A3-91AA7503B606}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Saga", "examples\Patterns\Saga\Saga.csproj", "{F6E76800-BF17-4D9B-9AD1-2BD2A3138807}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Saga", "examples\actor.saga\Saga.csproj", "{F6E76800-BF17-4D9B-9AD1-2BD2A3138807}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}"
 EndProject
@@ -105,7 +103,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClusterBenchmark", "benchma
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proto.Cluster.Identity.MongoDb", "src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj", "{C087B9A2-6790-484B-9C19-C23DDB025CEA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeadLetterThrottling", "examples\DeadLetterThrottling\DeadLetterThrottling.csproj", "{C912F331-E740-44F7-A573-B1432C5DCF98}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeadLetterThrottling", "examples\actor.deadletter-throttling\DeadLetterThrottling.csproj", "{C912F331-E740-44F7-A573-B1432C5DCF98}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".meta", ".meta", "{222D5932-627D-406B-9FA5-B60B38FD3019}"
 	ProjectSection(SolutionItems) = preProject
@@ -120,7 +118,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Identity.Test
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DependencyInjection", "DependencyInjection", "{C6E9CC73-7BAF-4208-9120-CA83ED0DE6F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyInjection", "examples\DependencyInjection\DependencyInjection.csproj", "{779521AC-8EBB-4E2D-82EE-508A2E95AD1B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyInjection", "examples\actor.dependency-injection\DependencyInjection.csproj", "{779521AC-8EBB-4E2D-82EE-508A2E95AD1B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{5C1A4C10-E037-4945-9EDC-DFBFBD501A4A}"
 ProjectSection(SolutionItems) = preProject
@@ -159,23 +157,23 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Persistence.Couchbase
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{4E7AA00C-446F-454B-BC8E-8C3622D81DB5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Persistence", "examples\Persistence\Persistence\Persistence.csproj", "{E8659EB8-991D-4FD1-B5AA-CC8158D67F1B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Persistence", "examples\persistence.basic\Persistence\Persistence.csproj", "{E8659EB8-991D-4FD1-B5AA-CC8158D67F1B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\Persistence\Messages\Messages.csproj", "{729A1C5C-9F9B-49C9-AABE-75C56F9E4509}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\persistence.basic\Messages\Messages.csproj", "{729A1C5C-9F9B-49C9-AABE-75C56F9E4509}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EventStream", "EventStream", "{B7382494-D73E-4A0C-8B6B-3AC3D5980631}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStream", "examples\EventStream\EventStream.csproj", "{1F2B8F3C-7558-4BF8-8BB3-530BE2259F76}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStream", "examples\actor.event-stream\EventStream.csproj", "{1F2B8F3C-7558-4BF8-8BB3-530BE2259F76}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStreamTopics", "examples\EventStreamTopics\EventStreamTopics.csproj", "{26BEA731-FE01-40D7-96AC-742657D842BE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStreamTopics", "examples\actor.event-stream-topics\EventStreamTopics.csproj", "{26BEA731-FE01-40D7-96AC-742657D842BE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStreamTopicsCluster", "examples\EventStreamTopicsCluster\EventStreamTopicsCluster.csproj", "{48C792A0-D32D-48B7-AA18-A961074DC490}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStreamTopicsCluster", "examples\cluster.event-stream-topics\EventStreamTopicsCluster.csproj", "{48C792A0-D32D-48B7-AA18-A961074DC490}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EventStreamTopics", "EventStreamTopics", "{8179B44D-A2DD-496F-B554-3AE9E0B2A6DC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EventStreamTopicsCluster", "EventStreamTopicsCluster", "{1A2E42A8-313F-475C-8172-7D572399D138}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActorMetrics", "examples\ActorMetrics\ActorMetrics.csproj", "{DB15D947-FD4A-4AAF-8195-74A94F34EE4A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActorMetrics", "examples\actor.metrics\ActorMetrics.csproj", "{DB15D947-FD4A-4AAF-8195-74A94F34EE4A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ActorMetrics", "ActorMetrics", "{525F60E8-DE81-45BF-A284-84CAB6DF5F8F}"
 EndProject
@@ -183,9 +181,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalPingPong", "benchmarks
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "KafkaVirtualActorIngress", "KafkaVirtualActorIngress", "{0F605F4E-8976-4444-81B9-17BFF028DC7E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaVirtualActorIngress", "examples\KafkaVirtualActorIngress\KafkaVirtualActorIngress.csproj", "{C0D710AE-6F79-40A8-8565-3D971E4F067C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaVirtualActorIngress", "examples\cluster.kafka-virtual-actor-ingress\KafkaVirtualActorIngress.csproj", "{C0D710AE-6F79-40A8-8565-3D971E4F067C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterPubSub", "examples\ClusterPubSub\ClusterPubSub.csproj", "{F94EA250-F52C-4FF6-A2ED-5B6B390C4A57}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterPubSub", "examples\cluster.pubsub\ClusterPubSub.csproj", "{F94EA250-F52C-4FF6-A2ED-5B6B390C4A57}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterPubSub", "ClusterPubSub", "{8368C8CC-7418-4B9B-B9B3-2011C612CE42}"
 EndProject
@@ -193,7 +191,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterMicroBenchmarks", "b
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MessageHeaders", "MessageHeaders", "{86AE9D56-DCCE-4AA0-814A-D411FBB2A241}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessageHeaders", "examples\MessageHeaders\MessageHeaders.csproj", "{4560E580-B22B-4435-A483-EB0D2C1668CC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessageHeaders", "examples\actor.message-headers\MessageHeaders.csproj", "{4560E580-B22B-4435-A483-EB0D2C1668CC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.CodeGen", "src\Proto.Cluster.CodeGen\Proto.Cluster.CodeGen.csproj", "{0EFA46FD-6762-4C4B-B821-434C1FB86ECE}"
 EndProject
@@ -201,11 +199,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.CodeGen.Tests
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RemoteChannels", "RemoteChannels", "{1A6608EB-EB09-4A1C-AA81-1D2658B9EEA2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "examples\remotechannels\Server\Server.csproj", "{13A75636-989E-4BF9-B4EC-0952F2862438}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "examples\remote.channels\Server\Server.csproj", "{13A75636-989E-4BF9-B4EC-0952F2862438}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "examples\remotechannels\Client\Client.csproj", "{5EACFB26-C757-452C-A536-E633BC352A69}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "examples\remote.channels\Client\Client.csproj", "{5EACFB26-C757-452C-A536-E633BC352A69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "examples\remotechannels\Common\Common.csproj", "{D33722CB-96B8-4B9C-AB59-B18B7FF28539}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "examples\remote.channels\Common\Common.csproj", "{D33722CB-96B8-4B9C-AB59-B18B7FF28539}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.AmazonECS", "src\Proto.Cluster.AmazonECS\Proto.Cluster.AmazonECS.csproj", "{F5EB4AD3-5BCB-48E9-B974-A93EB19CE43C}"
 EndProject
@@ -223,13 +221,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.PartitionIden
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoClusterBenchmark", "benchmarks\AutoClusterBenchmark\AutoClusterBenchmark.csproj", "{3E276EC3-12D8-4ACC-AE79-24D8B3A46F1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node1", "examples\ClusterGrainHelloWorld\Node1\Node1.csproj", "{F510BDE3-D06F-4859-91EF-F9F06EF067FA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node1", "examples\cluster.hello-world-grain\Node1\Node1.csproj", "{F510BDE3-D06F-4859-91EF-F9F06EF067FA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterGrains", "ClusterGrains", "{D0F8A451-44BB-4232-9C09-669E3E547C45}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node2", "examples\ClusterGrainHelloWorld\Node2\Node2.csproj", "{198D9787-2C5C-4764-860B-93709A2A1C86}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node2", "examples\cluster.hello-world-grain\Node2\Node2.csproj", "{198D9787-2C5C-4764-860B-93709A2A1C86}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\ClusterGrainHelloWorld\Messages\Messages.csproj", "{336B5875-8D8B-44C6-9CA1-A7E41CBE0633}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\cluster.hello-world-grain\Messages\Messages.csproj", "{336B5875-8D8B-44C6-9CA1-A7E41CBE0633}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{010B4228-6236-4111-B76E-90BD83780E35}"
 EndProject
@@ -237,7 +235,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "contrib", "contrib", "{3D12
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Dashboard", "src\Proto.Cluster.Dashboard\Proto.Cluster.Dashboard.csproj", "{58D27164-2426-4DBC-8826-A9048CC33E9D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Dashboard.Host", "examples\Proto.Cluster.Dashboard.Host\Proto.Cluster.Dashboard.Host.csproj", "{2A909620-2AA9-4038-A138-D0B135DD4DC5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Dashboard.Host", "examples\cluster.dashboard-host\Proto.Cluster.Dashboard.Host.csproj", "{2A909620-2AA9-4038-A138-D0B135DD4DC5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GossipBenchmark", "GossipBenchmark", "{3AD895C6-2E1D-40FE-9055-DD4F40E7FFFA}"
 EndProject
@@ -251,7 +249,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PropsBenchmark", "benchmark
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterPubSubBatchingProducer", "ClusterPubSubBatchingProducer", "{4A162D2F-C82A-4919-962B-6B2C53316263}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterPubSubBatchingProducer", "examples\ClusterPubSubBatchingProducer\ClusterPubSubBatchingProducer.csproj", "{8D481FB0-EEDC-4049-B18E-DEACA5BD8FF4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterPubSubBatchingProducer", "examples\cluster.pubsub-batching-producer\ClusterPubSubBatchingProducer.csproj", "{8D481FB0-EEDC-4049-B18E-DEACA5BD8FF4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.PubSub.Tests", "tests\Proto.Cluster.PubSub.Tests\Proto.Cluster.PubSub.Tests.csproj", "{5B3A62B8-4C75-4551-9DDE-4107EE96FD03}"
 EndProject
@@ -263,11 +261,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyriseMiniServer", "benchm
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AspNetGrains", "AspNetGrains", "{85F44707-946F-453E-9969-E3CDA6CB8F3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node1", "examples\AspNetGrains\Node1\Node1.csproj", "{FBD971F3-689A-491D-986B-B9ADBE0656B6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node1", "examples\cluster.aspnet-grains\Node1\Node1.csproj", "{FBD971F3-689A-491D-986B-B9ADBE0656B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node2", "examples\AspNetGrains\Node2\Node2.csproj", "{296010B4-B52A-4049-9C0D-497B7AC21C32}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node2", "examples\cluster.aspnet-grains\Node2\Node2.csproj", "{296010B4-B52A-4049-9C0D-497B7AC21C32}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\AspNetGrains\Messages\Messages.csproj", "{82D29895-93F1-4BD6-938D-7BEDD4D1D2BF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\cluster.aspnet-grains\Messages\Messages.csproj", "{82D29895-93F1-4BD6-938D-7BEDD4D1D2BF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Analyzers", "src\Proto.Analyzers\Proto.Analyzers.csproj", "{9D139291-31D9-4502-B5BD-EA522F54B008}"
 EndProject
@@ -285,30 +283,30 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GossipDecoder", "benchmarks
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClusterK8sGrains", "ClusterK8sGrains", "{ADE7A14E-FFE9-4137-AC25-E2F2A82B0A8C}"
 	ProjectSection(SolutionItems) = preProject
-		examples\ClusterK8sGrains\readme.md = examples\ClusterK8sGrains\readme.md
+		examples\cluster.kubernetes-grains\readme.md = examples\cluster.kubernetes-grains\readme.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\ClusterK8sGrains\Messages\Messages.csproj", "{44B8EBA7-5A47-4D20-B62F-48413B676473}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "examples\cluster.kubernetes-grains\Messages\Messages.csproj", "{44B8EBA7-5A47-4D20-B62F-48413B676473}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node1", "examples\ClusterK8sGrains\Node1\Node1.csproj", "{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node1", "examples\cluster.kubernetes-grains\Node1\Node1.csproj", "{80DC28A1-D361-4A25-AC5D-8F5B6DCE276A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node2", "examples\ClusterK8sGrains\Node2\Node2.csproj", "{B196FBFE-0DAA-4533-9A56-BB5826A57923}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node2", "examples\cluster.kubernetes-grains\Node2\Node2.csproj", "{B196FBFE-0DAA-4533-9A56-BB5826A57923}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "chart", "chart", "{CDCE3D4C-1BDD-460F-93B8-75123A258183}"
 	ProjectSection(SolutionItems) = preProject
-		examples\ClusterK8sGrains\chart\Chart.yaml = examples\ClusterK8sGrains\chart\Chart.yaml
-		examples\ClusterK8sGrains\chart\values.yaml = examples\ClusterK8sGrains\chart\values.yaml
+		examples\cluster.kubernetes-grains\chart\Chart.yaml = examples\cluster.kubernetes-grains\chart\Chart.yaml
+		examples\cluster.kubernetes-grains\chart\values.yaml = examples\cluster.kubernetes-grains\chart\values.yaml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "template", "template", "{087E5441-1582-4D55-8233-014C0FB06FF0}"
 	ProjectSection(SolutionItems) = preProject
-		examples\ClusterK8sGrains\chart\templates\namespace.yaml = examples\ClusterK8sGrains\chart\templates\namespace.yaml
-		examples\ClusterK8sGrains\chart\templates\node1-deployment.yaml = examples\ClusterK8sGrains\chart\templates\node1-deployment.yaml
-		examples\ClusterK8sGrains\chart\templates\node2-deployment.yaml = examples\ClusterK8sGrains\chart\templates\node2-deployment.yaml
-		examples\ClusterK8sGrains\chart\templates\protoactor-k8s-cluster-port-service.yaml = examples\ClusterK8sGrains\chart\templates\protoactor-k8s-cluster-port-service.yaml
-		examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-role.yaml = examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-role.yaml
-		examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-rolebinding.yaml = examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-rolebinding.yaml
-		examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-serviceaccount.yaml = examples\ClusterK8sGrains\chart\templates\protoactor-k8s-grains-serviceaccount.yaml
+		examples\cluster.kubernetes-grains\chart\templates\namespace.yaml = examples\cluster.kubernetes-grains\chart\templates\namespace.yaml
+		examples\cluster.kubernetes-grains\chart\templates\node1-deployment.yaml = examples\cluster.kubernetes-grains\chart\templates\node1-deployment.yaml
+		examples\cluster.kubernetes-grains\chart\templates\node2-deployment.yaml = examples\cluster.kubernetes-grains\chart\templates\node2-deployment.yaml
+		examples\cluster.kubernetes-grains\chart\templates\protoactor-k8s-cluster-port-service.yaml = examples\cluster.kubernetes-grains\chart\templates\protoactor-k8s-cluster-port-service.yaml
+		examples\cluster.kubernetes-grains\chart\templates\protoactor-k8s-grains-role.yaml = examples\cluster.kubernetes-grains\chart\templates\protoactor-k8s-grains-role.yaml
+		examples\cluster.kubernetes-grains\chart\templates\protoactor-k8s-grains-rolebinding.yaml = examples\cluster.kubernetes-grains\chart\templates\protoactor-k8s-grains-rolebinding.yaml
+		examples\cluster.kubernetes-grains\chart\templates\protoactor-k8s-grains-serviceaccount.yaml = examples\cluster.kubernetes-grains\chart\templates\protoactor-k8s-grains-serviceaccount.yaml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EndpointManagerTest", "benchmarks\EndpointManagerTest\EndpointManagerTest.csproj", "{B7258689-41D2-4284-AF93-050DD1DFEAC4}"
@@ -1544,8 +1542,7 @@ EndGlobalSection
 		{9DE48E83-DF4E-4C5F-9BC8-CB05C646FC43} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
 		{8705E498-3F5C-41DE-9CCD-FE99104FFF2D} = {6AD72F65-94AF-49DA-BADC-5647ED48D083}
 		{6AD72F65-94AF-49DA-BADC-5647ED48D083} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
-		{3025D606-F487-4A06-A2A3-91AA7503B606} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
-		{F6E76800-BF17-4D9B-9AD1-2BD2A3138807} = {3025D606-F487-4A06-A2A3-91AA7503B606}
+        {F6E76800-BF17-4D9B-9AD1-2BD2A3138807} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{8849DD9F-CEB4-40D5-9DC0-EC6EDCA09E65} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{BD994BD6-9E3D-4221-9287-E8A1468759C5} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
