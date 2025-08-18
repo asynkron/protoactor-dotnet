@@ -11,9 +11,9 @@ Cluster providers (e.g., Kubernetes) watch the environment for running nodes and
 invoke `MemberList.UpdateClusterTopology` with the current set of members ([KubernetesClusterMonitor.cs](src/Proto.Cluster.Kubernetes/KubernetesClusterMonitor.cs#L304-L317)).
 `UpdateClusterTopology` filters out blocked members, computes which members
 joined or left, and constructs a `ClusterTopology` that includes `Joined`,
-`Left`, and `Blocked` lists ([MemberList.cs](src/Proto.Cluster/Member/MemberList.cs#L161-L240)).
+`Left`, and `Blocked` lists ([MemberList.cs](src/Proto.Cluster/Membership/MemberList.cs#L161-L240)).
 The resulting topology is published to the node's local event stream via
-`BroadcastTopologyChanges` ([MemberList.cs](src/Proto.Cluster/Member/MemberList.cs#L349-L353)).
+`BroadcastTopologyChanges` ([MemberList.cs](src/Proto.Cluster/Membership/MemberList.cs#L349-L353)).
 
 ## Propagating membership to gossip
 
@@ -33,7 +33,7 @@ throughout the cluster.
 ## Member states
 
 - **Joined / Left** – Calculated by `MemberList.UpdateClusterTopology` and
-included in the published topology ([MemberList.cs](src/Proto.Cluster/Member/MemberList.cs#L197-L238)).
+  included in the published topology ([MemberList.cs](src/Proto.Cluster/Membership/MemberList.cs#L197-L238)).
 - **Gracefully left** – When a node shuts down gracefully it sets the
 `cluster:left` gossip key, waits two gossip intervals, and deregisters from the
 provider ([Cluster.cs](src/Proto.Cluster/Cluster.cs#L286-L299)). Other nodes read this key and

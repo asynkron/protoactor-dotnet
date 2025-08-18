@@ -9,19 +9,19 @@ components subscribe to it.
 - **Published by:** `BlockList` when new member IDs are added to the block list
   (e.g. unresponsive or leaving members) ([src/Proto.Remote/BlockList.cs](src/Proto.Remote/BlockList.cs#L42-L56))
 - **Subscribed by:** `MemberList` to log the block and recompute topology.
-  If the local node is blocked it invokes `SelfBlocked` ([src/Proto.Cluster/Member/MemberList.cs](src/Proto.Cluster/Member/MemberList.cs#L86-L114))
+  If the local node is blocked it invokes `SelfBlocked` ([src/Proto.Cluster/Membership/MemberList.cs](src/Proto.Cluster/Membership/MemberList.cs#L86-L114))
 
 ## EndpointTerminatedEvent
 - **Published by:**
   - `ServerConnector` when a remote connection is refused or fails ([src/Proto.Remote/Endpoints/ServerConnector.cs](src/Proto.Remote/Endpoints/ServerConnector.cs#L141-L166) and [src/Proto.Remote/Endpoints/ServerConnector.cs](src/Proto.Remote/Endpoints/ServerConnector.cs#L199-L229))
   - `EndpointReader` when a channel closes ([src/Proto.Remote/Endpoints/EndpointReader.cs](src/Proto.Remote/Endpoints/EndpointReader.cs#L238-L241))
-  - `MemberList` when a cluster member leaves ([src/Proto.Cluster/Member/MemberList.cs](src/Proto.Cluster/Member/MemberList.cs#L355-L365))
+  - `MemberList` when a cluster member leaves ([src/Proto.Cluster/Membership/MemberList.cs](src/Proto.Cluster/Membership/MemberList.cs#L355-L365))
 - **Subscribed by:** `EndpointManager` which disposes the endpoint and optionally
   blocks the address or system ID ([src/Proto.Remote/Endpoints/EndpointManager.cs](src/Proto.Remote/Endpoints/EndpointManager.cs#L25-L44) and [src/Proto.Remote/Endpoints/EndpointManager.cs](src/Proto.Remote/Endpoints/EndpointManager.cs#L91-L110))
 
 ## ClusterTopology
 - **Published by:** `MemberList.UpdateClusterTopology` whenever membership changes
-  (join/leave/block) and broadcast to all members ([src/Proto.Cluster/Member/MemberList.cs](src/Proto.Cluster/Member/MemberList.cs#L160-L232) and [src/Proto.Cluster/Member/MemberList.cs](src/Proto.Cluster/Member/MemberList.cs#L349-L353))
+  (join/leave/block) and broadcast to all members ([src/Proto.Cluster/Membership/MemberList.cs](src/Proto.Cluster/Membership/MemberList.cs#L160-L232) and [src/Proto.Cluster/Membership/MemberList.cs](src/Proto.Cluster/Membership/MemberList.cs#L349-L353))
 - **Subscribed by:** many cluster components, for example:
   - `Cluster` removes cached PIDs for members that left ([src/Proto.Cluster/Cluster.cs](src/Proto.Cluster/Cluster.cs#L146-L153))
   - `PartitionManager` updates placement selectors and forwards the update to
@@ -47,8 +47,8 @@ components subscribe to it.
 - **Published by:** `GossipActor` for each gossip state update received from a
   peer ([src/Proto.Cluster/Gossip/GossipActor.cs](src/Proto.Cluster/Gossip/GossipActor.cs#L162-L169))
 - **Subscribed by:**
-  - `MemberList` to merge block lists learned via gossip ([src/Proto.Cluster/Member/MemberList.cs](src/Proto.Cluster/Member/MemberList.cs#L86-L98))
-  - `GossipMemberStrategy` to track member heartbeats and actor counts ([src/Proto.Cluster/Member/GossipMemberStrategy.cs](src/Proto.Cluster/Member/GossipMemberStrategy.cs#L29-L45))
+  - `MemberList` to merge block lists learned via gossip ([src/Proto.Cluster/Membership/MemberList.cs](src/Proto.Cluster/Membership/MemberList.cs#L86-L98))
+  - `GossipMemberStrategy` to track member heartbeats and actor counts ([src/Proto.Cluster/Membership/GossipMemberStrategy.cs](src/Proto.Cluster/Membership/GossipMemberStrategy.cs#L29-L45))
 
 ## DeadLetterEvent
 - **Published by:** remote endpoints when a message cannot be delivered, either
