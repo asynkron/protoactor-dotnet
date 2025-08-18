@@ -306,18 +306,16 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 
                     break;
                 case SendAs.ReEnterAfter1:
-                    context.ReenterAfter(Task.FromResult(1), _ =>
+                    context.ReenterAfter(Task.FromResult(1), () =>
                     {
                         context.Forward(target);
-                        return Task.CompletedTask;
                     });
 
                     break;
                 case SendAs.ReEnterAfter2:
-                    context.ReenterAfter(Task.CompletedTask, _ =>
+                    context.ReenterAfter(Task.CompletedTask, () =>
                     {
                         context.Forward(target);
-                        return Task.CompletedTask;
                     });
 
                     break;

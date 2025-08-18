@@ -98,12 +98,10 @@ public class AzureContainerAppsClusterMonitor : IActor
         var registerMemberTask = RegisterMemberInternal();
 
         // Reenter after the member has been registered.
-        context.ReenterAfter(registerMemberTask, _ =>
+        context.ReenterAfter(registerMemberTask, () =>
         {
             // Schedule the first update.
             ScheduleUpdate(context);
-
-            return Task.CompletedTask;
         });
 
         return Task.CompletedTask;
@@ -122,12 +120,10 @@ public class AzureContainerAppsClusterMonitor : IActor
             return Task.CompletedTask;
 
         var updateMembersTask = UpdateMembersAsync();
-        context.ReenterAfter(updateMembersTask, _ =>
+        context.ReenterAfter(updateMembersTask, () =>
         {
             // Schedule the next update.
             ScheduleUpdate(context);
-
-            return Task.CompletedTask;
         });
 
         return Task.CompletedTask;

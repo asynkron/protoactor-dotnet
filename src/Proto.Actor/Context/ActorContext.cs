@@ -221,13 +221,10 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         if (token.IsCancellationRequested)
         {
-            ReenterAfter(Task.CompletedTask, _ =>
-                {
-                    onCancelled();
-
-                    return Task.CompletedTask;
-                }
-            );
+            ((IContext)this).ReenterAfter(Task.CompletedTask, () =>
+            {
+                onCancelled();
+            });
 
             return;
         }
@@ -244,14 +241,11 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         // Ensures registration is disposed with the actor
         var inceptionRegistration = CancellationToken.Register(() => registration.Dispose());
 
-        ReenterAfter(tcs.Task, _ =>
-            {
-                inceptionRegistration.Dispose();
-                onCancelled();
-
-                return Task.CompletedTask;
-            }
-        );
+        ((IContext)this).ReenterAfter(tcs.Task, () =>
+        {
+            inceptionRegistration.Dispose();
+            onCancelled();
+        });
     }
 
     private void ContinueReenter<T>(Task<T> target, Func<Task<T>, Task> action)
