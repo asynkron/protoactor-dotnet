@@ -56,7 +56,10 @@ public class ReenterTests : ActorTestBase
                 if (ctx.Message is "reenter")
                 {
                     var delay = Task.Delay(500);
-                    ctx.ReenterAfter(delay, () => { ctx.Respond("response"); });
+                    ctx.ReenterAfter(delay, () =>
+                    {
+                        ctx.Respond("response");
+                    });
                 }
 
                 return Task.CompletedTask;
@@ -79,7 +82,10 @@ public class ReenterTests : ActorTestBase
                 if (ctx.Message is "reenter")
                 {
                     var task = Task.FromResult(expectedResult);
-                    ctx.ReenterAfter(task, completedTask => { ctx.Respond(completedTask.Result); });
+                    ctx.ReenterAfter(task, (int result) =>
+                    {
+                        ctx.Respond(result);
+                    });
                 }
 
                 return Task.CompletedTask;
@@ -150,14 +156,16 @@ public class ReenterTests : ActorTestBase
                 if (ctx.Message is "reenter")
                 {
                     var task = Task.Run(async () =>
-                        {
-                            await Task.Delay(100);
+                    {
+                        await Task.Delay(100);
 
-                            throw new Exception("Failed!");
-                        }
-                    );
+                        throw new Exception("Failed!");
+                    });
 
-                    ctx.ReenterAfter(task, () => { ctx.Respond("response"); });
+                    ctx.ReenterAfter(task, () =>
+                    {
+                        ctx.Respond("response");
+                    });
                 }
 
                 return Task.CompletedTask;
@@ -179,13 +187,10 @@ public class ReenterTests : ActorTestBase
                 {
                     var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-                    ctx.ReenterAfter(tcs.Task, _ =>
-                        {
-                            ctx.Respond("response");
-
-                            return Task.CompletedTask;
-                        }
-                    );
+                    ctx.ReenterAfter(tcs.Task, () =>
+                    {
+                        ctx.Respond("response");
+                    });
 
                     tcs.TrySetCanceled();
                 }
@@ -217,17 +222,16 @@ public class ReenterTests : ActorTestBase
                     var task = Task.Delay(0);
 
                     ctx.ReenterAfter(task, () =>
+                    {
+                        var res = Interlocked.Increment(ref activeCount);
+
+                        if (res != 1)
                         {
-                            var res = Interlocked.Increment(ref activeCount);
-
-                            if (res != 1)
-                            {
-                                correct = false;
-                            }
-
-                            Interlocked.Decrement(ref activeCount);
+                            correct = false;
                         }
-                    );
+
+                        Interlocked.Decrement(ref activeCount);
+                    });
                 }
 
                 return Task.CompletedTask;
@@ -262,7 +266,10 @@ public class ReenterTests : ActorTestBase
 
                         ctx.ReenterAfter(
                             Task.Delay(-1, cts.Token),
-                            () => { completionExecuted = true; });
+                            () =>
+                            {
+                                completionExecuted = true;
+                            });
 
                         ctx.Self.SendSystemMessage(ctx.System, new Restart(new Exception()));
                         // Release the cancellation token after restart gets processed.
@@ -317,7 +324,10 @@ public class ReenterTests : ActorTestBase
 
                         ctx.ReenterAfter(
                             Task.Delay(-1, cts.Token),
-                            () => { completionExecuted = true; });
+                            () =>
+                            {
+                                completionExecuted = true;
+                            });
                         
                         ctx.Stop(ctx.Self);
                         

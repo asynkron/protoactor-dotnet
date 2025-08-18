@@ -39,8 +39,10 @@ public class PubSubMemberDeliveryActor : IActor
                     .Select(sub => DeliverBatch(context, topicBatch, sub))
                     .ToArray();
 
-            context.ReenterAfter(Task.WhenAll(tasks),
-                () => NotifyAboutInvalidDeliveries(tasks, deliveryBatch.Topic, context));
+            context.ReenterAfter(Task.WhenAll(tasks), () =>
+            {
+                NotifyAboutInvalidDeliveries(tasks, deliveryBatch.Topic, context);
+            });
         }
 
         return Task.CompletedTask;

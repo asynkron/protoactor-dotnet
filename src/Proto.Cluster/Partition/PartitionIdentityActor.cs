@@ -548,7 +548,7 @@ internal class PartitionIdentityActor : IActor
                     msg.ClusterIdentity);
             }
 
-            context.ReenterAfter(_rebalanceTcs.Task, _ => OnActivationRequest(msg, context));
+            context.ReenterAfter(_rebalanceTcs.Task, () => OnActivationRequest(msg, context));
 
             return Task.CompletedTask;
         }

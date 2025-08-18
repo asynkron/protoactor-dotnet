@@ -80,14 +80,13 @@ internal class PartitionPlacementActor : IActor, IDisposable
             .WaitUntilInFlightActivationsAreCompleted(_config.RebalanceActivationsCompletionTimeout, cancellationToken);
 
         // Waits until all members agree on a cluster topology and have no more in-flight activation requests
-        context.ReenterAfter(activationsCompleted, async _ =>
+        context.ReenterAfter(activationsCompleted, async () =>
+        {
+            if (!cancellationToken.IsCancellationRequested)
             {
-                if (!cancellationToken.IsCancellationRequested)
-                {
-                    await Rebalance(context, msg).ConfigureAwait(false);
-                }
+                await Rebalance(context, msg).ConfigureAwait(false);
             }
-        );
+        });
 
         return Task.CompletedTask;
     }

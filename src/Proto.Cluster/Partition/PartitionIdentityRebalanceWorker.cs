@@ -125,9 +125,10 @@ internal class PartitionIdentityRebalanceWorker : IActor, IDisposable
             default:
                 Logger.LogWarning("[PartitionIdentity] Partition {Member} unreachable", response.MemberAddress);
 
-                context.ReenterAfter(Task.Delay(200, _cancellationToken),
-                    () => StartRebalanceFromMember(_request!, context, response.MemberAddress)
-                );
+                context.ReenterAfter(Task.Delay(200, _cancellationToken), () =>
+                {
+                    StartRebalanceFromMember(_request!, context, response.MemberAddress);
+                });
 
                 break;
         }
@@ -197,11 +198,10 @@ internal class PartitionIdentityRebalanceWorker : IActor, IDisposable
             context.SetReceiveTimeout(_timeout);
 
             context.ReenterAfter(_completionSource.Task, () =>
-                {
-                    context.Send(context.Parent!, _completionSource.Task.Result);
-                    context.Stop(context.Self);
-                }
-            );
+            {
+                context.Send(context.Parent!, _completionSource.Task.Result);
+                context.Stop(context.Self);
+            });
         }
 
         private void OnIdentityHandover(IdentityHandover response, IContext context)

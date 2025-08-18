@@ -95,7 +95,7 @@ public class ActorLoggingContext : ActorContextDecorator
         base.ReenterAfter(target, action);
     }
 
-    public override void ReenterAfter(Task target, Action action)
+    public override void ReenterAfter(Task target, Func<Task, Task> action)
     {
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))
         {
