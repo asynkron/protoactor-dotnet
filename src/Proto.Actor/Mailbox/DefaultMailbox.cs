@@ -6,55 +6,23 @@
 
 using System;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Proto.Mailbox;
 
-internal static class MailboxStatus
-{
-    public const int Idle = 0;
-    public const int Busy = 1;
-}
-
-public interface IMailbox
-{
-    int UserMessageCount { get; }
-
-    void PostUserMessage(object msg);
-
-    void PostSystemMessage(object msg);
-
-    void RegisterHandlers(IMessageInvoker invoker, IDispatcher dispatcher);
-
-    void Start();
-}
-
-public static class BoundedMailbox
-{
-    public static IMailbox Create(int size, params IMailboxStatistics[] stats) =>
-        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new BoundedMailboxQueue(size), stats);
-
-    public static IMailbox Create(int size, BoundedChannelFullMode fullMode, params IMailboxStatistics[] stats) =>
-        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new BoundedMailboxQueue(size, fullMode), stats);
-}
-
-public static class UnboundedMailbox
-{
-    public static IMailbox Create(params IMailboxStatistics[] stats) =>
-        new DefaultMailbox(new LockingUnboundedMailboxQueue(4), new UnboundedMailboxQueue(), stats);
-}
-
 public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
 
 {
+    private const int Idle = 0;
+    private const int Busy = 1;
+
     private readonly IMailboxStatistics[] _stats;
     private readonly IMailboxQueue _systemMessages;
     private readonly IMailboxQueue _userMailbox;
     private IDispatcher _dispatcher;
     private IMessageInvoker _invoker;
 
-    private long _status = MailboxStatus.Idle;
+    private long _status = Idle;
     private bool _suspended;
 
     public DefaultMailbox(
@@ -174,7 +142,7 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
             return Await(mailbox, task);
         }
 
-        Interlocked.Exchange(ref mailbox._status, MailboxStatus.Idle);
+        Interlocked.Exchange(ref mailbox._status, Idle);
 
         if (mailbox._systemMessages.HasMessages || mailbox is { _suspended: false, _userMailbox.HasMessages: true })
         {
@@ -194,7 +162,7 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
         {
             await task.ConfigureAwait(false);
 
-            Interlocked.Exchange(ref self._status, MailboxStatus.Idle);
+            Interlocked.Exchange(ref self._status, Idle);
 
             if (self._systemMessages.HasMessages || self is { _suspended: false, _userMailbox.HasMessages: true })
             {
@@ -300,7 +268,7 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
 
     private void Schedule()
     {
-        if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
+        if (Interlocked.CompareExchange(ref _status, Busy, Idle) == Idle)
         {
             if (_dispatcher == Dispatchers.DefaultDispatcher)
             {

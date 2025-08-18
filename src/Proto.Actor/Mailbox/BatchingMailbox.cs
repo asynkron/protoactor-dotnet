@@ -21,7 +21,10 @@ public class BatchingMailbox : IMailbox
     private IDispatcher _dispatcher = null!;
     private IMessageInvoker _invoker = null!;
 
-    private int _status = MailboxStatus.Idle;
+    private const int Idle = 0;
+    private const int Busy = 1;
+
+    private int _status = Idle;
     private bool _suspended;
 
     public BatchingMailbox(int batchSize)
@@ -99,7 +102,7 @@ public class BatchingMailbox : IMailbox
             _invoker.EscalateFailure(x, currentMessage);
         }
 
-        Interlocked.Exchange(ref _status, MailboxStatus.Idle);
+        Interlocked.Exchange(ref _status, Idle);
 
         if (_systemMessages.HasMessages || (_userMessages.HasMessages && !_suspended))
         {
@@ -109,7 +112,7 @@ public class BatchingMailbox : IMailbox
 
     private void Schedule()
     {
-        if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
+        if (Interlocked.CompareExchange(ref _status, Busy, Idle) == Idle)
         {
             _dispatcher.Schedule(RunAsync);
         }
