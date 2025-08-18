@@ -127,6 +127,7 @@ public class MailboxSchedulingTests
         msg1.TaskCompletionSource.SetResult(0);
         await Task.Delay(1000);
 
-        Assert.Equal(MailboxStatus.Idle, mailbox.Status);
+        // Mailbox becomes idle (status 0) after completing the user message
+        Assert.Equal(0, mailbox.Status);
     }
 }
