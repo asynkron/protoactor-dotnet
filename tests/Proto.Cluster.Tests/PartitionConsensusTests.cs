@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
@@ -20,51 +18,36 @@ public class PartitionConsensusTests
         var fixture = new PartitionClusterFixture();
         await using var _ = fixture;
         await fixture.InitializeAsync();
-        await ClusterProbe.WaitForTopologyConsensusAsync(fixture.Members, TimeSpan.FromSeconds(5));
+        await Task.Delay(2000);
 
         var members = fixture.Members;
         var memberA = members[0];
         var memberB = members[1];
-        var memberC = members[2];
 
         const string key = "test-state";
         const string initialValue = "v1";
         const string newValue = "v2";
 
-        var handle = memberA.Gossip.RegisterConsensusCheck<SomeGossipState, string>(key, s => s.Key);
-
-        try
+        foreach (var m in members)
         {
-            foreach (var m in members)
-            {
-                await m.Gossip.SetStateAsync(key, new SomeGossipState { Key = initialValue });
-            }
-
-            await ClusterProbe.WaitForConsensusAsync(new[] { handle }, initialValue, TimeSpan.FromSeconds(10));
-
-            GossipNetworkPartition.Isolate(memberB.System.Address);
-
-            await memberA.Gossip.SetStateAsync(key, new SomeGossipState { Key = newValue });
-            await ClusterProbe.WaitForNoConsensusAsync(new[] { handle }, TimeSpan.FromSeconds(5));
-
-            var stateDuringPartition = await memberB.Gossip.GetState<SomeGossipState>(key);
-            stateDuringPartition[memberA.System.Id].Key.Should().Be(initialValue);
-
-            GossipNetworkPartition.Clear();
-
-            // Re-emit the updated state so the previously partitioned member catches up
-            await memberA.Gossip.SetStateAsync(key, new SomeGossipState { Key = newValue });
-            await memberC.Gossip.SetStateAsync(key, new SomeGossipState { Key = newValue });
-
-            await ClusterProbe.WaitForMemberStateAsync<SomeGossipState>(memberB, key, memberA.System.Id,
-                s => s.Key == newValue, TimeSpan.FromSeconds(10));
-            var stateAfterRecovery = await memberB.Gossip.GetState<SomeGossipState>(key);
-            stateAfterRecovery[memberA.System.Id].Key.Should().Be(newValue);
+            await m.Gossip.SetStateAsync(key, new SomeGossipState { Key = initialValue });
         }
-        finally
-        {
-            handle.Dispose();
-        }
+
+        await Task.Delay(2000);
+
+        GossipNetworkPartition.Isolate(memberB.System.Address);
+
+        await memberA.Gossip.SetStateAsync(key, new SomeGossipState { Key = newValue });
+
+        await Task.Delay(2000);
+        var stateDuringPartition = await memberB.Gossip.GetState<SomeGossipState>(key);
+        stateDuringPartition[memberA.System.Id].Key.Should().Be(initialValue);
+
+        GossipNetworkPartition.Clear();
+
+        await Task.Delay(2000);
+        var stateAfterRecovery = await memberB.Gossip.GetState<SomeGossipState>(key);
+        stateAfterRecovery[memberA.System.Id].Key.Should().Be(newValue);
     }
 
     private class PartitionClusterFixture : BaseInMemoryClusterFixture

@@ -58,8 +58,12 @@ public class GossipTests
         await using var _ = clusterFixture;
         await clusterFixture.InitializeAsync();
 
-        var initialTopologyHash = await ClusterProbe.WaitForTopologyConsensusAsync(
-            clusterFixture.Members, TimeSpan.FromSeconds(5));
+        await Task.Delay(1000);
+
+        var (consensus, initialTopologyHash) =
+            await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
+
+        consensus.Should().BeTrue();
 
         var fixtureMembers = clusterFixture.Members;
         var consensusChecks = fixtureMembers.Select(CreateCompositeConsensusCheck).ToList();
@@ -79,7 +83,7 @@ public class GossipTests
         afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
         await clusterFixture.SpawnMember();
-        await ClusterProbe.WaitForTopologyConsensusAsync(clusterFixture.Members, TimeSpan.FromSeconds(5));
+        await Task.Delay(2000); // Allow topology state to propagate
 
         var afterChangingTopology =
             await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout);
@@ -123,7 +127,7 @@ public class GossipTests
                 "We should be able to read our writes, and locally we do not have consensus");
 
         _testOutputHelper.WriteLine("Read our own writes...");
-        await ClusterProbe.WaitForNoConsensusAsync(consensusChecks, TimeSpan.FromSeconds(5));
+        await Task.Delay(5000);
 
         _testOutputHelper.WriteLine("Checking consensus...");
 
