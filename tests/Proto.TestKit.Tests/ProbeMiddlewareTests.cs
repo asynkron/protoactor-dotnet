@@ -37,6 +37,23 @@ public class ProbeMiddlewareTests
         probe.Sender.Should().Be(target);
     }
 
+    [Fact]
+    public void Mailbox_probe_captures_messages_and_system_messages()
+    {
+        var system = new ActorSystem();
+        var probe = new TestProbe();
+        system.Root.Spawn(Props.FromProducer(() => probe));
+
+        var props = Props.FromProducer(() => new EmptyActor()).WithTestMailboxProbe(probe);
+        var pid = system.Root.Spawn(props);
+
+        system.Root.Send(pid, "hello");
+        probe.GetNextMessage<string>().Should().Be("hello");
+
+        system.Root.Stop(pid);
+        probe.ExpectSystemMessage<Stop>();
+    }
+
     private class EmptyActor : IActor
     {
         public Task ReceiveAsync(IContext context) => Task.CompletedTask;

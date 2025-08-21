@@ -35,7 +35,7 @@ public class TestProbe : IActor, ITestProbe
                 _channel.Writer.TryWrite(new MessageAndSender(context));
 
                 break;
-            case SystemMessage _: return Task.CompletedTask;
+            case SystemMessage _:
             default:
                 _channel.Writer.TryWrite(new MessageAndSender(context));
 
