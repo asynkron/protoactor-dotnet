@@ -113,7 +113,7 @@ namespace Proto.TestKit.Tests
         {
             Send(Probe, "hi");
             this.Invoking(_ => ExpectNoMessage())
-                .Should().Throw<TestKitException>().WithMessage("Waited 1 seconds and received a message of type Proto.TestKit.MessageAndSender");
+                .Should().Throw<TestKitException>().WithMessage("Waited 1 seconds and received a message of type System.String");
         }
 
         [Fact]

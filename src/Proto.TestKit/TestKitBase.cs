@@ -65,6 +65,21 @@ public class TestKitBase : ITestProbe, ISpawnerContext
         Probe.GetNextMessage(when, timeAllowed);
 
     /// <inheritdoc />
+    public Task<object?> GetNextMessageAsync(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        Probe.GetNextMessageAsync(timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<T> GetNextMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        Probe.GetNextMessageAsync<T>(timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<T> GetNextMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        Probe.GetNextMessageAsync(when, timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
     public IEnumerable ProcessMessages(TimeSpan? timeAllowed = null) => Probe.ProcessMessages(timeAllowed);
 
     /// <inheritdoc />
@@ -75,11 +90,36 @@ public class TestKitBase : ITestProbe, ISpawnerContext
         Probe.ProcessMessages(when, timeAllowed);
 
     /// <inheritdoc />
+    public IAsyncEnumerable<object?> ProcessMessagesAsync(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        Probe.ProcessMessagesAsync(timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
+    public IAsyncEnumerable<T> ProcessMessagesAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        Probe.ProcessMessagesAsync<T>(timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
+    public IAsyncEnumerable<T> ProcessMessagesAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        Probe.ProcessMessagesAsync(when, timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
     public T FishForMessage<T>(TimeSpan? timeAllowed = null) => Probe.FishForMessage<T>(timeAllowed);
 
     /// <inheritdoc />
     public T FishForMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null) =>
         Probe.FishForMessage(when, timeAllowed);
+
+    /// <inheritdoc />
+    public Task<T> FishForMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        Probe.FishForMessageAsync<T>(timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<T> FishForMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        Probe.FishForMessageAsync(when, timeAllowed, cancellationToken);
 
     /// <inheritdoc />
     public void Send(PID target, object message) => Probe.Send(target, message);
