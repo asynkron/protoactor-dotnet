@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Time.Testing;
+using Proto.TestKit;
 using Proto.Timers;
 using Xunit;
 
@@ -14,16 +15,9 @@ public class SchedulerTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var tcs = new TaskCompletionSource();
-        var pid = context.Spawn(Props.FromFunc(context =>
-        {
-            if (context.Message is "Wakeup")
-            {
-                tcs.SetResult();
-            }
+        var probe = new TestProbe();
+        var pid = context.Spawn(Props.FromProducer(() => probe));
 
-            return Task.CompletedTask;
-        }));
         var timeProvider = new FakeTimeProvider();
         var hook = new TestSchedulerHook();
         var scheduler = context.Scheduler(timeProvider, hook);
@@ -31,7 +25,8 @@ public class SchedulerTests
         scheduler.SendOnce(TimeSpan.FromSeconds(10), pid, "Wakeup");
         await hook.WaitAsync();
         timeProvider.Advance(TimeSpan.FromMinutes(10));
-        await tcs.Task.WaitAsync(TimeSpan.FromMilliseconds(10));
+        var msg = await probe.GetNextMessageAsync<string>(TimeSpan.FromMilliseconds(10));
+        Assert.Equal("Wakeup", msg);
     }
 
     [Fact]
@@ -39,28 +34,8 @@ public class SchedulerTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var count = 0;
-        var firstMessage = new TaskCompletionSource();
-        var extraMessage = new TaskCompletionSource();
-
-        var pid = context.Spawn(Props.FromFunc(ctx =>
-        {
-            if (ctx.Message is "Tick")
-            {
-                count++;
-
-                if (count == 1)
-                {
-                    firstMessage.SetResult();
-                }
-                else
-                {
-                    extraMessage.SetResult();
-                }
-            }
-
-            return Task.CompletedTask;
-        }));
+        var probe = new TestProbe();
+        var pid = context.Spawn(Props.FromProducer(() => probe));
 
         var timeProvider = new FakeTimeProvider();
         var hook = new TestSchedulerHook();
@@ -70,15 +45,11 @@ public class SchedulerTests
 
         await hook.WaitAsync();
         timeProvider.Advance(TimeSpan.FromMinutes(1));
-        await firstMessage.Task.WaitAsync(TimeSpan.FromMilliseconds(10));
+        await probe.GetNextMessageAsync<string>(TimeSpan.FromMilliseconds(10));
 
         cts.Cancel();
-
         timeProvider.Advance(TimeSpan.FromMinutes(1));
-        await Task.Delay(50);
-
-        Assert.Equal(1, count);
-        Assert.False(extraMessage.Task.IsCompleted);
+        await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(50));
     }
 
     [Fact]
@@ -86,17 +57,8 @@ public class SchedulerTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var tcs = new TaskCompletionSource();
-
-        var pid = context.Spawn(Props.FromFunc(ctx =>
-        {
-            if (ctx.Message is "Wakeup")
-            {
-                tcs.SetResult();
-            }
-
-            return Task.CompletedTask;
-        }));
+        var probe = new TestProbe();
+        var pid = context.Spawn(Props.FromProducer(() => probe));
 
         var timeProvider = new FakeTimeProvider();
         var hook = new TestSchedulerHook();
@@ -106,11 +68,10 @@ public class SchedulerTests
 
         await hook.WaitAsync();
         cts.Cancel();
-
-        timeProvider.Advance(TimeSpan.FromMinutes(1));
         await Task.Delay(50);
 
-        Assert.False(tcs.Task.IsCompleted);
+        timeProvider.Advance(TimeSpan.FromMinutes(1));
+        await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(50));
     }
 
     [Fact]
