@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Proto.TestKit;
 using Proto.Timers;
 using Xunit;
 using Microsoft.Extensions.Time.Testing;
@@ -13,27 +14,18 @@ public class TimerExtensionsTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var tcs = new TaskCompletionSource();
-
-        var pid = context.Spawn(Props.FromFunc(ctx =>
-        {
-            if (ctx.Message is "Wakeup")
-            {
-                tcs.SetResult();
-            }
-
-            return Task.CompletedTask;
-        }));
+        var probe = new TestProbe();
+        var pid = context.Spawn(Props.FromProducer(() => probe));
 
         var scheduler = context.Scheduler();
 
         scheduler.SendOnce(TimeSpan.FromMilliseconds(200), pid, "Wakeup");
 
         // ensure message isn't delivered immediately
-        await Task.Delay(100);
-        Assert.False(tcs.Task.IsCompleted);
+        await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(100));
 
-        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var msg = await probe.GetNextMessageAsync<string>(TimeSpan.FromSeconds(5));
+        Assert.Equal("Wakeup", msg);
     }
 
     [Fact]
@@ -41,17 +33,8 @@ public class TimerExtensionsTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var tcs = new TaskCompletionSource();
-
-        var pid = context.Spawn(Props.FromFunc(ctx =>
-        {
-            if (ctx.Message is "Wakeup")
-            {
-                tcs.SetResult();
-            }
-
-            return Task.CompletedTask;
-        }));
+        var probe = new TestProbe();
+        var pid = context.Spawn(Props.FromProducer(() => probe));
 
         var timeProvider = new FakeTimeProvider();
         var scheduler = context.Scheduler(timeProvider);
@@ -62,7 +45,8 @@ public class TimerExtensionsTests
         await Task.Delay(50);
         timeProvider.Advance(TimeSpan.FromMinutes(1));
 
-        await tcs.Task.WaitAsync(TimeSpan.FromMilliseconds(10));
+        var msg = await probe.GetNextMessageAsync<string>(TimeSpan.FromMilliseconds(10));
+        Assert.Equal("Wakeup", msg);
     }
 }
 
