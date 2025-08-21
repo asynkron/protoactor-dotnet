@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Proto.Mailbox;
 
 namespace Proto.TestKit;
 
@@ -26,4 +27,11 @@ public static class PropsTestProbeExtensions
             probe.Context.Send(probe.Context.Self, new MessageEnvelope(env.Message, target));
             await next(ctx, target, env);
         });
+
+    /// <summary>
+    /// Captures messages processed by the mailbox using <see cref="ProbeMailboxStatistics"/>.
+    /// Existing send and receive middleware can still be chained.
+    /// </summary>
+    public static Props WithTestMailboxProbe(this Props props, TestProbe probe) =>
+        props.WithMailbox(() => UnboundedMailbox.Create(new ProbeMailboxStatistics(probe)));
 }
