@@ -18,15 +18,17 @@ public class Scheduler
 {
     private readonly ISenderContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly ISchedulerHook? _schedulerHook;
 
     /// <summary>
     ///     Creates a new scheduler.
     /// </summary>
     /// <param name="context">Context to send the scheduled message through</param>
-    public Scheduler(ISenderContext context)
+    public Scheduler(ISenderContext context, ISchedulerHook? schedulerHook = null)
     {
         _context = context;
         _timeProvider = TimeProvider.System;
+        _schedulerHook = schedulerHook;
     }
 
     /// <summary>
@@ -34,10 +36,11 @@ public class Scheduler
     /// </summary>
     /// <param name="context">Context to send the scheduled message through</param>
     /// <param name="timeProvider">TimeProvider to use for scheduling (FakeTimeProvider can be used for testing)</param>
-    public Scheduler(ISenderContext context, TimeProvider timeProvider)
+    public Scheduler(ISenderContext context, TimeProvider timeProvider, ISchedulerHook? schedulerHook = null)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _schedulerHook = schedulerHook;
     }
 
     /// <summary>
@@ -94,7 +97,7 @@ public class Scheduler
                 {
                     _context.Send(target, message);
 
-                    await Task.Delay(interval, token).ConfigureAwait(false);
+                    await Delay(interval, token).ConfigureAwait(false);
                 }
             }, token
         );
@@ -134,6 +137,8 @@ public class Scheduler
 
     private async Task Delay(TimeSpan delay, CancellationToken token)
     {
-        await Task.Delay(delay, _timeProvider, token).ConfigureAwait(false);
+        var delayTask = Task.Delay(delay, _timeProvider, token);
+        _schedulerHook?.OnTimerRegistered();
+        await delayTask.ConfigureAwait(false);
     }
 }
