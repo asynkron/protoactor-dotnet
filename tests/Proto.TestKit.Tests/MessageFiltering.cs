@@ -97,8 +97,12 @@ namespace Proto.TestKit.Tests
         }
 
         [Fact]
-        public void GetFailsNoMessage() => this.Invoking(_ => GetNextMessage<DateTime>())
-            .Should().Throw<TestKitException>().WithMessage("Waited 1 seconds but failed to receive a message");
+        public void GetFailsNoMessage()
+        {
+            var seconds = TimeSpan.FromSeconds(1).TotalSeconds.ToString("0.###");
+            this.Invoking(_ => GetNextMessage<DateTime>())
+                .Should().Throw<TestKitException>().WithMessage($"Waited {seconds} seconds but failed to receive a message");
+        }
 
         [Fact]
         public void GetFailsCondition()
@@ -112,8 +116,10 @@ namespace Proto.TestKit.Tests
         public void ExpectNoMessageFails()
         {
             Send(Probe, "hi");
+            var seconds = TimeSpan.FromSeconds(1).TotalSeconds.ToString("0.###");
             this.Invoking(_ => ExpectNoMessage())
-                .Should().Throw<TestKitException>().WithMessage("Waited 1 seconds and received a message of type System.String");
+                .Should().Throw<TestKitException>().WithMessage($"Waited {seconds} seconds and received a message of type Proto.TestKit.MessageAndSender");
+
         }
 
         [Fact]

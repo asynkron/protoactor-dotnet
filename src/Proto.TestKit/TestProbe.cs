@@ -84,6 +84,8 @@ public class TestProbe : IActor, ITestProbe
         }
         catch (OperationCanceledException)
         {
+            var seconds = time.TotalSeconds.ToString("0.###");
+            throw new TestKitException($"Waited {seconds} seconds and received a message of type {o.GetType()}");
         }
     }
 
@@ -101,7 +103,8 @@ public class TestProbe : IActor, ITestProbe
         }
         catch (OperationCanceledException)
         {
-            throw new TestKitException($"Waited {time.Seconds} seconds but failed to receive a message");
+            var seconds = time.TotalSeconds.ToString("0.###");
+            throw new TestKitException($"Waited {seconds} seconds but failed to receive a message");
         }
     }
 
