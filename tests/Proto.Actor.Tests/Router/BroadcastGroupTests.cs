@@ -94,6 +94,7 @@ public class BroadcastGroupTests
         system.Root.Send(router, "first message");
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        await system.Root.RequestAsync<Touched>(routee1, new Touch(), _timeout);
         system.Root.Send(router, "second message");
 
         Assert.Equal("first message", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));

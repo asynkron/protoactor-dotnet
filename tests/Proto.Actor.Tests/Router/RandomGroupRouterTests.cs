@@ -63,6 +63,7 @@ public class RandomGroupRouterTests
 
         // Ensure the router has processed the removal before routing further messages
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        await system.Root.RequestAsync<Touched>(routee1, new Touch(), _timeout);
 
         for (var i = 0; i < 100; i++)
         {

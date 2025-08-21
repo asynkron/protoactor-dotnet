@@ -89,6 +89,7 @@ public class RoundRobinGroupTests
         system.Root.Send(router, "0");
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        await system.Root.RequestAsync<Touched>(routee1, new Touch(), _timeout);
         // we should have 2 routees, so send 3 messages to ensure round robin happens
         system.Root.Send(router, "3");
         system.Root.Send(router, "3");
