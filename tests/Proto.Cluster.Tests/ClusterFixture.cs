@@ -25,6 +25,7 @@ using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using Proto.Utils;
 using Xunit;
+using static Proto.TestKit.TestKit;
 
 // ReSharper disable ClassNeverInstantiated.Global
 
@@ -209,29 +210,13 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
     public async Task WaitForMemberAsync(string memberId, bool shouldExist, CancellationToken ct = default)
     {
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        if (ct == default)
-        {
-            cts.CancelAfter(TimeSpan.FromSeconds(10));
-        }
-
-        while (!cts.IsCancellationRequested)
-        {
-            var all = Members.All(m =>
-            {
-                var ids = m.MemberList.GetMembers();
-                return shouldExist ? ids.Contains(memberId) : !ids.Contains(memberId);
-            });
-
-            if (all)
-            {
-                return;
-            }
-
-            await Task.Delay(100, cts.Token);
-        }
-
-        throw new TimeoutException($"Timed out waiting for member {(shouldExist ? "join" : "leave")}: {memberId}");
+        var timeout = ct == default ? TimeSpan.FromSeconds(10) : Timeout.InfiniteTimeSpan;
+        await AwaitConditionAsync(() =>
+            Task.FromResult(Members.All(m =>
+                shouldExist
+                    ? m.MemberList.ContainsMemberId(memberId)
+                    : !m.MemberList.ContainsMemberId(memberId))), timeout, ct,
+            $"Timed out waiting for member {(shouldExist ? "join" : "leave")}: {memberId}");
     }
 
     public Task Trace(Func<Task> test, [CallerMemberName] string testName = "")

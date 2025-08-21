@@ -6,7 +6,7 @@
 
 using FluentAssertions;
 using Xunit;
-using static Proto.Cluster.PubSub.Tests.WaitHelper;
+using static Proto.TestKit.TestKit;
 
 namespace Proto.Cluster.PubSub.Tests;
 
@@ -56,7 +56,7 @@ public class PubSubClientTests : IAsyncLifetime
 		// message should send
 		await _fixture.PublishData(topic, 1);
         
-		await WaitUntil(() => _fixture.Deliveries.Count == 1);
+                await AwaitConditionAsync(() => _fixture.Deliveries.Count == 1, TimeSpan.FromSeconds(5));
 		_fixture.Deliveries.Count.Should().Be(1);
 		_fixture.Deliveries.Should().ContainSingle(d => d.Data == 1);
 
@@ -74,11 +74,11 @@ public class PubSubClientTests : IAsyncLifetime
 		await _fixture.PublishData(topic, 2);
 	
 		// dead letter should be received, so the subscription is removed	
-		await WaitUntil(async () =>
-		{
-			subscribers = await _fixture.GetSubscribersForTopic(topic);
-			return subscribers.Subscribers_.Count == 0;
-		});
+                await AwaitConditionAsync(async () =>
+                {
+                        subscribers = await _fixture.GetSubscribersForTopic(topic);
+                        return subscribers.Subscribers_.Count == 0;
+                }, TimeSpan.FromSeconds(5));
 		
 		_fixture.Deliveries.Count.Should().Be(1);
 		_fixture.Deliveries.Should().ContainSingle(d => d.Data == 1);

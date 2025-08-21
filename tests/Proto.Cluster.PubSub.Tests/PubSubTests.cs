@@ -9,7 +9,7 @@ using FluentAssertions;
 using Proto.Cluster.Tests;
 using Xunit;
 using Xunit.Abstractions;
-using static Proto.Cluster.PubSub.Tests.WaitHelper;
+using static Proto.TestKit.TestKit;
 
 namespace Proto.Cluster.PubSub.Tests;
 
@@ -100,7 +100,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             await _fixture.PublishData(topic, 1);
             await Task.Delay(1000); // give time for the message "not to be delivered" to second subscriber
 
-            await WaitUntil(() => _fixture.Deliveries.Count == 1,
+            await AwaitConditionAsync(() => _fixture.Deliveries.Count == 1, TimeSpan.FromSeconds(5),
                 "only one delivery should happen because the other actor is unsubscribed");
 
             _fixture.Deliveries.Should()
@@ -136,7 +136,8 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
 
             await _fixture.PublishData(topic, 1);
 
-            await WaitUntil(() => deliveredMessage != null, "Message should be delivered");
+            await AwaitConditionAsync(() => deliveredMessage != null, TimeSpan.FromSeconds(5),
+                "Message should be delivered");
             deliveredMessage.Should().BeEquivalentTo(new DataPublished(1));
         });
     }
@@ -206,7 +207,8 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
 
             // publish one message
             await _fixture.PublishData(topic, 1);
-            await WaitUntil(() => deliveryCount == 2, "both messages should be delivered");
+            await AwaitConditionAsync(() => deliveryCount == 2, TimeSpan.FromSeconds(5),
+                "both messages should be delivered");
 
             // kill one of the actors
             await member.System.Root.StopAsync(pid2);
@@ -215,15 +217,15 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             var response = await _fixture.PublishData(topic, 2);
 
             response.Should().NotBeNull("the publish operation shouldn't have timed out");
-            await WaitUntil(() => deliveryCount == 3, "second publish should be delivered only to one of the actors");
+            await AwaitConditionAsync(() => deliveryCount == 3, TimeSpan.FromSeconds(5),
+                "second publish should be delivered only to one of the actors");
 
-            await WaitUntil(async () =>
+            await AwaitConditionAsync(async () =>
                 {
                     var subscribers = await _fixture.GetSubscribersForTopic(topic);
 
                     return !subscribers.Subscribers_!.Contains(new SubscriberIdentity { Pid = pid2 });
-                }
-            );
+            }, TimeSpan.FromSeconds(5));
         });
     }
 
@@ -258,9 +260,9 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             // next published message should also be delivered
             await _fixture.PublishData(topic, 1);
 
-            await WaitUntil(() => deliveryCount == 2,
-                "A timing out subscriber should not prevent subsequent publishes", TimeSpan.FromSeconds(10)
-            );
+            await AwaitConditionAsync(() => deliveryCount == 2,
+                TimeSpan.FromSeconds(10),
+                "A timing out subscriber should not prevent subsequent publishes");
         });
     }
 
@@ -280,9 +282,9 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             // next published message should also be delivered
             await _fixture.PublishData(topic, 1);
 
-            await WaitUntil(() => _fixture.Deliveries.Count == 2,
-                "A timing out subscriber should not prevent subsequent publishes", TimeSpan.FromSeconds(10)
-            );
+            await AwaitConditionAsync(() => _fixture.Deliveries.Count == 2,
+                TimeSpan.FromSeconds(10),
+                "A timing out subscriber should not prevent subsequent publishes");
         });
     }
 

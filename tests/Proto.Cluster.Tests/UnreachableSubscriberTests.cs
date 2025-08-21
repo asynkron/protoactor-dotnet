@@ -8,6 +8,7 @@ using Proto;
 using Proto.Cluster.PubSub;
 using Proto.Utils;
 using Xunit;
+using static Proto.TestKit.TestKit;
 
 namespace Proto.Cluster.Tests;
 
@@ -44,42 +45,22 @@ public class UnreachableSubscriberTests
         subscribers.Subscribers_.Should().Contain(s => s.Pid.Equals(subscriberPid));
 
         await fixture.PublishData(topic, 1);
-        await WaitUntil(() => fixture.Deliveries.Count == 1, "initial delivery");
+        await AwaitConditionAsync(() => fixture.Deliveries.Count == 1, TimeSpan.FromSeconds(5),
+            "initial delivery");
 
         await fixture.RemoveNode(leavingMember, graceful: false);
 
         await fixture.PublishData(topic, 2);
 
-        await WaitUntil(async () =>
+        await AwaitConditionAsync(async () =>
         {
             var subs = await fixture.GetSubscribersForTopic(topic);
             return subs.Subscribers_.Count == 0;
-        }, "Subscriber should be removed");
+        }, TimeSpan.FromSeconds(5), "Subscriber should be removed");
 
         fixture.Deliveries.Count.Should().Be(1);
     }
 
-    private static async Task WaitUntil(Func<bool> condition, string? message = null, int timeoutMs = 5000, int delayMs = 100)
-    {
-        var stop = DateTime.UtcNow + TimeSpan.FromMilliseconds(timeoutMs);
-        while (DateTime.UtcNow < stop)
-        {
-            if (condition()) return;
-            await Task.Delay(delayMs);
-        }
-        throw new TimeoutException(message ?? "Condition not met");
-    }
-
-    private static async Task WaitUntil(Func<Task<bool>> condition, string? message = null, int timeoutMs = 5000, int delayMs = 100)
-    {
-        var stop = DateTime.UtcNow + TimeSpan.FromMilliseconds(timeoutMs);
-        while (DateTime.UtcNow < stop)
-        {
-            if (await condition()) return;
-            await Task.Delay(delayMs);
-        }
-        throw new TimeoutException(message ?? "Condition not met");
-    }
 
     private record DataPublished(int Data);
     private record Delivery(string Identity, int Data);

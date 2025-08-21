@@ -6,7 +6,7 @@
 
 using FluentAssertions;
 using Xunit;
-using static Proto.Cluster.PubSub.Tests.WaitHelper;
+using static Proto.TestKit.TestKit;
 
 namespace Proto.Cluster.PubSub.Tests;
 
@@ -59,16 +59,16 @@ public class PubSubMemberTests : IAsyncLifetime
         await _fixture.PublishData(topic, 1);
 
         // everyone should have received the data
-        await WaitUntil(() => _fixture.Deliveries.Count == subscriberIds.Length + 2,
-            "All subscribers should get the message");
+        await AwaitConditionAsync(() => _fixture.Deliveries.Count == subscriberIds.Length + 2,
+            TimeSpan.FromSeconds(5), "All subscribers should get the message");
 
         _fixture.Deliveries.Count.Should().Be(subscriberIds.Length + 2);
 
         // a member leaves - wait of it to make it to the block list
         await _fixture.RemoveNode(leavingMember);
 
-        await WaitUntil(() => _fixture.Members.All(m => m.Remote.BlockList.BlockedMembers.Count == 1),
-            "Member should leave cluster");
+        await AwaitConditionAsync(() => _fixture.Members.All(m => m.Remote.BlockList.BlockedMembers.Count == 1),
+            TimeSpan.FromSeconds(5), "Member should leave cluster");
 
         // publish again
         _fixture.Deliveries.Clear();
@@ -76,19 +76,17 @@ public class PubSubMemberTests : IAsyncLifetime
 
         // the failure in delivery caused topic actor to remove subscribers from the member that left
         // next publish should succeed and deliver to remaining subscribers
-        await WaitUntil(() => _fixture.Deliveries.Count == subscriberIds.Length + 1,
-            "All subscribers apart the one that left should get the message"
-        );
+        await AwaitConditionAsync(() => _fixture.Deliveries.Count == subscriberIds.Length + 1,
+            TimeSpan.FromSeconds(5), "All subscribers apart the one that left should get the message");
 
         // the subscriber that left should be removed from subscribers list
-        await WaitUntil(async () =>
+        await AwaitConditionAsync(async () =>
             {
                 var subscribers = await _fixture.GetSubscribersForTopic(topic);
 
                 return !subscribers.Subscribers_.Contains(new SubscriberIdentity { Pid = leavingPid });
             },
-            "Subscriber that left should be removed from subscribers list"
-        );
+            TimeSpan.FromSeconds(5), "Subscriber that left should be removed from subscribers list");
     }
 
     private string[] SubscriberIds(string prefix, int count) =>

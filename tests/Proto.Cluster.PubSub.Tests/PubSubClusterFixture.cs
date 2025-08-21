@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using FluentAssertions;
 using Proto.Cluster.Tests;
 using Xunit.Abstractions;
+using static Proto.TestKit.TestKit;
 
 namespace Proto.Cluster.PubSub.Tests;
 
@@ -117,8 +118,8 @@ public class PubSubClusterFixture : BaseInMemoryClusterFixture
 
     public async Task VerifyAllSubscribersGotAllTheData(string[] subscriberIds, int numMessages)
     {
-        await WaitHelper.WaitUntil(() => Deliveries.Count == subscriberIds.Length * numMessages,
-            "All messages should be delivered");
+        await AwaitConditionAsync(() => Deliveries.Count == subscriberIds.Length * numMessages,
+            TimeSpan.FromSeconds(5), "All messages should be delivered");
 
         var expected = subscriberIds
             .SelectMany(id => Enumerable.Range(0, numMessages).Select(i => new Delivery(id, i)))
