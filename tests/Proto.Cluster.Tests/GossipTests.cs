@@ -9,11 +9,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Gossip;
 using Xunit;
 using Xunit.Abstractions;
+using ClusterTest.Messages;
 
 namespace Proto.Cluster.Tests;
 
@@ -91,7 +91,7 @@ public class GossipTests
     }
 
     [Fact]
-    public async Task StateProbeReplicatesState()
+    public async Task GossipStateProbeReplicatesState()
     {
         var clusterFixture = new InMemoryClusterFixture();
         await using var _ = clusterFixture;
@@ -103,11 +103,11 @@ public class GossipTests
         var memberA = clusterFixture.Members[0];
         var memberB = clusterFixture.Members[1];
 
-        var probeHelper = new ClusterProbe(memberA);
+        var probeHelper = new GossipProbe(memberA);
         using var probe = await probeHelper.CreateStateProbeAsync();
 
-        await ClusterProbe.WaitForMemberStateAsync<SomeGossipState>(memberB, probe.Key, memberA.System.Id,
-            s => s.Key == probe.Value, TimeSpan.FromSeconds(10));
+        await GossipProbe.WaitForMemberStateAsync(memberB, probe.Key, memberA.System.Id,
+            s => s == probe.Value, TimeSpan.FromSeconds(10));
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class GossipTests
             {
                 var key = $"k{index}-{i}";
                 var value = $"v{index}-{i}";
-                await member.Gossip.SetStateAsync(key, new SomeGossipState { Key = value });
+                await member.Gossip.SetStateAsync(key, GossipProbe.CreateStateMessage(value));
                 expected[member.System.Id][key] = value;
             }
         }
@@ -164,8 +164,8 @@ public class GossipTests
                 foreach (var (key, value) in kvs)
                 {
                     if (!ms.Values.TryGetValue(key, out var any) ||
-                        !any.Value.TryUnpack<SomeGossipState>(out var state) ||
-                        state.Key != value)
+                        !GossipProbe.TryGetStateValue(any.Value, out var state) ||
+                        state != value)
                     {
                         return false;
                     }
@@ -203,7 +203,7 @@ public class GossipTests
     {
         foreach (var member in members)
         {
-            member.Gossip.SetState(GossipStateKey, new SomeGossipState { Key = value });
+            member.Gossip.SetState(GossipStateKey, GossipProbe.CreateStateMessage(value));
         }
     }
 
@@ -214,9 +214,7 @@ public class GossipTests
         );
 
     private static IConsensusHandle<string> CreateConsensusCheck(Cluster member) =>
-        member.Gossip.RegisterConsensusCheck<SomeGossipState, string>(
-            GossipStateKey, rebalance => rebalance.Key
-        );
+        GossipProbe.RegisterConsensusCheck(member, GossipStateKey);
 
     private static IConsensusHandle<ulong> CreateCompositeConsensusCheck(Cluster member) =>
         member.Gossip.RegisterConsensusCheck(Gossiper.ConsensusCheckBuilder<ulong>

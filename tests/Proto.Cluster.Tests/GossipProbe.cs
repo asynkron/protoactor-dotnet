@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Proto.Cluster;
 using Proto.Cluster.Gossip;
 using ClusterTest.Messages;
@@ -15,11 +16,11 @@ namespace Proto.Cluster.Tests;
 /// Uses gossip consensus handles so tests can await changes
 /// instead of relying on <see cref="Task.Delay"/>.
 /// </summary>
-public sealed class ClusterProbe
+public sealed class GossipProbe
 {
     private readonly Cluster _cluster;
 
-    public ClusterProbe(Cluster cluster) => _cluster = cluster;
+    public GossipProbe(Cluster cluster) => _cluster = cluster;
 
     /// <summary>
     /// Writes a random gossip state for the provided key on this cluster instance.
@@ -45,12 +46,12 @@ public sealed class ClusterProbe
     /// <summary>
     /// Creates a state probe that publishes a random value and can wait for consensus on it.
     /// </summary>
-    public async Task<StateProbe> CreateStateProbeAsync(string? key = null)
+    public async Task<GossipStateProbe> CreateStateProbeAsync(string? key = null)
     {
         key ??= Guid.NewGuid().ToString("N");
         var handle = _cluster.Gossip.RegisterConsensusCheck<SomeGossipState, string>(key, s => s.Key);
         var value = await PublishRandomStateAsync(key).ConfigureAwait(false);
-        return new StateProbe(_cluster, handle, key, value);
+        return new GossipStateProbe(_cluster, handle, key, value);
     }
 
     /// <summary>
@@ -108,16 +109,16 @@ public sealed class ClusterProbe
     /// <summary>
     /// Polls a member's gossip state until the value from the specified source member satisfies the predicate.
     /// </summary>
-    public static async Task WaitForMemberStateAsync<TState>(Cluster observer, string key, string sourceMemberId,
-        Func<TState, bool> predicate, TimeSpan timeout, CancellationToken ct = default) where TState : class, IMessage, new()
+    public static async Task WaitForMemberStateAsync(Cluster observer, string key, string sourceMemberId,
+        Func<string, bool> predicate, TimeSpan timeout, CancellationToken ct = default)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(timeout);
 
         while (!cts.Token.IsCancellationRequested)
         {
-            var state = await observer.Gossip.GetState<TState>(key).ConfigureAwait(false);
-            if (state.TryGetValue(sourceMemberId, out var value) && predicate(value))
+            var state = await observer.Gossip.GetState<SomeGossipState>(key).ConfigureAwait(false);
+            if (state.TryGetValue(sourceMemberId, out var value) && predicate(value.Key))
             {
                 return;
             }
@@ -135,15 +136,41 @@ public sealed class ClusterProbe
         throw new TimeoutException("Expected state not observed within the allotted time.");
     }
 
+    public static SomeGossipState CreateStateMessage(string value) => new() { Key = value };
+
+    public static bool TryGetStateValue(Any any, out string value)
+    {
+        if (any.TryUnpack<SomeGossipState>(out var state))
+        {
+            value = state.Key;
+            return true;
+        }
+
+        value = string.Empty;
+        return false;
+    }
+
+    public static Task<Dictionary<string, string>> GetStateAsync(Cluster cluster, string key) =>
+        cluster.Gossip
+            .GetState<SomeGossipState>(key)
+            .ContinueWith(t =>
+                t.Result.ToDictionary(kv => kv.Key, kv => kv.Value.Key), TaskContinuationOptions.OnlyOnRanToCompletion);
+
+    public static IConsensusHandle<string> RegisterConsensusCheck(Cluster member, string key) =>
+        member.Gossip.RegisterConsensusCheck<SomeGossipState, string>(key, s => s.Key);
+
+    public static Gossiper.ConsensusCheckBuilder<string> BuildStringStateConsensus(string key) =>
+        Gossiper.ConsensusCheckBuilder<string>.Create<SomeGossipState>(key, s => s.Key);
+
     /// <summary>
     /// Represents a published test state that can await consensus.
     /// </summary>
-    public sealed class StateProbe : IDisposable
+    public sealed class GossipStateProbe : IDisposable
     {
         private readonly Cluster _cluster;
         private readonly IConsensusHandle<string> _handle;
 
-        internal StateProbe(Cluster cluster, IConsensusHandle<string> handle, string key, string value)
+        internal GossipStateProbe(Cluster cluster, IConsensusHandle<string> handle, string key, string value)
         {
             _cluster = cluster;
             _handle = handle;
@@ -155,7 +182,7 @@ public sealed class ClusterProbe
         public string Value { get; private set; }
 
         public Task WaitForConsensus(TimeSpan timeout, CancellationToken ct = default) =>
-            ClusterProbe.WaitForConsensusAsync(_handle, Value, timeout, ct);
+            GossipProbe.WaitForConsensusAsync(_handle, Value, timeout, ct);
 
         public async Task<string> PublishRandomValueAsync()
         {

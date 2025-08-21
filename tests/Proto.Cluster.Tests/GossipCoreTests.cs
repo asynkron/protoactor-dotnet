@@ -10,7 +10,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using ClusterTest.Messages;
 using Proto.Cluster.Gossip;
 using Xunit;
 using Xunit.Abstractions;
@@ -138,13 +137,12 @@ public class GossipCoreTests
 
         foreach (var m in environment.Values)
         {
-            m.Gossip.SetState(stateKey, new SomeGossipState { Key = stateValue });
+            m.Gossip.SetState(stateKey, GossipProbe.CreateStateMessage(stateValue));
         }
 
         var first = environment.Values.First().Gossip;
 
-        var checkDefinition = Gossiper.ConsensusCheckBuilder<string>
-            .Create<SomeGossipState>(stateKey, s => s.Key);
+        var checkDefinition = GossipProbe.BuildStringStateConsensus(stateKey);
 
         var id = Guid.NewGuid().ToString();
         var (handle, check) = checkDefinition.Build(() => first.RemoveConsensusCheck(id));
