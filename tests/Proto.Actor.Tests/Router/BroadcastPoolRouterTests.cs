@@ -29,6 +29,7 @@ public class BroadcastPoolRouterTests
         system.Root.Send(router, "first");
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        await system.Root.RequestAsync<Touched>(routee1, new Touch(), _timeout);
         system.Root.Send(router, "second");
 
         Assert.Equal("first", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));

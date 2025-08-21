@@ -118,6 +118,7 @@ public class ConsistentHashGroupTests
 
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        await system.Root.RequestAsync<Touched>(routee1, new Touch(), _timeout);
         system.Root.Send(router, new Message("message1"));
         Assert.Equal(0, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
     }
@@ -148,6 +149,7 @@ public class ConsistentHashGroupTests
         // remove receiver
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        await system.Root.RequestAsync<Touched>(routee1, new Touch(), _timeout);
         // routee2 should now handle "message1"
         system.Root.Send(router, new Message("message1"));
 
