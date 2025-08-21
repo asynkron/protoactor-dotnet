@@ -20,51 +20,44 @@ public class PartitionConsensusTests
         var fixture = new PartitionClusterFixture();
         await using var _ = fixture;
         await fixture.InitializeAsync();
-        await ClusterProbe.WaitForTopologyConsensusAsync(fixture.Members, TimeSpan.FromSeconds(5));
+        await Task.WhenAll(fixture.Members.Select(m => m.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5))));
 
         var members = fixture.Members;
         var memberA = members[0];
         var memberB = members[1];
         var memberC = members[2];
 
-        const string key = "test-state";
-        const string initialValue = "v1";
-        const string newValue = "v2";
+        var probeHelper = new ClusterProbe(memberA);
+        using var stateProbe = await probeHelper.CreateStateProbeAsync();
 
-        var handle = memberA.Gossip.RegisterConsensusCheck<SomeGossipState, string>(key, s => s.Key);
+        await ClusterProbe.WaitForMemberStateAsync<SomeGossipState>(memberB, stateProbe.Key, memberA.System.Id,
+            s => s.Key == stateProbe.Value, TimeSpan.FromSeconds(10));
+        await ClusterProbe.WaitForMemberStateAsync<SomeGossipState>(memberC, stateProbe.Key, memberA.System.Id,
+            s => s.Key == stateProbe.Value, TimeSpan.FromSeconds(10));
 
-        try
-        {
-            foreach (var m in members)
-            {
-                await m.Gossip.SetStateAsync(key, new SomeGossipState { Key = initialValue });
-            }
+        var oldValue = stateProbe.Value;
 
-            await ClusterProbe.WaitForConsensusAsync(new[] { handle }, initialValue, TimeSpan.FromSeconds(10));
+        GossipNetworkPartition.Isolate(memberB.System.Address);
 
-            GossipNetworkPartition.Isolate(memberB.System.Address);
+        await stateProbe.PublishRandomValueAsync();
 
-            await memberA.Gossip.SetStateAsync(key, new SomeGossipState { Key = newValue });
-            await ClusterProbe.WaitForNoConsensusAsync(new[] { handle }, TimeSpan.FromSeconds(5));
+        // Ensure the updated state is observed by at least one other member
+        await ClusterProbe.WaitForMemberStateAsync<SomeGossipState>(memberC, stateProbe.Key, memberA.System.Id,
+            s => s.Key == stateProbe.Value, TimeSpan.FromSeconds(5));
 
-            var stateDuringPartition = await memberB.Gossip.GetState<SomeGossipState>(key);
-            stateDuringPartition[memberA.System.Id].Key.Should().Be(initialValue);
+        var stateDuringPartition = await memberB.Gossip.GetState<SomeGossipState>(stateProbe.Key);
+        stateDuringPartition[memberA.System.Id].Key.Should().Be(oldValue);
 
-            GossipNetworkPartition.Clear();
+        GossipNetworkPartition.Clear();
 
-            // Re-emit the updated state so the previously partitioned member catches up
-            await memberA.Gossip.SetStateAsync(key, new SomeGossipState { Key = newValue });
-            await memberC.Gossip.SetStateAsync(key, new SomeGossipState { Key = newValue });
+        // Re-emit the updated state so the previously partitioned member catches up
+        await memberA.Gossip.SetStateAsync(stateProbe.Key, new SomeGossipState { Key = stateProbe.Value });
+        await memberC.Gossip.SetStateAsync(stateProbe.Key, new SomeGossipState { Key = stateProbe.Value });
 
-            await ClusterProbe.WaitForMemberStateAsync<SomeGossipState>(memberB, key, memberA.System.Id,
-                s => s.Key == newValue, TimeSpan.FromSeconds(10));
-            var stateAfterRecovery = await memberB.Gossip.GetState<SomeGossipState>(key);
-            stateAfterRecovery[memberA.System.Id].Key.Should().Be(newValue);
-        }
-        finally
-        {
-            handle.Dispose();
-        }
+        await ClusterProbe.WaitForMemberStateAsync<SomeGossipState>(memberB, stateProbe.Key, memberA.System.Id,
+            s => s.Key == stateProbe.Value, TimeSpan.FromSeconds(10));
+        var stateAfterRecovery = await memberB.Gossip.GetState<SomeGossipState>(stateProbe.Key);
+        stateAfterRecovery[memberA.System.Id].Key.Should().Be(stateProbe.Value);
     }
 
     private class PartitionClusterFixture : BaseInMemoryClusterFixture

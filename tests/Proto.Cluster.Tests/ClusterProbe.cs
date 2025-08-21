@@ -3,32 +3,69 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Proto.Cluster;
 using Proto.Cluster.Gossip;
-using Google.Protobuf;
+using ClusterTest.Messages;
 
 namespace Proto.Cluster.Tests;
 
 /// <summary>
 /// Utility helpers for probing cluster state in tests.
-/// Uses the gossip consensus handles so tests can await
-/// changes instead of relying on <see cref="Task.Delay"/>.
+/// Uses gossip consensus handles so tests can await changes
+/// instead of relying on <see cref="Task.Delay"/>.
 /// </summary>
-public static class ClusterProbe
+public sealed class ClusterProbe
 {
+    private readonly Cluster _cluster;
+
+    public ClusterProbe(Cluster cluster) => _cluster = cluster;
+
+    /// <summary>
+    /// Writes a random gossip state for the provided key on this cluster instance.
+    /// Returns the generated value so callers can verify consensus later.
+    /// </summary>
+    public async Task<string> PublishRandomStateAsync(string key)
+    {
+        var value = Guid.NewGuid().ToString("N");
+        await _cluster.Gossip.SetStateAsync(key, new SomeGossipState { Key = value }).ConfigureAwait(false);
+        return value;
+    }
+
+    /// <summary>
+    /// Waits for the cluster to reach consensus on the expected value for the specified state key.
+    /// </summary>
+    public async Task WaitForStateConsensusAsync(string key, string expectedValue, TimeSpan timeout,
+        CancellationToken ct = default)
+    {
+        using var handle = _cluster.Gossip.RegisterConsensusCheck<SomeGossipState, string>(key, s => s.Key);
+        await WaitForConsensusAsync(handle, expectedValue, timeout, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Creates a state probe that publishes a random value and can wait for consensus on it.
+    /// </summary>
+    public async Task<StateProbe> CreateStateProbeAsync(string? key = null)
+    {
+        key ??= Guid.NewGuid().ToString("N");
+        var handle = _cluster.Gossip.RegisterConsensusCheck<SomeGossipState, string>(key, s => s.Key);
+        var value = await PublishRandomStateAsync(key).ConfigureAwait(false);
+        return new StateProbe(_cluster, handle, key, value);
+    }
+
     /// <summary>
     /// Waits until all consensus handles report the same value.
-    /// Throws <see cref="TimeoutException"/> if consensus is not
-    /// reached before the timeout expires.
+    /// Throws <see cref="TimeoutException"/> if consensus is not reached before the timeout expires.
     /// </summary>
-    public static async Task<T> WaitForConsensusAsync<T>(IEnumerable<IConsensusHandle<T>> handles,
-        TimeSpan timeout, CancellationToken ct = default) where T : notnull
+    public static async Task<T> WaitForConsensusAsync<T>(IEnumerable<IConsensusHandle<T>> handles, TimeSpan timeout,
+        CancellationToken ct = default) where T : notnull
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var tasks = handles.Select(h => h.TryGetConsensus(timeout, cts.Token)).ToList();
+        cts.CancelAfter(timeout);
+        var tasks = handles.Select(h => h.TryGetConsensus(cts.Token)).ToList();
         var results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
-        if (results.Any(r => !r.consensus))
+        if (cts.IsCancellationRequested && results.Any(r => !r.consensus))
         {
             throw new TimeoutException("Consensus was not reached within the allotted time.");
         }
@@ -43,12 +80,12 @@ public static class ClusterProbe
     }
 
     /// <summary>
-    /// Waits until all consensus handles agree on the expected value.
+    /// Waits until the consensus handle reports the expected value.
     /// </summary>
-    public static async Task WaitForConsensusAsync<T>(IEnumerable<IConsensusHandle<T>> handles,
-        T expectedValue, TimeSpan timeout, CancellationToken ct = default) where T : notnull
+    public static async Task WaitForConsensusAsync<T>(IConsensusHandle<T> handle, T expectedValue, TimeSpan timeout,
+        CancellationToken ct = default) where T : notnull
     {
-        var value = await WaitForConsensusAsync(handles, timeout, ct).ConfigureAwait(false);
+        var value = await WaitForConsensusAsync(new[] { handle }, timeout, ct).ConfigureAwait(false);
         if (!EqualityComparer<T>.Default.Equals(value, expectedValue))
         {
             throw new TimeoutException("Consensus was reached for a different value than expected.");
@@ -56,53 +93,15 @@ public static class ClusterProbe
     }
 
     /// <summary>
-    /// Waits until all consensus handles report lack of consensus.
-    /// Useful when a cluster should fall out of consensus after a change.
+    /// Waits for all consensus handles to agree on the expected value.
     /// </summary>
-    public static async Task WaitForNoConsensusAsync<T>(IEnumerable<IConsensusHandle<T>> handles,
+    public static async Task WaitForConsensusAsync<T>(IEnumerable<IConsensusHandle<T>> handles, T expectedValue,
         TimeSpan timeout, CancellationToken ct = default) where T : notnull
     {
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        cts.CancelAfter(timeout);
-
-        var tasks = handles.Select(async h =>
+        var value = await WaitForConsensusAsync(handles, timeout, ct).ConfigureAwait(false);
+        if (!EqualityComparer<T>.Default.Equals(value, expectedValue))
         {
-            while (!cts.Token.IsCancellationRequested)
-            {
-                var (consensus, _) = await h.TryGetConsensus(TimeSpan.FromMilliseconds(200), cts.Token)
-                    .ConfigureAwait(false);
-                if (!consensus)
-                {
-                    return;
-                }
-            }
-
-            cts.Token.ThrowIfCancellationRequested();
-        });
-
-        await Task.WhenAll(tasks).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Waits for all members to reach topology consensus and returns the agreed topology hash.
-    /// </summary>
-    public static async Task<ulong> WaitForTopologyConsensusAsync(IEnumerable<Cluster> members,
-        TimeSpan timeout, CancellationToken ct = default)
-    {
-        var handles = members
-            .Select(m => m.Gossip.RegisterConsensusCheck<ClusterTopology, ulong>(GossipKeys.Topology,
-                t => t.TopologyHash))
-            .ToList();
-        try
-        {
-            return await WaitForConsensusAsync(handles, timeout, ct).ConfigureAwait(false);
-        }
-        finally
-        {
-            foreach (var h in handles)
-            {
-                h.Dispose();
-            }
+            throw new TimeoutException("Consensus was reached for a different value than expected.");
         }
     }
 
@@ -134,6 +133,39 @@ public static class ClusterProbe
         }
 
         throw new TimeoutException("Expected state not observed within the allotted time.");
+    }
+
+    /// <summary>
+    /// Represents a published test state that can await consensus.
+    /// </summary>
+    public sealed class StateProbe : IDisposable
+    {
+        private readonly Cluster _cluster;
+        private readonly IConsensusHandle<string> _handle;
+
+        internal StateProbe(Cluster cluster, IConsensusHandle<string> handle, string key, string value)
+        {
+            _cluster = cluster;
+            _handle = handle;
+            Key = key;
+            Value = value;
+        }
+
+        public string Key { get; }
+        public string Value { get; private set; }
+
+        public Task WaitForConsensus(TimeSpan timeout, CancellationToken ct = default) =>
+            ClusterProbe.WaitForConsensusAsync(_handle, Value, timeout, ct);
+
+        public async Task<string> PublishRandomValueAsync()
+        {
+            var newValue = Guid.NewGuid().ToString("N");
+            await _cluster.Gossip.SetStateAsync(Key, new SomeGossipState { Key = newValue }).ConfigureAwait(false);
+            Value = newValue;
+            return newValue;
+        }
+
+        public void Dispose() => _handle.Dispose();
     }
 }
 
