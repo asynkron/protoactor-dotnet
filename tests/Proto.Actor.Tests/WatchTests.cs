@@ -60,13 +60,9 @@ public class WatchTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor())
-            .WithMailbox(() => new TestMailbox())
-        );
+        var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor()));
 
-        var watcher = context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
-            .WithMailbox(() => new TestMailbox())
-        );
+        var watcher = context.Spawn(Props.FromProducer(() => new LocalActor(watchee)));
 
         await context.StopAsync(watchee);
         var terminatedMessageReceived = await context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
@@ -79,9 +75,7 @@ public class WatchTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor())
-            .WithMailbox(() => new TestMailbox())
-        );
+        var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor()));
 
         var terminated = new TaskCompletionSource<bool>();
 
@@ -106,8 +100,7 @@ public class WatchTests
 
                 return Task.CompletedTask;
             }
-        ).WithMailbox(() => new TestMailbox())
-        );
+        ));
 
         await context.RequestAsync<bool>(watcher, "ready", TimeSpan.FromSeconds(5));
 

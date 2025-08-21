@@ -93,6 +93,7 @@ public class BroadcastGroupTests
 
         system.Root.Send(router, "first message");
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, "second message");
 
         Assert.Equal("first message", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
@@ -108,6 +109,7 @@ public class BroadcastGroupTests
         var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
         system.Root.Send(router, new RouterAddRoutee(routee4));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, "a message");
 
         Assert.Equal("a message", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
@@ -124,6 +126,7 @@ public class BroadcastGroupTests
         var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterBroadcastMessage("hello"));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
 
         Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
         Assert.Equal("hello", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
@@ -137,8 +140,7 @@ public class BroadcastGroupTests
         var routee2 = system.Root.Spawn(MyActorProps);
         var routee3 = system.Root.Spawn(MyActorProps);
 
-        var props = system.Root.NewBroadcastGroup(routee1, routee2, routee3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewBroadcastGroup(routee1, routee2, routee3);
 
         var router = system.Root.Spawn(props);
 

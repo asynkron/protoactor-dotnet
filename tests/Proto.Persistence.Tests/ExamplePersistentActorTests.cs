@@ -396,12 +396,12 @@ public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
         var eventStore = GetProvider(testProvider);
         var snapshotStore = GetProvider(testProvider);
 
-        var props = Props.FromProducer(() => new ExamplePersistentActor(eventStore, snapshotStore, actorId))
-            .WithMailbox(() => new TestMailbox());
+        var props = Props.FromProducer(() => new ExamplePersistentActor(eventStore, snapshotStore, actorId));
 
         var pid = context.Spawn(props);
 
         context.Send(pid, new Multiply { Amount = 2 });
+        _ = await context.RequestAsync<int>(pid, new GetState(), TimeSpan.FromSeconds(5));
         var eventStoreMessages = new List<object>();
         var snapshotStoreMessages = new List<object>();
         await eventStore.GetEventsAsync(actorId, 0, 1, msg => eventStoreMessages.Add(msg));
@@ -416,8 +416,7 @@ public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
        
 
         var props = Props
-            .FromProducer(() => new ExamplePersistentActor(provider, provider, actorId))
-            .WithMailbox(() => new TestMailbox());
+            .FromProducer(() => new ExamplePersistentActor(provider, provider, actorId));
 
         var pid = context.Spawn(props);
 

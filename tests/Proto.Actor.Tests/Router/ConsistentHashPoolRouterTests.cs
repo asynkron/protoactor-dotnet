@@ -23,8 +23,7 @@ public class ConsistentHashPoolRouterTests
         var system = new ActorSystem();
         await using var _ = system;
 
-        var props = system.Root.NewConsistentHashPool(MyActorProps, 3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewConsistentHashPool(MyActorProps, 3);
         var router = system.Root.Spawn(props);
 
         var pid1 = await system.Root.RequestAsync<PID>(router, new Ping("a"), _timeout);

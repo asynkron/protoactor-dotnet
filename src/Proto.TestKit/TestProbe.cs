@@ -6,9 +6,9 @@
 
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Proto;
 using Proto.Mailbox;
@@ -18,8 +18,7 @@ namespace Proto.TestKit;
 /// <inheritdoc cref="ITestProbe" />
 public class TestProbe : IActor, ITestProbe
 {
-    private readonly BlockingCollection<MessageAndSender>
-        _messageQueue = new();
+    private readonly Channel<MessageAndSender> _channel = Channel.CreateUnbounded<MessageAndSender>();
 
     private IContext? _context;
 
@@ -33,12 +32,12 @@ public class TestProbe : IActor, ITestProbe
 
                 break;
             case Terminated _:
-                _messageQueue.Add(new MessageAndSender(context));
+                _channel.Writer.TryWrite(new MessageAndSender(context));
 
                 break;
             case SystemMessage _: return Task.CompletedTask;
             default:
-                _messageQueue.Add(new MessageAndSender(context));
+                _channel.Writer.TryWrite(new MessageAndSender(context));
 
                 break;
         }
@@ -69,54 +68,31 @@ public class TestProbe : IActor, ITestProbe
     {
         var time = timeAllowed ?? TimeSpan.FromSeconds(1);
 
-        if (_messageQueue.TryTake(out var o, time))
+        using var cts = new CancellationTokenSource(time);
+
+        try
         {
+            var item = _channel.Reader.ReadAsync(cts.Token).AsTask().GetAwaiter().GetResult();
             var seconds = time.TotalSeconds.ToString("0.###");
-            throw new TestKitException($"Waited {seconds} seconds and received a message of type {o.GetType()}");
+            throw new TestKitException($"Waited {seconds} seconds and received a message of type {item.Message.GetType()}");
+        }
+        catch (OperationCanceledException)
+        {
+            // expected - no message arrived
         }
     }
 
     /// <inheritdoc />
-    public object? GetNextMessage(TimeSpan? timeAllowed = null)
-    {
-        var time = timeAllowed ?? TimeSpan.FromSeconds(1);
-
-        if (!_messageQueue.TryTake(out var output, time))
-        {
-            var seconds = time.TotalSeconds.ToString("0.###");
-            throw new TestKitException($"Waited {seconds} seconds but failed to receive a message");
-        }
-
-        Sender = output?.Sender;
-
-        return output?.Message;
-    }
+    public object? GetNextMessage(TimeSpan? timeAllowed = null) =>
+        GetNextMessageAsync(timeAllowed).GetAwaiter().GetResult();
 
     /// <inheritdoc />
-    public T GetNextMessage<T>(TimeSpan? timeAllowed = null)
-    {
-        var output = GetNextMessage(timeAllowed);
-
-        if (!(output is T))
-        {
-            throw new TestKitException($"Message expected type {typeof(T)}, actual type {output?.GetType()}");
-        }
-
-        return (T)output;
-    }
+    public T GetNextMessage<T>(TimeSpan? timeAllowed = null) =>
+        GetNextMessageAsync<T>(timeAllowed).GetAwaiter().GetResult();
 
     /// <inheritdoc />
-    public T GetNextMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null)
-    {
-        var output = GetNextMessage<T>(timeAllowed);
-
-        if (!when(output))
-        {
-            throw new TestKitException("Condition not met");
-        }
-
-        return output;
-    }
+    public T GetNextMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null) =>
+        GetNextMessageAsync(when, timeAllowed).GetAwaiter().GetResult();
 
     /// <inheritdoc />
     public IEnumerable ProcessMessages(TimeSpan? timeAllowed = null)
@@ -179,21 +155,94 @@ public class TestProbe : IActor, ITestProbe
     }
 
     /// <inheritdoc />
-    public T FishForMessage<T>(TimeSpan? timeAllowed = null) => FishForMessage<T>(x => true, timeAllowed);
+    public T FishForMessage<T>(TimeSpan? timeAllowed = null) =>
+        FishForMessageAsync<T>(timeAllowed).GetAwaiter().GetResult();
 
     /// <inheritdoc />
-    public T FishForMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null)
+    public T FishForMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null) =>
+        FishForMessageAsync(when, timeAllowed).GetAwaiter().GetResult();
+
+    /// <inheritdoc />
+    public async Task<object?> GetNextMessageAsync(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default)
+    {
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(timeAllowed ?? TimeSpan.FromSeconds(1));
+
+        try
+        {
+            var item = await _channel.Reader.ReadAsync(cts.Token);
+            Sender = item.Sender;
+
+            return item.Message;
+        }
+        catch (OperationCanceledException)
+        {
+            var seconds = (timeAllowed ?? TimeSpan.FromSeconds(1)).TotalSeconds.ToString("0.###");
+            throw new TestKitException($"Waited {seconds} seconds but failed to receive a message");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<T> GetNextMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default)
+    {
+        var output = await GetNextMessageAsync(timeAllowed, cancellationToken);
+
+        if (output is not T typed)
+        {
+            throw new TestKitException($"Message expected type {typeof(T)}, actual type {output?.GetType()}");
+        }
+
+        return typed;
+    }
+
+    /// <inheritdoc />
+    public async Task<T> GetNextMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default)
+    {
+        var output = await GetNextMessageAsync<T>(timeAllowed, cancellationToken);
+
+        if (!when(output))
+        {
+            throw new TestKitException("Condition not met");
+        }
+
+        return output;
+    }
+
+    /// <inheritdoc />
+    public Task<T> FishForMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        FishForMessageAsync<T>(_ => true, timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<T> FishForMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default)
     {
         var endTime = DateTime.UtcNow + (timeAllowed ?? TimeSpan.FromSeconds(1));
 
         while (DateTime.UtcNow < endTime)
         {
-            if (_messageQueue.TryTake(out var item, endTime - DateTime.UtcNow) &&
-                item.Message is T typed && when(typed))
-            {
-                Sender = item.Sender;
+            var remaining = endTime - DateTime.UtcNow;
 
-                return typed;
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(remaining);
+
+            try
+            {
+                var item = await _channel.Reader.ReadAsync(cts.Token);
+
+                if (item.Message is T typed && when(typed))
+                {
+                    Sender = item.Sender;
+
+                    return typed;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // ignored, loop will end if time elapsed
             }
         }
 

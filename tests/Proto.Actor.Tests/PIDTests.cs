@@ -30,7 +30,7 @@ public class PidTests
         await using var _ = system;
         var context = system.Root;
 
-        var pid = context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
+        var pid = context.Spawn(Props.FromFunc(EmptyReceive));
         await context.StopAsync(pid);
 
         var p = pid.Ref(system);

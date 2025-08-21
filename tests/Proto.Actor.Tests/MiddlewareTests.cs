@@ -37,6 +37,7 @@ internal class TestContextDecorator : ActorContextDecorator
 
 public class MiddlewareTests
 {
+    private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
     [Fact]
     public async Task Given_ContextDecorator_Should_Call_Decorator_Before_Actor_Receive()
     {
@@ -48,8 +49,6 @@ public class MiddlewareTests
         var logs2 = new List<string>();
         var logs3 = new List<string>();
 
-        var testMailbox = new TestMailbox();
-
         var props = Props.FromFunc(c =>
                 {
                     switch (c.Message)
@@ -57,6 +56,7 @@ public class MiddlewareTests
                         //only inspect "decorator" message
                         case string str when str == "decorator":
                             logs.Add("actor");
+                            c.Respond(true);
 
                             return Task.CompletedTask;
                         default:
@@ -64,13 +64,12 @@ public class MiddlewareTests
                     }
                 }
             )
-            .WithMailbox(() => testMailbox)
             .WithContextDecorator(c => new TestContextDecorator(c, logs), c => new TestContextDecorator(c, logs2))
             .WithContextDecorator(c => new TestContextDecorator(c, logs3));
 
         var pid = context.Spawn(props);
 
-        context.Send(pid, "middleware");
+        await context.RequestAsync<bool>(pid, "middleware", _timeout);
 
         Assert.Equal(2, logs.Count);
         Assert.Equal("decorator", logs[0]);
@@ -92,7 +91,6 @@ public class MiddlewareTests
         var context = system.Root;
 
         var logs = new List<string>();
-        var testMailbox = new TestMailbox();
 
         var props = Props.FromFunc(c =>
                 {
@@ -101,6 +99,7 @@ public class MiddlewareTests
                         //only inspect "decorator" message
                         case string str when str == "decorator":
                             logs.Add("actor");
+                            c.Respond(true);
 
                             return Task.CompletedTask;
                         default:
@@ -123,12 +122,11 @@ public class MiddlewareTests
                     await next(c, env);
                 }
             )
-            .WithMailbox(() => testMailbox)
             .WithContextDecorator(c => new TestContextDecorator(c, logs));
 
         var pid = context.Spawn(props);
 
-        context.Send(pid, "start");
+        await context.RequestAsync<bool>(pid, "start", _timeout);
 
         Console.WriteLine(string.Join(", ", logs));
 
@@ -146,13 +144,13 @@ public class MiddlewareTests
         var context = system.Root;
 
         var logs = new List<string>();
-        var testMailbox = new TestMailbox();
 
         var props = Props.FromFunc(c =>
                 {
                     if (c.Message is string)
                     {
                         logs.Add("actor");
+                        c.Respond(true);
                     }
 
                     return Task.CompletedTask;
@@ -177,12 +175,11 @@ public class MiddlewareTests
 
                     await next(c, env);
                 }
-            )
-            .WithMailbox(() => testMailbox);
+            );
 
         var pid = context.Spawn(props);
 
-        context.Send(pid, "");
+        await context.RequestAsync<bool>(pid, "", _timeout);
 
         Assert.Equal(3, logs.Count);
         Assert.Equal("middleware 1", logs[0]);
@@ -205,6 +202,7 @@ public class MiddlewareTests
                     if (c.Message is string)
                     {
                         c.Send(pid1, "hey");
+                        c.Respond(true);
                     }
 
                     return Task.CompletedTask;
@@ -229,15 +227,16 @@ public class MiddlewareTests
 
                     return next(c, t, e);
                 }
-            )
-            .WithMailbox(() => new TestMailbox());
+            );
 
         var pid2 = context.Spawn(props);
 
-        context.Send(pid2, "");
+        await context.RequestAsync<bool>(pid2, "", _timeout);
 
-        Assert.Equal(2, logs.Count);
+        Assert.Equal(4, logs.Count);
         Assert.Equal("middleware 1", logs[0]);
         Assert.Equal("middleware 2", logs[1]);
+        Assert.Equal("middleware 1", logs[2]);
+        Assert.Equal("middleware 2", logs[3]);
     }
 }

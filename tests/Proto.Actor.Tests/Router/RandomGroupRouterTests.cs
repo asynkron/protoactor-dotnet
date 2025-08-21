@@ -123,8 +123,7 @@ public class RandomGroupRouterTests
         var routee2 = system.Root.Spawn(MyActorProps);
         var routee3 = system.Root.Spawn(MyActorProps);
 
-        var props = system.Root.NewRandomGroup(10000, routee1, routee2, routee3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewRandomGroup(10000, routee1, routee2, routee3);
 
         var router = system.Root.Spawn(props);
 
