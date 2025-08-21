@@ -61,6 +61,9 @@ public class RandomGroupRouterTests
 
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
 
+        // Ensure the router has processed the removal before routing further messages
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+
         for (var i = 0; i < 100; i++)
         {
             system.Root.Send(router, i.ToString());
