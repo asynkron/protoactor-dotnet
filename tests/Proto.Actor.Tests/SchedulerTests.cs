@@ -25,11 +25,11 @@ public class SchedulerTests
             return Task.CompletedTask;
         }));
         var timeProvider = new FakeTimeProvider();
-        var scheduler = context.Scheduler(timeProvider);
+        var hook = new TestSchedulerHook();
+        var scheduler = context.Scheduler(timeProvider, hook);
 
         scheduler.SendOnce(TimeSpan.FromSeconds(10), pid, "Wakeup");
-        // Give SendOnce's inner call to Task.Delay a head start, so it won't miss the call to Advance.
-        await Task.Delay(50);
+        await hook.WaitAsync();
         timeProvider.Advance(TimeSpan.FromMinutes(10));
         await tcs.Task.WaitAsync(TimeSpan.FromMilliseconds(10));
     }
@@ -63,12 +63,12 @@ public class SchedulerTests
         }));
 
         var timeProvider = new FakeTimeProvider();
-        var scheduler = context.Scheduler(timeProvider);
+        var hook = new TestSchedulerHook();
+        var scheduler = context.Scheduler(timeProvider, hook);
 
         var cts = scheduler.SendRepeatedly(TimeSpan.FromSeconds(5), pid, "Tick");
 
-        // Give SendRepeatedly's inner call to Task.Delay a head start
-        await Task.Delay(50);
+        await hook.WaitAsync();
         timeProvider.Advance(TimeSpan.FromMinutes(1));
         await firstMessage.Task.WaitAsync(TimeSpan.FromMilliseconds(10));
 
@@ -99,12 +99,12 @@ public class SchedulerTests
         }));
 
         var timeProvider = new FakeTimeProvider();
-        var scheduler = context.Scheduler(timeProvider);
+        var hook = new TestSchedulerHook();
+        var scheduler = context.Scheduler(timeProvider, hook);
 
         var cts = scheduler.SendOnce(TimeSpan.FromSeconds(5), pid, "Wakeup");
 
-        // Give SendOnce's inner call to Task.Delay a head start
-        await Task.Delay(50);
+        await hook.WaitAsync();
         cts.Cancel();
 
         timeProvider.Advance(TimeSpan.FromMinutes(1));
@@ -133,6 +133,7 @@ public class SchedulerTests
         var extraResponse = new TaskCompletionSource();
 
         var timeProvider = new FakeTimeProvider();
+        var hook = new TestSchedulerHook();
 
         CancellationTokenSource? cts = null;
         var requester = context.Spawn(Props.FromFunc(ctx =>
@@ -140,7 +141,7 @@ public class SchedulerTests
             switch (ctx.Message)
             {
                 case Started:
-                    var scheduler = ctx.Scheduler(timeProvider);
+                    var scheduler = ctx.Scheduler(timeProvider, hook);
                     cts = scheduler.RequestRepeatedly(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), responder, "Ping");
                     break;
                 case string msg when msg == "Pong":
@@ -161,8 +162,7 @@ public class SchedulerTests
             return Task.CompletedTask;
         }));
 
-        // Give RequestRepeatedly's inner call to Task.Delay a head start
-        await Task.Delay(50);
+        await hook.WaitAsync();
         timeProvider.Advance(TimeSpan.FromSeconds(5));
         await firstResponse.Task.WaitAsync(TimeSpan.FromMilliseconds(10));
 
@@ -175,6 +175,15 @@ public class SchedulerTests
         await Task.Delay(50);
 
         Assert.False(extraResponse.Task.IsCompleted);
+    }
+
+    private sealed class TestSchedulerHook : ISchedulerHook
+    {
+        private readonly TaskCompletionSource _tcs = new();
+
+        public Task WaitAsync() => _tcs.Task;
+
+        public void OnTimerRegistered() => _tcs.TrySetResult();
     }
 }
 
