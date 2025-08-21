@@ -5,8 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -64,16 +62,15 @@ public class TestProbe : IActor, ITestProbe
     }
 
     /// <inheritdoc />
-    public void ExpectNoMessage(TimeSpan? timeAllowed = null)
+    public async Task ExpectNoMessageAsync(TimeSpan? timeAllowed = null, CancellationToken cancellationToken = default)
     {
-        var time = timeAllowed ?? TimeSpan.FromSeconds(1);
-
-        using var cts = new CancellationTokenSource(time);
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(timeAllowed ?? TimeSpan.FromSeconds(1));
 
         try
         {
-            var item = _channel.Reader.ReadAsync(cts.Token).AsTask().GetAwaiter().GetResult();
-            var seconds = time.TotalSeconds.ToString("0.###");
+            var item = await _channel.Reader.ReadAsync(cts.Token);
+            var seconds = (timeAllowed ?? TimeSpan.FromSeconds(1)).TotalSeconds.ToString("0.###");
             throw new TestKitException($"Waited {seconds} seconds and received a message of type {item.Message.GetType()}");
         }
         catch (OperationCanceledException)
@@ -81,86 +78,6 @@ public class TestProbe : IActor, ITestProbe
             // expected - no message arrived
         }
     }
-
-    /// <inheritdoc />
-    public object? GetNextMessage(TimeSpan? timeAllowed = null) =>
-        GetNextMessageAsync(timeAllowed).GetAwaiter().GetResult();
-
-    /// <inheritdoc />
-    public T GetNextMessage<T>(TimeSpan? timeAllowed = null) =>
-        GetNextMessageAsync<T>(timeAllowed).GetAwaiter().GetResult();
-
-    /// <inheritdoc />
-    public T GetNextMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null) =>
-        GetNextMessageAsync(when, timeAllowed).GetAwaiter().GetResult();
-
-    /// <inheritdoc />
-    public IEnumerable ProcessMessages(TimeSpan? timeAllowed = null)
-    {
-        while (true)
-        {
-            object? message;
-
-            try
-            {
-                message = GetNextMessage(timeAllowed);
-            }
-            catch
-            {
-                yield break;
-            }
-
-            yield return message;
-        }
-    }
-
-    /// <inheritdoc />
-    public IEnumerable<T> ProcessMessages<T>(TimeSpan? timeAllowed = null)
-    {
-        while (true)
-        {
-            T message;
-
-            try
-            {
-                message = FishForMessage<T>(timeAllowed);
-            }
-            catch
-            {
-                yield break;
-            }
-
-            yield return message;
-        }
-    }
-
-    /// <inheritdoc />
-    public IEnumerable<T> ProcessMessages<T>(Func<T, bool> when, TimeSpan? timeAllowed = null)
-    {
-        while (true)
-        {
-            T message;
-
-            try
-            {
-                message = FishForMessage(when, timeAllowed);
-            }
-            catch
-            {
-                yield break;
-            }
-
-            yield return message;
-        }
-    }
-
-    /// <inheritdoc />
-    public T FishForMessage<T>(TimeSpan? timeAllowed = null) =>
-        FishForMessageAsync<T>(timeAllowed).GetAwaiter().GetResult();
-
-    /// <inheritdoc />
-    public T FishForMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null) =>
-        FishForMessageAsync(when, timeAllowed).GetAwaiter().GetResult();
 
     /// <inheritdoc />
     public async Task<object?> GetNextMessageAsync(TimeSpan? timeAllowed = null,

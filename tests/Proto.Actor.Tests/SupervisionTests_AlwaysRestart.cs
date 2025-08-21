@@ -49,7 +49,7 @@ public class SupervisionTestsAlwaysRestart
         await probe.FishForMessageAsync<string>();
 
         var childProps = Props.FromProducer(() => new ChildActor())
-            .WithTestMailboxProbe(probe);
+            .WithMailboxProbe(probe);
 
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(Supervision.AlwaysRestartStrategy);

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Mailbox.Tests;
@@ -9,14 +10,14 @@ public class MailboxStatisticsTests
 {
     private readonly DefaultMailbox _mailbox;
     private readonly TestMailboxHandler _mailboxHandler;
-    private readonly TestMailboxStatistics _mailboxStatistics;
+    private readonly TestMailboxStats _mailboxStatistics;
 
     public MailboxStatisticsTests()
     {
         _mailboxHandler = new TestMailboxHandler();
         var userMailbox = new UnboundedMailboxQueue();
         var systemMessages = new UnboundedMailboxQueue();
-        _mailboxStatistics = new TestMailboxStatistics();
+        _mailboxStatistics = new TestMailboxStats();
         _mailbox = new DefaultMailbox(systemMessages, userMailbox, _mailboxStatistics);
         _mailbox.RegisterHandlers(_mailboxHandler, _mailboxHandler);
     }

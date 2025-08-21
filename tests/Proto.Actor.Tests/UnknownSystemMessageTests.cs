@@ -56,7 +56,7 @@ public class UnknownSystemMessageTests
 
         var childProps = Props.FromFunc(ctx => Task.CompletedTask);
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
-            .WithTestMailboxProbe(probe);
+            .WithMailboxProbe(probe);
 
         var parent = system.Root.Spawn(parentProps);
         var child = await system.Root.RequestAsync<PID>(parent, new GetChild());
