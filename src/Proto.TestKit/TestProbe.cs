@@ -234,11 +234,17 @@ public class TestProbe : IActor, ITestProbe
 
     public static implicit operator PID?(TestProbe tp) => tp.Context.Self;
 
-    public static implicit operator TestProbe?(PID tpPid)
+    /// <summary>
+    ///     Resolves a <see cref="TestProbe"/> from a <see cref="PID"/> using the specified <see cref="ActorSystem"/>.
+    /// </summary>
+    /// <param name="system">Actor system containing the probe.</param>
+    /// <param name="tpPid">PID of the probe actor.</param>
+    /// <returns>The <see cref="TestProbe"/> instance or <c>null</c> if the probe could not be found.</returns>
+    public static TestProbe? FromPid(ActorSystem system, PID tpPid)
     {
         try
         {
-            return TestKit.System.Root.RequestAsync<TestProbe>(tpPid, new RequestReference()).Result;
+            return system.Root.RequestAsync<TestProbe>(tpPid, new RequestReference()).Result;
         }
         catch
         {
