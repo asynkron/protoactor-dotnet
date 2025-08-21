@@ -77,7 +77,8 @@ public class TestProbe : IActor, ITestProbe
 
         if (_messageQueue.TryTake(out var o, time))
         {
-            throw new TestKitException($"Waited {time.Seconds} seconds and received a message of type {o.GetType()}");
+            var seconds = time.TotalSeconds.ToString("0.###");
+            throw new TestKitException($"Waited {seconds} seconds and received a message of type {o.GetType()}");
         }
     }
 
@@ -88,7 +89,8 @@ public class TestProbe : IActor, ITestProbe
 
         if (!_messageQueue.TryTake(out var output, time))
         {
-            throw new TestKitException($"Waited {time.Seconds} seconds but failed to receive a message");
+            var seconds = time.TotalSeconds.ToString("0.###");
+            throw new TestKitException($"Waited {seconds} seconds but failed to receive a message");
         }
 
         Sender = output?.Sender;
