@@ -9,6 +9,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
         <ProjectReference Include="..\Proto.Remote.Tests.Messages\Proto.Remote.Tests.Messages.csproj" />
+        <ProjectReference Include="..\..\src\Proto.TestKit\Proto.TestKit.csproj" />
     </ItemGroup>
     <PropertyGroup Condition="'$(TargetFramework)' != 'net5.0'">
         <DefineConstants>NETCORE</DefineConstants>
