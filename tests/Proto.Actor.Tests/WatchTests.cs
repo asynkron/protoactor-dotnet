@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
+using Proto;
 using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Tests;
@@ -14,44 +15,30 @@ public class WatchTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        long counter = 0;
+        var probe = new TestProbe();
+        var probePid = context.Spawn(Props.FromProducer(() => probe));
 
+        // child stops itself twice when receiving "stop"
         var childProps = Props.FromFunc(ctx =>
+        {
+            if (ctx.Message is "stop")
             {
-                switch (ctx.Message)
-                {
-                    case Started _:
-                        ctx.Stop(ctx.Self);
-                        ctx.Stop(ctx.Self);
-
-                        break;
-                }
-
-                return Task.CompletedTask;
+                ctx.Stop(ctx.Self);
+                ctx.Stop(ctx.Self);
             }
-        );
 
-        context.Spawn(Props.FromFunc(ctx =>
-                {
-                    switch (ctx.Message)
-                    {
-                        case Started _:
-                            ctx.Spawn(childProps);
+            return Task.CompletedTask;
+        });
 
-                            break;
-                        case Terminated _:
-                            Interlocked.Increment(ref counter);
+        var child = context.Spawn(childProps);
 
-                            break;
-                    }
+        // register probe as watcher for the child
+        child.SendSystemMessage(system, new Watch(probePid));
 
-                    return Task.CompletedTask;
-                }
-            )
-        );
+        context.Send(child, "stop");
 
-        await Task.Delay(1000);
-        Assert.Equal(1, Interlocked.Read(ref counter));
+        await probe.GetNextMessageAsync<Terminated>();
+        await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(100));
     }
 
     [Fact]
@@ -62,11 +49,14 @@ public class WatchTests
 
         var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor()));
 
-        var watcher = context.Spawn(Props.FromProducer(() => new LocalActor(watchee)));
+        var probe = new TestProbe();
+        var probePid = context.Spawn(Props.FromProducer(() => probe));
+
+        watchee.SendSystemMessage(system, new Watch(probePid));
 
         await context.StopAsync(watchee);
-        var terminatedMessageReceived = await context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
-        Assert.True(terminatedMessageReceived);
+
+        await probe.GetNextMessageAsync<Terminated>();
     }
 
     [Fact]
@@ -77,76 +67,14 @@ public class WatchTests
 
         var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor()));
 
-        var terminated = new TaskCompletionSource<bool>();
+        var probe = new TestProbe();
+        var probePid = context.Spawn(Props.FromProducer(() => probe));
 
-        var watcher = context.Spawn(Props.FromFunc(ctx =>
-            {
-                switch (ctx.Message)
-                {
-                    case Started _:
-                        ctx.Watch(watchee);
-                        ctx.Unwatch(watchee);
-
-                        break;
-                    case "ready":
-                        ctx.Respond(true);
-
-                        break;
-                    case Terminated _:
-                        terminated.TrySetResult(true);
-
-                        break;
-                }
-
-                return Task.CompletedTask;
-            }
-        ));
-
-        await context.RequestAsync<bool>(watcher, "ready", TimeSpan.FromSeconds(5));
+        watchee.SendSystemMessage(system, new Watch(probePid));
+        watchee.SendSystemMessage(system, new Unwatch(probePid));
 
         await context.StopAsync(watchee);
 
-        var completed = true;
-        try
-        {
-            await terminated.Task.WaitAsync(TimeSpan.FromMilliseconds(500));
-        }
-        catch (TimeoutException)
-        {
-            completed = false;
-        }
-        Assert.False(completed);
-    }
-
-    public class LocalActor : IActor
-    {
-        private readonly PID _watchee;
-        private bool _terminateReceived;
-
-        public LocalActor(PID watchee)
-        {
-            _watchee = watchee;
-        }
-
-        public Task ReceiveAsync(IContext ctx)
-        {
-            switch (ctx.Message)
-            {
-                case Started _:
-                    ctx.Watch(_watchee);
-
-                    break;
-                case string msg when msg == "?":
-                    ctx.Respond(_terminateReceived);
-
-                    break;
-                case Terminated _:
-                    _terminateReceived = true;
-
-                    break;
-            }
-
-            return Task.CompletedTask;
-        }
+        await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(100));
     }
 }
