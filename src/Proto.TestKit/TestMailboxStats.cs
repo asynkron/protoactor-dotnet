@@ -3,17 +3,20 @@ using System.Collections.Generic;
 using System.Threading;
 using Proto.Mailbox;
 
-namespace Proto.TestFixtures;
+namespace Proto.TestKit;
 
-public class TestMailboxStatistics : IMailboxStatistics
+/// <summary>
+/// IMailboxStatistics implementation used to collect mailbox events in tests.
+/// </summary>
+public class TestMailboxStats : IMailboxStatistics
 {
-    private readonly Func<object, bool> _waitForReceived;
+    private readonly Func<object, bool>? _waitForReceived;
 
-    public TestMailboxStatistics()
+    public TestMailboxStats()
     {
     }
 
-    public TestMailboxStatistics(Func<object, bool> waitForReceived)
+    public TestMailboxStats(Func<object, bool> waitForReceived)
     {
         _waitForReceived = waitForReceived;
     }

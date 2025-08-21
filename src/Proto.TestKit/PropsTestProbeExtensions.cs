@@ -11,7 +11,7 @@ public static class PropsTestProbeExtensions
     /// <summary>
     /// Captures messages received by the actor after they are processed.
     /// </summary>
-    public static Props WithTestReceiveProbe(this Props props, TestProbe probe) =>
+    public static Props WithReceiveProbe(this Props props, TestProbe probe) =>
         props.WithReceiverMiddleware(next => async (ctx, env) =>
         {
             await next(ctx, env);
@@ -21,7 +21,7 @@ public static class PropsTestProbeExtensions
     /// <summary>
     /// Captures messages sent by the actor before they are delivered to the target.
     /// </summary>
-    public static Props WithTestSendProbe(this Props props, TestProbe probe) =>
+    public static Props WithSendProbe(this Props props, TestProbe probe) =>
         props.WithSenderMiddleware(next => async (ctx, target, env) =>
         {
             probe.Context.Send(probe.Context.Self, new MessageEnvelope(env.Message, target));
@@ -32,6 +32,6 @@ public static class PropsTestProbeExtensions
     /// Captures messages processed by the mailbox using <see cref="ProbeMailboxStatistics"/>.
     /// Existing send and receive middleware can still be chained.
     /// </summary>
-    public static Props WithTestMailboxProbe(this Props props, TestProbe probe) =>
+    public static Props WithMailboxProbe(this Props props, TestProbe probe) =>
         props.WithMailbox(() => UnboundedMailbox.Create(new ProbeMailboxStatistics(probe)));
 }

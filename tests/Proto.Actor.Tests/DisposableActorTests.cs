@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Proto.Mailbox;
-using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Tests;
@@ -15,7 +15,7 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
         var disposed = new TaskCompletionSource<bool>();
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
 
@@ -39,7 +39,7 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
         var disposed = new TaskCompletionSource<bool>();
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
 
@@ -63,7 +63,7 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
         var disposeCalled = false;
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
 
@@ -87,7 +87,7 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
         var disposeCalled = false;
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
 
@@ -145,8 +145,8 @@ public class DisposableActorTests
 
         var child1Disposed = false;
         var child2Disposed = false;
-        var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-        var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var child1MailboxStats = new TestMailboxStats(msg => msg is Stopped);
+        var child2MailboxStats = new TestMailboxStats(msg => msg is Stopped);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
 
         var child1Props = Props.FromProducer(() => new DisposableActor(() => child1Disposed = true))

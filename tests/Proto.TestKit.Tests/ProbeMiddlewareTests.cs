@@ -8,50 +8,50 @@ namespace Proto.TestKit.Tests
 public class ProbeMiddlewareTests
 {
     [Fact]
-    public void Receive_probe_captures_messages()
+    public async Task Receive_probe_captures_messages()
     {
         var system = new ActorSystem();
         var probe = new TestProbe();
         system.Root.Spawn(Props.FromProducer(() => probe));
 
-        var props = Props.FromProducer(() => new EmptyActor()).WithTestReceiveProbe(probe);
+        var props = Props.FromProducer(() => new EmptyActor()).WithReceiveProbe(probe);
         var pid = system.Root.Spawn(props);
 
         system.Root.Send(pid, "hello");
-        probe.GetNextMessage<string>().Should().Be("hello");
+        (await probe.GetNextMessageAsync<string>()).Should().Be("hello");
     }
 
     [Fact]
-    public void Send_probe_captures_outgoing_messages()
+    public async Task Send_probe_captures_outgoing_messages()
     {
         var system = new ActorSystem();
         var probe = new TestProbe();
         system.Root.Spawn(Props.FromProducer(() => probe));
 
         var target = system.Root.Spawn(Props.FromFunc(ctx => Task.CompletedTask));
-        var props = Props.FromProducer(() => new ForwardActor(target)).WithTestSendProbe(probe);
+        var props = Props.FromProducer(() => new ForwardActor(target)).WithSendProbe(probe);
         var pid = system.Root.Spawn(props);
 
         system.Root.Send(pid, "hi");
-        probe.GetNextMessage<string>().Should().Be("hi");
+        (await probe.GetNextMessageAsync<string>()).Should().Be("hi");
         probe.Sender.Should().Be(target);
     }
 
     [Fact]
-    public void Mailbox_probe_captures_messages_and_system_messages()
+    public async Task Mailbox_probe_captures_messages_and_system_messages()
     {
         var system = new ActorSystem();
         var probe = new TestProbe();
         system.Root.Spawn(Props.FromProducer(() => probe));
 
-        var props = Props.FromProducer(() => new EmptyActor()).WithTestMailboxProbe(probe);
+        var props = Props.FromProducer(() => new EmptyActor()).WithMailboxProbe(probe);
         var pid = system.Root.Spawn(props);
 
         system.Root.Send(pid, "hello");
-        probe.GetNextMessage<string>().Should().Be("hello");
+        (await probe.GetNextMessageAsync<string>()).Should().Be("hello");
 
         system.Root.Stop(pid);
-        probe.ExpectSystemMessage<Stop>();
+        await probe.ExpectSystemMessageAsync<Stop>();
     }
 
     private class EmptyActor : IActor

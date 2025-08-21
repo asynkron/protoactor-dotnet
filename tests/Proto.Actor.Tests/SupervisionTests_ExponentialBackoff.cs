@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Proto.Mailbox;
-using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Tests;
@@ -34,7 +34,7 @@ public class SupervisionTestsExponentialBackoff
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
         var strategy = new ExponentialBackoffStrategy(TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(50));
 
         var childProps = Props.FromProducer(() => new BackoffChild())

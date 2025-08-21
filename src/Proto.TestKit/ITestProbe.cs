@@ -5,8 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,7 +16,7 @@ namespace Proto.TestKit;
 public interface ITestProbe
 {
     /// <summary>
-    ///     the sender of the last message retrieved from GetNextMessage or FishForMessage
+    ///     the sender of the last message retrieved from GetNextMessageAsync or FishForMessageAsync
     /// </summary>
     PID? Sender { get; }
 
@@ -28,34 +26,11 @@ public interface ITestProbe
     IContext? Context { get; }
 
     /// <summary>
-    ///     this method will throw an exception if the probe receives a message within the time allowed
+    ///     asynchronously checks that no message arrives within the time allowed
     /// </summary>
     /// <param name="timeAllowed"></param>
-    void ExpectNoMessage(TimeSpan? timeAllowed = null);
-
-    /// <summary>
-    ///     gets the next message from the test probe
-    /// </summary>
-    /// <param name="timeAllowed"></param>
-    /// <returns></returns>
-    object? GetNextMessage(TimeSpan? timeAllowed = null);
-
-    /// <summary>
-    ///     gets the next message from the test probe
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="timeAllowed"></param>
-    /// <returns></returns>
-    T GetNextMessage<T>(TimeSpan? timeAllowed = null);
-
-    /// <summary>
-    ///     gets the next message from the test probe
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="when"></param>
-    /// <param name="timeAllowed"></param>
-    /// <returns></returns>
-    T GetNextMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null);
+    /// <param name="cancellationToken"></param>
+    Task ExpectNoMessageAsync(TimeSpan? timeAllowed = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     asynchronously gets the next message from the test probe
@@ -104,47 +79,6 @@ public interface ITestProbe
     /// <returns></returns>
     Task<T> FishForMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    ///     keeps returning messages until the interval between messages exceeds the time allowed
-    /// </summary>
-    /// <param name="timeAllowed"></param>
-    /// <returns></returns>
-    IEnumerable ProcessMessages(TimeSpan? timeAllowed = null);
-
-    /// <summary>
-    ///     keeps returning messages until the interval between messages exceeds the time allowed
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="timeAllowed"></param>
-    /// <returns></returns>
-    IEnumerable<T> ProcessMessages<T>(TimeSpan? timeAllowed = null);
-
-    /// <summary>
-    ///     keeps returning messages until the interval between messages exceeds the time allowed
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="when"></param>
-    /// <param name="timeAllowed"></param>
-    /// <returns></returns>
-    IEnumerable<T> ProcessMessages<T>(Func<T, bool> when, TimeSpan? timeAllowed = null);
-
-    /// <summary>
-    ///     fishes for the next message of a given type from the test probe
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="timeAllowed"></param>
-    /// <returns></returns>
-    T FishForMessage<T>(TimeSpan? timeAllowed = null);
-
-    /// <summary>
-    ///     fishes for the next message of a given type from the test probe
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="when"></param>
-    /// <param name="timeAllowed"></param>
-    /// <returns></returns>
-    T FishForMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null);
 
     /// <summary>
     ///     sends a message from the test probe to the target

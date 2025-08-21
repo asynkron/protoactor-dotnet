@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Proto.Mailbox;
-using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Tests;
@@ -17,8 +17,8 @@ public class SupervisionTestsAllForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var child1MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
-        var child2MailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
+        var child1MailboxStats = new TestMailboxStats(msg => msg is ResumeMailbox);
+        var child2MailboxStats = new TestMailboxStats(msg => msg is ResumeMailbox);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
@@ -47,8 +47,8 @@ public class SupervisionTestsAllForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var child1MailboxStats = new TestMailboxStatistics(msg => msg is Stop);
-        var child2MailboxStats = new TestMailboxStatistics(msg => msg is Stop);
+        var child1MailboxStats = new TestMailboxStats(msg => msg is Stop);
+        var child2MailboxStats = new TestMailboxStats(msg => msg is Stop);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
@@ -78,8 +78,8 @@ public class SupervisionTestsAllForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var child1MailboxStats = new TestMailboxStatistics(msg => msg is Restart);
-        var child2MailboxStats = new TestMailboxStatistics(msg => msg is Restart);
+        var child1MailboxStats = new TestMailboxStats(msg => msg is Restart);
+        var child2MailboxStats = new TestMailboxStats(msg => msg is Restart);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
@@ -109,8 +109,8 @@ public class SupervisionTestsAllForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var child1MailboxStats = new TestMailboxStatistics(msg => msg is Restart);
-        var child2MailboxStats = new TestMailboxStatistics(msg => msg is Restart);
+        var child1MailboxStats = new TestMailboxStats(msg => msg is Restart);
+        var child2MailboxStats = new TestMailboxStats(msg => msg is Restart);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
@@ -140,7 +140,7 @@ public class SupervisionTestsAllForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var parentMailboxStats = new TestMailboxStatistics(msg => msg is Failure);
+        var parentMailboxStats = new TestMailboxStats(msg => msg is Failure);
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
         var childProps = Props.FromProducer(() => new ChildActor());
 
