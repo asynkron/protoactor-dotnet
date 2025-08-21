@@ -10,6 +10,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Proto.Actor\Proto.Actor.csproj"/>
         <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj"/>
+        <ProjectReference Include="..\..\src\Proto.TestKit\Proto.TestKit.csproj"/>
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
       <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />

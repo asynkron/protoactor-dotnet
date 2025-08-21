@@ -24,7 +24,6 @@ public class DisposableActorTests
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
-            .WithMailbox(() => new TestMailbox())
             .WithChildSupervisorStrategy(strategy);
 
         var parent = context.Spawn(props);
@@ -49,7 +48,6 @@ public class DisposableActorTests
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
-            .WithMailbox(() => new TestMailbox())
             .WithChildSupervisorStrategy(strategy);
 
         var parent = context.Spawn(props);
@@ -74,7 +72,6 @@ public class DisposableActorTests
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
-            .WithMailbox(() => new TestMailbox())
             .WithChildSupervisorStrategy(strategy);
 
         var parent = context.Spawn(props);
@@ -99,7 +96,6 @@ public class DisposableActorTests
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
-            .WithMailbox(() => new TestMailbox())
             .WithChildSupervisorStrategy(strategy);
 
         var parent = context.Spawn(props);
@@ -117,8 +113,7 @@ public class DisposableActorTests
 
         var disposeCalled = false;
 
-        var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
-            .WithMailbox(() => new TestMailbox());
+        var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true));
 
         var pid = context.Spawn(props);
         await context.StopAsync(pid);
@@ -134,8 +129,7 @@ public class DisposableActorTests
 
         var disposeCalled = false;
 
-        var props = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
-            .WithMailbox(() => new TestMailbox());
+        var props = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true));
 
         var pid = context.Spawn(props);
         await context.StopAsync(pid);

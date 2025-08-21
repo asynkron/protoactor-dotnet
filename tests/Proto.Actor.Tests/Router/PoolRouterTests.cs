@@ -13,8 +13,7 @@ namespace Proto.Router.Tests;
 public class PoolRouterTests
 {
     private static readonly Props MyActorProps = Props.FromProducer(() => new DoNothingActor());
-    private static readonly Props TrackingActorProps = Props.FromProducer(() => new MyTestActor())
-        .WithMailbox(() => new TestMailbox());
+    private static readonly Props TrackingActorProps = Props.FromProducer(() => new MyTestActor());
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
     [Fact]
@@ -23,8 +22,7 @@ public class PoolRouterTests
         var system = new ActorSystem();
         await using var _ = system;
 
-        var props = system.Root.NewBroadcastPool(MyActorProps, 3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewBroadcastPool(MyActorProps, 3);
 
         var router = system.Root.Spawn(props);
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -37,8 +35,7 @@ public class PoolRouterTests
         var system = new ActorSystem();
         await using var _ = system;
 
-        var props = system.Root.NewRoundRobinPool(MyActorProps, 3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewRoundRobinPool(MyActorProps, 3);
 
         var router = system.Root.Spawn(props);
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -51,8 +48,7 @@ public class PoolRouterTests
         var system = new ActorSystem();
         await using var _ = system;
 
-        var props = system.Root.NewConsistentHashPool(MyActorProps, 3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewConsistentHashPool(MyActorProps, 3);
 
         var router = system.Root.Spawn(props);
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -65,8 +61,7 @@ public class PoolRouterTests
         var system = new ActorSystem();
         await using var _ = system;
 
-        var props = system.Root.NewRandomPool(MyActorProps, 3, 0)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewRandomPool(MyActorProps, 3, 0);
 
         var router = system.Root.Spawn(props);
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -79,8 +74,7 @@ public class PoolRouterTests
         var system = new ActorSystem();
         await using var _ = system;
 
-        var props = system.Root.NewBroadcastPool(TrackingActorProps, 3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewBroadcastPool(TrackingActorProps, 3);
 
         var router = system.Root.Spawn(props);
 
@@ -100,8 +94,7 @@ public class PoolRouterTests
         var system = new ActorSystem();
         await using var _ = system;
 
-        var props = system.Root.NewRoundRobinPool(TrackingActorProps, 3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewRoundRobinPool(TrackingActorProps, 3);
 
         var router = system.Root.Spawn(props);
 
@@ -130,8 +123,7 @@ public class PoolRouterTests
         var system = new ActorSystem();
         await using var _ = system;
 
-        var props = system.Root.NewConsistentHashPool(TrackingActorProps, 3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewConsistentHashPool(TrackingActorProps, 3);
 
         var router = system.Root.Spawn(props);
 

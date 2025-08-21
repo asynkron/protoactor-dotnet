@@ -18,8 +18,7 @@ public class RoundRobinPoolRouterTests
         var system = new ActorSystem();
         await using var _ = system;
 
-        var props = system.Root.NewRoundRobinPool(MyActorProps, 3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewRoundRobinPool(MyActorProps, 3);
         var router = system.Root.Spawn(props);
 
         var first = await system.Root.RequestAsync<PID>(router, "1", _timeout);

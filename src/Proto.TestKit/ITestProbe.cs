@@ -58,6 +58,54 @@ public interface ITestProbe
     T GetNextMessage<T>(Func<T, bool> when, TimeSpan? timeAllowed = null);
 
     /// <summary>
+    ///     asynchronously gets the next message from the test probe
+    /// </summary>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<object?> GetNextMessageAsync(TimeSpan? timeAllowed = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     asynchronously gets the next message from the test probe
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<T> GetNextMessageAsync<T>(TimeSpan? timeAllowed = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     asynchronously gets the next message from the test probe
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="when"></param>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<T> GetNextMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     asynchronously fishes for the next message of a given type from the test probe
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<T> FishForMessageAsync<T>(TimeSpan? timeAllowed = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     asynchronously fishes for the next message of a given type from the test probe
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="when"></param>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<T> FishForMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     keeps returning messages until the interval between messages exceeds the time allowed
     /// </summary>
     /// <param name="timeAllowed"></param>

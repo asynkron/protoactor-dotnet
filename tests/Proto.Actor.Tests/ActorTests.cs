@@ -203,7 +203,6 @@ public class ActorTests
                         return Task.CompletedTask;
                     }
                 )
-                .WithMailbox(() => new TestMailbox())
         );
 
         context.Send(pid, "hello");

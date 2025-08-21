@@ -18,8 +18,7 @@ public class BroadcastPoolRouterTests
         var system = new ActorSystem();
         await using var _ = system;
 
-        var props = system.Root.NewBroadcastPool(MyActorProps, 3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewBroadcastPool(MyActorProps, 3);
         var router = system.Root.Spawn(props);
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -29,6 +28,7 @@ public class BroadcastPoolRouterTests
 
         system.Root.Send(router, "first");
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, "second");
 
         Assert.Equal("first", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));

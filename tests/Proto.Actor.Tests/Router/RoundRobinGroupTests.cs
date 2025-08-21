@@ -8,8 +8,7 @@ namespace Proto.Router.Tests;
 
 public class RoundRobinGroupTests
 {
-    private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
-        .WithMailbox(() => new TestMailbox());
+    private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor());
 
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
@@ -89,6 +88,7 @@ public class RoundRobinGroupTests
         system.Root.Send(router, "0");
         system.Root.Send(router, "0");
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         // we should have 2 routees, so send 3 messages to ensure round robin happens
         system.Root.Send(router, "3");
         system.Root.Send(router, "3");
@@ -108,6 +108,7 @@ public class RoundRobinGroupTests
         var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
         system.Root.Send(router, new RouterAddRoutee(routee4));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         // should now have 4 routees, so need to send 4 messages to ensure all get them
         system.Root.Send(router, "1");
         system.Root.Send(router, "1");
@@ -141,8 +142,7 @@ public class RoundRobinGroupTests
         var routee2 = system.Root.Spawn(MyActorProps);
         var routee3 = system.Root.Spawn(MyActorProps);
 
-        var props = system.Root.NewRoundRobinGroup(routee1, routee2, routee3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewRoundRobinGroup(routee1, routee2, routee3);
 
         var router = system.Root.Spawn(props);
 

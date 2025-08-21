@@ -9,8 +9,7 @@ namespace Proto.Router.Tests;
 
 public class ConsistentHashGroupTests
 {
-    private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
-        .WithMailbox(() => new TestMailbox());
+    private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor());
 
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
@@ -118,6 +117,7 @@ public class ConsistentHashGroupTests
         var (router, routee1, _, _) = CreateRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, new Message("message1"));
         Assert.Equal(0, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
     }
@@ -130,6 +130,7 @@ public class ConsistentHashGroupTests
         var (router, _, _, _) = CreateRouterWith3Routees(system);
         var routee4 = system.Root.Spawn(MyActorProps);
         system.Root.Send(router, new RouterAddRoutee(routee4));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, new Message("message4"));
         Assert.Equal(1, await system.Root.RequestAsync<int>(routee4, "received?", _timeout));
     }
@@ -146,6 +147,7 @@ public class ConsistentHashGroupTests
         Assert.Equal(1, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
         // remove receiver
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         // routee2 should now handle "message1"
         system.Root.Send(router, new Message("message1"));
 
@@ -178,8 +180,7 @@ public class ConsistentHashGroupTests
 
         var props = system.Root.NewConsistentHashGroup(SuperIntelligentDeterministicHash.Hash, 1, messageHasher,
                 routee1, routee2, routee3
-            )
-            .WithMailbox(() => new TestMailbox());
+            );
 
         var router = system.Root.Spawn(props);
 

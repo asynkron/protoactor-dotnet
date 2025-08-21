@@ -41,7 +41,7 @@ public class PropsTests
     [Fact]
     public void Given_Props_When_WithMailbox_Then_mutate_MailboxProducer()
     {
-        IMailbox MailboxProducer() => new TestMailbox();
+        IMailbox MailboxProducer() => UnboundedMailbox.Create();
 
         var props = new Props();
         var props2 = props.WithMailbox(MailboxProducer);
