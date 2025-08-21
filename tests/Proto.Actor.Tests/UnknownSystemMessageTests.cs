@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Proto.Mailbox;
-using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Tests;
@@ -46,19 +46,25 @@ public class UnknownSystemMessageTests
     public async Task Unknown_system_message_should_escalate_to_parent()
     {
         await using var system = new ActorSystem();
-        var parentStats = new TestMailboxStatistics(m => m is Failure);
+
+        // Attach a probe to the parent mailbox to observe system messages such as Failure
+        var probe = new TestProbe();
+        var probePid = system.Root.Spawn(Props.FromProducer(() => probe));
+        // ensure the probe is fully started before it is used
+        system.Root.Send(probePid, "init");
+        await probe.FishForMessageAsync<string>();
 
         var childProps = Props.FromFunc(ctx => Task.CompletedTask);
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
-            .WithMailbox(() => UnboundedMailbox.Create(parentStats));
+            .WithTestMailboxProbe(probe);
 
         var parent = system.Root.Spawn(parentProps);
         var child = await system.Root.RequestAsync<PID>(parent, new GetChild());
 
         child.SendSystemMessage(system, new UnknownSystemMessage());
 
-        Assert.True(parentStats.Reset.Wait(TimeSpan.FromSeconds(5)));
-        var failure = Assert.Single(parentStats.Received.OfType<Failure>());
+        // The parent should receive a Failure describing the child and exception
+        var failure = await probe.FishForMessageAsync<Failure>();
         Assert.Equal(child, failure.Who);
         Assert.IsType<InvalidOperationException>(failure.Reason);
     }

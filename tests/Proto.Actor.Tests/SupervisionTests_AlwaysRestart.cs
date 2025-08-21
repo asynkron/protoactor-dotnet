@@ -1,8 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Proto.Mailbox;
-using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Tests;
@@ -43,20 +42,14 @@ public class SupervisionTestsAlwaysRestart
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var restartCount = 0;
-        var childMailboxStats = new TestMailboxStatistics(msg =>
-        {
-            if (msg is Restart)
-            {
-                restartCount++;
-                return restartCount == 3;
-            }
-
-            return false;
-        });
+        // probe child mailbox to observe Restart system messages
+        var probe = new TestProbe();
+        var probePid = system.Root.Spawn(Props.FromProducer(() => probe));
+        context.Send(probePid, "start");
+        await probe.FishForMessageAsync<string>();
 
         var childProps = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            .WithTestMailboxProbe(probe);
 
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(Supervision.AlwaysRestartStrategy);
@@ -67,9 +60,15 @@ public class SupervisionTestsAlwaysRestart
         context.Send(parent, "2");
         context.Send(parent, "3");
 
-        Assert.True(childMailboxStats.Reset.Wait(TimeSpan.FromSeconds(2)));
-        Assert.Equal(3, childMailboxStats.Received.OfType<Restart>().Count());
-        Assert.DoesNotContain(childMailboxStats.Posted, msg => msg is Stop);
+        for (var i = 0; i < 3; i++)
+        {
+            var restart = await probe.FishForMessageAsync<Restart>();
+            Assert.Equal(Exception, restart.Reason);
+        }
+
+        // Ensure no Stop message was processed
+        await Assert.ThrowsAsync<TestKitException>(
+            async () => await probe.FishForMessageAsync<Stop>(TimeSpan.FromMilliseconds(100)));
     }
 
     private class ParentActor : IActor
