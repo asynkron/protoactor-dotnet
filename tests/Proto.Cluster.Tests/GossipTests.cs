@@ -9,11 +9,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Gossip;
 using Xunit;
 using Xunit.Abstractions;
-using ClusterTest.Messages;
 
 namespace Proto.Cluster.Tests;
 
@@ -58,9 +58,12 @@ public class GossipTests
         await using var _ = clusterFixture;
         await clusterFixture.InitializeAsync();
 
-        var topologyResults = await Task.WhenAll(
-            clusterFixture.Members.Select(m => m.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5))));
-        var initialTopologyHash = topologyResults[0].topologyHash;
+        await Task.Delay(1000);
+
+        var (consensus, initialTopologyHash) =
+            await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
+
+        consensus.Should().BeTrue();
 
         var fixtureMembers = clusterFixture.Members;
         var consensusChecks = fixtureMembers.Select(CreateCompositeConsensusCheck).ToList();
@@ -80,8 +83,7 @@ public class GossipTests
         afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
         await clusterFixture.SpawnMember();
-        await Task.WhenAll(clusterFixture.Members
-            .Select(m => m.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5))));
+        await Task.Delay(2000); // Allow topology state to propagate
 
         var afterChangingTopology =
             await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout);
@@ -91,23 +93,47 @@ public class GossipTests
     }
 
     [Fact]
-    public async Task GossipStateProbeReplicatesState()
+    public async Task CanFallOutOfConsensus()
     {
         var clusterFixture = new InMemoryClusterFixture();
         await using var _ = clusterFixture;
         await clusterFixture.InitializeAsync();
 
-        await Task.WhenAll(clusterFixture.Members
-            .Select(m => m.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5))));
+        const string initialValue = "hello consensus";
+        const string otherValue = "hi";
 
-        var memberA = clusterFixture.Members[0];
-        var memberB = clusterFixture.Members[1];
+        var consensusChecks = clusterFixture.Members.Select(CreateConsensusCheck).ToList();
 
-        var probeHelper = new GossipProbe(memberA);
-        using var probe = await probeHelper.CreateStateProbeAsync();
+        SetGossipState(clusterFixture.Members, initialValue);
 
-        await GossipProbe.WaitForMemberStateAsync(memberB, probe.Key, memberA.System.Id,
-            s => s == probe.Value, TimeSpan.FromSeconds(10));
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
+        await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
+        _testOutputHelper.WriteLine("Start: We are in consensus...");
+        var firstMember = clusterFixture.Members[0];
+        _testOutputHelper.WriteLine("First member " + firstMember.System.Id);
+
+        var firstMemberConsensus = consensusChecks[0];
+
+        // var logStore = new LogStore();
+        // firstMember.System.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
+
+        // Sets a now inconsistent state on the first node
+        await firstMember.Gossip.SetStateAsync(GossipStateKey, new SomeGossipState { Key = otherValue });
+
+        var afterSettingDifferingState = await GetCurrentConsensus(firstMember, TimeSpan.FromMilliseconds(5000));
+
+        afterSettingDifferingState.Should()
+            .BeEquivalentTo((false, (string)null),
+                "We should be able to read our writes, and locally we do not have consensus");
+
+        _testOutputHelper.WriteLine("Read our own writes...");
+        await Task.Delay(5000);
+
+        _testOutputHelper.WriteLine("Checking consensus...");
+
+        _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
+        await ShouldBeNotHaveConsensus(consensusChecks);
+
     }
 
     [Fact]
@@ -133,7 +159,7 @@ public class GossipTests
             {
                 var key = $"k{index}-{i}";
                 var value = $"v{index}-{i}";
-                await member.Gossip.SetStateAsync(key, GossipProbe.CreateStateMessage(value));
+                await member.Gossip.SetStateAsync(key, new SomeGossipState { Key = value });
                 expected[member.System.Id][key] = value;
             }
         }
@@ -164,8 +190,8 @@ public class GossipTests
                 foreach (var (key, value) in kvs)
                 {
                     if (!ms.Values.TryGetValue(key, out var any) ||
-                        !GossipProbe.TryGetStateValue(any.Value, out var state) ||
-                        state != value)
+                        !any.Value.TryUnpack<SomeGossipState>(out var state) ||
+                        state.Key != value)
                     {
                         return false;
                     }
@@ -199,11 +225,23 @@ public class GossipTests
         new int[] { }.HasConsensus().Item1.Should().BeFalse();
     }
 
+    private static async Task ShouldBeNotHaveConsensus(List<IConsensusHandle<string>> consensusChecks)
+    {
+        var results = await Task
+            .WhenAll(consensusChecks.Select(it => it.TryGetConsensus(CancellationTokens.FromSeconds(1))))
+            ;
+
+        foreach (var (consensus, _) in results)
+        {
+            consensus.Should().BeFalse("The cluster is not in consensus");
+        }
+    }
+
     private static void SetGossipState(IList<Cluster> members, string value)
     {
         foreach (var member in members)
         {
-            member.Gossip.SetState(GossipStateKey, GossipProbe.CreateStateMessage(value));
+            member.Gossip.SetState(GossipStateKey, new SomeGossipState { Key = value });
         }
     }
 
@@ -214,7 +252,9 @@ public class GossipTests
         );
 
     private static IConsensusHandle<string> CreateConsensusCheck(Cluster member) =>
-        GossipProbe.RegisterConsensusCheck(member, GossipStateKey);
+        member.Gossip.RegisterConsensusCheck<SomeGossipState, string>(
+            GossipStateKey, rebalance => rebalance.Key
+        );
 
     private static IConsensusHandle<ulong> CreateCompositeConsensusCheck(Cluster member) =>
         member.Gossip.RegisterConsensusCheck(Gossiper.ConsensusCheckBuilder<ulong>

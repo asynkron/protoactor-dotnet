@@ -7,6 +7,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ClusterTest.Messages;
 using FluentAssertions;
 using Proto;
 using Proto.Cluster.Gossip;
@@ -29,7 +30,7 @@ public class RedundantGossipTests
         await fixture.InitializeAsync();
 
         var sender = fixture.Members[0];
-        sender.Gossip.SetState(GossipKey, GossipProbe.CreateStateMessage("value"));
+        sender.Gossip.SetState(GossipKey, new SomeGossipState { Key = "value" });
 
         var gossipPid = PID.FromAddress(sender.System.Address, Gossiper.GossipActorName);
 
