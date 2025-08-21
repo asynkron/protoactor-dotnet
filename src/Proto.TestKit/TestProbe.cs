@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto;
 using Proto.Mailbox;
 
 namespace Proto.TestKit;
@@ -29,13 +30,6 @@ public class TestProbe : IActor, ITestProbe
         {
             case Started _:
                 Context = context;
-
-                break;
-            case RequestReference _:
-                if (context.Sender is not null)
-                {
-                    context.Respond(this);
-                }
 
                 break;
             case Terminated _:
@@ -235,20 +229,4 @@ public class TestProbe : IActor, ITestProbe
         Context.RequestAsync<T>(target, message, timeAllowed);
 
     public static implicit operator PID?(TestProbe tp) => tp.Context.Self;
-
-    public static implicit operator TestProbe?(PID tpPid)
-    {
-        try
-        {
-            return TestKit.System.Root.RequestAsync<TestProbe>(tpPid, new RequestReference()).Result;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private class RequestReference
-    {
-    }
 }
