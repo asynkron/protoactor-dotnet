@@ -23,7 +23,7 @@ public class TestProbeAsyncTests
         }));
 
         system.Root.Send(target, "hello");
-        await probe.GetNextMessageAsync<string>(s => s == "hello");
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "hello");
     }
 
     [Fact]

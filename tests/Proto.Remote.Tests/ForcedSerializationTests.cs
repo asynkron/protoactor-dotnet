@@ -91,7 +91,7 @@ namespace Proto.Remote.Tests
             var sentMessage = new TestMessage("Serialized");
             system.Root.Send(pid, sentMessage);
 
-            var (message, _, _) = await probe.GetNextMessageAsync<(object, PID, Proto.MessageHeader)>();
+            var (message, _, _) = await probe.GetNextUserMessageAsync<(object, PID, Proto.MessageHeader)>();
 
             message.Should()
                 .BeEquivalentTo(sentMessage, "the received message should be the same as the sent message");
@@ -117,7 +117,7 @@ namespace Proto.Remote.Tests
             var sentMessage = new TestMessage("Not serialized");
             system.Root.Send(pid, sentMessage);
 
-            var (message, _, _) = await probe.GetNextMessageAsync<(object, PID, Proto.MessageHeader)>();
+            var (message, _, _) = await probe.GetNextUserMessageAsync<(object, PID, Proto.MessageHeader)>();
 
             message.Should()
                 .BeEquivalentTo(sentMessage, "the received message should be the same as the sent message");
@@ -138,7 +138,7 @@ namespace Proto.Remote.Tests
             var headers = new Proto.MessageHeader(new Dictionary<string, string> { { "key", "value" } });
             system.Root.Send(sender, new RunRequestAsync(pid, headers));
 
-            var (_, _, receivedHeaders) = await probe.GetNextMessageAsync<(object, PID, Proto.MessageHeader)>();
+            var (_, _, receivedHeaders) = await probe.GetNextUserMessageAsync<(object, PID, Proto.MessageHeader)>();
 
             receivedHeaders.Should().BeEquivalentTo(headers);
         }
@@ -155,7 +155,7 @@ namespace Proto.Remote.Tests
 
             system.Root.Send(sender, new RunRequest(pid, null));
 
-            var (_, receivedSender, _) = await probe.GetNextMessageAsync<(object, PID, Proto.MessageHeader)>();
+            var (_, receivedSender, _) = await probe.GetNextUserMessageAsync<(object, PID, Proto.MessageHeader)>();
 
             receivedSender.Should().BeEquivalentTo(sender);
         }
@@ -178,7 +178,7 @@ namespace Proto.Remote.Tests
             var sentMessage = new TestRootSerializableMessage("Serialized");
             system.Root.Send(pid, sentMessage);
 
-            var (message, _, _) = await probe.GetNextMessageAsync<(object, PID, Proto.MessageHeader)>();
+            var (message, _, _) = await probe.GetNextUserMessageAsync<(object, PID, Proto.MessageHeader)>();
 
             message.Should()
                 .BeEquivalentTo(sentMessage, "the received message should be the same as the sent message");

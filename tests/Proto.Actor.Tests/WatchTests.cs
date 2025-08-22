@@ -36,7 +36,7 @@ public class WatchTests
 
         context.Send(child, "stop");
 
-        await probe.ExpectSystemMessageAsync<Terminated>(t => Equals(t.Who, child));
+        await probe.ExpectNextSystemMessageAsync<Terminated>(t => Equals(t.Who, child));
         await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(100));
     }
 
@@ -54,7 +54,7 @@ public class WatchTests
 
         await context.StopAsync(watchee);
 
-        await probe.ExpectSystemMessageAsync<Terminated>(t => Equals(t.Who, watchee));
+        await probe.ExpectNextSystemMessageAsync<Terminated>(t => Equals(t.Who, watchee));
     }
 
     [Fact]

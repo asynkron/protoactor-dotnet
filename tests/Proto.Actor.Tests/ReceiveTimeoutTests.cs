@@ -34,7 +34,7 @@ public class ReceiveTimeoutTests
 
         context.Spawn(props);
 
-        await probe.GetNextMessageAsync<ReceiveTimeout>();
+        await probe.ExpectNextSystemMessageAsync<ReceiveTimeout>();
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class ReceiveTimeoutTests
         var scheduler = context.Scheduler();
         var cts = scheduler.SendRepeatedly(TimeSpan.Zero, TimeSpan.FromMilliseconds(100), pid, new IgnoreMe());
 
-        await probe.GetNextMessageAsync<ReceiveTimeout>();
+        await probe.ExpectNextSystemMessageAsync<ReceiveTimeout>();
         cts.Cancel();
     }
 
@@ -100,7 +100,7 @@ public class ReceiveTimeoutTests
 
         await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(400));
         cts.Cancel();
-        await probe.GetNextMessageAsync<ReceiveTimeout>();
+        await probe.ExpectNextSystemMessageAsync<ReceiveTimeout>();
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class ReceiveTimeoutTests
 
         context.Spawn(props);
 
-        await probe.GetNextMessageAsync<string>();
+        await probe.ExpectNextUserMessageAsync<string>();
         await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(200));
     }
 
@@ -194,7 +194,7 @@ public class ReceiveTimeoutTests
 
         context.Spawn(props);
 
-        await probe.GetNextMessageAsync<ReceiveTimeout>();
+        await probe.ExpectNextSystemMessageAsync<ReceiveTimeout>();
     }
 
     private record IgnoreMe : INotInfluenceReceiveTimeout;
