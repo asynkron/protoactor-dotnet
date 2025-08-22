@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 using static Proto.TestFixtures.Receivers;
 
@@ -189,98 +189,79 @@ public class ActorTests
     [Fact]
     public async Task ActorLifeCycle()
     {
-        var system = new ActorSystem();
-        await using var _ = system;
+        await using var system = new ActorSystem();
         var context = system.Root;
-
-        var messages = new Queue<object>();
+        var (probe, probePid) = system.CreateTestProbe();
 
         var pid = context.Spawn(
             Props.FromFunc(ctx =>
-                    {
-                        messages.Enqueue(ctx.Message!);
-
-                        return Task.CompletedTask;
-                    }
-                )
+            {
+                ctx.Send(probePid, ctx.Message);
+                return Task.CompletedTask;
+            })
         );
 
         context.Send(pid, "hello");
-        // wait for the actor to process the user message before stopping
-        await Task.Delay(10);
-        await context.StopAsync(pid);
 
-        Assert.Equal(4, messages.Count);
-        var msgs = messages.ToArray();
-        Assert.IsType<Started>(msgs[0]);
-        Assert.IsType<string>(msgs[1]);
-        Assert.IsType<Stopping>(msgs[2]);
-        Assert.IsType<Stopped>(msgs[3]);
+        await probe.ExpectNextSystemMessageAsync<Started>();
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "hello");
+        await context.StopAsync(pid);
+        await probe.ExpectNextSystemMessageAsync<Stopping>();
+        await probe.ExpectNextSystemMessageAsync<Stopped>();
+        await probe.ExpectEmptyMailboxAsync();
     }
 
     [Fact]
     public async Task ActorLifeCycleWhenExceptionIsThrown()
     {
-        var system = new ActorSystem();
-        await using var _ = system;
+        await using var system = new ActorSystem();
         var context = system.Root;
 
-        var messages = new Queue<object>();
+        var (probe, probePid) = system.CreateTestProbe();
         var i = 0;
-
         CapturedContext? capturedContext = null;
 
-        async Task HandleMessage(IContext ctx)
-        {
-            if (ctx.Message is string && i++ == 0)
-            {
-                capturedContext = ctx.Capture();
-
-                throw new Exception("Test");
-            }
-
-            messages.Enqueue(ctx.Message!);
-
-            if (ctx.Message is Started && capturedContext != null)
-            {
-                await capturedContext.Receive();
-            }
-
-            await Task.Yield();
-        }
-
         var pid = context.Spawn(
-            Props.FromFunc(ctx => ctx.Message switch
+            Props.FromFunc(async ctx =>
+            {
+                ctx.Send(probePid, ctx.Message);
+
+                if (ctx.Message is string && i++ == 0)
                 {
-                    object => HandleMessage(ctx),
-                    _      => Task.CompletedTask
+                    capturedContext = ctx.Capture();
+                    throw new Exception("Test");
                 }
-            )
+
+                if (ctx.Message is Started && capturedContext != null)
+                {
+                    await capturedContext.Receive();
+                }
+
+                await Task.Yield();
+            })
         );
 
         context.Send(pid, "hello");
         context.Send(pid, "hello");
-
         await context.PoisonAsync(pid);
 
-        Assert.Equal(7, messages.Count);
-        var msgs = messages.ToArray();
-        Assert.IsType<Started>(msgs[0]);
-        Assert.IsType<Restarting>(msgs[1]);
-        Assert.IsType<Started>(msgs[2]);
-        Assert.IsType<string>(msgs[3]);
-        Assert.IsType<string>(msgs[4]);
-        Assert.IsType<Stopping>(msgs[5]);
-        Assert.IsType<Stopped>(msgs[6]);
+        await probe.ExpectNextSystemMessageAsync<Started>();
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "hello");
+        await probe.ExpectNextUserMessageAsync<Restarting>();
+        await probe.ExpectNextSystemMessageAsync<Started>();
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "hello");
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "hello");
+        await probe.ExpectNextSystemMessageAsync<Stopping>();
+        await probe.ExpectNextSystemMessageAsync<Stopped>();
+        await probe.ExpectEmptyMailboxAsync();
     }
 
     [Fact]
     public async Task StopActorWithLongRunningTask()
     {
-        var system = new ActorSystem();
-        await using var _ = system;
+        await using var system = new ActorSystem();
         var context = system.Root;
-        var messages = new Queue<object>();
+        var (probe, probePid) = system.CreateTestProbe();
 
         var pid = context.Spawn(
             Props.FromFunc(async ctx =>
@@ -293,26 +274,22 @@ public class ActorTests
                     }
                     catch (Exception e)
                     {
-                        messages.Enqueue(e);
+                        ctx.Send(probePid, e);
                     }
                 }
 
-                messages.Enqueue(ctx.Message!);
+                ctx.Send(probePid, ctx.Message);
             })
         );
 
         context.Send(pid, "hello");
-        // Wait a little while the actor starts to process the message//
-        await Task.Delay(15);
+        await probe.ExpectNextSystemMessageAsync<Started>();
         await context.StopAsync(pid);
-
-        Assert.Equal(5, messages.Count);
-        var msgs = messages.ToArray();
-        Assert.IsType<Started>(msgs[0]);
-        Assert.IsType<TaskCanceledException>(msgs[1]);
-        Assert.IsType<string>(msgs[2]);
-        Assert.IsType<Stopping>(msgs[3]);
-        Assert.IsType<Stopped>(msgs[4]);
+        await probe.ExpectNextUserMessageAsync<TaskCanceledException>();
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "hello");
+        await probe.ExpectNextSystemMessageAsync<Stopping>();
+        await probe.ExpectNextSystemMessageAsync<Stopped>();
+        await probe.ExpectEmptyMailboxAsync();
     }
 
     [Fact]
