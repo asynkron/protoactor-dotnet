@@ -65,6 +65,7 @@ internal class Gossip
     private readonly InstanceLogger? _logger;
     private readonly string _myId;
     private readonly Random _rnd = new();
+    private readonly MemberStateDeltaBuilder _memberStateDeltaBuilder;
     private ImmutableHashSet<string> _activeMemberIds = ImmutableHashSet<string>.Empty;
     private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
     private long _localSequenceNo;
@@ -80,6 +81,7 @@ internal class Gossip
         _gossipDebugLogging = gossipDebugLogging;
         _gossipFanout = gossipFanout;
         _gossipMaxSend = gossipMaxSend;
+        _memberStateDeltaBuilder = new MemberStateDeltaBuilder(myId, gossipMaxSend);
     }
 
     public Task UpdateClusterTopology(ClusterTopology clusterTopology)
@@ -230,64 +232,10 @@ internal class Gossip
 
     public MemberStateDelta GetMemberStateDelta(string targetMemberId)
     {
-        var newState = new GossipState();
+        var (state, pendingOffsets, hasState) =
+            _memberStateDeltaBuilder.Build(_state, targetMemberId, _committedOffsets, _rnd);
 
-        var count = 0;
-        var pendingOffsets = _committedOffsets;
-
-        //for each member
-        var members = _state
-            .Members
-            .Where(m => m.Key != targetMemberId) //we dont need to send back state to the owner of the state
-            .OrderByRandom(_rnd, m => m.Key == _myId);
-
-        foreach (var (memberId, memberState1) in members)
-        {
-            //create an empty state
-            var newMemberState = new GossipState.Types.GossipMemberState();
-
-            var watermarkKey = $"{targetMemberId}.{memberId}";
-            //get the watermark 
-            _committedOffsets.TryGetValue(watermarkKey, out var watermark);
-            var newWatermark = watermark;
-
-            //for each value in member state
-            foreach (var (key, value) in memberState1.Values)
-            {
-                if (value.SequenceNumber <= watermark)
-                {
-                    continue;
-                }
-
-                if (value.SequenceNumber > newWatermark)
-                {
-                    newWatermark = value.SequenceNumber;
-                }
-
-                newMemberState.Values.Add(key, value);
-            }
-
-            //don't send memberStates that we have no new data for 
-            if (newMemberState.Values.Count > 0)
-            {
-                count++;
-                newState.Members.Add(memberId, newMemberState);
-                pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
-            }
-
-            if (count > _gossipMaxSend)
-            {
-                break;
-            }
-        }
-
-        //make sure to clone to make it a separate copy, avoid race conditions on mutate
-        var hasState = _committedOffsets != pendingOffsets;
-
-        var memberState =
-            new MemberStateDelta(targetMemberId, hasState, newState, () => CommitPendingOffsets(pendingOffsets));
-
-        return memberState;
+        return new MemberStateDelta(targetMemberId, hasState, state, () => CommitPendingOffsets(pendingOffsets));
     }
 
     public ImmutableDictionary<string, GossipKeyValue> GetStateEntry(string key)
