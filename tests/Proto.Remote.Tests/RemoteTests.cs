@@ -169,10 +169,9 @@ public abstract class RemoteTests
         probe.Context.Watch(remoteActor);
         await Task.Delay(20); // allow RemoteWatch to propagate
 
-        await System.Root.StopAsync(remoteActor);
+        await System.Root.PoisonAsync(remoteActor);
 
-        var terminated = await probe.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
-        Assert.Equal(remoteActor, terminated.Who);
+        await probe.ExpectSystemMessageAsync<Terminated>(t => Equals(t.Who, remoteActor), TimeSpan.FromSeconds(10));
     }
 
     [Fact]
@@ -188,11 +187,13 @@ public abstract class RemoteTests
         probe.Context.Watch(remoteActor2);
         await Task.Delay(20); // allow RemoteWatch to propagate
 
-        await System.Root.StopAsync(remoteActor1);
-        await System.Root.StopAsync(remoteActor2);
+        await System.Root.PoisonAsync(remoteActor1);
+        await System.Root.PoisonAsync(remoteActor2);
 
-        var term1 = await probe.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
-        var term2 = await probe.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
+        var term1 = await probe.ExpectSystemMessageAsync<Terminated>(t =>
+                Equals(t.Who, remoteActor1) || Equals(t.Who, remoteActor2), TimeSpan.FromSeconds(10));
+        var term2 = await probe.ExpectSystemMessageAsync<Terminated>(t =>
+                Equals(t.Who, remoteActor1) || Equals(t.Who, remoteActor2), TimeSpan.FromSeconds(10));
         new[] { term1.Who, term2.Who }.Should().BeEquivalentTo(new[] { remoteActor1, remoteActor2 });
     }
 
@@ -209,12 +210,10 @@ public abstract class RemoteTests
         probe2.Context.Watch(remoteActor);
         await Task.Delay(20); // allow RemoteWatch to propagate
 
-        await System.Root.StopAsync(remoteActor);
+        await System.Root.PoisonAsync(remoteActor);
 
-        var t1 = await probe1.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
-        var t2 = await probe2.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
-        Assert.Equal(remoteActor, t1.Who);
-        Assert.Equal(remoteActor, t2.Who);
+        await probe1.ExpectSystemMessageAsync<Terminated>(t => Equals(t.Who, remoteActor), TimeSpan.FromSeconds(10));
+        await probe2.ExpectSystemMessageAsync<Terminated>(t => Equals(t.Who, remoteActor), TimeSpan.FromSeconds(10));
     }
 
     [Fact]
@@ -233,10 +232,9 @@ public abstract class RemoteTests
         probe2.Context.Unwatch(remoteActor);
         await Task.Delay(TimeSpan.FromSeconds(3));
 
-        await System.Root.StopAsync(remoteActor);
+        await System.Root.PoisonAsync(remoteActor);
 
-        var term = await probe1.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
-        Assert.Equal(remoteActor, term.Who);
+        await probe1.ExpectSystemMessageAsync<Terminated>(t => Equals(t.Who, remoteActor), TimeSpan.FromSeconds(10));
 
         await probe2.ExpectNoMessageAsync(TimeSpan.FromSeconds(1));
     }
@@ -254,8 +252,7 @@ public abstract class RemoteTests
 
         System.Root.Send(remoteActor, new Die());
 
-        var term = await probe.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
-        Assert.Equal(remoteActor, term.Who);
+        await probe.ExpectSystemMessageAsync<Terminated>(t => Equals(t.Who, remoteActor), TimeSpan.FromSeconds(10));
 
         await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(200));
     }

@@ -23,8 +23,7 @@ public class TestProbeAsyncTests
         }));
 
         system.Root.Send(target, "hello");
-        var msg = await probe.GetNextMessageAsync<string>();
-        Assert.Equal("hello", msg);
+        await probe.GetNextMessageAsync<string>(s => s == "hello");
     }
 
     [Fact]
