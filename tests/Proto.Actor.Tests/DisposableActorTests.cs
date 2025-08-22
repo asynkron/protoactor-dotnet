@@ -14,12 +14,10 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
-        var disposed = new TaskCompletionSource<bool>();
+        var (probe, probePid) = system.CreateTestProbe();
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
 
-        var childProps = Props.FromProducer(() => new DisposableActor(() => disposed.TrySetResult(true)))
-            .WithTestMailboxStats(childMailboxStats)
+        var childProps = Props.FromProducer(() => new DisposableActor(system, probePid, "disposed"))
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
@@ -27,8 +25,8 @@ public class DisposableActorTests
 
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
-        childMailboxStats.Reset.Wait(1000);
-        Assert.True(await disposed.Task.WaitAsync(TimeSpan.FromSeconds(1)));
+
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "disposed");
     }
 
     [Fact]
@@ -38,12 +36,10 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
-        var disposed = new TaskCompletionSource<bool>();
+        var (probe, probePid) = system.CreateTestProbe();
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
 
-        var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposed.TrySetResult(true)))
-            .WithTestMailboxStats(childMailboxStats)
+        var childProps = Props.FromProducer(() => new AsyncDisposableActor(system, probePid, "disposed"))
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
@@ -51,8 +47,8 @@ public class DisposableActorTests
 
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
-        childMailboxStats.Reset.Wait(2000);
-        Assert.True(await disposed.Task.WaitAsync(TimeSpan.FromSeconds(1)));
+
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "disposed");
     }
 
     [Fact]
@@ -62,12 +58,10 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
-        var disposeCalled = false;
+        var (probe, probePid) = system.CreateTestProbe();
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
 
-        var childProps = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
-            .WithTestMailboxStats(childMailboxStats)
+        var childProps = Props.FromProducer(() => new DisposableActor(system, probePid, "disposed"))
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
@@ -75,8 +69,8 @@ public class DisposableActorTests
 
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
-        childMailboxStats.Reset.Wait(1000);
-        Assert.False(disposeCalled);
+
+        await probe.ExpectEmptyMailboxAsync();
     }
 
     [Fact]
@@ -86,12 +80,10 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
-        var disposeCalled = false;
+        var (probe, probePid) = system.CreateTestProbe();
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
 
-        var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
-            .WithTestMailboxStats(childMailboxStats)
+        var childProps = Props.FromProducer(() => new AsyncDisposableActor(system, probePid, "disposed"))
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
@@ -99,8 +91,8 @@ public class DisposableActorTests
 
         var parent = context.Spawn(props);
         context.Send(parent, "crash");
-        childMailboxStats.Reset.Wait(1000);
-        Assert.False(disposeCalled);
+
+        await probe.ExpectEmptyMailboxAsync();
     }
 
     [Fact]
@@ -110,13 +102,13 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var disposeCalled = false;
+        var (probe, probePid) = system.CreateTestProbe();
 
-        var props = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true));
+        var props = Props.FromProducer(() => new DisposableActor(system, probePid, "disposed"));
 
         var pid = context.Spawn(props);
         await context.StopAsync(pid);
-        Assert.True(disposeCalled);
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "disposed");
     }
 
     [Fact]
@@ -126,13 +118,13 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var disposeCalled = false;
+        var (probe, probePid) = system.CreateTestProbe();
 
-        var props = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true));
+        var props = Props.FromProducer(() => new AsyncDisposableActor(system, probePid, "disposed"));
 
         var pid = context.Spawn(props);
         await context.StopAsync(pid);
-        Assert.True(disposeCalled);
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "disposed");
     }
 
     [Fact]
@@ -142,17 +134,12 @@ public class DisposableActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var child1Disposed = false;
-        var child2Disposed = false;
-        var child1MailboxStats = new TestMailboxStats(msg => msg is Stopped);
-        var child2MailboxStats = new TestMailboxStats(msg => msg is Stopped);
+        var (probe, probePid) = system.CreateTestProbe();
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
 
-        var child1Props = Props.FromProducer(() => new DisposableActor(() => child1Disposed = true))
-            .WithTestMailboxStats(child1MailboxStats);
+        var child1Props = Props.FromProducer(() => new DisposableActor(system, probePid, "child1"));
 
-        var child2Props = Props.FromProducer(() => new DisposableActor(() => child2Disposed = true))
-            .WithTestMailboxStats(child2MailboxStats);
+        var child2Props = Props.FromProducer(() => new DisposableActor(system, probePid, "child2"));
 
         var parentProps = Props.FromProducer(() => new ParentWithMultipleChildrenActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);
@@ -161,10 +148,14 @@ public class DisposableActorTests
 
         context.Send(parent, "crash");
 
-        child1MailboxStats.Reset.Wait(1000);
-        child2MailboxStats.Reset.Wait(1000);
-        Assert.True(child1Disposed);
-        Assert.True(child2Disposed);
+        var messages = new[]
+        {
+            await probe.GetNextUserMessageAsync<string>(),
+            await probe.GetNextUserMessageAsync<string>()
+        };
+
+        Assert.Contains("child1", messages);
+        Assert.Contains("child2", messages);
     }
 
     private class SupervisingActor : IActor
@@ -195,19 +186,22 @@ public class DisposableActorTests
 
     private class AsyncDisposableActor : IActor, IAsyncDisposable
     {
-        private readonly Action _onDispose;
+        private readonly ActorSystem _system;
+        private readonly PID _probe;
+        private readonly object _message;
 
-        public AsyncDisposableActor(Action onDispose)
+        public AsyncDisposableActor(ActorSystem system, PID probe, object message)
         {
-            _onDispose = onDispose;
+            _system = system;
+            _probe = probe;
+            _message = message;
         }
 
         public Task ReceiveAsync(IContext context)
         {
-            switch (context.Message)
+            if (context.Message is string)
             {
-                case string _:
-                    throw new Exception();
+                throw new Exception();
             }
 
             return Task.CompletedTask;
@@ -215,7 +209,7 @@ public class DisposableActorTests
 
         public ValueTask DisposeAsync()
         {
-            _onDispose();
+            _system.Root.Send(_probe, _message);
 
             return default;
         }
@@ -223,25 +217,28 @@ public class DisposableActorTests
 
     private class DisposableActor : IActor, IDisposable
     {
-        private readonly Action _onDispose;
+        private readonly ActorSystem _system;
+        private readonly PID _probe;
+        private readonly object _message;
 
-        public DisposableActor(Action onDispose)
+        public DisposableActor(ActorSystem system, PID probe, object message)
         {
-            _onDispose = onDispose;
+            _system = system;
+            _probe = probe;
+            _message = message;
         }
 
         public Task ReceiveAsync(IContext context)
         {
-            switch (context.Message)
+            if (context.Message is string)
             {
-                case string _:
-                    throw new Exception();
+                throw new Exception();
             }
 
             return Task.CompletedTask;
         }
 
-        public void Dispose() => _onDispose();
+        public void Dispose() => _system.Root.Send(_probe, _message);
     }
 
     private class ParentWithMultipleChildrenActor : IActor
