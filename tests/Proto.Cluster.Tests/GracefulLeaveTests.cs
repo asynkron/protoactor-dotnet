@@ -1,8 +1,10 @@
+using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Google.Protobuf.WellKnownTypes;
 using Proto;
 using Proto.Cluster.Gossip;
+using static Proto.TestKit.TestKit;
 using Proto.Utils;
 using Xunit;
 
@@ -23,8 +25,10 @@ public class GracefulLeaveTests
 
         await leaver.Gossip.SetStateAsync(GossipKeys.GracefullyLeft, new Empty());
 
-        var interval = leaver.Config.GossipInterval;
-        await Task.Delay(interval + interval);
+        await AwaitConditionAsync(
+            // Wait until the leaving member is added to the block list
+            () => other.Remote.BlockList.BlockedMembers.Contains(leaver.System.Id),
+            TimeSpan.FromSeconds(5));
 
         other.Remote.BlockList.BlockedMembers.Should().Contain(leaver.System.Id);
 
