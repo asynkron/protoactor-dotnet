@@ -335,11 +335,6 @@ public class ReenterTests : ActorTestBase
                         ctx.Respond(true);
 
                         break;
-                    case Stopped:
-                        // Release the cancellation token after stop gets processed.
-                        cts.Cancel();
-
-                        break;
                 }
             }
         ).WithTestMailboxStats(stats);
@@ -351,7 +346,10 @@ public class ReenterTests : ActorTestBase
         // Wait for the actor to process the stop sequence
         await stats.WaitForResetAsync(TimeSpan.FromSeconds(5));
 
-        Assert.True(!completionExecuted);
+        // Trigger the reenter continuation after the actor has stopped
+        cts.Cancel();
+
+        Assert.False(completionExecuted);
     }
 
     private class ReenterAfterCancellationActor : IActor
