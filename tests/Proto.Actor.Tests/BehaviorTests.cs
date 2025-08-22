@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Proto.TestFixtures;
 using Xunit;
 
 namespace Proto.Tests;
@@ -50,8 +51,6 @@ public class BehaviorTests
         await using var _ = system;
         var context = system.Root;
 
-        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
-
         var behavior = new Behavior();
 
         behavior.Become(ctx =>
@@ -74,7 +73,7 @@ public class BehaviorTests
             }
         );
 
-        var pid = SpawnActorFromFunc(behavior.ReceiveAsync);
+        var pid = context.SpawnActorFromFunc(behavior.ReceiveAsync);
 
         var reply = await context.RequestAsync<string>(pid, "number");
         var replyAfterPush = await context.RequestAsync<int>(pid, null!);
