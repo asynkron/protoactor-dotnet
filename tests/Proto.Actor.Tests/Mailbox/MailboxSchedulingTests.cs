@@ -127,6 +127,8 @@ public class MailboxSchedulingTests
         mailbox.PostUserMessage(msg1);
 
         await AwaitConditionAsync(() => !userMailbox.HasMessages, TimeSpan.FromMilliseconds(100));
+        Assert.False(userMailbox.HasMessages, "Mailbox should be processing msg1 before completion.");
+
         msg1.TaskCompletionSource.SetResult(0);
         await AwaitConditionAsync(() => mailbox.Status == 0, TimeSpan.FromMilliseconds(100));
 
