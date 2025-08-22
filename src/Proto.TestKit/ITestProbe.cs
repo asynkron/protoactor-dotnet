@@ -23,11 +23,6 @@ public interface ITestProbe
     PID? Sender { get; }
 
     /// <summary>
-    ///     the context of the test probe
-    /// </summary>
-    IContext? Context { get; }
-
-    /// <summary>
     ///     asynchronously checks that no message arrives within the time allowed
     /// </summary>
     /// <param name="timeAllowed"></param>
@@ -182,6 +177,18 @@ public interface ITestProbe
     /// </summary>
     /// <param name="message"></param>
     void Respond(object message);
+
+    /// <summary>
+    ///     starts watching the target actor
+    /// </summary>
+    /// <param name="pid"></param>
+    void Watch(PID pid);
+
+    /// <summary>
+    ///     stops watching the target actor
+    /// </summary>
+    /// <param name="pid"></param>
+    void Unwatch(PID pid);
 
     /// <summary>
     ///     sends a request message from the test probe to the target

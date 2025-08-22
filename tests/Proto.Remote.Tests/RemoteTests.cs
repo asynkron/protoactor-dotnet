@@ -165,7 +165,7 @@ public abstract class RemoteTests
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
         var (probe, _) = System.CreateTestProbe();
-        probe.Context.Watch(remoteActor);
+        probe.Watch(remoteActor);
 
         await System.Root.PoisonAsync(remoteActor);
 
@@ -180,8 +180,8 @@ public abstract class RemoteTests
         var remoteActor2 = await SpawnRemoteActor(_fixture.RemoteAddress);
 
         var (probe, _) = System.CreateTestProbe();
-        probe.Context.Watch(remoteActor1);
-        probe.Context.Watch(remoteActor2);
+        probe.Watch(remoteActor1);
+        probe.Watch(remoteActor2);
 
         await System.Root.PoisonAsync(remoteActor1);
         await System.Root.PoisonAsync(remoteActor2);
@@ -201,8 +201,8 @@ public abstract class RemoteTests
 
         var (probe1, _) = System.CreateTestProbe();
         var (probe2, _) = System.CreateTestProbe();
-        probe1.Context.Watch(remoteActor);
-        probe2.Context.Watch(remoteActor);
+        probe1.Watch(remoteActor);
+        probe2.Watch(remoteActor);
 
         await System.Root.PoisonAsync(remoteActor);
 
@@ -218,10 +218,10 @@ public abstract class RemoteTests
 
         var (probe1, _) = System.CreateTestProbe();
         var (probe2, _) = System.CreateTestProbe();
-        probe1.Context.Watch(remoteActor);
-        probe2.Context.Watch(remoteActor);
+        probe1.Watch(remoteActor);
+        probe2.Watch(remoteActor);
 
-        probe2.Context.Unwatch(remoteActor);
+        probe2.Unwatch(remoteActor);
         await Task.Delay(TimeSpan.FromSeconds(3));
 
         await System.Root.PoisonAsync(remoteActor);
@@ -238,7 +238,7 @@ public abstract class RemoteTests
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
         var (probe, _) = System.CreateTestProbe();
-        probe.Context.Watch(remoteActor);
+        probe.Watch(remoteActor);
 
         System.Root.Send(remoteActor, new Die());
 
