@@ -37,7 +37,8 @@ public class WatchTests
         context.Send(child, "stop");
 
         await probe.ExpectNextSystemMessageAsync<Terminated>(t => Equals(t.Who, child));
-        await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(100));
+        // ensure no additional messages are left in the probe
+        await probe.ExpectEmptyMailboxAsync();
     }
 
     [Fact]
