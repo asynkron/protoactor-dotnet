@@ -23,7 +23,7 @@ public class TimerExtensionsTests
         // ensure message isn't delivered immediately
         await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(100));
 
-        await probe.GetNextMessageAsync<string>(s => s == "Wakeup", TimeSpan.FromSeconds(5));
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "Wakeup");
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class TimerExtensionsTests
         await Task.Delay(50);
         timeProvider.Advance(TimeSpan.FromMinutes(1));
 
-        await probe.GetNextMessageAsync<string>(s => s == "Wakeup", TimeSpan.FromMilliseconds(100));
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "Wakeup");
     }
 }
 

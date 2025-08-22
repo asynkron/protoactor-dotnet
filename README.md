@@ -101,7 +101,7 @@ Proto.Actor includes a TestKit library for unit testing actors.
   ```csharp
   var probe = new TestProbe();
   system.Root.Spawn(Props.FromProducer(() => probe));
-  await probe.GetNextMessageAsync<string>();
+  await probe.ExpectNextUserMessageAsync<string>();
   await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(100));
   ```
 

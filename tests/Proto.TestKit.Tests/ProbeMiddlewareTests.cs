@@ -17,7 +17,7 @@ public class ProbeMiddlewareTests
         var pid = system.Root.Spawn(props);
 
         system.Root.Send(pid, "hello");
-        (await probe.GetNextMessageAsync<string>()).Should().Be("hello");
+        (await probe.FishForMessageAsync<string>(s => s == "hello")).Should().Be("hello");
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class ProbeMiddlewareTests
         var pid = system.Root.Spawn(props);
 
         system.Root.Send(pid, "hi");
-        (await probe.GetNextMessageAsync<string>()).Should().Be("hi");
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "hi");
         probe.Sender.Should().Be(target);
     }
 
@@ -45,10 +45,10 @@ public class ProbeMiddlewareTests
         var pid = system.Root.Spawn(props);
 
         system.Root.Send(pid, "hello");
-        (await probe.GetNextMessageAsync<string>()).Should().Be("hello");
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "hello");
 
         system.Root.Stop(pid);
-        await probe.ExpectSystemMessageAsync<Stop>();
+        await probe.ExpectNextSystemMessageAsync<Stop>();
     }
 
     private class EmptyActor : IActor

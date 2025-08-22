@@ -20,9 +20,9 @@ public class BroadcastGroupTests
 
         system.Root.Send(router, "hello");
 
-        Assert.Equal("hello", await probe1.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("hello", await probe2.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("hello", await probe3.GetNextMessageAsync<string>(_timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
     [Fact]
@@ -36,8 +36,8 @@ public class BroadcastGroupTests
         await system.Root.StopAsync(routee2);
         system.Root.Send(router, "hello");
 
-        Assert.Equal("hello", await probe1.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("hello", await probe3.GetNextMessageAsync<string>(_timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
     [Fact]
@@ -52,8 +52,8 @@ public class BroadcastGroupTests
         system.Root.Send(routee2, "go slow");
         system.Root.Send(router, "hello");
 
-        Assert.Equal("hello", await probe1.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("hello", await probe3.GetNextMessageAsync<string>(_timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
     [Fact]
@@ -101,13 +101,13 @@ public class BroadcastGroupTests
         await system.Root.RequestAsync<Touched>(routee1, new Touch(), _timeout);
         system.Root.Send(router, "second message");
 
-        Assert.Equal("first message", await probe1.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("first message", await probe2.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("first message", await probe3.GetNextMessageAsync<string>(_timeout));
-        await probe1.GetNextMessageAsync<Touch>(_timeout);
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "first message");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "first message");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "first message");
+        await probe1.ExpectNextUserMessageAsync<Touch>();
         await probe1.ExpectNoMessageAsync(_timeout);
-        Assert.Equal("second message", await probe2.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("second message", await probe3.GetNextMessageAsync<string>(_timeout));
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "second message");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "second message");
     }
 
     [Fact]
@@ -122,10 +122,10 @@ public class BroadcastGroupTests
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, "a message");
 
-        Assert.Equal("a message", await probe1.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("a message", await probe2.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("a message", await probe3.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("a message", await probe4.GetNextMessageAsync<string>(_timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "a message");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "a message");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "a message");
+        await probe4.ExpectNextUserMessageAsync<string>(x => x == "a message");
     }
 
     [Fact]
@@ -139,9 +139,9 @@ public class BroadcastGroupTests
         system.Root.Send(router, new RouterBroadcastMessage("hello"));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
 
-        Assert.Equal("hello", await probe1.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("hello", await probe2.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("hello", await probe3.GetNextMessageAsync<string>(_timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
     private static (PID router, PID routee1, PID routee2, PID routee3, TestProbe probe1, TestProbe probe2,

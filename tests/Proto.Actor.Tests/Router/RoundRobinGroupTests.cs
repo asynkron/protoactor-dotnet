@@ -138,9 +138,9 @@ public class RoundRobinGroupTests
 
         system.Root.Send(router, new RouterBroadcastMessage("hello"));
 
-        Assert.Equal("hello", await probe1.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("hello", await probe2.GetNextMessageAsync<string>(_timeout));
-        Assert.Equal("hello", await probe3.GetNextMessageAsync<string>(_timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
     private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees(ActorSystem system)

@@ -7,6 +7,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto;
+using Proto.Mailbox;
 
 namespace Proto.TestKit;
 
@@ -58,6 +60,94 @@ public interface ITestProbe
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task<T> GetNextMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     asynchronously gets the next system message of type <typeparamref name="T"/>
+    /// </summary>
+    /// <typeparam name="T">The system message type</typeparam>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<T> GetNextSystemMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) where T : SystemMessage;
+
+    /// <summary>
+    ///     asynchronously gets the next user message of type <typeparamref name="T"/>
+    /// </summary>
+    /// <typeparam name="T">The user message type</typeparam>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<T> GetNextUserMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     asynchronously gets the next system message of type <typeparamref name="T"/> satisfying a predicate
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="when"></param>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<T> GetNextSystemMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) where T : SystemMessage;
+
+    /// <summary>
+    ///     asynchronously gets the next user message of type <typeparamref name="T"/> satisfying a predicate
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="when"></param>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<T> GetNextUserMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     asynchronously expects the next system message of type <typeparamref name="T"/>
+    /// </summary>
+    /// <typeparam name="T">The system message type</typeparam>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    Task ExpectNextSystemMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) where T : SystemMessage;
+
+    /// <summary>
+    ///     asynchronously expects the next user message of type <typeparamref name="T"/>
+    /// </summary>
+    /// <typeparam name="T">The user message type</typeparam>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    Task ExpectNextUserMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     asynchronously expects the next system message of type <typeparamref name="T"/> satisfying a predicate
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="when"></param>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    Task ExpectNextSystemMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) where T : SystemMessage;
+
+    /// <summary>
+    ///     asynchronously expects the next user message of type <typeparamref name="T"/> satisfying a predicate
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="when"></param>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    Task ExpectNextUserMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     ensures that the probe mailbox is empty
+    /// </summary>
+    /// <param name="timeAllowed"></param>
+    /// <param name="cancellationToken"></param>
+    Task ExpectEmptyMailboxAsync(TimeSpan? timeAllowed = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

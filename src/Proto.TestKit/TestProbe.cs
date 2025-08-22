@@ -83,32 +83,20 @@ public class TestProbe : IActor, ITestProbe
     public async Task<object?> GetNextMessageAsync(TimeSpan? timeAllowed = null,
         CancellationToken cancellationToken = default)
     {
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(timeAllowed ?? TimeSpan.FromSeconds(1));
+        var item = await ReceiveNextAsync(timeAllowed, cancellationToken);
 
-        try
-        {
-            var item = await _channel.Reader.ReadAsync(cts.Token);
-            Sender = item.Sender;
-
-            return item.Message;
-        }
-        catch (OperationCanceledException)
-        {
-            var seconds = (timeAllowed ?? TimeSpan.FromSeconds(1)).TotalSeconds.ToString("0.###");
-            throw new TestKitException($"Waited {seconds} seconds but failed to receive a message");
-        }
+        return item.Message;
     }
 
     /// <inheritdoc />
     public async Task<T> GetNextMessageAsync<T>(TimeSpan? timeAllowed = null,
         CancellationToken cancellationToken = default)
     {
-        var output = await GetNextMessageAsync(timeAllowed, cancellationToken);
+        var item = await ReceiveNextAsync(timeAllowed, cancellationToken);
 
-        if (output is not T typed)
+        if (item.Message is not T typed)
         {
-            throw new TestKitException($"Message expected type {typeof(T)}, actual type {output?.GetType()}");
+            throw new TestKitException($"Message expected type {typeof(T)}, actual type {item.Message?.GetType()}");
         }
 
         return typed;
@@ -195,4 +183,129 @@ public class TestProbe : IActor, ITestProbe
         Context.RequestAsync<T>(target, message, timeAllowed);
 
     public static implicit operator PID?(TestProbe tp) => tp.Context.Self;
+
+    private async Task<MessageAndSender> ReceiveNextAsync(TimeSpan? timeAllowed,
+        CancellationToken cancellationToken)
+    {
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(timeAllowed ?? TimeSpan.FromSeconds(1));
+
+        try
+        {
+            var item = await _channel.Reader.ReadAsync(cts.Token);
+            Sender = item.Sender;
+            return item;
+        }
+        catch (OperationCanceledException)
+        {
+            var seconds = (timeAllowed ?? TimeSpan.FromSeconds(1)).TotalSeconds.ToString("0.###");
+            throw new TestKitException($"Waited {seconds} seconds but failed to receive a message");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<T> GetNextSystemMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) where T : SystemMessage
+    {
+        var item = await ReceiveNextAsync(timeAllowed, cancellationToken);
+
+        if (item.Message is not SystemMessage)
+        {
+            throw new TestKitException(
+                $"Expected system message of type {typeof(T)}, but received user message of type {item.Message?.GetType()}");
+        }
+
+        if (item.Message is not T typed)
+        {
+            throw new TestKitException($"Message expected type {typeof(T)}, actual type {item.Message.GetType()}");
+        }
+
+        return typed;
+    }
+
+    /// <inheritdoc />
+    public async Task<T> GetNextUserMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default)
+    {
+        var item = await ReceiveNextAsync(timeAllowed, cancellationToken);
+
+        if (item.Message is SystemMessage sys)
+        {
+            throw new TestKitException(
+                $"Expected user message of type {typeof(T)}, but received system message of type {sys.GetType()}");
+        }
+
+        if (item.Message is not T typed)
+        {
+            throw new TestKitException($"Message expected type {typeof(T)}, actual type {item.Message?.GetType()}");
+        }
+
+        return typed;
+    }
+
+    /// <inheritdoc />
+    public async Task<T> GetNextSystemMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) where T : SystemMessage
+    {
+        var output = await GetNextSystemMessageAsync<T>(timeAllowed, cancellationToken);
+
+        if (!when(output))
+        {
+            throw new TestKitException("Condition not met");
+        }
+
+        return output;
+    }
+
+    /// <inheritdoc />
+    public async Task<T> GetNextUserMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default)
+    {
+        var output = await GetNextUserMessageAsync<T>(timeAllowed, cancellationToken);
+
+        if (!when(output))
+        {
+            throw new TestKitException("Condition not met");
+        }
+
+        return output;
+    }
+
+    /// <inheritdoc />
+    public async Task ExpectNextSystemMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) where T : SystemMessage =>
+        _ = await GetNextSystemMessageAsync<T>(timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task ExpectNextUserMessageAsync<T>(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        _ = await GetNextUserMessageAsync<T>(timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task ExpectNextSystemMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) where T : SystemMessage =>
+        _ = await GetNextSystemMessageAsync(when, timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task ExpectNextUserMessageAsync<T>(Func<T, bool> when, TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default) =>
+        _ = await GetNextUserMessageAsync(when, timeAllowed, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task ExpectEmptyMailboxAsync(TimeSpan? timeAllowed = null,
+        CancellationToken cancellationToken = default)
+    {
+        var self = Context.Self;
+
+        if (timeAllowed.HasValue)
+        {
+            await RequestAsync<Touched>(self, new Touch(), timeAllowed.Value);
+        }
+        else
+        {
+            await RequestAsync<Touched>(self, new Touch(), cancellationToken);
+        }
+
+        await GetNextUserMessageAsync<Touch>(timeAllowed, cancellationToken);
+    }
 }
