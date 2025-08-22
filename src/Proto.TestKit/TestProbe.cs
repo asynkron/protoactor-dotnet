@@ -46,8 +46,7 @@ public class TestProbe : IActor, ITestProbe
     /// <inheritdoc />
     public PID? Sender { get; private set; }
 
-    /// <inheritdoc />
-    public IContext Context
+    private IContext Context
     {
         get
         {
@@ -59,7 +58,7 @@ public class TestProbe : IActor, ITestProbe
 
             return _context!;
         }
-        private set => _context = value;
+        set => _context = value;
     }
 
     /// <inheritdoc />
@@ -182,6 +181,10 @@ public class TestProbe : IActor, ITestProbe
     /// <inheritdoc />
     public Task<T> RequestAsync<T>(PID target, object message, TimeSpan timeAllowed) =>
         Context.RequestAsync<T>(target, message, timeAllowed);
+
+    public void Watch(PID pid) => Context.Watch(pid);
+
+    public void Unwatch(PID pid) => Context.Unwatch(pid);
 
     public static implicit operator PID?(TestProbe tp) => tp.Context.Self;
 

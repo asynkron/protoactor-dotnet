@@ -52,17 +52,6 @@ public class TestProbeAsyncTests
         var (probe, pid) = system.CreateTestProbe();
 
         system.Root.Send(pid, "hello");
-        SpinWait.SpinUntil(() =>
-        {
-            try
-            {
-                return probe.Context != null;
-            }
-            catch
-            {
-                return false;
-            }
-        }, TimeSpan.FromSeconds(1));
         await Assert.ThrowsAsync<TestKitException>(() => probe.ExpectEmptyMailboxAsync());
     }
 }

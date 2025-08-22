@@ -35,9 +35,9 @@ public class BroadcastPoolRouterTests
         var routee2 = routees.Pids[1];
         var routee3 = routees.Pids[2];
 
-        var probe1 = probes.Find(p => p.Context.Self == routee1)!;
-        var probe2 = probes.Find(p => p.Context.Self == routee2)!;
-        var probe3 = probes.Find(p => p.Context.Self == routee3)!;
+        var probe1 = probes.Find(p => (PID)p == routee1)!;
+        var probe2 = probes.Find(p => (PID)p == routee2)!;
+        var probe3 = probes.Find(p => (PID)p == routee3)!;
 
         system.Root.Send(router, "first");
         await probe1.ExpectNextUserMessageAsync<string>(x => x == "first");
