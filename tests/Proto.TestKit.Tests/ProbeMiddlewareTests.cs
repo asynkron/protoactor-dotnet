@@ -11,8 +11,7 @@ public class ProbeMiddlewareTests
     public async Task Receive_probe_captures_messages()
     {
         var system = new ActorSystem();
-        var probe = new TestProbe();
-        system.Root.Spawn(Props.FromProducer(() => probe));
+        var (probe, _) = system.CreateTestProbe();
 
         var props = Props.FromProducer(() => new EmptyActor()).WithReceiveProbe(probe);
         var pid = system.Root.Spawn(props);
@@ -25,8 +24,7 @@ public class ProbeMiddlewareTests
     public async Task Send_probe_captures_outgoing_messages()
     {
         var system = new ActorSystem();
-        var probe = new TestProbe();
-        system.Root.Spawn(Props.FromProducer(() => probe));
+        var (probe, _) = system.CreateTestProbe();
 
         var target = system.Root.Spawn(Props.FromFunc(ctx => Task.CompletedTask));
         var props = Props.FromProducer(() => new ForwardActor(target)).WithSendProbe(probe);
@@ -41,8 +39,7 @@ public class ProbeMiddlewareTests
     public async Task Mailbox_probe_captures_messages_and_system_messages()
     {
         var system = new ActorSystem();
-        var probe = new TestProbe();
-        system.Root.Spawn(Props.FromProducer(() => probe));
+        var (probe, _) = system.CreateTestProbe();
 
         var props = Props.FromProducer(() => new EmptyActor()).WithMailboxProbe(probe);
         var pid = system.Root.Spawn(props);

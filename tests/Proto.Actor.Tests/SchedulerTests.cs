@@ -15,8 +15,7 @@ public class SchedulerTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        var pid = context.Spawn(Props.FromProducer(() => probe));
+        var (probe, pid) = system.CreateTestProbe();
 
         var timeProvider = new FakeTimeProvider();
         var hook = new TestSchedulerHook();
@@ -34,8 +33,7 @@ public class SchedulerTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        var pid = context.Spawn(Props.FromProducer(() => probe));
+        var (probe, pid) = system.CreateTestProbe();
 
         var timeProvider = new FakeTimeProvider();
         var hook = new TestSchedulerHook();
@@ -57,8 +55,7 @@ public class SchedulerTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        var pid = context.Spawn(Props.FromProducer(() => probe));
+        var (probe, pid) = system.CreateTestProbe();
 
         var timeProvider = new FakeTimeProvider();
         var hook = new TestSchedulerHook();
@@ -90,8 +87,7 @@ public class SchedulerTests
             return Task.CompletedTask;
         }));
 
-        var probe = new TestProbe();
-        var probePid = context.Spawn(Props.FromProducer(() => probe));
+        var (probe, probePid) = system.CreateTestProbe();
 
         var timeProvider = new FakeTimeProvider();
         var hook = new TestSchedulerHook();

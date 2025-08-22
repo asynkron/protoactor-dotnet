@@ -15,8 +15,7 @@ public class WatchTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var probe = new TestProbe();
-        var probePid = context.Spawn(Props.FromProducer(() => probe));
+        var (probe, probePid) = system.CreateTestProbe();
 
         // child stops itself twice when receiving "stop"
         var childProps = Props.FromFunc(ctx =>
@@ -49,8 +48,7 @@ public class WatchTests
 
         var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor()));
 
-        var probe = new TestProbe();
-        var probePid = context.Spawn(Props.FromProducer(() => probe));
+        var (probe, probePid) = system.CreateTestProbe();
 
         watchee.SendSystemMessage(system, new Watch(probePid));
 
@@ -67,8 +65,7 @@ public class WatchTests
 
         var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor()));
 
-        var probe = new TestProbe();
-        var probePid = context.Spawn(Props.FromProducer(() => probe));
+        var (probe, probePid) = system.CreateTestProbe();
 
         watchee.SendSystemMessage(system, new Watch(probePid));
         watchee.SendSystemMessage(system, new Unwatch(probePid));

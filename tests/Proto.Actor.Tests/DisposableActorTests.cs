@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Proto.Mailbox;
 using Proto.TestKit;
 using Xunit;
 
@@ -20,7 +19,7 @@ public class DisposableActorTests
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
 
         var childProps = Props.FromProducer(() => new DisposableActor(() => disposed.TrySetResult(true)))
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
+            .WithTestMailboxStats(childMailboxStats)
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
@@ -44,7 +43,7 @@ public class DisposableActorTests
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 0, null);
 
         var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposed.TrySetResult(true)))
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
+            .WithTestMailboxStats(childMailboxStats)
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
@@ -68,7 +67,7 @@ public class DisposableActorTests
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
 
         var childProps = Props.FromProducer(() => new DisposableActor(() => disposeCalled = true))
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
+            .WithTestMailboxStats(childMailboxStats)
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
@@ -92,7 +91,7 @@ public class DisposableActorTests
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 0, null);
 
         var childProps = Props.FromProducer(() => new AsyncDisposableActor(() => disposeCalled = true))
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats))
+            .WithTestMailboxStats(childMailboxStats)
             .WithChildSupervisorStrategy(strategy);
 
         var props = Props.FromProducer(() => new SupervisingActor(childProps))
@@ -150,10 +149,10 @@ public class DisposableActorTests
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
 
         var child1Props = Props.FromProducer(() => new DisposableActor(() => child1Disposed = true))
-            .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+            .WithTestMailboxStats(child1MailboxStats);
 
         var child2Props = Props.FromProducer(() => new DisposableActor(() => child2Disposed = true))
-            .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+            .WithTestMailboxStats(child2MailboxStats);
 
         var parentProps = Props.FromProducer(() => new ParentWithMultipleChildrenActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);

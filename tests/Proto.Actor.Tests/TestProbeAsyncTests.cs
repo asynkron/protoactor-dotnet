@@ -11,8 +11,7 @@ public class TestProbeAsyncTests
     public async Task Probe_can_await_next_message()
     {
         await using var system = new ActorSystem();
-        var probe = new TestProbe();
-        var probePid = system.Root.Spawn(Props.FromProducer(() => probe));
+        var (probe, probePid) = system.CreateTestProbe();
 
         var target = system.Root.Spawn(Props.FromFunc(ctx =>
         {
@@ -32,8 +31,7 @@ public class TestProbeAsyncTests
     public async Task Probe_can_wait_for_specific_message()
     {
         await using var system = new ActorSystem();
-        var probe = new TestProbe();
-        var probePid = system.Root.Spawn(Props.FromProducer(() => probe));
+        var (probe, probePid) = system.CreateTestProbe();
 
         var target = system.Root.Spawn(Props.FromFunc(ctx =>
         {

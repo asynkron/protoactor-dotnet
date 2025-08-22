@@ -77,8 +77,7 @@ public class BroadcastGroupTests
         await using var system = new ActorSystem();
 
         var (router, routee1, routee2, routee3, _, _, _) = CreateBroadcastGroupRouterWith3Routees(system);
-        var probe4 = new TestProbe();
-        var routee4 = system.Root.Spawn(Props.FromProducer(() => probe4));
+        var (probe4, routee4) = system.CreateTestProbe();
         system.Root.Send(router, new RouterAddRoutee(routee4));
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -118,8 +117,7 @@ public class BroadcastGroupTests
 
         var (router, routee1, routee2, routee3, probe1, probe2, probe3) =
             CreateBroadcastGroupRouterWith3Routees(system);
-        var probe4 = new TestProbe();
-        var routee4 = system.Root.Spawn(Props.FromProducer(() => probe4));
+        var (probe4, routee4) = system.CreateTestProbe();
         system.Root.Send(router, new RouterAddRoutee(routee4));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, "a message");
@@ -150,15 +148,14 @@ public class BroadcastGroupTests
         TestProbe probe3) CreateBroadcastGroupRouterWith3Routees(ActorSystem system,
         Func<TestProbe, Props>? routee2PropsFactory = null)
     {
-        var probe1 = new TestProbe();
-        var routee1 = system.Root.Spawn(Props.FromProducer(() => probe1));
+        var (probe1, routee1) = system.CreateTestProbe();
 
-        var probe2 = new TestProbe();
-        var props2 = routee2PropsFactory?.Invoke(probe2) ?? Props.FromProducer(() => probe2);
-        var routee2 = system.Root.Spawn(props2);
+        var (probe2, probe2Pid) = system.CreateTestProbe();
+        var routee2 = routee2PropsFactory is null
+            ? probe2Pid
+            : system.Root.Spawn(routee2PropsFactory(probe2));
 
-        var probe3 = new TestProbe();
-        var routee3 = system.Root.Spawn(Props.FromProducer(() => probe3));
+        var (probe3, routee3) = system.CreateTestProbe();
 
         var props = system.Root.NewBroadcastGroup(routee1, routee2, routee3);
 
