@@ -7,6 +7,7 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Proto.TestKit;
 using Proto.Utils;
 using Xunit;
 using Xunit.Abstractions;
@@ -31,10 +32,12 @@ public class MessageHeaderTests
 
         var headers = MessageHeader.Empty.With("foo", "bar");
 
-        var system = new ActorSystem(ActorSystemConfig.Setup() with
+        await using var system = new ActorSystem(ActorSystemConfig.Setup() with
         {
             ConfigureRootContext = context => context.WithHeaders(headers)
         });
+
+        var (probe, probePid) = system.CreateTestProbe();
 
         var props1 = Props.FromFunc(ctx =>
                 {
@@ -53,20 +56,17 @@ public class MessageHeaderTests
 
         var pid1 = system.Root.Spawn(props1);
 
-        var tcs1 = new TaskCompletionSource<MessageHeader>();
-        var tcs2 = new TaskCompletionSource<MessageHeader>();
-
         var props2 = Props.FromFunc(ctx =>
                 {
                     switch (ctx.Message)
                     {
                         case StartMessage:
-                            tcs1.SetResult(ctx.Headers);
+                            ctx.Send(probePid, ctx.Headers);
                             ctx.Request(pid1, new SomeRequest());
 
                             break;
                         case SomeResponse:
-                            tcs2.SetResult(ctx.Headers);
+                            ctx.Send(probePid, ctx.Headers);
 
                             break;
                     }
@@ -88,13 +88,13 @@ public class MessageHeaderTests
 
         root.Send(pid2, new StartMessage());
 
-        //actor1 should have headers
-        var headers1 = await tcs1.Task.WithTimeout(TimeSpan.FromSeconds(5));
-        Assert.Equal(headers, headers1);
-
         //actor2 should have headers
-        var headers2 = await tcs2.Task.WithTimeout(TimeSpan.FromSeconds(5));
-        Assert.Equal(headers, headers2);
+        await probe.ExpectNextUserMessageAsync<MessageHeader>(h => h.Equals(headers));
+
+        //actor2 should receive headers in the reply
+        await probe.ExpectNextUserMessageAsync<MessageHeader>(h => h.Equals(headers));
+
+        await probe.ExpectEmptyMailboxAsync();
     }
 
     [Fact]
