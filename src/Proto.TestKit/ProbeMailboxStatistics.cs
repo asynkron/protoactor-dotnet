@@ -20,7 +20,7 @@ public class ProbeMailboxStatistics : IMailboxStatistics
     }
 
     public void MessageReceived(object message) =>
-        _probe.Send(_probe, message);
+        _probe.Send(_probe.Self, message);
 
     public void MailboxEmpty()
     {

@@ -15,7 +15,7 @@ public static class PropsTestProbeExtensions
         props.WithReceiverMiddleware(next => async (ctx, env) =>
         {
             await next(ctx, env);
-            probe.Send(probe, new MessageEnvelope(env.Message, env.Sender));
+            probe.Send(probe.Self, new MessageEnvelope(env.Message, env.Sender));
         });
 
     /// <summary>
@@ -24,7 +24,7 @@ public static class PropsTestProbeExtensions
     public static Props WithSendProbe(this Props props, TestProbe probe) =>
         props.WithSenderMiddleware(next => async (ctx, target, env) =>
         {
-            probe.Send(probe, new MessageEnvelope(env.Message, target));
+            probe.Send(probe.Self, new MessageEnvelope(env.Message, target));
             await next(ctx, target, env);
         });
 

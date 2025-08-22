@@ -98,14 +98,12 @@ public class BroadcastGroupTests
         system.Root.Send(router, "first message");
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        await system.Root.RequestAsync<Touched>(routee1, new Touch(), _timeout);
         system.Root.Send(router, "second message");
 
         await probe1.ExpectNextUserMessageAsync<string>(x => x == "first message");
         await probe2.ExpectNextUserMessageAsync<string>(x => x == "first message");
         await probe3.ExpectNextUserMessageAsync<string>(x => x == "first message");
-        await probe1.ExpectNextUserMessageAsync<Touch>();
-        await probe1.ExpectNoMessageAsync(_timeout);
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
         await probe2.ExpectNextUserMessageAsync<string>(x => x == "second message");
         await probe3.ExpectNextUserMessageAsync<string>(x => x == "second message");
     }
@@ -178,7 +176,7 @@ public class BroadcastGroupTests
                 return;
             }
 
-            context.Send(_probe, context.Message);
+            context.Send(_probe.Self, context.Message);
         }
     }
 }

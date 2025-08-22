@@ -23,6 +23,11 @@ public interface ITestProbe
     PID? Sender { get; }
 
     /// <summary>
+    ///     The PID of this probe.
+    /// </summary>
+    PID Self { get; }
+
+    /// <summary>
     ///     asynchronously checks that no message arrives within the time allowed
     /// </summary>
     /// <param name="timeAllowed"></param>

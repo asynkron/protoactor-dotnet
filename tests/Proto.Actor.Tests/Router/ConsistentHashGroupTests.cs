@@ -25,8 +25,8 @@ public class ConsistentHashGroupTests
         system.Root.Send(router, new Message("message1"));
         await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
 
-        await probe2.ExpectNoMessageAsync();
-        await probe3.ExpectNoMessageAsync();
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
@@ -43,8 +43,8 @@ public class ConsistentHashGroupTests
         system.Root.Send(router, "message1");
         await probe1.ExpectNextUserMessageAsync<string>(x => x == "message1");
 
-        await probe2.ExpectNoMessageAsync();
-        await probe3.ExpectNoMessageAsync();
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
@@ -78,9 +78,9 @@ public class ConsistentHashGroupTests
         system.Root.Send(router, new Message("message1"));
 
         await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
-        await probe2.ExpectNoMessageAsync();
-        await probe3.ExpectNoMessageAsync();
-        await probe4.ExpectNoMessageAsync();
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
+        await probe4.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
@@ -90,12 +90,12 @@ public class ConsistentHashGroupTests
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
-        system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        system.Root.Send(router, new RouterRemoveRoutee(routee1.Self));
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        Assert.DoesNotContain(routee1, routees.Pids);
-        Assert.Contains(routee2, routees.Pids);
-        Assert.Contains(routee3, routees.Pids);
+        Assert.DoesNotContain(routee1.Self, routees.Pids);
+        Assert.Contains(routee2.Self, routees.Pids);
+        Assert.Contains(routee3.Self, routees.Pids);
     }
 
     [Fact]
@@ -108,9 +108,9 @@ public class ConsistentHashGroupTests
         system.Root.Send(router, new RouterAddRoutee(routee4));
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        Assert.Contains((PID)routee1, routees.Pids);
-        Assert.Contains((PID)routee2, routees.Pids);
-        Assert.Contains((PID)routee3, routees.Pids);
+        Assert.Contains(routee1.Self, routees.Pids);
+        Assert.Contains(routee2.Self, routees.Pids);
+        Assert.Contains(routee3.Self, routees.Pids);
         Assert.Contains(routee4, routees.Pids);
     }
 
@@ -121,12 +121,10 @@ public class ConsistentHashGroupTests
 
         var (router, probe1, _, _) = CreateRouterWith3Routees(system);
 
-        system.Root.Send(router, new RouterRemoveRoutee(probe1));
+        system.Root.Send(router, new RouterRemoveRoutee(probe1.Self));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        await system.Root.RequestAsync<Touched>(probe1, new Touch(), _timeout);
-        await probe1.ExpectNextUserMessageAsync<Touch>();
         system.Root.Send(router, new Message("message1"));
-        await probe1.ExpectNoMessageAsync();
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
@@ -151,11 +149,10 @@ public class ConsistentHashGroupTests
 
         system.Root.Send(router, new Message("message1"));
         await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
-        system.Root.Send(router, new RouterRemoveRoutee(probe1));
+        system.Root.Send(router, new RouterRemoveRoutee(probe1.Self));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        await system.Root.RequestAsync<Touched>(probe1, new Touch(), _timeout);
-        await probe1.ExpectNextUserMessageAsync<Touch>();
         system.Root.Send(router, new Message("message1"));
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
 
         await probe2.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
     }

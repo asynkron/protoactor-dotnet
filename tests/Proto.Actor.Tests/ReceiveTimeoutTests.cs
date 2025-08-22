@@ -24,7 +24,7 @@ public class ReceiveTimeoutTests
                         ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
                         break;
                     case ReceiveTimeout msg:
-                        ctx.Send(probe, msg);
+                        ctx.Send(probe.Self, msg);
                         break;
                 }
 
@@ -52,7 +52,7 @@ public class ReceiveTimeoutTests
                         ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
                         break;
                     case ReceiveTimeout msg:
-                        ctx.Send(probe, msg);
+                        ctx.Send(probe.Self, msg);
                         break;
                 }
 
@@ -86,7 +86,7 @@ public class ReceiveTimeoutTests
                         // regular messages reset the receive timeout
                         break;
                     case ReceiveTimeout msg:
-                        ctx.Send(probe, msg);
+                        ctx.Send(probe.Self, msg);
                         break;
                 }
 
@@ -116,10 +116,10 @@ public class ReceiveTimeoutTests
                 {
                     case Started:
                         ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(1500));
-                        ctx.Send(probe, "started");
+                        ctx.Send(probe.Self, "started");
                         break;
                     case ReceiveTimeout msg:
-                        ctx.Send(probe, msg);
+                        ctx.Send(probe.Self, msg);
                         break;
                 }
 
@@ -152,7 +152,7 @@ public class ReceiveTimeoutTests
                         endingTimeout = ctx.ReceiveTimeout;
                         break;
                     case ReceiveTimeout msg:
-                        ctx.Send(probe, msg); // should never happen
+                        ctx.Send(probe.Self, msg); // should never happen
                         break;
                 }
 
@@ -184,7 +184,7 @@ public class ReceiveTimeoutTests
                         ctx.SetReceiveTimeout(TimeSpan.FromMilliseconds(150));
                         break;
                     case ReceiveTimeout msg:
-                        ctx.Send(probe, msg);
+                        ctx.Send(probe.Self, msg);
                         break;
                 }
 
