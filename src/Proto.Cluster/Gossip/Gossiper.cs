@@ -54,6 +54,7 @@ public class Gossiper
 #pragma warning restore CS0618 // Type or member is obsolete
     private readonly Cluster _cluster;
     private readonly IRootContext _context;
+    private IGossip _gossip = null!;
     private PID _pid = null!;
 
     public Gossiper(Cluster cluster)
@@ -186,14 +187,23 @@ public class Gossiper
         }
     }
 
-    internal Task StartGossipActorAsync()
+    internal Task StartGossipActorAsync(IGossip? gossip = null)
     {
+        _gossip = gossip ?? new Gossip(
+            _cluster.System.Id,
+            _cluster.Config.GossipFanout,
+            _cluster.Config.GossipMaxSend,
+            _cluster.System.Logger(),
+            () => _cluster.MemberList.GetMembers(),
+            _cluster.Config.GossipDebugLogging);
+
         var props = Props.FromProducer(() => new GossipActor(
             _cluster.System,
             _cluster.Config.GossipRequestTimeout,
             _cluster.System.Logger(),
             _cluster.Config.GossipFanout,
-            _cluster.Config.GossipMaxSend));
+            _cluster.Config.GossipMaxSend,
+            _gossip));
 
         _pid = _context.SpawnNamedSystem(props, GossipActorName);
         _cluster.System.EventStream.Subscribe<ClusterTopology>(topology =>
