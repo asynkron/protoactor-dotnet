@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.TestKit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -312,8 +313,8 @@ public class ReenterTests : ActorTestBase
     [Fact]
     public async Task DropReenterContinuationAfterStop()
     {
-        var stopped = false;
         var completionExecuted = false;
+        var stats = new TestMailboxStats(msg => msg is Stop); // track when the stop message is received
         CancellationTokenSource cts = new();
 
         var props = Props.FromFunc(async ctx =>
@@ -328,30 +329,28 @@ public class ReenterTests : ActorTestBase
                             {
                                 completionExecuted = true;
                             });
-                        
+
                         ctx.Stop(ctx.Self);
-                        
-                        // Release the cancellation token after stop gets processed.
-                        cts.Cancel();
 
                         ctx.Respond(true);
 
                         break;
                     case Stopped:
-                        stopped = true;
-                        
+                        // Release the cancellation token after stop gets processed.
+                        cts.Cancel();
+
                         break;
                 }
             }
-        );
+        ).WithTestMailboxStats(stats);
 
         var pid = Context.Spawn(props);
 
         await Context.RequestAsync<bool>(pid, "start", TimeSpan.FromSeconds(5));
-        
-        await Task.Delay(500);
-        await Task.Yield();
-        
+
+        // Wait for the actor to process the stop sequence
+        await stats.WaitForResetAsync(TimeSpan.FromSeconds(5));
+
         Assert.True(!completionExecuted);
     }
 
