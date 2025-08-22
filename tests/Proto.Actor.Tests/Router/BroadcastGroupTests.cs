@@ -103,8 +103,10 @@ public class BroadcastGroupTests
         system.Root.Send(router, "second message");
 
         Assert.Equal("first message", await probe1.GetNextMessageAsync<string>(_timeout));
-        await probe2.GetNextMessageAsync<string>(_timeout);
-        await probe3.GetNextMessageAsync<string>(_timeout);
+        Assert.Equal("first message", await probe2.GetNextMessageAsync<string>(_timeout));
+        Assert.Equal("first message", await probe3.GetNextMessageAsync<string>(_timeout));
+        await probe1.GetNextMessageAsync<Touch>(_timeout);
+        await probe1.ExpectNoMessageAsync(_timeout);
         Assert.Equal("second message", await probe2.GetNextMessageAsync<string>(_timeout));
         Assert.Equal("second message", await probe3.GetNextMessageAsync<string>(_timeout));
     }
