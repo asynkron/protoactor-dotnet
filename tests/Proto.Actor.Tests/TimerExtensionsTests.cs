@@ -34,15 +34,24 @@ public class TimerExtensionsTests
         var (probe, pid) = system.CreateTestProbe();
 
         var timeProvider = new FakeTimeProvider();
-        var scheduler = context.Scheduler(timeProvider);
+        var hook = new TestSchedulerHook();
+        var scheduler = context.Scheduler(timeProvider, hook);
 
         scheduler.SendOnce(TimeSpan.FromSeconds(10), pid, "Wakeup");
 
-        // Give the inner Task.Delay a head start
-        await Task.Delay(50);
+        await hook.WaitAsync();
         timeProvider.Advance(TimeSpan.FromMinutes(1));
 
         await probe.ExpectNextUserMessageAsync<string>(s => s == "Wakeup");
+    }
+
+    private sealed class TestSchedulerHook : ISchedulerHook
+    {
+        private readonly TaskCompletionSource _tcs = new();
+
+        public Task WaitAsync() => _tcs.Task;
+
+        public void OnTimerRegistered() => _tcs.TrySetResult();
     }
 }
 

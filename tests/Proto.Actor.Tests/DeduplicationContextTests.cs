@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using Proto.Deduplication;
 using Proto;
+using Proto.TestKit;
+using static Proto.TestKit.TestKit;
 using Xunit;
 
 namespace Proto.Tests;
@@ -36,7 +38,8 @@ public class DeduplicationContextTests
         context.Send(pid, "one");
         context.Send(pid, "one");
         context.Send(pid, "two");
-        await Task.Delay(100);
+
+        await AwaitConditionAsync(() => count == 2, TimeSpan.FromSeconds(1));
 
         Assert.Equal(2, count);
     }

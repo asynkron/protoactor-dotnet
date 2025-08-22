@@ -9,6 +9,8 @@ using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Proto.TestKit;
+using static Proto.TestKit.TestKit;
 using Xunit;
 
 namespace Proto.Cluster.Tests;
@@ -77,8 +79,8 @@ public class PidCacheTests
 
         await cluster.RequestAsync<Ack>(identity, new Die(), timeout.Token);
 
-        // Let the system purge the terminated PID,
-        await Task.Delay(50);
+        await AwaitConditionAsync(() => !cluster.PidCache.TryGet(identity, out _),
+            TimeSpan.FromSeconds(5));
 
         cluster.PidCache.TryGet(identity, out _).Should().BeFalse();
     }
