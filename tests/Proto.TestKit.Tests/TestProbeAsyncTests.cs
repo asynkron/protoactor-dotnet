@@ -15,8 +15,7 @@ public class TestProbeAsyncTests
         var (probe, pid) = system.CreateTestProbe();
 
         system.Root.Send(pid, "hello");
-        var msg = await probe.GetNextMessageAsync<string>();
-        msg.Should().Be("hello");
+        await probe.GetNextMessageAsync<string>(s => s == "hello");
     }
 
     [Fact]

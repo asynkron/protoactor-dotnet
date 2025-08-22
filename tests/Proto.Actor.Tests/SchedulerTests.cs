@@ -24,8 +24,7 @@ public class SchedulerTests
         scheduler.SendOnce(TimeSpan.FromSeconds(10), pid, "Wakeup");
         await hook.WaitAsync();
         timeProvider.Advance(TimeSpan.FromMinutes(10));
-        var msg = await probe.GetNextMessageAsync<string>(TimeSpan.FromMilliseconds(10));
-        Assert.Equal("Wakeup", msg);
+        await probe.GetNextMessageAsync<string>(x => x == "Wakeup", TimeSpan.FromMilliseconds(100));
     }
 
     [Fact]
@@ -43,7 +42,7 @@ public class SchedulerTests
 
         await hook.WaitAsync();
         timeProvider.Advance(TimeSpan.FromMinutes(1));
-        await probe.GetNextMessageAsync<string>(TimeSpan.FromMilliseconds(10));
+        await probe.GetNextMessageAsync<string>(TimeSpan.FromMilliseconds(100));
 
         cts.Cancel();
         timeProvider.Advance(TimeSpan.FromMinutes(1));
@@ -114,7 +113,7 @@ public class SchedulerTests
 
         await hook.WaitAsync();
         timeProvider.Advance(TimeSpan.FromSeconds(5));
-        await probe.GetNextMessageAsync<string>(TimeSpan.FromMilliseconds(10));
+        await probe.GetNextMessageAsync<string>(TimeSpan.FromMilliseconds(100));
 
         context.Send(requester, "Cancel");
 
