@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Proto.TestFixtures;
 using Proto.TestKit;
 using Xunit;
+using static Proto.TestKit.TestKit;
 
 namespace Proto.Mailbox.Tests;
 
@@ -36,7 +37,7 @@ public class MailboxStatisticsTests
         var msg1 = new TestMessageWithTaskCompletionSource();
 
         _mailbox.PostUserMessage(msg1);
-        await Task.Delay(1000);
+        await AwaitConditionAsync(() => _mailboxStatistics.Posted.Contains(msg1), TimeSpan.FromSeconds(1));
         Assert.Contains(msg1, _mailboxStatistics.Posted);
     }
 
@@ -46,7 +47,7 @@ public class MailboxStatisticsTests
         var msg1 = new TestMessageWithTaskCompletionSource();
 
         _mailbox.PostSystemMessage(msg1);
-        await Task.Delay(1000);
+        await AwaitConditionAsync(() => _mailboxStatistics.Posted.Contains(msg1), TimeSpan.FromSeconds(1));
         Assert.Contains(msg1, _mailboxStatistics.Posted);
     }
 
@@ -58,18 +59,19 @@ public class MailboxStatisticsTests
         _mailbox.PostUserMessage(msg1);
         Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
         msg1.TaskCompletionSource.SetResult(0);
-        await Task.Delay(1000);
+        await AwaitConditionAsync(() => _mailboxStatistics.Received.Contains(msg1), TimeSpan.FromSeconds(1));
 
         Assert.Contains(msg1, _mailboxStatistics.Posted);
     }
 
     [Fact]
-    public void GivenCompletedUserMessage_ShouldInvokeMessageReceivedImmediately()
+    public async Task GivenCompletedUserMessage_ShouldInvokeMessageReceivedImmediately()
     {
         var msg1 = new TestMessageWithTaskCompletionSource();
         msg1.TaskCompletionSource.SetResult(0);
 
         _mailbox.PostUserMessage(msg1);
+        await AwaitConditionAsync(() => _mailboxStatistics.Posted.Contains(msg1), TimeSpan.FromSeconds(1));
         Assert.Contains(msg1, _mailboxStatistics.Posted);
     }
 
@@ -81,18 +83,23 @@ public class MailboxStatisticsTests
         _mailbox.PostUserMessage(msg1);
 
         msg1.TaskCompletionSource.SetException(new Exception());
-        await Task.Delay(1000);
+        await AwaitConditionAsync(
+            () => _mailboxStatistics.Posted.Contains(msg1) && _mailboxHandler.HasFailures.IsCompleted,
+            TimeSpan.FromSeconds(1));
 
         Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
     }
 
     [Fact]
-    public void GivenCompletedUserMessageThrewException_ShouldNotInvokeMessageReceived()
+    public async Task GivenCompletedUserMessageThrewException_ShouldNotInvokeMessageReceived()
     {
         var msg1 = new TestMessageWithTaskCompletionSource();
         msg1.TaskCompletionSource.SetException(new Exception());
 
         _mailbox.PostUserMessage(msg1);
+        await AwaitConditionAsync(
+            () => _mailboxStatistics.Posted.Contains(msg1) && _mailboxHandler.HasFailures.IsCompleted,
+            TimeSpan.FromSeconds(1));
 
         Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
     }
@@ -104,18 +111,23 @@ public class MailboxStatisticsTests
 
         _mailbox.PostSystemMessage(msg1);
         msg1.TaskCompletionSource.SetException(new Exception());
-        await Task.Delay(1000);
+        await AwaitConditionAsync(
+            () => _mailboxStatistics.Posted.Contains(msg1) && _mailboxHandler.HasFailures.IsCompleted,
+            TimeSpan.FromSeconds(1));
 
         Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
     }
 
     [Fact]
-    public void GivenCompletedSystemMessageThrewException_ShouldNotInvokeMessageReceived()
+    public async Task GivenCompletedSystemMessageThrewException_ShouldNotInvokeMessageReceived()
     {
         var msg1 = new TestMessageWithTaskCompletionSource();
         msg1.TaskCompletionSource.SetException(new Exception());
 
         _mailbox.PostSystemMessage(msg1);
+        await AwaitConditionAsync(
+            () => _mailboxStatistics.Posted.Contains(msg1) && _mailboxHandler.HasFailures.IsCompleted,
+            TimeSpan.FromSeconds(1));
 
         Assert.DoesNotContain(msg1, _mailboxStatistics.Received);
     }
