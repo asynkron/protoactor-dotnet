@@ -4,45 +4,23 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using ForcedSerialization.TestMessages;
 using Proto;
 using Proto.Remote;
+using Proto.TestKit;
 using Xunit;
-using MessageHeader = Proto.MessageHeader;
 
 namespace Proto.Remote.Tests
 {
     public class ForcedSerializationTests
     {
-        private readonly Props _receivingActorProps;
         private readonly Props _sendingActorProps;
-        private readonly ManualResetEvent _wait = new(false);
-        private Proto.MessageHeader _header;
-        private object _receivedMessage;
-        private PID _sender;
 
         public ForcedSerializationTests()
         {
-            _receivingActorProps = Props.FromFunc(ctx =>
-                {
-                    if (ctx.Message is TestMessage or TestRootSerializableMessage)
-                    {
-                        _receivedMessage = ctx.Message;
-                        _sender = ctx.Sender;
-                        _header = ctx.Headers;
-                        ctx.Respond(new TestResponse());
-                        _wait.Set();
-                    }
-
-                    return Task.CompletedTask;
-                }
-            );
-
             _sendingActorProps = Props.FromFunc(ctx =>
                     {
                         switch (ctx.Message)
@@ -64,6 +42,19 @@ namespace Proto.Remote.Tests
                 .WithSenderMiddleware(ForcedSerializationSenderMiddleware.Create());
         }
 
+        private static Props CreateReceivingActorProps(PID probePid) =>
+            Props.FromFunc(ctx =>
+                {
+                    if (ctx.Message is TestMessage or TestRootSerializableMessage)
+                    {
+                        ctx.Send(probePid, (ctx.Message, ctx.Sender, ctx.Headers));
+                        ctx.Respond(new TestResponse());
+                    }
+
+                    return Task.CompletedTask;
+                }
+            );
+
         [Fact]
         public void The_test_messages_are_allowed_by_the_default_predicate()
         {
@@ -83,7 +74,7 @@ namespace Proto.Remote.Tests
         }
 
         [Fact]
-        public void It_serializes_and_deserializes()
+        public async Task It_serializes_and_deserializes()
         {
             var system = new ActorSystem(ActorSystemConfig.Setup()
                 .WithConfigureRootContext(ctx => ctx.WithSenderMiddleware(
@@ -91,23 +82,25 @@ namespace Proto.Remote.Tests
                     )
                 )
             );
+            await using var _ = system;
 
             system.Extensions.Register(new Serialization());
 
-            var pid = system.Root.Spawn(_receivingActorProps);
+            var (probe, probePid) = system.CreateTestProbe();
+            var pid = system.Root.Spawn(CreateReceivingActorProps(probePid));
             var sentMessage = new TestMessage("Serialized");
             system.Root.Send(pid, sentMessage);
 
-            _wait.WaitOne(TimeSpan.FromSeconds(2));
+            var (message, _, _) = await probe.GetNextMessageAsync<(object, PID, Proto.MessageHeader)>();
 
-            _receivedMessage.Should()
+            message.Should()
                 .BeEquivalentTo(sentMessage, "the received message should be the same as the sent message");
 
-            _receivedMessage.Should().NotBeSameAs(sentMessage, "the message should have been serialized");
+            message.Should().NotBeSameAs(sentMessage, "the message should have been serialized");
         }
 
         [Fact]
-        public void It_should_not_serialize_if_predicate_prevents_it()
+        public async Task It_should_not_serialize_if_predicate_prevents_it()
         {
             var system = new ActorSystem(ActorSystemConfig.Setup()
                 .WithConfigureRootContext(ctx => ctx.WithSenderMiddleware(
@@ -115,19 +108,21 @@ namespace Proto.Remote.Tests
                     )
                 )
             );
+            await using var _ = system;
 
             system.Extensions.Register(new Serialization());
 
-            var pid = system.Root.Spawn(_receivingActorProps);
+            var (probe, probePid) = system.CreateTestProbe();
+            var pid = system.Root.Spawn(CreateReceivingActorProps(probePid));
             var sentMessage = new TestMessage("Not serialized");
             system.Root.Send(pid, sentMessage);
 
-            _wait.WaitOne(TimeSpan.FromSeconds(2));
+            var (message, _, _) = await probe.GetNextMessageAsync<(object, PID, Proto.MessageHeader)>();
 
-            _receivedMessage.Should()
+            message.Should()
                 .BeEquivalentTo(sentMessage, "the received message should be the same as the sent message");
 
-            _receivedMessage.Should().BeSameAs(sentMessage, "the message should not have been serialized");
+            message.Should().BeSameAs(sentMessage, "the message should not have been serialized");
         }
 
         [Fact]
@@ -136,15 +131,16 @@ namespace Proto.Remote.Tests
             await using var system = new ActorSystem();
             system.Extensions.Register(new Serialization());
 
-            var pid = system.Root.Spawn(_receivingActorProps);
+            var (probe, probePid) = system.CreateTestProbe();
+            var pid = system.Root.Spawn(CreateReceivingActorProps(probePid));
             var sender = system.Root.Spawn(_sendingActorProps);
 
             var headers = new Proto.MessageHeader(new Dictionary<string, string> { { "key", "value" } });
             system.Root.Send(sender, new RunRequestAsync(pid, headers));
 
-            _wait.WaitOne(TimeSpan.FromSeconds(2));
+            var (_, _, receivedHeaders) = await probe.GetNextMessageAsync<(object, PID, Proto.MessageHeader)>();
 
-            _header.Should().BeEquivalentTo(headers);
+            receivedHeaders.Should().BeEquivalentTo(headers);
         }
 
         [Fact]
@@ -153,14 +149,15 @@ namespace Proto.Remote.Tests
             await using var system = new ActorSystem();
             system.Extensions.Register(new Serialization());
 
-            var pid = system.Root.Spawn(_receivingActorProps);
+            var (probe, probePid) = system.CreateTestProbe();
+            var pid = system.Root.Spawn(CreateReceivingActorProps(probePid));
             var sender = system.Root.Spawn(_sendingActorProps);
 
             system.Root.Send(sender, new RunRequest(pid, null));
 
-            _wait.WaitOne(TimeSpan.FromSeconds(2));
+            var (_, receivedSender, _) = await probe.GetNextMessageAsync<(object, PID, Proto.MessageHeader)>();
 
-            _sender.Should().BeEquivalentTo(sender);
+            receivedSender.Should().BeEquivalentTo(sender);
         }
 
         [Fact]
@@ -176,16 +173,17 @@ namespace Proto.Remote.Tests
 
             system.Extensions.Register(new Serialization());
 
-            var pid = system.Root.Spawn(_receivingActorProps);
+            var (probe, probePid) = system.CreateTestProbe();
+            var pid = system.Root.Spawn(CreateReceivingActorProps(probePid));
             var sentMessage = new TestRootSerializableMessage("Serialized");
             system.Root.Send(pid, sentMessage);
 
-            _wait.WaitOne(TimeSpan.FromSeconds(2));
+            var (message, _, _) = await probe.GetNextMessageAsync<(object, PID, Proto.MessageHeader)>();
 
-            _receivedMessage.Should()
+            message.Should()
                 .BeEquivalentTo(sentMessage, "the received message should be the same as the sent message");
 
-            _receivedMessage.Should().NotBeSameAs(sentMessage, "the message should have been serialized");
+            message.Should().NotBeSameAs(sentMessage, "the message should have been serialized");
         }
     }
 }
@@ -206,7 +204,7 @@ namespace ForcedSerialization.TestMessages
 
     internal record TestResponse;
 
-    internal record RunRequest(PID Target, MessageHeader Headers);
+    internal record RunRequest(PID Target, Proto.MessageHeader Headers);
 
-    internal record RunRequestAsync(PID Target, MessageHeader Headers);
+    internal record RunRequestAsync(PID Target, Proto.MessageHeader Headers);
 }
