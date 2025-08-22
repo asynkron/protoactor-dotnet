@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using static Proto.TestKit.TestKit;
 using Xunit;
 
 namespace Proto.Cluster.Tests;
@@ -37,7 +38,9 @@ public class PidCacheInvalidationTests : IClassFixture<InMemoryPidCacheInvalidat
         cachedPid.Should().NotBeNull();
         await remoteMember.RequestAsync<object>(id, EchoActor.Kind, new Die(), CancellationToken.None);
 
-        await Task.Delay(2000); // PidCache is asynchronously cleared, allow the system to purge it
+        await AwaitConditionAsync(
+            () => GetFromPidCache(remoteMember, id) is null,
+            TimeSpan.FromSeconds(5)); // Wait until the pid cache entry is purged
 
         var cachedPidAfterStopping = GetFromPidCache(remoteMember, id);
 
