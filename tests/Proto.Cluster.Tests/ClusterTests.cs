@@ -7,6 +7,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Proto;
 using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
 using Proto.Utils;
@@ -40,7 +41,7 @@ public abstract class ClusterTests : ClusterTestBase
     {
         await Trace(async () =>
         {
-            var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+            var timeout = CancellationTokens.FromSeconds(10);
 
             var entryNode = Members[0];
 
@@ -59,7 +60,7 @@ public abstract class ClusterTests : ClusterTestBase
 
         await Trace(async () =>
         {
-            var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+            var timeout = CancellationTokens.FromSeconds(10);
 
             var clientNode = await ClusterFixture.SpawnClient();
 

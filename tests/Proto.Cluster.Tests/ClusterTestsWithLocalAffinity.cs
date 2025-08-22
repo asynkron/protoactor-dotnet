@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Proto;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -21,7 +22,7 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
     {
         await Trace(async () =>
         {
-            var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)).Token;
+            var timeout = CancellationTokens.FromSeconds(20);
             var firstNode = Members[0];
             var secondNode = Members[1];
 
