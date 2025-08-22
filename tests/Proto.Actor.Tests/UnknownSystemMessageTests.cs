@@ -49,9 +49,9 @@ public class UnknownSystemMessageTests
 
         // Attach a probe to the parent mailbox to observe system messages such as Failure
         var (probe, probePid) = system.CreateTestProbe();
-        // ensure the probe is fully started before it is used
+        // ensure the probe is fully started before it is used by awaiting the init message
         system.Root.Send(probePid, "init");
-        await probe.FishForMessageAsync<string>();
+        await probe.ExpectNextUserMessageAsync<string>();
 
         var childProps = Props.FromFunc(ctx => Task.CompletedTask);
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
