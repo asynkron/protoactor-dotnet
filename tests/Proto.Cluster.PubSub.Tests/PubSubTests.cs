@@ -7,6 +7,7 @@
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Proto.Cluster.Tests;
+using Proto.TestKit;
 using Xunit;
 using Xunit.Abstractions;
 using static Proto.TestKit.TestKit;
@@ -98,10 +99,12 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
             await _fixture.UnsubscribeFrom(topic, sub2);
 
             await _fixture.PublishData(topic, 1);
-            await Task.Delay(1000); // give time for the message "not to be delivered" to second subscriber
-
             await AwaitConditionAsync(() => _fixture.Deliveries.Count == 1, TimeSpan.FromSeconds(5),
                 "only one delivery should happen because the other actor is unsubscribed");
+
+            await Assert.ThrowsAsync<TimeoutException>(() =>
+                AwaitConditionAsync(() => _fixture.Deliveries.Count > 1, TimeSpan.FromMilliseconds(500))
+            );
 
             _fixture.Deliveries.Should()
                 .HaveCount(1, "only one delivery should happen because the other actor is unsubscribed");
@@ -149,29 +152,14 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
         {
             const string topic = "pid-unsubscribe";
 
-            var deliveryCount = 0;
-
-            var props = Props.FromFunc(ctx =>
-                {
-                    if (ctx.Message is DataPublished)
-                    {
-                        Interlocked.Increment(ref deliveryCount);
-                    }
-
-                    return Task.CompletedTask;
-                }
-            );
-
             var member = _fixture.Members.First();
-            var pid = member.System.Root.Spawn(props);
+            var (probe, pid) = member.System.CreateTestProbe();
 
             await member.Subscribe(topic, pid);
             await member.Unsubscribe(topic, pid);
 
             await _fixture.PublishData(topic, 1);
-            await Task.Delay(1000); // give time for the message "not to be delivered" to second subscriber
-
-            deliveryCount.Should().Be(0);
+            await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(500));
         });
     }
 
