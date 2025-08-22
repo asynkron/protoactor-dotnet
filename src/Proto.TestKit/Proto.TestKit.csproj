@@ -4,6 +4,7 @@
         <IsPackable>true</IsPackable>
         <Nullable>enable</Nullable>
         <LangVersion>10</LangVersion>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     </PropertyGroup>
 
     <ItemGroup>
@@ -11,5 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="**/*.cs" />
     </ItemGroup>
 </Project>
