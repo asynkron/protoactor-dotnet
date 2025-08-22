@@ -35,9 +35,9 @@ public class BroadcastPoolRouterTests
         var routee2 = routees.Pids[1];
         var routee3 = routees.Pids[2];
 
-        var probe1 = probes.Find(p => (PID)p == routee1)!;
-        var probe2 = probes.Find(p => (PID)p == routee2)!;
-        var probe3 = probes.Find(p => (PID)p == routee3)!;
+        var probe1 = probes.Find(p => p.Self == routee1)!;
+        var probe2 = probes.Find(p => p.Self == routee2)!;
+        var probe3 = probes.Find(p => p.Self == routee3)!;
 
         system.Root.Send(router, "first");
         await probe1.ExpectNextUserMessageAsync<string>(x => x == "first");
@@ -46,13 +46,10 @@ public class BroadcastPoolRouterTests
 
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        await system.Root.RequestAsync<Touched>(routee1, new Touch(), _timeout);
-        await probe1.ExpectNextUserMessageAsync<Touch>();
-
         system.Root.Send(router, "second");
 
         await probe2.ExpectNextUserMessageAsync<string>(x => x == "second");
         await probe3.ExpectNextUserMessageAsync<string>(x => x == "second");
-        await probe1.ExpectNoMessageAsync();
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
     }
 }

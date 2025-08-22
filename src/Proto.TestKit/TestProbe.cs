@@ -46,6 +46,11 @@ public class TestProbe : IActor, ITestProbe
     /// <inheritdoc />
     public PID? Sender { get; private set; }
 
+    /// <summary>
+    ///     The PID of this probe.
+    /// </summary>
+    public PID Self => Context.Self;
+
     private IContext Context
     {
         get
@@ -186,7 +191,6 @@ public class TestProbe : IActor, ITestProbe
 
     public void Unwatch(PID pid) => Context.Unwatch(pid);
 
-    public static implicit operator PID?(TestProbe tp) => tp.Context.Self;
 
     private async Task<MessageAndSender> ReceiveNextAsync(TimeSpan? timeAllowed,
         CancellationToken cancellationToken)

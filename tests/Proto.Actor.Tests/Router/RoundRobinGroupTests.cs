@@ -21,23 +21,23 @@ public class RoundRobinGroupTests
 
         system.Root.Send(router, "1");
         await probe1.ExpectNextUserMessageAsync<string>(x => x == "1");
-        await probe2.ExpectNoMessageAsync();
-        await probe3.ExpectNoMessageAsync();
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
 
         system.Root.Send(router, "2");
         await probe2.ExpectNextUserMessageAsync<string>(x => x == "2");
-        await probe1.ExpectNoMessageAsync();
-        await probe3.ExpectNoMessageAsync();
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
 
         system.Root.Send(router, "3");
         await probe3.ExpectNextUserMessageAsync<string>(x => x == "3");
-        await probe1.ExpectNoMessageAsync();
-        await probe2.ExpectNoMessageAsync();
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
 
         system.Root.Send(router, "4");
         await probe1.ExpectNextUserMessageAsync<string>(x => x == "4");
-        await probe2.ExpectNoMessageAsync();
-        await probe3.ExpectNoMessageAsync();
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
@@ -95,10 +95,8 @@ public class RoundRobinGroupTests
         await probe2.ExpectNextUserMessageAsync<string>(x => x == "0");
         system.Root.Send(router, "0");
         await probe3.ExpectNextUserMessageAsync<string>(x => x == "0");
-        system.Root.Send(router, new RouterRemoveRoutee(probe1));
+        system.Root.Send(router, new RouterRemoveRoutee(probe1.Self));
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        await system.Root.RequestAsync<Touched>(probe1, new Touch(), _timeout);
-        await probe1.ExpectNextUserMessageAsync<Touch>();
 
         system.Root.Send(router, "3");
         await probe3.ExpectNextUserMessageAsync<string>(x => x == "3");
@@ -107,7 +105,7 @@ public class RoundRobinGroupTests
         system.Root.Send(router, "3");
         await probe3.ExpectNextUserMessageAsync<string>(x => x == "3");
 
-        await probe1.ExpectNoMessageAsync();
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]

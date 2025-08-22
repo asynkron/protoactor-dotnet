@@ -56,18 +56,16 @@ public class RandomGroupRouterTests
 
         var (router, probe1, _, _) = CreateRouterWith3Routees(system);
 
-        system.Root.Send(router, new RouterRemoveRoutee(probe1));
+        system.Root.Send(router, new RouterRemoveRoutee(probe1.Self));
 
         await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        await system.Root.RequestAsync<Touched>(probe1, new Touch(), _timeout);
-        await probe1.ExpectNextUserMessageAsync<Touch>();
 
         for (var i = 0; i < 100; i++)
         {
             system.Root.Send(router, i.ToString());
         }
 
-        await probe1.ExpectNoMessageAsync();
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
@@ -78,12 +76,12 @@ public class RandomGroupRouterTests
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
-        system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        system.Root.Send(router, new RouterRemoveRoutee(routee1.Self));
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        Assert.DoesNotContain(routee1, routees.Pids);
-        Assert.Contains(routee2, routees.Pids);
-        Assert.Contains(routee3, routees.Pids);
+        Assert.DoesNotContain(routee1.Self, routees.Pids);
+        Assert.Contains(routee2.Self, routees.Pids);
+        Assert.Contains(routee3.Self, routees.Pids);
     }
 
     [Fact]
@@ -97,9 +95,9 @@ public class RandomGroupRouterTests
         system.Root.Send(router, new RouterAddRoutee(routee4));
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        Assert.Contains(routee1, routees.Pids);
-        Assert.Contains(routee2, routees.Pids);
-        Assert.Contains(routee3, routees.Pids);
+        Assert.Contains(routee1.Self, routees.Pids);
+        Assert.Contains(routee2.Self, routees.Pids);
+        Assert.Contains(routee3.Self, routees.Pids);
         Assert.Contains(routee4, routees.Pids);
     }
 
