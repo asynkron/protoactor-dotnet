@@ -92,33 +92,6 @@ You should see the output `Hello Alex`.
 
 [https://github.com/asynkron/realtimemap-dotnet](https://github.com/asynkron/realtimemap-dotnet)
 
-## TestKit
-
-Proto.Actor includes a TestKit library for unit testing actors.
-
-- **TestProbe** is an actor that records incoming messages. The API is fully asynchronous:
-
-  ```csharp
-  var probe = new TestProbe();
-  system.Root.Spawn(Props.FromProducer(() => probe));
-  await probe.ExpectNextUserMessageAsync<string>();
-  await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(100));
-  ```
-
-- **TestMailboxStats** captures mailbox events such as posted and received messages:
-
-  ```csharp
-  var stats = new TestMailboxStats(msg => msg is MyMessage);
-  var props = Props.FromProducer(() => new MyActor())
-      .WithMailbox(() => UnboundedMailbox.Create(stats));
-  ```
-
-- **Props extensions** help observe actor behavior:
-
-  - `WithReceiveProbe` intercepts messages an actor receives.
-  - `WithSendProbe` observes messages an actor sends.
-  - `WithMailboxProbe` taps into mailbox traffic using `ProbeMailboxStatistics`.
-
 ## Contributors
 
 <a href="https://github.com/asynkron/protoactor-dotnet/graphs/contributors">
