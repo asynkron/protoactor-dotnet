@@ -4,8 +4,10 @@ using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto;
+using Proto.Cluster;
 using Proto.Cluster.Gossip;
 using Xunit;
+using static Proto.TestKit.TestKit;
 
 namespace Proto.Cluster.Tests;
 
@@ -18,11 +20,17 @@ public class PartitionConsensusTests
         var fixture = new PartitionClusterFixture();
         await using var _ = fixture;
         await fixture.InitializeAsync();
-        await Task.Delay(2000);
 
         var members = fixture.Members;
         var memberA = members[0];
         var memberB = members[1];
+
+        // Wait until gossip knows about all members
+        await AwaitConditionAsync(async () =>
+        {
+            var topology = await memberB.Gossip.GetState<ClusterTopology>(GossipKeys.Topology);
+            return topology.Count == members.Count;
+        }, TimeSpan.FromSeconds(10));
 
         const string key = "test-state";
         const string initialValue = "v1";
@@ -33,19 +41,34 @@ public class PartitionConsensusTests
             await m.Gossip.SetStateAsync(key, new SomeGossipState { Key = initialValue });
         }
 
-        await Task.Delay(2000);
+        // Wait for memberB to observe memberA's initial state
+        await AwaitConditionAsync(async () =>
+        {
+            var state = await memberB.Gossip.GetState<SomeGossipState>(key);
+            return state.TryGetValue(memberA.System.Id, out var s) && s.Key == initialValue;
+        }, TimeSpan.FromSeconds(10));
 
         GossipNetworkPartition.Isolate(memberB.System.Address);
 
         await memberA.Gossip.SetStateAsync(key, new SomeGossipState { Key = newValue });
 
-        await Task.Delay(2000);
+        // Ensure memberB still sees the old value while partitioned
+        await AwaitConditionAsync(async () =>
+        {
+            var state = await memberB.Gossip.GetState<SomeGossipState>(key);
+            return state.TryGetValue(memberA.System.Id, out var s) && s.Key == initialValue;
+        }, TimeSpan.FromSeconds(5));
         var stateDuringPartition = await memberB.Gossip.GetState<SomeGossipState>(key);
         stateDuringPartition[memberA.System.Id].Key.Should().Be(initialValue);
 
         GossipNetworkPartition.Clear();
 
-        await Task.Delay(2000);
+        // Wait for memberB to receive the updated value after partition clears
+        await AwaitConditionAsync(async () =>
+        {
+            var state = await memberB.Gossip.GetState<SomeGossipState>(key);
+            return state.TryGetValue(memberA.System.Id, out var s) && s.Key == newValue;
+        }, TimeSpan.FromSeconds(10));
         var stateAfterRecovery = await memberB.Gossip.GetState<SomeGossipState>(key);
         stateAfterRecovery[memberA.System.Id].Key.Should().Be(newValue);
     }
