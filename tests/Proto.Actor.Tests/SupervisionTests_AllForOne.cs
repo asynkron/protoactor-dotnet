@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Proto.Mailbox;
 using Proto.TestKit;
 using Xunit;
 
