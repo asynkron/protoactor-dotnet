@@ -90,8 +90,8 @@ public class SchedulerTests
             return Task.CompletedTask;
         }));
 
-        var firstResponse = new TaskCompletionSource();
-        var extraResponse = new TaskCompletionSource();
+        var probe = new TestProbe();
+        var probePid = context.Spawn(Props.FromProducer(() => probe));
 
         var timeProvider = new FakeTimeProvider();
         var hook = new TestSchedulerHook();
@@ -106,14 +106,7 @@ public class SchedulerTests
                     cts = scheduler.RequestRepeatedly(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), responder, "Ping");
                     break;
                 case string msg when msg == "Pong":
-                    if (!firstResponse.Task.IsCompleted)
-                    {
-                        firstResponse.SetResult();
-                    }
-                    else
-                    {
-                        extraResponse.SetResult();
-                    }
+                    ctx.Send(probePid, msg);
                     break;
                 case "Cancel":
                     cts?.Cancel();
@@ -125,7 +118,7 @@ public class SchedulerTests
 
         await hook.WaitAsync();
         timeProvider.Advance(TimeSpan.FromSeconds(5));
-        await firstResponse.Task.WaitAsync(TimeSpan.FromMilliseconds(10));
+        await probe.GetNextMessageAsync<string>(TimeSpan.FromMilliseconds(10));
 
         context.Send(requester, "Cancel");
 
@@ -135,7 +128,7 @@ public class SchedulerTests
         timeProvider.Advance(TimeSpan.FromSeconds(10));
         await Task.Delay(50);
 
-        Assert.False(extraResponse.Task.IsCompleted);
+        await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(50));
     }
 
     private sealed class TestSchedulerHook : ISchedulerHook
