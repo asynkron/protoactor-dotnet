@@ -64,6 +64,7 @@ public class PoolRouterTests
         var props = system.Root.NewRandomPool(MyActorProps, 3, 0);
 
         var router = system.Root.Spawn(props);
+        await Task.Delay(10); // allow routees to spawn
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         Assert.Equal(3, routees.Pids.Count);
     }

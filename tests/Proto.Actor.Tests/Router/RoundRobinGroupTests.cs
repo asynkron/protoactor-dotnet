@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Proto.Router.Messages;
 using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Router.Tests;
@@ -125,16 +126,21 @@ public class RoundRobinGroupTests
     [Fact]
     public async Task RoundRobinGroupRouter_AllRouteesReceiveRouterBroadcastMessages()
     {
-        var system = new ActorSystem();
-        await using var _ = system;
+        await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
+        // use probes for deterministic delivery checks
+        var (probe1, routee1) = system.CreateTestProbe();
+        var (probe2, routee2) = system.CreateTestProbe();
+        var (probe3, routee3) = system.CreateTestProbe();
+
+        var props = system.Root.NewRoundRobinGroup(routee1, routee2, routee3);
+        var router = system.Root.Spawn(props);
 
         system.Root.Send(router, new RouterBroadcastMessage("hello"));
 
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        Assert.Equal("hello", await probe1.GetNextMessageAsync<string>(_timeout));
+        Assert.Equal("hello", await probe2.GetNextMessageAsync<string>(_timeout));
+        Assert.Equal("hello", await probe3.GetNextMessageAsync<string>(_timeout));
     }
 
     private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees(ActorSystem system)

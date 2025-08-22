@@ -206,7 +206,8 @@ public class ActorTests
         );
 
         context.Send(pid, "hello");
-
+        // wait for the actor to process the user message before stopping
+        await Task.Delay(10);
         await context.StopAsync(pid);
 
         Assert.Equal(4, messages.Count);
