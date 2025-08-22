@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Proto.Mailbox;
 
 namespace Proto.TestKit;
@@ -46,4 +47,10 @@ public class TestMailboxStats : IMailboxStatistics
     }
 
     public void MailboxEmpty() => Stats.Add("Empty");
+
+    /// <summary>
+    /// Asynchronously waits until <see cref="Reset"/> is signaled or the <paramref name="timeout"/> elapses.
+    /// </summary>
+    public Task WaitForResetAsync(TimeSpan timeout) =>
+        TestKit.AwaitConditionAsync(() => Reset.IsSet, timeout);
 }
