@@ -10,4 +10,5 @@
   - When suitable, use `ExpectEmptyMailbox` rather than `ExpectNoMessages`.
 - Always run the core tests, Proto.Actor.Tests, Proto.Remote.Tests, the base Proto.Cluster.Tests. if they fail, you have failed.
 - Freely suggest new helpers for Proto.TestKit if we detect a pattern that can be simplified in many tests
+- Always add a detailed log of what you have done, and why tht change is required for each changed file. add this log to /logs with a filename of "log" + unixtimestamp + ".md". 
 
