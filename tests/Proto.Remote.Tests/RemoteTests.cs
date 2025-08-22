@@ -285,43 +285,25 @@ public abstract class RemoteTests
 
         // Seeded for deterministic message payloads
         var rnd = new Random(0);
-        var tcs = new TaskCompletionSource<bool>();
-        long responseCount = 0;
 
-        var responseHandler = _fixture.ActorSystem.Root.Spawn(Props.FromFunc(ctx =>
-                {
-                    if (ctx.Message is Ack)
-                    {
-                        if (Interlocked.Increment(ref responseCount) == messageCount)
-                        {
-                            tcs.TrySetResult(true);
-                        }
-                    }
-
-                    return Task.CompletedTask;
-                }
-            )
-        );
+        var (probe, probePid) = System.CreateTestProbe();
 
         var actor = remote ? await SpawnRemoteActor(_fixture.RemoteAddress) : SpawnLocalActor();
 
-        var timeout = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
-
         for (var i = 0; i < messageCount; i++)
         {
-            System.Root.Request(actor, NextMsg(), responseHandler);
+            System.Root.Request(actor, NextMsg(), probePid);
         }
 
-        await Task.WhenAny(tcs.Task, timeout);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+        for (var i = 0; i < messageCount; i++)
+        {
+            await probe.ExpectNextUserMessageAsync<Ack>(cancellationToken: cts.Token);
+        }
 
         var res = await System.Root.RequestAsync<Touched>(actor, new Touch(), TimeSpan.FromSeconds(1));
         res.Should().NotBeNull("Remote should still be alive");
         res.Who.Should().BeEquivalentTo(actor);
-
-        Interlocked.Read(ref responseCount).Should().Be(messageCount);
-
-        tcs.Task.IsCompletedSuccessfully.Should().BeTrue("All responses received");
-        Interlocked.Read(ref responseCount).Should().Be(messageCount);
 
         BinaryMessage NextMsg()
         {
