@@ -20,7 +20,13 @@ public class SupervisionTestsAlwaysRestart
         var child2Started = 0;
         var strategy = new AlwaysRestartStrategy();
 
-        var child1Props = Props.FromProducer(() => new ChildActor(() => child1Started++));
+        // attach a probe to the failing child to observe its mailbox
+        var (probe, probePid) = system.CreateTestProbe();
+        context.Send(probePid, "start");
+        await probe.FishForMessageAsync<string>();
+
+        var child1Props = Props.FromProducer(() => new ChildActor(() => child1Started++))
+            .WithMailboxProbe(probe);
         var child2Props = Props.FromProducer(() => new ChildActor(() => child2Started++));
 
         var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
@@ -30,7 +36,8 @@ public class SupervisionTestsAlwaysRestart
 
         context.Send(parent, "fail");
 
-        await Task.Delay(1000);
+        // Wait for the restart system message instead of relying on elapsed time
+        await probe.FishForMessageAsync<Restart>();
 
         Assert.Equal(2, child1Started);
         Assert.Equal(1, child2Started);
