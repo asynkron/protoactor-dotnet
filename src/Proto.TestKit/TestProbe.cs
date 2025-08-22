@@ -51,12 +51,13 @@ public class TestProbe : IActor, ITestProbe
     {
         get
         {
-            if (_context is null)
+            // Spin-wait for up to one second for the probe's context to be set.
+            if (!SpinWait.SpinUntil(() => _context != null, TimeSpan.FromSeconds(1)))
             {
                 throw new InvalidOperationException("Probe context is null");
             }
 
-            return _context;
+            return _context!;
         }
         private set => _context = value;
     }
