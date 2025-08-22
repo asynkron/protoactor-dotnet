@@ -28,12 +28,12 @@ public class GossipActor : IActor
         TimeSpan gossipRequestTimeout,
         InstanceLogger? instanceLogger,
         int gossipFanout,
-        int gossipMaxSend
+        int gossipMaxSend,
+        IGossip gossip
     )
     {
         _gossipRequestTimeout = gossipRequestTimeout;
-        _internal = new Gossip(system.Id, gossipFanout, gossipMaxSend, instanceLogger,
-            () => system.Cluster().MemberList.GetMembers(), system.Cluster().Config.GossipDebugLogging);
+        _internal = gossip;
     }
 
     public async Task ReceiveAsync(IContext context)

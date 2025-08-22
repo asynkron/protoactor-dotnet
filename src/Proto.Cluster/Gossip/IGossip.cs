@@ -12,11 +12,11 @@ using Google.Protobuf.WellKnownTypes;
 
 namespace Proto.Cluster.Gossip;
 
-internal interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
+public interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
 {
 }
 
-internal interface IGossipCore
+public interface IGossipCore
 {
     Task UpdateClusterTopology(ClusterTopology clusterTopology);
 
@@ -33,14 +33,14 @@ internal interface IGossipCore
     IEnumerable<(Member member, MemberStateDelta memberState)> SendState();
 }
 
-internal interface IGossipConsensusChecker
+public interface IGossipConsensusChecker
 {
     void AddConsensusCheck(string id, ConsensusCheck check);
 
     void RemoveConsensusCheck(string id);
 }
 
-internal interface IGossipStateStore
+public interface IGossipStateStore
 {
     GossipState GetStateSnapshot();
 
