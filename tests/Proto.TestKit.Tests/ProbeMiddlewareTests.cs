@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using FluentAssertions;
+using Proto;
 using Proto.TestKit;
 using Xunit;
 
@@ -30,6 +31,9 @@ public class ProbeMiddlewareTests
         var props = Props.FromProducer(() => new ForwardActor(target)).WithSendProbe(probe);
         var pid = system.Root.Spawn(props);
 
+        // The probe receives a Started message when the actor starts
+        await probe.ExpectNextSystemMessageAsync<Started>();
+
         system.Root.Send(pid, "hi");
         await probe.ExpectNextUserMessageAsync<string>(s => s == "hi");
         probe.Sender.Should().Be(target);
@@ -43,6 +47,9 @@ public class ProbeMiddlewareTests
 
         var props = Props.FromProducer(() => new EmptyActor()).WithMailboxProbe(probe);
         var pid = system.Root.Spawn(props);
+
+        // The probe receives a Started message when the actor starts
+        await probe.ExpectNextSystemMessageAsync<Started>();
 
         system.Root.Send(pid, "hello");
         await probe.ExpectNextUserMessageAsync<string>(s => s == "hello");
