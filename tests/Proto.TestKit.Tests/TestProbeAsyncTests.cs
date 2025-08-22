@@ -54,5 +54,17 @@ public class TestProbeAsyncTests
         system.Root.Send(pid, "hello");
         await Assert.ThrowsAsync<TestKitException>(() => probe.ExpectEmptyMailboxAsync());
     }
+
+    [Fact]
+    public async Task SubsequentStartedMessages_are_enqueued()
+    {
+        var system = new ActorSystem();
+        var (probe, pid) = system.CreateTestProbe();
+
+        // Send an extra Started message and ensure probe receives it
+        system.Root.Send(pid, Started.Instance);
+
+        await probe.ExpectNextSystemMessageAsync<Started>();
+    }
 }
 }

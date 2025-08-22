@@ -19,14 +19,21 @@ public class TestProbe : IActor, ITestProbe
     private readonly Channel<MessageAndSender> _channel = Channel.CreateUnbounded<MessageAndSender>();
 
     private IContext? _context;
+    // Tracks if the probe has processed its own startup.
+    private bool _started;
 
     /// <inheritdoc />
     public Task ReceiveAsync(IContext context)
     {
         switch (context.Message)
         {
-            case Started _:
+            case Started _ when !_started:
                 Context = context;
+                _started = true;
+
+                break;
+            case Started _:
+                _channel.Writer.TryWrite(new MessageAndSender(context));
 
                 break;
             case Terminated _:
