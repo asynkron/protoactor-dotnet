@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Tests;
@@ -10,21 +11,19 @@ public class FunctionActorTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var received = false;
+        var (probe, probePid) = system.CreateTestProbe();
 
         var props = Props.FromFunc(ctx =>
         {
             if (ctx.Message is string)
             {
-                received = true;
+                ctx.Forward(probePid);
             }
             return Task.CompletedTask;
         });
 
         var pid = context.Spawn(props);
         context.Send(pid, "hello");
-        await Task.Delay(50);
-
-        Assert.True(received);
+        await probe.ExpectNextUserMessageAsync<string>(msg => msg == "hello");
     }
 }
