@@ -165,7 +165,9 @@ public abstract class RemoteTests
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
         var (probe, _) = System.CreateTestProbe();
+        await Task.Delay(20); // wait for probe to start
         probe.Context.Watch(remoteActor);
+        await Task.Delay(20); // allow RemoteWatch to propagate
 
         await System.Root.StopAsync(remoteActor);
 
@@ -181,8 +183,10 @@ public abstract class RemoteTests
         var remoteActor2 = await SpawnRemoteActor(_fixture.RemoteAddress);
 
         var (probe, _) = System.CreateTestProbe();
+        await Task.Delay(20); // wait for probe to start
         probe.Context.Watch(remoteActor1);
         probe.Context.Watch(remoteActor2);
+        await Task.Delay(20); // allow RemoteWatch to propagate
 
         await System.Root.StopAsync(remoteActor1);
         await System.Root.StopAsync(remoteActor2);
@@ -200,8 +204,10 @@ public abstract class RemoteTests
 
         var (probe1, _) = System.CreateTestProbe();
         var (probe2, _) = System.CreateTestProbe();
+        await Task.Delay(20); // wait for probes to start
         probe1.Context.Watch(remoteActor);
         probe2.Context.Watch(remoteActor);
+        await Task.Delay(20); // allow RemoteWatch to propagate
 
         await System.Root.StopAsync(remoteActor);
 
@@ -219,9 +225,10 @@ public abstract class RemoteTests
 
         var (probe1, _) = System.CreateTestProbe();
         var (probe2, _) = System.CreateTestProbe();
+        await Task.Delay(20); // wait for probes to start
         probe1.Context.Watch(remoteActor);
         probe2.Context.Watch(remoteActor);
-        await Task.Delay(20);
+        await Task.Delay(20); // allow RemoteWatch to propagate
 
         probe2.Context.Unwatch(remoteActor);
         await Task.Delay(TimeSpan.FromSeconds(3));
@@ -241,8 +248,9 @@ public abstract class RemoteTests
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
         var (probe, _) = System.CreateTestProbe();
+        await Task.Delay(20); // wait for probe to start
         probe.Context.Watch(remoteActor);
-        await Task.Delay(20);
+        await Task.Delay(20); // allow RemoteWatch to propagate
 
         System.Root.Send(remoteActor, new Die());
 
