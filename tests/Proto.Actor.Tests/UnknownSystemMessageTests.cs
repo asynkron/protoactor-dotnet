@@ -48,8 +48,7 @@ public class UnknownSystemMessageTests
         await using var system = new ActorSystem();
 
         // Attach a probe to the parent mailbox to observe system messages such as Failure
-        var probe = new TestProbe();
-        var probePid = system.Root.Spawn(Props.FromProducer(() => probe));
+        var (probe, probePid) = system.CreateTestProbe();
         // ensure the probe is fully started before it is used
         system.Root.Send(probePid, "init");
         await probe.FishForMessageAsync<string>();

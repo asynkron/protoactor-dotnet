@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Proto.Mailbox;
 using Proto.TestKit;
 using Xunit;
 
@@ -38,7 +37,7 @@ public class SupervisionTestsExponentialBackoff
         var strategy = new ExponentialBackoffStrategy(TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(50));
 
         var childProps = Props.FromProducer(() => new BackoffChild())
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            .WithTestMailboxStats(childMailboxStats);
 
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy);

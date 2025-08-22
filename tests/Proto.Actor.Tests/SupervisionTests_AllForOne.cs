@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Proto.Mailbox;
 using Proto.TestKit;
 using Xunit;
 
@@ -22,10 +21,10 @@ public class SupervisionTestsAllForOne
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+            .WithTestMailboxStats(child1MailboxStats);
 
         var child2Props = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+            .WithTestMailboxStats(child2MailboxStats);
 
         var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);
@@ -52,10 +51,10 @@ public class SupervisionTestsAllForOne
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+            .WithTestMailboxStats(child1MailboxStats);
 
         var child2Props = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+            .WithTestMailboxStats(child2MailboxStats);
 
         var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);
@@ -83,10 +82,10 @@ public class SupervisionTestsAllForOne
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+            .WithTestMailboxStats(child1MailboxStats);
 
         var child2Props = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+            .WithTestMailboxStats(child2MailboxStats);
 
         var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);
@@ -114,10 +113,10 @@ public class SupervisionTestsAllForOne
         var strategy = new AllForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
 
         var child1Props = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(child1MailboxStats));
+            .WithTestMailboxStats(child1MailboxStats);
 
         var child2Props = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(child2MailboxStats));
+            .WithTestMailboxStats(child2MailboxStats);
 
         var parentProps = Props.FromProducer(() => new ParentActor(child1Props, child2Props))
             .WithChildSupervisorStrategy(strategy);
@@ -146,7 +145,7 @@ public class SupervisionTestsAllForOne
 
         var parentProps = Props.FromProducer(() => new ParentActor(childProps, childProps))
             .WithChildSupervisorStrategy(strategy)
-            .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
+            .WithTestMailboxStats(parentMailboxStats);
 
         var parent = context.Spawn(parentProps);
 

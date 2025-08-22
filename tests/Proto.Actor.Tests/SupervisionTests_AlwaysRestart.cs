@@ -43,8 +43,7 @@ public class SupervisionTestsAlwaysRestart
         var context = system.Root;
 
         // probe child mailbox to observe Restart system messages
-        var probe = new TestProbe();
-        var probePid = system.Root.Spawn(Props.FromProducer(() => probe));
+        var (probe, probePid) = system.CreateTestProbe();
         context.Send(probePid, "start");
         await probe.FishForMessageAsync<string>();
 

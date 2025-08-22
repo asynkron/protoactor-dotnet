@@ -14,8 +14,7 @@ public class TimerExtensionsTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        var pid = context.Spawn(Props.FromProducer(() => probe));
+        var (probe, pid) = system.CreateTestProbe();
 
         var scheduler = context.Scheduler();
 
@@ -33,8 +32,7 @@ public class TimerExtensionsTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        var pid = context.Spawn(Props.FromProducer(() => probe));
+        var (probe, pid) = system.CreateTestProbe();
 
         var timeProvider = new FakeTimeProvider();
         var scheduler = context.Scheduler(timeProvider);

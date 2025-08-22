@@ -14,8 +14,7 @@ public class ReceiveTimeoutTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        context.Spawn(Props.FromProducer(() => probe));
+        var (probe, _) = system.CreateTestProbe();
 
         var props = Props.FromFunc(ctx =>
             {
@@ -43,8 +42,7 @@ public class ReceiveTimeoutTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        context.Spawn(Props.FromProducer(() => probe));
+        var (probe, _) = system.CreateTestProbe();
 
         var props = Props.FromFunc(ctx =>
             {
@@ -75,8 +73,7 @@ public class ReceiveTimeoutTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        context.Spawn(Props.FromProducer(() => probe));
+        var (probe, _) = system.CreateTestProbe();
 
         var props = Props.FromFunc(ctx =>
             {
@@ -111,8 +108,7 @@ public class ReceiveTimeoutTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        context.Spawn(Props.FromProducer(() => probe));
+        var (probe, _) = system.CreateTestProbe();
 
         var props = Props.FromFunc(ctx =>
             {
@@ -142,8 +138,7 @@ public class ReceiveTimeoutTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        context.Spawn(Props.FromProducer(() => probe));
+        var (probe, _) = system.CreateTestProbe();
 
         var endingTimeout = TimeSpan.MaxValue;
 
@@ -177,8 +172,7 @@ public class ReceiveTimeoutTests
     {
         await using var system = new ActorSystem();
         var context = system.Root;
-        var probe = new TestProbe();
-        context.Spawn(Props.FromProducer(() => probe));
+        var (probe, _) = system.CreateTestProbe();
 
         var props = Props.FromFunc(ctx =>
             {

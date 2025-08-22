@@ -164,13 +164,10 @@ public abstract class RemoteTests
     {
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
-        var probe = new TestProbe();
-        System.Root.Spawn(Props.FromProducer(() => probe));
-        await Task.Delay(20); // wait for probe to start
+        var (probe, _) = System.CreateTestProbe();
         probe.Context.Watch(remoteActor);
-        await Task.Delay(20); // allow RemoteWatch to propagate
 
-        System.Root.Stop(remoteActor);
+        await System.Root.StopAsync(remoteActor);
 
         var terminated = await probe.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
         Assert.Equal(remoteActor, terminated.Who);
@@ -183,15 +180,12 @@ public abstract class RemoteTests
         var remoteActor1 = await SpawnRemoteActor(_fixture.RemoteAddress);
         var remoteActor2 = await SpawnRemoteActor(_fixture.RemoteAddress);
 
-        var probe = new TestProbe();
-        System.Root.Spawn(Props.FromProducer(() => probe));
-        await Task.Delay(20); // wait for probe to start
+        var (probe, _) = System.CreateTestProbe();
         probe.Context.Watch(remoteActor1);
         probe.Context.Watch(remoteActor2);
-        await Task.Delay(20); // allow RemoteWatch to propagate
 
-        System.Root.Stop(remoteActor1);
-        System.Root.Stop(remoteActor2);
+        await System.Root.StopAsync(remoteActor1);
+        await System.Root.StopAsync(remoteActor2);
 
         var term1 = await probe.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
         var term2 = await probe.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
@@ -204,16 +198,12 @@ public abstract class RemoteTests
     {
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
-        var probe1 = new TestProbe();
-        System.Root.Spawn(Props.FromProducer(() => probe1));
-        var probe2 = new TestProbe();
-        System.Root.Spawn(Props.FromProducer(() => probe2));
-        await Task.Delay(20);
+        var (probe1, _) = System.CreateTestProbe();
+        var (probe2, _) = System.CreateTestProbe();
         probe1.Context.Watch(remoteActor);
         probe2.Context.Watch(remoteActor);
-        await Task.Delay(20);
 
-        System.Root.Stop(remoteActor);
+        await System.Root.StopAsync(remoteActor);
 
         var t1 = await probe1.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
         var t2 = await probe2.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
@@ -227,11 +217,8 @@ public abstract class RemoteTests
     {
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
-        var probe1 = new TestProbe();
-        System.Root.Spawn(Props.FromProducer(() => probe1));
-        var probe2 = new TestProbe();
-        System.Root.Spawn(Props.FromProducer(() => probe2));
-        await Task.Delay(20);
+        var (probe1, _) = System.CreateTestProbe();
+        var (probe2, _) = System.CreateTestProbe();
         probe1.Context.Watch(remoteActor);
         probe2.Context.Watch(remoteActor);
         await Task.Delay(20);
@@ -239,7 +226,7 @@ public abstract class RemoteTests
         probe2.Context.Unwatch(remoteActor);
         await Task.Delay(TimeSpan.FromSeconds(3));
 
-        System.Root.Stop(remoteActor);
+        await System.Root.StopAsync(remoteActor);
 
         var term = await probe1.ExpectSystemMessageAsync<Terminated>(TimeSpan.FromSeconds(10));
         Assert.Equal(remoteActor, term.Who);
@@ -253,9 +240,7 @@ public abstract class RemoteTests
     {
         var remoteActor = await SpawnRemoteActor(_fixture.RemoteAddress);
 
-        var probe = new TestProbe();
-        System.Root.Spawn(Props.FromProducer(() => probe));
-        await Task.Delay(20);
+        var (probe, _) = System.CreateTestProbe();
         probe.Context.Watch(remoteActor);
         await Task.Delay(20);
 
