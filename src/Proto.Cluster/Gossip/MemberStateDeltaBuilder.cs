@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Proto.Cluster.Gossip;
@@ -21,14 +22,28 @@ internal class MemberStateDeltaBuilder
         ImmutableDictionary<string, long> committedOffsets,
         Random rnd)
     {
-        var newState = new GossipState();
-        var pendingOffsets = committedOffsets;
-        var count = 0;
-
         var members = currentState
             .Members
             .Where(m => m.Key != targetMemberId)
             .OrderByRandom(rnd, m => m.Key == _myId);
+
+        return BuildOrdered(currentState, targetMemberId, committedOffsets, members, _gossipMaxSend);
+    }
+
+    /// <summary>
+    /// Calculates a member state delta based on a deterministic member sequence.
+    /// Returns a new state, updated offsets and a flag indicating if any state was sent.
+    /// </summary>
+    public static MemberStateDeltaBuildResult BuildOrdered(
+        GossipState currentState,
+        string targetMemberId,
+        ImmutableDictionary<string, long> committedOffsets,
+        IEnumerable<KeyValuePair<string, GossipState.Types.GossipMemberState>> members,
+        int gossipMaxSend)
+    {
+        var newState = new GossipState();
+        var pendingOffsets = committedOffsets;
+        var count = 0;
 
         foreach (var (memberId, memberState) in members)
         {
@@ -57,7 +72,7 @@ internal class MemberStateDeltaBuilder
                 newState.Members.Add(memberId, newMemberState);
                 pendingOffsets = pendingOffsets.SetItem(watermarkKey, newWatermark);
                 count++;
-                if (count >= _gossipMaxSend)
+                if (count >= gossipMaxSend)
                 {
                     break;
                 }
