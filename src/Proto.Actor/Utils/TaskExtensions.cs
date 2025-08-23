@@ -37,6 +37,7 @@ public static class TaskExtensions
                 _        => new CancellationTokenSource()
             };
 
+        // Compete the original task against a timeout to enforce upper execution bound
         var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token))
             .ConfigureAwait(false);
 

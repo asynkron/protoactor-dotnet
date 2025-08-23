@@ -324,6 +324,7 @@ public abstract class ClusterTests : ClusterTestBase
             var task = entryNode.RequestAsync<Ping>("non-existing", "gen-actor", new Ping(), tcs.Token);
             try
             {
+                // Bound the waiting time in case the request never completes
                 await Task.WhenAny(task, Task.Delay(entryNode.Config.ActorRequestTimeout.Add(TimeSpan.FromSeconds(2)), CancellationToken.None));
 
                 if (task.IsFaulted)
@@ -574,6 +575,7 @@ public abstract class ClusterTests : ClusterTestBase
 
             if (response == null)
             {
+                // Brief pause before retrying to avoid busy loop
                 await Task.Delay(200);
             }
         } while (response == null && !token.IsCancellationRequested);

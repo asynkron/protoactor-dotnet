@@ -41,6 +41,7 @@ public class EchoActor : IActor
 
                 break;
             case SlowPing ping:
+                // Simulate slow processing before responding
                 await Task.Delay(ping.DelayMs);
                 var slowPong = new Pong { Message = ping.Message, Kind = _initKind ?? "", Identity = _identity ?? "" };
                 Logger.LogDebug("Received SlowPing, replying Pong after {Delay} ms: {@Pong}", ping.DelayMs, slowPong);

@@ -255,6 +255,7 @@ public class ActorTests
                 {
                     try
                     {
+                        // Simulate long-running work that should be cancellable
                         await Task.Delay(5000, ctx.CancellationToken);
                     }
                     catch (Exception e)

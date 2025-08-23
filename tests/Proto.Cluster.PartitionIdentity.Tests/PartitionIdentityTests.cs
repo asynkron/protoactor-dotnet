@@ -109,6 +109,7 @@ public class PartitionIdentityTests
 
         while (!stop.IsCancellationRequested)
         {
+            // Report request throughput once per second
             await Task.Delay(TimeSpan.FromSeconds(1));
             var now = Interlocked.Read(ref _requests);
 
@@ -125,6 +126,7 @@ public class PartitionIdentityTests
         _output.WriteLine($"Stopped cluster in {timer.Elapsed}");
         
         // delay to reduce flakiness
+        // Delay to reduce flakiness when tearing down the cluster
         await Task.Delay(2000);
 
         var actorStates = fixture.Repository.Contents.ToList();
@@ -231,6 +233,7 @@ public class PartitionIdentityTests
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    // Randomize kill timing to simulate non-deterministic actor lifetimes
                     await Task.Delay(rnd.Next(50), cancellationToken);
                     var id = RandomIdentity(identities, rnd);
                     var member = clusterFixture.Members[rnd.Next(clusterFixture.Members.Count)];
@@ -265,6 +268,7 @@ public class PartitionIdentityTests
                 {
                     while (!cancellationToken.IsCancellationRequested)
                     {
+                        // Random delay between cluster membership changes
                         await Task.Delay(rnd.Next(10000), cancellationToken);
                         var spawn = rnd.Next() % 2 == 0;
 

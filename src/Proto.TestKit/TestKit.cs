@@ -60,6 +60,7 @@ public static class TestKit
                 return;
             }
 
+            // Pause briefly to avoid busy waiting before rechecking the condition
             await Task.Delay(PollInterval, cancellationToken).ConfigureAwait(false);
         }
 

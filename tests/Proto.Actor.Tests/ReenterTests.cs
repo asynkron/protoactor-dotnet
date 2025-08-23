@@ -25,6 +25,7 @@ public class ReenterTests : ActorTestBase
                 switch (ctx.Message)
                 {
                     case "reenter":
+                        // Simulate async processing before responding
                         await Task.Delay(500);
                         ctx.Respond("done");
 
@@ -56,6 +57,7 @@ public class ReenterTests : ActorTestBase
             {
                 if (ctx.Message is "reenter")
                 {
+                    // Simulate asynchronous work before reentering
                     var delay = Task.Delay(500);
                     ctx.ReenterAfter(delay, () =>
                     {
@@ -158,6 +160,7 @@ public class ReenterTests : ActorTestBase
                 {
                     var task = Task.Run(async () =>
                     {
+                        // Delay before throwing to emulate work that fails
                         await Task.Delay(100);
 
                         throw new Exception("Failed!");
@@ -220,6 +223,7 @@ public class ReenterTests : ActorTestBase
                     //use ++ on purpose, any race condition would make the counter go out of sync
                     counter++;
 
+                    // Immediate delay to schedule reenter continuation asynchronously
                     var task = Task.Delay(0);
 
                     ctx.ReenterAfter(task, () =>
@@ -266,6 +270,7 @@ public class ReenterTests : ActorTestBase
                         CancellationTokenSource cts = new();
 
                         ctx.ReenterAfter(
+                            // Wait indefinitely until cancellation triggered by restart
                             Task.Delay(-1, cts.Token),
                             () =>
                             {
@@ -324,6 +329,7 @@ public class ReenterTests : ActorTestBase
                     case "start":
 
                         ctx.ReenterAfter(
+                            // Wait indefinitely until cancellation token triggers on actor stop
                             Task.Delay(-1, cts.Token),
                             () =>
                             {

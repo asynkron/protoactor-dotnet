@@ -52,6 +52,7 @@ public static class Retry
                 }
 
                 var backoff = Math.Min(i * backoffMilliSeconds, maxBackoffMilliseconds);
+                // Wait using incremental backoff before retrying operation
                 await Task.Delay(backoff).ConfigureAwait(false);
             }
         }
@@ -82,6 +83,7 @@ public static class Retry
                 }
 
                 var backoff = Math.Min(i * backoffMilliSeconds, maxBackoffMilliseconds);
+                // Wait using incremental backoff before retrying operation
                 await Task.Delay(backoff).ConfigureAwait(false);
             }
         }
@@ -125,6 +127,7 @@ public static class Retry
                 }
 
                 var backoff = Math.Min(i * backoffMilliSeconds, maxBackoffMilliseconds);
+                // Wait using incremental backoff before retrying operation
                 await Task.Delay(backoff).ConfigureAwait(false);
             }
         }

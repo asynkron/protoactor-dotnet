@@ -81,6 +81,7 @@ public static class DynamoDBExtensions
 
             if (res.TableStatus != "ACTIVE")
             {
+                // Newly created table is not active yet; wait before verifying creation
                 await Task.Delay(2000).ConfigureAwait(false);
                 await dynamoDB.IsTableCreated(tableName, false).ConfigureAwait(false);
             }

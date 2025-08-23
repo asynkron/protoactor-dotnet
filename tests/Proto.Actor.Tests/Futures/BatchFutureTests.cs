@@ -96,6 +96,7 @@ public class BatchFutureTests : ActorTestBase
                 {
                     if (ctx.Sender is not null)
                     {
+                        // Delay just enough to trigger timeout in test
                         await Task.Delay(1);
                         ctx.Respond(ctx.Message!);
                     }

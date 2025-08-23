@@ -58,6 +58,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         await VerifyTrace(async (rootContext, target) =>
             {
                 rootContext.Send(target, new TraceMe(SendAs.Send));
+                // Allow trace propagation before verifying
                 await Task.Delay(100);
             }
         );
@@ -76,6 +77,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         await VerifyTrace(async (rootContext, target) =>
             {
                 rootContext.Request(target, new TraceMe(SendAs.Request));
+                // Allow trace propagation before verifying
                 await Task.Delay(100);
             }
         );
@@ -164,6 +166,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
             {
                 Baggage.Current = TestBaggage;
                 rootContext.Request(target, new TraceMe(SendAs.Request));
+                // Allow trace propagation before verifying
                 await Task.Delay(100);
             }
         );
@@ -238,6 +241,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         var (_, activityTraceId) = await Trace(async () =>
             {
                 tracedRoot.Send(testRoot, new TraceMe(SendAs.Invalid));
+                // Wait for the actor to process and record exception trace
                 await Task.Delay(500);
             }
         );

@@ -64,6 +64,7 @@ public class SchedulerTests
 
         await hook.WaitAsync();
         cts.Cancel();
+        // Give the cancellation time to propagate before advancing the clock
         await Task.Delay(50);
 
         timeProvider.Advance(TimeSpan.FromMinutes(1));
@@ -121,6 +122,7 @@ public class SchedulerTests
         await Task.Delay(50);
 
         timeProvider.Advance(TimeSpan.FromSeconds(10));
+        // Allow scheduled callbacks to execute after advancing time
         await Task.Delay(50);
 
         await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(50));

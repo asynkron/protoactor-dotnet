@@ -13,6 +13,7 @@ namespace Proto.TestKit.Tests
             var value = 0;
             _ = Task.Run(async () =>
             {
+                // Update value asynchronously after short delay
                 await Task.Delay(50);
                 value = 1;
             });

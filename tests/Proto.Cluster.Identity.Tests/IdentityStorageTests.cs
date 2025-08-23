@@ -291,6 +291,7 @@ public abstract class IdentityStorageTests : IDisposable
 
         _ = SafeTask.Run(async () =>
             {
+                // Simulate activation being stored asynchronously after a delay
                 await Task.Delay(500, timeout);
                 await _storage.StoreActivation(activator.Id, spawnLock!, pid, timeout);
             }, timeout

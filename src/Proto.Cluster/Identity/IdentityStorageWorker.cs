@@ -184,6 +184,7 @@ internal class IdentityStorageWorker : IActor
                         _logger.LogWarning(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
                     }
 
+                    // Exponential backoff before retrying activation retrieval
                     await Task.Delay(tries * 20).ConfigureAwait(false);
                 }
                 catch (Exception e)
@@ -198,6 +199,7 @@ internal class IdentityStorageWorker : IActor
                         _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
                     }
 
+                    // Exponential backoff before retrying after failure
                     await Task.Delay(tries * 20).ConfigureAwait(false);
                 }
             }

@@ -122,6 +122,7 @@ internal class IdentityActivatorProxy : IActor
                                 replacedPid, identity, attempt);
                         }
 
+                        // Back off before retrying to replace activation and avoid rapid retry loops
                         context.ReenterAfter(Task.Delay(50 * attempt),
                             _ => ReplaceActivation(identity, replacedPid, context, attempt + 1));
 

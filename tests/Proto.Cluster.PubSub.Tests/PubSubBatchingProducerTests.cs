@@ -270,6 +270,7 @@ public class PubSubBatchingProducerTests
 
     private async Task<PublishResponse> Wait(PubSubBatch _)
     {
+        // Simulate a slow publisher call
         await Task.Delay(1000);
 
         return new PublishResponse();
@@ -278,6 +279,7 @@ public class PubSubBatchingProducerTests
     private Func<PubSubBatch, Task<PublishResponse>> Wait(int ms = 1000) =>
         async _ =>
         {
+            // Simulate configurable processing delay
             await Task.Delay(ms);
 
             return new PublishResponse();
@@ -285,6 +287,7 @@ public class PubSubBatchingProducerTests
 
     private async Task<PublishResponse> WaitThenFail(PubSubBatch _)
     {
+        // Delay before failing to mimic transient issues
         await Task.Delay(500);
 
         throw new TestException();
@@ -293,6 +296,7 @@ public class PubSubBatchingProducerTests
     private Func<PubSubBatch, Task<PublishResponse>> WaitThenRecord(int ms = 500) =>
         async batch =>
         {
+            // Delay before recording to simulate batching latency
             await Task.Delay(ms);
 
             var copy = new PubSubBatch();

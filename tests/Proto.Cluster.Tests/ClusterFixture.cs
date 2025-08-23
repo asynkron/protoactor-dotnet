@@ -112,6 +112,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
         ),
         new ClusterKind(EchoActor.AsyncFilteredKind, EchoActor.Props).WithSpawnPredicate(async (identity, ct) =>
             {
+                // Simulate async predicate work before deciding spawn
                 await Task.Delay(100, ct);
 
                 return !identity.Equals(InvalidIdentity, StringComparison.InvariantCultureIgnoreCase);

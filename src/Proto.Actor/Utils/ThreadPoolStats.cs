@@ -21,6 +21,7 @@ public static class ThreadPoolStats
 
         while (!cancellationToken.IsCancellationRequested)
         {
+            // Wait for the configured sampling interval before measuring again
             await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
             var t1 = DateTime.UtcNow;
 

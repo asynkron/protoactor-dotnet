@@ -191,7 +191,7 @@ public class ConsulProvider : IClusterProvider
                         {
                             _logger.LogError(x, "Consul Monitor failed");
 
-                            //just backoff and try again
+                            // Back off briefly before retrying the Consul query
                             await Task.Delay(2000).ConfigureAwait(false);
                         }
                     }
@@ -222,6 +222,7 @@ public class ConsulProvider : IClusterProvider
                     try
                     {
                         await _client.Agent.PassTTL("service:" + _consulServiceInstanceId, "").ConfigureAwait(false);
+                        // Wait until the TTL needs refreshing again
                         await Task.Delay(_refreshTtl, _cluster.System.Shutdown).ConfigureAwait(false);
                     }
                     catch (Exception x)
