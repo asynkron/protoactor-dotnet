@@ -6,6 +6,7 @@
 
 ## Coding guidelines
 - Always add a detailed log of what you have done, and a strong motivation why the change was required. add this log to /logs with a filename of "log" + unixtimestamp + ".md".
+- Whenever a prompt contains an .NET exception, document this specific exception in /logs/exceptions.md, failed test name as ### header, important details about the failure as `code`, so we can keep track of failures. if exceptions.md already exists, just append at the end
 - Prefer immutable data structures over mutable variants
 - Any hardcoded Task.Delay must have a descriptive comment
 - Prefer functional programming style over object orientation when possible.
