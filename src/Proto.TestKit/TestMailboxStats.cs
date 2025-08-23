@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,22 +24,29 @@ public class TestMailboxStats : IMailboxStatistics
     }
 
     public ManualResetEventSlim Reset { get; } = new();
-    public List<object> Stats { get; } = new();
-    public List<object> Posted { get; } = new();
-    public List<object> Received { get; } = new();
 
-    public void MailboxStarted() => Stats.Add("Started");
+    // concurrent queues allow lock-free, thread-safe enumeration in tests
+    private readonly ConcurrentQueue<object> _stats = new();
+    private readonly ConcurrentQueue<object> _posted = new();
+    private readonly ConcurrentQueue<object> _received = new();
+
+    // snapshot queues as arrays to keep API compatible with IReadOnlyList
+    public IReadOnlyList<object> Stats => _stats.ToArray();
+    public IReadOnlyList<object> Posted => _posted.ToArray();
+    public IReadOnlyList<object> Received => _received.ToArray();
+
+    public void MailboxStarted() => _stats.Enqueue("Started");
 
     public void MessagePosted(object message)
     {
-        Stats.Add(message);
-        Posted.Add(message);
+        _stats.Enqueue(message);
+        _posted.Enqueue(message);
     }
 
     public void MessageReceived(object message)
     {
-        Stats.Add(message);
-        Received.Add(message);
+        _stats.Enqueue(message);
+        _received.Enqueue(message);
 
         if (_waitForReceived is not null && _waitForReceived(message))
         {
@@ -46,7 +54,7 @@ public class TestMailboxStats : IMailboxStatistics
         }
     }
 
-    public void MailboxEmpty() => Stats.Add("Empty");
+    public void MailboxEmpty() => _stats.Enqueue("Empty");
 
     /// <summary>
     /// Asynchronously waits until <see cref="Reset"/> is signaled or the <paramref name="timeout"/> elapses.
