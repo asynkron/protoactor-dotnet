@@ -62,67 +62,59 @@ internal static class GossipStateManagement
         return memberState;
     }
 
-    public static IReadOnlyCollection<GossipUpdate> MergeState(
+    // Merge two states and return the new state and associated updates without touching the inputs
+    public static (GossipState newState, IReadOnlyCollection<GossipUpdate> updates, HashSet<string> updatedKeys) MergeStates(
         GossipState localState,
-        GossipState remoteState,
-        out GossipState newState,
-        out HashSet<string> updatedKeys
+        GossipState remoteState
     )
     {
-        newState = localState.Clone();
+        var newState = localState.Clone();
         var updates = new List<GossipUpdate>();
-        updatedKeys = new HashSet<string>();
+        var updatedKeys = new HashSet<string>();
 
         foreach (var (memberId, remoteMemberState) in remoteState.Members)
         {
-            //this entry does not exist in newState, just copy all of it
-            if (!newState.Members.ContainsKey(memberId))
+            if (!newState.Members.TryGetValue(memberId, out var newMemberState))
             {
-                newState.Members.Add(memberId, remoteMemberState);
+                var clonedMemberState = remoteMemberState.Clone();
 
-                foreach (var entry in remoteMemberState.Values)
+                foreach (var (key, value) in clonedMemberState.Values)
                 {
-                    updates.Add(new GossipUpdate(memberId, entry.Key, entry.Value.Value, entry.Value.SequenceNumber));
-                    entry.Value.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    updatedKeys.Add(entry.Key);
+                    value.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    updates.Add(new GossipUpdate(memberId, key, value.Value, value.SequenceNumber));
+                    updatedKeys.Add(key);
                 }
 
+                newState.Members.Add(memberId, clonedMemberState);
                 continue;
             }
 
-            //this entry exists in both newState and remoteState, we should merge them
-            var newMemberState = newState.Members[memberId];
-
             foreach (var (key, remoteValue) in remoteMemberState.Values)
             {
-                //this entry does not exist in newMemberState, just copy all of it
-                if (!newMemberState.Values.ContainsKey(key))
+                if (!newMemberState.Values.TryGetValue(key, out var existingValue))
                 {
-                    newMemberState.Values.Add(key, remoteValue);
-                    updates.Add(new GossipUpdate(memberId, key, remoteValue.Value, remoteValue.SequenceNumber));
-                    remoteValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    var newValue = remoteValue.Clone();
+                    newValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    newMemberState.Values.Add(key, newValue);
+                    updates.Add(new GossipUpdate(memberId, key, newValue.Value, newValue.SequenceNumber));
                     updatedKeys.Add(key);
-
                     continue;
                 }
 
-                var newValue = newMemberState.Values[key];
-
-                //remote value is older, ignore
-                if (remoteValue.SequenceNumber <= newValue.SequenceNumber)
+                if (remoteValue.SequenceNumber <= existingValue.SequenceNumber)
                 {
                     continue;
                 }
 
-                //just replace the existing value
-                newMemberState.Values[key] = remoteValue;
-                updates.Add(new GossipUpdate(memberId, key, remoteValue.Value, remoteValue.SequenceNumber));
-                remoteValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var replacedValue = remoteValue.Clone();
+                replacedValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                newMemberState.Values[key] = replacedValue;
+                updates.Add(new GossipUpdate(memberId, key, replacedValue.Value, replacedValue.SequenceNumber));
                 updatedKeys.Add(key);
             }
         }
 
-        return updates;
+        return (newState, updates, updatedKeys);
     }
 
     public static long SetKey(GossipState state, string key, IMessage value, string memberId, long sequenceNo)
