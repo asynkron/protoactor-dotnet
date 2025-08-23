@@ -64,7 +64,7 @@ internal class Gossip
     private readonly int _gossipMaxSend;
     private readonly InstanceLogger? _logger;
     private readonly string _myId;
-    private readonly Random _rnd = new();
+    private readonly IRandomProvider _random;
     private readonly MemberStateDeltaBuilder _memberStateDeltaBuilder;
     private ImmutableHashSet<string> _activeMemberIds = ImmutableHashSet<string>.Empty;
     private ImmutableDictionary<string, long> _committedOffsets = ImmutableDictionary<string, long>.Empty;
@@ -73,7 +73,7 @@ internal class Gossip
     private GossipState _state = new();
 
     public Gossip(string myId, int gossipFanout, int gossipMaxSend, InstanceLogger? logger,
-        Func<ImmutableHashSet<string>> getMembers, bool gossipDebugLogging)
+        Func<ImmutableHashSet<string>> getMembers, bool gossipDebugLogging, IRandomProvider? randomProvider = null)
     {
         _myId = myId;
         _logger = logger;
@@ -81,6 +81,7 @@ internal class Gossip
         _gossipDebugLogging = gossipDebugLogging;
         _gossipFanout = gossipFanout;
         _gossipMaxSend = gossipMaxSend;
+        _random = randomProvider ?? new SystemRandomProvider();
         _memberStateDeltaBuilder = new MemberStateDeltaBuilder(myId, gossipMaxSend);
     }
 
@@ -193,7 +194,7 @@ internal class Gossip
                 GossipStateManagement.EnsureMemberStateExists(_state, member.Id);
             }
 
-            var randomMembers = _otherMembers.OrderByRandom(_rnd).ToArray();
+            var randomMembers = _otherMembers.OrderByRandom(_random).ToArray();
 
             var fanoutCount = 0;
 
@@ -233,7 +234,7 @@ internal class Gossip
     public MemberStateDelta GetMemberStateDelta(string targetMemberId)
     {
         var (state, pendingOffsets, hasState) =
-            _memberStateDeltaBuilder.Build(_state, targetMemberId, _committedOffsets, _rnd);
+            _memberStateDeltaBuilder.Build(_state, targetMemberId, _committedOffsets, _random);
 
         return new MemberStateDelta(targetMemberId, hasState, state, () => CommitPendingOffsets(pendingOffsets));
     }
