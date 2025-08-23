@@ -1,69 +1,89 @@
 # Proto.TestKit
 
-`Proto.TestKit` provides utilities for writing unit tests against Proto.Actor components.
+`Proto.TestKit` provides helpers for unit testing Proto.Actor systems. Each feature is
+exposed as a dedicated class with optional extensions.
 
-## TestProbe: observing messages
+## TestProbe
 
-`TestProbe` is an actor that records incoming messages asynchronously. Use it to verify
-that actors send the expected messages or to assert that no messages are received
-within a given period.
+`TestProbe` is an actor that records messages and exposes methods to inspect or assert
+on them. It implements `ITestProbe`.
+
+### Creating a probe
+
+Use the `ActorSystem` or `RootContext` extensions to create and spawn a probe in one
+step:
 
 ```csharp
-var probe = new TestProbe();
-system.Root.Spawn(Props.FromProducer(() => probe));
+var root = system.Root;
+var (probe, pid) = root.CreateTestProbe();
+root.Send(pid, "ping");
 await probe.ExpectNextUserMessageAsync<string>();
 await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(100));
 ```
 
-Practical when: you need fine‑grained assertions about message flow without modifying
-the actors under test.
+### Attaching probes to actors
 
-## Mailbox statistics
-
-`TestMailboxStats` captures mailbox activity such as posted and received messages. It helps
-diagnose how an actor uses its mailbox and whether specific messages were enqueued.
+`Props` extensions let a probe observe actor communication:
 
 ```csharp
-var stats = new TestMailboxStats(msg => msg is MyMessage);
+var (probe, _) = system.CreateTestProbe();
 var props = Props.FromProducer(() => new MyActor())
-    .WithMailbox(() => UnboundedMailbox.Create(stats));
+    .WithReceiveProbe(probe)   // messages after processing
+    .WithSendProbe(probe)      // messages sent by the actor
+    .WithMailboxProbe(probe);  // mailbox traffic via ProbeMailboxStatistics
+
+system.Root.Spawn(props);
 ```
 
-Practical when: you want insight into mailbox throughput or to confirm that particular
-messages entered the mailbox.
+These helpers allow inspection of message flow without modifying actor code.
 
-## Props extensions
+## TestMailboxStats
 
-The TestKit includes `Props` extensions that instrument actors:
+`TestMailboxStats` implements `IMailboxStatistics` and collects posted/received
+messages. Configure it via `WithTestMailboxStats`:
 
-- `WithReceiveProbe` intercepts messages an actor receives.
-- `WithSendProbe` observes messages an actor sends.
-- `WithMailboxProbe` taps into mailbox traffic using `ProbeMailboxStatistics`.
+```csharp
+var stats = new TestMailboxStats(m => m is MyMessage);
+var props = Props.FromProducer(() => new MyActor())
+    .WithTestMailboxStats(stats);
+var pid = system.Root.Spawn(props);
+await stats.WaitForResetAsync(TimeSpan.FromSeconds(1));
+```
 
-These helpers are useful when debugging complex message interactions while keeping
-the actor code unchanged.
+Use it to verify that specific messages enter or leave the mailbox.
 
-## Awaiting Conditions
+## ProbeMailboxStatistics
 
-Use `AwaitConditionAsync` to poll for a condition until it becomes true:
+`ProbeMailboxStatistics` forwards each processed mailbox message to a `TestProbe`. It
+is used by `Props.WithMailboxProbe`:
+
+```csharp
+var (probe, _) = system.CreateTestProbe();
+var props = Props.FromProducer(() => new MyActor())
+    .WithMailboxProbe(probe);
+```
+
+## TestKit
+
+`TestKit` exposes utilities such as `AwaitConditionAsync` for polling conditions:
 
 ```csharp
 using static Proto.TestKit.TestKit;
 
-await AwaitConditionAsync(() => value == expected, TimeSpan.FromSeconds(5), "value was never updated");
+await AwaitConditionAsync(() => state.Ready, TimeSpan.FromSeconds(5),
+    "state not ready");
 ```
 
-The helper evaluates the condition every 20ms and throws a `TimeoutException`—including
-the optional message—if the condition is not met within the supplied timeout.
+## TestKitException
 
-Practical when: a test depends on asynchronous state changes and busy‑waiting would
-introduce flakiness.
+`TestKitException` is thrown when probe expectations fail. Catch it to obtain detailed
+error information during tests.
 
-## Deterministic Scheduler Tests
+## ISchedulerHook
 
-`Proto.Timers` exposes a test hook, `ISchedulerHook`, that signals when a `Scheduler`
-has registered its internal `Task.Delay` timer. When testing with `FakeTimeProvider`,
-await this hook before advancing time to avoid flakiness:
+`ISchedulerHook` (defined in `Proto.Actor`) can be implemented by tests to observe when
+a `Scheduler` registers internal timers. This enables deterministic timer tests, for
+example with a fake time provider:
 
 ```csharp
 var hook = new TestSchedulerHook();
@@ -74,8 +94,6 @@ await hook.WaitAsync();
 fakeTimeProvider.Advance(TimeSpan.FromSeconds(5));
 ```
 
-Implement `ISchedulerHook` with a `TaskCompletionSource` to observe timer registration.
-This allows tests to deterministically control when scheduled messages are delivered.
-
-Practical when: verifying behavior that relies on timers or scheduled messages.
+Implement the hook with a `TaskCompletionSource` to await timer registration before
+advancing time.
 
