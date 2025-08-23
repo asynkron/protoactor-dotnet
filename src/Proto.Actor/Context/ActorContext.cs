@@ -34,10 +34,12 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     private object? _messageOrEnvelope;
     private ContextState _state;
     
-    private readonly ShouldThrottle _shouldThrottleStartLogs = Throttle.Create(1000,TimeSpan.FromSeconds(1), droppedLogs =>
-    {
-        Logger.ActorContextThrottledLogs(droppedLogs);
-    } );
+    private readonly ShouldThrottle _shouldThrottleStartLogs = Throttle.Create(
+        1000,
+        TimeSpan.FromSeconds(1),
+        droppedLogs => { Logger.ActorContextThrottledLogs(droppedLogs); },
+        CancellationToken.None
+    );
 
 
     private ActorContext(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)

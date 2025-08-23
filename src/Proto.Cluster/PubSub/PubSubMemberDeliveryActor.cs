@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
@@ -15,8 +16,11 @@ namespace Proto.Cluster.PubSub;
 
 public class PubSubMemberDeliveryActor : IActor
 {
-    private static readonly ShouldThrottle LogThrottle = Throttle.Create(10, TimeSpan.FromSeconds(1),
-        droppedLogs => Logger?.LogInformation("[PubSubMemberDeliveryActor] Throttled {LogCount} logs", droppedLogs)
+    private static readonly ShouldThrottle LogThrottle = Throttle.Create(
+        10,
+        TimeSpan.FromSeconds(1),
+        droppedLogs => Logger?.LogInformation("[PubSubMemberDeliveryActor] Throttled {LogCount} logs", droppedLogs),
+        CancellationToken.None
     );
 
     private static readonly ILogger Logger = Log.CreateLogger<PubSubMemberDeliveryActor>();

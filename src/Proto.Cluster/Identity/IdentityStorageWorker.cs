@@ -32,16 +32,17 @@ internal class IdentityStorageWorker : IActor
 
     public IdentityStorageWorker(IdentityStorageLookup storageLookup)
     {
-        _shouldThrottle = Throttle.Create(
-            10,
-            TimeSpan.FromSeconds(5),
-            i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs", i)
-        );
-
         _cluster = storageLookup.Cluster;
         _memberList = storageLookup.MemberList;
         _lookup = storageLookup;
         _storage = storageLookup.Storage;
+
+        _shouldThrottle = Throttle.Create(
+            10,
+            TimeSpan.FromSeconds(5),
+            i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs", i),
+            _cluster.System.Shutdown
+        );
     }
 
     public Task ReceiveAsync(IContext context)

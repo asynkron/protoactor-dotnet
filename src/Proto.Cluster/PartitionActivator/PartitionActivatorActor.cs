@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
@@ -23,7 +24,9 @@ public class PartitionActivatorActor : IActor
     private readonly PartitionActivatorManager _manager;
     private readonly string _myAddress;
 
-    private readonly ShouldThrottle _wrongPartitionLogThrottle = Throttle.Create(1, TimeSpan.FromSeconds(1),
+    private readonly ShouldThrottle _wrongPartitionLogThrottle = Throttle.Create(
+        1,
+        TimeSpan.FromSeconds(1),
         wrongNodeCount =>
         {
             if (wrongNodeCount > 1)
@@ -31,7 +34,8 @@ public class PartitionActivatorActor : IActor
                 Logger.LogWarning("[PartitionActivator] Forwarded {SpawnCount} attempts to spawn on wrong node",
                     wrongNodeCount);
             }
-        }
+        },
+        CancellationToken.None
     );
 
     private ulong _topologyHash;

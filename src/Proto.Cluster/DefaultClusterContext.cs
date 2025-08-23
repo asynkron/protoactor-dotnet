@@ -42,7 +42,8 @@ public class DefaultClusterContext : IClusterContext
         _requestLogThrottle = Throttle.Create(
             config.MaxNumberOfEventsInRequestLogThrottlePeriod,
             config.RequestLogThrottlePeriod,
-            i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i)
+            i => Logger.LogInformation("Throttled {LogCount} TryRequestAsync logs", i),
+            _system.Shutdown
         );
 
         _requestTimeoutSeconds = (int)config.ActorRequestTimeout.TotalSeconds;

@@ -38,9 +38,11 @@ public class EventStream : EventStream<object>
             return;
         }
 
-        var shouldThrottle = Throttle.Create(system.Config.DeadLetterThrottleCount,
+        var shouldThrottle = Throttle.Create(
+            system.Config.DeadLetterThrottleCount,
             system.Config.DeadLetterThrottleInterval,
-            droppedLogs => _logger.DeadLetterThrottled(droppedLogs)
+            droppedLogs => _logger.DeadLetterThrottled(droppedLogs),
+            system.Shutdown
         );
 
         Subscribe<DeadLetterEvent>(

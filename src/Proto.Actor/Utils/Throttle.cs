@@ -48,6 +48,7 @@ public static class Throttle
     /// <param name="maxEventsInPeriod">Event limit</param>
     /// <param name="period">Time window to verify event limit</param>
     /// <param name="throttledCallBack">This will be called with the number of events that was throttled after the period</param>
+    /// <param name="token">Cancellation token to abort waiting for the throttle window</param>
     /// <returns>
     ///     <see cref="ShouldThrottle" /> delegate that records an event when called, and returns current state of the
     ///     throttle valve
@@ -55,7 +56,8 @@ public static class Throttle
     public static ShouldThrottle Create(
         int maxEventsInPeriod,
         TimeSpan period,
-        Action<int>? throttledCallBack = null
+        Action<int>? throttledCallBack = null,
+        CancellationToken token = default
     )
     {
         if (maxEventsInPeriod == 0)
@@ -90,7 +92,8 @@ public static class Throttle
         void StartTimer(Action<int>? callBack) =>
             _ = SafeTask.Run(async () =>
                 {
-                    await Task.Delay(period).ConfigureAwait(false);
+                    // Defines the throttle window
+                    await Task.Delay(period, token).ConfigureAwait(false);
                     var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
 
                     if (timesCalled > maxEventsInPeriod)
@@ -103,9 +106,10 @@ public static class Throttle
 
     public static ShouldThrottle Create(
         this ThrottleOptions options,
-        Action<int>? throttledCallBack = null
+        Action<int>? throttledCallBack = null,
+        CancellationToken token = default
     ) =>
-        Create(options.MaxEventsInPeriod, options.Period, throttledCallBack);
+        Create(options.MaxEventsInPeriod, options.Period, throttledCallBack, token);
 
     public static bool IsOpen(this Valve valve) => valve != Valve.Closed;
 }

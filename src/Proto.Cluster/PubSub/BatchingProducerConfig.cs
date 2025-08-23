@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
@@ -23,8 +24,11 @@ public record BatchingProducerConfig
 {
     private static readonly ILogger Logger = Log.CreateLogger<BatchingProducer>();
 
-    private static readonly ShouldThrottle DefaultLogThrottle = Throttle.Create(3, TimeSpan.FromSeconds(10),
-        droppedLogs => Logger.LogInformation("[BatchingProducer] Throttled {LogCount} logs", droppedLogs)
+    private static readonly ShouldThrottle DefaultLogThrottle = Throttle.Create(
+        3,
+        TimeSpan.FromSeconds(10),
+        droppedLogs => Logger.LogInformation("[BatchingProducer] Throttled {LogCount} logs", droppedLogs),
+        CancellationToken.None
     );
 
     /// <summary>

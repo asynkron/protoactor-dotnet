@@ -20,8 +20,12 @@ public sealed class TopicActor : IActor
     public const string
         Kind = "prototopic"; // only alphanum in the name, to maximize chances it works on all clustering providers
 
-    private static readonly ShouldThrottle LogThrottle = Throttle.Create(10, TimeSpan.FromSeconds(1),
-        droppedLogs => Logger?.LogInformation("[TopicActor] Throttled {LogCount} logs", droppedLogs));
+    private static readonly ShouldThrottle LogThrottle = Throttle.Create(
+        10,
+        TimeSpan.FromSeconds(1),
+        droppedLogs => Logger?.LogInformation("[TopicActor] Throttled {LogCount} logs", droppedLogs),
+        CancellationToken.None
+    );
 
     private static readonly ILogger Logger = Log.CreateLogger<TopicActor>();
     private readonly IKeyValueStore<Subscribers> _subscriptionStore;
