@@ -72,4 +72,51 @@ public class ClusterTopologyBuilderTests
         Assert.Empty(topology.Joined);
         Assert.Equal(new[] { "1", "2" }, topology.Members.Select(m => m.Id).OrderBy(x => x));
     }
+
+    [Fact]
+    public void Compute_MultiStepTransitionsRespectBlockList()
+    {
+        var m1 = CreateMember("1");
+        var m2 = CreateMember("2");
+        var m3 = CreateMember("3");
+
+        var active = ImmutableMemberSet.Empty;
+        var blocked = ImmutableHashSet<string>.Empty;
+
+        var step1 = ClusterTopologyBuilder.Compute(active, new[] { m1, m2 }, blocked);
+        Assert.Equal(new[] { "1", "2" }, step1.Joined.Members.Select(m => m.Id).OrderBy(x => x));
+        Assert.Empty(step1.Left.Members);
+        active = step1.ActiveMembers;
+
+        blocked = blocked.Add(m2.Id);
+        var step2 = ClusterTopologyBuilder.Compute(active, new[] { m1, m2 }, blocked);
+        Assert.Equal(new[] { "2" }, step2.Left.Members.Select(m => m.Id));
+        Assert.Empty(step2.Joined.Members);
+        active = step2.ActiveMembers;
+
+        var step3 = ClusterTopologyBuilder.Compute(active, new[] { m1, m3 }, blocked);
+        Assert.Equal(new[] { "3" }, step3.Joined.Members.Select(m => m.Id));
+        Assert.Empty(step3.Left.Members);
+    }
+
+    [Fact]
+    public void Compute_IgnoresBlockedMembersRejoining()
+    {
+        var m1 = CreateMember("1");
+
+        var active = ImmutableMemberSet.Empty;
+        var blocked = ImmutableHashSet<string>.Empty;
+
+        var step1 = ClusterTopologyBuilder.Compute(active, new[] { m1 }, blocked);
+        active = step1.ActiveMembers;
+
+        blocked = blocked.Add(m1.Id);
+        var step2 = ClusterTopologyBuilder.Compute(active, new[] { m1 }, blocked);
+        Assert.Equal(new[] { "1" }, step2.Left.Members.Select(m => m.Id));
+        active = step2.ActiveMembers;
+
+        var step3 = ClusterTopologyBuilder.Compute(active, new[] { m1 }, blocked);
+        Assert.Empty(step3.Joined.Members);
+        Assert.Empty(step3.ActiveMembers.Members);
+    }
 }
