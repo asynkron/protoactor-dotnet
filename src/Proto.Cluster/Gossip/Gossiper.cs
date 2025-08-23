@@ -198,15 +198,12 @@ public class Gossiper
             _cluster.Config.GossipDebugLogging);
 
         var props = Props.FromProducer(() => new GossipActor(
-            _cluster.System,
             _cluster.Config.GossipRequestTimeout,
-            _cluster.System.Logger(),
-            _cluster.Config.GossipFanout,
-            _cluster.Config.GossipMaxSend,
             _gossip,
             transport ?? new GossipTransport(),
             _cluster.MemberList,
-            _cluster.System.Remote().BlockList));
+            _cluster.System.Remote().BlockList,
+            _cluster.Config.GossipDebugLogging));
 
         _pid = _context.SpawnNamedSystem(props, GossipActorName);
         _cluster.System.EventStream.Subscribe<ClusterTopology>(topology =>
