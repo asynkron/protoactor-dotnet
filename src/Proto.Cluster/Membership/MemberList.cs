@@ -164,151 +164,165 @@ public record MemberList
 
         lock (_lock)
         {
-            if (Logger.IsEnabled(LogLevel.Debug))
-            {
-                Logger.LogDebug("[MemberList] Updating Cluster Topology");
-            }
+            Logger.LogDebug("[MemberList] Updating Cluster Topology");
 
             if (blockList.IsBlocked(_system.Id))
             {
                 SelfBlocked();
-
                 return;
             }
 
-            //TLDR:
-            //this method filters out any member status in the blocked list
-            //then makes a delta between new and old members
-            //notifying the cluster accordingly which members left or joined
-
-            var activeMembers = new ImmutableMemberSet(members.ToArray()).Except(blockList.BlockedMembers);
+            var (activeMembers, left, joined) =
+                ComputeTopologyChanges(_activeMembers, members, blockList.BlockedMembers);
 
             if (activeMembers.Equals(_activeMembers))
             {
                 return;
             }
 
-            activeMembers = RemoveDuplicateAddresses(activeMembers);
-
-            // Cancel any work based on the previous topology
             _currentTopologyTokenSource?.Cancel();
             _currentTopologyTokenSource = new CancellationTokenSource();
 
-            var left = _activeMembers.Except(activeMembers);
-            var joined = activeMembers.Except(_activeMembers);
             blockList.Block(left.Members.Select(m => m.Id), "Member left cluster");
             _activeMembers = activeMembers;
 
-            //notify that these members left
-            foreach (var memberThatLeft in left.Members)
+            foreach (var member in left.Members)
             {
-                MemberLeave(memberThatLeft);
-                TerminateMember(memberThatLeft);
+                HandleMemberLeave(member);
+                TerminateMember(member);
             }
 
-            //notify that these members joined
-            foreach (var memberThatJoined in joined.Members)
+            foreach (var member in joined.Members)
             {
-                MemberJoin(memberThatJoined);
+                HandleMemberJoin(member);
             }
 
-            var topology = new ClusterTopology
-            {
-                TopologyHash = activeMembers.TopologyHash,
-                Members = { activeMembers.Members },
-                Left = { left.Members },
-                Joined = { joined.Members },
-                Blocked = { blockList.BlockedMembers },
-                TopologyValidityToken = _currentTopologyTokenSource.Token
-            };
+            var topology = BuildTopology(activeMembers, left, joined, blockList.BlockedMembers);
 
-            if (Logger.IsEnabled(LogLevel.Debug))
-            {
-                Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
-            }
-
-            if (topology.Joined.Any())
-            {
-                Logger.ClusterMembersJoined(topology.Joined);
-            }
-
-            if (topology.Left.Any())
-            {
-                Logger.ClusterMembersLeft(topology.Left);
-            }
-
+            LogTopologyChanges(topology);
             BroadcastTopologyChanges(topology);
+            TrySetStarted(activeMembers);
+        }
+    }
 
-            if (!_startedTcs.Task.IsCompleted)
+    internal static (ImmutableMemberSet ActiveMembers, ImmutableMemberSet Left, ImmutableMemberSet Joined)
+        ComputeTopologyChanges(
+            ImmutableMemberSet previousMembers,
+            IReadOnlyCollection<Member> newMembers,
+            ImmutableHashSet<string> blockedMembers
+        )
+    {
+        var active = new ImmutableMemberSet(newMembers.ToArray()).Except(blockedMembers);
+        active = RemoveDuplicateAddresses(active);
+        var left = previousMembers.Except(active);
+        var joined = active.Except(previousMembers);
+        return (active, left, joined);
+    }
+
+    private void HandleMemberLeave(Member memberThatLeft)
+    {
+        foreach (var k in memberThatLeft.Kinds)
+        {
+            if (!_memberStrategyByKind.TryGetValue(k, out var ms))
             {
-                if (_isClient || activeMembers.Contains(_system.Id))
-                {
-                    _startedTcs.TrySetResult(true);
-                }
+                continue;
+            }
+
+            ms.RemoveMember(memberThatLeft);
+
+            if (ms.GetAllMembers().Count == 0)
+            {
+                _memberStrategyByKind = _memberStrategyByKind.Remove(k);
             }
         }
 
-        void MemberLeave(Member memberThatLeft)
+        if (_metaMembers.TryGetValue(memberThatLeft.Id, out var meta))
         {
-            //update MemberStrategy
-            foreach (var k in memberThatLeft.Kinds)
+            _membersByIndex = _membersByIndex.Remove(meta.Index);
+
+            if (_indexByAddress.TryGetValue(memberThatLeft.Address, out _))
             {
-                if (!_memberStrategyByKind.TryGetValue(k, out var ms))
-                {
-                    continue;
-                }
-
-                ms.RemoveMember(memberThatLeft);
-
-                if (ms.GetAllMembers().Count == 0)
-                {
-                    _memberStrategyByKind = _memberStrategyByKind.Remove(k);
-                }
+                _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
             }
 
-            if (_metaMembers.TryGetValue(memberThatLeft.Id, out var meta))
-            {
-                _membersByIndex = _membersByIndex.Remove(meta.Index);
+            _metaMembers = _metaMembers.Remove(memberThatLeft.Id);
+        }
+    }
 
-                if (_indexByAddress.TryGetValue(memberThatLeft.Address, out _))
+    private void HandleMemberJoin(Member newMember)
+    {
+        try
+        {
+            if (_metaMembers.ContainsKey(newMember.Id))
+            {
+                Logger.LogError("Member {Member} already exists in MemberList", newMember);
+                return;
+            }
+
+            var index = _nextMemberIndex++;
+            _metaMembers = _metaMembers.SetItem(newMember.Id, new MetaMember(newMember, index));
+            _membersByIndex = _membersByIndex.SetItem(index, newMember);
+            _indexByAddress = _indexByAddress.SetItem(newMember.Address, index);
+
+            foreach (var kind in newMember.Kinds)
+            {
+                if (!_memberStrategyByKind.ContainsKey(kind))
                 {
-                    _indexByAddress = _indexByAddress.Remove(memberThatLeft.Address);
+                    _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, GetMemberStrategyByKind(kind));
                 }
 
-                _metaMembers = _metaMembers.Remove(memberThatLeft.Id);
+                _memberStrategyByKind[kind].AddMember(newMember);
             }
-            //Log?
+        }
+        catch (Exception x)
+        {
+            Logger.LogError(x, "Error during MemberJoin {Member}", newMember);
+        }
+    }
+
+    private ClusterTopology BuildTopology(
+        ImmutableMemberSet activeMembers,
+        ImmutableMemberSet left,
+        ImmutableMemberSet joined,
+        ImmutableHashSet<string> blocked)
+        => new()
+        {
+            TopologyHash = activeMembers.TopologyHash,
+            Members = { activeMembers.Members },
+            Left = { left.Members },
+            Joined = { joined.Members },
+            Blocked = { blocked },
+            TopologyValidityToken = _currentTopologyTokenSource!.Token
+        };
+
+    private static void LogTopologyChanges(ClusterTopology topology)
+    {
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
         }
 
-        void MemberJoin(Member newMember)
+        if (topology.Joined.Any())
         {
-            try
-            {
-                if (_metaMembers.ContainsKey(newMember.Id))
-                {
-                    Logger.LogError("Member {Member} already exists in MemberList", newMember);
-                    return;
-                }
+            Logger.ClusterMembersJoined(topology.Joined);
+        }
 
-                var index = _nextMemberIndex++;
-                _metaMembers = _metaMembers.SetItem(newMember.Id, new MetaMember(newMember, index));
-                _membersByIndex = _membersByIndex.SetItem(index, newMember);
-                _indexByAddress = _indexByAddress.SetItem(newMember.Address, index);
+        if (topology.Left.Any())
+        {
+            Logger.ClusterMembersLeft(topology.Left);
+        }
+    }
 
-                foreach (var kind in newMember.Kinds)
-                {
-                    if (!_memberStrategyByKind.ContainsKey(kind))
-                    {
-                        _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, GetMemberStrategyByKind(kind));
-                    }
+    private void TrySetStarted(ImmutableMemberSet activeMembers)
+    {
+        if (_startedTcs.Task.IsCompleted)
+        {
+            return;
+        }
 
-                    _memberStrategyByKind[kind].AddMember(newMember);
-                }
-            }
-            catch (Exception x)
-            {
-                Logger.LogError(x, "Error during MemberJoin {Member}", newMember);
-            }
+        if (_isClient || activeMembers.Contains(_system.Id))
+        {
+            _startedTcs.TrySetResult(true);
         }
     }
 
