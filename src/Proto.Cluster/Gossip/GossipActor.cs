@@ -20,6 +20,7 @@ public class GossipActor : IActor
 #pragma warning restore CS0618 // Type or member is obsolete
     private readonly TimeSpan _gossipRequestTimeout;
     private readonly IGossip _internal;
+    private readonly IGossipTransport _transport;
 
     // lookup from state key -> consensus checks
 
@@ -29,11 +30,13 @@ public class GossipActor : IActor
         InstanceLogger? instanceLogger,
         int gossipFanout,
         int gossipMaxSend,
-        IGossip gossip
+        IGossip gossip,
+        IGossipTransport transport
     )
     {
         _gossipRequestTimeout = gossipRequestTimeout;
         _internal = gossip;
+        _transport = transport;
     }
 
     public async Task ReceiveAsync(IContext context)
@@ -197,14 +200,11 @@ public class GossipActor : IActor
     private void SendGossipForMember(IContext context, Member targetMember,
         MemberStateDelta memberStateDelta)
     {
-        var pid = PID.FromAddress(targetMember.Address, Gossiper.GossipActorName);
-
         if (Logger.IsEnabled(LogLevel.Debug))
         {
             Logger.LogDebug("Sending GossipRequest to {MemberId}", targetMember.Id);
         }
 
-        var start = DateTime.UtcNow;
         var gossipRequest = new GossipRequest
         {
             MemberId = context.System.Id,
@@ -215,55 +215,7 @@ public class GossipActor : IActor
             gossipRequest.RequestId = Guid.NewGuid().ToString("N");
             Logger.LogInformation("Sending GossipRequest {Request} to {MemberId}", gossipRequest, targetMember.Id);
         }
-        context.RequestReenter<GossipResponse>(pid, gossipRequest,
-            async task =>
-            {
-                var delta = DateTime.UtcNow - start;
-                var self = context.Cluster().MemberList.Self;
-                
-                //if the target is no longer part of the cluster. don't log. the failure is expected.. issue #1992
-                if (!context.Cluster().MemberList.TryGetMember(targetMember.Id, out _))
-                {
-                    return;
-                }
 
-                try
-                {
-                    var res = await task.ConfigureAwait(false);
-                    if (res.Rejected)
-                    {
-                        //we could be smarter here. rejected because of block? then init shutdown
-                        return;
-                    }
-                    
-                    memberStateDelta.CommitOffsets();
-                }
-                catch (TimeoutException)
-                {
-                    //log member issue #1993
-                    Logger.LogWarning(
-                        "Timeout in GossipReenterAfterSend, elapsed {Delta}ms for target member {TargetMember} from {SelfMember}",
-                        delta.TotalMilliseconds, targetMember, self);
-                }
-                catch (DeadLetterException x)
-                {
-                    Logger.LogDebug(x,
-                        "DeadLetter in GossipReenterAfterSend, elapsed {Delta}ms for target member {TargetMember} from {SelfMember}",
-                        delta.TotalMilliseconds, targetMember, self);
-                }
-                catch (Exception x)
-                {
-                    //if the target is no longer part of the cluster. don't log. the failure is expected.. issue #1992
-                    if (context.Cluster().MemberList.TryGetMember(targetMember.Id, out _))
-                    {
-                        //log member issue #1993
-                        Logger.LogError(x,
-                            "GossipReenterAfterSend failed, elapsed {Delta}ms for target member {TargetMember} from {SelfMember}",
-                            delta.TotalMilliseconds, targetMember, self);
-                    }
-                }
-            },
-            CancellationTokens.WithTimeout(_gossipRequestTimeout)
-        );
+        GossipSender.Send(context, context.Cluster(), targetMember, memberStateDelta, gossipRequest, _gossipRequestTimeout, _transport);
     }
 }
