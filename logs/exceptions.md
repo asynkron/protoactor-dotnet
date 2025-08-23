@@ -6,3 +6,6 @@
 
 ### Proto.Cluster.Tests (Timeout)
 `System.TimeoutException: Request timed out` in `InMemoryPartitionActivatorClusterTests.HandlesSlowResponsesCorrectly`.
+
+### Proto.Actor.Tests.EscalateFailureTests
+`System.TimeoutException: The condition was not met within the timeout of 00:00:00.1000000` in `Proto.Mailbox.Tests.EscalateFailureTests.GivenNonCompletedSystemMessageTaskThrewException_ShouldEscalateFailure`.

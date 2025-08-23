@@ -8,6 +8,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Proto.Actor\Proto.Actor.csproj" />
+        <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
     </ItemGroup>
 
     <ItemGroup>
