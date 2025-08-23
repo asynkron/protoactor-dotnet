@@ -1,14 +1,26 @@
 # Agent Instructions
 
+## Setup
 - Verify that .NET 8 is installed by running `dotnet --version`.
 - Do not run Docker or other external services; skip integration tests that require them.
+
+## Coding guidelines
+- Always add a detailed log of what you have done, and a strong motivation why the change was required. add this log to /logs with a filename of "log" + unixtimestamp + ".md".
+- Prefer immutable data structures over mutable variants
+- Any hardcoded Task.Delay must have a descriptive comment
+- Prefer functional programming style over object orientation when possible.
+- Ensure any new code is also tested via some code path, either existing tests or via new tests
+
+## Refactoring
+- For computational logic, prefer pure functions, if possible in static classes, with easily testable input and output. e.g. Gossip and Cluster Topology logic are good examples.
+
+## Testing
+- Freely suggest new helpers for Proto.TestKit if we detect a pattern that can be simplified in many tests
+- Always run the core tests, Proto.Actor.Tests, Proto.Remote.Tests, the base Proto.Cluster.Tests. if they fail, you have failed.
 - When adding or modifying tests:
   - Prefer Proto.TestKit utilities when possible.
-  - Use probes instead of `TaskCompletionSource` or ad-hoc recording/forwarding actors.
+  - Prefer `TestProbes` or `TestMailboxStats` instead of `TaskCompletionSource` when the interaction depends on actor messages
+  - Prefer `TestProbes` or `TestMailboxStats` instead of ad-hoc recording/forwarding actors.
   - Assert message contents through `probe.ExpectNext*` methods.
   - Preserve the existing level of assertions; do not reduce coverage.
-  - When suitable, use `ExpectEmptyMailbox` rather than `ExpectNoMessages`.
-- Always run the core tests, Proto.Actor.Tests, Proto.Remote.Tests, the base Proto.Cluster.Tests. if they fail, you have failed.
-- Freely suggest new helpers for Proto.TestKit if we detect a pattern that can be simplified in many tests
-- Always add a detailed log of what you have done, and why tht change is required for each changed file. add this log to /logs with a filename of "log" + unixtimestamp + ".md". 
-
+  - Prefer `ExpectEmptyMailbox` over `ExpectNoMessages`.
