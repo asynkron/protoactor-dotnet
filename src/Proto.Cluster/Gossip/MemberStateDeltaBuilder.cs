@@ -20,7 +20,7 @@ internal class MemberStateDeltaBuilder
         GossipState currentState,
         string targetMemberId,
         ImmutableDictionary<string, long> committedOffsets,
-        Random rnd)
+        IRandomProvider rnd)
     {
         var members = currentState
             .Members

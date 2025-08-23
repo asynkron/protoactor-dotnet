@@ -49,4 +49,33 @@ public class MemberStateDeltaBuilderTests
 
         result.State.Members.Count.Should().BeLessOrEqualTo(3);
     }
+
+    [Fact]
+    public void Build_UsesRandomProviderOrdering()
+    {
+        var state = new GossipState();
+
+        var me = new GossipState.Types.GossipMemberState();
+        me.Values.Add("k-me", new GossipKeyValue { SequenceNumber = 1 });
+        state.Members.Add("me", me);
+
+        var a = new GossipState.Types.GossipMemberState();
+        a.Values.Add("k-a", new GossipKeyValue { SequenceNumber = 1 });
+        state.Members.Add("a", a);
+
+        var b = new GossipState.Types.GossipMemberState();
+        b.Values.Add("k-b", new GossipKeyValue { SequenceNumber = 1 });
+        state.Members.Add("b", b);
+
+        var committed = ImmutableDictionary<string, long>.Empty;
+        var rnd = new DeterministicRandomProvider(new[] { 5, 1, 2 });
+        var builder = new MemberStateDeltaBuilder("me", 10);
+
+        var result = builder.Build(state, "target", committed, rnd);
+
+        result.State.Members.Keys.Should().Equal("me", "a", "b");
+        result.State.Members["me"].Values.Keys.Should().Equal("k-me");
+        result.State.Members["a"].Values.Keys.Should().Equal("k-a");
+        result.State.Members["b"].Values.Keys.Should().Equal("k-b");
+    }
 }
