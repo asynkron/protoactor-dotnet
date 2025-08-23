@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Proto.TestFixtures;
 using Proto.TestKit;
 using Xunit;
 using static Proto.TestFixtures.Receivers;
@@ -20,7 +19,7 @@ public class ActorTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var pid = context.SpawnActorFromFunc(ctx =>
+        var pid = context.Spawn(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -29,14 +28,14 @@ public class ActorTests
 
                 return Task.CompletedTask;
             }
-        );
+        ));
 
         var reply = await context.RequestAsync<object>(pid, "hello");
         Assert.Equal("hey", reply);
 
         await system.ShutdownAsync();
         
-        var pid2 = context.SpawnActorFromFunc(ctx =>
+        var pid2 = context.Spawn(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -45,7 +44,7 @@ public class ActorTests
 
                 return Task.CompletedTask;
             }
-        );
+        ));
         
         Assert.Same(system.DeadLetterPid, pid2);
     }
@@ -56,7 +55,7 @@ public class ActorTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var pid = context.SpawnActorFromFunc(ctx =>
+        var pid = context.Spawn(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -65,7 +64,7 @@ public class ActorTests
 
                 return Task.CompletedTask;
             }
-        );
+        ));
 
         var reply = await context.RequestAsync<object>(pid, "hello");
         Assert.Equal("hey", reply);
@@ -87,7 +86,7 @@ public class ActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var pid = context.SpawnActorFromFunc(ctx =>
+        var pid = context.Spawn(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -96,7 +95,7 @@ public class ActorTests
 
                 return Task.CompletedTask;
             }
-        );
+        ));
 
         var reply = await context.RequestAsync<object>(pid, "hello");
 
@@ -111,7 +110,7 @@ public class ActorTests
         var context = system.Root;
 
         //no code...
-        var pid = context.SpawnActorFromFunc(ctx => Task.CompletedTask);
+        var pid = context.Spawn(Props.FromFunc(ctx => Task.CompletedTask));
 
         var reply = await context.RequestAsync<Touched>(pid, new Proto.Touch(), CancellationTokens.FromSeconds(5));
 
@@ -126,7 +125,7 @@ public class ActorTests
         var context = system.Root;
 
         //no code...
-        var pid = context.SpawnActorFromFunc(ctx => Task.CompletedTask);
+        var pid = context.Spawn(Props.FromFunc(ctx => Task.CompletedTask));
 
         var reply = await context.RequestAsync<object>(pid, new MyAutoRespondMessage());
 
@@ -140,7 +139,7 @@ public class ActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var pid = context.SpawnActorFromFunc(EmptyReceive);
+        var pid = context.Spawn(Props.FromFunc(EmptyReceive));
 
         var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(
             () => { return context.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20)); }
@@ -156,7 +155,7 @@ public class ActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var pid = context.SpawnActorFromFunc(ctx =>
+        var pid = context.Spawn(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -165,7 +164,7 @@ public class ActorTests
 
                 return Task.CompletedTask;
             }
-        );
+        ));
 
         var reply = await context.RequestAsync<object>(pid, "hello", TimeSpan.FromMilliseconds(1000));
 
@@ -285,7 +284,7 @@ public class ActorTests
         await using var _ = system;
         var context = system.Root;
 
-        var pid = context.SpawnActorFromFunc(ctx =>
+        var pid = context.Spawn(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -294,9 +293,9 @@ public class ActorTests
 
                 return Task.CompletedTask;
             }
-        );
+        ));
 
-        var forwarder = context.SpawnForwarderFromFunc(ctx =>
+        var forwarder = context.Spawn(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
                 {
@@ -305,7 +304,7 @@ public class ActorTests
 
                 return Task.CompletedTask;
             }
-        );
+        ));
 
         var reply = await context.RequestAsync<object>(forwarder, "hello");
 

@@ -24,7 +24,4 @@ public abstract class ActorTestBase : IAsyncLifetime
 
     public async Task DisposeAsync() => await System.ShutdownAsync();
 
-    protected PID SpawnForwarderFromFunc(Receive forwarder) => Context.Spawn(Props.FromFunc(forwarder));
-
-    protected PID SpawnActorFromFunc(Receive receive) => Context.Spawn(Props.FromFunc(receive));
 }
