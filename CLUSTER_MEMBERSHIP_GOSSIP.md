@@ -30,6 +30,35 @@ state to randomly chosen peers ([Gossiper.cs](src/Proto.Cluster/Gossip/Gossiper.
 Peers merge received updates, which allows membership changes to spread
 throughout the cluster.
 
+## Delta-based member state propagation
+
+`MemberStateDeltaBuilder` constructs per-target deltas by tracking a watermark
+for each `{target}.{member}` pair. The watermark represents the highest sequence
+number previously sent to that target for a given member. During a build, values
+with a higher sequence number are included in the delta and the watermark is
+advanced:
+
+```csharp
+var watermarkKey = $"{targetMemberId}.{memberId}";
+committedOffsets.TryGetValue(watermarkKey, out var watermark);
+...
+if (value.SequenceNumber <= watermark) continue;
+if (value.SequenceNumber > newWatermark) newWatermark = value.SequenceNumber;
+```
+
+The builder stops once it has added updates for `_gossipMaxSend` members,
+ensuring that large clusters do not overwhelm the network. Members exceeding
+this limit are retried in later cycles:
+
+```csharp
+count++;
+if (count >= _gossipMaxSend) break;
+```
+
+If no sequence numbers exceed the watermark, the member is omitted from the
+delta and its watermark remains unchanged. This prevents redundant transmissions
+but means updates may be delayed when the `gossipMaxSend` limit is hit.
+
 ## Member states
 
 - **Joined / Left** – Calculated by `MemberList.UpdateClusterTopology` and
