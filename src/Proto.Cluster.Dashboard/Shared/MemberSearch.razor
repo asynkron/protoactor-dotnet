@@ -68,6 +68,7 @@
                 _gossipState = await System.Cluster().Gossip.GetStateSnapshot().ConfigureAwait(false);
                 _members = System.Cluster().MemberList.GetAllMembers();
                 await InvokeAsync(async () => { await GossipState(_gossipState).ConfigureAwait(false); }).ConfigureAwait(false);
+                // Delay briefly to throttle refresh rate of the dashboard
                 await Task.Delay(100).ConfigureAwait(false);
             }
             catch (Exception x)

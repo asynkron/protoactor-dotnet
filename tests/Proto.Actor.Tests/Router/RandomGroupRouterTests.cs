@@ -37,6 +37,7 @@ public class RandomGroupRouterTests
         var (router, probe1, probe2, probe3) = CreateRouterWith3Routees(system);
         var (probe4, routee4) = system.CreateTestProbe();
         system.Root.Send(router, new RouterAddRoutee(routee4));
+        // Give router time to register the new routee
         await Task.Delay(500);
         for (var i = 0; i < 100; i++)
         {

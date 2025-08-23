@@ -222,6 +222,7 @@ public abstract class RemoteTests
         probe2.Watch(remoteActor);
 
         probe2.Unwatch(remoteActor);
+        // Wait to ensure the unwatch is processed before killing the actor
         await Task.Delay(TimeSpan.FromSeconds(3));
 
         await System.Root.PoisonAsync(remoteActor);

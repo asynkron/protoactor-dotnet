@@ -23,6 +23,7 @@ public class ClusterTopologyBuilderTests
         var blocked = ImmutableHashSet.Create(m2.Id);
 
         var dupOld = CreateMember("3");
+        // Wait to ensure members have distinct timestamps
         await Task.Delay(1);
         var dupYoung = CreateMember("4");
         dupYoung.Host = dupOld.Host;

@@ -237,6 +237,7 @@ public class Gossiper
         {
             try
             {
+                // Space out gossip broadcasts according to configured interval
                 await Task.Delay(_cluster.Config.GossipInterval).ConfigureAwait(false);
 
                 await BlockExpiredHeartbeats().ConfigureAwait(false);

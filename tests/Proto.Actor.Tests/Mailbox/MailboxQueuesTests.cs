@@ -86,6 +86,7 @@ public class MailboxQueuesTests
                             return;
                         }
 
+                        // Yield to avoid busy-spin while waiting for new items
                         await Task.Delay(1, cancelSource.Token);
                         popped = sut.Pop();
                     }

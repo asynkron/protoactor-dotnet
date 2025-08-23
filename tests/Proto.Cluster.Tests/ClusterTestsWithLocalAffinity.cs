@@ -39,6 +39,7 @@ public abstract class ClusterTestsWithLocalAffinity : ClusterTests
             LogProcessCounts();
 
             _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
+            // Give actors time to relocate according to affinity
             await Task.Delay(200, timeout);
             LogProcessCounts();
 

@@ -233,6 +233,7 @@ public sealed class ServerConnector
                 var backoff = rs.FailureCount * (int)_backoff.TotalMilliseconds;
                 var noise = _random.Next(500);
                 var duration = TimeSpan.FromMilliseconds(backoff + noise);
+                // Exponential backoff before attempting to reconnect to the remote endpoint
                 await Task.Delay(duration).ConfigureAwait(false);
 
                 _logger.LogWarning(

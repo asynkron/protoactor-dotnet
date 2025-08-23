@@ -137,6 +137,7 @@ public class Scheduler
 
     private async Task Delay(TimeSpan delay, CancellationToken token)
     {
+        // Use provided time provider to allow deterministic and testable delays
         var delayTask = Task.Delay(delay, _timeProvider, token);
         _schedulerHook?.OnTimerRegistered();
         await delayTask.ConfigureAwait(false);

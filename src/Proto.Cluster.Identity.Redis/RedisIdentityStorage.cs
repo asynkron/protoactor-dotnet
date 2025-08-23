@@ -75,6 +75,7 @@ public sealed class RedisIdentityStorage : IIdentityStorage
 
             do
             {
+                // Incrementally back off while waiting for the lock to be released
                 await Task.Delay(20 * i++, ct).ConfigureAwait(false);
             } while (!ct.IsCancellationRequested
                      && _maxLockTime > timer.Elapsed

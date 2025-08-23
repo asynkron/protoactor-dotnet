@@ -33,6 +33,7 @@ internal class GossipConsensusHandle<T> : IConsensusHandle<T> where T : notnull
         {
             var t = Volatile.Read(ref _consensusTcs).Task;
             // ReSharper disable once MethodSupportsCancellation
+            // Poll for consensus completion or timeout to periodically check cancellation
             await Task.WhenAny(t, Task.Delay(500)).ConfigureAwait(false);
 
             if (t.IsCompleted)

@@ -44,7 +44,7 @@ public sealed class MongoIdentityStorage : IIdentityStorage
 
         if (lockId != null)
         {
-            //There is an active lock on the pid, spin wait
+            //There is an active lock on the pid, spin wait with incremental backoff
             var i = 0;
 
             do

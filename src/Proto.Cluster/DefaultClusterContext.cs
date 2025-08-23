@@ -102,6 +102,7 @@ public class DefaultClusterContext : IClusterContext
                         return TimeoutOrThrow();
                     }
                     
+                    // Back off slightly before retrying PID lookup to reduce contention
                     await Task.Delay(i * 20, CancellationToken.None).ConfigureAwait(false);
 
                     continue;
@@ -217,6 +218,7 @@ public class DefaultClusterContext : IClusterContext
                     _pidCache.RemoveByVal(clusterIdentity, pid);
                     RefreshFuture();
                     await RemoveFromSource(clusterIdentity, PidSource.Cache, pid).ConfigureAwait(false);
+                    // Back off slightly before retrying after an exception
                     await Task.Delay(i * 20, CancellationToken.None).ConfigureAwait(false);
 
                     continue;

@@ -36,6 +36,7 @@ public class GithubActionsReporter
 
     public async Task Run(Func<Task> test, [CallerMemberName] string testName = "")
     {
+        // Small delay to ensure tracing infrastructure is initialized
         await Task.Delay(1);
 
         using var activity = StartActivity(testName);

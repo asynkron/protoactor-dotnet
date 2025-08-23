@@ -97,6 +97,7 @@ internal class KubernetesClusterMonitor : IActor
                 await Watch();
             }
 
+            // Delay to avoid tight loop when restarting watcher
             await Task.Delay(1000);
 
             context.Send(context.Self, new StartWatchingCluster(_clusterName));
