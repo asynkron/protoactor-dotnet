@@ -187,7 +187,7 @@ public class Gossiper
         }
     }
 
-    internal Task StartGossipActorAsync(IGossip? gossip = null)
+    internal Task StartGossipActorAsync(IGossip? gossip = null, IGossipTransport? transport = null)
     {
         _gossip = gossip ?? new Gossip(
             _cluster.System.Id,
@@ -203,7 +203,8 @@ public class Gossiper
             _cluster.System.Logger(),
             _cluster.Config.GossipFanout,
             _cluster.Config.GossipMaxSend,
-            _gossip));
+            _gossip,
+            transport ?? new GossipTransport()));
 
         _pid = _context.SpawnNamedSystem(props, GossipActorName);
         _cluster.System.EventStream.Subscribe<ClusterTopology>(topology =>
