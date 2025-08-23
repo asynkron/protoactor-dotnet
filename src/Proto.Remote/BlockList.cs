@@ -18,7 +18,7 @@ public record MemberBlocked(string MemberId, string Reason);
 ///     unresponsiveness. Entries on this list expire after <see cref="ActorSystemConfig.BlockedMemberDuration"/>,
 ///     defaults to 1 hour.
 /// </summary>
-public class BlockList
+public class BlockList : IBlockList
 {
     private readonly object _lock = new();
     private readonly ActorSystem _system;

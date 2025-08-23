@@ -204,7 +204,9 @@ public class Gossiper
             _cluster.Config.GossipFanout,
             _cluster.Config.GossipMaxSend,
             _gossip,
-            transport ?? new GossipTransport()));
+            transport ?? new GossipTransport(),
+            _cluster.MemberList,
+            _cluster.System.Remote().BlockList));
 
         _pid = _context.SpawnNamedSystem(props, GossipActorName);
         _cluster.System.EventStream.Subscribe<ClusterTopology>(topology =>

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Logging;
+using Proto.Cluster;
 
 namespace Proto.Cluster.Gossip;
 
@@ -19,7 +20,7 @@ internal static class GossipSender
 
     public static void Send(
         IContext context,
-        Cluster cluster,
+        IMemberList memberList,
         Member targetMember,
         MemberStateDelta memberStateDelta,
         GossipRequest request,
@@ -36,9 +37,9 @@ internal static class GossipSender
             async task =>
             {
                 var delta = DateTime.UtcNow - start;
-                var self = cluster.MemberList.Self;
+                var self = memberList.Self;
 
-                if (!cluster.MemberList.TryGetMember(targetMember.Id, out _))
+                if (!memberList.TryGetMember(targetMember.Id, out _))
                 {
                     return;
                 }
@@ -72,7 +73,7 @@ internal static class GossipSender
                 }
                 catch (Exception x)
                 {
-                    if (cluster.MemberList.TryGetMember(targetMember.Id, out _))
+                    if (memberList.TryGetMember(targetMember.Id, out _))
                     {
                         Logger.LogError(
                             x,
