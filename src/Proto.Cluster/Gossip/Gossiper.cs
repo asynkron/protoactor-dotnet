@@ -187,8 +187,11 @@ public class Gossiper
         }
     }
 
-    internal Task StartGossipActorAsync(IGossip? gossip = null, IGossipTransport? transport = null)
+    internal async Task StartGossipActorAsync(IGossip? gossip = null, IGossipTransport? transport = null)
     {
+
+        await Task.Delay(100); //racy. _cluster.MemberList may be null
+        
         _gossip = gossip ?? new Gossip(
             _cluster.System.Id,
             _cluster.Config.GossipFanout,
@@ -202,7 +205,7 @@ public class Gossiper
             _gossip,
             transport ?? new GossipTransport(),
             _cluster.MemberList,
-            _cluster.System.Remote().BlockList,
+            _cluster.Remote.BlockList,
             _cluster.Config.GossipDebugLogging));
 
         _pid = _context.SpawnNamedSystem(props, GossipActorName);
@@ -213,8 +216,7 @@ public class Gossiper
             tmp.Left.Clear();
             _context.Send(_pid, tmp);
         });
-        
-        return Task.CompletedTask;
+
     }
 
     internal Task StartgossipLoopAsync()
