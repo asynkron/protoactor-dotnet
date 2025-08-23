@@ -35,7 +35,7 @@ public class GossipTests
     public async Task CanGetConsensus()
     {
         var clusterFixture = new InMemoryClusterFixture();
-        await using var _ = clusterFixture;
+        await using var cleanup = clusterFixture;
         await clusterFixture.InitializeAsync();
 
         const string initialValue = "hello consensus";
@@ -50,17 +50,15 @@ public class GossipTests
 
     }
 
-    [Fact(Skip = "Flaky")]
+    [Fact]
     public async Task CompositeConsensusWorks()
     {
         var timeout = CancellationTokens.FromSeconds(20);
         var clusterFixture = new InMemoryClusterFixture();
-        await using var _ = clusterFixture;
+        await using var cleanup = clusterFixture;
         await clusterFixture.InitializeAsync();
 
-        // Allow cluster to settle before verifying consensus
-        await Task.Delay(1000);
-
+        // Wait for the cluster to reach topology consensus before performing checks
         var (consensus, initialTopologyHash) =
             await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
 
@@ -84,7 +82,21 @@ public class GossipTests
         afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
         await clusterFixture.SpawnMember();
-        await Task.Delay(2000); // Allow topology state to propagate
+
+        // Wait until the new member is included in the topology consensus
+        var updatedTopologyHash = initialTopologyHash;
+        var waitUntil = DateTime.UtcNow + TimeSpan.FromSeconds(20);
+        while (updatedTopologyHash == initialTopologyHash && DateTime.UtcNow < waitUntil)
+        {
+            (_, updatedTopologyHash) = await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
+            if (updatedTopologyHash == initialTopologyHash)
+            {
+                // Small delay to avoid tight polling while waiting for topology to update
+                await Task.Delay(100);
+            }
+        }
+
+        updatedTopologyHash.Should().NotBe(initialTopologyHash);
 
         var afterChangingTopology =
             await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout);
