@@ -205,7 +205,7 @@ public class Gossiper
             _gossip,
             transport ?? new GossipTransport(),
             _cluster.MemberList,
-            _cluster.Remote.BlockList,
+            _cluster.System.Remote().BlockList,
             _cluster.Config.GossipDebugLogging));
 
         _pid = _context.SpawnNamedSystem(props, GossipActorName);
