@@ -138,7 +138,7 @@ internal class Gossip
 
     public ImmutableList<GossipUpdate> ReceiveState(GossipState remoteState)
     {
-        var updates = GossipStateManagement.MergeState(_state, remoteState, out var newState, out var updatedKeys);
+        var (newState, updates, updatedKeys) = GossipStateManagement.MergeStates(_state, remoteState);
 
         if (updates.Count == 0)
         {
@@ -154,7 +154,7 @@ internal class Gossip
         }
 
         _state = newState;
-        
+
         CheckConsensus(updatedKeys);
 
         return updates.ToImmutableList();
