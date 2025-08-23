@@ -172,10 +172,9 @@ public record MemberList
                 return;
             }
 
-            var (activeMembers, left, joined) =
-                ComputeTopologyChanges(_activeMembers, members, blockList.BlockedMembers);
+            var changes = ClusterTopologyBuilder.Compute(_activeMembers, members, blockList.BlockedMembers);
 
-            if (activeMembers.Equals(_activeMembers))
+            if (changes.ActiveMembers.Equals(_activeMembers))
             {
                 return;
             }
@@ -183,40 +182,30 @@ public record MemberList
             _currentTopologyTokenSource?.Cancel();
             _currentTopologyTokenSource = new CancellationTokenSource();
 
-            blockList.Block(left.Members.Select(m => m.Id), "Member left cluster");
-            _activeMembers = activeMembers;
+            blockList.Block(changes.Left.Members.Select(m => m.Id), "Member left cluster");
+            _activeMembers = changes.ActiveMembers;
 
-            foreach (var member in left.Members)
+            foreach (var member in changes.Left.Members)
             {
                 HandleMemberLeave(member);
                 TerminateMember(member);
             }
 
-            foreach (var member in joined.Members)
+            foreach (var member in changes.Joined.Members)
             {
                 HandleMemberJoin(member);
             }
 
-            var topology = BuildTopology(activeMembers, left, joined, blockList.BlockedMembers);
+            var topology = ClusterTopologyBuilder.BuildTopology(
+                changes,
+                blockList.BlockedMembers,
+                _currentTopologyTokenSource.Token
+            );
 
             LogTopologyChanges(topology);
             BroadcastTopologyChanges(topology);
-            TrySetStarted(activeMembers);
+            TrySetStarted(changes.ActiveMembers);
         }
-    }
-
-    internal static (ImmutableMemberSet ActiveMembers, ImmutableMemberSet Left, ImmutableMemberSet Joined)
-        ComputeTopologyChanges(
-            ImmutableMemberSet previousMembers,
-            IReadOnlyCollection<Member> newMembers,
-            ImmutableHashSet<string> blockedMembers
-        )
-    {
-        var active = new ImmutableMemberSet(newMembers.ToArray()).Except(blockedMembers);
-        active = RemoveDuplicateAddresses(active);
-        var left = previousMembers.Except(active);
-        var joined = active.Except(previousMembers);
-        return (active, left, joined);
     }
 
     private void HandleMemberLeave(Member memberThatLeft)
@@ -280,21 +269,6 @@ public record MemberList
         }
     }
 
-    private ClusterTopology BuildTopology(
-        ImmutableMemberSet activeMembers,
-        ImmutableMemberSet left,
-        ImmutableMemberSet joined,
-        ImmutableHashSet<string> blocked)
-        => new()
-        {
-            TopologyHash = activeMembers.TopologyHash,
-            Members = { activeMembers.Members },
-            Left = { left.Members },
-            Joined = { joined.Members },
-            Blocked = { blocked },
-            TopologyValidityToken = _currentTopologyTokenSource!.Token
-        };
-
     private static void LogTopologyChanges(ClusterTopology topology)
     {
         if (Logger.IsEnabled(LogLevel.Debug))
@@ -324,21 +298,6 @@ public record MemberList
         {
             _startedTcs.TrySetResult(true);
         }
-    }
-
-    private static ImmutableMemberSet RemoveDuplicateAddresses(ImmutableMemberSet activeMembers)
-    {
-        var duplicateAddresses = activeMembers.Members.ToLookup(m => m.Address);
-        foreach (var dup in duplicateAddresses.Where(d => d.Count() > 1))
-        {
-            var youngest = dup.OrderByDescending(m => m.Age).First();
-            var rest = dup.Where(m => m.Id != youngest.Id).Select(m => m.Id).ToArray();
-
-            Logger.DuplicateAddressFound(dup.Key, rest);
-            activeMembers = activeMembers.Except(rest);
-        }
-
-        return activeMembers;
     }
 
     private void SelfBlocked()
