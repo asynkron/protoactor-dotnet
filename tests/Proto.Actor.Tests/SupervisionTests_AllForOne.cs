@@ -128,6 +128,7 @@ public class SupervisionTestsAllForOne
 
         Assert.True(child1MailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
         Assert.True(child2MailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
+
         Assert.Contains(child1MailboxStats.Posted, msg => msg is Restart r && r.Reason == Exception);
         Assert.Contains(child1MailboxStats.Received, msg => msg is Restart r && r.Reason == Exception);
         Assert.Contains(child2MailboxStats.Posted, msg => msg is Restart r && r.Reason == Exception);
