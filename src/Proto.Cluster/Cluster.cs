@@ -83,7 +83,6 @@ public class Cluster : IActorSystemExtension<Cluster>
         serialization.RegisterFileDescriptor(SeedContractsReflection.Descriptor);
         serialization.RegisterFileDescriptor(EmptyReflection.Descriptor);
 
-        Gossip = new Gossiper(this);
         PidCache = new PidCache();
         _ = new PubSubExtension(this);
 
@@ -106,7 +105,7 @@ public class Cluster : IActorSystemExtension<Cluster>
 
     internal IClusterContext ClusterContext { get; private set; } = null!;
 
-    public Gossiper Gossip { get; }
+    public Gossiper Gossip { get; private set; } = null!;
 
     /// <summary>
     ///     Cluster config used by this cluster
@@ -202,6 +201,7 @@ public class Cluster : IActorSystemExtension<Cluster>
         Logger.LogInformation("Starting");
         MemberList = new MemberList(this, client);
         _ = MemberList.Started.ContinueWith(_ => _joinedClusterTcs.TrySetResult(true));
+        Gossip = Gossiper.FromCluster(this);
         ClusterContext = Config.ClusterContextProducer(this);
 
         var kinds = GetClusterKinds();

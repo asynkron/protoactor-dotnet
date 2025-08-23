@@ -400,7 +400,7 @@ public record ClusterConfig
     ///    The code to run when a member is expired from the cluster.
     /// </summary>
     [JsonIgnore]
-    public Func<Cluster, Task> HeartbeatExpirationHandler { get; init; } = Gossiper.BlockExpiredMembers;
+    public Func<Cluster, Task> HeartbeatExpirationHandler { get; init; } = GossipDefaults.BlockExpiredMembers;
     
     /// <summary>
     ///    Configures the code to run when a member is expired from the cluster.

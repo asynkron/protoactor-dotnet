@@ -44,23 +44,54 @@ public record AddConsensusCheck(ConsensusCheck Check, CancellationToken Token);
 
 public record GetGossipStateSnapshot;
 
+public sealed record GossiperOptions(
+    IRootContext Context,
+    IMemberList MemberList,
+    BlockList BlockList,
+    EventStream EventStream,
+    string SystemId,
+    Task JoinedCluster,
+    CancellationToken Shutdown,
+    Func<ActorStatistics> GetActorStatistics,
+    int GossipFanout,
+    int GossipMaxSend,
+    TimeSpan GossipInterval,
+    TimeSpan GossipRequestTimeout,
+    bool GossipDebugLogging,
+    TimeSpan HeartbeatExpiration,
+    Func<Task> HeartbeatExpirationHandler);
+
 [PublicAPI]
-public class Gossiper
+public partial class Gossiper
 {
     public const string GossipActorName = "$gossip";
 
 #pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<Gossiper>();
 #pragma warning restore CS0618 // Type or member is obsolete
-    private readonly Cluster _cluster;
     private readonly IRootContext _context;
+    private readonly IMemberList _memberList;
+    private readonly BlockList _blockList;
+    private readonly EventStream _eventStream;
+    private readonly string _systemId;
+    private readonly Task _joinedCluster;
+    private readonly CancellationToken _shutdown;
+    private readonly Func<ActorStatistics> _getActorStatistics;
+    private readonly GossiperOptions _options;
     private IGossip _gossip = null!;
     private PID _pid = null!;
 
-    public Gossiper(Cluster cluster)
+    public Gossiper(GossiperOptions options)
     {
-        _cluster = cluster;
-        _context = _cluster.System.Root;
+        _options = options;
+        _context = options.Context;
+        _memberList = options.MemberList;
+        _blockList = options.BlockList;
+        _eventStream = options.EventStream;
+        _systemId = options.SystemId;
+        _joinedCluster = options.JoinedCluster;
+        _shutdown = options.Shutdown;
+        _getActorStatistics = options.GetActorStatistics;
     }
 
     /// <summary>
@@ -190,30 +221,30 @@ public class Gossiper
     internal Task StartGossipActorAsync(IGossip? gossip = null, IGossipTransport? transport = null)
     {
         _gossip = gossip ?? new Gossip(
-            _cluster.System.Id,
-            _cluster.Config.GossipFanout,
-            _cluster.Config.GossipMaxSend,
-            _cluster.System.Logger(),
-            () => _cluster.MemberList.GetMembers(),
-            _cluster.Config.GossipDebugLogging);
+            _systemId,
+            _options.GossipFanout,
+            _options.GossipMaxSend,
+            _context.System.Logger(),
+            _memberList.GetMembers,
+            _options.GossipDebugLogging);
 
         var props = Props.FromProducer(() => new GossipActor(
-            _cluster.Config.GossipRequestTimeout,
+            _options.GossipRequestTimeout,
             _gossip,
             transport ?? new GossipTransport(),
-            _cluster.MemberList,
-            _cluster.System.Remote().BlockList,
-            _cluster.Config.GossipDebugLogging));
+            _memberList,
+            _blockList,
+            _options.GossipDebugLogging));
 
         _pid = _context.SpawnNamedSystem(props, GossipActorName);
-        _cluster.System.EventStream.Subscribe<ClusterTopology>(topology =>
+        _eventStream.Subscribe<ClusterTopology>(topology =>
         {
             var tmp = topology.Clone();
             tmp.Joined.Clear();
             tmp.Left.Clear();
             _context.Send(_pid, tmp);
         });
-        
+
         return Task.CompletedTask;
     }
 
@@ -229,16 +260,16 @@ public class Gossiper
     private async Task GossipLoop()
     {
         Logger.LogInformation("Gossip is waiting for cluster to join");
-        await _cluster.JoinedCluster;
+        await _joinedCluster;
         Logger.LogInformation("Starting gossip loop");
         await Task.Yield();
 
-        while (!_cluster.System.Shutdown.IsCancellationRequested)
+        while (!_shutdown.IsCancellationRequested)
         {
             try
             {
                 // Space out gossip broadcasts according to configured interval
-                await Task.Delay(_cluster.Config.GossipInterval).ConfigureAwait(false);
+                await Task.Delay(_options.GossipInterval).ConfigureAwait(false);
 
                 await BlockExpiredHeartbeats().ConfigureAwait(false);
 
@@ -254,7 +285,7 @@ public class Gossiper
             }
             catch (DeadLetterException)
             {
-                if (_cluster.System.Shutdown.IsCancellationRequested)
+                if (_shutdown.IsCancellationRequested)
                 {
                     //pass. this is expected, system is shutting down
                 }
@@ -275,65 +306,31 @@ public class Gossiper
     {
         var t2 = await GetStateEntry(GossipKeys.GracefullyLeft).ConfigureAwait(false);
 
-        var blockList = _cluster.System.Remote().BlockList;
-        var alreadyBlocked = blockList.BlockedMembers;
+        var alreadyBlocked = _blockList.BlockedMembers;
 
         //don't ban ourselves. our gossip state will never reach other members then...
         var gracefullyLeft = t2.Keys
             .Where(k => !alreadyBlocked.Contains(k))
-            .Where(k => k != _cluster.System.Id)
+            .Where(k => k != _systemId)
             .ToArray();
 
         if (gracefullyLeft.Any())
         {
-            blockList.Block(gracefullyLeft, "Gracefully left");
+            _blockList.Block(gracefullyLeft, "Gracefully left");
         }
     }
 
     private async Task BlockExpiredHeartbeats()
     {
-        if (_cluster.Config.HeartbeatExpiration == TimeSpan.Zero)
+        if (_options.HeartbeatExpiration == TimeSpan.Zero)
         {
             return;
         }
-        
-        await _cluster.Config.HeartbeatExpirationHandler(_cluster);
+
+        await _options.HeartbeatExpirationHandler().ConfigureAwait(false);
     }
 
-    public static async Task BlockExpiredMembers(Cluster cluster)
-    {
-        var gossipState = await cluster.Gossip. GetStateEntry(GossipKeys.Heartbeat).ConfigureAwait(false);
-        var blockList = cluster.Remote.BlockList;
-        var alreadyBlocked = blockList.BlockedMembers;
-        //new blocked members
-        var blocked = (from x in gossipState
-                //never block ourselves
-                where x.Key != cluster.System.Id
-                //pick any entry that is too old
-                where x.Value.Age > cluster.Config.HeartbeatExpiration
-                //and not already part of the block list
-                where !alreadyBlocked.Contains(x.Key)
-                select x.Key)
-            .ToArray();
-
-        if (blocked.Any())
-        {
-            blockList.Block(blocked, "Expired heartbeat");
-        }
-    }
-
-    private ActorStatistics GetActorStatistics()
-    {
-        var stats = new ActorStatistics();
-
-        foreach (var k in _cluster.GetClusterKinds())
-        {
-            var kind = _cluster.GetClusterKind(k);
-            stats.ActorCount.Add(k, kind.Count);
-        }
-
-        return stats;
-    }
+    private ActorStatistics GetActorStatistics() => _getActorStatistics();
 
     /// <summary>
     ///     Helper for composing <see cref="ConsensusCheck{T}" /> logic over one or more gossip keys.
