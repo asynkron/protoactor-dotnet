@@ -335,6 +335,16 @@ public class Gossiper
         return stats;
     }
 
+    /// <summary>
+    ///     Helper for composing <see cref="ConsensusCheck{T}" /> logic over one or more gossip keys.
+    /// </summary>
+    /// <typeparam name="T">Type of the value that should be in consensus.</typeparam>
+    /// <example>
+    /// <code>
+    /// var definition = new Gossiper.ConsensusCheckBuilder<int>("config", any => any.Unpack<Int32Value>().Value);
+    /// var handle = gossiper.RegisterConsensusCheck(definition);
+    /// </code>
+    /// </example>
     public class ConsensusCheckBuilder<T> : IConsensusCheckDefinition<T>
         where T : notnull
     {
@@ -390,21 +400,11 @@ public class Gossiper
 
                 return (state, ids) =>
                 {
-                    var memberStates = GetValidMemberStates(state, ids);
-
-                    // Missing state, cannot have consensus
-                    if (memberStates.Length < ids.Count)
-                    {
-                        return default;
-                    }
-
-                    var valueTuples = memberStates.Select(mapToValue);
-                    // ReSharper disable PossibleMultipleEnumeration
-                    var result = valueTuples.Select(it => it.value).HasConsensus();
+                    var (consensus, value, tuples) = ConsensusEvaluator.HasConsensus(state, ids, new[] { mapToValue });
 
                     if (Logger.IsEnabled(LogLevel.Debug))
                     {
-                        Logger.LogDebug("consensus {Consensus}: {Values}", result.Item1, valueTuples
+                        Logger.LogDebug("consensus {Consensus}: {Values}", consensus, tuples
                             .GroupBy(it => (it.key, it.value), tuple => tuple.member)
                             .Select(
                                 grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
@@ -413,7 +413,7 @@ public class Gossiper
                         );
                     }
 
-                    return result!;
+                    return consensus ? (consensus, value!) : default;
                 };
             }
 
@@ -421,21 +421,11 @@ public class Gossiper
 
             return (state, ids) =>
             {
-                var memberStates = GetValidMemberStates(state, ids);
-
-                if (memberStates.Length < ids.Count) // Not all members have state..
-                {
-                    return default;
-                }
-
-                var valueTuples = memberStates
-                    .SelectMany(memberState => mappers.Select(mapper => mapper(memberState)));
-
-                var consensus = valueTuples.Select(it => it.value).HasConsensus();
+                var (consensus, value, tuples) = ConsensusEvaluator.HasConsensus(state, ids, mappers);
 
                 if (Logger.IsEnabled(LogLevel.Debug))
                 {
-                    Logger.LogDebug("consensus {Consensus}: {Values}", consensus.Item1, valueTuples
+                    Logger.LogDebug("consensus {Consensus}: {Values}", consensus, tuples
                         .GroupBy(it => (it.key, it.value), tuple => tuple.member)
                         .Select(
                             grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
@@ -444,16 +434,8 @@ public class Gossiper
                     );
                 }
 
-                // ReSharper enable PossibleMultipleEnumeration
-                return consensus!;
+                return consensus ? (consensus, value!) : default;
             };
-
-            KeyValuePair<string, GossipState.Types.GossipMemberState>[] GetValidMemberStates(GossipState state,
-                IImmutableSet<string> ids) =>
-                state.Members
-                    .Where(member => ids.Contains(member.Key))
-                    .Select(member => member)
-                    .ToArray();
         }
     }
 
