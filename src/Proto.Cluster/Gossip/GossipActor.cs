@@ -20,6 +20,8 @@ public class GossipActor : IActor
 #pragma warning restore CS0618 // Type or member is obsolete
     private readonly TimeSpan _gossipRequestTimeout;
     private readonly IGossip _internal;
+    private readonly IMemberList _memberList;
+    private readonly IBlockList _blockList;
     private readonly IGossipTransport _transport;
 
     // lookup from state key -> consensus checks
@@ -31,12 +33,16 @@ public class GossipActor : IActor
         int gossipFanout,
         int gossipMaxSend,
         IGossip gossip,
-        IGossipTransport transport
+        IGossipTransport transport,
+        IMemberList memberList,
+        IBlockList blockList
     )
     {
         _gossipRequestTimeout = gossipRequestTimeout;
         _internal = gossip;
         _transport = transport;
+        _memberList = memberList;
+        _blockList = blockList;
     }
 
     public async Task ReceiveAsync(IContext context)
@@ -121,7 +127,7 @@ public class GossipActor : IActor
         var logger = context.Logger()?.BeginScope<GossipActor>();
         logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
         
-        if (context.Remote().BlockList.BlockedMembers.Contains(gossipRequest.MemberId))
+        if (_blockList.BlockedMembers.Contains(gossipRequest.MemberId))
         {
             Logger.LogInformation("Blocked gossip request from {MemberId}", gossipRequest.MemberId);
             context.Respond(new GossipResponse()
@@ -130,8 +136,7 @@ public class GossipActor : IActor
             });
             return Task.CompletedTask;
         }
-
-        if (!context.Cluster().MemberList.ContainsMemberId(gossipRequest.MemberId))
+        if (!_memberList.ContainsMemberId(gossipRequest.MemberId))
         {
             Logger.LogInformation("Ignoring gossip request from {MemberId} as it is not a member", gossipRequest.MemberId);
             context.Respond(new GossipResponse()
@@ -140,9 +145,6 @@ public class GossipActor : IActor
             });
             return Task.CompletedTask;
         }
-        
-        
-        
 
         if (Logger.IsEnabled(LogLevel.Debug))
         {
@@ -150,8 +152,6 @@ public class GossipActor : IActor
         }
         
         ReceiveState(context, gossipRequest.State);
-
-        
         if (context.Cluster().Config.GossipDebugLogging)
         {
             Logger.LogInformation("Responding to GossipRequest {Request} to {MemberId}", gossipRequest, gossipRequest.MemberId);
@@ -216,6 +216,6 @@ public class GossipActor : IActor
             Logger.LogInformation("Sending GossipRequest {Request} to {MemberId}", gossipRequest, targetMember.Id);
         }
 
-        GossipSender.Send(context, context.Cluster(), targetMember, memberStateDelta, gossipRequest, _gossipRequestTimeout, _transport);
+        GossipSender.Send(context, _memberList, targetMember, memberStateDelta, gossipRequest, _gossipRequestTimeout, _transport);
     }
 }

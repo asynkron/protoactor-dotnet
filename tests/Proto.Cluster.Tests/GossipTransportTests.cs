@@ -54,7 +54,7 @@ public class GossipTransportTests
 
         var props = Props.FromFunc(ctx =>
         {
-            GossipSender.Send(ctx, cluster, targetMember, delta, request, cluster.Config.GossipRequestTimeout, transport);
+            GossipSender.Send(ctx, cluster.MemberList, targetMember, delta, request, cluster.Config.GossipRequestTimeout, transport);
             return Task.CompletedTask;
         });
 
@@ -87,7 +87,7 @@ public class GossipTransportTests
 
         var props = Props.FromFunc(ctx =>
         {
-            GossipSender.Send(ctx, cluster, targetMember, delta, request, cluster.Config.GossipRequestTimeout, transport);
+            GossipSender.Send(ctx, cluster.MemberList, targetMember, delta, request, cluster.Config.GossipRequestTimeout, transport);
             return Task.CompletedTask;
         });
 
@@ -119,7 +119,7 @@ public class GossipTransportTests
 
         var props = Props.FromFunc(ctx =>
         {
-            GossipSender.Send(ctx, cluster, targetMember, delta, request, cluster.Config.GossipRequestTimeout, transport);
+            GossipSender.Send(ctx, cluster.MemberList, targetMember, delta, request, cluster.Config.GossipRequestTimeout, transport);
             return Task.CompletedTask;
         });
 
@@ -151,7 +151,7 @@ public class GossipTransportTests
 
         var props = Props.FromFunc(ctx =>
         {
-            GossipSender.Send(ctx, cluster, targetMember, delta, request, cluster.Config.GossipRequestTimeout, transport);
+            GossipSender.Send(ctx, cluster.MemberList, targetMember, delta, request, cluster.Config.GossipRequestTimeout, transport);
             return Task.CompletedTask;
         });
 

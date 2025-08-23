@@ -27,7 +27,7 @@ namespace Proto.Cluster;
 ///     If the member learns that it is blocked from gossip, it will initiate shutdown.
 /// </summary>
 [PublicAPI]
-public record MemberList
+public record MemberList : IMemberList
 {
 #pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<MemberList>();
