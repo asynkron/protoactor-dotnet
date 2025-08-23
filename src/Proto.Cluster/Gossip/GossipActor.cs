@@ -23,19 +23,17 @@ public class GossipActor : IActor
     private readonly IMemberList _memberList;
     private readonly IBlockList _blockList;
     private readonly IGossipTransport _transport;
+    private readonly bool _gossipDebugLogging;
 
     // lookup from state key -> consensus checks
 
     public GossipActor(
-        ActorSystem system,
         TimeSpan gossipRequestTimeout,
-        InstanceLogger? instanceLogger,
-        int gossipFanout,
-        int gossipMaxSend,
         IGossip gossip,
         IGossipTransport transport,
         IMemberList memberList,
-        IBlockList blockList
+        IBlockList blockList,
+        bool gossipDebugLogging
     )
     {
         _gossipRequestTimeout = gossipRequestTimeout;
@@ -43,6 +41,7 @@ public class GossipActor : IActor
         _transport = transport;
         _memberList = memberList;
         _blockList = blockList;
+        _gossipDebugLogging = gossipDebugLogging;
     }
 
     public async Task ReceiveAsync(IContext context)
@@ -152,7 +151,7 @@ public class GossipActor : IActor
         }
         
         ReceiveState(context, gossipRequest.State);
-        if (context.Cluster().Config.GossipDebugLogging)
+        if (_gossipDebugLogging)
         {
             Logger.LogInformation("Responding to GossipRequest {Request} to {MemberId}", gossipRequest, gossipRequest.MemberId);
         }
@@ -210,7 +209,7 @@ public class GossipActor : IActor
             MemberId = context.System.Id,
             State = memberStateDelta.State.Clone(), //ensure we have a copy and not send state that might mutate
         };
-        if (context.Cluster().Config.GossipDebugLogging)
+        if (_gossipDebugLogging)
         {
             gossipRequest.RequestId = Guid.NewGuid().ToString("N");
             Logger.LogInformation("Sending GossipRequest {Request} to {MemberId}", gossipRequest, targetMember.Id);
