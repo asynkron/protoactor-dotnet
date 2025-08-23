@@ -1,5 +1,5 @@
-using System;
 using System.Collections.Immutable;
+using System.Linq;
 using FluentAssertions;
 using Proto.Cluster.Gossip;
 using Xunit;
@@ -11,7 +11,6 @@ public class MemberStateDeltaBuilderTests
     [Fact]
     public void Build_FiltersUsingWatermarks()
     {
-        var builder = new MemberStateDeltaBuilder("a", 10);
         var state = new GossipState();
 
         var memberA = new GossipState.Types.GossipMemberState();
@@ -22,7 +21,9 @@ public class MemberStateDeltaBuilderTests
         var committed = ImmutableDictionary<string, long>.Empty
             .SetItem("c.a", 1);
 
-        var result = builder.Build(state, "c", committed, new Random(0));
+        var members = state.Members.Where(m => m.Key != "c");
+
+        var result = MemberStateDeltaBuilder.BuildOrdered(state, "c", committed, members, 10);
 
         result.State.Members.Should().ContainKey("a");
         result.State.Members["a"].Values.Keys.Should().BeEquivalentTo("k2");
@@ -33,7 +34,6 @@ public class MemberStateDeltaBuilderTests
     [Fact]
     public void Build_RespectsMaxSend()
     {
-        var builder = new MemberStateDeltaBuilder("member0", 3);
         var state = new GossipState();
 
         for (var i = 0; i < 5; i++)
@@ -43,7 +43,9 @@ public class MemberStateDeltaBuilderTests
             state.Members.Add($"member{i}", ms);
         }
 
-        var result = builder.Build(state, "target", ImmutableDictionary<string, long>.Empty, new Random(0));
+        var members = state.Members.OrderBy(m => m.Key);
+
+        var result = MemberStateDeltaBuilder.BuildOrdered(state, "target", ImmutableDictionary<string, long>.Empty, members, 3);
 
         result.State.Members.Count.Should().BeLessOrEqualTo(3);
     }
