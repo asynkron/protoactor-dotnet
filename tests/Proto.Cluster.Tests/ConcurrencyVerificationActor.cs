@@ -82,6 +82,7 @@ public class ConcurrencyVerificationActor : IActor
     private async Task OnStopping(IContext context)
     {
         _state!.RecordStopping(context);
+        // Simulate async cleanup work
         await Task.Delay(Random.Shared.Next(50));
     }
 

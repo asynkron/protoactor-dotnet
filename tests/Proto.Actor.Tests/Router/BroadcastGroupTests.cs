@@ -172,6 +172,7 @@ public class BroadcastGroupTests
         {
             if (context.Message is string s && s == "go slow")
             {
+                // Simulate a slow routee for broadcast testing
                 await Task.Delay(5000);
                 return;
             }

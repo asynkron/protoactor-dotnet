@@ -312,6 +312,7 @@ public class SupervisionTestsOneForOne
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(1);
         while (!parentMailboxStats.Received.ToArray().Any(msg => msg is Restart) && DateTime.UtcNow < deadline)
         {
+            // Poll for restart notification until timeout
             await Task.Delay(10);
         }
 

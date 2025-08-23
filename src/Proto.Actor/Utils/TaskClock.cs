@@ -49,6 +49,7 @@ public class TaskClock
     /// </summary>
     public void Start()
     {
+        // Initialize first bucket to signal after the combined timeout interval
         CurrentBucket = Task.Delay(_bucketSize, _ct);
 
         _ = SafeTask.Run(async () =>
@@ -57,7 +58,10 @@ public class TaskClock
             {
                 try
                 {
+                    // Rotate bucket to provide a fresh completion task for next tick
                     CurrentBucket = Task.Delay(_bucketSize, _ct);
+
+                    // Delay until it's time to update the bucket again
                     await Task.Delay(_updateInterval, _ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)

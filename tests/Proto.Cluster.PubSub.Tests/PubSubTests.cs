@@ -323,6 +323,7 @@ public class PubSubTests : IClassFixture<PubSubClusterFixture>
                 CancellationTokens.FromSeconds(2));
             Assert.NotNull(pid);
 
+            // Allow time for the topic actor to expire and be restarted
             await Task.Delay(TimeSpan.FromSeconds(5));
 
             var newPid = await firstCluster.GetAsync(ClusterIdentity.Create(topic, TopicActor.Kind),

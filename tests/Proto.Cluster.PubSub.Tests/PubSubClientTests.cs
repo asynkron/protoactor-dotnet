@@ -69,9 +69,10 @@ public class PubSubClientTests : IAsyncLifetime
 		subscribers.Subscribers_.Should().Contain(s => s.Pid.Equals(clientPid));
         
 		// messages should not send or attempt to send
-		await _fixture.PublishData(topic, 2);
-		await Task.Delay(3000);
-		await _fixture.PublishData(topic, 2);
+                await _fixture.PublishData(topic, 2);
+                // Give the system time to attempt delivery before sending again
+                await Task.Delay(3000);
+                await _fixture.PublishData(topic, 2);
 	
 		// dead letter should be received, so the subscription is removed	
                 await AwaitConditionAsync(async () =>

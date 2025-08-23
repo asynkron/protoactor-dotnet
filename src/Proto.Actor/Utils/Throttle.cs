@@ -90,6 +90,7 @@ public static class Throttle
         void StartTimer(Action<int>? callBack) =>
             _ = SafeTask.Run(async () =>
                 {
+                    // Pause for the throttling period before resetting the counter
                     await Task.Delay(period).ConfigureAwait(false);
                     var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
 

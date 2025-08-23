@@ -124,6 +124,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
 
                 if (evt.ShouldBlock && _remoteConfig.WaitAfterEndpointTerminationTimeSpan.HasValue)
                 {
+                    // Give remote transport a chance to release resources before reconnecting
                     await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value, CancellationToken).ConfigureAwait(false);
                 }
 

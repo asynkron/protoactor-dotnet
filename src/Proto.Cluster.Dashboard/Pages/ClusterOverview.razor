@@ -102,6 +102,7 @@
             }
 
             await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+            // Briefly pause to limit how often the dashboard refreshes
             await Task.Delay(100).ConfigureAwait(false);
         }
     }

@@ -293,6 +293,7 @@ internal class IdentityStoragePlacementActor : IActor
                 if (++attempts < PersistenceRetries)
                 {
                     Logger.LogWarning(e, "No entry was updated {@SpawnLock}. Retrying", spawnLock);
+                    // Give storage a moment before retrying to store the activation
                     await Task.Delay(50).ConfigureAwait(false);
                 }
                 else

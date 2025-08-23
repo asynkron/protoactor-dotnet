@@ -48,6 +48,8 @@ public class ExponentialBackoffStrategy : ISupervisorStrategy
         var backoff = rs.FailureCount * (int)_initialBackoff.TotalMilliseconds;
         var noise = _random.Next(500);
         var duration = TimeSpan.FromMilliseconds(backoff + noise);
+
+        // Schedule restart after a backoff period to avoid aggressive retry loops
         Task.Delay(duration).ContinueWith(t => supervisor.RestartChildren(reason, child));
     }
 }

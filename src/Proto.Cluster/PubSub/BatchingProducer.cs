@@ -283,6 +283,7 @@ public class BatchingProducer : IAsyncDisposable
                 }
                 else if (decision.Delay != null)
                 {
+                    // Delay according to retry strategy before attempting to publish again
                     await Task.Delay(decision.Delay.Value).ConfigureAwait(false);
                 }
             }

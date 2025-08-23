@@ -102,6 +102,7 @@ public abstract class BaseFutureTests : ActorTestBase
                 {
                     if (ctx.Sender is not null)
                     {
+                        // Delay slightly to exceed future timeout
                         await Task.Delay(1);
                         ctx.Respond(ctx.Message!);
                     }

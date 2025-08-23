@@ -26,15 +26,28 @@ public static class Retry
         TryUntil(body, res => res != null, retryCount, backoffMilliSeconds, maxBackoffMilliseconds, onError,
             onFailed, ct);
 
-    public static Task<T> TryUntil<T>(Func<Task<T>> body, Func<T?, bool> condition, int retryCount = 10,
-        int backoffMilliSeconds = 100, int maxBackoffMilliseconds = 5000, Action<int, Exception>? onError = null,
-        Action<Exception>? onFailed = null, CancellationToken ct = default) =>
+    public static Task<T> TryUntil<T>(
+        Func<Task<T>> body,
+        Func<T?, bool> condition,
+        int retryCount = 10,
+        int backoffMilliSeconds = 100,
+        int maxBackoffMilliseconds = 5000,
+        Action<int, Exception>? onError = null,
+        Action<Exception>? onFailed = null,
+        CancellationToken ct = default
+    ) =>
         TryInternal(body, condition, retryCount, backoffMilliSeconds, maxBackoffMilliseconds, onError, onFailed,
             ignoreFailure: false, checkFailFast: true, ct);
 
-    public static Task<T> Try<T>(Func<Task<T>> body, int retryCount = 10, int backoffMilliSeconds = 100,
-        int maxBackoffMilliseconds = 5000, Action<int, Exception>? onError = null, Action<Exception>? onFailed = null,
-        CancellationToken ct = default) =>
+    public static Task<T> Try<T>(
+        Func<Task<T>> body,
+        int retryCount = 10,
+        int backoffMilliSeconds = 100,
+        int maxBackoffMilliseconds = 5000,
+        Action<int, Exception>? onError = null,
+        Action<Exception>? onFailed = null,
+        CancellationToken ct = default
+    ) =>
         TryInternal(body, condition: null, retryCount, backoffMilliSeconds, maxBackoffMilliseconds, onError, onFailed,
             ignoreFailure: false, checkFailFast: false, ct);
 

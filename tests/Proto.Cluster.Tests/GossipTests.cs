@@ -58,6 +58,7 @@ public class GossipTests
         await using var _ = clusterFixture;
         await clusterFixture.InitializeAsync();
 
+        // Allow cluster to settle before verifying consensus
         await Task.Delay(1000);
 
         var (consensus, initialTopologyHash) =
@@ -127,6 +128,7 @@ public class GossipTests
                 "We should be able to read our writes, and locally we do not have consensus");
 
         _testOutputHelper.WriteLine("Read our own writes...");
+        // Allow time for gossip state to propagate
         await Task.Delay(5000);
 
         _testOutputHelper.WriteLine("Checking consensus...");
@@ -167,6 +169,7 @@ public class GossipTests
         var ct = CancellationTokens.FromSeconds(20);
         while (!ct.IsCancellationRequested && !await AllReplicated())
         {
+            // Poll periodically until all gossip states have replicated
             await Task.Delay(50, ct);
         }
 
