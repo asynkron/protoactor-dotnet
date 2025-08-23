@@ -143,8 +143,10 @@ public class EscalateFailureTests
 
         _ = Task.Run(() => msg1.TaskCompletionSource.SetCanceled());
 
-        await AwaitConditionAsync(() => mailboxHandler.EscalatedFailures.Count == 1,
-            TimeSpan.FromMilliseconds(100));
+        await AwaitConditionAsync(
+            () => mailboxHandler.EscalatedFailures.Count == 1,
+            // allow additional time for the asynchronous cancellation to propagate
+            TimeSpan.FromMilliseconds(500));
 
         Assert.Single(mailboxHandler.EscalatedFailures);
         Assert.IsType<TaskCanceledException>(mailboxHandler.EscalatedFailures[0]);

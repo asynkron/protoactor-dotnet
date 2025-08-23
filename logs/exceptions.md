@@ -6,3 +6,10 @@
 
 ### Proto.Cluster.Tests (Timeout)
 `System.TimeoutException: Request timed out` in `InMemoryPartitionActivatorClusterTests.HandlesSlowResponsesCorrectly`.
+### Proto.Mailbox.Tests.EscalateFailureTests.GivenNonCompletedUserMessageTaskGotCancelled_ShouldEscalateFailure
+`System.TimeoutException: The condition was not met within the timeout of 00:00:00.1000000` when waiting for mailbox failure escalation.
+
+### Proto.Tests.SupervisionTestsAllForOne.AllForOneStrategy_Should_PassExceptionOnRestart
+`System.InvalidOperationException: Collection was modified; enumeration operation may not execute.` during enumeration of mailbox statistics.
+### Proto.Tests.SupervisionTestsAllForOne.AllForOneStrategy_Should_PassExceptionOnRestart
+`System.InvalidOperationException: Collection was modified; enumeration operation may not execute.` during enumeration of mailbox statistics.
