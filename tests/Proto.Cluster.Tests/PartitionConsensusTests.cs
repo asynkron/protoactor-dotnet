@@ -1,11 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Gossip;
+using Proto.TestKit;
 using Xunit;
 using static Proto.TestKit.TestKit;
 
@@ -86,29 +86,5 @@ public class PartitionConsensusTests
                 .WithConfigureProps(p => baseConfig.ConfigureProps(p).WithSenderMiddleware(GossipNetworkPartition.Middleware))
                 .WithConfigureSystemProps((name, p) => baseConfig.ConfigureSystemProps(name, p).WithSenderMiddleware(GossipNetworkPartition.Middleware));
         }
-    }
-
-    private static class GossipNetworkPartition
-    {
-        private static readonly HashSet<string> Dropped = new();
-
-        public static void Isolate(string address) => Dropped.Add(address);
-        public static void Clear() => Dropped.Clear();
-
-        public static Func<Sender, Sender> Middleware => next => async (ctx, target, envelope) =>
-        {
-            if (envelope.Message is GossipRequest && target.Id == Gossiper.GossipActorName)
-            {
-                var from = ctx.System.Address;
-                var to = target.Address;
-
-                if (Dropped.Contains(from) || Dropped.Contains(to))
-                {
-                    return;
-                }
-            }
-
-            await next(ctx, target, envelope);
-        };
     }
 }
