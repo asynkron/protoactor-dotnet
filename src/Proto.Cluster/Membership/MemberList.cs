@@ -51,15 +51,13 @@ public record MemberList : IMemberList
 
     private ImmutableDictionary<int, Member> _membersByIndex = ImmutableDictionary<int, Member>.Empty;
 
-    private ImmutableDictionary<string, IMemberStrategy> _memberStrategyByKind =
-        ImmutableDictionary<string, IMemberStrategy>.Empty;
-
     private ImmutableDictionary<string, MetaMember> _metaMembers = ImmutableDictionary<string, MetaMember>.Empty;
 
     private int _nextMemberIndex;
 
     private TaskCompletionSource<bool> _startedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private IConsensusHandle<ulong>? _topologyConsensus;
+    private readonly ConsensusManager _consensusManager;
+    private readonly MemberStrategyManager _memberStrategyManager;
     private readonly bool _isClient;
 
     public bool IsClient => _isClient;
@@ -80,6 +78,8 @@ public record MemberList : IMemberList
             Kinds = { _cluster.GetClusterKinds() }
         };
 
+        _consensusManager = new ConsensusManager(cluster);
+        _memberStrategyManager = new MemberStrategyManager(cluster);
         _eventStream = _system.EventStream;
 
         //subscribe non synchronous to avoid recursive updates
@@ -132,27 +132,13 @@ public record MemberList : IMemberList
     /// <returns></returns>
     public ImmutableHashSet<string> GetMembers() => _activeMembers.Members.Select(m => m.Id).ToImmutableHashSet();
 
-    internal void InitializeTopologyConsensus() =>
-        _topologyConsensus =
-            _cluster.Gossip.RegisterConsensusCheck<ClusterTopology, ulong>(GossipKeys.Topology,
-                topology => topology.TopologyHash);
+    internal void InitializeTopologyConsensus() => _consensusManager.InitializeTopologyConsensus();
 
     internal Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct) =>
-        _topologyConsensus?.TryGetConsensus(ct) ??
-        Task.FromResult<(bool consensus, ulong topologyHash)>(default);
+        _consensusManager.TopologyConsensus(ct);
 
-    internal Member? GetActivator(string kind, string requestSourceAddress)
-    {
-        //immutable, don't lock
-        if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
-        {
-            return memberStrategy.GetActivator(requestSourceAddress);
-        }
-
-        Logger.DidNotFindActivatorForKind(kind);
-
-        return null;
-    }
+    internal Member? GetActivator(string kind, string requestSourceAddress) =>
+        _memberStrategyManager.GetActivator(kind, requestSourceAddress);
 
     /// <summary>
     ///     Used by clustering providers to update the member list.
@@ -210,20 +196,7 @@ public record MemberList : IMemberList
 
     private void HandleMemberLeave(Member memberThatLeft)
     {
-        foreach (var k in memberThatLeft.Kinds)
-        {
-            if (!_memberStrategyByKind.TryGetValue(k, out var ms))
-            {
-                continue;
-            }
-
-            ms.RemoveMember(memberThatLeft);
-
-            if (ms.GetAllMembers().Count == 0)
-            {
-                _memberStrategyByKind = _memberStrategyByKind.Remove(k);
-            }
-        }
+        _memberStrategyManager.RemoveMember(memberThatLeft);
 
         if (_metaMembers.TryGetValue(memberThatLeft.Id, out var meta))
         {
@@ -253,15 +226,7 @@ public record MemberList : IMemberList
             _membersByIndex = _membersByIndex.SetItem(index, newMember);
             _indexByAddress = _indexByAddress.SetItem(newMember.Address, index);
 
-            foreach (var kind in newMember.Kinds)
-            {
-                if (!_memberStrategyByKind.ContainsKey(kind))
-                {
-                    _memberStrategyByKind = _memberStrategyByKind.SetItem(kind, GetMemberStrategyByKind(kind));
-                }
-
-                _memberStrategyByKind[kind].AddMember(newMember);
-            }
+            _memberStrategyManager.AddMember(newMember);
         }
         catch (Exception x)
         {
@@ -335,22 +300,6 @@ public record MemberList : IMemberList
         }
 
         _cluster.System.EventStream.Publish(endpointTerminated);
-    }
-
-    private IMemberStrategy GetMemberStrategyByKind(string kind)
-    {
-        //Try get the cluster kind
-        var clusterKind = _cluster.TryGetClusterKind(kind);
-
-        //if it exists, and if it has a strategy
-        if (clusterKind?.Strategy != null)
-        {
-            //use that strategy
-            return clusterKind.Strategy;
-        }
-
-        //otherwise, use whatever member strategy the default builder says
-        return _cluster.Config.MemberStrategyBuilder(_cluster, kind) ?? new SimpleMemberStrategy();
     }
 
     /// <summary>
