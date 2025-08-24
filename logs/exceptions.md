@@ -15,3 +15,5 @@
 
 ### Proto.Tests.SupervisionTestsAllForOne.AllForOneStrategy_Should_PassExceptionOnRestart
 `System.InvalidOperationException: Collection was modified; enumeration operation may not execute.` during enumeration of mailbox statistics.
+### Proto.Cluster.Tests.GossipCoreTests.Large_cluster_should_get_topology_consensus
+`Test failure: output indicated [FAIL] but passed on rerun; no stack trace captured.`
