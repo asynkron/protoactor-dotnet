@@ -33,6 +33,26 @@ flowchart LR
   `GossipRequest`; the default `GossipTransport` simply forwards the request
   through `IContext.RequestReenter`.
 
+### Type relationships
+
+```mermaid
+classDiagram
+    class Gossiper
+    class GossipActor
+    class Gossip
+    class MemberStateDeltaBuilder
+    class GossipSender
+    class IGossipTransport
+    class GossipTransport
+    Gossiper o-- Gossip
+    Gossiper --> GossipActor : commands
+    Gossiper --> GossipSender : uses
+    GossipActor --> Gossip : merges
+    Gossip --> MemberStateDeltaBuilder : uses
+    GossipSender ..> IGossipTransport
+    IGossipTransport <|-- GossipTransport
+```
+
 ## Detecting members
 
 Cluster providers (e.g., Kubernetes) watch the environment for running nodes and
@@ -50,6 +70,41 @@ its `Joined` and `Left` lists cleared before being forwarded to the `GossipActor
 for inclusion in the gossip state ([Gossiper.cs](src/Proto.Cluster/Gossip/Gossiper.cs#L190-L204)).
 The gossip implementation stores the full membership under the `cluster:topology`
 key and tracks active member IDs for later consensus checks ([Gossip.cs](src/Proto.Cluster/Gossip/Gossip.cs#L85-L92)).
+
+## Gossip state structure
+
+```mermaid
+classDiagram
+    class GossipState {
+        +members : map<string, GossipMemberState>
+    }
+    class GossipMemberState {
+        +values : map<string, GossipKeyValue>
+    }
+    class GossipKeyValue {
+        +sequence_number : long
+        +value : Any
+        +local_timestamp_unix_milliseconds : long
+    }
+    GossipState --> GossipMemberState : members
+    GossipMemberState --> GossipKeyValue : values
+```
+
+Each cluster node keeps a `GossipState` containing a map of member IDs to
+`GossipMemberState` entries. A `GossipMemberState` holds a map of keys such as
+`cluster:topology` or `cluster:heartbeat` to `GossipKeyValue` records. Every
+`GossipKeyValue` carries a monotonically increasing `sequence_number` and a
+payload packed as `google.protobuf.Any`【F:src/Proto.Cluster/GossipContracts.proto†L21-L28】【F:src/Proto.Cluster/GossipContracts.proto†L40-L43】.
+
+When a node updates one of its keys, the sequence number is incremented before
+the value is stored, ensuring later updates supersede earlier ones【F:src/Proto.Cluster/Gossip/GossipStateManagement.cs†L120-L132】.
+To avoid resending data, `MemberStateDeltaBuilder` tracks a per-target
+high-water mark ("watermark") for each `{target}.{member}` pair. Only values with
+sequence numbers above this watermark are included in a delta, and the watermark
+is advanced to the highest sent sequence number【F:src/Proto.Cluster/Gossip/MemberStateDeltaBuilder.cs†L51-L74】.
+`Gossip` stores these watermarks as committed offsets and updates them when a
+peer acknowledges receipt, guaranteeing that each node receives monotonically
+ordered state without duplicates【F:src/Proto.Cluster/Gossip/Gossip.cs†L69-L71】【F:src/Proto.Cluster/Gossip/Gossip.cs†L300-L307】.
 
 ## Gossip dissemination
 
