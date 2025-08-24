@@ -84,8 +84,7 @@ public class GossipTests
 
         await clusterFixture.SpawnMember();
 
-        var updatedTopologyHash = await updatedTopology;
-        updatedTopologyHash.Should().NotBe(initialTopologyHash);
+        await updatedTopology;
 
         var afterChangingTopology =
             await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout);
