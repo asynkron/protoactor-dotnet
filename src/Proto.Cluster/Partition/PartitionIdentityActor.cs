@@ -603,10 +603,7 @@ internal class PartitionIdentityActor : IActor
                     res, msg.ClusterIdentity);
             }
             // Just waits for the already in-progress activation to complete (or fail)
-            context.ReenterAfter(res.Response.Task, async task =>
-                {
-                    context.Respond(await task.ConfigureAwait(false));
-                }
+            context.ReenterAfter(res.Response.Task, async task => context.Respond(await task.ConfigureAwait(false))
             );
 
             return Task.CompletedTask;
@@ -646,7 +643,7 @@ internal class PartitionIdentityActor : IActor
 
                 if (_partitionLookup.TryGetValue(msg.ClusterIdentity, out var pid))
                 {
-                    if (response.Pid is not null && !response.Pid.Equals(pid))
+                    if (response.Pid?.Equals(pid) == false)
                     {
                         context.Stop(response.Pid); // Stop duplicate activation
                     }
@@ -669,8 +666,8 @@ internal class PartitionIdentityActor : IActor
                         Logger.LogDebug("[PartitionIdentity] [PartitionIdentityActor] Spawned {ClusterIdentity} on {Pid}",
                             msg.ClusterIdentity, response.Pid);
                     }
-                    
-                    if (response.Failed is false)
+
+                    if (!response.Failed)
                     {
                         if (response.TopologyHash != TopologyHash) // Topology changed between request and response
                         {

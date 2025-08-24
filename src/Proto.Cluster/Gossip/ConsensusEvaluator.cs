@@ -49,4 +49,3 @@ internal static class ConsensusEvaluator
         return (hasConsensus, value, valueTuples);
     }
 }
-

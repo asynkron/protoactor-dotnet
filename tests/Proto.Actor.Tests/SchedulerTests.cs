@@ -137,4 +137,3 @@ public class SchedulerTests
         public void OnTimerRegistered() => _tcs.TrySetResult();
     }
 }
-

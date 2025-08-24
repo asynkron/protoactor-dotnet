@@ -22,7 +22,7 @@ public class DefaultClusterContext : IClusterContext
 #pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<DefaultClusterContext>();
 #pragma warning restore CS0618 // Type or member is obsolete
-    
+
     private readonly IIdentityLookup _identityLookup;
     private readonly PidCache _pidCache;
     private readonly ShouldThrottle _requestLogThrottle;
@@ -52,7 +52,6 @@ public class DefaultClusterContext : IClusterContext
     public async Task<T?> RequestAsync<T>(ClusterIdentity clusterIdentity, object message, ISenderContext context,
         CancellationToken ct)
     {
-        
         //for member requests, we need to wait for the cluster to be ready
         if (!_cluster.MemberList.IsClient)
         {
@@ -70,11 +69,11 @@ public class DefaultClusterContext : IClusterContext
         try
         {
             var lookupTimer = Stopwatch.StartNew();
-                
+
             while (!ct.IsCancellationRequested && !context.System.Shutdown.IsCancellationRequested)
             {
                 i++;
-                
+
                 if (i > 1 && Logger.IsEnabled(LogLevel.Debug))
                 {
                     Logger.LogDebug("RequestAsync attempt {Attempt} for {ClusterIdentity}", i, clusterIdentity);
@@ -101,7 +100,7 @@ public class DefaultClusterContext : IClusterContext
                     {
                         return TimeoutOrThrow();
                     }
-                    
+
                     // Back off slightly before retrying PID lookup to reduce contention
                     await Task.Delay(i * 20, CancellationToken.None).ConfigureAwait(false);
 
@@ -127,14 +126,14 @@ public class DefaultClusterContext : IClusterContext
                 {
                     context.Request(pid, message, future.Pid);
                     var task = future.Task;
-                    
+
                     await task.WaitAsync(CancellationTokens.FromSeconds(_requestTimeoutSeconds)).ConfigureAwait(false);
 
                     if (task.IsCompleted)
                     {
                         var result = await task.ConfigureAwait(false);
                         var untypedResult = MessageEnvelope.UnwrapMessage(result);
-                        
+
                         if (untypedResult is DeadLetterResponse)
                         {
                             if (!context.System.Shutdown.IsCancellationRequested && Logger.IsEnabled(LogLevel.Debug))
@@ -147,7 +146,7 @@ public class DefaultClusterContext : IClusterContext
 
                             continue;
                         }
-                        
+
                         if (untypedResult is T t1)
                         {
                             return t1;
@@ -157,7 +156,7 @@ public class DefaultClusterContext : IClusterContext
                         {
                             return TimeoutOrThrow();
                         }
-                        
+
                         if (typeof(T) == typeof(MessageEnvelope))
                         {
                             return (T)(object)MessageEnvelope.Wrap(result);

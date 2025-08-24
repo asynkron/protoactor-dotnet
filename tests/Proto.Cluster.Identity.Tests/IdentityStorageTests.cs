@@ -54,7 +54,7 @@ public abstract class IdentityStorageTests : IDisposable
         const int attempts = 10;
 
         var locks = await Task.WhenAll(Enumerable.Range(1, attempts)
-            .Select(i => _storage.TryAcquireLock(identity, timeout))
+            .Select(_ => _storage.TryAcquireLock(identity, timeout))
         );
 
         var successfulLocks = locks.Where(it => it != null).ToList();
@@ -323,10 +323,10 @@ public abstract class IdentityStorageTests : IDisposable
     }
 
     // ReSharper disable once SuggestBaseTypeForParameter
-    private PID Activate(Member activator, ClusterIdentity identity) =>
+    private static PID Activate(Member activator, ClusterIdentity identity) =>
         PID.FromAddress(activator.Address, $"placement-activator/{identity}${NextId()}");
 
-    private Member GetFakeActivator()
+    private static Member GetFakeActivator()
     {
         var activator = new Member
         {
@@ -339,5 +339,5 @@ public abstract class IdentityStorageTests : IDisposable
         return activator;
     }
 
-    private int NextId() => Interlocked.Increment(ref testId);
+    private static int NextId() => Interlocked.Increment(ref testId);
 }

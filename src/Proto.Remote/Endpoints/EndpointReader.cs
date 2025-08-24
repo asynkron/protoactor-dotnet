@@ -129,10 +129,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
                     systemId = clientConnection.MemberId;
                     endpoint = _endpointManager.GetOrAddClientEndpoint(systemId);
 
-                    _ = Task.Run(async () =>
-                    {
-                        await RunClientWriter(responseStream, cancellationTokenSource, endpoint, systemId).ConfigureAwait(false);
-                    });
+                    _ = Task.Run(async () => await RunClientWriter(responseStream, cancellationTokenSource, endpoint, systemId).ConfigureAwait(false));
                 }
 
                     break;
@@ -173,7 +170,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
                         shouldExit = true;
                     }
 
-                    if (blocked.Any())
+                    if (blocked.Count != 0)
                     {
                         _system.Remote().BlockList.Block(blocked, "Blocked by remote member");
                     }

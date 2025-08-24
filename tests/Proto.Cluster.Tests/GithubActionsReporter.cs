@@ -27,11 +27,11 @@ public class GithubActionsReporter
 
     private static Activity? StartActivity([CallerMemberName] string callerName = "N/A") =>
         ActivitySource.StartActivity(callerName);
-    
+
     private readonly List<TestResult> _results = new();
 
     private record TestResult(string Name, string TraceId, TimeSpan Duration, Exception? Exception= null);
-    
+
     private readonly StringBuilder _output = new();
 
     public async Task Run(Func<Task> test, [CallerMemberName] string testName = "")
@@ -57,7 +57,7 @@ public class GithubActionsReporter
                 Console.WriteLine($"Running test: {testName}");
                 Console.WriteLine(traceViewUrl);
             }
-            
+
             await test();
             Logger.LogInformation("Test succeeded");
             _results.Add(new TestResult(testName, traceId, sw.Elapsed));
@@ -76,9 +76,9 @@ public class GithubActionsReporter
 
     public async Task WriteReportFile()
     {
-        var failIcon =
+        const string failIcon =
             "<img src=\"https://gist.githubusercontent.com/rogeralsing/d8566b01e0850be70f7af9bc9757691e/raw/e025b5d58fe3aec1029a5c74f5ab2ee198960fcb/fail.svg\">";
-        var successIcon =
+        const string successIcon =
             "<img src=\"https://gist.githubusercontent.com/rogeralsing/b9165f8eaeb25f05226745c94ab011b6/raw/cb28ccf1a11c44c8b4c9173bc4aeb98bfa79ca4b/success.svg\">";
 
         var serverUrl = Environment.GetEnvironmentVariable("GITHUB_SERVER_URL");
@@ -102,7 +102,7 @@ Test
 Duration
 </th>
 </tr>");
-            
+
             foreach (var res in _results)
             {
                 try
@@ -126,7 +126,7 @@ Duration
 <tr>
 <td colspan=""3"">
 <code>
-{res.Exception.ToString()}
+{res.Exception}
 </code>
 </td>
 </tr>");
@@ -138,7 +138,7 @@ Duration
                 }
             }
             _output.AppendLine("</table>");
-            
+
             await File.AppendAllTextAsync(f, _output.ToString());
         }
     }

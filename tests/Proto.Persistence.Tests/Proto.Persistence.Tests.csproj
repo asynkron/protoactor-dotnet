@@ -1,27 +1,27 @@
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <LangVersion>10</LangVersion>
-        <TargetFrameworks>net8.0</TargetFrameworks>
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" />
-        <PackageReference Include="Testcontainers" />
-        <PackageReference Include="Testcontainers.PostgreSql" />
-        <PackageReference Include="Testcontainers.CouchDb" />
-        <PackageReference Include="Testcontainers.MsSql" />
-        <PackageReference Include="Testcontainers.DynamoDb" />
-        <PackageReference Include="Testcontainers.RavenDb" />
-        <PackageReference Include="Testcontainers.MongoDb" />
-    </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\..\src\Proto.Persistence.Couchbase\Proto.Persistence.Couchbase.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Persistence.DynamoDB\Proto.Persistence.DynamoDB.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Persistence.Marten\Proto.Persistence.Marten.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Persistence.MongoDB\Proto.Persistence.MongoDB.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Persistence.RavenDB\Proto.Persistence.RavenDB.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Persistence.Sqlite\Proto.Persistence.Sqlite.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Persistence.SqlServer\Proto.Persistence.SqlServer.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Persistence\Proto.Persistence.csproj" />
-        <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
-    </ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <LangVersion>10</LangVersion>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Testcontainers.CouchDb" />
+    <PackageReference Include="Testcontainers.MsSql" />
+    <PackageReference Include="Testcontainers.DynamoDb" />
+    <PackageReference Include="Testcontainers.RavenDb" />
+    <PackageReference Include="Testcontainers.MongoDb" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Proto.Persistence.Couchbase\Proto.Persistence.Couchbase.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Persistence.DynamoDB\Proto.Persistence.DynamoDB.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Persistence.Marten\Proto.Persistence.Marten.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Persistence.MongoDB\Proto.Persistence.MongoDB.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Persistence.RavenDB\Proto.Persistence.RavenDB.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Persistence.Sqlite\Proto.Persistence.Sqlite.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Persistence.SqlServer\Proto.Persistence.SqlServer.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Persistence\Proto.Persistence.csproj" />
+    <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
+  </ItemGroup>
 </Project>

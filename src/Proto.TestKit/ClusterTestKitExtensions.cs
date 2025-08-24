@@ -51,4 +51,3 @@ public static class ClusterTestKitExtensions
             $"Member {member.Id} was not found within {waitTimeout}");
     }
 }
-

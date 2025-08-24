@@ -24,7 +24,7 @@ public class TimeoutTests
         await using var _ = fixture;
         await fixture.InitializeAsync();
 
-        await fixture.Members.First()
+        await fixture.Members[0]
             .Invoking(m => m.RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
                     new SlowPing { Message = "hi", DelayMs = 4000 }, new CancellationTokenSource(500).Token
                 )
@@ -33,7 +33,7 @@ public class TimeoutTests
             .ThrowAsync<TimeoutException>();
     }
 
-    private string CreateIdentity(string baseId) => $"{Guid.NewGuid().ToString("N").Substring(0, 6)}-{baseId}-";
+    private static string CreateIdentity(string baseId) => $"{Guid.NewGuid().ToString("N").Substring(0, 6)}-{baseId}-";
 
     private class Fixture : BaseInMemoryClusterFixture
     {

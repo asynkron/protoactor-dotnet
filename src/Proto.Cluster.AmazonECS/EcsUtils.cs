@@ -29,7 +29,7 @@ public static class EcsUtils
 
         var instanceArns = allTasks.TaskArns;
 
-        if (!instanceArns.Any())
+        if (instanceArns.Count == 0)
         {
             return Array.Empty<Member>();
         }
@@ -64,7 +64,7 @@ public static class EcsUtils
             {
                 Id = metadata[ProtoLabels.LabelMemberId],
                 Port = int.Parse(metadata[ProtoLabels.LabelPort]),
-                Host = task.Containers.First().NetworkInterfaces.First().PrivateIpv4Address,
+                Host = task.Containers[0].NetworkInterfaces[0].PrivateIpv4Address,
                 Kinds = { kinds }
             };
 

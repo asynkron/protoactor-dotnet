@@ -17,10 +17,10 @@ public class ExpectUpdatedTopologyConsensusTests
         await clusterFixture.InitializeAsync();
 
         // Capture the initial topology hash
-        (_, var initialHash) = await clusterFixture.Members.First()
+        (_, var initialHash) = await clusterFixture.Members[0]
             .MemberList.TopologyConsensus(CancellationTokens.FromSeconds(5));
 
-        var updateTask = clusterFixture.Members.First().ExpectUpdatedTopologyConsensus();
+        var updateTask = clusterFixture.Members[0].ExpectUpdatedTopologyConsensus();
 
         await clusterFixture.SpawnMember();
 
@@ -35,7 +35,7 @@ public class ExpectUpdatedTopologyConsensusTests
         await using var clusterFixture = new InMemoryClusterFixture();
         await clusterFixture.InitializeAsync();
 
-        var updateTask = clusterFixture.Members.First()
+        var updateTask = clusterFixture.Members[0]
             .ExpectUpdatedTopologyConsensus(TimeSpan.FromMilliseconds(200));
 
         await Assert.ThrowsAsync<TimeoutException>(() => updateTask);

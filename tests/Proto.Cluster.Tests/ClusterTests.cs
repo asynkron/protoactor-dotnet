@@ -29,7 +29,7 @@ public abstract class ClusterTests : ClusterTestBase
     [Fact]
     public void ClusterMembersMatch()
     {
-        var memberSet = Members.First().MemberList.GetMembers();
+        var memberSet = Members[0].MemberList.GetMembers();
 
         memberSet.Should().NotBeEmpty();
 
@@ -116,7 +116,7 @@ public abstract class ClusterTests : ClusterTestBase
 
             const string msg = "Hello-slow-world";
 
-            var response = await Members.First()
+            var response = await Members[0]
                 .RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
                     new SlowPing { Message = msg, DelayMs = 5000 }, timeout
                 );
@@ -135,7 +135,7 @@ public abstract class ClusterTests : ClusterTestBase
 
             const string msg = "Hello-message-envelope";
 
-            var response = await Members.First()
+            var response = await Members[0]
                 .RequestAsync<MessageEnvelope>(CreateIdentity("message-envelope"),
                     EchoActor.Kind,
                     new Ping { Message = msg }, timeout
@@ -159,9 +159,9 @@ public abstract class ClusterTests : ClusterTestBase
                 return;
             }
 
-            var sourceMember = Members.First();
+            var sourceMember = Members[0];
             var sourceMemberId = sourceMember.System.Id;
-            var targetMember = Members.Last();
+            var targetMember = Members[^1];
             var targetMemberId = targetMember.System.Id;
 
             //make sure we somehow don't already have the expected value in the state of targetMember
@@ -250,7 +250,7 @@ public abstract class ClusterTests : ClusterTestBase
 
             await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
 
-            var toBeRemoved = Members.Last();
+            var toBeRemoved = Members[^1];
             _testOutputHelper.WriteLine("Removing node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
             await ClusterFixture.RemoveNode(toBeRemoved);
             _testOutputHelper.WriteLine("Removed node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
@@ -307,7 +307,7 @@ public abstract class ClusterTests : ClusterTestBase
         var timer = Stopwatch.StartNew();
         var timeout = new CancellationTokenSource(timeoutMs).Token;
         await Task.WhenAll(nodes.SelectMany(entryNode => actorIds.Select(id => PingPong(entryNode, id, timeout))));
-        _testOutputHelper.WriteLine("Got response from {0} nodes in {1}", nodes.Count(), timer.Elapsed);
+        _testOutputHelper.WriteLine("Got response from {0} nodes in {1}", nodes.Count, timer.Elapsed);
     }
 
     /// <summary>
@@ -319,7 +319,7 @@ public abstract class ClusterTests : ClusterTestBase
         await Trace(async () =>
         {
             var tcs = new CancellationTokenSource();
-            var entryNode = Members.First();
+            var entryNode = Members[0];
             var timer = Stopwatch.StartNew();
             var task = entryNode.RequestAsync<Ping>("non-existing", "gen-actor", new Ping(), tcs.Token);
             try
@@ -338,11 +338,11 @@ public abstract class ClusterTests : ClusterTestBase
                 _testOutputHelper.WriteLine("Got expected timeout after " + timer.ElapsedMilliseconds + "ms");
                 return;
             }
-            
+
             // If the task completed, then the test was not conclusive, as we ether need a time out or infinite delay.
             if(task.IsCompletedSuccessfully)
                 throw new Exception("Should not get here");
-            
+
             // If still running, then let's set our cancellation token to cancel the task, and it should then exit
             _testOutputHelper.WriteLine("Canceling task via CancellationTokenSource");
             tcs.Cancel();
@@ -355,10 +355,9 @@ public abstract class ClusterTests : ClusterTestBase
             {
                 throw new Exception("RequestAsync didn't timeout as expected");
             }
-     
         }, _testOutputHelper);
     }
-    
+
     [Theory]
     [InlineData(10, 10000)]
     public async Task CanSpawnVirtualActorsSequentially(int actorCount, int timeoutMs)
@@ -367,7 +366,7 @@ public abstract class ClusterTests : ClusterTestBase
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
-            var entryNode = Members.First();
+            var entryNode = Members[0];
 
             var timer = Stopwatch.StartNew();
 
@@ -389,7 +388,7 @@ public abstract class ClusterTests : ClusterTestBase
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
-            var entryNode = Members.First();
+            var entryNode = Members[0];
             var timer = Stopwatch.StartNew();
 
             var id = GetActorIds(clientCount).First();
@@ -409,7 +408,7 @@ public abstract class ClusterTests : ClusterTestBase
         {
             var timeout = new CancellationTokenSource(timeoutMs).Token;
 
-            var entryNode = Members.First();
+            var entryNode = Members[0];
 
             var timer = Stopwatch.StartNew();
             await Task.WhenAll(GetActorIds(actorCount).Select(id => PingPong(entryNode, id, timeout)));
@@ -427,7 +426,7 @@ public abstract class ClusterTests : ClusterTestBase
             using var cts = new CancellationTokenSource(timeoutMs);
             var timeout = cts.Token;
 
-            var entryNode = Members.First();
+            var entryNode = Members[0];
 
             var timer = Stopwatch.StartNew();
             var actorIds = GetActorIds(actorCount);
@@ -456,7 +455,7 @@ public abstract class ClusterTests : ClusterTestBase
             using var cts = new CancellationTokenSource(timeoutMs);
             var timeout = cts.Token;
 
-            var entryNode = Members.First();
+            var entryNode = Members[0];
 
             var timer = Stopwatch.StartNew();
             var actorIds = GetActorIds(actorCount);
@@ -506,7 +505,7 @@ public abstract class ClusterTests : ClusterTestBase
             {
                 var timeout = new CancellationTokenSource(timeoutMs).Token;
 
-                var member = Members.First();
+                var member = Members[0];
 
                 var invalidIdentity =
                     ClusterIdentity.Create(Tests.ClusterFixture.InvalidIdentity, filteredKind);
@@ -528,7 +527,7 @@ public abstract class ClusterTests : ClusterTestBase
             using var cts = new CancellationTokenSource(timeoutMs);
             var timeout = cts.Token;
 
-            var entryNode = Members.First();
+            var entryNode = Members[0];
 
             var timer = Stopwatch.StartNew();
 
@@ -550,7 +549,7 @@ public abstract class ClusterTests : ClusterTestBase
         }, _testOutputHelper);
     }
 
-    private async Task PingPong(
+    private static async Task PingPong(
         Cluster cluster,
         string id,
         CancellationToken token = default,

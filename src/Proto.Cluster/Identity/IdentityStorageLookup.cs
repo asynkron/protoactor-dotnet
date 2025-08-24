@@ -97,5 +97,5 @@ public class IdentityStorageLookup : IIdentityLookup
 
     internal Task RemoveMemberAsync(string memberId) => Storage.RemoveMember(memberId, CancellationToken.None);
 
-    internal PID RemotePlacementActor(string address) => PID.FromAddress(address, PlacementActorName);
+    internal static PID RemotePlacementActor(string address) => PID.FromAddress(address, PlacementActorName);
 }

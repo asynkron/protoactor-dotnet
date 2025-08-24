@@ -50,22 +50,22 @@ public class SqlServerProvider : IProvider
 
         // execute string interpolation once
         _sqlDeleteEvents =
-            $@"DELETE FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
+            $"DELETE FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
 
         _sqlDeleteSnapshots =
-            $@"DELETE FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName AND SnapshotIndex <= @SnapshotIndex";
+            $"DELETE FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName AND SnapshotIndex <= @SnapshotIndex";
 
-        _sqlReadEvents = $@"SELECT EventIndex, EventData FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex >= @IndexStart AND EventIndex <= @IndexEnd ORDER BY EventIndex ASC";
+        _sqlReadEvents = $"SELECT EventIndex, EventData FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex >= @IndexStart AND EventIndex <= @IndexEnd ORDER BY EventIndex ASC";
 
         _sqlReadSnapshot =
             $@"SELECT SnapshotIndex, SnapshotData FROM [{_tableSchema}].[{_tableSnapshots}]
                WHERE ActorName = @ActorName AND SnapshotIndex = (SELECT MAX(SnapshotIndex) FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName)";
 
         _sqlSaveEvents =
-            $@"INSERT INTO [{_tableSchema}].[{_tableEvents}] (Id, ActorName, EventIndex, EventData) VALUES (@Id, @ActorName, @EventIndex, @EventData)";
+            $"INSERT INTO [{_tableSchema}].[{_tableEvents}] (Id, ActorName, EventIndex, EventData) VALUES (@Id, @ActorName, @EventIndex, @EventData)";
 
         _sqlSaveSnapshot =
-            $@"INSERT INTO [{_tableSchema}].[{_tableSnapshots}] (Id, ActorName, SnapshotIndex, SnapshotData) VALUES (@Id, @ActorName, @SnapshotIndex, @SnapshotData)";
+            $"INSERT INTO [{_tableSchema}].[{_tableSnapshots}] (Id, ActorName, SnapshotIndex, SnapshotData) VALUES (@Id, @ActorName, @SnapshotIndex, @SnapshotData)";
     }
 
     public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex) =>

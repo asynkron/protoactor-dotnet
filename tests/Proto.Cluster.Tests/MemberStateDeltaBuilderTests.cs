@@ -50,6 +50,8 @@ public class MemberStateDeltaBuilderTests
         result.State.Members.Count.Should().BeLessOrEqualTo(3);
     }
 
+    private static readonly int[] values = new[] { 5, 1, 2 };
+
     [Fact]
     public void Build_UsesRandomProviderOrdering()
     {
@@ -68,7 +70,7 @@ public class MemberStateDeltaBuilderTests
         state.Members.Add("b", b);
 
         var committed = ImmutableDictionary<string, long>.Empty;
-        var rnd = new DeterministicRandomProvider(new[] { 5, 1, 2 });
+        var rnd = new DeterministicRandomProvider(values);
         var builder = new MemberStateDeltaBuilder("me", 10);
 
         var result = builder.Build(state, "target", committed, rnd);

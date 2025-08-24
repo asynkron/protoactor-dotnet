@@ -199,4 +199,3 @@ public class ReceiveTimeoutTests
 
     private record IgnoreMe : INotInfluenceReceiveTimeout;
 }
-

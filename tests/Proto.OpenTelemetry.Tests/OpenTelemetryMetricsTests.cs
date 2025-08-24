@@ -92,7 +92,7 @@ public class OpenTelemetryMetricsTests : IAsyncLifetime
     private void MetricShouldHaveValue(string name, double value, params string[] tagValues) =>
         _testExporter!.MetricValues[FormatMetricLogEntry(name, tagValues)].Should().Be(value);
 
-    private async Task<Cluster.Cluster> StartCluster()
+    private static async Task<Cluster.Cluster> StartCluster()
     {
         var system = new ActorSystem(ActorSystemConfig.Setup().WithMetrics());
 

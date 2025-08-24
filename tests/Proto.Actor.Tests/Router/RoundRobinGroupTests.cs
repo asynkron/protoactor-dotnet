@@ -147,7 +147,7 @@ public class RoundRobinGroupTests
         await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
-    private (PID router, TestProbe routee1, TestProbe routee2, TestProbe routee3) CreateRoundRobinRouterWith3Routees(ActorSystem system)
+    private static (PID router, TestProbe routee1, TestProbe routee2, TestProbe routee3) CreateRoundRobinRouterWith3Routees(ActorSystem system)
     {
         var (probe1, pid1) = system.CreateTestProbe();
         var (probe2, pid2) = system.CreateTestProbe();

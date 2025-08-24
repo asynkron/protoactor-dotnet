@@ -35,8 +35,8 @@ public class ClusterTopologyBuilderTests
 
         Assert.Single(changes.ActiveMembers.Members);
         Assert.Equal("4", changes.ActiveMembers.Members.Single().Id);
-        Assert.Equal(new[] { "1", "2" }, changes.Left.Members.Select(m => m.Id).OrderBy(x => x));
-        Assert.Equal(new[] { "4" }, changes.Joined.Members.Select(m => m.Id));
+        Assert.Equal(expected, changes.Left.Members.Select(m => m.Id).OrderBy(x => x));
+        Assert.Equal(expectedArray, changes.Joined.Members.Select(m => m.Id));
     }
 
     [Fact]
@@ -52,9 +52,9 @@ public class ClusterTopologyBuilderTests
         var changes = ClusterTopologyBuilder.Compute(previous, current, blocked);
         var topology = ClusterTopologyBuilder.BuildTopology(changes, blocked, CancellationToken.None);
 
-        Assert.Equal(new[] { "1" }, topology.Left.Select(m => m.Id));
-        Assert.Equal(new[] { "3" }, topology.Joined.Select(m => m.Id));
-        Assert.Equal(new[] { "2", "3" }, topology.Members.Select(m => m.Id).OrderBy(x => x));
+        Assert.Equal(expected, topology.Left.Select(m => m.Id));
+        Assert.Equal(expected, topology.Joined.Select(m => m.Id));
+        Assert.Equal(expectedArray0, topology.Members.Select(m => m.Id).OrderBy(x => x));
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class ClusterTopologyBuilderTests
 
         Assert.Empty(topology.Left);
         Assert.Empty(topology.Joined);
-        Assert.Equal(new[] { "1", "2" }, topology.Members.Select(m => m.Id).OrderBy(x => x));
+        Assert.Equal(expected, topology.Members.Select(m => m.Id).OrderBy(x => x));
     }
 
     [Fact]
@@ -85,20 +85,24 @@ public class ClusterTopologyBuilderTests
         var blocked = ImmutableHashSet<string>.Empty;
 
         var step1 = ClusterTopologyBuilder.Compute(active, new[] { m1, m2 }, blocked);
-        Assert.Equal(new[] { "1", "2" }, step1.Joined.Members.Select(m => m.Id).OrderBy(x => x));
+        Assert.Equal(expected, step1.Joined.Members.Select(m => m.Id).OrderBy(x => x));
         Assert.Empty(step1.Left.Members);
         active = step1.ActiveMembers;
 
         blocked = blocked.Add(m2.Id);
         var step2 = ClusterTopologyBuilder.Compute(active, new[] { m1, m2 }, blocked);
-        Assert.Equal(new[] { "2" }, step2.Left.Members.Select(m => m.Id));
+        Assert.Equal(expectedArray1, step2.Left.Members.Select(m => m.Id));
         Assert.Empty(step2.Joined.Members);
         active = step2.ActiveMembers;
 
         var step3 = ClusterTopologyBuilder.Compute(active, new[] { m1, m3 }, blocked);
-        Assert.Equal(new[] { "3" }, step3.Joined.Members.Select(m => m.Id));
+        Assert.Equal(expected, step3.Joined.Members.Select(m => m.Id));
         Assert.Empty(step3.Left.Members);
     }
+    private static readonly string[] expectedArray = new[] { "4" };
+    private static readonly string[] expected = new[] { "3" };
+    private static readonly string[] expectedArray0 = new[] { "2", "3" };
+    private static readonly string[] expectedArray1 = new[] { "2" };
 
     [Fact]
     public void Compute_IgnoresBlockedMembersRejoining()
@@ -113,7 +117,7 @@ public class ClusterTopologyBuilderTests
 
         blocked = blocked.Add(m1.Id);
         var step2 = ClusterTopologyBuilder.Compute(active, new[] { m1 }, blocked);
-        Assert.Equal(new[] { "1" }, step2.Left.Members.Select(m => m.Id));
+        Assert.Equal(expected, step2.Left.Members.Select(m => m.Id));
         active = step2.ActiveMembers;
 
         var step3 = ClusterTopologyBuilder.Compute(active, new[] { m1 }, blocked);

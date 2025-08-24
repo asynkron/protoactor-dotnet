@@ -55,7 +55,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
     public async Task StopAsync()
     {
         lock (_synLock)
-        {            
+        {
             if (CancellationToken.IsCancellationRequested)
             {
                 return;
@@ -67,7 +67,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
 
             _cancellationTokenSource.Cancel();
         }
-        
+
         // release the lock while we dispose, other threads will see the cancellation token and return blocked endpoint.
         foreach (var endpoint in _serverEndpoints.Values)
         {
@@ -127,7 +127,6 @@ public sealed class EndpointManager : IDiagnosticsProvider
                     // Give remote transport a chance to release resources before reconnecting
                     await Task.Delay(_remoteConfig.WaitAfterEndpointTerminationTimeSpan.Value, CancellationToken).ConfigureAwait(false);
                 }
-
             }
             else
             {
@@ -173,12 +172,12 @@ public sealed class EndpointManager : IDiagnosticsProvider
             {
                 return _blockedEndpoint;
             }
-            
+
             if (_serverEndpoints.TryGetValue(address, out endpoint))
             {
                 return endpoint;
             }
-            
+
             if (_system.Address.StartsWith(ActorSystem.Client, StringComparison.Ordinal))
             {
                 if (Logger.IsEnabled(LogLevel.Debug))
@@ -233,7 +232,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
             {
                 return _blockedEndpoint;
             }
-            
+
             if (_clientEndpoints.TryGetValue(systemId, out endpoint))
             {
                 return endpoint;

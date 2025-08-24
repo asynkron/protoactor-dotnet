@@ -44,7 +44,7 @@ public class BlockList : IBlockList
         lock (_lock)
         {
             var newIds = memberIds.ToHashSet().Except(_blockedMembers.Keys.ToHashSet());
-          
+
             foreach (var member in newIds)
             {
                 _blockedMembers = _blockedMembers.ContainsKey(member) switch

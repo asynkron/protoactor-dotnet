@@ -206,9 +206,9 @@ internal class KubernetesClusterMonitor : IActor
         return _kubernetes.CoreV1.ListNamespacedPodWithHttpMessagesAsync(
             KubernetesExtensions.GetKubeNamespace(),
             labelSelector: selector,
-            watch: watch,
             timeoutSeconds: timeoutInSeconds
-        );
+,
+            watch: watch);
     }
 
     private void RecreateKubernetesClient()
@@ -301,11 +301,10 @@ internal class KubernetesClusterMonitor : IActor
             Logger.LogInformation("[Cluster][KubernetesProvider] No pods found in the cluster");
             return;
         }
-        
+
         var memberStatuses = _clusterPods.Values
             .Select(x => x.GetMemberStatus(_config))
-            .Where(x => x is not null)
-            .Where(x => x.IsRunning && (x.IsReady || x.Member.Id == _cluster.System.Id))
+            .Where(x => x?.IsRunning == true && (x.IsReady || x.Member.Id == _cluster.System.Id))
             .Select(x => x.Member)
             .ToList();
 

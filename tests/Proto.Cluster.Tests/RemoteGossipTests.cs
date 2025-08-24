@@ -161,4 +161,3 @@ public class RemoteGossipTests
         await Task.WhenAll(remote1.ShutdownAsync(), remote2.ShutdownAsync());
     }
 }
-

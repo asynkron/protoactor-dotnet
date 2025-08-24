@@ -38,7 +38,6 @@ public record ClusterKind(string Name, Props Props)
     /// </summary>
     [JsonIgnore] public CanSpawnIdentity? CanSpawnIdentity { get; init; }
 
-    
     /// <summary>Props to spawn the virtual actor</summary>
     [JsonIgnore] public Props Props { get; init; } = Props;
 
@@ -47,7 +46,7 @@ public record ClusterKind(string Name, Props Props)
     /// </summary>
     /// <param name="configureProps">Function to configure a new Props</param>
     /// <returns></returns>
-    public ClusterKind WithProps(Func<Props, Props> configureProps) => 
+    public ClusterKind WithProps(Func<Props, Props> configureProps) =>
         this with { Props = configureProps(Props) };
 
     /// <summary>

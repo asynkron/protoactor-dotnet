@@ -44,7 +44,7 @@ public static class Extensions
         if (toDocumentMi == null)
         {
             toDocumentMi = typeof(DynamoDBContext).GetMethods()
-                .First(m => m.Name == "ToDocument" && m.GetParameters().Count() == 1);
+                .First(m => m.Name == "ToDocument" && m.GetParameters().Length == 1);
         }
 
         var doc = toDocumentMi

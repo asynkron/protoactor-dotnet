@@ -23,7 +23,6 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
     [InlineData(20, 10, 20000)]
     public async Task OrderedDeliveryFromActors(int sendingActors, int messagesSentPerCall, int timeoutMs)
     {
-        
         var aggregatorId = CreateIdentity("agg-1");
 
         var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -42,7 +41,7 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
 
         await Task.WhenAll(sendRequestsSent);
 
-        var result = await Members.First()
+        var result = await Members[0]
             .RequestAsync<AggregatorResult>(aggregatorId, VerifyOrderActor.Kind,
                 new AskAggregator(),
                 new CancellationTokenSource(5000).Token

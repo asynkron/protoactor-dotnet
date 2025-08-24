@@ -18,7 +18,7 @@ public class RedisSeedNodeDiscovery : ISeedNodeDiscovery
         _db = multiplexer.GetDatabase();
     }
     public async Task Register(string memberId, string host, int port)
-    { 
+    {
         await _db.HashSetAsync(Key(), memberId, $"{host}:{port}");
     }
 

@@ -101,7 +101,6 @@ public class GossipCoreTests
         _output.WriteLine("Gossip generations " + Interlocked.Read(ref gossipGenerations));
         _output.WriteLine("Send count " + Interlocked.Read(ref sends));
         x.consensus.Should().BeTrue();
-
     }
 
     [Fact]
@@ -172,5 +171,4 @@ public class GossipCoreTests
         result.consensus.Should().BeTrue();
         result.value.Should().Be(stateValue);
     }
-
 }

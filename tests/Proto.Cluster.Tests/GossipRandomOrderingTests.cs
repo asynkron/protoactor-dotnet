@@ -10,11 +10,13 @@ namespace Proto.Cluster.Tests;
 
 public class GossipRandomOrderingTests
 {
+    private static readonly int[] values = new[] { 1, 0, 2 };
+
     [Fact]
     public async Task SendState_UsesRandomProviderOrdering()
     {
-        var rnd = new DeterministicRandomProvider(new[] { 1, 0, 2 });
-        var myId = "me";
+        var rnd = new DeterministicRandomProvider(values);
+        const string myId = "me";
         var gossip = new Gossip.Gossip(myId, gossipFanout: 3, gossipMaxSend: 10, logger: null,
             () => ImmutableHashSet.Create(myId, "a", "b", "c"), false, rnd);
 

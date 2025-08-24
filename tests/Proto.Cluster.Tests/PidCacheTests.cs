@@ -85,7 +85,7 @@ public class PidCacheTests
         cluster.PidCache.TryGet(identity, out _).Should().BeFalse();
     }
 
-    private ClusterConfig GetClusterConfig() =>
+    private static ClusterConfig GetClusterConfig() =>
         ClusterConfig
             .Setup(
                 "MyCluster",

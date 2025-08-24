@@ -189,7 +189,7 @@ public class MessageHeaderTests
 
         response.Should().Be("bar");
     }
-    
+
     [Fact]
     public async Task Actor_Request_honors_message_envelopes()
     {

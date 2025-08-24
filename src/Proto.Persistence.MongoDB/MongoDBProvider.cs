@@ -39,7 +39,7 @@ public class MongoDBProvider : IProvider
             callback(@event.Data);
         }
 
-        return events.Any() ? events.Last().EventIndex : -1;
+        return events.Count != 0 ? events[^1].EventIndex : -1;
     }
 
     public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)

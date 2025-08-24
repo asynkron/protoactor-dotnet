@@ -6,4 +6,3 @@ public interface IBlockList
 {
     ImmutableHashSet<string> BlockedMembers { get; }
 }
-

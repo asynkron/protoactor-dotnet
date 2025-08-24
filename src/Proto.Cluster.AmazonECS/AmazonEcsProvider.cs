@@ -30,7 +30,7 @@ public class AmazonEcsProvider : IClusterProvider
     private string[] _kinds;
     private MemberList _memberList;
     private int _port;
-    private string _taskArn;
+    private readonly string _taskArn;
 
     public AmazonEcsProvider(AmazonECSClient client, string ecsClusterName, string taskArn,
         AmazonEcsProviderConfig config)
@@ -78,7 +78,7 @@ public class AmazonEcsProvider : IClusterProvider
 
     public async Task RegisterMemberAsync()
     {
-        await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever).ConfigureAwait(false);
+        await Retry.Try(RegisterMemberInner, retryCount: Retry.Forever, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
         static void OnError(int attempt, Exception exception) =>
             Logger.LogWarning(exception, "Failed to register service");

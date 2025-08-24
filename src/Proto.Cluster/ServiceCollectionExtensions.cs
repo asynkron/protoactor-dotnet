@@ -45,7 +45,7 @@ public static class ServiceCollectionExtensions
 
             var r = RemoteConfig.BindTo(boot.BindToHost, boot.Port);
             r = boot.ConfigureRemote?.Invoke(r) ?? r;
-            
+
             boot.IdentityLookup ??= new PartitionIdentityLookup();
             if (boot.ClusterProvider is null)
             {

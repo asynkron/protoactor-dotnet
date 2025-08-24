@@ -104,23 +104,9 @@ public static class LocalAffinityExtensions
         return Task.CompletedTask;
     }
 
-    private static Func<bool> CreateShouldRelocate(float relocationFactor)
-    {
-        if (relocationFactor >= 1)
-        {
-            return () => true;
-        }
-
-        // Random.Shared ensures thread-safety and avoids reseeding
-        var random = Random.Shared;
-
-        return () => random.NextDouble() < relocationFactor;
-    }
-
-    private static bool IsRemote(this PID? sender, IInfoContext context) => sender is not null &&
-                                                                            !sender.Address.Equals(
+    private static bool IsRemote(this PID? sender, IInfoContext context) => sender?.Address.Equals(
                                                                                 context.System.Address,
-                                                                                StringComparison.OrdinalIgnoreCase);
+                                                                                StringComparison.OrdinalIgnoreCase) == false;
 
     /// <summary>
     ///     Marks the actor, to avoid poisoning twice

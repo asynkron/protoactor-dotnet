@@ -12,7 +12,7 @@ public class SupervisionTestsExponentialBackoff
     {
         var rs = new RestartStatistics(10, DateTime.Now.Subtract(TimeSpan.FromSeconds(11)));
         var strategy = new ExponentialBackoffStrategy(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(1));
-        strategy.HandleFailure(null!, null!, rs, null!, null!);
+        strategy.HandleFailure(null!, null!, rs, null!, null);
         Assert.Equal(1, rs.FailureCount);
     }
 

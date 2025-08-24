@@ -37,4 +37,3 @@ internal class ConsensusManager
         _topologyConsensus?.TryGetConsensus(ct) ??
         Task.FromResult<(bool consensus, ulong topologyHash)>(default);
 }
-

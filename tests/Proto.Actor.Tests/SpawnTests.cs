@@ -41,7 +41,7 @@ public class SpawnTests
 
         var uniqueName = Guid.NewGuid().ToString();
         context.SpawnNamed(props, uniqueName);
-        var x = Assert.Throws<ProcessNameExistException>(() => { context.SpawnNamed(props, uniqueName); });
+        var x = Assert.Throws<ProcessNameExistException>(() => context.SpawnNamed(props, uniqueName));
         Assert.Equal(uniqueName, x.Name);
         Assert.Contains(uniqueName, x.Message);
     }

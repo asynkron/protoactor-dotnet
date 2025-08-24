@@ -90,4 +90,3 @@ public class GuardianProcessTests
         Assert.Throws<InvalidOperationException>(() => guardian.EscalateFailure(new Exception(), null));
     }
 }
-

@@ -3,7 +3,6 @@ using JetBrains.Annotations;
 
 namespace Proto.Cluster.Seed;
 
-
 [PublicAPI]
 public interface ISeedNodeDiscovery
 {

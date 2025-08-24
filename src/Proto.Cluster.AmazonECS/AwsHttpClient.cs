@@ -111,28 +111,28 @@ public class AwsEcsContainerMetadataHttpClient
 
 public class Limits
 {
-    [JsonProperty("CPU")] public int CPU { get; set; }
+    [JsonProperty(nameof(CPU))] public int CPU { get; set; }
 }
 
 public class Network
 {
-    [JsonProperty("NetworkMode")] public string NetworkMode { get; set; }
+    [JsonProperty(nameof(NetworkMode))] public string NetworkMode { get; set; }
 
-    [JsonProperty("IPv4Addresses")] public List<string> IPv4Addresses { get; set; }
+    [JsonProperty(nameof(IPv4Addresses))] public List<string> IPv4Addresses { get; set; }
 
-    [JsonProperty("AttachmentIndex")] public int AttachmentIndex { get; set; }
+    [JsonProperty(nameof(AttachmentIndex))] public int AttachmentIndex { get; set; }
 
-    [JsonProperty("MACAddress")] public string MACAddress { get; set; }
+    [JsonProperty(nameof(MACAddress))] public string MACAddress { get; set; }
 
-    [JsonProperty("IPv4SubnetCIDRBlock")] public string IPv4SubnetCIDRBlock { get; set; }
+    [JsonProperty(nameof(IPv4SubnetCIDRBlock))] public string IPv4SubnetCIDRBlock { get; set; }
 
-    [JsonProperty("DomainNameServers")] public List<string> DomainNameServers { get; set; }
+    [JsonProperty(nameof(DomainNameServers))] public List<string> DomainNameServers { get; set; }
 
-    [JsonProperty("DomainNameSearchList")] public List<string> DomainNameSearchList { get; set; }
+    [JsonProperty(nameof(DomainNameSearchList))] public List<string> DomainNameSearchList { get; set; }
 
-    [JsonProperty("PrivateDNSName")] public string PrivateDNSName { get; set; }
+    [JsonProperty(nameof(PrivateDNSName))] public string PrivateDNSName { get; set; }
 
-    [JsonProperty("SubnetGatewayIpv4Address")]
+    [JsonProperty(nameof(SubnetGatewayIpv4Address))]
     public string SubnetGatewayIpv4Address { get; set; }
 }
 
@@ -147,91 +147,91 @@ public class LogOptions
 
 public class ContainerMetadata
 {
-    [JsonProperty("DockerId")] public string DockerId { get; set; }
+    [JsonProperty(nameof(DockerId))] public string DockerId { get; set; }
 
-    [JsonProperty("Name")] public string Name { get; set; }
+    [JsonProperty(nameof(Name))] public string Name { get; set; }
 
-    [JsonProperty("DockerName")] public string DockerName { get; set; }
+    [JsonProperty(nameof(DockerName))] public string DockerName { get; set; }
 
-    [JsonProperty("Image")] public string Image { get; set; }
+    [JsonProperty(nameof(Image))] public string Image { get; set; }
 
-    [JsonProperty("ImageID")] public string ImageID { get; set; }
+    [JsonProperty(nameof(ImageID))] public string ImageID { get; set; }
 
-    [JsonProperty("DesiredStatus")] public string DesiredStatus { get; set; }
+    [JsonProperty(nameof(DesiredStatus))] public string DesiredStatus { get; set; }
 
-    [JsonProperty("KnownStatus")] public string KnownStatus { get; set; }
+    [JsonProperty(nameof(KnownStatus))] public string KnownStatus { get; set; }
 
-    [JsonProperty("Limits")] public Limits Limits { get; set; }
+    [JsonProperty(nameof(Limits))] public Limits Limits { get; set; }
 
-    [JsonProperty("CreatedAt")] public string CreatedAt { get; set; }
+    [JsonProperty(nameof(CreatedAt))] public string CreatedAt { get; set; }
 
-    [JsonProperty("StartedAt")] public string StartedAt { get; set; }
+    [JsonProperty(nameof(StartedAt))] public string StartedAt { get; set; }
 
-    [JsonProperty("Type")] public string Type { get; set; }
+    [JsonProperty(nameof(Type))] public string Type { get; set; }
 
-    [JsonProperty("Networks")] public List<Network> Networks { get; set; }
+    [JsonProperty(nameof(Networks))] public List<Network> Networks { get; set; }
 
-    [JsonProperty("ContainerARN")] public string ContainerARN { get; set; }
+    [JsonProperty(nameof(ContainerARN))] public string ContainerARN { get; set; }
 
-    [JsonProperty("LogOptions")] public LogOptions LogOptions { get; set; }
+    [JsonProperty(nameof(LogOptions))] public LogOptions LogOptions { get; set; }
 
-    [JsonProperty("LogDriver")] public string LogDriver { get; set; }
+    [JsonProperty(nameof(LogDriver))] public string LogDriver { get; set; }
 }
 
 public class Container
 {
-    [JsonProperty("DockerId")] public string DockerId { get; set; }
+    [JsonProperty(nameof(DockerId))] public string DockerId { get; set; }
 
-    [JsonProperty("Name")] public string Name { get; set; }
+    [JsonProperty(nameof(Name))] public string Name { get; set; }
 
-    [JsonProperty("DockerName")] public string DockerName { get; set; }
+    [JsonProperty(nameof(DockerName))] public string DockerName { get; set; }
 
-    [JsonProperty("Image")] public string Image { get; set; }
+    [JsonProperty(nameof(Image))] public string Image { get; set; }
 
-    [JsonProperty("ImageID")] public string ImageID { get; set; }
+    [JsonProperty(nameof(ImageID))] public string ImageID { get; set; }
 
-    [JsonProperty("DesiredStatus")] public string DesiredStatus { get; set; }
+    [JsonProperty(nameof(DesiredStatus))] public string DesiredStatus { get; set; }
 
-    [JsonProperty("KnownStatus")] public string KnownStatus { get; set; }
+    [JsonProperty(nameof(KnownStatus))] public string KnownStatus { get; set; }
 
-    [JsonProperty("Limits")] public Limits Limits { get; set; }
+    [JsonProperty(nameof(Limits))] public Limits Limits { get; set; }
 
-    [JsonProperty("CreatedAt")] public string CreatedAt { get; set; }
+    [JsonProperty(nameof(CreatedAt))] public string CreatedAt { get; set; }
 
-    [JsonProperty("StartedAt")] public string StartedAt { get; set; }
+    [JsonProperty(nameof(StartedAt))] public string StartedAt { get; set; }
 
-    [JsonProperty("Type")] public string Type { get; set; }
+    [JsonProperty(nameof(Type))] public string Type { get; set; }
 
-    [JsonProperty("Networks")] public List<Network> Networks { get; set; }
+    [JsonProperty(nameof(Networks))] public List<Network> Networks { get; set; }
 
-    [JsonProperty("LogDriver")] public string LogDriver { get; set; }
+    [JsonProperty(nameof(LogDriver))] public string LogDriver { get; set; }
 
-    [JsonProperty("LogOptions")] public LogOptions LogOptions { get; set; }
+    [JsonProperty(nameof(LogOptions))] public LogOptions LogOptions { get; set; }
 
-    [JsonProperty("ContainerARN")] public string ContainerARN { get; set; }
+    [JsonProperty(nameof(ContainerARN))] public string ContainerARN { get; set; }
 }
 
 public class TaskMetadata
 {
-    [JsonProperty("Cluster")] public string Cluster { get; set; }
+    [JsonProperty(nameof(Cluster))] public string Cluster { get; set; }
 
-    [JsonProperty("TaskARN")] public string TaskARN { get; set; }
+    [JsonProperty(nameof(TaskARN))] public string TaskARN { get; set; }
 
-    [JsonProperty("Family")] public string Family { get; set; }
+    [JsonProperty(nameof(Family))] public string Family { get; set; }
 
-    [JsonProperty("Revision")] public string Revision { get; set; }
+    [JsonProperty(nameof(Revision))] public string Revision { get; set; }
 
-    [JsonProperty("DesiredStatus")] public string DesiredStatus { get; set; }
+    [JsonProperty(nameof(DesiredStatus))] public string DesiredStatus { get; set; }
 
-    [JsonProperty("KnownStatus")] public string KnownStatus { get; set; }
+    [JsonProperty(nameof(KnownStatus))] public string KnownStatus { get; set; }
 
-    [JsonProperty("PullStartedAt")] public string PullStartedAt { get; set; }
+    [JsonProperty(nameof(PullStartedAt))] public string PullStartedAt { get; set; }
 
-    [JsonProperty("PullStoppedAt")] public string PullStoppedAt { get; set; }
+    [JsonProperty(nameof(PullStoppedAt))] public string PullStoppedAt { get; set; }
 
-    [JsonProperty("AvailabilityZone")] public string AvailabilityZone { get; set; }
+    [JsonProperty(nameof(AvailabilityZone))] public string AvailabilityZone { get; set; }
 
-    [JsonProperty("LaunchType")] public string LaunchType { get; set; }
+    [JsonProperty(nameof(LaunchType))] public string LaunchType { get; set; }
 
-    [JsonProperty("Containers")] public List<Container> Containers { get; set; }
+    [JsonProperty(nameof(Containers))] public List<Container> Containers { get; set; }
 }

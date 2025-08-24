@@ -78,4 +78,3 @@ internal class MemberStrategyManager
         return _cluster.Config.MemberStrategyBuilder(_cluster, kind) ?? new SimpleMemberStrategy();
     }
 }
-

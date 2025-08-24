@@ -54,4 +54,3 @@ public class TimerExtensionsTests
         public void OnTimerRegistered() => _tcs.TrySetResult();
     }
 }
-

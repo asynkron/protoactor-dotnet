@@ -32,8 +32,7 @@ public static class ForcedSerializationSenderMiddleware
     {
         shouldSerialize ??= SkipInternalProtoMessages;
 
-        return next =>
-            (context, target, envelope) =>
+        return next => async (context, target, envelope) =>
             {
                 object? message = null;
                 PID? sender;
@@ -43,7 +42,8 @@ public static class ForcedSerializationSenderMiddleware
                 {
                     if (shouldSerialize?.Invoke(envelope) == false)
                     {
-                        return next(context, target, envelope);
+                        await next(context, target, envelope);
+                        return;
                     }
 
                     var serialization = context.System.Serialization();
@@ -74,7 +74,8 @@ public static class ForcedSerializationSenderMiddleware
                     // forward
                     var newEnvelope = new Proto.MessageEnvelope(deserializedMessage, sender, headers);
 
-                    return next(context, target, newEnvelope);
+                    await next(context, target, newEnvelope);
+                    return;
                 }
                 catch (CodedOutputStream.OutOfSpaceException oom)
                 {

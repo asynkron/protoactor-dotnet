@@ -94,7 +94,7 @@ public class SeedNodeClusterProvider : IClusterProvider
     {
         if (_pid is not null && _cluster is not null)
             await _cluster.System.Root.StopAsync(_pid).ConfigureAwait(false);
-        
+
         var (selfHost, selfPort) = _cluster.System.GetAddress();
         await _options.Discovery.Remove(_cluster!.System.Id);
         Logger.LogInformation(

@@ -49,7 +49,7 @@ public class MPMCQueue
 
     private bool TryEnqueue(object item)
     {
-        do
+        while (true)
         {
             var buffer = _buffer;
             var pos = _enqueuePos;
@@ -68,25 +68,20 @@ public class MPMCQueue
             {
                 return false;
             }
-        } while (true);
+        }
     }
 
     public void Enqueue(object item)
     {
-        while (true)
+        while (!TryEnqueue(item))
         {
-            if (TryEnqueue(item))
-            {
-                break;
-            }
-
             Thread.Yield(); // non-blocking backoff under contention
         }
     }
 
     public bool TryDequeue(out object? result)
     {
-        do
+        while (true)
         {
             var buffer = _buffer;
             var bufferMask = _bufferMask;
@@ -109,7 +104,7 @@ public class MPMCQueue
 
                 return false;
             }
-        } while (true);
+        }
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16, CharSet = CharSet.Ansi)]

@@ -191,8 +191,8 @@ public static class DynamoDBExtensions
     private static void CheckTableKeys(TableDescription status, string requiredPartitionKey, string requiredSortKey)
     {
         // Check HASH and RANGE keys
-        var partitionKey = status.KeySchema.FirstOrDefault(s => s.KeyType == "HASH");
-        var sortKey = status.KeySchema.FirstOrDefault(s => s.KeyType == "RANGE");
+        var partitionKey = status.KeySchema.Find(s => s.KeyType == "HASH");
+        var sortKey = status.KeySchema.Find(s => s.KeyType == "RANGE");
 
         if (partitionKey == null || partitionKey.AttributeName != requiredPartitionKey)
         {
@@ -209,8 +209,8 @@ public static class DynamoDBExtensions
         }
 
         // Check HASH AND RANGE keys types
-        var partitionKeyType = status.AttributeDefinitions.FirstOrDefault(a => a.AttributeName == requiredPartitionKey);
-        var sortKeyType = status.AttributeDefinitions.FirstOrDefault(a => a.AttributeName == requiredSortKey);
+        var partitionKeyType = status.AttributeDefinitions.Find(a => a.AttributeName == requiredPartitionKey);
+        var sortKeyType = status.AttributeDefinitions.Find(a => a.AttributeName == requiredSortKey);
 
         if (partitionKeyType == null || partitionKeyType.AttributeType != "S")
         {

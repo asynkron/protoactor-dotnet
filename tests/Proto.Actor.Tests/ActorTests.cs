@@ -34,7 +34,7 @@ public class ActorTests
         Assert.Equal("hey", reply);
 
         await system.ShutdownAsync();
-        
+
         var pid2 = context.Spawn(Props.FromFunc(ctx =>
             {
                 if (ctx.Message is string)
@@ -45,10 +45,10 @@ public class ActorTests
                 return Task.CompletedTask;
             }
         ));
-        
+
         Assert.Same(system.DeadLetterPid, pid2);
     }
-    
+
     [Fact]
     public async Task CanNotSendUserMessageAfterShutdown()
     {
@@ -70,15 +70,12 @@ public class ActorTests
         Assert.Equal("hey", reply);
 
         await system.ShutdownAsync();
-        
+
         //expect DeadLetterException
-        
-        await Assert.ThrowsAsync<DeadLetterException>(async () =>
-        {
-            await context.RequestAsync<object>(pid, "hello");
-        }); 
+
+        await Assert.ThrowsAsync<DeadLetterException>(async () => await context.RequestAsync<object>(pid, "hello"));
     }
-    
+
     [Fact]
     public async Task RequestActorAsync()
     {
@@ -142,7 +139,7 @@ public class ActorTests
         var pid = context.Spawn(Props.FromFunc(EmptyReceive));
 
         var timeoutEx = await Assert.ThrowsAsync<TimeoutException>(
-            () => { return context.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20)); }
+            () => context.RequestAsync<object>(pid, "", TimeSpan.FromMilliseconds(20))
         );
 
         Assert.Equal("Request didn't receive any Response within the expected time.", timeoutEx.Message);

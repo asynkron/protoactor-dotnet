@@ -15,7 +15,7 @@ using Proto.Remote;
 
 namespace Proto.Cluster.Seed;
 
-public class SeedNodeActor : IActor
+public sealed class SeedNodeActor : IActor
 {
     public const string Name = "$server_seed";
     private readonly ILogger _logger;
@@ -75,26 +75,26 @@ public class SeedNodeActor : IActor
     {
         _logger.LogInformation(
             "Starting via SeedNode Discovery");
-        
+
         for (var i = 0; i < 2; i++)
         {
             var members = context.Cluster().MemberList.GetMembers();
-            
+
             var seedNodes = await _options.Discovery.GetAll().ConfigureAwait(false);
             //remove existing nodes
             seedNodes = seedNodes.Where(m => !members.Contains(m.memberId)).ToArray();
 
-            if (!seedNodes.Any())
+            if (seedNodes.Length == 0)
             {
                 continue;
             }
-            
+
             _logger.LogInformation(
                 "SeedNode Discovery found seed nodes {@Members}",
                 seedNodes
             );
 
-            if (!seedNodes.Any()) continue;
+            if (seedNodes.Length == 0) continue;
             var tasks = new List<Task<Member?>>();
             foreach (var (memberId, host, port) in seedNodes)
             {
@@ -246,13 +246,6 @@ public class SeedNodeActor : IActor
         if (_members.ContainsKey(member.Id)) return;
         _members = _members.SetItem(member.Id, member);
         _logger.LogInformation("SeedNode added member {Member}", member);
-    }
-    
-    private void RemoveMember(Member member)
-    {
-        if (!_members.ContainsKey(member.Id)) return;
-        _members = _members.Remove(member.Id);
-        _logger.LogInformation("SeedNode removed member {Member}", member);
     }
 
     private void UpdateMemberList(IContext context)

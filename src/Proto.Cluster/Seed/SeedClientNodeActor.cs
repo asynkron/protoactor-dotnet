@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Cluster.Seed;
 
-public class SeedClientNodeActor : IActor
+public sealed class SeedClientNodeActor : IActor
 {
     public const string Name = "$client_seed";
     private readonly ILogger _logger;
@@ -48,11 +48,11 @@ public class SeedClientNodeActor : IActor
         return Proto.Props.FromProducer(() => new SeedClientNodeActor(options, logger));
     }
 
-    private async Task OnConnect(IContext context)
+    private static async Task OnConnect(IContext context)
     {
         var (selfHost, selfPort) = context.System.GetAddress();
 
-        bool connected = false;
+        const bool connected = false;
         // foreach (var (host, port) in _options.SeedNodes)
         // {
         //     //never connect to yourself

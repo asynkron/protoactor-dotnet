@@ -77,10 +77,7 @@ public class ReenterAfterExtensionsDecoratorTests : ActorTestBase
         Verify((ctx, tcs) =>
         {
             var task = Task.CompletedTask;
-            ctx.ReenterAfter(task, completed =>
-            {
-                tcs.SetResult(completed.IsCompleted);
-            });
+            ctx.ReenterAfter(task, completed => tcs.SetResult(completed.IsCompleted));
             return Task.CompletedTask;
         }, 1, 0);
 
@@ -108,10 +105,7 @@ public class ReenterAfterExtensionsDecoratorTests : ActorTestBase
     public Task Generic_ActionTask_Should_Call_Decorator() =>
         Verify((ctx, tcs) =>
         {
-            ctx.ReenterAfter(Task.FromResult(1), task =>
-            {
-                tcs.SetResult(task.IsCompleted);
-            });
+            ctx.ReenterAfter(Task.FromResult(1), task => tcs.SetResult(task.IsCompleted));
             return Task.CompletedTask;
         }, 0, 1);
 
@@ -119,10 +113,7 @@ public class ReenterAfterExtensionsDecoratorTests : ActorTestBase
     public Task Generic_ActionResult_Should_Call_Decorator() =>
         Verify((ctx, tcs) =>
         {
-            ctx.ReenterAfter(Task.FromResult(1), result =>
-            {
-                tcs.SetResult(result == 1);
-            });
+            ctx.ReenterAfter(Task.FromResult(1), result => tcs.SetResult(result == 1));
             return Task.CompletedTask;
         }, 0, 1);
 

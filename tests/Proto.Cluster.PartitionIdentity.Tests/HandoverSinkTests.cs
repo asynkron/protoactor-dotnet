@@ -57,7 +57,7 @@ public class HandoverSinkTests
         var topology = CreateTopology(TestMember1, TestMember2);
         var receivedCount = 0;
         var sink = new HandoverSink(topology, handover => receivedCount += handover.Actors.Count);
-        var activationsPerNode = 10;
+        const int activationsPerNode = 10;
 
         var completeAfterFirst =
             sink.Receive(TestMember1.Address, CreateHandover(topology, TestMember1, activationsPerNode));
@@ -78,7 +78,7 @@ public class HandoverSinkTests
         var topology = CreateTopology(TestMember1, TestMember2);
         var receivedCount = 0;
         var sink = new HandoverSink(topology, handover => receivedCount += handover.Actors.Count);
-        var activationsPerMember = 50;
+        const int activationsPerMember = 50;
 
         var activator1 = TestMember1.Address;
 
@@ -107,8 +107,8 @@ public class HandoverSinkTests
         var topology = CreateTopology(TestMember1, TestMember2);
         var receivedCount = 0;
         var sink = new HandoverSink(topology, handover => receivedCount += handover.Actors.Count);
-        var activationsPerMember = 50;
-        var chunkSize = 15;
+        const int activationsPerMember = 50;
+        const int chunkSize = 15;
 
         var activator1 = TestMember1.Address;
 
@@ -132,7 +132,7 @@ public class HandoverSinkTests
         }
 
         sink.IsComplete.Should().BeFalse("Handover is missing a message");
-        receivedCount.Should().Be(activationsPerMember * topology.Members.Count - chunkSize);
+        receivedCount.Should().Be((activationsPerMember * topology.Members.Count) - chunkSize);
     }
 
     [Fact]
@@ -141,13 +141,13 @@ public class HandoverSinkTests
         var topology = CreateTopology(TestMember1, TestMember2);
         var receivedCount = 0;
         var sink = new HandoverSink(topology, handover => receivedCount += handover.Actors.Count);
-        var activationsPerMember = 50;
-        var chunkSize = 15;
+        const int activationsPerMember = 50;
+        const int chunkSize = 15;
 
         var activator1 = TestMember1.Address;
 
         foreach (var handover in CreateHandovers(topology, TestMember1, 50, chunkSize)
-                     .OrderBy(it => it.Actors.First().Identity)) // Randomized order
+                     .OrderBy(it => it.Actors[0].Identity)) // Randomized order
         {
             sink.Receive(activator1, handover);
         }
@@ -155,7 +155,7 @@ public class HandoverSinkTests
         var activator2 = TestMember2.Address;
 
         foreach (var handover in CreateHandovers(topology, TestMember2, 50, chunkSize)
-                     .OrderBy(it => it.Actors.First().Identity))
+                     .OrderBy(it => it.Actors[0].Identity))
         {
             sink.Receive(activator2, handover);
         }
@@ -176,8 +176,8 @@ public class HandoverSinkTests
             duplicateHandover => duplicateCount += duplicateHandover.Actors.Count
         );
 
-        var activationsPerMember = 50;
-        var chunkSize = 15;
+        const int activationsPerMember = 50;
+        const int chunkSize = 15;
 
         var activator1 = TestMember1.Address;
 
@@ -240,7 +240,7 @@ public class HandoverSinkTests
 
     private IEnumerable<Activation> CreateActivations(string address, int count) =>
         Enumerable.Range(0, count)
-            .Select(i =>
+            .Select(_ =>
                 {
                     var identity = Guid.NewGuid().ToString("N");
 

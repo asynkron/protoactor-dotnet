@@ -50,5 +50,4 @@ public static class TaskExtensions
 
         return await task.ConfigureAwait(false); // Very important in order to propagate exceptions
     }
-
 }

@@ -46,7 +46,7 @@ public class EventStream : EventStream<object>
         Subscribe<DeadLetterEvent>(
             dl =>
             {
-                if (system.Config.DeadLetterRequestLogging is false && dl.Sender is not null)
+                if (!system.Config.DeadLetterRequestLogging && dl.Sender is not null)
                 {
                     return;
                 }
@@ -117,14 +117,14 @@ public class EventStream<T>
         var sub = new EventStreamSubscription<T>(
             this,
             dispatcher ?? Dispatchers.SynchronousDispatcher,
-            async x => { await channel.Writer.WriteAsync(x).ConfigureAwait(false); }
-            ,caller ?? "Unknown");
+            async x => await channel.Writer.WriteAsync(x).ConfigureAwait(false)
+            , caller ?? "Unknown");
 
         _subscriptions.TryAdd(sub.Id, sub);
 
         return sub;
     }
-    
+
     /// <summary>
     ///     Subscribe to messages and yields the result onto a Channel
     /// </summary>
@@ -218,7 +218,7 @@ public class EventStream<T>
     /// <returns>A new subscription that can be used to unsubscribe</returns>
     public EventStreamSubscription<T> Subscribe<TMsg>(ISenderContext context, params PID[] pids) where TMsg : T
     {
-        var caller = pids.First().ToDiagnosticString().Split("/").Last();
+        var caller = pids[0].ToDiagnosticString().Split("/").Last();
         var sub = new EventStreamSubscription<T>(
             this,
             Dispatchers.SynchronousDispatcher,
@@ -271,7 +271,7 @@ public class EventStream<T>
         var parent = Activity.Current;
         using var publishActivity = ActorSystem.ActivitySource.StartActivity($"{nameof(EventStream)} {msg?.GetType().Name??"null"}",ActivityKind.Internal,parent?.Id);
         publishActivity?.AddTag(ProtoTags.MessageType, msg?.GetType().Name??"null");
-        
+
         foreach (var sub in _subscriptions.Values)
         {
             sub.Dispatcher.Schedule(

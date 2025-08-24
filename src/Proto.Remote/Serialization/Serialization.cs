@@ -39,7 +39,7 @@ public class Serialization : IActorSystemExtension<Serialization>
             SERIALIZER_ID_PROTOBUF,
             0,
             new ProtobufSerializer(this));
-        
+
         RegisterSerializer(
             SERIALIZER_ID_JSON,
             -1000,

@@ -17,20 +17,20 @@ namespace Proto.Cluster.Tests;
 [Collection("ClusterTests")]
 public class ForcedSerializationTests
 {
-    [Fact(Skip = "Does not work with tracing")]
+    [Fact]
     public async Task Forced_serialization_works_correctly_in_a_cluster()
     {
         var fixture = new ForcedSerializationClusterFixture();
         await using var _ = fixture;
         await fixture.InitializeAsync();
-        var entryMember = fixture.Members.First();
+        var entryMember = fixture.Members[0];
 
         var testData = Enumerable.Range(1, 100).Select(i => i.ToString()).ToList();
 
-        var tasks = testData.Select(id => entryMember.Ping(id, id, CancellationTokens.FromSeconds(10))).ToList();
+        var tasks = testData.ConvertAll(id => entryMember.Ping(id, id, CancellationTokens.FromSeconds(10)));
         await Task.WhenAll(tasks);
 
-        var results = tasks.Select(t => t.Result.Message).ToList();
+        var results = tasks.ConvertAll(t => t.Result.Message);
 
         results.Should().BeEquivalentTo(testData);
     }

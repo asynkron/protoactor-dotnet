@@ -14,7 +14,7 @@ public class IntervalStrategyTests
     {
         var strategy = new IntervalStrategy(interval);
 
-        for (var index = 1; index <= expected.Last(); index++)
+        for (var index = 1; index <= expected[^1]; index++)
         {
             if (expected.Contains(index))
             {

@@ -26,4 +26,3 @@ internal static partial class EndpointManagerLogMessages
     [LoggerMessage(EventId = 6, Level = LogLevel.Error, Message = "[{SystemAddress}] Tried to get endpoint for null address")]
     internal static partial void TriedGetEndpointForNullAddress(this ILogger logger, string systemAddress);
 }
-

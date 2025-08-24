@@ -25,7 +25,7 @@ namespace Proto.Cluster.Consul;
 [PublicAPI]
 public class ConsulProvider : IClusterProvider
 {
-    private static ILogger _logger = Log.CreateLogger<ConsulProvider>();
+    private static readonly ILogger _logger = Log.CreateLogger<ConsulProvider>();
     private readonly TimeSpan _blockingWaitTime;
     private readonly ConsulClient _client;
 
@@ -54,10 +54,7 @@ public class ConsulProvider : IClusterProvider
     {
         try
         {
-            var statuses = await _client.Health.Service(_consulServiceName, null, false, new QueryOptions
-                {
-
-                }
+            var statuses = await _client.Health.Service(_consulServiceName, null, false, new QueryOptions()
                 , _cluster.System.Shutdown
             ).ConfigureAwait(false);
 

@@ -71,7 +71,7 @@ public class ConcurrencyVerificationActor : IActor
         return Task.CompletedTask;
     }
 
-    private Task StopNow(IContext context)
+    private static Task StopNow(IContext context)
     {
         context.Respond(new Ack());
         context.Stop(context.Self);

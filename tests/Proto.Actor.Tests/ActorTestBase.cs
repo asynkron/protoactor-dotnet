@@ -23,5 +23,4 @@ public abstract class ActorTestBase : IAsyncLifetime
     public Task InitializeAsync() => Task.CompletedTask;
 
     public async Task DisposeAsync() => await System.ShutdownAsync();
-
 }

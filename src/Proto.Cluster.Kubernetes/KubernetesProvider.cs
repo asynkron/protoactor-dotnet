@@ -27,7 +27,6 @@ namespace Proto.Cluster.Kubernetes;
 public class KubernetesProvider : IClusterProvider
 {
     private static readonly ILogger Logger = Log.CreateLogger<KubernetesProvider>();
-    private readonly KubernetesProviderConfig _config;
     private string _address;
     private Cluster _cluster;
 
@@ -39,18 +38,18 @@ public class KubernetesProvider : IClusterProvider
     private string _podName;
     private int _port;
 
-    internal KubernetesProviderConfig Config => _config;
-    
+    internal KubernetesProviderConfig Config { get; }
+
     public async Task<DiagnosticsEntry[]> GetDiagnostics()
     {
         try
         {
             var selector = $"{LabelCluster}={_clusterName}";
-            using var client = _config.ClientFactory();
+            using var client = Config.ClientFactory();
             var res = await client.CoreV1.ListNamespacedPodWithHttpMessagesAsync(
                 KubernetesExtensions.GetKubeNamespace(),
                 labelSelector: selector,
-                timeoutSeconds: _config.WatchTimeoutSeconds,
+                timeoutSeconds: Config.WatchTimeoutSeconds,
                 watch: false).ConfigureAwait(false);
 
             var pods = new DiagnosticsEntry("KubernetesProvider", "Pods", res.Body);
@@ -74,7 +73,7 @@ public class KubernetesProvider : IClusterProvider
             throw new InvalidOperationException("The application doesn't seem to be running in Kubernetes");
         }
 
-        _config = config;
+        Config = config;
     }
 
     [Obsolete("Do not pass a Kubernetes client directly, pass Client factory as part of Config, or use Config defaults",
@@ -126,7 +125,7 @@ public class KubernetesProvider : IClusterProvider
 
     public async Task RegisterMemberAsync()
     {
-        await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever).ConfigureAwait(false);
+        await Retry.Try(RegisterMemberInner, retryCount: Retry.Forever, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
         static void OnError(int attempt, Exception exception) =>
             Logger.LogWarning(exception, "Failed to register service");
@@ -136,7 +135,7 @@ public class KubernetesProvider : IClusterProvider
 
     public async Task RegisterMemberInner()
     {
-        var kubernetes = _config.ClientFactory();
+        var kubernetes = Config.ClientFactory();
 
         Logger.LogInformation("[Cluster][KubernetesProvider] Registering service {PodName} on {PodIp}", _podName,
             _address);
@@ -151,7 +150,7 @@ public class KubernetesProvider : IClusterProvider
         Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: {Namespace}", pod.Namespace());
 
         Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: {Port}", _port);
-        
+
         var labels = new Dictionary<string, string>
         {
             [LabelCluster] = _clusterName,
@@ -209,7 +208,7 @@ public class KubernetesProvider : IClusterProvider
             }
             else
             {
-                var dnsPostfix = $".{pod.Namespace()}.svc.{_config.ClusterDomain}";
+                var dnsPostfix = $".{pod.Namespace()}.svc.{Config.ClusterDomain}";
 
                 // If we have a subdomain, then we can add that to the dnsPostfix, as it will be known to the cluster
                 if (!string.IsNullOrEmpty(pod.Spec.Subdomain))
@@ -236,7 +235,7 @@ public class KubernetesProvider : IClusterProvider
     private void StartClusterMonitor()
     {
         var props = Props
-            .FromProducer(() => new KubernetesClusterMonitor(_cluster, _config))
+            .FromProducer(() => new KubernetesClusterMonitor(_cluster, Config))
             .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
 
         _clusterMonitor = _cluster.System.Root.SpawnNamedSystem(props, "$kubernetes-cluster-monitor");
@@ -267,7 +266,7 @@ public class KubernetesProvider : IClusterProvider
 
     private async Task DeregisterMemberInner(Cluster cluster)
     {
-        var kubernetes = _config.ClientFactory();
+        var kubernetes = Config.ClientFactory();
 
         Logger.LogInformation("[Cluster][KubernetesProvider] Unregistering service {PodName} on {PodIp}", _podName,
             _address);

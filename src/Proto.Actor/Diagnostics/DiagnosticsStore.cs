@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
 
-
 namespace Proto.Diagnostics;
 
 public class DiagnosticsStore

@@ -14,8 +14,8 @@ namespace Proto.Cluster.CodeGen.Tests;
 public class PathPolyfillTests
 {
     [Theory]
-    [InlineData(@"./..", @"./..")]
-    [InlineData(@"same", @"same")]
+    [InlineData("./..", "./..")]
+    [InlineData("same", "same")]
     [InlineData(@"..\dir", @"some\other\path")]
     [InlineData(@".\dir", @"some\other\path")]
     [InlineData(@".\root\dir", @"some\other\path")]

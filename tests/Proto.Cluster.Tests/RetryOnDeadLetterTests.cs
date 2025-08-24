@@ -17,7 +17,7 @@ public class RetryOnDeadLetterTests
         await using var _ = fixture;
         await fixture.InitializeAsync();
 
-        var member = fixture.Members.First();
+        var member = fixture.Members[0];
         var identity = CreateIdentity("dead-letter-test");
 
         // make sure the actor is created and the PID is cached
@@ -41,11 +41,10 @@ public class RetryOnDeadLetterTests
         // check if the correct response type is returned
         var response = await member.RequestAsync<object>(identity, EchoActor.Kind, new Ping(), CancellationTokens.FromSeconds(1));
         response.Should().BeOfType<Pong>();
-
     }
 
-    private string CreateIdentity(string baseId) => $"{Guid.NewGuid().ToString("N").Substring(0, 6)}-{baseId}-";
-    
+    private static string CreateIdentity(string baseId) => $"{Guid.NewGuid().ToString("N").Substring(0, 6)}-{baseId}-";
+
     private class Fixture : BaseInMemoryClusterFixture
     {
         public Fixture(int clusterSize)

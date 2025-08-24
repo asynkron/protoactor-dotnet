@@ -250,7 +250,6 @@ public partial class Gossiper
 
     internal Task StartgossipLoopAsync()
     {
-
         Logger.LogInformation("Started Cluster Gossip");
         _ = SafeTask.Run(GossipLoop);
 
@@ -310,11 +309,10 @@ public partial class Gossiper
 
         //don't ban ourselves. our gossip state will never reach other members then...
         var gracefullyLeft = t2.Keys
-            .Where(k => !alreadyBlocked.Contains(k))
-            .Where(k => k != _systemId)
+            .Where(k => !alreadyBlocked.Contains(k) && k != _systemId)
             .ToArray();
 
-        if (gracefullyLeft.Any())
+        if (gracefullyLeft.Length != 0)
         {
             _blockList.Block(gracefullyLeft, "Gracefully left");
         }

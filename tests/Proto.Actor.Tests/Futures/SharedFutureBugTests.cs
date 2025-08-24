@@ -13,12 +13,12 @@ public class SharedFutureBugTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var count = 100_000;
+        const int count = 100_000;
         var hashSet = new HashSet<string>();
         for (int i = 0; i < count; i++)
         {
             var f = context.GetFuture();
-  
+
             var s = f.Pid.ToDiagnosticString();
             hashSet.Add(s);
         }

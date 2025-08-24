@@ -67,4 +67,3 @@ public static class TestKit
         throw new TimeoutException(message ?? $"The condition was not met within the timeout of {timeout}");
     }
 }
-

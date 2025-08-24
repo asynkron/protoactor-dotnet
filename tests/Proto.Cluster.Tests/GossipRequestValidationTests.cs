@@ -66,4 +66,3 @@ public class GossipRequestValidationTests
         response.Rejected.Should().BeTrue();
     }
 }
-

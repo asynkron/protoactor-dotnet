@@ -24,8 +24,8 @@ public class UnreachableSubscriberTests
         await using var _ = fixture;
         await fixture.InitializeAsync();
 
-        var leavingMember = fixture.Members.Last();
-        var stayingMember = fixture.Members.First();
+        var leavingMember = fixture.Members[^1];
+        var stayingMember = fixture.Members[0];
 
         var props = Props.FromFunc(ctx =>
         {
@@ -61,7 +61,6 @@ public class UnreachableSubscriberTests
         fixture.Deliveries.Count.Should().Be(1);
     }
 
-
     private record DataPublished(int Data);
     private record Delivery(string Identity, int Data);
     private record Response;
@@ -85,6 +84,6 @@ public class UnreachableSubscriberTests
         public Task<Subscribers> GetSubscribersForTopic(string topic) => _store.GetAsync(topic, CancellationToken.None);
 
         public Task<PublishResponse> PublishData(string topic, int data) =>
-            Members.First().Publisher().Publish(topic, new DataPublished(data), CancellationTokens.FromSeconds(5));
+            Members[0].Publisher().Publish(topic, new DataPublished(data), CancellationTokens.FromSeconds(5));
     }
 }

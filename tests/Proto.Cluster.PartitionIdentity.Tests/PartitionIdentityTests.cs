@@ -124,16 +124,16 @@ public class PartitionIdentityTests
         timer.Restart();
         await fixture.DisposeAsync();
         _output.WriteLine($"Stopped cluster in {timer.Elapsed}");
-        
+
         // delay to reduce flakiness
         // Delay to reduce flakiness when tearing down the cluster
         await Task.Delay(2000);
 
         var actorStates = fixture.Repository.Contents.ToList();
 
-        var totalCalls = actorStates.Select(it => it.TotalCount).Sum();
-        var restarts = actorStates.Select(it => it.Events.Count(e => e is ActorStopped) - 1).Sum();
-        var totalStarts = actorStates.Select(it => it.Events.Count(e => e is ActorStarted)).Sum();
+        var totalCalls = actorStates.Sum(it => it.TotalCount);
+        var restarts = actorStates.Sum(it => it.Events.Count(e => e is ActorStopped) - 1);
+        var totalStarts = actorStates.Sum(it => it.Events.Count(e => e is ActorStarted));
 
         var sentActivationRequests = activationRequestsSent;
         var receivedActivationRequests = activationRequestsReceived;
@@ -326,7 +326,7 @@ public class PartitionIdentityTests
         _output.WriteLine($"[{DateTimeOffset.Now:O}] Stopped cluster member {member.System.Id}");
     }
 
-    private async Task<PartitionIdentityClusterFixture> InitClusterFixture(
+    private static async Task<PartitionIdentityClusterFixture> InitClusterFixture(
         int memberCount,
         PartitionIdentityLookup.Mode mode,
         PartitionIdentityLookup.Send send

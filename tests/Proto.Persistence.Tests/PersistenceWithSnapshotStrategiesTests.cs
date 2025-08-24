@@ -17,8 +17,8 @@ public class PersistenceWithSnapshotStrategiesTests
         var actorId = Guid.NewGuid().ToString();
 
         var persistence = Persistence.WithEventSourcingAndSnapshotting(provider, provider, actorId,
-            @event => { state *= ((Multiplied)@event.Data).Amount; },
-            snapshot => { state = (int)snapshot.State; },
+            @event => state *= ((Multiplied)@event.Data).Amount,
+            snapshot => state = (int)snapshot.State,
             new IntervalStrategy(1), () => state
         );
 

@@ -58,16 +58,15 @@ public record MemberList : IMemberList
     private TaskCompletionSource<bool> _startedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly ConsensusManager _consensusManager;
     private readonly MemberStrategyManager _memberStrategyManager;
-    private readonly bool _isClient;
 
-    public bool IsClient => _isClient;
+    public bool IsClient { get; }
 
     public MemberList(Cluster cluster, bool isClient = false)
     {
         _cluster = cluster;
         _system = _cluster.System;
         _root = _system.Root;
-        _isClient = isClient;
+        IsClient = isClient;
         var (host, port) = _cluster.System.GetAddress();
 
         Self = new Member
@@ -241,12 +240,12 @@ public record MemberList : IMemberList
             Logger.LogDebug("[MemberList] Published ClusterTopology event {ClusterTopology}", topology);
         }
 
-        if (topology.Joined.Any())
+        if (topology.Joined.Count != 0)
         {
             Logger.ClusterMembersJoined(topology.Joined);
         }
 
-        if (topology.Left.Any())
+        if (topology.Left.Count != 0)
         {
             Logger.ClusterMembersLeft(topology.Left);
         }
@@ -259,7 +258,7 @@ public record MemberList : IMemberList
             return;
         }
 
-        if (_isClient || activeMembers.Contains(_system.Id))
+        if (IsClient || activeMembers.Contains(_system.Id))
         {
             _startedTcs.TrySetResult(true);
         }

@@ -73,7 +73,7 @@ public class BatchFutureTests : ActorTestBase
             )
         );
 
-        var batchSize = 100;
+        const int batchSize = 100;
         using var batch = new FutureBatchProcess(System, batchSize, CancellationTokens.FromSeconds(5));
         var futures = new IFuture[batchSize];
 
@@ -104,7 +104,7 @@ public class BatchFutureTests : ActorTestBase
             )
         );
 
-        var batchSize = 1000;
+        const int batchSize = 1000;
         using var cts = new CancellationTokenSource(50);
         using var batch = new FutureBatchProcess(System, batchSize, cts.Token);
         var futures = new IFuture[batchSize];
@@ -116,7 +116,7 @@ public class BatchFutureTests : ActorTestBase
             Context.Request(pid, i, future.Pid);
         }
 
-        await futures.Invoking(async f => { await Task.WhenAll(f.Select(future => future.Task)); }
+        await futures.Invoking(async f => await Task.WhenAll(f.Select(future => future.Task))
             )
             .Should()
             .ThrowAsync<TimeoutException>();

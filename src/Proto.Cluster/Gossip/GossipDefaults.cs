@@ -33,7 +33,7 @@ public static class GossipDefaults
                 select x.Key)
             .ToArray();
 
-        if (blocked.Any())
+        if (blocked.Length != 0)
         {
             blockList.Block(blocked, "Expired heartbeat");
         }

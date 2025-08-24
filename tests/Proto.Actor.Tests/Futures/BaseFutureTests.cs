@@ -110,7 +110,7 @@ public abstract class BaseFutureTests : ActorTestBase
             )
         );
 
-        var batchSize = 1000;
+        const int batchSize = 1000;
         var futures = new IFuture[batchSize];
 
         for (var i = 0; i < batchSize; i++)

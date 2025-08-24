@@ -35,7 +35,7 @@ public class AllForOneStrategy : ISupervisorStrategy
     ///     A delegate that provided with failing child <see cref="PID" /> and the exception returns a
     ///     <see cref="SupervisorDirective" />
     /// </param>
-    /// <param name="maxNrOfRetries">Number of restart retries before stopping the the children of the supervisor</param>
+    /// <param name="maxNrOfRetries">Number of restart retries before stopping the children of the supervisor</param>
     /// <param name="withinTimeSpan">A time window to count <see cref="maxNrOfRetries" /> in</param>
     public AllForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
     {

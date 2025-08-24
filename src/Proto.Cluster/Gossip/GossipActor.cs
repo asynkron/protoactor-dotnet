@@ -72,13 +72,13 @@ public class GossipActor : IActor
         }
     }
 
-    private Task OnReceiveTimeout(IContext context)
+    private static Task OnReceiveTimeout(IContext context)
     {
         Logger.LogCritical("GossipActor received timeout, report bug");
         return Task.CompletedTask;
     }
 
-    private Task OnStarted(IContext context)
+    private static Task OnStarted(IContext context)
     {
         context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
         return Task.CompletedTask;
@@ -125,7 +125,7 @@ public class GossipActor : IActor
     {
         var logger = context.Logger()?.BeginScope<GossipActor>();
         logger?.LogDebug("Gossip Request {Sender}", context.Sender!);
-        
+
         if (_blockList.BlockedMembers.Contains(gossipRequest.MemberId))
         {
             Logger.LogInformation("Blocked gossip request from {MemberId}", gossipRequest.MemberId);
@@ -149,14 +149,13 @@ public class GossipActor : IActor
         {
             Logger.LogDebug("Gossip Request {Sender}", context.Sender!);
         }
-        
+
         ReceiveState(context, gossipRequest.State);
         if (_gossipDebugLogging)
         {
             Logger.LogInformation("Responding to GossipRequest {Request} to {MemberId}", gossipRequest, gossipRequest.MemberId);
         }
         context.Respond(new GossipResponse());
-
 
         return Task.CompletedTask;
     }

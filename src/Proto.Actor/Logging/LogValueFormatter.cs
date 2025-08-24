@@ -168,7 +168,7 @@ internal class LogValuesFormatter
         return valueArray;
     }
 
-    private object FormatArgument(object value)
+    private static object FormatArgument(object value)
     {
         if (value == null)
         {

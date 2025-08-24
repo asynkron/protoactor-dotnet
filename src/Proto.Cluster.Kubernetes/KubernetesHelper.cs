@@ -10,11 +10,11 @@ namespace Proto.Cluster.Kubernetes;
 public static class KubernetesHelper
 {
     /// <summary>
-    /// Checks if the Kubernetes namespace file exists. 
+    /// Checks if the Kubernetes namespace file exists.
     /// </summary>
     [PublicAPI]
     public static bool HasKubeNamespace() => KubernetesExtensions.TryGetKubeNamespace(out _);
-    
+
     /// <summary>
     /// Attempts to get the FQDN for the Pod by querying the Kubernetes API.
     /// </summary>
@@ -49,7 +49,7 @@ public static class KubernetesHelper
         var ownerReferences = pod.Metadata.OwnerReferences;
         var isStableHostnameWorkload = ownerReferences.Any(
             // Add other workload kinds with stable hostnames as needed
-            owner => owner.Kind is "StatefulSet" or "DaemonSet" 
+            owner => owner.Kind is "StatefulSet" or "DaemonSet"
         );
 
         var host = isStableHostnameWorkload ? pod.Metadata.Name : pod.Status.PodIP.Replace('.', '-');

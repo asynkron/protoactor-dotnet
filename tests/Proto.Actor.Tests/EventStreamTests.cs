@@ -88,7 +88,7 @@ public class EventStreamTests
         var system = new ActorSystem();
         await using var _ = system;
         var eventStream = system.EventStream;
-        
+
         var channel = Channel.CreateUnbounded<string>();
         eventStream.Subscribe(channel);
         eventStream.Publish(123);

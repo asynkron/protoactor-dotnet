@@ -369,14 +369,13 @@ public record ClusterConfig
     /// </summary>
     public ClusterConfig WithLegacyRequestTimeoutBehavior(bool enabled = true) =>
         this with { LegacyRequestTimeoutBehavior = enabled };
-    
-    
+
     /// <summary>
     ///     Exit the application process when the cluster is shutdown.
     /// </summary>
     /// <param name="enabled"></param>
     /// <returns></returns>
-    public ClusterConfig WithExitOnShutdown(bool enabled = true) => 
+    public ClusterConfig WithExitOnShutdown(bool enabled = true) =>
         this with { ExitOnShutdown = enabled };
 
     /// <summary>
@@ -401,7 +400,7 @@ public record ClusterConfig
     /// </summary>
     [JsonIgnore]
     public Func<Cluster, Task> HeartbeatExpirationHandler { get; init; } = GossipDefaults.BlockExpiredMembers;
-    
+
     /// <summary>
     ///    Configures the code to run when a member is expired from the cluster.
     /// </summary>

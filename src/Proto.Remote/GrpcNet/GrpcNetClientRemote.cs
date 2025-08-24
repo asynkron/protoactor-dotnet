@@ -6,7 +6,6 @@ namespace Proto.Remote.GrpcNet;
 
 public class GrpcNetClientRemote : IRemote
 {
-    private readonly RemoteConfig _config;
     private readonly EndpointManager _endpointManager;
     private readonly object _lock = new();
     private readonly ILogger _logger = Log.CreateLogger<GrpcNetClientRemote>();
@@ -27,7 +26,7 @@ public class GrpcNetClientRemote : IRemote
         }
 
         System.SetClientAddress();
-        _config = config;
+        Config = config;
         System.Extensions.Register(this);
         System.Extensions.Register(config.Serialization);
         System.Diagnostics.RegisterObject("Remote", "Config", Config);
@@ -35,7 +34,7 @@ public class GrpcNetClientRemote : IRemote
         _endpointManager = new EndpointManager(System, Config);
     }
 
-    public RemoteConfig Config => _config;
+    public RemoteConfig Config { get; }
 
     public ActorSystem System { get; }
     public BlockList BlockList { get; }

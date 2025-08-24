@@ -17,7 +17,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
     {
         {"baggageKey", "baggageValue"}
     });
-    
+
     private static readonly Props ProxyTraceActorProps = Props.FromProducer(() => new TraceTestActor()).WithTracing();
 
     private static readonly Props InnerTraceActorProps = Props.FromFunc(context =>
@@ -43,7 +43,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
             ? new TraceResponse(Baggage.Current)
             : new TraceResponse();
     }
-    
+
     private static readonly ActivitySource TestSource = new("Proto.Actor.Tests");
 
     private readonly ActivityFixture _fixture;
@@ -84,10 +84,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 
     [Fact]
     public async Task TracesPropagateCorrectlyForRequestWithForward() =>
-        await VerifyTrace(async (rootContext, target) =>
-            {
-                await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.Forward));
-            }
+        await VerifyTrace(async (rootContext, target) => await rootContext.RequestAsync<TraceResponse>(target, new TraceMe(SendAs.Forward))
         );
 
     [Fact]
@@ -137,7 +134,6 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
         inner.Should().NotBeNull();
     }
 
-    
     [Fact]
     public async Task TracesPropagateCorrectlyWithBaggageForRequestAsync() =>
         await VerifyTrace(async (rootContext, target) =>
@@ -147,7 +143,7 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
                 response.Should().BeEquivalentTo(new TraceResponse(TestBaggage));
             }
         );
-    
+
     [Theory]
     [InlineData(SendAs.ReEnterAfter1)]
     [InlineData(SendAs.ReEnterAfter2)]
@@ -209,9 +205,9 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
                 response.Message.Should().Be(new TraceResponse(TestBaggage));
             }
         );
-    
+
     // End
-    
+
     private async Task VerifyTrace(Func<IRootContext, PID, Task> action)
     {
         var tracedRoot = new ActorSystem().Root.WithTracing();
@@ -250,7 +246,6 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
             .GetActivitiesByTraceId(activityTraceId)
             .Single(it => it.OperationName.Contains("Receive TraceMe", StringComparison.Ordinal));
 
-        
         receiveActivity.GetStatus().Should().Be(Status.Error);
         receiveActivity.Events.Should().HaveCount(1);
         receiveActivity.Events.Single().Tags.Where(tag => tag.Key.StartsWith("exception")).Should().NotBeEmpty();
@@ -310,17 +305,11 @@ public class OpenTelemetryTracingTests : IClassFixture<ActivityFixture>
 
                     break;
                 case SendAs.ReEnterAfter1:
-                    context.ReenterAfter(Task.FromResult(1), () =>
-                    {
-                        context.Forward(target);
-                    });
+                    context.ReenterAfter(Task.FromResult(1), () => context.Forward(target));
 
                     break;
                 case SendAs.ReEnterAfter2:
-                    context.ReenterAfter(Task.CompletedTask, () =>
-                    {
-                        context.Forward(target);
-                    });
+                    context.ReenterAfter(Task.CompletedTask, () => context.Forward(target));
 
                     break;
                 default: throw new ArgumentOutOfRangeException(nameof(msg.Method), msg.Method.ToString());

@@ -14,7 +14,7 @@ public class MailboxQueuesTests
         Unbounded
     }
 
-    private IMailboxQueue GetMailboxQueue(MailboxQueueKind kind) =>
+    private static IMailboxQueue GetMailboxQueue(MailboxQueueKind kind) =>
         kind switch
         {
             MailboxQueueKind.Bounded   => new BoundedMailboxQueue(4),

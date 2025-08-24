@@ -37,8 +37,10 @@ public static class IPUtils
         IPAddress result = null!;
 
         foreach (var addr in candidates)
+        {
             if (CompareIpAddresses(addr, result))
                 result = addr;
+        }
 
         return result;
 
@@ -53,8 +55,10 @@ public static class IPUtils
             if (lbytes.Length != rbytes.Length) return lbytes.Length < rbytes.Length;
 
             for (var i = 0; i < lbytes.Length; i++)
+            {
                 if (lbytes[i] != rbytes[i])
                     return lbytes[i] < rbytes[i];
+            }
 
             return false;
         }

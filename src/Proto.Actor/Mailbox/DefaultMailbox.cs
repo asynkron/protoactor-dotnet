@@ -178,7 +178,7 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
         }
     }
 
-    private Task ProcessMessages()
+    private async Task ProcessMessages()
     {
         object? msg = null;
 
@@ -201,7 +201,8 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
 
                     if (!t.IsCompletedSuccessfully)
                     {
-                        return Await(msg, t, this);
+                        await Await(msg, t, this);
+                        return;
                     }
 
                     foreach (var t1 in _stats)
@@ -225,7 +226,8 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
 
                     if (!t.IsCompletedSuccessfully)
                     {
-                        return Await(msg, t, this);
+                        await Await(msg, t, this);
+                        return;
                     }
 
                     foreach (var t1 in _stats)
@@ -245,7 +247,8 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
             _invoker.EscalateFailure(e, msg);
         }
 
-        return Task.CompletedTask;
+        await Task.CompletedTask;
+        return;
 
         static async Task Await(object msg, Task task, DefaultMailbox self)
         {
@@ -280,9 +283,8 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
             }
         }
     }
-    
-    public void Execute() => _ = RunAsync(this);
 
+    public void Execute() => _ = RunAsync(this);
 }
 
 /// <summary>

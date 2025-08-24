@@ -61,14 +61,13 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 {
     private static readonly object Lock = new();
 
-
     public const string InvalidIdentity = "invalid";
     private readonly Func<ClusterConfig, ClusterConfig>? _configure;
     private readonly ILogger _logger = Log.CreateLogger(nameof(GetType));
     private readonly List<Cluster> _members = new();
     private readonly List<Cluster> _clients = new();
     private static TracerProvider? _tracerProvider;
-    private GithubActionsReporter _reporter;
+    private readonly GithubActionsReporter _reporter;
 
     protected readonly string ClusterName;
 
@@ -100,7 +99,6 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
     }
 
     public virtual bool SupportsClients => true;
-
 
     protected virtual ClusterKind[] ClusterKinds => new[]
     {
@@ -157,7 +155,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
             _logger.LogInformation("Preparing shutdown for cluster member {MemberId}", cluster.System.Id);
         }
 
-        var tasks = Members.ToList().Select(cluster => (cluster, cluster.ShutdownAsync())).ToList();
+        var tasks = Members.ToList().ConvertAll(cluster => (cluster, cluster.ShutdownAsync()));
         foreach (var (cluster, task) in tasks)
         {
             try
@@ -315,7 +313,6 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
         var res = (await Task.WhenAll(tasks)).ToList();
 
-
         var consensus = res.Select(m => m.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(10)));
         var x = await Task.WhenAll(consensus);
         if (x.Any(c => !c.consensus))
@@ -343,7 +340,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
         var logger = system.Logger()?.BeginScope<EventStream>();
 
-        system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e); }
+        system.EventStream.Subscribe<object>(e => logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e)
         );
 
         var remoteConfig = RemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);
@@ -372,7 +369,7 @@ public abstract class ClusterFixture : IAsyncLifetime, IClusterFixture, IAsyncDi
 
         var logger = system.Logger()?.BeginScope<EventStream>();
 
-        system.EventStream.Subscribe<object>(e => { logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e); }
+        system.EventStream.Subscribe<object>(e => logger?.LogDebug("EventStream {MessageType}:{MessagePayload}", e.GetType().Name, e)
         );
 
         var remoteConfig = RemoteConfig.BindToLocalhost().WithProtoMessages(MessagesReflection.Descriptor);

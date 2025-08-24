@@ -4,7 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-
 /*
    Member abc state:
        GossipState
@@ -166,7 +165,7 @@ internal class Gossip
         _localSequenceNo = GossipStateManagement.SetKey(_state, key, message, _myId, _localSequenceNo);
         logger?.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
         Logger.LogDebug("Setting state key {Key} - {Value} - {State}", key, message, _state);
-        
+
         if (_gossipDebugLogging)
         {
             Logger.LogInformation("SetState: Gossip key {Key} - {Value} - {State}", key, message, _state);
@@ -274,7 +273,7 @@ internal class Gossip
     {
         //find all members that have sent topology
         var members = _getMembers();
-        
+
         //purge member states
         foreach (var memberId in _state.Members.Keys.ToArray())
         {

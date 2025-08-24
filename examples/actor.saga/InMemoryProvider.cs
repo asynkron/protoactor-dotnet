@@ -61,7 +61,7 @@ public class InMemoryProvider : IProvider
         var events = Events.GetOrAdd(actorName, new Dictionary<long, object>());
         long nextEventIndex = 1;
 
-        if (events.Any())
+        if (events.Count != 0)
         {
             nextEventIndex = events.Last().Key + 1;
         }

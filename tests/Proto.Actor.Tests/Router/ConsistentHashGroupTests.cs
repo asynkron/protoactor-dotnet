@@ -261,5 +261,4 @@ public class ConsistentHashGroupTests
 
         public override string ToString() => _value;
     }
-
 }

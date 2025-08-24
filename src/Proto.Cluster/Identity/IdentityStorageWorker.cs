@@ -276,7 +276,7 @@ internal class IdentityStorageWorker : IActor
             );
         }
 
-        var remotePid = _lookup.RemotePlacementActor(activator.Address);
+        var remotePid = IdentityStorageLookup.RemotePlacementActor(activator.Address);
 
         var req = new ActivationRequest
         {

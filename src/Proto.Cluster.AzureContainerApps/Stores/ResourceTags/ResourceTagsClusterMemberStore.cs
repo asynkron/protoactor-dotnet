@@ -157,8 +157,10 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         var prefixedName = ResourceTagNames.Prefix(memberId);
 
         foreach (var tag in existingTags)
+        {
             if (tag.Key.StartsWith(prefixedName))
                 existingTags.Remove(tag.Key);
+        }
 
         await containerApp.SetTagsAsync(existingTags, cancellationToken).ConfigureAwait(false);
     }
@@ -193,11 +195,13 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
             return;
 
         var existingTags = containerApp.Data.Tags;
-        var prefixedName = ResourceTagNames.NamePrefix;
+        const string prefixedName = ResourceTagNames.NamePrefix;
 
         foreach (var tag in existingTags)
+        {
             if (tag.Key.StartsWith(prefixedName))
                 existingTags.Remove(tag.Key);
+        }
 
         await containerApp.SetTagsAsync(existingTags, cancellationToken).ConfigureAwait(false);
     }
@@ -228,14 +232,6 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         return resource.HasValue ? resource.Value : default;
     }
 
-    private async Task<ContainerAppManagedEnvironmentResource> GetContainerAppManagedEnvironmentResourceAsync(ContainerAppResource containerApp, CancellationToken cancellationToken)
-    {
-        var armClient = await GetArmClientAsync().ConfigureAwait(false);
-        var environmentId = containerApp.Data.EnvironmentId;
-        var response = armClient.GetContainerAppManagedEnvironmentResource(environmentId);
-        return response;
-    }
-
     private async Task<IEnumerable<ContainerAppResource>> GetContainerAppsAsync(ResourceIdentifier environmentId, CancellationToken cancellationToken)
     {
         var armClient = await GetArmClientAsync();
@@ -244,9 +240,6 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         var resourceGroup = await armClient.GetResourceGroupByNameAsync(resourceGroupName, subscriptionId, cancellationToken).ConfigureAwait(false);
         return resourceGroup.GetContainerApps().Where(x => x.Data.EnvironmentId == environmentId);
     }
-
-    private static IEnumerable<ContainerAppRevisionResource> GetActiveRevisionsWithTraffic(ContainerAppResource containerApp) =>
-        containerApp.GetContainerAppRevisions().Where(r => r.HasData && (r.Data.IsActive ?? false) && r.Data.TrafficWeight > 0);
 
     private static string Serialize(TaggedMember taggedMember) => JsonSerializer.Serialize(taggedMember);
     private static TaggedMember Deserialize(string json) => JsonSerializer.Deserialize<TaggedMember>(json)!;

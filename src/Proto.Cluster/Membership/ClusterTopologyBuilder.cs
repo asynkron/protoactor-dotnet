@@ -66,4 +66,3 @@ internal static class ClusterTopologyBuilder
         return activeMembers;
     }
 }
-

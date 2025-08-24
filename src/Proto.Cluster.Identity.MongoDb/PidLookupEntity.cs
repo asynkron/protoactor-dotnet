@@ -12,7 +12,7 @@ public class PidLookupEntity
     [BsonId] public string Key { get; set; } = default!;
 
     public string Identity { get; set; } = default!;
-    public string? UniqueIdentity { get; set; } = default!;
+    public string? UniqueIdentity { get; set; }
     public string Kind { get; set; } = default!;
     public string? Address { get; set; }
     public string? MemberId { get; set; }

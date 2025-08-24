@@ -116,7 +116,7 @@ public class RandomGroupRouterTests
         await probe2.ExpectNextUserMessageAsync<string>(x => x == "hello");
         await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
-    private (PID router, TestProbe routee1, TestProbe routee2, TestProbe routee3) CreateRouterWith3Routees(ActorSystem system)
+    private static (PID router, TestProbe routee1, TestProbe routee2, TestProbe routee3) CreateRouterWith3Routees(ActorSystem system)
     {
         var (probe1, pid1) = system.CreateTestProbe();
         var (probe2, pid2) = system.CreateTestProbe();

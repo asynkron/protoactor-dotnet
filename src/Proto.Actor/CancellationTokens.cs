@@ -42,10 +42,7 @@ public static class CancellationTokens
     /// <exception cref="ArgumentOutOfRangeException">Thrown if seconds is less than 1</exception>
     public static CancellationToken FromSeconds(int seconds)
     {
-        if (seconds < 1)
-        {
-            throw new ArgumentOutOfRangeException(nameof(seconds));
-        }
+        ArgumentOutOfRangeException.ThrowIfLessThan(seconds, 1);
 
         static TokenEntry ValueFactory(int seconds)
         {

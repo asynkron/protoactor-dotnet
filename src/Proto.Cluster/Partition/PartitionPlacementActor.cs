@@ -321,7 +321,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
         return Task.CompletedTask;
     }
 
-    private Props AbortOnDeadLetter(CancellationTokenSource cts) =>
+    private static Props AbortOnDeadLetter(CancellationTokenSource cts) =>
         Props.FromFunc(responseContext =>
             {
                 // Node lost or rebalance cancelled because of topology changes
@@ -350,7 +350,7 @@ internal class PartitionPlacementActor : IActor, IDisposable
             {
                 Logger.LogDebug("[PartitionPlacementActor] Activation already exists: {ClusterIdentity}, {Pid}", msg.ClusterIdentity, existing);
             }
-            
+
             //this identity already exists
             var response = new ActivationResponse
             {
@@ -543,10 +543,8 @@ internal class PartitionPlacementActor : IActor, IDisposable
                     {
                         return null;
                     }
-                },
-                ack => cancellationToken.IsCancellationRequested || ack is not null,
-                int.MaxValue // Continue until complete or cancelled,
-            );
+                }, ack => cancellationToken.IsCancellationRequested || ack is not null, int.MaxValue // Continue until complete or cancelled,
+, ct: cancellationToken);
 
             _responseTasks.Add(task);
         }

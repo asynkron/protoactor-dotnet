@@ -64,11 +64,11 @@ public sealed class SharedFutureProcess : Process, IDisposable
             _futures.Add(requestSlot);
         }
 
-        _maxRequestId = int.MaxValue - int.MaxValue % size;
+        _maxRequestId = int.MaxValue - (int.MaxValue % size);
     }
 
     private PID Pid { get; }
-    public bool Stopping { get; private set; }
+    public bool Stopping { get; }
 
     public int RequestsInFlight
     {

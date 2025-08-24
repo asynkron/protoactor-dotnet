@@ -95,10 +95,7 @@ internal class PartitionManager
 
     public async Task ShutdownAsync()
     {
-        if (_isClient)
-        {
-        }
-        else
+        if (!_isClient)
         {
             await Task.WhenAll(
                 _context.StopAsync(_partitionPlacementActor),

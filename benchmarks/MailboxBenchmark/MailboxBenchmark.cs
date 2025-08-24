@@ -12,10 +12,10 @@ using Proto.Mailbox;
 public class MailboxBenchmark
 {
     [Benchmark]
-    public Task Unbounded() => RunTest(() => UnboundedMailbox.Create());
+    public static Task Unbounded() => RunTest(() => UnboundedMailbox.Create());
 
     [Benchmark]
-    public Task Unbound() => RunTest(() => BoundedMailbox.Create(1024 * 1024));
+    public static Task Unbound() => RunTest(() => BoundedMailbox.Create(1024 * 1024));
 
     private static async Task RunTest(MailboxProducer mailbox)
     {

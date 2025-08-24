@@ -22,11 +22,10 @@ internal class OpenTelemetryRootContextDecorator : RootContextDecorator
                 sendActivitySetup(activity, message);
             }
         };
-        
+
         _spawnActivitySetup = (activity, message)
             =>
         {
-           
         };
     }
 
@@ -48,7 +47,7 @@ internal class OpenTelemetryRootContextDecorator : RootContextDecorator
         OpenTelemetryMethodsDecorators.RequestAsync(Source, target, message, _sendActivitySetup,
             () => base.RequestAsync<T>(target, message, cancellationToken)
         );
-    
+
     public override PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) =>
         OpenTelemetryMethodsDecorators.SpawnNamed(Source,_spawnActivitySetup, () => base.SpawnNamed(props, name, callback),name, "<None>");
 }

@@ -9,4 +9,3 @@ public interface IMemberList
     Member Self { get; }
     ImmutableHashSet<string> GetMembers();
 }
-

@@ -63,7 +63,7 @@ internal class IdentityStoragePlacementActor : IActor
         await _actors.Values.StopMany(context);
     }
 
-    private Task Stopped()
+    private static Task Stopped()
     {
         Logger.LogDebug("Stopped placement actor");
 

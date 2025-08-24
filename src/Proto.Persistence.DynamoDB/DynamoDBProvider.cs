@@ -22,10 +22,7 @@ public class DynamoDBProvider : IProvider, IDisposable
 
     public DynamoDBProvider(IAmazonDynamoDB dynamoDBClient, DynamoDBProviderOptions options)
     {
-        if (dynamoDBClient == null)
-        {
-            throw new ArgumentNullException(nameof(dynamoDBClient));
-        }
+        ArgumentNullException.ThrowIfNull(dynamoDBClient);
 
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
@@ -46,7 +43,7 @@ public class DynamoDBProvider : IProvider, IDisposable
 
         var lastIndex = -1L;
 
-        while (true)
+        do
         {
             var results = await query.GetNextSetAsync().ConfigureAwait(false);
 
@@ -55,12 +52,8 @@ public class DynamoDBProvider : IProvider, IDisposable
                 callback(GetData(doc));
                 lastIndex++;
             }
-
-            if (query.IsDone)
-            {
-                break;
-            }
         }
+        while (!query.IsDone);
 
         return lastIndex;
 
@@ -167,7 +160,7 @@ public class DynamoDBProvider : IProvider, IDisposable
         var write = _snapshotsTable.CreateBatchWrite();
         var writeCount = 0;
 
-        while (true)
+        do
         {
             var results = await query.GetNextSetAsync().ConfigureAwait(false);
 
@@ -182,12 +175,8 @@ public class DynamoDBProvider : IProvider, IDisposable
                     writeCount = 0;
                 }
             }
-
-            if (query.IsDone)
-            {
-                break;
-            }
         }
+        while (!query.IsDone);
 
         if (writeCount > 0)
         {

@@ -87,10 +87,7 @@ public class PartitionActivatorManager
 
     public async Task ShutdownAsync()
     {
-        if (_isClient)
-        {
-        }
-        else
+        if (!_isClient)
         {
             await _context.StopAsync(_partitionActivatorActor).ConfigureAwait(false);
         }

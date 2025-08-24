@@ -39,7 +39,7 @@ internal static class OpenTelemetryHelpers
 
         return activity;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Activity? BuildStartedActivity(
         ActivityContext parent,
@@ -50,8 +50,6 @@ internal static class OpenTelemetryHelpers
         ActivityKind activityKind = ActivityKind.Internal
     )
     {
-        
-
         var name = $"Proto {source}.{verb} {message}";
         var tags = new[] { new KeyValuePair<string, object?>(ProtoTags.MessageType, message) };
         var activity = ActivitySource.StartActivity(name, activityKind, parent, tags);
@@ -63,7 +61,7 @@ internal static class OpenTelemetryHelpers
 
         return activity;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Activity? BuildStartedSpawnActivity(
         ActivityContext parent,
@@ -74,7 +72,6 @@ internal static class OpenTelemetryHelpers
         ActivityKind activityKind = ActivityKind.Internal
     )
     {
-        
         var name = $"Proto {source}.{verb} {actorName}";
         var tags = Array.Empty<KeyValuePair<string, object?>>();
         var activity = ActivitySource.StartActivity(name, activityKind, parent, tags);

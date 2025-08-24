@@ -121,7 +121,7 @@ public class CodeGenerator : CommonCodeGenerator
             var index = type.LastIndexOf('.');
             var res = type.Substring(index + 1);
 
-            if (res == "")
+            if (res?.Length == 0)
             {
                 return "MissingName " + type;
             }

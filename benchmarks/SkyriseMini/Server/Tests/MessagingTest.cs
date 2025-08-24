@@ -51,7 +51,7 @@ public class MessagingTest
         }
     }
 
-    string[] PrepareActorIds(int count) =>
+    static string[] PrepareActorIds(int count) =>
         Enumerable.Range(1, count).Select(i => $"{Environment.MachineName}-{i}").ToArray();
 
     async Task<object[]> ActivateActors(string[] actorIds)

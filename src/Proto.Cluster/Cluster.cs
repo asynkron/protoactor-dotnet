@@ -43,18 +43,18 @@ public class Cluster : IActorSystemExtension<Cluster>
 
         var now = new DiagnosticsEntry("Cluster", "Local Time", DateTimeOffset.UtcNow);
         res.Add(now);
-        
+
         var blocked = new DiagnosticsEntry("Cluster", "Blocked", System.Remote().BlockList.BlockedMembers.ToArray());
         res.Add(blocked);
-        
+
         var t = await Gossip.GetState<ClusterTopology>(GossipKeys.Topology).ConfigureAwait(false);
 
         var topology = new DiagnosticsEntry("Cluster", "Topology", t);
         res.Add(topology);
-        
+
         var h = await Gossip.GetStateEntry(GossipKeys.Heartbeat).ConfigureAwait(false);
         var heartbeats = h.Select(heartbeat => new DiagnosticsMemberHeartbeat(heartbeat.Key, heartbeat.Value.Value.Unpack<MemberHeartbeat>(), heartbeat.Value.LocalTimestamp)).ToArray();
-        
+
         var heartbeat = new DiagnosticsEntry("Cluster", "Heartbeat", heartbeats);
         res.Add(heartbeat);
 

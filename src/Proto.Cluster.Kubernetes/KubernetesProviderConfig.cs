@@ -35,7 +35,7 @@ public record KubernetesProviderConfig
     ///     Enables more detailed logging
     /// </summary>
     private bool DeveloperLogging { get; }
-    
+
     /// <summary>
     /// The k8s Cluster Domain (TLD), defaults to "cluster.local"
     /// </summary>
@@ -49,7 +49,7 @@ public record KubernetesProviderConfig
     internal LogLevel DebugLogLevel => DeveloperLogging ? LogLevel.Information : LogLevel.Debug;
 
     internal static IKubernetes DefaultFactory() => new k8s.Kubernetes(KubernetesClientConfiguration.InClusterConfig());
-    
+
     /// <summary>
     /// The k8s Cluster Domain (TLD), defaults to "cluster.local"
     /// </summary>

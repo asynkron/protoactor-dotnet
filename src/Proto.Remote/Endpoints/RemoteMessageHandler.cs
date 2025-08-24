@@ -31,7 +31,7 @@ public sealed class RemoteMessageHandler
         _system = system;
         _serialization = serialization;
         _deserializationErrorLogLevel = remoteConfig.DeserializationErrorLogLevel;
-        
+
         //important, must be undecorated context to not mess up e.g. Otel
         _sendContext = new RootContext(system);
     }

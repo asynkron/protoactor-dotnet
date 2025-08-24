@@ -198,7 +198,6 @@ public class TestProbe : IActor, ITestProbe
 
     public void Unwatch(PID pid) => Context.Unwatch(pid);
 
-
     private async Task<MessageAndSender> ReceiveNextAsync(TimeSpan? timeAllowed,
         CancellationToken cancellationToken)
     {

@@ -16,13 +16,10 @@ using Xunit;
 
 namespace Proto.Persistence.Tests;
 
-
-
 public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
 {
     private const int InitialState = 1;
 
-    
     private readonly ContainersFixture _fixture;
 
     public ExamplePersistentActorTests(ContainersFixture fixture)
@@ -46,9 +43,9 @@ public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
             case TestProvider.MongoDb:
                 try
                 {
-                    ObjectSerializer objectSerializer = new ObjectSerializer(type => 
+                    ObjectSerializer objectSerializer = new ObjectSerializer(type =>
                         ObjectSerializer.DefaultAllowedTypes(type) || type.FullName.StartsWith("Proto.Persistence.Tests"));
-        
+
                     BsonSerializer.RegisterSerializer(objectSerializer);
                 }
                 catch (BsonSerializationException e)
@@ -60,14 +57,14 @@ public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
                 throw new ArgumentOutOfRangeException(nameof(providerType), providerType, null);
         }
     }
-    
+
     [Theory]
     [InlineData(TestProvider.InMemory)]
     [InlineData(TestProvider.Sqlite)]
     [InlineData(TestProvider.Marten)]
     [InlineData(TestProvider.SqlServer)]
     [InlineData(TestProvider.MongoDb)]
-   
+
     public async Task EventsAreSavedToPersistence(TestProvider testProvider)
     {
         await using var system = new ActorSystem();
@@ -185,7 +182,7 @@ public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
     [InlineData(TestProvider.Marten)]
     [InlineData(TestProvider.SqlServer)]
     [InlineData(TestProvider.MongoDb)]
-    
+
     public async Task GivenEventsThenASnapshot_StateShouldBeRestoredFromTheSnapshot(TestProvider  testProvider)
     {
         await using var system = new ActorSystem();
@@ -196,7 +193,7 @@ public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
         context.Send(pid, new Multiply { Amount = 2 });
         context.Send(pid, new RequestSnapshot());
         var state = await RestartActorAndGetState(pid, props, context);
-        var expectedState = InitialState * 2 * 2;
+        const int expectedState = InitialState * 2 * 2;
         Assert.Equal(expectedState, state);
     }
 
@@ -218,7 +215,7 @@ public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
         context.Send(pid, new Multiply { Amount = 4 });
         context.Send(pid, new Multiply { Amount = 8 });
         var state = await RestartActorAndGetState(pid, props, context);
-        var expectedState = InitialState * 2 * 2 * 4 * 8;
+        const int expectedState = InitialState * 2 * 2 * 4 * 8;
         Assert.Equal(expectedState, state);
     }
 
@@ -264,7 +261,7 @@ public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
         await providerState.DeleteSnapshotsAsync(actorId, 0);
         await providerState.DeleteEventsAsync(actorId, 1);
         var state = await RestartActorAndGetState(pid, props, context);
-        var expectedState = InitialState * 2 * 4;
+        const int expectedState = InitialState * 2 * 4;
         Assert.Equal(expectedState, state);
     }
 
@@ -410,10 +407,9 @@ public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
         Assert.Empty(snapshotStoreMessages);
     }
 
-    private (PID pid, Props props, string actorId, IProvider provider) CreateTestActor(IRootContext context,IProvider provider)
+    private static (PID pid, Props props, string actorId, IProvider provider) CreateTestActor(IRootContext context,IProvider provider)
     {
         var actorId = Guid.NewGuid().ToString();
-       
 
         var props = Props
             .FromProducer(() => new ExamplePersistentActor(provider, provider, actorId));
@@ -423,18 +419,14 @@ public class ExamplePersistentActorTests: IClassFixture<ContainersFixture>
         return (pid, props, actorId, provider);
     }
 
-    private async Task<int> RestartActorAndGetState(PID pid, Props props, IRootContext context)
+    private static async Task<int> RestartActorAndGetState(PID pid, Props props, IRootContext context)
     {
         await context.StopAsync(pid);
         pid = context.Spawn(props);
 
         return await context.RequestAsync<int>(pid, new GetState(), TimeSpan.FromMilliseconds(500));
     }
-
-   
-
 }
-
 
 internal class State
 {
@@ -519,7 +511,7 @@ internal class ExamplePersistentActor : IActor
         switch (@event.Data)
         {
             case Multiplied msg:
-                _state.Value = _state.Value * msg.Amount;
+                _state.Value *= msg.Amount;
 
                 break;
         }

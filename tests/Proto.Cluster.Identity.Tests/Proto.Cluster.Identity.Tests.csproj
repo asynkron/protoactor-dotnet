@@ -1,21 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-    <PropertyGroup>
-        <LangVersion>10</LangVersion>
-        <TargetFrameworks>net8.0</TargetFrameworks>
-        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <DockerComposeProjectPath>..\docker-compose\docker-compose.dcproj</DockerComposeProjectPath>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
-        <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
-        <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj" />
-        <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="Neovolve.Logging.Xunit" />
-    </ItemGroup>
-    <ItemGroup>
-        <None Update="*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
-    </ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <PropertyGroup>
+    <LangVersion>10</LangVersion>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerComposeProjectPath>..\docker-compose\docker-compose.dcproj</DockerComposeProjectPath>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Proto.Cluster.Identity.MongoDb\Proto.Cluster.Identity.MongoDb.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Cluster.Identity.Redis\Proto.Cluster.Identity.Redis.csproj" />
+    <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj" />
+    <ProjectReference Include="..\Proto.TestFixtures\Proto.TestFixtures.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Neovolve.Logging.Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="*.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+  </ItemGroup>
 </Project>

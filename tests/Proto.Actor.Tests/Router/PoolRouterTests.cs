@@ -15,6 +15,8 @@ public class PoolRouterTests
     private static readonly Props MyActorProps = Props.FromProducer(() => new DoNothingActor());
     private static readonly Props TrackingActorProps = Props.FromProducer(() => new MyTestActor());
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
+    private static readonly int[] expected = new[] {1, 1, 2};
+    private static readonly int[] expectedArray = new[] {0, 0, 3};
 
     [Fact]
     public async Task BroadcastGroupPool_CreatesRoutees()
@@ -115,7 +117,7 @@ public class PoolRouterTests
 
         counts.Sort();
 
-        Assert.Equal(new[] {1, 1, 2}, counts);
+        Assert.Equal(expected, counts);
     }
 
     [Fact]
@@ -143,7 +145,7 @@ public class PoolRouterTests
 
         counts.Sort();
 
-        Assert.Equal(new[] {0, 0, 3}, counts);
+        Assert.Equal(expectedArray, counts);
     }
 
     [Fact]
@@ -195,4 +197,3 @@ public class PoolRouterTests
         public override string ToString() => _value;
     }
 }
-

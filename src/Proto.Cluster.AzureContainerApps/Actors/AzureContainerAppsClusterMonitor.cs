@@ -18,7 +18,7 @@ using Proto.Utils;
 namespace Proto.Cluster.AzureContainerApps.Actors;
 
 /// <summary>
-/// An actor that periodically updates the member list. 
+/// An actor that periodically updates the member list.
 /// </summary>
 public class AzureContainerAppsClusterMonitor : IActor
 {
@@ -168,7 +168,7 @@ public class AzureContainerAppsClusterMonitor : IActor
 
     private void LogStoredMembers(ICollection<StoredMember> storedMembers)
     {
-        if (storedMembers.Any())
+        if (storedMembers.Count != 0)
             _logger.LogInformation("Got members {Members}", storedMembers.Count);
         else
             _logger.LogWarning("Did not get any members from {Store}", _clusterMemberStore.GetType().Name);

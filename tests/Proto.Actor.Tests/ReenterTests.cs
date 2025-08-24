@@ -59,10 +59,7 @@ public class ReenterTests : ActorTestBase
                 {
                     // Simulate asynchronous work before reentering
                     var delay = Task.Delay(500);
-                    ctx.ReenterAfter(delay, () =>
-                    {
-                        ctx.Respond("response");
-                    });
+                    ctx.ReenterAfter(delay, () => ctx.Respond("response"));
                 }
 
                 return Task.CompletedTask;
@@ -85,10 +82,7 @@ public class ReenterTests : ActorTestBase
                 if (ctx.Message is "reenter")
                 {
                     var task = Task.FromResult(expectedResult);
-                    ctx.ReenterAfter(task, (int result) =>
-                    {
-                        ctx.Respond(result);
-                    });
+                    ctx.ReenterAfter(task, (int result) => ctx.Respond(result));
                 }
 
                 return Task.CompletedTask;
@@ -166,10 +160,7 @@ public class ReenterTests : ActorTestBase
                         throw new Exception("Failed!");
                     });
 
-                    ctx.ReenterAfter(task, () =>
-                    {
-                        ctx.Respond("response");
-                    });
+                    ctx.ReenterAfter(task, () => ctx.Respond("response"));
                 }
 
                 return Task.CompletedTask;
@@ -191,10 +182,7 @@ public class ReenterTests : ActorTestBase
                 {
                     var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-                    ctx.ReenterAfter(tcs.Task, () =>
-                    {
-                        ctx.Respond("response");
-                    });
+                    ctx.ReenterAfter(tcs.Task, () => ctx.Respond("response"));
 
                     tcs.TrySetCanceled();
                 }
@@ -272,10 +260,7 @@ public class ReenterTests : ActorTestBase
                         ctx.ReenterAfter(
                             // Wait indefinitely until cancellation triggered by restart
                             Task.Delay(-1, cts.Token),
-                            () =>
-                            {
-                                completionExecuted = true;
-                            });
+                            () => completionExecuted = true);
 
                         ctx.Self.SendSystemMessage(ctx.System, new Restart(new Exception()));
                         // Release the cancellation token after restart gets processed.
@@ -314,7 +299,7 @@ public class ReenterTests : ActorTestBase
         var res = await Context.RequestAsync<bool>(pid, "waitstate", TimeSpan.FromSeconds(5));
         Assert.True(res);
     }
-    
+
     [Fact]
     public async Task DropReenterContinuationAfterStop()
     {
@@ -331,10 +316,7 @@ public class ReenterTests : ActorTestBase
                         ctx.ReenterAfter(
                             // Wait indefinitely until cancellation token triggers on actor stop
                             Task.Delay(-1, cts.Token),
-                            () =>
-                            {
-                                completionExecuted = true;
-                            });
+                            () => completionExecuted = true);
 
                         ctx.Stop(ctx.Self);
 

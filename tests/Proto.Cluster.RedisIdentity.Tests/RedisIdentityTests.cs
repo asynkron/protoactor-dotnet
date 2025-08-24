@@ -92,4 +92,3 @@ public class RedisStorageTests : IdentityStorageTests
             TimeSpan.FromMilliseconds(1500)
         );
 }
-

@@ -16,7 +16,6 @@ namespace Proto.Remote.GrpcNet;
 
 public class GrpcNetRemote : IRemote
 {
-    private readonly RemoteConfig _config;
     private readonly object _lock = new();
     private readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
     private EndpointManager _endpointManager = null!;
@@ -28,7 +27,7 @@ public class GrpcNetRemote : IRemote
     {
         System = system;
         BlockList = new BlockList(system);
-        _config = config;
+        Config = config;
         System.Extensions.Register(this);
         System.Extensions.Register(config.Serialization);
     }
@@ -37,7 +36,7 @@ public class GrpcNetRemote : IRemote
 
     public BlockList BlockList { get; }
 
-    public RemoteConfig Config => _config;
+    public RemoteConfig Config { get; }
     public ActorSystem System { get; }
 
     public async Task<DiagnosticsEntry[]> GetDiagnostics()
@@ -71,16 +70,16 @@ public class GrpcNetRemote : IRemote
                 .UseKestrel()
                 .ConfigureKestrel(serverOptions =>
                     {
-                        if (_config.ConfigureKestrel == null)
+                        if (Config.ConfigureKestrel == null)
                         {
                             serverOptions.Listen(ipAddress, Config.Port,
-                                listenOptions => { listenOptions.Protocols = HttpProtocols.Http2; }
+                                listenOptions => listenOptions.Protocols = HttpProtocols.Http2
                             );
                         }
                         else
                         {
                             serverOptions.Listen(ipAddress, Config.Port,
-                                listenOptions => _config.ConfigureKestrel(listenOptions)
+                                listenOptions => Config.ConfigureKestrel(listenOptions)
                             );
                         }
                     }

@@ -224,7 +224,7 @@ public static class Extensions
                 {
                     var pid = envelope.Sender;
 
-                    if (pid is not null && pid.RequestId > 0 && int.TryParse(pid.Id[1..], out var id) &&
+                    if (pid?.RequestId > 0 && int.TryParse(pid.Id[1..], out var id) &&
                         memberList.TryGetMemberIndexByAddress(pid.Address, out var memberId))
                     {
                         pidRef = new PidRef(memberId, id, pid.RequestId);

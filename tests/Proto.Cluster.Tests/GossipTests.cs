@@ -25,6 +25,8 @@ public class GossipTests
     private const string TopologyStateKey = "topology-test-state";
 
     private readonly ITestOutputHelper _testOutputHelper;
+    private static readonly int[] enumerable = new[] { 1, 2, 3 };
+    private static readonly int[] enumerable0 = new[] { 1, 1, 1 };
 
     //
     public GossipTests(ITestOutputHelper testOutputHelper)
@@ -47,7 +49,6 @@ public class GossipTests
 
         _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
         await ShouldBeInConsensusAboutValue(consensusChecks, initialValue);
-
     }
 
     [Fact]
@@ -59,7 +60,7 @@ public class GossipTests
 
         // Wait for the cluster to reach topology consensus before performing checks
         var (consensus, initialTopologyHash) =
-            await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
+            await clusterFixture.Members[0].MemberList.TopologyConsensus(timeout);
 
         consensus.Should().BeTrue();
 
@@ -80,7 +81,7 @@ public class GossipTests
 
         afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
-        var updatedTopology = clusterFixture.Members.First().ExpectUpdatedTopologyConsensus();
+        var updatedTopology = clusterFixture.Members[0].ExpectUpdatedTopologyConsensus();
 
         await clusterFixture.SpawnMember();
 
@@ -90,7 +91,6 @@ public class GossipTests
             await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout);
 
         afterChangingTopology.consensus.Should().BeFalse("The state does no longer match the current topology");
-
     }
 
     [Fact]
@@ -134,7 +134,6 @@ public class GossipTests
 
         _testOutputHelper.WriteLine(await clusterFixture.Members.DumpClusterState());
         await ShouldBeNotHaveConsensus(consensusChecks);
-
     }
 
     [Fact]
@@ -221,9 +220,9 @@ public class GossipTests
     [Fact]
     private void EnumerableExtensionIsCorrect()
     {
-        new[] { 1, 2, 3 }.HasConsensus().Item1.Should().BeFalse();
-        new[] { 1, 1, 1 }.HasConsensus().Item1.Should().BeTrue();
-        new int[] { }.HasConsensus().Item1.Should().BeFalse();
+        enumerable.HasConsensus().Item1.Should().BeFalse();
+        enumerable0.HasConsensus().Item1.Should().BeTrue();
+        Array.Empty<int>().HasConsensus().Item1.Should().BeFalse();
     }
 
     private static async Task ShouldBeNotHaveConsensus(List<IConsensusHandle<string>> consensusChecks)

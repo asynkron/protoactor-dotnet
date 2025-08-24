@@ -48,7 +48,7 @@ internal static class PathPolyfill
 
         relativePath = relativePath.TrimEnd(Path.DirectorySeparatorChar);
 
-        if (relativePath == string.Empty)
+        if (relativePath?.Length == 0)
         {
             relativePath = ".";
         }

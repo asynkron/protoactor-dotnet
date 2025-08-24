@@ -9,7 +9,7 @@ public static class FixedServerSeedNode {
         return new SeedNodeClusterProvider(
             new SeedNodeClusterProviderOptions(FixedServerSeedNodeDiscovery.JoinSeedNode(host, port)));
     }
-    
+
     public static IClusterProvider StartSeedNode()
     {
         return new SeedNodeClusterProvider(
@@ -17,16 +17,16 @@ public static class FixedServerSeedNode {
     }
 }
 
-public class FixedServerSeedNodeDiscovery : ISeedNodeDiscovery
+public sealed class FixedServerSeedNodeDiscovery : ISeedNodeDiscovery
 {
     private readonly string _host;
     private readonly int _port;
-    
+
     public static ISeedNodeDiscovery JoinSeedNode(string host, int port)
     {
         return new FixedServerSeedNodeDiscovery(host, port);
     }
-    
+
     public static ISeedNodeDiscovery StartSeedNode()
     {
         return new FixedServerSeedNodeDiscovery("", 0);
@@ -37,7 +37,7 @@ public class FixedServerSeedNodeDiscovery : ISeedNodeDiscovery
         _host = host;
         _port = port;
     }
-    
+
     public Task Register(string memberId, string host, int port)
     {
         return Task.CompletedTask;
@@ -50,11 +50,11 @@ public class FixedServerSeedNodeDiscovery : ISeedNodeDiscovery
 
     public Task<(string memberId, string host, int port)[]> GetAll()
     {
-        if (_host == "")
+        if (_host?.Length == 0)
         {
             return Task.FromResult(System.Array.Empty<(string memberId, string host, int port)>());
         }
-        
+
         var res = ("SEEDNODE", _host, _port);
         return Task.FromResult(new[] { res });
     }

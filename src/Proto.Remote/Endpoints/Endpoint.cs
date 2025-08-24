@@ -249,7 +249,7 @@ public abstract class Endpoint : IEndpoint
         var waiter = new MultiTaskReuseWaiter<bool>(
             () => _remoteDelivers.Reader.WaitToReadAsync(CancellationToken),
             () => _remotePriorityDelivers.Reader.WaitToReadAsync(CancellationToken));
-        
+
         while (!CancellationToken.IsCancellationRequested)
         {
             try
@@ -258,13 +258,13 @@ public abstract class Endpoint : IEndpoint
                 while (true)
                 {
                     await waiter.WaitAnyAsync();
-                    
+
                     var i = 0;
                     while (true)
                     {
                         var didWrite = false;
                         RemoteDeliver? remoteDeliver;
-                        
+
                         //we don´t need complete priority, we need "enough" important messages to get over
                         if (i++ % 10 == 0)
                         {
@@ -313,10 +313,9 @@ public abstract class Endpoint : IEndpoint
         }
     }
 
-    
     /// <summary>
     /// Preserves non completed Tasks between <see cref="WaitAnyAsync"/> calls.
-    /// This is necessary to prevent memory leak https://github.com/asynkron/protoactor-dotnet/issues/2110 
+    /// This is necessary to prevent memory leak https://github.com/asynkron/protoactor-dotnet/issues/2110
     /// </summary>
     class MultiTaskReuseWaiter<T>
     {
@@ -335,16 +334,15 @@ public abstract class Endpoint : IEndpoint
             {
                 if (_tasks[i]?.IsCompleted == false)
                     continue;
-                
+
                 var vt = _taskFactories[i].Invoke();
                 if (vt.IsCompleted)
                     return await vt;
-                
+
                 _tasks[i] = vt.AsTask();
             }
 
             return await await Task.WhenAny(_tasks!);
         }
-
     }
 }

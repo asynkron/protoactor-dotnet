@@ -71,7 +71,7 @@ public class RendezvousFast
     ///     Combines 2 hashes, with a basic XOR.
     ///     Any more complicated hash combination is simply pointless here.
     /// </summary>
-    private uint CombineHashes(uint hash1, uint hash2) => hash1 ^ hash2;
+    private static uint CombineHashes(uint hash1, uint hash2) => hash1 ^ hash2;
 
     private readonly struct MemberData
     {

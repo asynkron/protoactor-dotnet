@@ -48,10 +48,7 @@ public class GossipTransportTests
         var request = new GossipRequest { MemberId = cluster.System.Id, State = delta.State };
         var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var transport = new MockTransport((cb, _) =>
-        {
-            cb(Task.FromResult(new GossipResponse())).ContinueWith(_ => done.SetResult());
-        });
+        var transport = new MockTransport((cb, _) => cb(Task.FromResult(new GossipResponse())).ContinueWith(_ => done.SetResult(), _));
 
         var props = Props.FromFunc(ctx =>
         {
@@ -84,7 +81,7 @@ public class GossipTransportTests
         var transport = new MockTransport((cb, _) =>
         {
             var resp = new GossipResponse { Rejected = true };
-            cb(Task.FromResult(resp)).ContinueWith(_ => done.SetResult());
+            cb(Task.FromResult(resp)).ContinueWith(_ => done.SetResult(), _);
         });
 
         var props = Props.FromFunc(ctx =>
@@ -115,10 +112,7 @@ public class GossipTransportTests
         var request = new GossipRequest { MemberId = cluster.System.Id, State = delta.State };
         var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var transport = new MockTransport((cb, _) =>
-        {
-            cb(Task.FromException<GossipResponse>(new TimeoutException())).ContinueWith(_ => done.SetResult());
-        });
+        var transport = new MockTransport((cb, _) => cb(Task.FromException<GossipResponse>(new TimeoutException())).ContinueWith(_ => done.SetResult(), _));
 
         var props = Props.FromFunc(ctx =>
         {
@@ -148,10 +142,7 @@ public class GossipTransportTests
         var request = new GossipRequest { MemberId = cluster.System.Id, State = delta.State };
         var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var transport = new MockTransport((cb, _) =>
-        {
-            cb(Task.FromException<GossipResponse>(new DeadLetterException(PID.FromAddress("", "")))).ContinueWith(_ => done.SetResult());
-        });
+        var transport = new MockTransport((cb, _) => cb(Task.FromException<GossipResponse>(new DeadLetterException(PID.FromAddress("", "")))).ContinueWith(_ => done.SetResult(), _));
 
         var props = Props.FromFunc(ctx =>
         {

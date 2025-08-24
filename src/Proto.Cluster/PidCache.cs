@@ -27,10 +27,7 @@ public class PidCache
 
     public bool TryGet(ClusterIdentity clusterIdentity, [NotNullWhen(true)] out PID? pid)
     {
-        if (clusterIdentity is null)
-        {
-            throw new ArgumentNullException(nameof(clusterIdentity));
-        }
+        ArgumentNullException.ThrowIfNull(clusterIdentity);
 
         if (clusterIdentity.CachedPid is { CurrentRef: { } and not DeadLetterProcess } identityCachedPid)
         {
@@ -54,15 +51,9 @@ public class PidCache
 
     public bool TryAdd(ClusterIdentity clusterIdentity, PID pid)
     {
-        if (clusterIdentity is null)
-        {
-            throw new ArgumentNullException(nameof(clusterIdentity));
-        }
+        ArgumentNullException.ThrowIfNull(clusterIdentity);
 
-        if (pid is null)
-        {
-            throw new ArgumentNullException(nameof(pid));
-        }
+        ArgumentNullException.ThrowIfNull(pid);
 
         if (!_cacheDict.TryAdd(clusterIdentity, pid))
         {
@@ -76,20 +67,11 @@ public class PidCache
 
     public bool TryUpdate(ClusterIdentity clusterIdentity, PID newPid, PID existingPid)
     {
-        if (clusterIdentity is null)
-        {
-            throw new ArgumentNullException(nameof(clusterIdentity));
-        }
+        ArgumentNullException.ThrowIfNull(clusterIdentity);
 
-        if (newPid is null)
-        {
-            throw new ArgumentNullException(nameof(newPid));
-        }
+        ArgumentNullException.ThrowIfNull(newPid);
 
-        if (existingPid is null)
-        {
-            throw new ArgumentNullException(nameof(existingPid));
-        }
+        ArgumentNullException.ThrowIfNull(existingPid);
 
         if (!_cacheDict.TryUpdate(clusterIdentity, newPid, existingPid))
         {
@@ -103,10 +85,7 @@ public class PidCache
 
     public bool TryRemove(ClusterIdentity clusterIdentity)
     {
-        if (clusterIdentity is null)
-        {
-            throw new ArgumentNullException(nameof(clusterIdentity));
-        }
+        ArgumentNullException.ThrowIfNull(clusterIdentity);
 
         clusterIdentity.CachedPid = null;
 

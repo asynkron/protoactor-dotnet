@@ -126,10 +126,7 @@ internal class PartitionIdentityRebalanceWorker : IActor, IDisposable
                 Logger.LogWarning("[PartitionIdentity] Partition {Member} unreachable", response.MemberAddress);
 
                 // Delay before retrying to prevent tight retry loops when a partition is unreachable
-                context.ReenterAfter(Task.Delay(200, _cancellationToken), () =>
-                {
-                    StartRebalanceFromMember(_request!, context, response.MemberAddress);
-                });
+                context.ReenterAfter(Task.Delay(200, _cancellationToken), () => StartRebalanceFromMember(_request!, context, response.MemberAddress));
 
                 break;
         }

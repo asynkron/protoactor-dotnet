@@ -161,10 +161,7 @@ public sealed record RootContext : IRootContext
 
     private void SendUserMessage(PID target, object message)
     {
-        if (target is null)
-        {
-            throw new ArgumentNullException(nameof(target));
-        }
+        ArgumentNullException.ThrowIfNull(target);
 
         if (SenderMiddleware is not null)
         {

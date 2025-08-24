@@ -14,10 +14,7 @@ public static class ProtoHack
 {
     public static FileDescriptorProto File(this DescriptorProto self)
     {
-        if (self is null)
-        {
-            throw new ArgumentNullException(nameof(self));
-        }
+        ArgumentNullException.ThrowIfNull(self);
 
         var parentProp = typeof(DescriptorProto).GetProperty("Parent", BindingFlags.NonPublic | BindingFlags.Instance);
         var parent = (FileDescriptorProto)parentProp!.GetValue(self);

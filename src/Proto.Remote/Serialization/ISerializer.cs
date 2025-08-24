@@ -29,7 +29,7 @@ public interface ISerializer
     object Deserialize(ByteString bytes, string typeName);
 
     /// <summary>
-    ///     Retrieves a type name for a message. Type name is used during deserialization. It is the the responsibility of
+    ///     Retrieves a type name for a message. Type name is used during deserialization. It is the responsibility of
     ///     the <see cref="ISerializer" /> implementation to maintain a mapping between type names and messages.
     /// </summary>
     /// <param name="message"></param>

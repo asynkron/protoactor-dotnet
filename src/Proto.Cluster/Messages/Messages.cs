@@ -142,5 +142,4 @@ public partial class Member
 
 public partial class MemberHeartbeat : IRemotePriorityMessage
 {
-    
 }

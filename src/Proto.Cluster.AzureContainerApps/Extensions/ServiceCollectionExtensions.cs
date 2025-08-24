@@ -42,11 +42,15 @@ public static class ServiceCollectionExtensions
             services.AddSingleton(armClientProvider);
 
         if (configureMemberStore != null)
+        {
             // Add the custom member store
             configureMemberStore.Invoke(services);
+        }
         else
+        {
             // Add the default member store
             services.AddResourceTagsMemberStore();
+        }
 
         return services;
     }

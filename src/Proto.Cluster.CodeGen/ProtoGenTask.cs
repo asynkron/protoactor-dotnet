@@ -17,6 +17,8 @@ public class ProtoGenTask : Task
 
     public ITaskItem[] ProtoFile { get; set; } = Array.Empty<ITaskItem>();
 
+    private static readonly string[] separator = new[] { ";" };
+
     public override bool Execute()
     {
         var projectFile = MSBuildProjectFullPath;
@@ -27,7 +29,7 @@ public class ProtoGenTask : Task
         var potatoDirectory = Path.Combine(IntermediateOutputPath, "protopotato");
         EnsureDirExistsAndIsEmpty(potatoDirectory);
 
-        if (ProtoFile.Any())
+        if (ProtoFile.Length != 0)
         {
             foreach (var item in ProtoFile)
             {
@@ -71,9 +73,9 @@ public class ProtoGenTask : Task
         var importPaths = GetImportPaths(projectDirectory, additionalImportDirsString);
         var templateFiles = GetTemplatePaths(projectDirectory, templateFilesString);
 
-        if (!templateFiles.Any())
+        if (templateFiles.Length == 0)
         {
-            var template = Template.DefaultTemplate;
+            const string template = Template.DefaultTemplate;
             var outputFileName = OutputFileName.GetOutputFileName(inputFileInfo);
 
             GenerateFile(projectDirectory, objDirectory, inputFileInfo, importPaths, template, outputFileName);
@@ -109,7 +111,7 @@ public class ProtoGenTask : Task
     {
         var importPaths =
             additionalImportDirsString
-                .Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries)
+                .Split(separator, StringSplitOptions.RemoveEmptyEntries)
                 .Select(p => p.Trim())
                 .Select(p => PathPolyfill.GetRelativePath(projectDirectory, p))
                 .Select(p => new DirectoryInfo(p))
@@ -127,7 +129,7 @@ public class ProtoGenTask : Task
     {
         var templateFilesArr =
             templateFilesString
-                .Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries)
+                .Split(separator, StringSplitOptions.RemoveEmptyEntries)
                 .Select(p => p.Trim())
                 .Select(p => PathPolyfill.GetRelativePath(projectDirectory, p))
                 .Select(p => new FileInfo(p))

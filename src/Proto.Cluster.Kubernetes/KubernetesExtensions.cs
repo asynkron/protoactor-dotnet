@@ -80,7 +80,9 @@ internal static class KubernetesExtensions
 
         var host = pod.Status.PodIP ?? "";
         if (pod.Metadata.Labels.TryGetValue(LabelHost, out var hostOverride))
+        {
             host = hostOverride;
+        }
         else if (pod.Metadata.Labels.TryGetValue(LabelHostPrefix, out var hostPrefix))
         {
             var dnsPostfix = $".{pod.Namespace()}.svc.{config.ClusterDomain}";
@@ -133,7 +135,7 @@ internal static class KubernetesExtensions
                 kubeNamespace = null;
                 return false;
             }
-            
+
             kubeNamespace = cachedNamespace;
             return true;
         }
@@ -153,7 +155,7 @@ internal static class KubernetesExtensions
             kubeNamespace = null;
             return false;
         }
-        
+
         // k8s has a limit of 63 characters for namespace names 
         // Limit to reading 63 characters, in case a larger files is there, we will just ignore it.
         using var reader = new StreamReader(namespaceFile, Encoding.UTF8);
@@ -165,7 +167,7 @@ internal static class KubernetesExtensions
             kubeNamespace = null;
             return false;
         }
-        
+
         kubeNamespace = cachedNamespace = new string(buffer, 0, read).Trim();
         if (string.IsNullOrWhiteSpace(kubeNamespace))
         {

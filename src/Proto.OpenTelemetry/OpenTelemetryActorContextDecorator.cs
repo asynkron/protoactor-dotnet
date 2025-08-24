@@ -31,10 +31,9 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
                 sendActivitySetup(activity, message);
             }
         };
-        
+
         _spawnActivitySetup = (activity, message) =>
         {
-  
         };
 
         _receiveActivitySetup = (activity, message) =>
@@ -105,6 +104,6 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
         base.ReenterAfter(target, a2);
     }
 
-    public override PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) => 
+    public override PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) =>
         OpenTelemetryMethodsDecorators.SpawnNamed(Source,_spawnActivitySetup, () => base.SpawnNamed(props, name, callback),name, Actor.GetType().Name);
 }

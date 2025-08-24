@@ -22,4 +22,3 @@ internal static partial class MemberListLogMessages
     [LoggerMessage(EventId = 5, Level = LogLevel.Critical, Message = "I have been blocked, exiting {Id}")]
     internal static partial void BlockedExiting(this ILogger logger, string id);
 }
-

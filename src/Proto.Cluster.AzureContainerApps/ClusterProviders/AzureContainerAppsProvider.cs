@@ -14,8 +14,6 @@ namespace Proto.Cluster.AzureContainerApps.ClusterProviders;
 public class AzureContainerAppsProvider : IClusterProvider
 {
     private readonly ILogger _logger;
-
-    private string _address = default!;
     private Cluster _cluster = default!;
     private string _clusterName = default!;
     private string[] _kinds = default!;

@@ -7,6 +7,8 @@ namespace Proto.Cluster.Tests;
 
 public class GossipStateManagementTests
 {
+    private static readonly string[] expectation = new[] { "k1", "k2", "k3" };
+
     [Fact]
     public void MergeStates_should_merge_without_mutating_inputs()
     {
@@ -64,7 +66,7 @@ public class GossipStateManagementTests
         updates.Should().Contain(u => u.MemberId == "A" && u.Key == "k1" && u.SequenceNumber == 2);
         updates.Should().Contain(u => u.MemberId == "A" && u.Key == "k2" && u.SequenceNumber == 1);
         updates.Should().Contain(u => u.MemberId == "B" && u.Key == "k3" && u.SequenceNumber == 1);
-        updatedKeys.Should().BeEquivalentTo(new[] { "k1", "k2", "k3" });
+        updatedKeys.Should().BeEquivalentTo(expectation);
 
         // input states remain untouched
         localState.Members["A"].Values.Should().ContainKey("k1");

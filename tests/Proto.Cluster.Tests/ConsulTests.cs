@@ -2,7 +2,6 @@
 
 namespace Proto.Cluster.Tests;
 
-
 // ReSharper disable once UnusedType.Global
 public class ConsulClusterFixture : ClusterFixture
 {

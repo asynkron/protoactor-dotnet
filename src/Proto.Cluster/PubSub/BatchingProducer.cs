@@ -153,7 +153,7 @@ public class BatchingProducer : IAsyncDisposable
         }
     }
 
-    private void ClearBatch(PubSubBatchWithReceipts batchWrapper)
+    private static void ClearBatch(PubSubBatchWithReceipts batchWrapper)
     {
         // we just remove the reference to the batch
         // the batch itself might still be in send pipeline, waiting to be serialized or delivered locally
@@ -162,7 +162,7 @@ public class BatchingProducer : IAsyncDisposable
         batchWrapper.CancelTokens.Clear();
     }
 
-    private void FailBatch(PubSubBatchWithReceipts batch, Exception ex)
+    private static void FailBatch(PubSubBatchWithReceipts batch, Exception ex)
     {
         foreach (var deliveryReport in batch.DeliveryReports)
         {
@@ -173,7 +173,7 @@ public class BatchingProducer : IAsyncDisposable
         ClearBatch(batch);
     }
 
-    private void CancelBatch(PubSubBatchWithReceipts batchWrapper)
+    private static void CancelBatch(PubSubBatchWithReceipts batchWrapper)
     {
         foreach (var deliveryReport in batchWrapper.DeliveryReports)
         {
@@ -184,7 +184,7 @@ public class BatchingProducer : IAsyncDisposable
         ClearBatch(batchWrapper);
     }
 
-    private void CompleteBatch(PubSubBatchWithReceipts batchWrapper)
+    private static void CompleteBatch(PubSubBatchWithReceipts batchWrapper)
     {
         foreach (var deliveryReport in batchWrapper.DeliveryReports)
         {
@@ -195,7 +195,7 @@ public class BatchingProducer : IAsyncDisposable
         ClearBatch(batchWrapper);
     }
 
-    private void RemoveCancelledFromBatch(PubSubBatchWithReceipts batchWrapper)
+    private static void RemoveCancelledFromBatch(PubSubBatchWithReceipts batchWrapper)
     {
         var cancelTokensCopy = batchWrapper.CancelTokens.ToArray();
 
@@ -250,7 +250,7 @@ public class BatchingProducer : IAsyncDisposable
                     // we are stopping
                     break;
                 }
-                
+
                 var decision = await _config.OnPublishingError(retries, e, batchWrapper.Batch).ConfigureAwait(false);
 
                 if (decision == PublishingErrorDecision.FailBatchAndStop)
