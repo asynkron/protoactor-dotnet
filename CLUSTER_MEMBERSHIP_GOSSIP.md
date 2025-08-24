@@ -40,18 +40,26 @@ classDiagram
     class Gossiper
     class GossipActor
     class Gossip
+    class GossipState
     class MemberStateDeltaBuilder
     class GossipSender
+    class GossipRequest
+    class GossipResponse
     class IGossipTransport
     class GossipTransport
     Gossiper o-- Gossip
     Gossiper --> GossipActor : commands
     Gossiper --> GossipSender : uses
     GossipActor --> Gossip : merges
+    Gossip --> GossipState : holds
     Gossip --> MemberStateDeltaBuilder : uses
+    GossipSender ..> GossipRequest : sends
+    GossipSender ..> GossipResponse : receives
     GossipSender ..> IGossipTransport
     IGossipTransport <|-- GossipTransport
 ```
+
+`Gossip` maintains a `GossipState` and exchanges `GossipRequest` and `GossipResponse` messages via `IGossipTransport` to synchronize that state across nodes.
 
 ## Detecting members
 
