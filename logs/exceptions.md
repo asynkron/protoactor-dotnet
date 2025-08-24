@@ -17,3 +17,5 @@
 `System.InvalidOperationException: Collection was modified; enumeration operation may not execute.` during enumeration of mailbox statistics.
 ### Proto.Cluster.Tests.GossipCoreTests.Large_cluster_should_get_topology_consensus
 `Test failure: output indicated [FAIL] but passed on rerun; no stack trace captured.`
+### Proto.Tests.SupervisionTestsAlwaysRestart.AlwaysRestartStrategy_Should_RestartFailingChildOnly
+`Assert.Equal() Failure: Values differ. Expected: 1 Actual: 0` in `SupervisionTests_AlwaysRestart.cs:line 43`.
