@@ -8,3 +8,4 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Proto.Cluster.Tests")]
 [assembly: InternalsVisibleTo("Proto.Premium")]
+[assembly: InternalsVisibleTo("Proto.TestKit")]

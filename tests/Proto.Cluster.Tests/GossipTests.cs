@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Gossip;
+using Proto.TestKit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,8 +35,7 @@ public class GossipTests
     [Fact]
     public async Task CanGetConsensus()
     {
-        var clusterFixture = new InMemoryClusterFixture();
-        await using var _ = clusterFixture;
+        await using var clusterFixture = new InMemoryClusterFixture();
         await clusterFixture.InitializeAsync();
 
         const string initialValue = "hello consensus";
@@ -50,17 +50,14 @@ public class GossipTests
 
     }
 
-    [Fact(Skip = "Flaky")]
+    [Fact]
     public async Task CompositeConsensusWorks()
     {
         var timeout = CancellationTokens.FromSeconds(20);
-        var clusterFixture = new InMemoryClusterFixture();
-        await using var _ = clusterFixture;
+        await using var clusterFixture = new InMemoryClusterFixture();
         await clusterFixture.InitializeAsync();
 
-        // Allow cluster to settle before verifying consensus
-        await Task.Delay(1000);
-
+        // Wait for the cluster to reach topology consensus before performing checks
         var (consensus, initialTopologyHash) =
             await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
 
@@ -83,8 +80,11 @@ public class GossipTests
 
         afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
+        var updatedTopology = clusterFixture.Members.First().ExpectUpdatedTopologyConsensus();
+
         await clusterFixture.SpawnMember();
-        await Task.Delay(2000); // Allow topology state to propagate
+
+        await updatedTopology;
 
         var afterChangingTopology =
             await firstNodeCheck.TryGetConsensus(TimeSpan.FromMilliseconds(500), timeout);
@@ -96,8 +96,7 @@ public class GossipTests
     [Fact]
     public async Task CanFallOutOfConsensus()
     {
-        var clusterFixture = new InMemoryClusterFixture();
-        await using var _ = clusterFixture;
+        await using var clusterFixture = new InMemoryClusterFixture();
         await clusterFixture.InitializeAsync();
 
         const string initialValue = "hello consensus";
@@ -146,8 +145,7 @@ public class GossipTests
         const int maxSend = 2;
         const int keysPerMember = 5;
 
-        var clusterFixture = new GossipClusterFixture(memberCount, fanout, maxSend);
-        await using var _ = clusterFixture;
+        await using var clusterFixture = new GossipClusterFixture(memberCount, fanout, maxSend);
         await clusterFixture.InitializeAsync();
 
         var expected = clusterFixture.Members.ToDictionary(
