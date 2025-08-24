@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
 using Proto.Cluster.Gossip;
+using Proto.TestKit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -81,21 +82,11 @@ public class GossipTests
 
         afterSettingMatchingState.value.Should().Be(initialTopologyHash);
 
+        var updatedTopology = clusterFixture.Members.First().ExpectUpdatedTopologyConsensus();
+
         await clusterFixture.SpawnMember();
 
-        // Wait until the new member is included in the topology consensus
-        var updatedTopologyHash = initialTopologyHash;
-        var waitUntil = DateTime.UtcNow + TimeSpan.FromSeconds(20);
-        while (updatedTopologyHash == initialTopologyHash && DateTime.UtcNow < waitUntil)
-        {
-            (_, updatedTopologyHash) = await clusterFixture.Members.First().MemberList.TopologyConsensus(timeout);
-            if (updatedTopologyHash == initialTopologyHash)
-            {
-                // Small delay to avoid tight polling while waiting for topology to update
-                await Task.Delay(100);
-            }
-        }
-
+        var updatedTopologyHash = await updatedTopology;
         updatedTopologyHash.Should().NotBe(initialTopologyHash);
 
         var afterChangingTopology =
