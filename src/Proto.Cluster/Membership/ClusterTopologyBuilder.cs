@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -47,8 +48,16 @@ internal static class ClusterTopologyBuilder
         var duplicateAddresses = activeMembers.Members.ToLookup(m => m.Address);
         foreach (var dup in duplicateAddresses.Where(d => d.Count() > 1))
         {
-            var youngest = dup.OrderByDescending(m => m.Age).First();
-            var rest = dup.Where(m => m.Id != youngest.Id).Select(m => m.Id).ToArray();
+            // Prefer the member with the highest age (newest), break ties by id for determinism
+            var youngest = dup
+                .OrderByDescending(m => m.Age)
+                .ThenByDescending(m => m.Id, StringComparer.Ordinal)
+                .First();
+
+            var rest = dup
+                .Where(m => m.Id != youngest.Id)
+                .Select(m => m.Id)
+                .ToArray();
 
             Logger.DuplicateAddressFound(dup.Key, rest);
             activeMembers = activeMembers.Except(rest);
