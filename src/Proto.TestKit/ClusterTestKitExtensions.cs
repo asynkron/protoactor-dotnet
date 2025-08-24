@@ -34,5 +34,21 @@ public static class ClusterTestKitExtensions
 
         return updatedTopologyHash;
     }
+
+    /// <summary>
+    /// Waits until the cluster's member list contains the specified <paramref name="member"/>.
+    /// </summary>
+    /// <param name="cluster">Cluster to inspect.</param>
+    /// <param name="member">Member expected to exist in the cluster.</param>
+    /// <param name="timeout">Maximum time to wait. Defaults to 10 seconds.</param>
+    /// <returns>A task that completes when the member is present.</returns>
+    public static Task ExpectMemberToExist(this Proto.Cluster.Cluster cluster, Member member, TimeSpan? timeout = null)
+    {
+        var waitTimeout = timeout ?? TimeSpan.FromSeconds(10);
+        return TestKit.AwaitConditionAsync(
+            () => cluster.MemberList.ContainsMemberId(member.Id),
+            waitTimeout,
+            $"Member {member.Id} was not found within {waitTimeout}");
+    }
 }
 
