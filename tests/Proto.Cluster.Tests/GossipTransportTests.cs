@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Gossip;
+using Proto.TestKit;
 using Xunit;
-using static Proto.TestKit.TestKit;
 
 namespace Proto.Cluster.Tests;
 
@@ -41,7 +41,8 @@ public class GossipTransportTests
         await fixture.InitializeAsync();
         var cluster = fixture.Members[0];
         var targetMember = fixture.Members[1].MemberList.Self;
-        await AwaitConditionAsync(() => cluster.MemberList.ContainsMemberId(targetMember.Id), TimeSpan.FromSeconds(10));
+        // Wait for the cluster to register the other member before proceeding
+        await cluster.ExpectMemberToExist(targetMember);
         var committed = false;
         var delta = new MemberStateDelta(targetMember.Id, true, new GossipState(), () => committed = true);
         var request = new GossipRequest { MemberId = cluster.System.Id, State = delta.State };
@@ -73,7 +74,8 @@ public class GossipTransportTests
         await fixture.InitializeAsync();
         var cluster = fixture.Members[0];
         var targetMember = fixture.Members[1].MemberList.Self;
-        await AwaitConditionAsync(() => cluster.MemberList.ContainsMemberId(targetMember.Id), TimeSpan.FromSeconds(10));
+        // Wait for the cluster to register the other member before proceeding
+        await cluster.ExpectMemberToExist(targetMember);
         var committed = false;
         var delta = new MemberStateDelta(targetMember.Id, true, new GossipState(), () => committed = true);
         var request = new GossipRequest { MemberId = cluster.System.Id, State = delta.State };
@@ -106,7 +108,8 @@ public class GossipTransportTests
         await fixture.InitializeAsync();
         var cluster = fixture.Members[0];
         var targetMember = fixture.Members[1].MemberList.Self;
-        await AwaitConditionAsync(() => cluster.MemberList.ContainsMemberId(targetMember.Id), TimeSpan.FromSeconds(10));
+        // Wait for the cluster to register the other member before proceeding
+        await cluster.ExpectMemberToExist(targetMember);
         var committed = false;
         var delta = new MemberStateDelta(targetMember.Id, true, new GossipState(), () => committed = true);
         var request = new GossipRequest { MemberId = cluster.System.Id, State = delta.State };
@@ -138,7 +141,8 @@ public class GossipTransportTests
         await fixture.InitializeAsync();
         var cluster = fixture.Members[0];
         var targetMember = fixture.Members[1].MemberList.Self;
-        await AwaitConditionAsync(() => cluster.MemberList.ContainsMemberId(targetMember.Id), TimeSpan.FromSeconds(10));
+        // Wait for the cluster to register the other member before proceeding
+        await cluster.ExpectMemberToExist(targetMember);
         var committed = false;
         var delta = new MemberStateDelta(targetMember.Id, true, new GossipState(), () => committed = true);
         var request = new GossipRequest { MemberId = cluster.System.Id, State = delta.State };
