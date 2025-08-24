@@ -271,7 +271,7 @@ public partial class Gossiper
                 // Space out gossip broadcasts according to configured interval
                 await Task.Delay(_options.GossipInterval).ConfigureAwait(false);
 
-                await BlockExpiredHeartbeats().ConfigureAwait(false);
+                await _options.HeartbeatExpirationHandler().ConfigureAwait(false);
 
                 await BlockGracefullyLeft().ConfigureAwait(false);
 
@@ -318,16 +318,6 @@ public partial class Gossiper
         {
             _blockList.Block(gracefullyLeft, "Gracefully left");
         }
-    }
-
-    private async Task BlockExpiredHeartbeats()
-    {
-        if (_options.HeartbeatExpiration == TimeSpan.Zero)
-        {
-            return;
-        }
-
-        await _options.HeartbeatExpirationHandler().ConfigureAwait(false);
     }
 
     private ActorStatistics GetActorStatistics() => _getActorStatistics();
