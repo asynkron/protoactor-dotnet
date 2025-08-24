@@ -33,7 +33,7 @@ flowchart LR
   `GossipRequest`; the default `GossipTransport` simply forwards the request
   through `IContext.RequestReenter`.
 
-### Type relationships
+### Component relationships
 
 ```mermaid
 classDiagram
@@ -49,17 +49,61 @@ classDiagram
     class GossipTransport
     Gossiper o-- Gossip
     Gossiper --> GossipActor : commands
-    Gossiper --> GossipSender : uses
     GossipActor --> Gossip : merges
-    Gossip --> GossipState : holds
-    Gossip --> MemberStateDeltaBuilder : uses
-    GossipSender ..> GossipRequest : sends
-    GossipSender ..> GossipResponse : receives
+    GossipActor --> MemberStateDeltaBuilder : builds deltas
+    GossipActor --> GossipSender : uses
     GossipSender ..> IGossipTransport
     IGossipTransport <|-- GossipTransport
+    GossipSender ..> GossipRequest : sends
+    GossipActor --> GossipRequest : handles
+    GossipActor --> GossipResponse : replies
 ```
 
 `Gossip` maintains a `GossipState` and exchanges `GossipRequest` and `GossipResponse` messages via `IGossipTransport` to synchronize that state across nodes.
+
+### Gossip message flow
+
+#### Sending a delta
+
+```mermaid
+sequenceDiagram
+    participant Gossiper
+    participant GossipActor
+    participant DeltaBuilder
+    participant GossipSender
+    participant Transport
+    participant RemoteActor
+
+    Gossiper->>GossipActor: SendGossipStateRequest
+    GossipActor->>DeltaBuilder: build per-target delta
+    DeltaBuilder-->>GossipActor: MemberStateDelta
+    GossipActor->>GossipSender: target, delta, request
+    GossipSender->>Transport: Request(pid, GossipRequest)
+    Transport->>RemoteActor: GossipRequest
+    RemoteActor-->>Transport: GossipResponse
+    Transport-->>GossipSender: callback
+    GossipSender-->>DeltaBuilder: CommitOffsets
+```
+
+`Gossiper` periodically instructs the `GossipActor` to send state by issuing a `SendGossipStateRequest`【F:src/Proto.Cluster/Gossip/Gossiper.cs†L452-L466】. The actor builds a `GossipRequest` for each target and uses `GossipSender` to transmit it through the configured `IGossipTransport`【F:src/Proto.Cluster/Gossip/GossipActor.cs†L199-L218】【F:src/Proto.Cluster/Gossip/GossipSender.cs†L21-L57】.
+
+#### Receiving a request
+
+```mermaid
+sequenceDiagram
+    participant Transport
+    participant GossipActor
+    participant Gossip
+    participant EventStream
+
+    Transport->>GossipActor: GossipRequest
+    GossipActor->>Gossip: ReceiveState
+    Gossip-->>GossipActor: updates
+    GossipActor->>EventStream: publish updates
+    GossipActor-->>Transport: GossipResponse
+```
+
+Incoming `GossipRequest` messages are handled by the `GossipActor`, which merges the state and publishes any resulting updates to the event stream before replying with `GossipResponse`【F:src/Proto.Cluster/Gossip/GossipActor.cs†L124-L161】.
 
 ## Detecting members
 
