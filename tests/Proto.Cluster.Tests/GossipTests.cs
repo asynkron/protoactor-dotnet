@@ -35,8 +35,7 @@ public class GossipTests
     [Fact]
     public async Task CanGetConsensus()
     {
-        var clusterFixture = new InMemoryClusterFixture();
-        await using var cleanup = clusterFixture;
+        await using var clusterFixture = new InMemoryClusterFixture();
         await clusterFixture.InitializeAsync();
 
         const string initialValue = "hello consensus";
@@ -55,8 +54,7 @@ public class GossipTests
     public async Task CompositeConsensusWorks()
     {
         var timeout = CancellationTokens.FromSeconds(20);
-        var clusterFixture = new InMemoryClusterFixture();
-        await using var cleanup = clusterFixture;
+        await using var clusterFixture = new InMemoryClusterFixture();
         await clusterFixture.InitializeAsync();
 
         // Wait for the cluster to reach topology consensus before performing checks
@@ -99,8 +97,7 @@ public class GossipTests
     [Fact]
     public async Task CanFallOutOfConsensus()
     {
-        var clusterFixture = new InMemoryClusterFixture();
-        await using var _ = clusterFixture;
+        await using var clusterFixture = new InMemoryClusterFixture();
         await clusterFixture.InitializeAsync();
 
         const string initialValue = "hello consensus";
@@ -149,8 +146,7 @@ public class GossipTests
         const int maxSend = 2;
         const int keysPerMember = 5;
 
-        var clusterFixture = new GossipClusterFixture(memberCount, fanout, maxSend);
-        await using var _ = clusterFixture;
+        await using var clusterFixture = new GossipClusterFixture(memberCount, fanout, maxSend);
         await clusterFixture.InitializeAsync();
 
         var expected = clusterFixture.Members.ToDictionary(
