@@ -24,6 +24,7 @@
 
 ### Proto.Cluster.Tests.ClusterTopologyBuilderTests.Compute_FiltersBlockedAndDuplicates
 `Assert.Equal() Failure: Strings differ Expected: "4" Actual: "3"`
+
 ### Proto.Cluster.Tests.GossipCoreTests.Large_cluster_should_get_topology_consensus
 `Expected x.consensus to be True, but found False.`
 
@@ -35,5 +36,12 @@
 ### Proto.Tests.ActorTests.StopActorWithLongRunningTask
 `Proto.TestKit.TestKitException: Expected user message of type System.Threading.Tasks.TaskCanceledException, but received system message of type Proto.Stopping`
 
+### Proto.Tests.ReceiveTimeoutTests.receive_timeout_is_reset_by_influencing_messages
+`Proto.TestKit.TestKitException : Waited 1 seconds but failed to receive a message` observed when ReceiveTimeout was not delivered after cancelling scheduled ticks.
+
+### Proto.Cluster.Tests.RedundantGossipTests.GossipRequest_is_sent_multiple_times_without_state_changes
+`Expected fixture.SerializedKeyCount to be 3, but found 1.`
+
 ### Proto.Cluster.Tests.GossipCoreTests.Large_cluster_should_get_topology_consensus
 `Expected x.consensus to be True, but found False.`
+
