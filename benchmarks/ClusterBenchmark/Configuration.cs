@@ -20,6 +20,7 @@ using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
+using Proto.Cluster.PartitionActivator;
 using Proto.OpenTelemetry;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
@@ -113,15 +114,16 @@ public static class Configuration
         }
     }
 
-    public static IIdentityLookup GetIdentityLookup() =>
-        new PartitionIdentityLookup(
+    public static IIdentityLookup GetIdentityLookup() =>  new PartitionActivatorLookup();
+/*  PartitionIdentityLookup(
             new PartitionConfig
             {
                 GetPidTimeout = TimeSpan.FromSeconds(5),
                 Mode = PartitionIdentityLookup.Mode.Push,
                 Send = PartitionIdentityLookup.Send.Delta
-            }
+            }*
         );
+        */
 
     private static IIdentityLookup GetRedisIdentityLookup()
     {
