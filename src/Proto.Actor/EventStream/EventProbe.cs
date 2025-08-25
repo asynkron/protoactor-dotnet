@@ -91,13 +91,14 @@ public class EventProbe<T>
         {
             if (_currentExpectation.Evaluate(@event))
             {
-                _logger.GotExpectedEvent(@event);
+                // The event stream never publishes null events; the null-forgiving operator communicates this to the compiler
+                _logger.GotExpectedEvent(@event!);
                 _currentExpectation = null;
 
                 return;
             }
 
-            _logger.GotUnexpectedEvent(@event);
+            _logger.GotUnexpectedEvent(@event!);
         }
     }
 }
