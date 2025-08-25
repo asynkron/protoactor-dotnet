@@ -28,21 +28,23 @@ internal sealed class ConnectionReader
     {
         try
         {
-            while (await call.ResponseStream.MoveNext(token).ConfigureAwait(false))
-            {
-                var currentMessage = call.ResponseStream.Current;
-                switch (currentMessage.MessageTypeCase)
+            await RemoteStreamProcessor.RunReaderAsync(
+                call.ResponseStream,
+                token,
+                currentMessage =>
                 {
-                    case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
-                        _logger.ReceivedDisconnectionRequest(_system.Address, _address);
-                        var terminated = new EndpointTerminatedEvent(false, _address, actorSystemId);
-                        _system.EventStream.Publish(terminated);
-                        break;
-                    default:
-                        _mode.HandleMessage(currentMessage, _address);
-                        break;
-                }
-            }
+                    switch (currentMessage.MessageTypeCase)
+                    {
+                        case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
+                            _logger.ReceivedDisconnectionRequest(_system.Address, _address);
+                            var terminated = new EndpointTerminatedEvent(false, _address, actorSystemId);
+                            _system.EventStream.Publish(terminated);
+                            break;
+                        default:
+                            _mode.HandleMessage(currentMessage, _address);
+                            break;
+                    }
+                }).ConfigureAwait(false);
 
             _logger.ReaderFinished(_system.Address, _address);
         }
