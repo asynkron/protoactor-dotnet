@@ -48,3 +48,7 @@
 ### EndpointReader.RunReader
 `System.InvalidOperationException: Can't read messages after the request is complete.` observed when a node leaves the cluster.
 
+### Proto.Tests.ReceiveTimeoutTests.receive_timeout_received_within_expected_time_when_sending_ignored_messages
+```
+Proto.TestKit.TestKitException : Waited 1 seconds but failed to receive a message
+```
