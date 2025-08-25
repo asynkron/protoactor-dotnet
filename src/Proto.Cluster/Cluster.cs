@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +14,6 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.Gossip;
 using Proto.Cluster.Identity;
-using Proto.Cluster.Metrics;
 using Proto.Cluster.PubSub;
 using Proto.Cluster.Seed;
 using Proto.Diagnostics;
@@ -31,75 +29,29 @@ namespace Proto.Cluster;
 [PublicAPI]
 public class Cluster : IActorSystemExtension<Cluster>
 {
-    private Func<IEnumerable<Measurement<long>>>? _clusterKindObserver;
     private readonly Dictionary<string, ActivatedClusterKind> _clusterKinds = new();
-    private Func<IEnumerable<Measurement<long>>>? _clusterMembersObserver;
     private readonly TaskCompletionSource<bool> _shutdownCompletedTcs = new();
     private readonly TaskCompletionSource<bool> _joinedClusterTcs = new();
-
-    public async Task<DiagnosticsEntry[]> GetDiagnostics()
-    {
-        var res = new List<DiagnosticsEntry>();
-
-        var now = new DiagnosticsEntry("Cluster", "Local Time", DateTimeOffset.UtcNow);
-        res.Add(now);
-        
-        var blocked = new DiagnosticsEntry("Cluster", "Blocked", System.Remote().BlockList.BlockedMembers.ToArray());
-        res.Add(blocked);
-        
-        var topologyState = await Gossip.GetState<ClusterTopology>(GossipKeys.Topology).ConfigureAwait(false);
-
-        var topology = new DiagnosticsEntry("Cluster", "Topology", topologyState);
-        res.Add(topology);
-        
-        var h = await Gossip.GetStateEntry(GossipKeys.Heartbeat).ConfigureAwait(false);
-        var heartbeats = h.Select(heartbeat => new DiagnosticsMemberHeartbeat(heartbeat.Key, heartbeat.Value.Value.Unpack<MemberHeartbeat>(), heartbeat.Value.LocalTimestamp)).ToArray();
-        
-        var heartbeat = new DiagnosticsEntry("Cluster", "Heartbeat", heartbeats);
-        res.Add(heartbeat);
-
-        var idlookup = await IdentityLookup.GetDiagnostics().ConfigureAwait(false);
-        res.AddRange(idlookup);
-
-        var provider = await Provider.GetDiagnostics().ConfigureAwait(false);
-        res.AddRange(provider);
-
-        return res.ToArray();
-    }
+    private readonly ClusterDiagnostics _diagnostics;
+    private readonly ClusterMetricsCollector _metricsCollector;
 
     public Cluster(ActorSystem system, ClusterConfig config)
     {
         System = system;
         Config = config;
 
-        system.Extensions.Register(this);
-
-        //register cluster messages
-        var serialization = system.Serialization();
-        serialization.RegisterFileDescriptor(ClusterContractsReflection.Descriptor);
-        serialization.RegisterFileDescriptor(GossipContractsReflection.Descriptor);
-        serialization.RegisterFileDescriptor(PubSubContractsReflection.Descriptor);
-        serialization.RegisterFileDescriptor(GrainContractsReflection.Descriptor);
-        serialization.RegisterFileDescriptor(SeedContractsReflection.Descriptor);
-        serialization.RegisterFileDescriptor(EmptyReflection.Descriptor);
+        ClusterInitialization.RegisterExtensions(system, this);
+        ClusterInitialization.RegisterSerialization(system);
 
         PidCache = new PidCache();
-        _ = new PubSubExtension(this);
-
-        if (System.Metrics.Enabled)
-        {
-            _clusterMembersObserver = () => new[]
-            {
-                new Measurement<long>(MemberList.GetAllMembers().Length,
-                    new KeyValuePair<string, object?>("id", System.Id),
-                    new KeyValuePair<string, object?>("address", System.Address))
-            };
-
-            ClusterMetrics.ClusterMembersCount.AddObserver(_clusterMembersObserver);
-        }
+        _diagnostics = new ClusterDiagnostics(this);
+        _metricsCollector = new ClusterMetricsCollector(this);
+        _metricsCollector.RegisterMemberCountObserver();
 
         SubscribeToTopologyEvents();
     }
+
+    public Task<DiagnosticsEntry[]> GetDiagnostics() => _diagnostics.GetDiagnostics();
 
     internal static ILogger Logger { get; } = Log.CreateLogger<Cluster>();
 
@@ -241,18 +193,7 @@ public class Cluster : IActorSystemExtension<Cluster>
             EnsureTopicKindRegistered();
         }
 
-        if (System.Metrics.Enabled)
-        {
-            _clusterKindObserver = () =>
-                _clusterKinds.Values
-                    .Select(ck =>
-                        new Measurement<long>(ck.Count, new KeyValuePair<string, object?>("id", System.Id),
-                            new KeyValuePair<string, object?>("address", System.Address),
-                            new KeyValuePair<string, object?>("clusterkind", ck.Name))
-                    );
-
-            ClusterMetrics.VirtualActorsCount.AddObserver(_clusterKindObserver);
-        }
+        _metricsCollector.RegisterClusterKindObserver(_clusterKinds);
     }
 
     private void EnsureTopicKindRegistered()
@@ -303,17 +244,7 @@ public class Cluster : IActorSystemExtension<Cluster>
             // Deregister from configured cluster provider.
             await Provider.ShutdownAsync(graceful);
 
-            if (_clusterKindObserver != null)
-            {
-                ClusterMetrics.VirtualActorsCount.RemoveObserver(_clusterKindObserver);
-                _clusterKindObserver = null;
-            }
-
-            if (_clusterMembersObserver != null)
-            {
-                ClusterMetrics.ClusterMembersCount.RemoveObserver(_clusterMembersObserver);
-                _clusterMembersObserver = null;
-            }
+            _metricsCollector.RemoveObservers();
 
             // Shut down the rest of the dependencies in reverse order that they were started.
             await Gossip.ShutdownAsync().ConfigureAwait(false);
