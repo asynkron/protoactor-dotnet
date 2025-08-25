@@ -47,9 +47,9 @@ public class Cluster : IActorSystemExtension<Cluster>
         var blocked = new DiagnosticsEntry("Cluster", "Blocked", System.Remote().BlockList.BlockedMembers.ToArray());
         res.Add(blocked);
         
-        var t = await Gossip.GetState<ClusterTopology>(GossipKeys.Topology).ConfigureAwait(false);
+        var topologyState = await Gossip.GetState<ClusterTopology>(GossipKeys.Topology).ConfigureAwait(false);
 
-        var topology = new DiagnosticsEntry("Cluster", "Topology", t);
+        var topology = new DiagnosticsEntry("Cluster", "Topology", topologyState);
         res.Add(topology);
         
         var h = await Gossip.GetStateEntry(GossipKeys.Heartbeat).ConfigureAwait(false);

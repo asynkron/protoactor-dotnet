@@ -49,16 +49,16 @@ public class DeadlineContextDecorator : ActorContextDecorator
 
     public override async Task Receive(MessageEnvelope envelope)
     {
-        var t = base.Receive(envelope);
+        var receiveTask = base.Receive(envelope);
 
-        if (t.IsCompleted)
+        if (receiveTask.IsCompleted)
         {
             return;
         }
 
         try
         {
-            await t.WaitAsync(_deadline).ConfigureAwait(false);
+            await receiveTask.WaitAsync(_deadline).ConfigureAwait(false);
         }
         catch (TimeoutException)
         {
@@ -66,7 +66,7 @@ public class DeadlineContextDecorator : ActorContextDecorator
 
             // keep waiting, we cannot just ignore and continue as an async task might still be running and updating state of the actor
             // if we return here, actor concurrency guarantees could break
-            await t.ConfigureAwait(false);
+            await receiveTask.ConfigureAwait(false);
         }
     }
 }

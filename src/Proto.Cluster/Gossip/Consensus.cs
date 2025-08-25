@@ -31,14 +31,14 @@ internal class GossipConsensusHandle<T> : IConsensusHandle<T> where T : notnull
     {
         while (!ct.IsCancellationRequested)
         {
-            var t = Volatile.Read(ref _consensusTcs).Task;
+            var consensusTask = Volatile.Read(ref _consensusTcs).Task;
             // ReSharper disable once MethodSupportsCancellation
             // Poll for consensus completion or timeout to periodically check cancellation
-            await Task.WhenAny(t, Task.Delay(500)).ConfigureAwait(false);
+            await Task.WhenAny(consensusTask, Task.Delay(500)).ConfigureAwait(false);
 
-            if (t.IsCompleted)
+            if (consensusTask.IsCompleted)
             {
-                return (true, t.Result);
+                return (true, consensusTask.Result);
             }
         }
 
@@ -68,15 +68,15 @@ internal class GossipConsensusHandle<T> : IConsensusHandle<T> where T : notnull
 
     internal void TrySetConsensus(object consensus)
     {
-        var tcs = Volatile.Read(ref _consensusTcs);
+        var consensusSource = Volatile.Read(ref _consensusTcs);
 
-        if (tcs.Task.IsCompleted && tcs.Task.Result?.Equals(consensus) != true)
+        if (consensusSource.Task.IsCompleted && consensusSource.Task.Result?.Equals(consensus) != true)
         {
             TryResetConsensus();
         }
 
         //if not set, set it, if already set, keep it set
-        tcs.TrySetResult((T)consensus);
+        consensusSource.TrySetResult((T)consensus);
     }
 
     public void TryResetConsensus()

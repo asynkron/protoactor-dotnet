@@ -300,14 +300,14 @@ public partial class Gossiper
 
     private async Task BlockGracefullyLeft()
     {
-        var t2 = await GetStateEntry(GossipKeys.GracefullyLeft).ConfigureAwait(false);
+        var gracefullyLeftEntries = await GetStateEntry(GossipKeys.GracefullyLeft).ConfigureAwait(false);
 
         var alreadyBlocked = _blockList.BlockedMembers;
 
         var gracefullyLeft = new List<string>();
 
         // Collect members that left gracefully but are neither already blocked nor this system
-        foreach (var memberId in t2.Keys)
+        foreach (var memberId in gracefullyLeftEntries.Keys)
         {
             if (!alreadyBlocked.Contains(memberId) && memberId != _systemId)
             {

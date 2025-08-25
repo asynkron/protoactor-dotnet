@@ -49,7 +49,7 @@ public class GossipActor : IActor
         try
         {
          //   Logger.LogInformation("GossipActor Received {MessageType}", context.Message.GetMessageTypeName());
-            var t = context.Message switch
+            var handlerTask = context.Message switch
             {
                 Started => OnStarted(context),
                 ReceiveTimeout => OnReceiveTimeout(context),
@@ -63,7 +63,7 @@ public class GossipActor : IActor
                 ClusterTopology clusterTopology => OnClusterTopology(clusterTopology),
                 _ => Task.CompletedTask
             };
-            await t;
+            await handlerTask;
          //   Logger.LogInformation("GossipActor Done {MessageType}", context.Message.GetMessageTypeName());
         }
         catch (Exception x)
