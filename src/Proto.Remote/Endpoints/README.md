@@ -60,3 +60,61 @@ classDiagram
 ```
 
 The diagram illustrates the high‑level relationships between these types and how they collaborate to maintain remote communication channels.
+
+## Sequence: Cross‑Node Messaging Flow
+
+The following sequence diagram shows how two actors on different nodes communicate using Proto.Remote over gRPC. It includes connection negotiation, message delivery, and an optional reply path.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Actor A (Node1)
+    participant Ctx1 as ActorSystem + EndpointManager (Node1)
+    participant CE as ClientRemoteEndpoint (Writer, Node1)
+    participant GRPC as gRPC Bidirectional Stream
+    participant Svc as RemotingGrpcService (Node2)
+    participant EM2 as EndpointManager + RemoteMessageHandler (Node2)
+    participant PR as ProcessRegistry (Node2)
+    participant B as Actor B (Mailbox, Node2)
+
+    Note over Ctx1,Svc: Connection negotiation (one-time per peer)
+    CE->>Svc: ConnectRequest(ClientConnection { MemberId1 })
+    Svc-->>CE: ConnectResponse { MemberId2 }
+
+    rect rgb(240, 248, 255)
+    Note over A,B: Sending a message to a remote PID
+    A->>Ctx1: Context.Send(PID[B@Node2], Msg)
+    Ctx1->>Ctx1: Detect remote address (PID.Address != local)
+    Ctx1->>CE: Ensure writer for Node2 address
+    CE->>GRPC: Serialize Envelope(Msg, TargetPID, SenderPID, Headers)
+    GRPC->>Svc: Stream Write(RemoteMessage)
+    Svc->>EM2: RemoteStreamProcessor.RunReader dispatch
+    EM2->>PR: Resolve TargetPID to Process
+    PR->>B: Enqueue to mailbox (deserialize Msg)
+    B-->>B: Process message in actor Receive loop
+    end
+
+    alt Request/Response interaction
+        B->>EM2: Context.Respond(Reply, SenderPID)
+        EM2->>Svc: Serialize Envelope(Reply, SenderPID)
+        Svc->>GRPC: Stream Write(RemoteMessage)
+        GRPC->>CE: Receive reply from Node2
+        CE->>Ctx1: Deliver to Sender (actor or Future PID)
+        Ctx1->>A: Complete request or enqueue reply
+    else Fire-and-forget
+        Note over A,B: No reply expected; mailbox processing only
+    end
+
+    Note over EM2: BlockList and diagnostics can affect negotiation and routing
+```
+
+Key components in the flow:
+- ActorSystem + EndpointManager: Determines local vs remote, manages endpoints and routing.
+- ClientRemoteEndpoint: Maintains writer stream to remote node; serializes outgoing envelopes.
+- RemotingGrpcService: Server-side gRPC service handling negotiation and streaming I/O.
+- RemoteMessageHandler: Dispatches incoming messages to local processes.
+- ProcessRegistry + Mailbox: Resolves `PID` and delivers to the actor’s mailbox for processing.
+
+Notes:
+- Connection negotiation uses `ClientConnection`/`ServerConnection` and respects the block list.
+- Envelopes carry target `PID`, optional `SenderPID`, headers, and message type info; serialization is configured by `RemoteConfig`.
