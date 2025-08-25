@@ -20,9 +20,20 @@ internal static class RemoteStreamProcessor
         CancellationToken token,
         Action<RemoteMessage> onMessage)
     {
-        while (await reader.MoveNext(token).ConfigureAwait(false))
+        try
         {
-            onMessage(reader.Current);
+            while (await reader.MoveNext(token).ConfigureAwait(false))
+            {
+                onMessage(reader.Current);
+            }
+        }
+        catch (RpcException e) when (e.StatusCode == StatusCode.Cancelled)
+        {
+            // expected when the remote disconnects
+        }
+        catch (InvalidOperationException)
+        {
+            // thrown if MoveNext is invoked after the request is complete
         }
     }
 

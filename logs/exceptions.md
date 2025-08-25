@@ -45,3 +45,6 @@
 ### Proto.Cluster.Tests.GossipCoreTests.Large_cluster_should_get_topology_consensus
 `Expected x.consensus to be True, but found False.`
 
+### EndpointReader.RunReader
+`System.InvalidOperationException: Can't read messages after the request is complete.` observed when a node leaves the cluster.
+

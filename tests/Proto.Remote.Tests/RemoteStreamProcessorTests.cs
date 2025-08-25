@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -44,6 +45,22 @@ public class RemoteStreamProcessorTests
         public Task<bool> MoveNext(CancellationToken cancellationToken) => Task.FromResult(_enumerator.MoveNext());
     }
 
+    private sealed class ThrowingAfterFirstReader : IAsyncStreamReader<RemoteMessage>
+    {
+        private int _count;
+        public RemoteMessage Current { get; private set; } = new();
+        public Task<bool> MoveNext(CancellationToken cancellationToken)
+        {
+            if (_count == 0)
+            {
+                _count++;
+                return Task.FromResult(true);
+            }
+
+            throw new InvalidOperationException("Can't read messages after the request is complete.");
+        }
+    }
+
     [Fact]
     public async Task WriteLoopFlushesStash()
     {
@@ -86,5 +103,14 @@ public class RemoteStreamProcessorTests
         var received = new List<RemoteMessage>();
         await RemoteStreamProcessor.RunReaderAsync(reader, CancellationToken.None, m => received.Add(m));
         received.Count.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task ReadLoopIgnoresCompletionError()
+    {
+        var reader = new ThrowingAfterFirstReader();
+        var received = new List<RemoteMessage>();
+        await RemoteStreamProcessor.RunReaderAsync(reader, CancellationToken.None, m => received.Add(m));
+        received.Count.Should().Be(1);
     }
 }
