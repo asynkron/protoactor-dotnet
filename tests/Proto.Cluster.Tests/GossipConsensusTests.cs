@@ -1,14 +1,14 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using Google.Protobuf.WellKnownTypes;
-using Proto.Cluster.Tests;
 using Proto.Cluster.Gossip;
 using Proto;
 using Xunit;
 
-namespace Proto.Cluster.Gossip.Tests;
+namespace Proto.Cluster.Tests;
 
-public class ConsensusTests
+[Collection("ClusterTests")]
+public class GossipConsensusTests
 {
     [Fact]
     public async Task ReachesConsensusForSameValue()

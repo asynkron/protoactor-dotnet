@@ -1,13 +1,13 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using Google.Protobuf.WellKnownTypes;
-using Proto.Cluster.Tests;
 using Proto.Cluster.Gossip;
 using Xunit;
 
-namespace Proto.Cluster.Gossip.Tests;
+namespace Proto.Cluster.Tests;
 
-public class StateQueryTests
+[Collection("ClusterTests")]
+public class GossipStateQueryTests
 {
     [Fact]
     public async Task CanSetAndGetState()

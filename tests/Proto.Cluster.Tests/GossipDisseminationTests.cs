@@ -1,14 +1,15 @@
+using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Google.Protobuf.WellKnownTypes;
-using Proto.Cluster.Tests;
 using Proto.Cluster.Gossip;
-using Proto;
+using static Proto.TestKit.TestKit;
 using Xunit;
 
-namespace Proto.Cluster.Gossip.Tests;
+namespace Proto.Cluster.Tests;
 
-public class DisseminationTests
+[Collection("ClusterTests")]
+public class GossipDisseminationTests
 {
     [Fact]
     public async Task DisseminatesStateAcrossMembers()
@@ -21,19 +22,13 @@ public class DisseminationTests
 
         await source.Gossip.SetStateAsync("shared", new Int32Value { Value = 99 });
 
-        var ct = CancellationTokens.FromSeconds(20);
         Int32Value? value = null;
-        while (!ct.IsCancellationRequested)
+        await AwaitConditionAsync(async () =>
         {
             var state = await target.Gossip.GetState<Int32Value>("shared");
-            if (state.TryGetValue(source.System.Id, out value))
-            {
-                break;
-            }
-            await Task.Delay(100, ct);
-        }
+            return state.TryGetValue(source.System.Id, out value);
+        }, TimeSpan.FromSeconds(20));
 
-        value.Should().NotBeNull();
         value!.Value.Should().Be(99);
     }
 }
