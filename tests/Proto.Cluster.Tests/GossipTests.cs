@@ -258,7 +258,7 @@ public class GossipTests
         );
 
     private static IConsensusHandle<ulong> CreateCompositeConsensusCheck(Cluster member) =>
-        member.Gossip.RegisterConsensusCheck(Gossiper.ConsensusCheckBuilder<ulong>
+        member.Gossip.RegisterConsensusCheck(ConsensusCheckBuilder<ulong>
             .Create<SomeTopologyGossipState>(TopologyStateKey, state => state.TopologyHash)
             .InConsensusWith<ClusterTopology>(GossipKeys.Topology, topology => topology.TopologyHash)
         );

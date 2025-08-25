@@ -14,7 +14,7 @@ namespace Proto.Cluster.Gossip;
 /// <typeparam name="T">Type of the value that should be in agreement across members.</typeparam>
 /// <example>
 /// <code>
-/// var definition = new Gossiper.ConsensusCheckBuilder&lt;int&gt;("config", any => any.Unpack&lt;Int32Value&gt;().Value);
+/// var definition = new ConsensusCheckBuilder&lt;int&gt;("config", any => any.Unpack&lt;Int32Value&gt;().Value);
 /// </code>
 /// </example>
 public interface IConsensusCheckDefinition<T> where T : notnull

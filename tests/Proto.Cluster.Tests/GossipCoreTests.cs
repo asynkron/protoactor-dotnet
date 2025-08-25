@@ -64,7 +64,7 @@ public class GossipCoreTests
         var first = environment.Values.First().Gossip;
 
         var checkDefinition =
-            Gossiper.ConsensusCheckBuilder<ulong>.Create(GossipKeys.Topology,
+            ConsensusCheckBuilder<ulong>.Create(GossipKeys.Topology,
                 (ClusterTopology tp) => tp.TopologyHash);
 
         var id = Guid.NewGuid().ToString();
@@ -143,7 +143,7 @@ public class GossipCoreTests
 
         var first = environment.Values.First().Gossip;
 
-        var checkDefinition = Gossiper.ConsensusCheckBuilder<string>
+        var checkDefinition = ConsensusCheckBuilder<string>
             .Create<SomeGossipState>(stateKey, s => s.Key);
 
         var id = Guid.NewGuid().ToString();
