@@ -102,7 +102,7 @@ sequenceDiagram
         CE->>Ctx1: Deliver to Sender (actor or Future PID)
         Ctx1->>A: Complete request or enqueue reply
     else Fire-and-forget
-        Note over A,B: No reply expected; mailbox processing only
+        Note over A,B: No reply expected - mailbox processing only
     end
 
     Note over EM2: BlockList and diagnostics can affect negotiation and routing
