@@ -4,13 +4,15 @@
 - Verify that .NET 8 is installed by running `dotnet --version`.
 - Do not run Docker or other external services; skip integration tests that require them.
 
-## Coding guidelines
+## Always follow these coding guidelines
 - Always add a detailed log of what you have done, and a strong motivation why the change was required. add this log to /logs with a filename of "log" + unixtimestamp + ".md".
 - Whenever a prompt contains an .NET exception, document this specific exception in /logs/exceptions.md, failed test name as ### header, important details about the failure as `code`, so we can keep track of failures. if exceptions.md already exists, just append at the end
 - Prefer immutable data structures over mutable variants
+- Prefer Concurrent collections over Immutable collections when dealing with concurrent code, but don´t replace for no reason.
 - Any hardcoded Task.Delay must have a descriptive comment
-- Prefer functional programming style over object orientation when possible.
+- Prefer functional programming style over object orientation when it makes sense.
 - Ensure any new code is also tested via some code path, either existing tests or via new tests
+- In the framework code, all logging via ILogger should be "typed logging", no raw logging string templates
 
 ## Refactoring
 - For computational logic, prefer pure functions, if possible in static classes, with easily testable input and output. e.g. Gossip and Cluster Topology logic are good examples.
