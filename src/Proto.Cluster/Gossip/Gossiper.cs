@@ -391,6 +391,18 @@ public partial class Gossiper
 
         private ConsensusCheck<T> Build()
         {
+            // Logs consensus outcome together with the members contributing to each key/value pair.
+            static void LogConsensus(bool consensus, IEnumerable<(string member, string key, T value)> tuples)
+            {
+                Logger.LogDebug("consensus {Consensus}: {Values}", consensus, tuples
+                    .GroupBy(it => (it.key, it.value), tuple => tuple.member)
+                    .Select(
+                        grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
+                                    (grouping.Count() > 1 ? grouping.Count() + " nodes" : grouping.First())
+                    ).ToArray()
+                );
+            }
+
             if (_getConsensusValues.Count == 1)
             {
                 var mapToValue = MapToValue(_getConsensusValues.Single());
@@ -401,13 +413,7 @@ public partial class Gossiper
 
                     if (Logger.IsEnabled(LogLevel.Debug))
                     {
-                        Logger.LogDebug("consensus {Consensus}: {Values}", consensus, tuples
-                            .GroupBy(it => (it.key, it.value), tuple => tuple.member)
-                            .Select(
-                                grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
-                                            (grouping.Count() > 1 ? grouping.Count() + " nodes" : grouping.First())
-                            ).ToArray()
-                        );
+                        LogConsensus(consensus, tuples);
                     }
 
                     return consensus ? (consensus, value!) : default;
@@ -422,13 +428,7 @@ public partial class Gossiper
 
                 if (Logger.IsEnabled(LogLevel.Debug))
                 {
-                    Logger.LogDebug("consensus {Consensus}: {Values}", consensus, tuples
-                        .GroupBy(it => (it.key, it.value), tuple => tuple.member)
-                        .Select(
-                            grouping => $"{grouping.Key.key}:{grouping.Key.value}, " +
-                                        (grouping.Count() > 1 ? grouping.Count() + " nodes" : grouping.First())
-                        ).ToArray()
-                    );
+                    LogConsensus(consensus, tuples);
                 }
 
                 return consensus ? (consensus, value!) : default;
