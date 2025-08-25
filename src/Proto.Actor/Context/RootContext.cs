@@ -102,7 +102,11 @@ public sealed record RootContext : IRootContext
 
     public void Request(PID target, object message, PID? sender)
     {
-        var envelope = MessageEnvelope.WithSender(message, sender);
+        // Ensure a sender is only attached when one is provided to avoid nullable warnings
+        var envelope = sender != null
+            ? MessageEnvelope.WithSender(message, sender)
+            : MessageEnvelope.Wrap(message);
+
         Send(target, envelope);
     }
 

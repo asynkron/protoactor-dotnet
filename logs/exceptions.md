@@ -26,3 +26,6 @@
 `Assert.Equal() Failure: Strings differ Expected: "4" Actual: "3"`
 ### Proto.Cluster.Tests.GossipCoreTests.Large_cluster_should_get_topology_consensus
 `Expected x.consensus to be True, but found False.`
+
+### Proto.Tests.SupervisionTestsOneForOne.OneForOneStrategy_Should_EscalateFailureToParent
+`System.InvalidOperationException: Sequence contains no elements` in `SupervisionTests_OneForOne.cs:line 263`.

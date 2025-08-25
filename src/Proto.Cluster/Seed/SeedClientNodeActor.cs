@@ -48,10 +48,9 @@ public class SeedClientNodeActor : IActor
         return Proto.Props.FromProducer(() => new SeedClientNodeActor(options, logger));
     }
 
-    private async Task OnConnect(IContext context)
+    private Task OnConnect(IContext context)
     {
-        var (selfHost, selfPort) = context.System.GetAddress();
-
+        // Connection logic is currently synchronous; adjust signature accordingly
         bool connected = false;
         // foreach (var (host, port) in _options.SeedNodes)
         // {
@@ -92,6 +91,8 @@ public class SeedClientNodeActor : IActor
         {
             context.Respond(new FailedToConnect());
         }
+
+        return Task.CompletedTask;
     }
 
     private async Task OnClusterTopology(IContext context, ClusterTopology clusterTopology)

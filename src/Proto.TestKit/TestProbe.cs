@@ -83,7 +83,7 @@ public class TestProbe : IActor, ITestProbe
         {
             var item = await _channel.Reader.ReadAsync(cts.Token);
             var seconds = (timeAllowed ?? TimeSpan.FromSeconds(1)).TotalSeconds.ToString("0.###");
-            throw new TestKitException($"Waited {seconds} seconds and received a message of type {item.Message.GetType()}");
+            throw new TestKitException($"Waited {seconds} seconds and received a message of type {item.Message?.GetType()}");
         }
         catch (OperationCanceledException)
         {
@@ -232,7 +232,7 @@ public class TestProbe : IActor, ITestProbe
 
         if (item.Message is not T typed)
         {
-            throw new TestKitException($"Message expected type {typeof(T)}, actual type {item.Message.GetType()}");
+            throw new TestKitException($"Message expected type {typeof(T)}, actual type {item.Message?.GetType()}");
         }
 
         return typed;
