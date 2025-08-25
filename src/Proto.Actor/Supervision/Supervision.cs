@@ -15,7 +15,7 @@ public static class Supervision
     ///     Default supervision strategy is <see cref="OneForOneStrategy" />
     /// </summary>
     public static ISupervisorStrategy DefaultStrategy { get; } =
-        new OneForOneStrategy((who, reason) => SupervisorDirective.Restart, 10, TimeSpan.FromSeconds(10));
+        new OneForOneStrategy((_, __) => SupervisorDirective.Restart, 10, TimeSpan.FromSeconds(10));
 
     /// <summary>
     ///     Restarts the actor regardless of the failure reason

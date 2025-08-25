@@ -16,7 +16,7 @@ public static class ProtoTags
     ///     GetType().Name on the message
     /// </summary>
     public const string MessageType = "proto.messagetype";
-    
+
     /// <summary>
     ///     GetType().Name on the response message
     /// </summary>
@@ -43,12 +43,12 @@ public static class ProtoTags
     ///     Type of the current actor, when applicable
     /// </summary>
     public const string ActorType = "proto.actortype";
-    
+
     /// <summary>
     ///     Name of the current action
     /// </summary>
     public const string ActionType = "proto.action";
-    
+
     public const string EventSubscriber = "proto.eventsubscriber";
     public const string TargetName = "proto.targetname";
 }

@@ -73,7 +73,7 @@ internal class DeDuplicator<T> where T : IEquatable<T>
             {
                 _logger.RequestDeduplicated();
                 // Update timestamp to keep a sliding window of TTL
-                _processed[key!]= now;
+                _processed[key!] = now;
 
                 return;
             }

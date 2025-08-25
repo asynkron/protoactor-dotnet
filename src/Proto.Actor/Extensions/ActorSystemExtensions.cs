@@ -32,7 +32,7 @@ public class ActorSystemExtensions
     {
         var id = IActorSystemExtension<T>.Id;
         if (id < _extensions.Length)
-            return (T) _extensions[id];
+            return (T)_extensions[id];
         return default;
     }
 

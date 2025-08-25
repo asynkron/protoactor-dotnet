@@ -193,8 +193,8 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
                     _suspended = msg switch
                     {
                         SuspendMailbox => true,
-                        ResumeMailbox  => false,
-                        _              => _suspended
+                        ResumeMailbox => false,
+                        _ => _suspended
                     };
 
                     var systemMessageTask = _invoker.InvokeSystemMessageAsync(sys);
@@ -280,9 +280,8 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
             }
         }
     }
-    
-    public void Execute() => _ = RunAsync(this);
 
+    public void Execute() => _ = RunAsync(this);
 }
 
 /// <summary>

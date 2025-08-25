@@ -234,7 +234,7 @@ public record ActorSystemConfig
     /// </summary>
     public ActorSystemConfig WithDeadLetterResponseLogging(bool enabled) =>
         this with { DeadLetterResponseLogging = enabled };
-    
+
     /// <summary>
     ///     The LogLevel used for Diagnostics logging
     /// </summary>
@@ -248,7 +248,6 @@ public record ActorSystemConfig
     /// </summary>
     public ActorSystemConfig WithBlockedMemberDuration(TimeSpan blockedMemberDuration) =>
         this with { BlockedMemberDuration = blockedMemberDuration };
-
 
     /// <summary>
     ///     Wraps a given process inside a wrapper process.

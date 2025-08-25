@@ -34,7 +34,7 @@ public static class TaskExtensions
             ct switch
             {
                 not null => CancellationTokenSource.CreateLinkedTokenSource(ct.Value),
-                _        => new CancellationTokenSource()
+                _ => new CancellationTokenSource()
             };
 
         // Compete the original task against a timeout to enforce upper execution bound
@@ -50,5 +50,4 @@ public static class TaskExtensions
 
         return await task.ConfigureAwait(false); // Very important in order to propagate exceptions
     }
-
 }

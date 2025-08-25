@@ -53,7 +53,7 @@ public class ProcessRegistry
         {
             return (_localProcesses.TryGetValue(pid.Id, out var process) switch
             {
-                true  => process,
+                true => process,
                 false => System.DeadLetter
                 // ReSharper disable once RedundantSuppressNullableWarningExpression
             })!;
@@ -74,7 +74,7 @@ public class ProcessRegistry
         return reff switch
         {
             null => throw new NotSupportedException("Unknown host"),
-            _    => reff
+            _ => reff
         };
     }
 

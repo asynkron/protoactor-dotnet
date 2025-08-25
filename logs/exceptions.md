@@ -24,3 +24,5 @@
 
 ### Proto.Cluster.Tests.ClusterTopologyBuilderTests.Compute_FiltersBlockedAndDuplicates
 `Assert.Equal() Failure: Strings differ Expected: "4" Actual: "3"`
+### Proto.Cluster.Tests.GossipCoreTests.Large_cluster_should_get_topology_consensus
+`Expected x.consensus to be True, but found False.`

@@ -22,7 +22,7 @@ public static class UtilExtensions
             pid.SendSystemMessage(system, message);
         }
     }
-    
+
     public static async Task StopMany(this IEnumerable<PID> self, IContext context)
     {
         foreach (var chunk in self.Chunk(20))
@@ -69,6 +69,6 @@ public static class UtilExtensions
         return system.Config.ConfigureProcess(self);
     }
 
-    public static Func<T, T> Wrap<T>(this Func<T, T> self, Func<T, T> outer) => 
+    public static Func<T, T> Wrap<T>(this Func<T, T> self, Func<T, T> outer) =>
         x => outer(self(x));
 }

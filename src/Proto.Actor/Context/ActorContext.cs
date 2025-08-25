@@ -21,7 +21,7 @@ using Proto.Utils;
 
 namespace Proto.Context;
 
-public class ActorContext : IMessageInvoker, IContext, ISupervisor
+public sealed class ActorContext : IMessageInvoker, IContext, ISupervisor
 {
 #pragma warning disable CS0618 // Type or member is obsolete
     private static readonly ILogger Logger = Log.CreateLogger<ActorContext>();
@@ -33,12 +33,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     private ActorContextExtras? _extras;
     private object? _messageOrEnvelope;
     private ContextState _state;
-    
-    private readonly ShouldThrottle _shouldThrottleStartLogs = Throttle.Create(1000,TimeSpan.FromSeconds(1), droppedLogs =>
-    {
-        Logger.ActorContextThrottledLogs(droppedLogs);
-    } );
 
+    private readonly ShouldThrottle _shouldThrottleStartLogs = Throttle.Create(1000, TimeSpan.FromSeconds(1), droppedLogs => Logger.ActorContextThrottledLogs(droppedLogs));
 
     private ActorContext(ActorSystem system, Props props, PID? parent, PID self, IMailbox mailbox)
     {
@@ -107,7 +103,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             var id = name switch
             {
                 "" => System.ProcessRegistry.NextId(),
-                _  => $"{Self.Id}/{name}"
+                _ => $"{Self.Id}/{name}"
             };
 
             var pid = props.Spawn(System, id, Self, callback);
@@ -221,10 +217,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
     {
         if (token.IsCancellationRequested)
         {
-            ((IContext)this).ReenterAfter(Task.CompletedTask, () =>
-            {
-                onCancelled();
-            });
+            ((IContext)this).ReenterAfter(Task.CompletedTask, () => onCancelled());
 
             return;
         }
@@ -347,18 +340,18 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         {
             return msg switch
             {
-                Started                         => HandleStartedAsync(),
-                Stop _                          => HandleStopAsync(),
-                Terminated t                    => HandleTerminatedAsync(t),
-                Watch w                         => HandleWatch(w),
-                Unwatch uw                      => HandleUnwatch(uw),
-                Failure f                       => HandleFailureAsync(f),
-                Restart                         => HandleRestartAsync(),
+                Started => HandleStartedAsync(),
+                Stop _ => HandleStopAsync(),
+                Terminated t => HandleTerminatedAsync(t),
+                Watch w => HandleWatch(w),
+                Unwatch uw => HandleUnwatch(uw),
+                Failure f => HandleFailureAsync(f),
+                Restart => HandleRestartAsync(),
                 SuspendMailbox or ResumeMailbox => Task.CompletedTask,
-                Continuation cont               => HandleContinuation(cont),
-                ProcessDiagnosticsRequest pdr   => HandleProcessDiagnosticsRequest(pdr),
-                ReceiveTimeout _                => HandleReceiveTimeout(),
-                _                               => HandleUnknownSystemMessage(msg)
+                Continuation cont => HandleContinuation(cont),
+                ProcessDiagnosticsRequest pdr => HandleProcessDiagnosticsRequest(pdr),
+                ReceiveTimeout _ => HandleReceiveTimeout(),
+                _ => HandleUnknownSystemMessage(msg)
             };
         }
         catch (Exception x)
@@ -377,7 +370,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         }
 
         return InvokeUserMessageAsync(Started.Instance);
-        
+
         async Task Await()
         {
             var sw = Stopwatch.StartNew();
@@ -573,9 +566,9 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         // an older Actor instance.
         if (_state == ContextState.Stopped || System.Shutdown.IsCancellationRequested || (cont.Actor != Actor && cont is not { Actor: null }))
         {
-                Logger.DroppingContinuation(Self, MessageEnvelope.UnwrapMessage(cont.Message));
+            Logger.DroppingContinuation(Self, MessageEnvelope.UnwrapMessage(cont.Message));
 
-                return;
+            return;
         }
 
         _messageOrEnvelope = cont.Message;
@@ -589,7 +582,6 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             return _extras;
         }
 
-        
         //YOLO: nobody else should touch this....
 #pragma warning disable RCS1059
         lock (this)
@@ -600,7 +592,7 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             {
                 return _extras;
             }
-            
+
             var context = _props.ContextDecoratorChain?.Invoke(this) ?? this;
             _extras = new ActorContextExtras(context);
         }
@@ -798,8 +790,8 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
         return _state switch
         {
             ContextState.Restarting => RestartAsync(),
-            ContextState.Stopping   => FinalizeStopAsync(),
-            _                       => Task.CompletedTask
+            ContextState.Stopping => FinalizeStopAsync(),
+            _ => Task.CompletedTask
         };
     }
 

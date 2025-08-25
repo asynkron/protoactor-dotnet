@@ -10,4 +10,3 @@ public interface ISchedulerHook
     /// </summary>
     void OnTimerRegistered();
 }
-
