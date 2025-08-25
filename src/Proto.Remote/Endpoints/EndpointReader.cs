@@ -21,6 +21,8 @@ public sealed class EndpointReader : Remoting.RemotingBase
     private readonly EndpointManager _endpointManager;
     private readonly ActorSystem _system;
 
+    private readonly record struct NegotiationResult(IEndpoint Endpoint, string SystemId, string? Address, bool StartWriter);
+
     public EndpointReader(ActorSystem system, EndpointManager endpointManager)
     {
         _system = system;
@@ -44,180 +46,159 @@ public sealed class EndpointReader : Remoting.RemotingBase
 
         var cancellationTokenSource = new CancellationTokenSource();
 
-        async Task DisconnectAsync()
-        {
-            try
-            {
-                var disconnectMsg = new RemoteMessage
-                {
-                    DisconnectRequest = new DisconnectRequest()
-                };
-
-                await responseStream.WriteAsync(disconnectMsg).ConfigureAwait(false);
-            }
-            catch (Exception x)
-            {
-                x.CheckFailFast();
-
-                Logger.LogWarning("[EndpointReader][{SystemAddress}] Failed to write disconnect message to the stream",
-                    _system.Address);
-            }
-            finally
-            {
-                // When we disconnect, cancel the token, so the reader and writer both stop, and this method returns,
-                // so that the stream actually closes. Without this, when kestrel begins shutdown, it's possible the
-                // connection will stay open until the kestrel shutdown timeout is reached.
-                cancellationTokenSource.Cancel();
-            }
-        }
-
         await using (
             _endpointManager.CancellationToken.Register(() =>
             {
-                // Explicitly ignore the task; cancellation callbacks cannot be awaited
-                _ = DisconnectAsync();
-            }).ConfigureAwait(false)
-        )
+                _ = RemoteStreamProcessor.DisconnectAsync(responseStream, cancellationTokenSource);
+            }).ConfigureAwait(false))
         {
-            IEndpoint endpoint;
-            string? address = null;
-            string systemId;
-
             Logger.LogInformation(
                 "[EndpointReader][{SystemAddress}] Accepted connection request from {Remote} to {Local}",
                 _system.Address, context.Peer, context.Host
             );
 
-            if (await requestStream.MoveNext(_endpointManager.CancellationToken).ConfigureAwait(false) &&
-                requestStream.Current.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectRequest)
+            var negotiation = await NegotiateAsync(requestStream, responseStream).ConfigureAwait(false);
+            if (negotiation is null)
             {
-                throw new RpcException(Status.DefaultCancelled, "Expected connection message");
+                return;
             }
 
-            var connectRequest = requestStream.Current.ConnectRequest;
+            var (endpoint, systemId, address, startWriter) = negotiation.Value;
 
-            switch (connectRequest.ConnectionTypeCase)
+            if (startWriter)
             {
-                case ConnectRequest.ConnectionTypeOneofCase.ClientConnection:
+                _ = Task.Run(async () =>
                 {
-                    var clientConnection = connectRequest.ClientConnection;
-
-                    if (_system.Remote().BlockList.IsBlocked(clientConnection.MemberId))
-                    {
-                        Logger.LogWarning(
-                            "[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected",
-                            _system.Address);
-
-                        await responseStream.WriteAsync(new RemoteMessage
-                                {
-                                    ConnectResponse = new ConnectResponse
-                                    {
-                                        Blocked = true,
-                                        MemberId = _system.Id
-                                    }
-                                }
-                            )
-                            .ConfigureAwait(false);
-
-                        return;
-                    }
-
-                    await responseStream.WriteAsync(new RemoteMessage
-                            {
-                                ConnectResponse = new ConnectResponse
-                                {
-                                    MemberId = _system.Id
-                                }
-                            }
-                        )
-                        .ConfigureAwait(false);
-
-                    systemId = clientConnection.MemberId;
-                    endpoint = _endpointManager.GetOrAddClientEndpoint(systemId);
-
-                    _ = Task.Run(async () =>
-                    {
-                        await RunClientWriter(responseStream, cancellationTokenSource, endpoint, systemId).ConfigureAwait(false);
-                    });
-                }
-
-                    break;
-                case ConnectRequest.ConnectionTypeOneofCase.ServerConnection:
-                {
-                    var serverConnection = connectRequest.ServerConnection;
-                    var shouldExit = false;
-                    var blocked = serverConnection.BlockList.ToHashSet();
-
-                    if (_system.Remote().BlockList.IsBlocked(serverConnection.MemberId))
-                    {
-                        Logger.LogWarning(
-                            "[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, they are blocked",
-                            _system.Address, connectRequest.ServerConnection.MemberId,
-                            connectRequest.ServerConnection.Address);
-
-                        await responseStream.WriteAsync(new RemoteMessage
-                                {
-                                    ConnectResponse = new ConnectResponse
-                                    {
-                                        Blocked = true,
-                                        MemberId = _system.Id
-                                    }
-                                }
-                            )
-                            .ConfigureAwait(false);
-
-                        shouldExit = true;
-                    }
-
-                    if (blocked.Contains(_system.Id))
-                    {
-                        Logger.LogWarning(
-                            "[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, we are blocked",
-                            _system.Address, connectRequest.ServerConnection.MemberId,
-                            connectRequest.ServerConnection.Address);
-
-                        shouldExit = true;
-                    }
-
-                    if (blocked.Any())
-                    {
-                        _system.Remote().BlockList.Block(blocked, "Blocked by remote member");
-                    }
-
-                    if (shouldExit)
-                    {
-                        return;
-                    }
-
-                    await responseStream.WriteAsync(new RemoteMessage
-                            {
-                                ConnectResponse = new ConnectResponse
-                                {
-                                    MemberId = _system.Id
-                                }
-                            }
-                        )
-                        .ConfigureAwait(false);
-
-                    address = serverConnection.Address;
-                    systemId = serverConnection.MemberId;
-                    endpoint = _endpointManager.GetOrAddServerEndpoint(address);
-                    if (!endpoint.IsActive)
-                    {
-                        Logger.LogWarning(
-                            "[EndpointReader][{SystemAddress}] Failed to connect back to remote member {MemberId} address {Address} for writes",
-                            _system.Address, connectRequest.ServerConnection.MemberId,
-                            connectRequest.ServerConnection.Address);
-                    }
-                }
-
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                    await RunClientWriter(responseStream, cancellationTokenSource, endpoint, systemId).ConfigureAwait(false);
+                });
             }
 
-            await RunReader(requestStream, address, cancellationTokenSource, systemId).ConfigureAwait(false);
+        await RunReader(requestStream, address, cancellationTokenSource, systemId).ConfigureAwait(false);
         }
+    }
+
+    private async Task<NegotiationResult?> NegotiateAsync(
+        IAsyncStreamReader<RemoteMessage> requestStream,
+        IServerStreamWriter<RemoteMessage> responseStream)
+    {
+        if (await requestStream.MoveNext(_endpointManager.CancellationToken).ConfigureAwait(false) &&
+            requestStream.Current.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectRequest)
+        {
+            throw new RpcException(Status.DefaultCancelled, "Expected connection message");
+        }
+
+        var connectRequest = requestStream.Current.ConnectRequest;
+        return connectRequest.ConnectionTypeCase switch
+        {
+            ConnectRequest.ConnectionTypeOneofCase.ClientConnection =>
+                await HandleClientConnectionAsync(connectRequest.ClientConnection, responseStream).ConfigureAwait(false),
+            ConnectRequest.ConnectionTypeOneofCase.ServerConnection =>
+                await HandleServerConnectionAsync(connectRequest.ServerConnection, responseStream).ConfigureAwait(false),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    private async Task<NegotiationResult?> HandleClientConnectionAsync(
+        ClientConnection clientConnection,
+        IServerStreamWriter<RemoteMessage> responseStream)
+    {
+        if (_system.Remote().BlockList.IsBlocked(clientConnection.MemberId))
+        {
+            Logger.LogWarning(
+                "[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected",
+                _system.Address);
+
+            await responseStream.WriteAsync(new RemoteMessage
+            {
+                ConnectResponse = new ConnectResponse
+                {
+                    Blocked = true,
+                    MemberId = _system.Id
+                }
+            }).ConfigureAwait(false);
+
+            return null;
+        }
+
+        await responseStream.WriteAsync(new RemoteMessage
+        {
+            ConnectResponse = new ConnectResponse
+            {
+                MemberId = _system.Id
+            }
+        }).ConfigureAwait(false);
+
+        var systemId = clientConnection.MemberId;
+        var endpoint = _endpointManager.GetOrAddClientEndpoint(systemId);
+        return new NegotiationResult(endpoint, systemId, null, true);
+    }
+
+    private async Task<NegotiationResult?> HandleServerConnectionAsync(
+        ServerConnection serverConnection,
+        IServerStreamWriter<RemoteMessage> responseStream)
+    {
+        var shouldExit = false;
+        var blocked = serverConnection.BlockList.ToHashSet();
+
+        if (_system.Remote().BlockList.IsBlocked(serverConnection.MemberId))
+        {
+            Logger.LogWarning(
+                "[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, they are blocked",
+                _system.Address, serverConnection.MemberId,
+                serverConnection.Address);
+
+            await responseStream.WriteAsync(new RemoteMessage
+            {
+                ConnectResponse = new ConnectResponse
+                {
+                    Blocked = true,
+                    MemberId = _system.Id
+                }
+            }).ConfigureAwait(false);
+
+            shouldExit = true;
+        }
+
+        if (blocked.Contains(_system.Id))
+        {
+            Logger.LogWarning(
+                "[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, we are blocked",
+                _system.Address, serverConnection.MemberId,
+                serverConnection.Address);
+
+            shouldExit = true;
+        }
+
+        if (blocked.Any())
+        {
+            _system.Remote().BlockList.Block(blocked, "Blocked by remote member");
+        }
+
+        if (shouldExit)
+        {
+            return null;
+        }
+
+        await responseStream.WriteAsync(new RemoteMessage
+        {
+            ConnectResponse = new ConnectResponse
+            {
+                MemberId = _system.Id
+            }
+        }).ConfigureAwait(false);
+
+        var address = serverConnection.Address;
+        var systemId = serverConnection.MemberId;
+        var endpoint = _endpointManager.GetOrAddServerEndpoint(address);
+        if (!endpoint.IsActive)
+        {
+            Logger.LogWarning(
+                "[EndpointReader][{SystemAddress}] Failed to connect back to remote member {MemberId} address {Address} for writes",
+                _system.Address, serverConnection.MemberId,
+                serverConnection.Address);
+        }
+
+        return new NegotiationResult(endpoint, systemId, address, false);
     }
 
     private async Task RunReader(IAsyncStreamReader<RemoteMessage> requestStream, string? address,
@@ -225,17 +206,18 @@ public sealed class EndpointReader : Remoting.RemotingBase
     {
         try
         {
-            while (await requestStream.MoveNext(cancellationTokenSource.Token).ConfigureAwait(false))
-            {
-                var currentMessage = requestStream.Current;
-
-                if (_endpointManager.CancellationToken.IsCancellationRequested)
+            await RemoteStreamProcessor.RunReaderAsync(
+                requestStream,
+                cancellationTokenSource.Token,
+                currentMessage =>
                 {
-                    continue;
-                }
+                    if (_endpointManager.CancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
 
-                _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage, address!);
-            }
+                    _endpointManager.RemoteMessageHandler.HandleRemoteMessage(currentMessage, address!);
+                }).ConfigureAwait(false);
         }
         finally
         {
@@ -248,53 +230,19 @@ public sealed class EndpointReader : Remoting.RemotingBase
         }
     }
 
-    private async Task RunClientWriter(IAsyncStreamWriter<RemoteMessage> responseStream,
+    private async Task RunClientWriter(IServerStreamWriter<RemoteMessage> responseStream,
         CancellationTokenSource cancellationTokenSource, IEndpoint endpoint, string systemId)
     {
         try
         {
-            while (!cancellationTokenSource.Token.IsCancellationRequested)
-            {
-                //consume stash
-                while (!cancellationTokenSource.Token.IsCancellationRequested &&
-                       endpoint.OutgoingStash.TryPop(out var messages))
-                {
-                    var batch = MessageBatchFactory.CreateBatch(_system, _system.Remote().Config, messages);
-
-                    try
-                    {
-                        await responseStream.WriteAsync(new RemoteMessage { MessageBatch = batch })
-                            .ConfigureAwait(false);
-                    }
-                    catch (Exception)
-                    {
-                        _ = endpoint.OutgoingStash.Append(messages);
-
-                        throw;
-                    }
-                }
-
-                //
-                while (endpoint.OutgoingStash.IsEmpty && !cancellationTokenSource.Token.IsCancellationRequested)
-                {
-                    var messages = await endpoint.Outgoing.Reader.ReadAsync(cancellationTokenSource.Token)
-                        .ConfigureAwait(false);
-
-                    var batch = MessageBatchFactory.CreateBatch(_system, _system.Remote().Config, messages);
-
-                    try
-                    {
-                        await responseStream.WriteAsync(new RemoteMessage { MessageBatch = batch })
-                            .ConfigureAwait(false);
-                    }
-                    catch (Exception)
-                    {
-                        _ = endpoint.OutgoingStash.Append(messages);
-
-                        throw;
-                    }
-                }
-            }
+            await RemoteStreamProcessor.RunWriterAsync(
+                endpoint,
+                _system,
+                _system.Remote().Config,
+                (m, ct) => responseStream.WriteAsync(m),
+                cancellationTokenSource.Token,
+                cancellationTokenSource,
+                null).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

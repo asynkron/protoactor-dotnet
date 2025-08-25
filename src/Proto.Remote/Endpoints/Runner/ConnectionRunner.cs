@@ -67,31 +67,10 @@ public sealed class ConnectionRunner
 
                 _onConnected();
 
-                await _mode.SendConnectRequest(_system, _remoteConfig, call).ConfigureAwait(false);
-
-                await call.ResponseStream.MoveNext().ConfigureAwait(false);
-                var response = call.ResponseStream.Current;
-                if (response?.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectResponse)
+                var negotiation = await NegotiateAsync(call).ConfigureAwait(false);
+                actorSystemId = negotiation.ActorSystemId;
+                if (negotiation.ShouldExit)
                 {
-                    throw new Exception("Expected ConnectResponse");
-                }
-
-                var connectResponse = response.ConnectResponse;
-                if (connectResponse.Blocked)
-                {
-                    _logger.ConnectionRefusedWeAreBlocked(new Exception("Blocked"), _system.Address, connectResponse.MemberId, _address);
-                    _system.Remote().BlockList.Block(new[] { _system.Id }, "Blocked by remote member");
-                    var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
-                    _system.EventStream.Publish(terminated);
-                    return;
-                }
-
-                actorSystemId = connectResponse.MemberId;
-                if (_system.Remote().BlockList.IsBlocked(actorSystemId))
-                {
-                    _logger.ConnectionRefusedTheyAreBlocked(new Exception("Blocked"), _system.Address, connectResponse.MemberId, _address);
-                    var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
-                    _system.EventStream.Publish(terminated);
                     return;
                 }
 
@@ -105,8 +84,7 @@ public sealed class ConnectionRunner
                 _logger.Connected(_system.Address, _address);
 
                 await writer.ConfigureAwait(false);
-                cts.Cancel();
-                await call.RequestStream.CompleteAsync().ConfigureAwait(false);
+                await RemoteStreamProcessor.CompleteAsync(call, cts).ConfigureAwait(false);
                 await reader.ConfigureAwait(false);
 
                 _onDisconnected();
@@ -151,6 +129,35 @@ public sealed class ConnectionRunner
                 cts.Cancel();
             }
         }
+    }
+
+    private async Task<(string ActorSystemId, bool ShouldExit)> NegotiateAsync(AsyncDuplexStreamingCall<RemoteMessage, RemoteMessage> call)
+    {
+        await _mode.SendConnectRequest(_system, _remoteConfig, call).ConfigureAwait(false);
+        await call.ResponseStream.MoveNext().ConfigureAwait(false);
+        var response = call.ResponseStream.Current;
+        if (response?.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectResponse)
+        {
+            throw new Exception("Expected ConnectResponse");
+        }
+        var connectResponse = response.ConnectResponse;
+        if (connectResponse.Blocked)
+        {
+            _logger.ConnectionRefusedWeAreBlocked(new Exception("Blocked"), _system.Address, connectResponse.MemberId, _address);
+            _system.Remote().BlockList.Block(new[] { _system.Id }, "Blocked by remote member");
+            var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
+            _system.EventStream.Publish(terminated);
+            return (connectResponse.MemberId, true);
+        }
+        var actorSystemId = connectResponse.MemberId;
+        if (_system.Remote().BlockList.IsBlocked(actorSystemId))
+        {
+            _logger.ConnectionRefusedTheyAreBlocked(new Exception("Blocked"), _system.Address, connectResponse.MemberId, _address);
+            var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
+            _system.EventStream.Publish(terminated);
+            return (actorSystemId, true);
+        }
+        return (actorSystemId, false);
     }
 
 
