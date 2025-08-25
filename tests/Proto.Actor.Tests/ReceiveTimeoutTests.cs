@@ -100,7 +100,8 @@ public class ReceiveTimeoutTests
 
         await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(400));
         cts.Cancel();
-        await probe.ExpectNextSystemMessageAsync<ReceiveTimeout>();
+
+        await probe.ExpectNextSystemMessageAsync<ReceiveTimeout>(TimeSpan.FromSeconds(2)); // allow time for any in-flight tick messages to complete before timeout fires
     }
 
     [Fact]
