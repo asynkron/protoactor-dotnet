@@ -253,6 +253,8 @@ public class ActorTests
             {
                 if (ctx.Message is string)
                 {
+                    // Signal that processing has started so the test can safely stop the actor
+                    ctx.Send(probePid, "processing");
                     try
                     {
                         // Simulate long-running work that should be cancellable
@@ -270,6 +272,7 @@ public class ActorTests
 
         context.Send(pid, "hello");
         await probe.ExpectNextSystemMessageAsync<Started>();
+        await probe.ExpectNextUserMessageAsync<string>(s => s == "processing");
         await context.StopAsync(pid);
         await probe.ExpectNextUserMessageAsync<TaskCanceledException>();
         await probe.ExpectNextUserMessageAsync<string>(s => s == "hello");
