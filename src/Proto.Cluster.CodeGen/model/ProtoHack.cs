@@ -20,7 +20,16 @@ public static class ProtoHack
         }
 
         var parentProp = typeof(DescriptorProto).GetProperty("Parent", BindingFlags.NonPublic | BindingFlags.Instance);
-        var parent = (FileDescriptorProto)parentProp!.GetValue(self);
+        if (parentProp is null)
+        {
+            throw new InvalidOperationException("Parent property not found");
+        }
+
+        var parent = parentProp.GetValue(self) as FileDescriptorProto;
+        if (parent is null)
+        {
+            throw new InvalidOperationException("Parent FileDescriptorProto not found");
+        }
 
         return parent;
     }

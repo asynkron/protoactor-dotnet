@@ -54,6 +54,12 @@ public class ProtoGenTask : Task
 
     private static void EnsureDirExistsAndIsEmpty(string? potatoDirectory)
     {
+        // Guard against null paths to satisfy the compiler's null-safety analysis
+        if (potatoDirectory is null)
+        {
+            throw new ArgumentNullException(nameof(potatoDirectory));
+        }
+
         Directory.CreateDirectory(potatoDirectory);
         var di = new DirectoryInfo(potatoDirectory);
 

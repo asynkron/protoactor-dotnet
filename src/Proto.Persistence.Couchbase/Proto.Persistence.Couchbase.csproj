@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
     <PropertyGroup>
         <TargetFrameworks>net8.0</TargetFrameworks>
+        <!-- Couchbase 3.x requires extensive changes, suppress vulnerability warning until upgrade path is available -->
+        <NoWarn>NU1902</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="CouchbaseNetClient" />
