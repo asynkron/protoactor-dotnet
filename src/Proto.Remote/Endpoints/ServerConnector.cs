@@ -77,10 +77,7 @@ public sealed class ServerConnector
             onConnected,
             onDisconnected,
             recordWrite,
-            msg => _logger.LogInformation(msg),
-            msg => _logger.LogDebug(msg),
-            msg => _logger.LogWarning(msg),
-            (ex, msg) => _logger.LogError(ex, msg));
+            _logger);
 
         _runner = Task.Run(runner.RunAsync);
     }
