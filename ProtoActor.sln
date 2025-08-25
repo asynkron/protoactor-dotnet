@@ -121,21 +121,21 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyInjection", "examples\actor.dependency-injection\DependencyInjection.csproj", "{779521AC-8EBB-4E2D-82EE-508A2E95AD1B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{5C1A4C10-E037-4945-9EDC-DFBFBD501A4A}"
-ProjectSection(SolutionItems) = preProject
-	.github\ISSUE_TEMPLATE.md = .github\ISSUE_TEMPLATE.md
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		.github\ISSUE_TEMPLATE.md = .github\ISSUE_TEMPLATE.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{C8C3C2EE-083A-46B4-8F5A-0C0F442C14BE}"
-ProjectSection(SolutionItems) = preProject
-	Terminology.md = Terminology.md
-	README.md = README.md
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		Terminology.md = Terminology.md
+		README.md = README.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ci", "ci", "{8B241043-F933-4C1F-AB57-BAE8B624F133}"
-ProjectSection(SolutionItems) = preProject
-	.github\workflows\build-dev.yml = .github\workflows\build-dev.yml
-	.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build-dev.yml = .github\workflows\build-dev.yml
+		.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HostedService", "benchmarks\HostedService\HostedService.csproj", "{7840C651-9352-4CB2-9152-4793EC219DE9}"
 EndProject
@@ -310,6 +310,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "template", "template", "{08
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EndpointManagerTest", "benchmarks\EndpointManagerTest\EndpointManagerTest.csproj", "{B7258689-41D2-4284-AF93-050DD1DFEAC4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThrottleBenchmarks", "benchmarks\ThrottleBenchmarks\ThrottleBenchmarks.csproj", "{0EC31C27-3733-411B-BD45-8AF627F04776}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1497,7 +1499,7 @@ Global
 		{B7258689-41D2-4284-AF93-050DD1DFEAC4}.Release|x64.Build.0 = Release|Any CPU
 		{B7258689-41D2-4284-AF93-050DD1DFEAC4}.Release|x86.ActiveCfg = Release|Any CPU
 		{B7258689-41D2-4284-AF93-050DD1DFEAC4}.Release|x86.Build.0 = Release|Any CPU
-			{BEF7AF52-F9A6-4BF8-881D-636D97234884}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEF7AF52-F9A6-4BF8-881D-636D97234884}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BEF7AF52-F9A6-4BF8-881D-636D97234884}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BEF7AF52-F9A6-4BF8-881D-636D97234884}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{BEF7AF52-F9A6-4BF8-881D-636D97234884}.Debug|x64.Build.0 = Debug|Any CPU
@@ -1509,7 +1511,19 @@ Global
 		{BEF7AF52-F9A6-4BF8-881D-636D97234884}.Release|x64.Build.0 = Release|Any CPU
 		{BEF7AF52-F9A6-4BF8-881D-636D97234884}.Release|x86.ActiveCfg = Release|Any CPU
 		{BEF7AF52-F9A6-4BF8-881D-636D97234884}.Release|x86.Build.0 = Release|Any CPU
-EndGlobalSection
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Debug|x64.Build.0 = Debug|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Debug|x86.Build.0 = Debug|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Release|x64.ActiveCfg = Release|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Release|x64.Build.0 = Release|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Release|x86.ActiveCfg = Release|Any CPU
+		{0EC31C27-3733-411B-BD45-8AF627F04776}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
@@ -1542,7 +1556,7 @@ EndGlobalSection
 		{9DE48E83-DF4E-4C5F-9BC8-CB05C646FC43} = {9AA2BCF0-19AB-4DD9-8D91-7D188E463806}
 		{8705E498-3F5C-41DE-9CCD-FE99104FFF2D} = {6AD72F65-94AF-49DA-BADC-5647ED48D083}
 		{6AD72F65-94AF-49DA-BADC-5647ED48D083} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
-        {F6E76800-BF17-4D9B-9AD1-2BD2A3138807} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
+		{F6E76800-BF17-4D9B-9AD1-2BD2A3138807} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{DF4464D4-B411-42E2-B4DC-16EBE5ABB0EF} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{8849DD9F-CEB4-40D5-9DC0-EC6EDCA09E65} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
 		{BD994BD6-9E3D-4221-9287-E8A1468759C5} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
@@ -1644,9 +1658,10 @@ EndGlobalSection
 		{CDCE3D4C-1BDD-460F-93B8-75123A258183} = {ADE7A14E-FFE9-4137-AC25-E2F2A82B0A8C}
 		{087E5441-1582-4D55-8233-014C0FB06FF0} = {CDCE3D4C-1BDD-460F-93B8-75123A258183}
 		{B7258689-41D2-4284-AF93-050DD1DFEAC4} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
-			{BCA22E13-E154-498A-9989-61639EC6B2AC} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
+		{BCA22E13-E154-498A-9989-61639EC6B2AC} = {59DCCC96-DDAF-469F-9E8E-9BC733285082}
 		{BEF7AF52-F9A6-4BF8-881D-636D97234884} = {BCA22E13-E154-498A-9989-61639EC6B2AC}
-EndGlobalSection
+		{0EC31C27-3733-411B-BD45-8AF627F04776} = {0F3AB331-C042-4371-A2F0-0AFDFA13DC9F}
+	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD0D1E44-8118-4682-8793-6B20ABFA824C}
 	EndGlobalSection
