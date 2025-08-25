@@ -14,7 +14,7 @@ components subscribe to it.
 ## EndpointTerminatedEvent
 - **Published by:**
   - `ServerConnector` when a remote connection is refused or fails ([src/Proto.Remote/Endpoints/ServerConnector.cs](src/Proto.Remote/Endpoints/ServerConnector.cs#L141-L166) and [src/Proto.Remote/Endpoints/ServerConnector.cs](src/Proto.Remote/Endpoints/ServerConnector.cs#L199-L229))
-  - `EndpointReader` when a channel closes ([src/Proto.Remote/Endpoints/EndpointReader.cs](src/Proto.Remote/Endpoints/EndpointReader.cs#L238-L241))
+  - `RemotingGrpcService` when a channel closes ([src/Proto.Remote/Endpoints/RemotingGrpcService.cs](src/Proto.Remote/Endpoints/RemotingGrpcService.cs#L228-L229))
   - `MemberList` when a cluster member leaves ([src/Proto.Cluster/Membership/MemberList.cs](src/Proto.Cluster/Membership/MemberList.cs#L355-L365))
 - **Subscribed by:** `EndpointManager` which disposes the endpoint and optionally
   blocks the address or system ID ([src/Proto.Remote/Endpoints/EndpointManager.cs](src/Proto.Remote/Endpoints/EndpointManager.cs#L25-L44) and [src/Proto.Remote/Endpoints/EndpointManager.cs](src/Proto.Remote/Endpoints/EndpointManager.cs#L91-L110))

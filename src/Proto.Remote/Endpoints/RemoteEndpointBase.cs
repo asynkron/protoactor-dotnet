@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="Endpoint.cs" company="Asynkron AB">
+//   <copyright file="RemoteEndpointBase.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2025 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -16,12 +16,12 @@ using Proto.Extensions;
 
 namespace Proto.Remote;
 
-public abstract class Endpoint : IEndpoint
+public abstract class RemoteEndpointBase : IRemoteEndpoint
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly LogLevel _deserializationErrorLogLevel;
 #pragma warning disable CS0618 // Type or member is obsolete
-    private readonly ILogger _logger = Log.CreateLogger<Endpoint>();
+    private readonly ILogger _logger = Log.CreateLogger<RemoteEndpointBase>();
 #pragma warning restore CS0618 // Type or member is obsolete
     private readonly Channel<RemoteDeliver> _remoteDelivers = Channel.CreateUnbounded<RemoteDeliver>();
     private readonly Channel<RemoteDeliver> _remotePriorityDelivers = Channel.CreateUnbounded<RemoteDeliver>();
@@ -32,7 +32,7 @@ public abstract class Endpoint : IEndpoint
     protected readonly RemoteConfig RemoteConfig;
     protected readonly ActorSystem System;
 
-    internal Endpoint(string remoteAddress, ActorSystem system, RemoteConfig remoteConfig)
+    internal RemoteEndpointBase(string remoteAddress, ActorSystem system, RemoteConfig remoteConfig)
     {
         RemoteAddress = remoteAddress;
         System = system;

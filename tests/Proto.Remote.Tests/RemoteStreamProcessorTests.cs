@@ -14,7 +14,7 @@ namespace Proto.Remote.Tests;
 
 public class RemoteStreamProcessorTests
 {
-    private sealed class TestEndpoint : IEndpoint
+    private sealed class TestEndpoint : IRemoteEndpoint
     {
         public Channel<RemoteDeliver[]> Outgoing { get; } = Channel.CreateUnbounded<RemoteDeliver[]>();
         public ConcurrentStack<RemoteDeliver[]> OutgoingStash { get; } = new();

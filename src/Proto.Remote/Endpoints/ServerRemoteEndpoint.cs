@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-//   <copyright file="ServerEndpoint.cs" company="Asynkron AB">
+//   <copyright file="ServerRemoteEndpoint.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2025 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -12,15 +12,15 @@ namespace Proto.Remote;
 /// <summary>
 ///     Handles a connection to a remote endpoint.
 /// </summary>
-    public sealed class ServerEndpoint : Endpoint
+public sealed class ServerRemoteEndpoint : RemoteEndpointBase
+{
+    public ServerRemoteEndpoint(ActorSystem system, RemoteConfig remoteConfig, string remoteAddress,
+        ServerConnector.Type type, RemoteMessageHandler remoteMessageHandler) : base(remoteAddress, system, remoteConfig)
     {
-        public ServerEndpoint(ActorSystem system, RemoteConfig remoteConfig, string remoteAddress,
-            ServerConnector.Type type, RemoteMessageHandler remoteMessageHandler) : base(remoteAddress, system, remoteConfig)
-        {
-            Connector = new ServerConnector(RemoteAddress, type, this, System, remoteConfig, remoteMessageHandler);
-        }
+        Connector = new ServerConnector(RemoteAddress, type, this, System, remoteConfig, remoteMessageHandler);
+    }
 
-        public ServerConnector Connector { get; }
+    public ServerConnector Connector { get; }
 
     public override async ValueTask DisposeAsync()
     {

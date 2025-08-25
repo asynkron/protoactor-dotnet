@@ -20,7 +20,7 @@ public class GrpcNetRemote : IRemote
     private readonly object _lock = new();
     private readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
     private EndpointManager _endpointManager = null!;
-    private EndpointReader _endpointReader = null!;
+    private RemotingGrpcService _remotingGrpcService = null!;
     private HealthServiceImpl _healthCheck = null!;
     private IWebHost? _host;
 
@@ -57,7 +57,7 @@ public class GrpcNetRemote : IRemote
             }
 
             _endpointManager = new EndpointManager(System, Config);
-            _endpointReader = new EndpointReader(System, _endpointManager);
+            _remotingGrpcService = new RemotingGrpcService(System, _endpointManager);
             _healthCheck = new HealthServiceImpl();
 
             if (!IPAddress.TryParse(Config.Host, out var ipAddress))
@@ -96,7 +96,7 @@ public class GrpcNetRemote : IRemote
                             }
                         );
 
-                        serviceCollection.AddSingleton<Remoting.RemotingBase>(_endpointReader);
+                        serviceCollection.AddSingleton<Remoting.RemotingBase>(_remotingGrpcService);
                         serviceCollection.AddSingleton<Health.HealthBase>(_healthCheck);
                         serviceCollection.AddSingleton<IRemote>(this);
                     }

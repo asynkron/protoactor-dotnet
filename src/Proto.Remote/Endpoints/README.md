@@ -6,21 +6,20 @@ Each type below plays a specific role in accepting connections, reading and writ
 ## Types
 
 ### Interfaces and Base Classes
-- **`IEndpoint`** – contract for endpoint implementations; exposes outgoing channels and lifecycle hooks for remote messaging.
-- **`Endpoint`** – abstract base implementing `IEndpoint`; queues outgoing messages, tracks watchers, and handles message delivery.
+- **`IRemoteEndpoint`** – contract for endpoint implementations; exposes outgoing channels and lifecycle hooks for remote messaging.
+- **`RemoteEndpointBase`** – abstract base implementing `IRemoteEndpoint`; queues outgoing messages, tracks watchers, and handles message delivery.
 
 ### Concrete Endpoints
-- **`ServerEndpoint`** – `Endpoint` with an associated `ServerConnector` used for connections to other servers.
-- **`ServerSideClientEndpoint`** – `Endpoint` representing a connection to a remote client actor system.
-- **`BlockedEndpoint`** – inert `IEndpoint` used when an address is temporarily blocked; replies with dead‑letter or termination notices.
+- **`ServerRemoteEndpoint`** – `RemoteEndpointBase` with an associated `ServerConnector` used for connections to other servers.
+- **`ClientRemoteEndpoint`** – `RemoteEndpointBase` representing a connection to a remote client actor system.
+- **`BlockedEndpoint`** – inert `IRemoteEndpoint` used when an address is temporarily blocked; replies with dead‑letter or termination notices.
 
-### Connection Management
-- **`EndpointManager`** – central registry creating, tracking, and disposing `IEndpoint` instances. Handles block lists and endpoint lifecycle events.
-- **`EndpointReader`** – gRPC service accepting incoming connections. Negotiates handshakes and starts per‑connection readers and writers.
+- **`EndpointManager`** – central registry creating, tracking, and disposing `IRemoteEndpoint` instances. Handles block lists and endpoint lifecycle events.
+- **`RemotingGrpcService`** – gRPC service accepting incoming connections. Negotiates handshakes and starts per‑connection readers and writers.
 - **`ServerConnector`** – sets up a `ConnectionRunner` for an address and chooses a `ClientConnectionMode` or `ServerConnectionMode`.
 - **`ConnectionRunner`** – drives a bidirectional gRPC stream: performs the handshake, spawns a `ConnectionWriter` and `ConnectionReader`, and handles reconnection backoff.
 - **`ConnectionReader`** – per‑connection task that processes incoming `RemoteMessage` instances using an `IConnectionMode`.
-- **`ConnectionWriter`** – per‑connection task that batches and sends outgoing messages from an `IEndpoint`.
+- **`ConnectionWriter`** – per‑connection task that batches and sends outgoing messages from an `IRemoteEndpoint`.
 - **`RemoteStreamProcessor`** – helper with shared logic for reading, writing, and disconnecting gRPC streams.
 
 ### Connection Modes
@@ -39,16 +38,16 @@ Each type below plays a specific role in accepting connections, reading and writ
 ## Relationships
 ```mermaid
 classDiagram
-    IEndpoint <|-- Endpoint
-    Endpoint <|-- ServerEndpoint
-    Endpoint <|-- ServerSideClientEndpoint
-    IEndpoint <|-- BlockedEndpoint
+    IRemoteEndpoint <|-- RemoteEndpointBase
+    RemoteEndpointBase <|-- ServerRemoteEndpoint
+    RemoteEndpointBase <|-- ClientRemoteEndpoint
+    IRemoteEndpoint <|-- BlockedEndpoint
 
-    EndpointManager --> IEndpoint
+    EndpointManager --> IRemoteEndpoint
     EndpointManager --> RemoteMessageHandler
-    EndpointReader --> EndpointManager
-    EndpointReader --> IEndpoint
-    ServerEndpoint --> ServerConnector
+    RemotingGrpcService --> EndpointManager
+    RemotingGrpcService --> IRemoteEndpoint
+    ServerRemoteEndpoint --> ServerConnector
     ServerConnector --> ConnectionRunner
     ConnectionRunner --> ConnectionReader
     ConnectionRunner --> ConnectionWriter
@@ -56,7 +55,7 @@ classDiagram
     IConnectionMode <|-- ClientConnectionMode
     IConnectionMode <|-- ServerConnectionMode
     ConnectionReader --> IConnectionMode
-    ConnectionWriter --> IEndpoint
+    ConnectionWriter --> IRemoteEndpoint
     RemoteMessageHandler --> EndpointManager
 ```
 

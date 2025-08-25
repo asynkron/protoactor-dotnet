@@ -22,12 +22,12 @@ public sealed class EndpointManager : IDiagnosticsProvider
     private static readonly ILogger Logger = Log.CreateLogger<EndpointManager>();
     private readonly ConcurrentDictionary<string, DateTime> _blockedAddresses = new();
     private readonly ConcurrentDictionary<string, DateTime> _blockedClientSystemIds = new();
-    private readonly IEndpoint _blockedEndpoint;
+    private readonly IRemoteEndpoint _blockedEndpoint;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly ConcurrentDictionary<string, IEndpoint> _clientEndpoints = new();
+    private readonly ConcurrentDictionary<string, IRemoteEndpoint> _clientEndpoints = new();
     private readonly EventStreamSubscription<object>? _endpointTerminatedEvnSub;
     private readonly RemoteConfig _remoteConfig;
-    private readonly ConcurrentDictionary<string, IEndpoint> _serverEndpoints = new();
+    private readonly ConcurrentDictionary<string, IRemoteEndpoint> _serverEndpoints = new();
     private readonly object _synLock = new();
     private readonly ActorSystem _system;
 
@@ -94,7 +94,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
         Action? unblock = null;
         try
         {
-            IEndpoint? endpoint = null;
+            IRemoteEndpoint? endpoint = null;
             lock (_synLock)
             {
                 if (_cancellationTokenSource.IsCancellationRequested)
@@ -148,7 +148,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
         }
     }
 
-    internal IEndpoint GetOrAddServerEndpoint(string? address)
+    internal IRemoteEndpoint GetOrAddServerEndpoint(string? address)
     {
         if (address is null)
         {
@@ -183,24 +183,24 @@ public sealed class EndpointManager : IDiagnosticsProvider
             {
                 if (Logger.IsEnabled(LogLevel.Debug))
                 {
-                    Logger.LogDebug("[{SystemAddress}] Requesting new client side ServerEndpoint for {Address}",
+                    Logger.LogDebug("[{SystemAddress}] Requesting new client side ServerRemoteEndpoint for {Address}",
                         _system.Address, address);
                 }
 
                 endpoint = _serverEndpoints.GetOrAdd(address,
-                    v => new ServerEndpoint(_system, _remoteConfig, v,
+                    v => new ServerRemoteEndpoint(_system, _remoteConfig, v,
                         ServerConnector.Type.ClientSide, RemoteMessageHandler));
             }
             else
             {
                 if (Logger.IsEnabled(LogLevel.Debug))
                 {
-                    Logger.LogDebug("[{SystemAddress}] Requesting new server side ServerEndpoint for {Address}",
+                    Logger.LogDebug("[{SystemAddress}] Requesting new server side ServerRemoteEndpoint for {Address}",
                         _system.Address, address);
                 }
 
                 endpoint = _serverEndpoints.GetOrAdd(address,
-                    v => new ServerEndpoint(_system, _remoteConfig, v,
+                    v => new ServerRemoteEndpoint(_system, _remoteConfig, v,
                         ServerConnector.Type.ServerSide, RemoteMessageHandler));
             }
 
@@ -208,7 +208,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
         }
     }
 
-    internal IEndpoint GetOrAddClientEndpoint(string systemId)
+    internal IRemoteEndpoint GetOrAddClientEndpoint(string systemId)
     {
         if (systemId is null)
         {
@@ -241,16 +241,16 @@ public sealed class EndpointManager : IDiagnosticsProvider
 
             if (Logger.IsEnabled(LogLevel.Debug))
             {
-                Logger.LogDebug("[{SystemAddress}] Requesting new ServerSideClientEndpoint for {SystemId}",
+                Logger.LogDebug("[{SystemAddress}] Requesting new ClientRemoteEndpoint for {SystemId}",
                     _system.Address, systemId);
             }
 
             return _clientEndpoints.GetOrAdd(systemId,
-                address => new ServerSideClientEndpoint(_system, _remoteConfig, address));
+                address => new ClientRemoteEndpoint(_system, _remoteConfig, address));
         }
     }
 
-    internal IEndpoint GetServerEndpoint(string address)
+    internal IRemoteEndpoint GetServerEndpoint(string address)
     {
         if (_cancellationTokenSource.IsCancellationRequested || _blockedAddresses.ContainsKey(address))
         {
@@ -265,7 +265,7 @@ public sealed class EndpointManager : IDiagnosticsProvider
         return _blockedEndpoint;
     }
 
-    internal IEndpoint GetClientEndpoint(string systemId)
+    internal IRemoteEndpoint GetClientEndpoint(string systemId)
     {
         if (_cancellationTokenSource.IsCancellationRequested || _blockedClientSystemIds.ContainsKey(systemId))
         {

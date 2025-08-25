@@ -23,13 +23,13 @@ public sealed class ServerConnector
 
     private readonly string _address;
     private readonly CancellationTokenSource _cts = new();
-    private readonly IEndpoint _endpoint;
+    private readonly IRemoteEndpoint _endpoint;
     private readonly ILogger _logger = Log.CreateLogger<ServerConnector>();
     private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
     private readonly Task _runner;
     private readonly ActorSystem _system;
 
-    public ServerConnector(string address, Type connectorType, IEndpoint endpoint,
+    public ServerConnector(string address, Type connectorType, IRemoteEndpoint endpoint,
         ActorSystem system, RemoteConfig remoteConfig, RemoteMessageHandler remoteMessageHandler)
     {
         _system = system;

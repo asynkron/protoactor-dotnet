@@ -13,7 +13,7 @@ public class RemoteProcess : Process
 {
     private readonly EndpointManager _endpointManager;
     private readonly string? _systemId;
-    private IEndpoint? _endpoint;
+    private IRemoteEndpoint? _endpoint;
 
     public RemoteProcess(ActorSystem system, EndpointManager endpointManager, PID pid) : base(system)
     {
@@ -52,7 +52,7 @@ public class RemoteProcess : Process
         LastUsedTick = Stopwatch.GetTimestamp();
     }
 
-    private IEndpoint GetEndpoint(PID pid)
+    private IRemoteEndpoint GetEndpoint(PID pid)
     {
         if (_endpoint?.IsActive == true)
         {
