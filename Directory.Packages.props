@@ -91,6 +91,7 @@
     <PackageVersion Include="System.Interactive.Async" Version="6.0.1" />
     <PackageVersion Include="System.Text.Json" Version="9.0.3" />
     <PackageVersion Include="System.Threading.Channels" Version="8.0.0" />
+    <PackageVersion Include="System.Threading.RateLimiting" Version="8.0.0" />
     <PackageVersion Include="Testcontainers" Version="3.10.0" />
     <PackageVersion Include="Testcontainers.CouchDb" Version="3.10.0" />
     <PackageVersion Include="Testcontainers.DynamoDb" Version="3.10.0" />

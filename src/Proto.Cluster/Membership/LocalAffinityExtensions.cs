@@ -29,7 +29,7 @@ public static class LocalAffinityExtensions
         LocalAffinityOptions? options = null) =>
         clusterKind with
         {
-            Props = clusterKind.Props.WithRelocateOnRemoteSender(options?.RelocationThroughput?.Create(),
+            Props = clusterKind.Props.WithRelocateOnRemoteSender(options?.RelocationThrottle,
                 options?.TriggersLocalAffinity),
             StrategyBuilder = cluster => new LocalAffinityStrategy(cluster)
         };

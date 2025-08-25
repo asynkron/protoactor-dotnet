@@ -14,7 +14,7 @@ public sealed record LocalAffinityOptions
     /// <summary>
     ///     Throttle the number of relocations in a window of time to avoid slowdowns in the system.
     /// </summary>
-    public ThrottleOptions? RelocationThroughput { get; init; }
+    public ShouldThrottle? RelocationThrottle { get; init; }
 
     /// <summary>
     ///     A predicate that should return true for messages that trigger local affinity mechanism. If you also

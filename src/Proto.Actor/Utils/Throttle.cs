@@ -1,12 +1,11 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Throttle.cs" company="Asynkron AB">
 //      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Threading.RateLimiting;
 
 namespace Proto.Utils;
 
@@ -39,15 +38,12 @@ public static class Throttle
     }
 
     /// <summary>
-    ///     Creates a new throttle with the given window and rate. After first event is recorded, a timer starts to reset the
-    ///     number of events back to 0.
-    ///     If the number of events in the meantime exceeds the limit, the valve will be closed.
-    ///     This has no guarantees that the throttle opens exactly after the period, since it is reset asynchronously
-    ///     Throughput has been prioritized over exact re-opening
+    ///     Creates a new throttle with the given window and rate using a token bucket rate limiter.
+    ///     Tokens are replenished automatically, removing the need for external timers.
     /// </summary>
     /// <param name="maxEventsInPeriod">Event limit</param>
     /// <param name="period">Time window to verify event limit</param>
-    /// <param name="throttledCallBack">This will be called with the number of events that was throttled after the period</param>
+    /// <param name="throttledCallBack">Invoked with the number of throttled events once the limiter opens again</param>
     /// <returns>
     ///     <see cref="ShouldThrottle" /> delegate that records an event when called, and returns current state of the
     ///     throttle valve
@@ -68,52 +64,38 @@ public static class Throttle
             return () => Valve.Open;
         }
 
-        var currentEvents = 0;
+        var limiter = new TokenBucketRateLimiter(new TokenBucketRateLimiterOptions
+        {
+            TokenLimit = maxEventsInPeriod,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+            ReplenishmentPeriod = period,
+            TokensPerPeriod = maxEventsInPeriod,
+            AutoReplenishment = true
+        });
+
+        var dropped = 0;
 
         return () =>
         {
-            var tries = Interlocked.Increment(ref currentEvents);
+            var lease = limiter.AttemptAcquire(1);
 
-            if (tries == 1)
+            if (lease.IsAcquired)
             {
-                StartTimer(throttledCallBack);
-            }
-
-            if (tries == maxEventsInPeriod)
-            {
-                return Valve.Closing;
-            }
-
-            return tries > maxEventsInPeriod ? Valve.Closed : Valve.Open;
-        };
-
-        void StartTimer(Action<int>? callBack) =>
-            _ = SafeTask.Run(async () =>
+                if (dropped > 0)
                 {
-                    // Pause for the throttling period before resetting the counter
-                    await Task.Delay(period).ConfigureAwait(false);
-                    var timesCalled = Interlocked.Exchange(ref currentEvents, 0);
-
-                    if (timesCalled > maxEventsInPeriod)
-                    {
-                        callBack?.Invoke(timesCalled - maxEventsInPeriod);
-                    }
+                    throttledCallBack?.Invoke(dropped);
+                    dropped = 0;
                 }
-            );
-    }
 
-    public static ShouldThrottle Create(
-        this ThrottleOptions options,
-        Action<int>? throttledCallBack = null
-    ) =>
-        Create(options.MaxEventsInPeriod, options.Period, throttledCallBack);
+                var stats = limiter.GetStatistics();
+                return stats.CurrentAvailablePermits == 0 ? Valve.Closing : Valve.Open;
+            }
+
+            dropped++;
+            return Valve.Closed;
+        };
+    }
 
     public static bool IsOpen(this Valve valve) => valve != Valve.Closed;
 }
-
-/// <summary>
-///     Throttling options
-/// </summary>
-/// <param name="MaxEventsInPeriod">Max events in a period</param>
-/// <param name="Period">Period to check the threshold in</param>
-public record ThrottleOptions(int MaxEventsInPeriod, TimeSpan Period);
