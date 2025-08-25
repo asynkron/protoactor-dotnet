@@ -14,12 +14,10 @@ public record DiagnosticsEntry
         Data = data;
     }
 
-    public string Module { get;  }
-
+    public string Module { get; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Message { get; }
-
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public object? Data { get; }

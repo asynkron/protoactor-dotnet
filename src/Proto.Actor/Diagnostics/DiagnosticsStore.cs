@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Utils;
 
-
 namespace Proto.Diagnostics;
 
 public class DiagnosticsStore
@@ -62,7 +61,7 @@ public class DiagnosticsStore
         if (_entries.TryAdd(entry))
         {
             var json = System.Text.Json.JsonSerializer.Serialize(data);
-            _logger.Log(_logLevel,"[Diagnostics] {Module}: {Key}: {Data}", module, key, json);
+            _logger.Log(_logLevel, "[Diagnostics] {Module}: {Key}: {Data}", module, key, json);
         }
     }
 

@@ -7,7 +7,7 @@ namespace Proto.Context;
 [PublicAPI]
 public static class PassivationContextExtensions
 {
-    public static Props WithPassivationContextDecorator(this Props props, TimeSpan timeout) => 
+    public static Props WithPassivationContextDecorator(this Props props, TimeSpan timeout) =>
         props.WithContextDecorator(ctx => new PassivationContextDecorator(ctx, timeout));
 }
 public class PassivationContextDecorator : ActorContextDecorator

@@ -62,7 +62,7 @@ public class EventProbe<T>
                     return @event switch
                     {
                         TE e when predicate(e) => true,
-                        _                      => false
+                        _ => false
                     };
                 }
             );

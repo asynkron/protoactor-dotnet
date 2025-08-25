@@ -176,7 +176,7 @@ public static class SenderContextExtensions
         {
             throw new ArgumentException("Cancellation token is already cancelled", nameof(cancellationToken));
         }
-        
+
         using var future = self.GetFuture();
 
         var messageEnvelope = message is MessageEnvelope envelope

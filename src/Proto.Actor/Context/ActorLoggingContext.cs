@@ -249,7 +249,7 @@ public class ActorLoggingContext : ActorContextDecorator
 
         base.Unwatch(pid);
     }
-    
+
     public override void Watch(PID pid)
     {
         if (_logLevel != LogLevel.None && _logger.IsEnabled(_logLevel))

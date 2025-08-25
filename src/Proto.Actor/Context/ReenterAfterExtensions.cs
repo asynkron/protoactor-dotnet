@@ -47,10 +47,7 @@ public static class ReenterAfterExtensions
         });
 
     public static void ReenterAfter<T>(this IContext context, Task<T> target, Action<T> action)
-        => context.ReenterAfter(target, async t =>
-        {
-            action(await t.ConfigureAwait(false));
-        });
+        => context.ReenterAfter(target, async t => action(await t.ConfigureAwait(false)));
 
     public static void ReenterAfter<T>(this IContext context, Task<T> target, Func<T, Task> action)
         => context.ReenterAfter(target, async t =>

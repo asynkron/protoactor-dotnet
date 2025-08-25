@@ -93,7 +93,7 @@ public sealed record Props
         {
             return system.DeadLetterPid;
         }
-        
+
         //Ordering is important here
         //first we create a mailbox and attach it to a process
         props = system.ConfigureProps(props);
@@ -121,7 +121,7 @@ public sealed record Props
 
         return self;
     }
-    
+
     public static PID SystemSpawner(ActorSystem system, string name, Props props, PID? parent,
         Action<IContext>? callback)
     {
@@ -157,7 +157,7 @@ public sealed record Props
     ///     Delegate used to create the actor.
     /// </summary>
     public Props WithProducer(Producer producer) => this with { Producer = (_, _) => producer() };
-    
+
     public Props WithStartDeadline(TimeSpan deadline) => this with { StartDeadline = deadline };
 
     /// <summary>
@@ -253,7 +253,7 @@ public sealed record Props
 
     internal PID Spawn(ActorSystem system, string name, PID? parent, Action<IContext>? callback = null) =>
         Spawner(system, name, this, parent, callback);
-    
+
     internal PID SpawnSystem(ActorSystem system, string name, PID? parent, Action<IContext>? callback = null)
     {
         return SystemSpawner(system, name, this, parent, callback);

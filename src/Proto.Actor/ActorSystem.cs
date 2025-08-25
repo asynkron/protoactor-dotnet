@@ -32,7 +32,7 @@ public sealed class ActorSystem : IAsyncDisposable
 #pragma warning restore CS0618 // Type or member is obsolete
     private string _host = NoHost;
     private int _port;
-    
+
     public static readonly ActivitySource ActivitySource = new("Proto.Actor");
 
     public ActorSystem() : this(new ActorSystemConfig())
@@ -60,7 +60,7 @@ public sealed class ActorSystem : IAsyncDisposable
 
         DeferredFuture =
             new Lazy<FutureFactory>(() => new FutureFactory(this, config.SharedFutures, config.SharedFutureSize));
-        
+
         Diagnostics.RegisterObject("ActorSystem", "Config", config);
         Diagnostics.RegisterObject("ActorSystem", "Id", Id);
         RunThreadPoolStats();
@@ -81,7 +81,7 @@ public sealed class ActorSystem : IAsyncDisposable
     ///     Configuration used to create the actor system.
     /// </summary>
     public ActorSystemConfig Config { get; }
-    
+
     /// <summary>
     ///     Diagnostics store, containing detected system issues
     /// </summary>
@@ -117,7 +117,7 @@ public sealed class ActorSystem : IAsyncDisposable
     ///     DeadLetter process that receives all messages that could not be delivered to an actor.
     /// </summary>
     public Process DeadLetter { get; }
-    
+
     /// <summary>
     ///     Pid for the DeadLetter process.
     /// </summary>
@@ -192,7 +192,6 @@ public sealed class ActorSystem : IAsyncDisposable
                 }
 
                 logger.ThreadPoolRunningHot(Id, t);
-                
             }, Stopper.Token
         );
     }

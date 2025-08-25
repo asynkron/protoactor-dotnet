@@ -168,7 +168,7 @@ public sealed class Stopped : SystemMessage
 ///     When receive timeout expires, this message is sent to the actor to notify it. See
 ///     <see cref="IContext.SetReceiveTimeout" />
 /// </summary>
-public class ReceiveTimeout : SystemMessage
+public sealed class ReceiveTimeout : SystemMessage
 {
     public static readonly ReceiveTimeout Instance = new();
 

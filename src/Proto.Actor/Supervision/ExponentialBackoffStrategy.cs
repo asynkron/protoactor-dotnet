@@ -50,6 +50,6 @@ public class ExponentialBackoffStrategy : ISupervisorStrategy
         var duration = TimeSpan.FromMilliseconds(backoff + noise);
 
         // Schedule restart after a backoff period to avoid aggressive retry loops
-        Task.Delay(duration).ContinueWith(t => supervisor.RestartChildren(reason, child));
+        Task.Delay(duration).ContinueWith(_ => supervisor.RestartChildren(reason, child));
     }
 }

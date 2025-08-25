@@ -71,7 +71,7 @@ public class BatchingMailbox : IMailbox
                 {
                     //special system message at mailbox level
                     SuspendMailbox _ => true,
-                    _                => _suspended
+                    _ => _suspended
                 };
 
                 currentMessage = sys;
