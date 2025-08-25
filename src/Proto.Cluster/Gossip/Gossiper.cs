@@ -116,12 +116,8 @@ public partial class Gossiper
             var res = await _context.RequestAsync<GetGossipStateResponse>(_pid, new GetGossipStateRequest(key)).ConfigureAwait(false);
 
             var dict = res.State;
-            var typed = ImmutableDictionary<string, T>.Empty;
-
-            foreach (var (k, value) in dict)
-            {
-                typed = typed.SetItem(k, value.Unpack<T>());
-            }
+            // Using ToImmutableDictionary avoids repeated reallocations from successive SetItem calls
+            var typed = dict.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Unpack<T>());
 
             return typed;
         }
