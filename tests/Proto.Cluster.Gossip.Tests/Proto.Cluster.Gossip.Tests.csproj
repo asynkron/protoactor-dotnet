@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <LangVersion>10</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Proto.Cluster.Tests\Proto.Cluster.Tests.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+    <ProjectReference Include="..\..\src\Proto.Remote\Proto.Remote.csproj" />
+    <ProjectReference Include="..\..\src\Proto.TestKit\Proto.TestKit.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Interactive.Async" />
+  </ItemGroup>
+</Project>
