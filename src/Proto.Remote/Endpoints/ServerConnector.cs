@@ -6,12 +6,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
-using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using Proto.Remote.Metrics;
 
@@ -26,17 +22,10 @@ public sealed class ServerConnector
     }
 
     private readonly string _address;
-    private readonly TimeSpan _backoff;
-    private readonly Type _connectorType;
     private readonly CancellationTokenSource _cts = new();
     private readonly IEndpoint _endpoint;
-
     private readonly ILogger _logger = Log.CreateLogger<ServerConnector>();
-    private readonly int _maxNrOfRetries;
     private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
-    private readonly Random _random = new();
-    private readonly RemoteConfig _remoteConfig;
-    private readonly RemoteMessageHandler _remoteMessageHandler;
     private readonly Task _runner;
     private readonly ActorSystem _system;
 
@@ -44,361 +33,61 @@ public sealed class ServerConnector
         ActorSystem system, RemoteConfig remoteConfig, RemoteMessageHandler remoteMessageHandler)
     {
         _system = system;
-        _remoteConfig = remoteConfig;
-        _remoteMessageHandler = remoteMessageHandler;
         _address = address;
-        _connectorType = connectorType;
         _endpoint = endpoint;
-        _maxNrOfRetries = remoteConfig.EndpointWriterOptions.MaxRetries;
-        _backoff = remoteConfig.EndpointWriterOptions.RetryBackOff;
-        _runner = Task.Run(RunAsync);
 
         if (_system.Metrics.Enabled)
         {
             _metricTags = new KeyValuePair<string, object?>[]
-                { new("id", _system.Id), new("address", _system.Address) };
+            {
+                new("id", _system.Id),
+                new("address", _system.Address)
+            };
         }
+
+        IConnectionMode mode = connectorType switch
+        {
+            Type.ServerSide => new ServerConnectionMode((msg, addr) =>
+                _logger.LogWarning("[ServerConnector][{SystemAddress}] Received {MessagePayload} from {Address}",
+                    _system.Address, msg, addr)),
+            Type.ClientSide => new ClientConnectionMode(remoteMessageHandler),
+            _ => throw new ArgumentOutOfRangeException(nameof(connectorType), connectorType, null)
+        };
+
+        Action onConnected = _system.Metrics.Enabled
+            ? () => RemoteMetrics.RemoteEndpointConnectedCount.Add(1,
+                new KeyValuePair<string, object?>("id", _system.Id),
+                new KeyValuePair<string, object?>("address", _system.Address),
+                new KeyValuePair<string, object?>("destinationaddress", _address))
+            : () => { };
+
+        Action onDisconnected = _system.Metrics.Enabled
+            ? () => RemoteMetrics.RemoteEndpointDisconnectedCount.Add(1, _metricTags)
+            : () => { };
+
+        Action<double> recordWrite = _system.Metrics.Enabled
+            ? s => RemoteMetrics.RemoteWriteDuration.Record(s, _metricTags)
+            : _ => { };
+
+        var runner = new ConnectionRunner(_address, _endpoint, _system, remoteConfig, mode,
+            remoteConfig.EndpointWriterOptions.RetryBackOff,
+            remoteConfig.EndpointWriterOptions.MaxRetries,
+            new Random(),
+            _cts.Token,
+            onConnected,
+            onDisconnected,
+            recordWrite,
+            msg => _logger.LogInformation(msg),
+            msg => _logger.LogDebug(msg),
+            msg => _logger.LogWarning(msg),
+            (ex, msg) => _logger.LogError(ex, msg));
+
+        _runner = Task.Run(runner.RunAsync);
     }
 
     public async Task Stop()
     {
         _cts.Cancel();
         await _runner.ConfigureAwait(false);
-    }
-
-    private async Task RunAsync()
-    {
-        string? actorSystemId = null;
-        var rs = new RestartStatistics(0, null);
-
-        while (!_cts.IsCancellationRequested)
-        {
-            var cancellationTokenSource = new CancellationTokenSource();
-            try
-            {
-                _logger.LogInformation("[ServerConnector][{SystemAddress}] Connecting to {Address}", _system.Address,
-                    _address);
-
-                var addressWithProtocol =
-                    $"{(_remoteConfig.UseHttps ? "https://" : "http://")}{_address}";
-                var channel = GrpcChannel.ForAddress(addressWithProtocol, _remoteConfig.ChannelOptions);
-                var client = new Remoting.RemotingClient(channel);
-                using var call = client.Receive(_remoteConfig.CallOptions);
-
-                if (_system.Metrics.Enabled)
-                {
-                    RemoteMetrics.RemoteEndpointConnectedCount
-                        .Add(1, new KeyValuePair<string, object?>("id", _system.Id),
-                            new KeyValuePair<string, object?>("address", _system.Address),
-                            new KeyValuePair<string, object?>("destinationaddress", _address));
-                }
-
-                switch (_connectorType)
-                {
-                    case Type.ServerSide:
-                        await call.RequestStream.WriteAsync(new RemoteMessage
-                            {
-                                ConnectRequest = new ConnectRequest
-                                {
-                                    ServerConnection = new ServerConnection
-                                    {
-                                        Address = _system.Address,
-                                        MemberId = _system.Id,
-                                        BlockList = { _system.Remote().BlockList.BlockedMembers }
-                                    }
-                                }
-                            })
-                            .ConfigureAwait(false);
-
-                        break;
-                    case Type.ClientSide:
-                        await call.RequestStream.WriteAsync(new RemoteMessage
-                            {
-                                ConnectRequest = new ConnectRequest
-                                {
-                                    ClientConnection = new ClientConnection
-                                    {
-                                        MemberId = _system.Id
-                                    }
-                                }
-                            })
-                            .ConfigureAwait(false);
-
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-
-                await call.ResponseStream.MoveNext().ConfigureAwait(false);
-                var response = call.ResponseStream.Current;
-
-                if (response?.MessageTypeCase != RemoteMessage.MessageTypeOneofCase.ConnectResponse)
-                {
-                    throw new Exception("Expected ConnectResponse");
-                }
-
-                var connectResponse = response.ConnectResponse;
-
-                if (connectResponse.Blocked)
-                {
-                    _logger.LogError(
-                        "[ServerConnector][{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, we are blocked",
-                        _system.Address, connectResponse.MemberId, _address);
-
-                    //block self
-                    _system.Remote().BlockList.Block(new[] { _system.Id }, "Blocked by remote member");
-                    var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
-                    _system.EventStream.Publish(terminated);
-
-                    return;
-                }
-
-                actorSystemId = connectResponse.MemberId;
-
-                if (_system.Remote().BlockList.IsBlocked(actorSystemId))
-                {
-                    _logger.LogError(
-                        "[ServerConnector][{SystemAddress}] Connection Refused to remote member {MemberId} address {Address}, they are blocked",
-                        _system.Address, connectResponse.MemberId, _address);
-
-                    var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
-                    _system.EventStream.Publish(terminated);
-
-                    return;
-                }
-
-                rs.Reset();
-
-                var combinedToken = CancellationTokenSource
-                    .CreateLinkedTokenSource(_cts.Token, cancellationTokenSource.Token)
-                    .Token;
-
-                var writer = StartWriter(combinedToken, call, cancellationTokenSource);
-
-                var reader = StartReader(combinedToken, call, actorSystemId, cancellationTokenSource);
-
-                _logger.LogInformation("[ServerConnector][{SystemAddress}] Connected to {Address}", _system.Address,
-                    _address);
-
-                await writer.ConfigureAwait(false);
-                cancellationTokenSource.Cancel();
-                await call.RequestStream.CompleteAsync().ConfigureAwait(false);
-                await reader.ConfigureAwait(false);
-
-                if (_system.Metrics.Enabled)
-                {
-                    RemoteMetrics.RemoteEndpointDisconnectedCount.Add(1, _metricTags);
-                }
-
-                _logger.LogInformation("[ServerConnector][{SystemAddress}] Disconnected from {Address}",
-                    _system.Address, _address);
-            }
-            catch (Exception e)
-            {
-                e.CheckFailFast();
-
-                if (actorSystemId is not null && _system.Remote().BlockList.IsBlocked(actorSystemId))
-                {
-                    _logger.LogDebug(
-                        "[ServerConnector][{SystemAddress}] dropped connection to blocked member {ActorSystemId}/{Address}",
-                        _system.Address, actorSystemId, _address);
-
-                    var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
-                    _system.EventStream.Publish(terminated);
-
-                    break;
-                }
-
-                if (ShouldStop(rs))
-                {
-                    if (e is RpcException { StatusCode: StatusCode.Unavailable })
-                    {
-                        _logger.LogInformation(
-                            "[ServerConnector][{SystemAddress}] Stopping connection to {Address} after retries expired because the endpoint is unavailable",
-                            _system.Address, _address);
-                    }
-                    else
-                    {
-                        _logger.LogError(e,
-                            "[ServerConnector][{SystemAddress}] Stopping connection to {Address} after retries expired because of {Reason}",
-                            _system.Address, _address, e.GetType().Name);
-                    }
-
-                    var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
-                    _system.EventStream.Publish(terminated);
-
-                    break;
-                }
-
-                var backoff = rs.FailureCount * (int)_backoff.TotalMilliseconds;
-                var noise = _random.Next(500);
-                var duration = TimeSpan.FromMilliseconds(backoff + noise);
-                // Exponential backoff before attempting to reconnect to the remote endpoint
-                await Task.Delay(duration).ConfigureAwait(false);
-
-                _logger.LogWarning(
-                    "[ServerConnector][{SystemAddress}] Restarting endpoint connection to {Address} after {Duration} because of {Reason} ({Retries} / {MaxRetries})",
-                    _system.Address, _address, duration, e.GetType().Name, rs.FailureCount, _maxNrOfRetries);
-            }
-            finally
-            {
-                // always cancel the token for this writer/reader, otherwise their loops can continue
-                // running indefinitely, depending on how we got here. the call does get disposed via
-                // a using above, but we want to be certain these loops don't continue running, especially
-                // since these can build up when there are multiple reconnect attempts
-                cancellationTokenSource.Cancel();
-            }
-        }
-    }
-
-    private Task StartWriter(CancellationToken combinedToken, AsyncDuplexStreamingCall<RemoteMessage, RemoteMessage> call, CancellationTokenSource cancellationTokenSource)
-    {
-        return Task.Run(async () =>
-        {
-            while (!combinedToken.IsCancellationRequested)
-            {
-                while (_endpoint.OutgoingStash.TryPop(out var messages))
-                {
-                    var batch = MessageBatchFactory.CreateBatch(_system, _remoteConfig, messages);
-
-                    try
-                    {
-                        await call.RequestStream.WriteAsync(new RemoteMessage { MessageBatch = batch }, combinedToken)
-                            .ConfigureAwait(false);
-                    }
-                    catch (Exception)
-                    {
-                        _ = _endpoint.OutgoingStash.Append(messages);
-                        cancellationTokenSource.Cancel();
-
-                        throw;
-                    }
-                }
-
-                try
-                {
-                    await foreach (var messages in _endpoint.Outgoing.Reader.ReadAllAsync(combinedToken)
-                                       .ConfigureAwait(false))
-                    {
-                        var batch = MessageBatchFactory.CreateBatch(_system, _remoteConfig, messages);
-
-                        try
-                        {
-                            if (_system.Metrics.Enabled)
-                            {
-                                var sw = Stopwatch.StartNew();
-                                await call.RequestStream
-                                    .WriteAsync(new RemoteMessage { MessageBatch = batch }, combinedToken)
-                                    .ConfigureAwait(false);
-                                sw.Stop();
-                                RemoteMetrics.RemoteWriteDuration.Record(sw.Elapsed.TotalSeconds, _metricTags);
-                            }
-                            else
-                            {
-                                await call.RequestStream
-                                    .WriteAsync(new RemoteMessage { MessageBatch = batch }, combinedToken)
-                                    .ConfigureAwait(false);
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            _ = _endpoint.OutgoingStash.Append(messages);
-                            cancellationTokenSource.Cancel();
-
-                            throw;
-                        }
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    _logger.LogDebug("[ServerConnector][{SystemAddress}] Writer cancelled for {Address}",
-                        _system.Address, _address);
-                }
-            }
-        });
-    }
-
-    private Task StartReader(CancellationToken combinedToken, AsyncDuplexStreamingCall<RemoteMessage, RemoteMessage> call, string actorSystemId, CancellationTokenSource cancellationTokenSource)
-    {
-        return Task.Run(async () =>
-        {
-            try
-            {
-                while (await call.ResponseStream.MoveNext(combinedToken).ConfigureAwait(false))
-                {
-                    // if (_endpoint.CancellationToken.IsCancellationRequested) continue;
-                    var currentMessage = call.ResponseStream.Current;
-
-                    switch (currentMessage.MessageTypeCase)
-                    {
-                        case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
-                        {
-                            _logger.LogDebug(
-                                "[ServerConnector][{SystemAddress}] Received disconnection request from {Address}",
-                                _system.Address, _address);
-
-                            var terminated = new EndpointTerminatedEvent(false, _address, actorSystemId);
-                            _system.EventStream.Publish(terminated);
-
-                            break;
-                        }
-                        default:
-                            if (_connectorType == Type.ServerSide)
-                            {
-                                _logger.LogWarning(
-                                    "[ServerConnector][{SystemAddress}] Received {MessagePayload} from {Addres}",
-                                    _system.Address, currentMessage, _address);
-                            }
-                            else
-                            {
-                                _remoteMessageHandler.HandleRemoteMessage(currentMessage, _address);
-                            }
-
-                            break;
-                    }
-                }
-
-                _logger.LogDebug("[ServerConnector][{SystemAddress}] Reader finished for {Address}",
-                    _system.Address, _address);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogDebug("[ServerConnector][{SystemAddress}] Reader cancelled for {Address}",
-                    _system.Address, _address);
-            }
-            catch (RpcException e) when (e.StatusCode == StatusCode.Cancelled)
-            {
-                _logger.LogWarning("[ServerConnector][{SystemAddress}] Reader cancelled for {Address}",
-                    _system.Address, _address);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning("[ServerConnector][{SystemAddress}] Error in reader for {Address} {Reason}",
-                    _system.Address, _address, e.GetType().Name);
-
-                cancellationTokenSource.Cancel();
-
-                throw;
-            }
-        });
-    }
-
-    private bool ShouldStop(RestartStatistics rs)
-    {
-        if (_maxNrOfRetries == 0)
-        {
-            return true;
-        }
-
-        rs.Fail();
-
-        if (rs.FailureCount > _maxNrOfRetries)
-        {
-            rs.Reset();
-
-            return true;
-        }
-
-        return false;
     }
 }

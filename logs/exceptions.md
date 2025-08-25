@@ -29,3 +29,5 @@
 
 ### Proto.Tests.SupervisionTestsOneForOne.OneForOneStrategy_Should_EscalateFailureToParent
 `System.InvalidOperationException: Sequence contains no elements` in `SupervisionTests_OneForOne.cs:line 263`.
+### Proto.Mailbox.Tests.MailboxSchedulingTests.GivenNonCompletedUserMessage_ShouldHaltProcessingUntilCompletion
+`System.TimeoutException: The condition was not met within the timeout of 00:00:00.1000000`
