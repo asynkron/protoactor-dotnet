@@ -16,18 +16,17 @@ internal static class Extensions
     private const string ReadyForRebalanceKey = "reb:ready";
     private const string RebalanceCompletedKey = "reb:done";
 
-    private static readonly Gossiper.ConsensusCheckBuilder<ulong> TopologyConsensus = Gossiper
-        .ConsensusCheckBuilder<ulong>
+    private static readonly ConsensusCheckBuilder<ulong> TopologyConsensus = ConsensusCheckBuilder<ulong>
         .Create<ClusterTopology>(GossipKeys.Topology, topology => topology.TopologyHash);
 
-    private static readonly Gossiper.ConsensusCheckBuilder<ulong> ReadyForRebalance = TopologyConsensus
+    private static readonly ConsensusCheckBuilder<ulong> ReadyForRebalance = TopologyConsensus
         .InConsensusWith<ReadyForRebalance>(ReadyForRebalanceKey, rebalance => rebalance.TopologyHash);
 
-    private static readonly Gossiper.ConsensusCheckBuilder<ulong> RebalanceCompleted = TopologyConsensus
+    private static readonly ConsensusCheckBuilder<ulong> RebalanceCompleted = TopologyConsensus
         .InConsensusWith<RebalanceCompleted>(RebalanceCompletedKey, rebalance => rebalance.TopologyHash);
 
     public static async Task<(bool consensus, T value)> WaitFor<T>(
-        this Gossiper gossip, Gossiper.ConsensusCheckBuilder<T> check,
+        this Gossiper gossip, ConsensusCheckBuilder<T> check,
         TimeSpan maxWait,
         CancellationToken cancellationToken
     ) where T : notnull
