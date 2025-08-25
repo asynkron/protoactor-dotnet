@@ -1,8 +1,6 @@
 namespace Proto.Remote;
 
 using System;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -25,6 +23,8 @@ public sealed class ConnectionRunner
     private readonly Action _onDisconnected;
     private readonly Action<double> _recordWriteDuration;
     private readonly ILogger _logger;
+    private readonly ConnectionWriter _writer;
+    private readonly ConnectionReader _reader;
 
     public ConnectionRunner(string address, IEndpoint endpoint, ActorSystem system, RemoteConfig remoteConfig,
         IConnectionMode mode, TimeSpan backoff, int maxRetries, Random random, CancellationToken stopToken,
@@ -43,6 +43,9 @@ public sealed class ConnectionRunner
         _onDisconnected = onDisconnected;
         _recordWriteDuration = recordWriteDuration;
         _logger = logger;
+
+        _writer = new ConnectionWriter(address, endpoint, system, remoteConfig, recordWriteDuration, logger);
+        _reader = new ConnectionReader(address, system, mode, logger);
     }
 
     public async Task RunAsync()
@@ -96,8 +99,8 @@ public sealed class ConnectionRunner
 
                 var combinedToken = CancellationTokenSource.CreateLinkedTokenSource(_stopToken, cts.Token).Token;
 
-                var writer = RunWriterAsync(combinedToken, call, cts);
-                var reader = RunReaderAsync(combinedToken, call, actorSystemId, cts);
+                var writer = _writer.RunAsync(combinedToken, call, cts);
+                var reader = _reader.RunAsync(combinedToken, call, actorSystemId, cts);
 
                 _logger.Connected(_system.Address, _address);
 
@@ -150,92 +153,6 @@ public sealed class ConnectionRunner
         }
     }
 
-    private async Task RunWriterAsync(CancellationToken token, AsyncDuplexStreamingCall<RemoteMessage, RemoteMessage> call, CancellationTokenSource cts)
-    {
-        while (!token.IsCancellationRequested)
-        {
-            while (_endpoint.OutgoingStash.TryPop(out var messages))
-            {
-                var batch = MessageBatchFactory.CreateBatch(_system, _remoteConfig, messages);
-                try
-                {
-                    var sw = Stopwatch.StartNew();
-                    await call.RequestStream.WriteAsync(new RemoteMessage { MessageBatch = batch }, token).ConfigureAwait(false);
-                    sw.Stop();
-                    _recordWriteDuration(sw.Elapsed.TotalSeconds);
-                }
-                catch (Exception)
-                {
-                    _ = _endpoint.OutgoingStash.Append(messages);
-                    cts.Cancel();
-                    throw;
-                }
-            }
-
-            try
-            {
-                await foreach (var messages in _endpoint.Outgoing.Reader.ReadAllAsync(token).ConfigureAwait(false))
-                {
-                    var batch = MessageBatchFactory.CreateBatch(_system, _remoteConfig, messages);
-                    try
-                    {
-                        var sw = Stopwatch.StartNew();
-                        await call.RequestStream.WriteAsync(new RemoteMessage { MessageBatch = batch }, token).ConfigureAwait(false);
-                        sw.Stop();
-                        _recordWriteDuration(sw.Elapsed.TotalSeconds);
-                    }
-                    catch (Exception)
-                    {
-                        _ = _endpoint.OutgoingStash.Append(messages);
-                        cts.Cancel();
-                        throw;
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.WriterCancelled(_system.Address, _address);
-            }
-        }
-    }
-
-    private async Task RunReaderAsync(CancellationToken token, AsyncDuplexStreamingCall<RemoteMessage, RemoteMessage> call, string actorSystemId, CancellationTokenSource cts)
-    {
-        try
-        {
-            while (await call.ResponseStream.MoveNext(token).ConfigureAwait(false))
-            {
-                var currentMessage = call.ResponseStream.Current;
-                switch (currentMessage.MessageTypeCase)
-                {
-                    case RemoteMessage.MessageTypeOneofCase.DisconnectRequest:
-                        _logger.ReceivedDisconnectionRequest(_system.Address, _address);
-                        var terminated = new EndpointTerminatedEvent(false, _address, actorSystemId);
-                        _system.EventStream.Publish(terminated);
-                        break;
-                    default:
-                        _mode.HandleMessage(currentMessage, _address);
-                        break;
-                }
-            }
-
-            _logger.ReaderFinished(_system.Address, _address);
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.ReaderCancelledDebug(_system.Address, _address);
-        }
-        catch (RpcException e) when (e.StatusCode == StatusCode.Cancelled)
-        {
-            _logger.ReaderCancelledWarning(_system.Address, _address);
-        }
-        catch (Exception e)
-        {
-            _logger.ReaderError(_system.Address, _address, e.GetType().Name);
-            cts.Cancel();
-            throw;
-        }
-    }
 
     private bool ShouldStop(RestartStatistics rs)
     {
