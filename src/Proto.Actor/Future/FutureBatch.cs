@@ -53,9 +53,9 @@ public sealed class FutureBatchProcess : Process, IDisposable
         {
             _cancellation = ct.Register(() =>
                 {
-                    foreach (var tcs in _completionSources)
+                    foreach (var completionSource in _completionSources)
                     {
-                        if (tcs?.TrySetException(
+                        if (completionSource?.TrySetException(
                                 new TimeoutException("Request didn't receive any Response within the expected time.")
                             ) == true)
                         {
@@ -82,15 +82,15 @@ public sealed class FutureBatchProcess : Process, IDisposable
 
         if (index < _completionSources.Length)
         {
-            var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _completionSources[index] = tcs;
+            var completionSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _completionSources[index] = completionSource;
 
             if (System.Metrics.Enabled)
             {
                 ActorMetrics.FuturesStartedCount.Add(1, _metricTags);
             }
 
-            return new SimpleFutureHandle(Pid.WithRequestId(ToRequestId(index)), tcs, _onTimeout);
+            return new SimpleFutureHandle(Pid.WithRequestId(ToRequestId(index)), completionSource, _onTimeout);
         }
 
         return null;
@@ -98,14 +98,14 @@ public sealed class FutureBatchProcess : Process, IDisposable
 
     protected internal override void SendUserMessage(PID pid, object message)
     {
-        if (!TryGetTaskCompletionSource(pid.RequestId, out var index, out var tcs))
+        if (!TryGetTaskCompletionSource(pid.RequestId, out var index, out var completionSource))
         {
             return;
         }
 
         try
         {
-            tcs.TrySetResult(message);
+            completionSource.TrySetResult(message);
             _completionSources[index] = default;
         }
         finally
@@ -126,14 +126,14 @@ public sealed class FutureBatchProcess : Process, IDisposable
             return;
         }
 
-        if (!TryGetTaskCompletionSource(pid.RequestId, out var index, out var tcs))
+        if (!TryGetTaskCompletionSource(pid.RequestId, out var index, out var completionSource))
         {
             return;
         }
 
         try
         {
-            tcs.TrySetResult(default!);
+            completionSource.TrySetResult(default!);
             _completionSources[index] = default;
         }
         finally
@@ -154,35 +154,35 @@ public sealed class FutureBatchProcess : Process, IDisposable
 
     private static uint ToRequestId(int index) => (uint)(index + 1);
 
-    private bool TryGetTaskCompletionSource(uint requestId, out int index, out TaskCompletionSource<object> tcs)
+    private bool TryGetTaskCompletionSource(uint requestId, out int index, out TaskCompletionSource<object> completionSource)
     {
         if (!TryGetIndex(requestId, out index))
         {
-            tcs = default!;
+            completionSource = default!;
 
             return false;
         }
 
-        tcs = _completionSources[index]!;
+        completionSource = _completionSources[index]!;
 
-        return tcs != default!;
+        return completionSource != default!;
     }
 
     private sealed class SimpleFutureHandle : IFuture
     {
         private readonly Action? _onTimeout;
 
-        public SimpleFutureHandle(PID pid, TaskCompletionSource<object> tcs, Action? onTimeout)
+        public SimpleFutureHandle(PID pid, TaskCompletionSource<object> completionSource, Action? onTimeout)
         {
             _onTimeout = onTimeout;
             Pid = pid;
-            Tcs = tcs;
+            CompletionSource = completionSource;
         }
 
-        internal TaskCompletionSource<object> Tcs { get; }
+        internal TaskCompletionSource<object> CompletionSource { get; }
 
         public PID Pid { get; }
-        public Task<object> Task => Tcs.Task;
+        public Task<object> Task => CompletionSource.Task;
 
         public async Task<object> GetTask(CancellationToken cancellationToken)
         {
@@ -190,12 +190,12 @@ public sealed class FutureBatchProcess : Process, IDisposable
             {
                 if (cancellationToken == default)
                 {
-                    return await Tcs.Task.ConfigureAwait(false);
+                    return await CompletionSource.Task.ConfigureAwait(false);
                 }
 
-                await using (cancellationToken.Register(() => Tcs.TrySetCanceled()).ConfigureAwait(false))
+                await using (cancellationToken.Register(() => CompletionSource.TrySetCanceled()).ConfigureAwait(false))
                 {
-                    return await Tcs.Task.ConfigureAwait(false);
+                    return await CompletionSource.Task.ConfigureAwait(false);
                 }
             }
             catch

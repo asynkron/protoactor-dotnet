@@ -235,13 +235,13 @@ public class ActorContext : IMessageInvoker, IContext, ISupervisor
             return;
         }
 
-        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var registration = token.Register(() => tcs.SetResult(true));
+        var completionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var registration = token.Register(() => completionSource.SetResult(true));
 
         // Ensures registration is disposed with the actor
         var inceptionRegistration = CancellationToken.Register(() => registration.Dispose());
 
-        ((IContext)this).ReenterAfter(tcs.Task, () =>
+        ((IContext)this).ReenterAfter(completionSource.Task, () =>
         {
             inceptionRegistration.Dispose();
             onCancelled();

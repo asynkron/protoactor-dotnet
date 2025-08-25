@@ -69,9 +69,9 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
             {
                 _userMailbox.Push(message);
 
-                foreach (var t in _stats)
+                foreach (var stat in _stats)
                 {
-                    t.MessagePosted(message);
+                    stat.MessagePosted(message);
                 }
             }
 
@@ -82,9 +82,9 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
                 _userMailbox.Push(msg);
             }
 
-            foreach (var t in _stats)
+            foreach (var stat in _stats)
             {
-                t.MessagePosted(msg);
+                stat.MessagePosted(msg);
             }
 
             Schedule();
@@ -93,9 +93,9 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
         {
             _userMailbox.Push(msg);
 
-            foreach (var t in _stats)
+            foreach (var stat in _stats)
             {
-                t.MessagePosted(msg);
+                stat.MessagePosted(msg);
             }
 
             Schedule();
@@ -111,9 +111,9 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
             _invoker?.CancellationTokenSource?.Cancel();
         }
 
-        foreach (var t in _stats)
+        foreach (var stat in _stats)
         {
-            t.MessagePosted(msg);
+            stat.MessagePosted(msg);
         }
 
         Schedule();
@@ -127,9 +127,9 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
 
     public void Start()
     {
-        foreach (var t in _stats)
+        foreach (var stat in _stats)
         {
-            t.MailboxStarted();
+            stat.MailboxStarted();
         }
     }
 
@@ -150,9 +150,9 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
         }
         else
         {
-            foreach (var t in mailbox._stats)
+            foreach (var stat in mailbox._stats)
             {
-                t.MailboxEmpty();
+                stat.MailboxEmpty();
             }
         }
 
@@ -170,9 +170,9 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
             }
             else
             {
-                foreach (var t in self._stats)
+                foreach (var stat in self._stats)
                 {
-                    t.MailboxEmpty();
+                    stat.MailboxEmpty();
                 }
             }
         }
@@ -197,16 +197,16 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
                         _              => _suspended
                     };
 
-                    var t = _invoker.InvokeSystemMessageAsync(sys);
+                    var systemMessageTask = _invoker.InvokeSystemMessageAsync(sys);
 
-                    if (!t.IsCompletedSuccessfully)
+                    if (!systemMessageTask.IsCompletedSuccessfully)
                     {
-                        return Await(msg, t, this);
+                        return Await(msg, systemMessageTask, this);
                     }
 
-                    foreach (var t1 in _stats)
+                    foreach (var stat in _stats)
                     {
-                        t1.MessageReceived(msg);
+                        stat.MessageReceived(msg);
                     }
 
                     continue;
@@ -221,16 +221,16 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
 
                 if (msg is not null)
                 {
-                    var t = _invoker.InvokeUserMessageAsync(msg);
+                    var userMessageTask = _invoker.InvokeUserMessageAsync(msg);
 
-                    if (!t.IsCompletedSuccessfully)
+                    if (!userMessageTask.IsCompletedSuccessfully)
                     {
-                        return Await(msg, t, this);
+                        return Await(msg, userMessageTask, this);
                     }
 
-                    foreach (var t1 in _stats)
+                    foreach (var stat in _stats)
                     {
-                        t1.MessageReceived(msg);
+                        stat.MessageReceived(msg);
                     }
                 }
                 else
@@ -253,9 +253,9 @@ public sealed class DefaultMailbox : IMailbox, IThreadPoolWorkItem
             {
                 await task.ConfigureAwait(false);
 
-                foreach (var t1 in self._stats)
+                foreach (var stat in self._stats)
                 {
-                    t1.MessageReceived(msg);
+                    stat.MessageReceived(msg);
                 }
             }
             catch (Exception e)

@@ -23,9 +23,9 @@ public static class ThreadPoolStats
         {
             // Wait for the configured sampling interval before measuring again
             await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
-            var t1 = DateTime.UtcNow;
+            var startTime = DateTime.UtcNow;
 
-            var t2 = await Task.Run(async () =>
+            var endTime = await Task.Run(async () =>
                 {
                     await Task.Yield();
 
@@ -33,7 +33,7 @@ public static class ThreadPoolStats
                 }, cancellationToken
             ).ConfigureAwait(false);
 
-            var delta = t2 - t1;
+            var delta = endTime - startTime;
             callback(delta);
         }
     }

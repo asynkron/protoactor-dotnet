@@ -309,9 +309,9 @@ public class BatchingProducer : IAsyncDisposable
     /// <exception cref="ProducerQueueFullException">Thrown when producer max queue size is reached.</exception>
     public Task ProduceAsync(object message, CancellationToken ct = default)
     {
-        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        if (!_publisherChannel.Writer.TryWrite(new ProduceMessage(message, tcs, ct)))
+        if (!_publisherChannel.Writer.TryWrite(new ProduceMessage(message, completionSource, ct)))
         {
             if (_publisherChannel.Reader.Completion.IsCompleted)
             {
@@ -322,7 +322,7 @@ public class BatchingProducer : IAsyncDisposable
             throw new ProducerQueueFullException(_topic);
         }
 
-        return tcs.Task;
+        return completionSource.Task;
     }
 
     private record ProduceMessage(object Message, TaskCompletionSource<bool> TaskCompletionSource,

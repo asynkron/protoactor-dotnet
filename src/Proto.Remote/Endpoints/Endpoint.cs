@@ -199,7 +199,7 @@ public abstract class Endpoint : IEndpoint
                     continue;
                 }
 
-                foreach (var t in pidSet.Select(
+                foreach (var terminated in pidSet.Select(
                              pid => new Terminated
                              {
                                  Who = pid,
@@ -208,7 +208,7 @@ public abstract class Endpoint : IEndpoint
                          ))
                 {
                     //send the address Terminated event to the Watcher
-                    watcherPid.SendSystemMessage(System, t);
+                    watcherPid.SendSystemMessage(System, terminated);
                 }
             }
 

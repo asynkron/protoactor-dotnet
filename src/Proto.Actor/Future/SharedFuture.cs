@@ -215,17 +215,17 @@ public sealed class SharedFutureProcess : Process, IDisposable
     {
         private readonly SharedFutureProcess _parent;
 
-        private readonly TaskCompletionSource<object> _tcs;
+        private readonly TaskCompletionSource<object> _completionSource;
 
-        public SharedFutureHandle(SharedFutureProcess parent, PID pid, TaskCompletionSource<object> tcs)
+        public SharedFutureHandle(SharedFutureProcess parent, PID pid, TaskCompletionSource<object> completionSource)
         {
             _parent = parent;
             Pid = pid;
-            _tcs = tcs;
+            _completionSource = completionSource;
         }
 
         public PID Pid { get; }
-        public Task<object> Task => _tcs.Task;
+        public Task<object> Task => _completionSource.Task;
 
         public async Task<object> GetTask(CancellationToken cancellationToken)
         {
@@ -233,12 +233,12 @@ public sealed class SharedFutureProcess : Process, IDisposable
             {
                 if (cancellationToken == default)
                 {
-                    return await _tcs.Task.ConfigureAwait(false);
+                    return await _completionSource.Task.ConfigureAwait(false);
                 }
 
-                await using (cancellationToken.Register(() => _tcs.TrySetCanceled()).ConfigureAwait(false))
+                await using (cancellationToken.Register(() => _completionSource.TrySetCanceled()).ConfigureAwait(false))
                 {
-                    return await _tcs.Task.ConfigureAwait(false);
+                    return await _completionSource.Task.ConfigureAwait(false);
                 }
             }
             catch

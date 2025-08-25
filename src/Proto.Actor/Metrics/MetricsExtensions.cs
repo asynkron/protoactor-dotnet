@@ -20,8 +20,8 @@ public static class MetricsExtensions
         params KeyValuePair<string, object?>[] tags)
     {
         var sw = Stopwatch.StartNew();
-        var t = factory();
-        var res = await t.ConfigureAwait(false);
+        var operationTask = factory();
+        var res = await operationTask.ConfigureAwait(false);
         sw.Stop();
 
         histogram.Record(sw.Elapsed.TotalSeconds, tags);
@@ -33,8 +33,8 @@ public static class MetricsExtensions
         params KeyValuePair<string, object?>[] tags)
     {
         var sw = Stopwatch.StartNew();
-        var t = factory();
-        await t.ConfigureAwait(false);
+        var operationTask = factory();
+        await operationTask.ConfigureAwait(false);
         sw.Stop();
         histogram.Record(sw.Elapsed.TotalSeconds, tags);
     }
