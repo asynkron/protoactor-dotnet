@@ -13,13 +13,13 @@ using Proto.Extensions;
 internal sealed class ConnectionWriter
 {
     private readonly string _address;
-    private readonly IEndpoint _endpoint;
+    private readonly IRemoteEndpoint _endpoint;
     private readonly RemoteConfig _remoteConfig;
     private readonly ActorSystem _system;
     private readonly Action<double> _recordWriteDuration;
     private readonly ILogger _logger;
 
-    public ConnectionWriter(string address, IEndpoint endpoint, ActorSystem system, RemoteConfig remoteConfig, Action<double> recordWriteDuration, ILogger logger)
+    public ConnectionWriter(string address, IRemoteEndpoint endpoint, ActorSystem system, RemoteConfig remoteConfig, Action<double> recordWriteDuration, ILogger logger)
     {
         _address = address;
         _endpoint = endpoint;

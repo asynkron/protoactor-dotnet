@@ -101,9 +101,9 @@ public static class Extensions
         services.AddSingleton<IRemote, HostedGrpcNetRemote>(sp => sp.GetRequiredService<HostedGrpcNetRemote>());
         services.AddSingleton<EndpointManager>();
 
-        services.AddSingleton<EndpointReader, EndpointReader>();
+        services.AddSingleton<RemotingGrpcService, RemotingGrpcService>();
         services.AddSingleton(sp => sp.GetRequiredService<RemoteConfig>().Serialization);
-        services.AddSingleton<Remoting.RemotingBase, EndpointReader>(sp => sp.GetRequiredService<EndpointReader>());
+        services.AddSingleton<Remoting.RemotingBase, RemotingGrpcService>(sp => sp.GetRequiredService<RemotingGrpcService>());
     }
 
     private static GrpcServiceEndpointConventionBuilder AddProtoRemoteEndpoint(IEndpointRouteBuilder endpoints)

@@ -11,7 +11,7 @@ using Proto.Extensions;
 public sealed class ConnectionRunner
 {
     private readonly string _address;
-    private readonly IEndpoint _endpoint;
+    private readonly IRemoteEndpoint _endpoint;
     private readonly TimeSpan _backoff;
     private readonly int _maxRetries;
     private readonly IConnectionMode _mode;
@@ -26,7 +26,7 @@ public sealed class ConnectionRunner
     private readonly ConnectionWriter _writer;
     private readonly ConnectionReader _reader;
 
-    public ConnectionRunner(string address, IEndpoint endpoint, ActorSystem system, RemoteConfig remoteConfig,
+    public ConnectionRunner(string address, IRemoteEndpoint endpoint, ActorSystem system, RemoteConfig remoteConfig,
         IConnectionMode mode, TimeSpan backoff, int maxRetries, Random random, CancellationToken stopToken,
         Action onConnected, Action onDisconnected, Action<double> recordWriteDuration, ILogger logger)
     {

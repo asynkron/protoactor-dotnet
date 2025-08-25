@@ -41,7 +41,7 @@ internal static class RemoteStreamProcessor
     /// Writes outgoing message batches for an endpoint to the provided stream writer.
     /// </summary>
     public static async Task RunWriterAsync(
-        IEndpoint endpoint,
+        IRemoteEndpoint endpoint,
         ActorSystem system,
         RemoteConfig remoteConfig,
         Func<RemoteMessage, CancellationToken, Task> write,

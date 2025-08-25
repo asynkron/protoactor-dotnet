@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-//   <copyright file="IEndpoint.cs" company="Asynkron AB">
+//   <copyright file="IRemoteEndpoint.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2025 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -10,7 +10,7 @@ using System.Threading.Channels;
 
 namespace Proto.Remote;
 
-public interface IEndpoint : IAsyncDisposable
+public interface IRemoteEndpoint : IAsyncDisposable
 {
     Channel<RemoteDeliver[]> Outgoing { get; }
     ConcurrentStack<RemoteDeliver[]> OutgoingStash { get; }

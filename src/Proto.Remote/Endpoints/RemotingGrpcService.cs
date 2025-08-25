@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//   <copyright file="EndpointReader.cs" company="Asynkron AB">
+//   <copyright file="RemotingGrpcService.cs" company="Asynkron AB">
 //       Copyright (C) 2015-2025 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
@@ -15,15 +15,15 @@ using Proto.Diagnostics;
 
 namespace Proto.Remote;
 
-public sealed class EndpointReader : Remoting.RemotingBase
+public sealed class RemotingGrpcService : Remoting.RemotingBase
 {
-    private static readonly ILogger Logger = Log.CreateLogger<EndpointReader>();
+    private static readonly ILogger Logger = Log.CreateLogger<RemotingGrpcService>();
     private readonly EndpointManager _endpointManager;
     private readonly ActorSystem _system;
 
-    private readonly record struct NegotiationResult(IEndpoint Endpoint, string SystemId, string? Address, bool StartWriter);
+    private readonly record struct NegotiationResult(IRemoteEndpoint Endpoint, string SystemId, string? Address, bool StartWriter);
 
-    public EndpointReader(ActorSystem system, EndpointManager endpointManager)
+    public RemotingGrpcService(ActorSystem system, EndpointManager endpointManager)
     {
         _system = system;
         _endpointManager = endpointManager;
@@ -38,7 +38,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
         if (_endpointManager.CancellationToken.IsCancellationRequested)
         {
             Logger.LogWarning(
-                "[EndpointReader][{SystemAddress}] Attempt to connect to the suspended reader has been rejected",
+                "[RemotingGrpcService][{SystemAddress}] Attempt to connect to the suspended reader has been rejected",
                 _system.Address);
 
             throw new RpcException(Status.DefaultCancelled, "Suspended");
@@ -53,7 +53,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
             }).ConfigureAwait(false))
         {
             Logger.LogInformation(
-                "[EndpointReader][{SystemAddress}] Accepted connection request from {Remote} to {Local}",
+                "[RemotingGrpcService][{SystemAddress}] Accepted connection request from {Remote} to {Local}",
                 _system.Address, context.Peer, context.Host
             );
 
@@ -105,7 +105,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
         if (_system.Remote().BlockList.IsBlocked(clientConnection.MemberId))
         {
             Logger.LogWarning(
-                "[EndpointReader][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected",
+                "[RemotingGrpcService][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected",
                 _system.Address);
 
             await responseStream.WriteAsync(new RemoteMessage
@@ -143,7 +143,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
         if (_system.Remote().BlockList.IsBlocked(serverConnection.MemberId))
         {
             Logger.LogWarning(
-                "[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, they are blocked",
+                "[RemotingGrpcService][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, they are blocked",
                 _system.Address, serverConnection.MemberId,
                 serverConnection.Address);
 
@@ -162,7 +162,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
         if (blocked.Contains(_system.Id))
         {
             Logger.LogWarning(
-                "[EndpointReader][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, we are blocked",
+                "[RemotingGrpcService][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, we are blocked",
                 _system.Address, serverConnection.MemberId,
                 serverConnection.Address);
 
@@ -193,7 +193,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
         if (!endpoint.IsActive)
         {
             Logger.LogWarning(
-                "[EndpointReader][{SystemAddress}] Failed to connect back to remote member {MemberId} address {Address} for writes",
+                "[RemotingGrpcService][{SystemAddress}] Failed to connect back to remote member {MemberId} address {Address} for writes",
                 _system.Address, serverConnection.MemberId,
                 serverConnection.Address);
         }
@@ -231,7 +231,7 @@ public sealed class EndpointReader : Remoting.RemotingBase
     }
 
     private async Task RunClientWriter(IServerStreamWriter<RemoteMessage> responseStream,
-        CancellationTokenSource cancellationTokenSource, IEndpoint endpoint, string systemId)
+        CancellationTokenSource cancellationTokenSource, IRemoteEndpoint endpoint, string systemId)
     {
         try
         {
@@ -246,14 +246,14 @@ public sealed class EndpointReader : Remoting.RemotingBase
         }
         catch (OperationCanceledException)
         {
-            Logger.LogDebug("[EndpointReader][{SystemAddress}] Writer closed for {SystemId}", _system.Address,
+            Logger.LogDebug("[RemotingGrpcService][{SystemAddress}] Writer closed for {SystemId}", _system.Address,
                 systemId);
         }
         catch (Exception e)
         {
             e.CheckFailFast();
 
-            Logger.LogWarning(e, "[EndpointReader][{SystemAddress}] Writing error to {SystemId}", _system.Address,
+            Logger.LogWarning(e, "[RemotingGrpcService][{SystemAddress}] Writing error to {SystemId}", _system.Address,
                 systemId);
         }
     }
