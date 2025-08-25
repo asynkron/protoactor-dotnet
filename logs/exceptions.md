@@ -34,3 +34,6 @@
 
 ### Proto.Tests.ActorTests.StopActorWithLongRunningTask
 `Proto.TestKit.TestKitException: Expected user message of type System.Threading.Tasks.TaskCanceledException, but received system message of type Proto.Stopping`
+
+### Proto.Cluster.Tests.GossipCoreTests.Large_cluster_should_get_topology_consensus
+`Expected x.consensus to be True, but found False.`
