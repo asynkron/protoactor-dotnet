@@ -308,13 +308,18 @@ public partial class Gossiper
 
         var alreadyBlocked = _blockList.BlockedMembers;
 
-        //don't ban ourselves. our gossip state will never reach other members then...
-        var gracefullyLeft = t2.Keys
-            .Where(k => !alreadyBlocked.Contains(k))
-            .Where(k => k != _systemId)
-            .ToArray();
+        var gracefullyLeft = new List<string>();
 
-        if (gracefullyLeft.Any())
+        // Collect members that left gracefully but are neither already blocked nor this system
+        foreach (var memberId in t2.Keys)
+        {
+            if (!alreadyBlocked.Contains(memberId) && memberId != _systemId)
+            {
+                gracefullyLeft.Add(memberId);
+            }
+        }
+
+        if (gracefullyLeft.Count > 0)
         {
             _blockList.Block(gracefullyLeft, "Gracefully left");
         }
