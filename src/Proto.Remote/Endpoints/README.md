@@ -81,7 +81,7 @@ sequenceDiagram
     CE->>Svc: ConnectRequest(ClientConnection { MemberId1 })
     Svc-->>CE: ConnectResponse { MemberId2 }
 
-    rect rgb(240, 248, 255)
+    rect rgba(128, 128, 128, 0.1)
     Note over A,B: Sending a message to a remote PID
     A->>Ctx1: Context.Send(PID[B@Node2], Msg)
     Ctx1->>Ctx1: Detect remote address (PID.Address != local)
