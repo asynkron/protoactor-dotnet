@@ -67,17 +67,17 @@ public record MessageEnvelope : IDiagnosticsTypeName
     /// <summary>
     ///     Adds a sender <see cref="PID" /> to the message envelope.
     /// </summary>
-    /// <param name="sender"></param>
+    /// <param name="sender">Sender <see cref="PID" /> or <c>null</c></param>
     /// <returns>New envelope</returns>
-    public MessageEnvelope WithSender(PID sender) => this with { Sender = sender };
+    public MessageEnvelope WithSender(PID? sender) => this with { Sender = sender };
 
     /// <summary>
     ///     Adds a sender <see cref="PID" /> if the message is an envelope, otherwise creates a new envelope with the given sender.
     /// </summary>
     /// <param name="message"></param>
-    /// <param name="sender"></param>
+    /// <param name="sender">Sender <see cref="PID" /> or <c>null</c></param>
     /// <returns>New envelope</returns>
-    public static MessageEnvelope WithSender(object message, PID sender) => message is MessageEnvelope env
+    public static MessageEnvelope WithSender(object message, PID? sender) => message is MessageEnvelope env
         ? env.WithSender(sender)
         : new MessageEnvelope(message, sender);
 
