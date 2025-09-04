@@ -270,50 +270,72 @@ internal class PartitionIdentityActor : IActor
             return Task.CompletedTask;
         }
 
-        var timer = Stopwatch.StartNew();
+        WaitForActivationsAsync(msg, context);
 
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Waits for all activations to complete before starting a rebalance.
+    /// </summary>
+    private Task WaitForActivationsAsync(ClusterTopology msg, IContext context)
+    {
+        var timer = Stopwatch.StartNew();
         var topologyValidityToken = msg.TopologyValidityToken!.Value;
 
-        var waitUntilInFlightActivationsAreCompleted =
-            _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(_config.RebalanceActivationsCompletionTimeout,
-                topologyValidityToken);
+        var waitTask = _cluster.Gossip.WaitUntilInFlightActivationsAreCompleted(
+            _config.RebalanceActivationsCompletionTimeout, topologyValidityToken);
 
-        context.ReenterAfter(waitUntilInFlightActivationsAreCompleted, consensusResult =>
+        context.ReenterAfter(waitTask, consensusResult =>
             {
-                if (TopologyHash != msg.TopologyHash || topologyValidityToken.IsCancellationRequested)
+                if (!IsTopologyValid(TopologyHash, msg, topologyValidityToken))
                 {
-                    // Cancelled
                     return Task.CompletedTask;
                 }
 
                 timer.Stop();
-                var allNodesCompletedActivations = consensusResult.Result.consensus;
 
-                if (allNodesCompletedActivations)
-                {
-                    if (Logger.IsEnabled(LogLevel.Debug))
-                    {
-                        Logger.LogDebug(
-                            "[PartitionIdentity] {SystemId} All nodes OK, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
-                            _cluster.System.Id, TopologyHash, consensusResult.Result.topologyHash, timer.Elapsed
-                        );
-                    }
-                }
-                else
-                {
-                    Logger.LogWarning(
-                        "[PartitionIdentity] {SystemId} Consensus not reached, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
-                        _cluster.System.Id, TopologyHash, consensusResult.Result.topologyHash, timer.Elapsed
-                    );
-                }
-
-                StartPartitionPull(msg, msg.Members.Select(it => it.Address), context, _deltaTopology);
+                Rebalance(msg, consensusResult.Result.consensus, consensusResult.Result.topologyHash, timer.Elapsed,
+                    context);
 
                 return Task.CompletedTask;
             }
         );
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Validates that the topology update is still relevant.
+    /// </summary>
+    private static bool IsTopologyValid(ulong currentTopologyHash, ClusterTopology msg, CancellationToken token) =>
+        currentTopologyHash == msg.TopologyHash && !token.IsCancellationRequested;
+
+    /// <summary>
+    ///     Logs the outcome and initiates the partition pull for the topology.
+    /// </summary>
+    private void Rebalance(ClusterTopology msg, bool allNodesCompletedActivations, ulong consensusHash,
+        TimeSpan duration, IContext context)
+    {
+        if (allNodesCompletedActivations)
+        {
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug(
+                    "[PartitionIdentity] {SystemId} All nodes OK, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
+                    _cluster.System.Id, TopologyHash, consensusHash, duration
+                );
+            }
+        }
+        else
+        {
+            Logger.LogWarning(
+                "[PartitionIdentity] {SystemId} Consensus not reached, Initiating rebalance:, {CurrentTopology} {ConsensusHash} after {Duration}",
+                _cluster.System.Id, TopologyHash, consensusHash, duration
+            );
+        }
+
+        StartPartitionPull(msg, msg.Members.Select(it => it.Address), context, _deltaTopology);
     }
 
     private Action<IdentityHandover> TakeOverIdentities(IContext context) =>
@@ -409,7 +431,7 @@ internal class PartitionIdentityActor : IActor
         }
     }
 
-    private void StartPartitionPull(
+    protected virtual void StartPartitionPull(
         ClusterTopology msg,
         IEnumerable<string> memberAddresses,
         IContext context,
