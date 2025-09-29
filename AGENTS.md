@@ -4,10 +4,19 @@
 - Verify that .NET 8 is installed by running `dotnet --version`.
 - Do not run Docker or other external services; skip integration tests that require them.
 
+## Knowledge Base (`context.md`)
+* Every directory in this repository contains a `context.md` that summarises the purpose of the files underneath it. 
+* Whenever you modify code, tests, assets, or configuration within a directory, update that directory's `context.md` (and any parent summaries if the high-level description needs to change). Keep the links between related contexts accurate.
+* Always start a new session by running the following command:
+```
+find . -name context.md -print0 \
+| sort -z \
+| xargs -0 -I{} sh -c 'echo "## {}"; cat "{}"; echo'
+```
+That will give you context of the entire repository, and help you understand the relationships between components.
+
+
 ## Always follow these coding guidelines
-- Always add a detailed log of what you have done, and a strong motivation why the change was required. add this log to /logs with a filename of "log" + unixtimestamp + ".md".
-- Every directory now contains a `context.md` knowledge card. Before working in any area, review the closest `context.md` files to understand the subsystem, and keep them up to date with any relevant changes.
-- When touching any files in a directory, update that directory's `context.md` (and parent contexts if the change alters their overview) to reflect the new information.
 - Whenever a prompt contains an .NET exception, document this specific exception in /logs/exceptions.md, failed test name as ### header, important details about the failure as `code`, so we can keep track of failures. if exceptions.md already exists, just append at the end
 - Prefer immutable data structures over mutable variants
 - Prefer Concurrent collections over Immutable collections when dealing with concurrent code, but don´t replace for no reason.
