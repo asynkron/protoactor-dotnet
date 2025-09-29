@@ -9,11 +9,10 @@
 * Whenever you modify code, tests, assets, or configuration within a directory, update that directory's `context.md` (and any parent summaries if the high-level description needs to change). Keep the links between related contexts accurate.
 * Always start a new session by running the following command:
 ```
-find . -name context.md -print0 \
-| sort -z \
-| xargs -0 -I{} sh -c 'echo "## {}"; cat "{}"; echo'
+find . -name context.md -print0 | sort -z | xargs -0 -I{} sh -c 'echo "## {}"; cat "{}";
+  │ echo' > /tmp/context_dump.txt
 ```
-That will give you context of the entire repository, and help you understand the relationships between components.
+Read the dump file, understand the meaning, the structures, the architecture, anything of value, and then delete it.
 
 ## Live-View MCP
 - if live-view MCP is present, use it as a way to notify the user of what you are doing.
