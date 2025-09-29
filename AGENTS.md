@@ -15,6 +15,11 @@ find . -name context.md -print0 \
 ```
 That will give you context of the entire repository, and help you understand the relationships between components.
 
+## Live-View MCP
+- if live-view MCP is present, use it as a way to notify the user of what you are doing.
+- you can use the `create_markdown_file` function to create a markdown file that will be rendered in the live-view MCP.
+- e.g. describe architectureal diagrams highlight snippets of relevant code etc.
+- use it as if it was a markdown based chat interface to the user
 
 ## Always follow these coding guidelines
 - Whenever a prompt contains an .NET exception, document this specific exception in /logs/exceptions.md, failed test name as ### header, important details about the failure as `code`, so we can keep track of failures. if exceptions.md already exists, just append at the end
