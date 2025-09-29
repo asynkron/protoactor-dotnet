@@ -1,7 +1,7 @@
 # Remote Tests Context
 
 ## Overview
-Remote Tests directory within the Proto.Actor repository.
+Remote Tests directory within the Proto.Actor repository. Each test suite now reuses the descriptor helpers in `RemoteFixture` to declare the client and server transport combination instead of duplicating manual setup code.
 
 _Parent context: [Proto Remote Tests](../context.md)_
 
@@ -34,4 +34,3 @@ _Parent context: [Proto Remote Tests](../context.md)_
 
 ## Related Subcontexts
 * No nested subcontexts.
-
