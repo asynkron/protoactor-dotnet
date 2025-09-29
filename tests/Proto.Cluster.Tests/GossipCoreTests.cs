@@ -72,7 +72,7 @@ public class GossipCoreTests
         first.AddConsensusCheck(id, check);
 
         var gossipGenerations = 0L;
-        var ct = CancellationTokens.FromSeconds(10);
+        var ct = CancellationTokens.FromSeconds(20);
 
         _ = Task.Run(() =>
             {

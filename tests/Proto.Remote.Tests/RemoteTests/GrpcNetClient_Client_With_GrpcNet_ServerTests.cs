@@ -16,14 +16,13 @@ public class GrpcNetClient_Client_With_GrpcNet_ServerTests
 
     public class Fixture : RemoteFixture
     {
-        public Fixture()
+        public Fixture() : base(
+            Fixture(
+                Client(RemoteTransportKind.GrpcNetClient),
+                Server(RemoteTransportKind.GrpcNet)
+            )
+        )
         {
-            var clientConfig = ConfigureClientRemoteConfig(RemoteConfig.BindToLocalhost());
-            Remote = GetGrpcNetClientRemote(clientConfig);
-            var serverConfig = ConfigureServerRemoteConfig(RemoteConfig.BindToLocalhost());
-            var serverConfig2 = ConfigureServerRemoteConfig(RemoteConfig.BindToLocalhost());
-            ServerRemote1 = GetGrpcNetRemote(serverConfig);
-            ServerRemote2 = GetGrpcNetRemote(serverConfig2);
         }
     }
 }

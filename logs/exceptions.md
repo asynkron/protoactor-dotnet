@@ -52,3 +52,9 @@
 ```
 Proto.TestKit.TestKitException : Waited 1 seconds but failed to receive a message
 ```
+
+### Proto.Tests.SupervisionTestsAlwaysRestart.AlwaysRestartStrategy_Should_RestartFailingChildOnly
+`Assert.Equal() Failure: Values differ. Expected: 1 Actual: 0` encountered during initial `dotnet test` run; rerun passed.
+
+### Proto.Cluster.Tests.GossipCoreTests.Large_cluster_should_get_topology_consensus
+`Expected x.consensus to be True, but found False.` occurred twice before extending the consensus timeout to 20 seconds.

@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using Xunit;
@@ -18,26 +16,13 @@ public class GrpcNetClientWithHostedGrpcNetServerTests
 
     public class Fixture : RemoteFixture
     {
-        private readonly IHost _serverHost;
-        private readonly IHost _serverHost2;
-
-        public Fixture()
+        public Fixture() : base(
+            Fixture(
+                Client(RemoteTransportKind.GrpcNet),
+                Server(RemoteTransportKind.HostedGrpcNet)
+            )
+        )
         {
-            var clientConfig = ConfigureClientRemoteConfig(RemoteConfig.BindToLocalhost());
-            Remote = GetGrpcNetRemote(clientConfig);
-            var serverConfig = ConfigureServerRemoteConfig(RemoteConfig.BindToLocalhost());
-            (_serverHost, ServerRemote1) = GetHostedGrpcNetRemote(serverConfig);
-            var serverConfig2 = ConfigureServerRemoteConfig(RemoteConfig.BindToLocalhost());
-            (_serverHost2, ServerRemote2) = GetHostedGrpcNetRemote(serverConfig2);
-        }
-
-        public override async Task DisposeAsync()
-        {
-            await Remote.ShutdownAsync();
-            await _serverHost.StopAsync();
-            await _serverHost2.StopAsync();
-            _serverHost.Dispose();
-            _serverHost2.Dispose();
         }
     }
 }

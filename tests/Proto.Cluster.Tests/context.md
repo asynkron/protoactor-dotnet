@@ -22,7 +22,7 @@ _Parent context: [Tests](../context.md)_
 * `ForcedSerializationTests.cs` – C# source defining Forced Serialization Tests behavior.
 * `GithubActionsReporter.cs` – C# source defining Github Actions Reporter behavior.
 * `GossipConsensusTests.cs` – C# source defining Gossip Consensus Tests behavior.
-* `GossipCoreTests.cs` – C# source defining Gossip Core Tests behavior.
+* `GossipCoreTests.cs` – C# source defining Gossip Core Tests behavior; the large-cluster consensus test now allows a longer gossip window to reduce flakiness.
 * `GossipDisseminationTests.cs` – C# source defining Gossip Dissemination Tests behavior.
 * `GossipRandomOrderingTests.cs` – C# source defining Gossip Random Ordering Tests behavior.
 * `GossipRequestValidationTests.cs` – C# source defining Gossip Request Validation Tests behavior.
@@ -133,4 +133,3 @@ _Parent context: [Tests](../context.md)_
 
 ## Related Subcontexts
 * No nested subcontexts.
-

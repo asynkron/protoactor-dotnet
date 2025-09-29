@@ -1,7 +1,7 @@
 # Proto Remote Tests Context
 
 ## Overview
-Unit and integration tests for the remote transport and endpoint handling.
+Unit and integration tests for the remote transport and endpoint handling. `RemoteFixture` now centralizes transport setup through descriptor helpers so the individual test fixtures only describe the client/server transport mix.
 
 _Parent context: [Tests](../context.md)_
 
@@ -13,7 +13,7 @@ _Parent context: [Tests](../context.md)_
 * `ForcedSerializationTests.cs` – C# source defining Forced Serialization Tests behavior.
 * `LargeMessageEnvelopeTests.cs` – C# source defining Large Message Envelope Tests behavior.
 * `Proto.Remote.Tests.csproj` – Project file configuring compilation targets and dependencies.
-* `RemoteFixture.cs` – C# source defining Remote Fixture behavior.
+* `RemoteFixture.cs` – C# source defining Remote Fixture behavior, including descriptor helpers for composing test transport combinations and unified startup/disposal logic.
 * `RemoteKindsRegistrationTests.cs` – C# source defining Remote Kinds Registration Tests behavior.
 * `RemoteStreamProcessorTests.cs` – C# source defining Remote Stream Processor Tests behavior.
 * `RemoteTests.cs` – C# source defining Remote Tests behavior.
@@ -48,4 +48,3 @@ _Parent context: [Tests](../context.md)_
 
 ## Related Subcontexts
 * [Remote Tests](RemoteTests/context.md) – See the nested context for details.
-
