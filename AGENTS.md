@@ -6,6 +6,8 @@
 
 ## Always follow these coding guidelines
 - Always add a detailed log of what you have done, and a strong motivation why the change was required. add this log to /logs with a filename of "log" + unixtimestamp + ".md".
+- Every directory now contains a `context.md` knowledge card. Before working in any area, review the closest `context.md` files to understand the subsystem, and keep them up to date with any relevant changes.
+- When touching any files in a directory, update that directory's `context.md` (and parent contexts if the change alters their overview) to reflect the new information.
 - Whenever a prompt contains an .NET exception, document this specific exception in /logs/exceptions.md, failed test name as ### header, important details about the failure as `code`, so we can keep track of failures. if exceptions.md already exists, just append at the end
 - Prefer immutable data structures over mutable variants
 - Prefer Concurrent collections over Immutable collections when dealing with concurrent code, but don´t replace for no reason.
