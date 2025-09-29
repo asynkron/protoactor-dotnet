@@ -3,7 +3,7 @@
         <RootNamespace>Proto.Tests</RootNamespace>
         <LangVersion>10</LangVersion>
         <OutputType>Library</OutputType>
-        <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net8.0</TargetFrameworks>
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
@@ -15,6 +15,6 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Update="FluentAssertions" Version="6.4.0" />
+        <PackageReference Update="FluentAssertions" Version="6.12.0" />
     </ItemGroup>
 </Project>

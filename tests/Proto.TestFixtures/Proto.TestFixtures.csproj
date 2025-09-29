@@ -2,7 +2,7 @@
   <PropertyGroup>
     <IsTestProject>false</IsTestProject>
     <LangVersion>10</LangVersion>
-    <TargetFrameworks>net5.0;net6.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Remove="AutoFixture.Xunit2" />

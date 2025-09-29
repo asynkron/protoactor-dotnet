@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
-    <TargetFrameworks>net5.0;net6.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MongoDB.Driver" Version="2.14.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.26.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
