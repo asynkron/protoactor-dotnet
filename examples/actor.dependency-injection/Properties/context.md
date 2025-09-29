@@ -1,0 +1,16 @@
+# Properties Context
+
+## Overview
+Project metadata for DI example.
+
+_Parent context: [Actor Dependency Injection](../context.md)_
+
+## Key Files
+* `launchSettings.json` – Configuration or metadata in JSON format.
+
+## Primary Types and Contracts
+* No primary C# types discovered in this directory.
+
+## Related Subcontexts
+* No nested subcontexts.
+
