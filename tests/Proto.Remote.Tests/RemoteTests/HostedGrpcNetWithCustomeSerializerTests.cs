@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Concurrent;
-using System.Threading.Tasks;
 using Google.Protobuf;
-using Microsoft.Extensions.Hosting;
+using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using Xunit;
 
@@ -36,31 +35,17 @@ public class HostedGrpcNetWithCustomSerializerTests
 
     public class Fixture : RemoteFixture
     {
-        private readonly IHost _clientHost;
-        private readonly IHost _serverHost;
-        private readonly IHost _serverHost2;
-
-        public Fixture()
+        public Fixture() : base(
+            FixtureDescriptor(
+                Client(RemoteTransportKind.HostedGrpcNet, ApplyCustomSerializer),
+                Server(RemoteTransportKind.HostedGrpcNet, ApplyCustomSerializer),
+                Server(RemoteTransportKind.HostedGrpcNet, ApplyCustomSerializer)
+            )
+        )
         {
-            var clientConfig = ConfigureClientRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
-                .WithSerializer(serializerId: 2, priority: 1000, new CustomSerializer());
-            (_clientHost, Remote) = GetHostedGrpcNetRemote(clientConfig);
-            var serverConfig = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
-                .WithSerializer(serializerId: 2, priority: 1000, new CustomSerializer());
-            var serverConfig2 = ConfigureServerRemoteConfig(GrpcNetRemoteConfig.BindToLocalhost())
-                .WithSerializer(serializerId: 2, priority: 1000, new CustomSerializer());
-            (_serverHost, ServerRemote1) = GetHostedGrpcNetRemote(serverConfig);
-            (_serverHost2, ServerRemote2) = GetHostedGrpcNetRemote(serverConfig2);
         }
 
-        public override async Task DisposeAsync()
-        {
-            await _clientHost.StopAsync();
-            _clientHost.Dispose();
-            await _serverHost.StopAsync();
-            _serverHost.Dispose();
-            await _serverHost2.StopAsync();
-            _serverHost2.Dispose();
-        }
+        private static GrpcNetRemoteConfig ApplyCustomSerializer(GrpcNetRemoteConfig config) =>
+            config.WithSerializer(serializerId: 2, priority: 1000, new CustomSerializer());
     }
 }
