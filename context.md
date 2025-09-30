@@ -1,7 +1,7 @@
 # Repository Root Context
 
 ## Overview
-Root of the Proto.Actor for .NET repository. Hosts the runtime, clustering, remote communication, persistence providers, tooling, tests, and numerous samples.
+Root of the Proto.Actor for .NET repository. Hosts the runtime, clustering, remote communication, persistence providers, tooling, tests, and numerous samples. The `README.md` document also summarizes how to collect code coverage with the .NET SDK for contributors verifying their changes.
 
 Start here, but also read [`README.md`](README.md) for project onboarding, then dive into [`src/context.md`](src/context.md), [`tests/context.md`](tests/context.md), and [`examples/context.md`](examples/context.md) for subsystem-specific guides.
 
