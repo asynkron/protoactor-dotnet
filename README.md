@@ -36,6 +36,55 @@ Additional root-level documents provide deeper insights into the project:
 - [SECURITY.md](SECURITY.md) – security policy and supported versions.
 - [Terminology.md](Terminology.md) – definitions of common Proto.Actor terms.
 
+## Test coverage
+
+You can capture code coverage directly when running the test projects. The .NET SDK ships an `XPlat Code Coverage` data collector that works across platforms, so you do not need any third-party tooling for the basic workflow.
+
+### Quick coverage run
+
+Run any test project with coverage enabled by passing the `CollectCoverage` property:
+
+```bash
+dotnet test /p:CollectCoverage=true
+```
+
+This uses the built-in collector and writes coverage data under the `TestResults` directory for the invocation.
+
+### Using coverlet.collector
+
+For richer reporting support you can opt into the `coverlet.collector` package. Add it to the test project you want to analyze:
+
+```bash
+dotnet add package coverlet.collector
+```
+
+Then request coverage when running the tests:
+
+```bash
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+This produces a `.coverage` file under `TestResults/...` that can be converted into other formats.
+
+### Alternative output formats
+
+You can ask the collector to emit other formats such as Cobertura, lcov, or OpenCover. For example, to produce an `lcov` report:
+
+```bash
+dotnet test --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=lcov
+```
+
+### HTML reports
+
+Feed the generated `lcov` or `cobertura` files into tools like [ReportGenerator](https://github.com/danielpalme/ReportGenerator) to build browsable HTML output. Install the global tool and point it at your coverage reports:
+
+```bash
+dotnet tool install -g dotnet-reportgenerator-globaltool
+reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coveragereport
+```
+
+Open the files in the `coveragereport` directory to inspect the results.
+
 ## Design principles
 
 **Minimalistic API** - The API should be small and easy to use. Avoid enterprisey containers and configurations.
