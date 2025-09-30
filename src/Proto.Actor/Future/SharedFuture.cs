@@ -270,7 +270,9 @@ public sealed class SharedFutureProcess : Process, IDisposable
         public bool TryComplete(int requestId)
         {
             var incBy = _parent._slots.Length;
-            var nextRequestId = (requestId + incBy) % _parent._maxRequestId;
+            var maxRequestId = _parent._maxRequestId;
+            // Keep the sequence within the inclusive range [1, maxRequestId] when wrapping.
+            var nextRequestId = (int)(((requestId - 1L + incBy) % maxRequestId) + 1L);
 
             if (requestId == Interlocked.CompareExchange(ref _requestId, nextRequestId, requestId))
             {

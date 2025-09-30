@@ -1,7 +1,8 @@
 # Future Context
 
 ## Overview
-Future/TCS helpers for awaiting actor responses.
+Future/TCS helpers for awaiting actor responses. Shared futures now clamp their request id wrap-around into the inclusive
+range `[1, max]` so recycled slots never yield the sentinel `0` value.
 
 _Parent context: [Proto Actor](../context.md)_
 
