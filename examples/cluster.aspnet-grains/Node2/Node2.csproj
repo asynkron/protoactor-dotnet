@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="StackExchange.Redis" />
+      <PackageReference Include="StackExchange.Redis" />
     </ItemGroup>
 
 </Project>

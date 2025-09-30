@@ -14,7 +14,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
   </ItemGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' != 'net5.0'">
-    <DefineConstants>NETCORE</DefineConstants>
+  <PropertyGroup>
+    <!-- Ensure NETCORE is defined for the .NET 8 build -->
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
   </PropertyGroup>
 </Project>
