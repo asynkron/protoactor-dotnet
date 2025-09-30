@@ -38,6 +38,14 @@ public interface IMemberStrategy
     ///     Assigns a virtual actor to a member.
     /// </summary>
     /// <param name="senderAddress">Network address of the process that initiated the activation</param>
+    /// <param name="identity">Identity of the virtual actor to activate</param>
+    /// <returns>Member to spawn on</returns>
+    Member? GetActivator(string senderAddress, ClusterIdentity identity) => GetActivator(senderAddress);
+
+    /// <summary>
+    ///     Assigns a virtual actor to a member.
+    /// </summary>
+    /// <param name="senderAddress">Network address of the process that initiated the activation</param>
     /// <returns>Member to spawn on</returns>
     Member? GetActivator(string senderAddress);
 }

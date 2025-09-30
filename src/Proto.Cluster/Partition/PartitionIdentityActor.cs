@@ -580,7 +580,7 @@ internal class PartitionIdentityActor : IActor
         }
 
         //Get activator
-        var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
+        var activatorAddress = _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address, msg.ClusterIdentity)?.Address;
 
         if (string.IsNullOrEmpty(activatorAddress))
         {
@@ -687,7 +687,7 @@ internal class PartitionIdentityActor : IActor
                             }
 
                             var currentActivatorAddress =
-                                _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address)?.Address;
+                                _cluster.MemberList.GetActivator(msg.Kind, context.Sender!.Address, msg.ClusterIdentity)?.Address;
 
                             if (_myAddress != currentActivatorAddress)
                             {

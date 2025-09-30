@@ -143,7 +143,7 @@ internal class IdentityStorageWorker : IActor
                     //are there any members that can spawn this kind?
                     //if not, just bail out
 
-                    var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
+                    var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address, clusterIdentity);
 
                     if (activator == null)
                     {
