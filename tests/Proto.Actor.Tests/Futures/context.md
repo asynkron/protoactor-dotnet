@@ -1,7 +1,8 @@
 # Futures Context
 
 ## Overview
-Future/awaitable interaction tests.
+Future/awaitable interaction tests, including regression coverage for shared future request id wrap-around so slots never
+emit a zero identifier.
 
 _Parent context: [Proto Actor Tests](../context.md)_
 
