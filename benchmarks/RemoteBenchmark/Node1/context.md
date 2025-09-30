@@ -6,7 +6,7 @@ Primary node for remote benchmark harness.
 _Parent context: [Remote Benchmark](../context.md)_
 
 ## Key Files
-* `Node1.csproj` – Project file configuring compilation targets and dependencies.
+* `Node1.csproj` – Project file configuring compilation targets and dependencies, now defining the `NETCORE` compilation constant for the .NET 8 build explicitly.
 * `Program.cs` – C# source defining Program behavior.
 
 ## Primary Types and Contracts

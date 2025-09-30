@@ -12,7 +12,7 @@ _Parent context: [Tests](../context.md)_
 * `EchoActor.cs` – C# source defining Echo Actor behavior.
 * `ForcedSerializationTests.cs` – C# source defining Forced Serialization Tests behavior.
 * `LargeMessageEnvelopeTests.cs` – C# source defining Large Message Envelope Tests behavior.
-* `Proto.Remote.Tests.csproj` – Project file configuring compilation targets and dependencies.
+* `Proto.Remote.Tests.csproj` – Project file configuring compilation targets and dependencies, including the explicit .NET 8 `NETCORE` compilation constant.
 * `RemoteFixture.cs` – C# source defining Remote Fixture behavior, including descriptor helpers for composing test transport combinations and unified startup/disposal logic.
 * `RemoteKindsRegistrationTests.cs` – C# source defining Remote Kinds Registration Tests behavior.
 * `RemoteStreamProcessorTests.cs` – C# source defining Remote Stream Processor Tests behavior.

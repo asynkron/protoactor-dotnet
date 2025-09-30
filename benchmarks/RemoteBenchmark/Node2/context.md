@@ -6,7 +6,7 @@ Secondary node for remote benchmark harness.
 _Parent context: [Remote Benchmark](../context.md)_
 
 ## Key Files
-* `Node2.csproj` – Project file configuring compilation targets and dependencies.
+* `Node2.csproj` – Project file configuring compilation targets and dependencies, explicitly adding the `NETCORE` define for the .NET 8 target.
 * `Program.cs` – C# source defining Program behavior.
 
 ## Primary Types and Contracts

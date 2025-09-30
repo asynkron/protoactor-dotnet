@@ -7,7 +7,7 @@ _Parent context: [Cluster Aspnet Grains](../context.md)_
 
 ## Key Files
 * `HelloGrain.cs` – C# source defining Hello Grain behavior.
-* `Node2.csproj` – Project file configuring compilation targets and dependencies.
+* `Node2.csproj` – Project file configuring compilation targets and dependencies, pulling StackExchange.Redis through the .NET 8 package feed.
 * `Program.cs` – C# source defining Program behavior.
 * `appsettings.Development.json` – Configuration or metadata in JSON format.
 * `appsettings.json` – Configuration or metadata in JSON format.

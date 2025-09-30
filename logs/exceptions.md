@@ -58,3 +58,6 @@ Proto.TestKit.TestKitException : Waited 1 seconds but failed to receive a messag
 
 ### Proto.Cluster.Tests.GossipCoreTests.Large_cluster_should_get_topology_consensus
 `Expected x.consensus to be True, but found False.` occurred twice before extending the consensus timeout to 20 seconds.
+
+### Proto.Tests.SharedFutureTests.Should_wrap_request_ids_without_hitting_zero
+`Expected future.Pid.RequestId to be 8u, but found 1u.` observed when verifying request id wrap-around on .NET 8 after the upgrade; focused rerun and a full-suite retry passed.
