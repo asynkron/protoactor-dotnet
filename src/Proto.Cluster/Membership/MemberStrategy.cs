@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -37,8 +38,19 @@ public interface IMemberStrategy
     /// <summary>
     ///     Assigns a virtual actor to a member.
     /// </summary>
+    /// <param name="identity">Identity of the virtual actor to activate</param>
     /// <param name="senderAddress">Network address of the process that initiated the activation</param>
     /// <returns>Member to spawn on</returns>
+#pragma warning disable CS0618 // Type or member is obsolete
+    Member? GetActivator(ClusterIdentity identity, string senderAddress) => GetActivator(senderAddress);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+    /// <summary>
+    ///     Assigns a virtual actor to a member.
+    /// </summary>
+    /// <param name="senderAddress">Network address of the process that initiated the activation</param>
+    /// <returns>Member to spawn on</returns>
+    [Obsolete("Use GetActivator(ClusterIdentity identity, string senderAddress) instead")]
     Member? GetActivator(string senderAddress);
 }
 
