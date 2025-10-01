@@ -23,14 +23,14 @@ internal class MemberStrategyManager
 
     internal MemberStrategyManager(Cluster cluster) => _cluster = cluster;
 
-    internal Member? GetActivator(string kind, string requestSourceAddress, ClusterIdentity identity)
+    internal Member? GetActivator(ClusterIdentity identity, string requestSourceAddress)
     {
-        if (_memberStrategyByKind.TryGetValue(kind, out var memberStrategy))
+        if (_memberStrategyByKind.TryGetValue(identity.Kind, out var memberStrategy))
         {
-            return memberStrategy.GetActivator(requestSourceAddress, identity);
+            return memberStrategy.GetActivator(identity, requestSourceAddress);
         }
 
-        Logger.DidNotFindActivatorForKind(kind);
+        Logger.DidNotFindActivatorForKind(identity.Kind);
 
         return null;
     }

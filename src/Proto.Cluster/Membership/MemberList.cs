@@ -137,8 +137,8 @@ public record MemberList : IMemberList
     internal Task<(bool consensus, ulong topologyHash)> TopologyConsensus(CancellationToken ct) =>
         _consensusManager.TopologyConsensus(ct);
 
-    internal Member? GetActivator(string kind, string requestSourceAddress, ClusterIdentity identity) =>
-        _memberStrategyManager.GetActivator(kind, requestSourceAddress, identity);
+    internal Member? GetActivator(ClusterIdentity identity, string requestSourceAddress) =>
+        _memberStrategyManager.GetActivator(identity, requestSourceAddress);
 
     /// <summary>
     ///     Used by clustering providers to update the member list.
