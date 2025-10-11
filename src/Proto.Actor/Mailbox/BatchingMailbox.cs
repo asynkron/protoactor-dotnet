@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="BatchingMailbox.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -21,10 +21,16 @@ public class BatchingMailbox : IMailbox
     private IDispatcher _dispatcher = null!;
     private IMessageInvoker _invoker = null!;
 
-    private int _status = MailboxStatus.Idle;
+    private const int Idle = 0;
+    private const int Busy = 1;
+
+    private int _status = Idle;
     private bool _suspended;
 
-    public BatchingMailbox(int batchSize) => _batchSize = batchSize;
+    public BatchingMailbox(int batchSize)
+    {
+        _batchSize = batchSize;
+    }
 
     public int UserMessageCount => _userMessages.Length;
 
@@ -57,27 +63,27 @@ public class BatchingMailbox : IMailbox
         try
         {
             var batch = new List<object>(_batchSize);
-            var sys = _systemMessages.Pop();
+            var msg = _systemMessages.Pop();
 
-            if (sys is not null)
+            if (msg is SystemMessage sys)
             {
                 _suspended = sys switch
                 {
                     //special system message at mailbox level
                     SuspendMailbox _ => true,
-                    _                => _suspended
+                    _ => _suspended
                 };
+
                 currentMessage = sys;
-                await _invoker.InvokeSystemMessageAsync(sys);
+                await _invoker.InvokeSystemMessageAsync(sys).ConfigureAwait(false);
             }
 
             if (!_suspended)
             {
                 batch.Clear();
-                object? msg;
 
-                while ((msg = _userMessages.Pop()) is not null ||
-                       batch.Count >= _batchSize)
+                while (batch.Count < _batchSize &&
+                    (msg = _userMessages.Pop()) is not null)
                 {
                     batch.Add(msg!);
                 }
@@ -85,24 +91,30 @@ public class BatchingMailbox : IMailbox
                 if (batch.Count > 0)
                 {
                     currentMessage = batch;
-                    await _invoker.InvokeUserMessageAsync(new MessageBatch(batch));
+                    await _invoker.InvokeUserMessageAsync(new MessageBatch(batch)).ConfigureAwait(false);
                 }
             }
         }
         catch (Exception x)
         {
+            x.CheckFailFast();
             _suspended = true;
             _invoker.EscalateFailure(x, currentMessage);
         }
 
-        Interlocked.Exchange(ref _status, MailboxStatus.Idle);
+        Interlocked.Exchange(ref _status, Idle);
 
-        if (_systemMessages.HasMessages || (_userMessages.HasMessages && !_suspended)) Schedule();
+        if (_systemMessages.HasMessages || (_userMessages.HasMessages && !_suspended))
+        {
+            Schedule();
+        }
     }
 
     private void Schedule()
     {
-        if (Interlocked.CompareExchange(ref _status, MailboxStatus.Busy, MailboxStatus.Idle) == MailboxStatus.Idle)
+        if (Interlocked.CompareExchange(ref _status, Busy, Idle) == Idle)
+        {
             _dispatcher.Schedule(RunAsync);
+        }
     }
 }

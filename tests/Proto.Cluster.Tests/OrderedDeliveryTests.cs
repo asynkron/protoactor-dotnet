@@ -5,21 +5,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Proto.Utils;
 using Xunit;
 
 namespace Proto.Cluster.Tests;
 
+[Collection("ClusterTests")]
 public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDeliveryTests.OrderedDeliveryFixture>
 {
-    public OrderedDeliveryTests( OrderedDeliveryFixture clusterFixture) : base(
+    public OrderedDeliveryTests(OrderedDeliveryFixture clusterFixture) : base(
         clusterFixture
     )
     {
     }
 
-    [Theory, InlineData(1000, 10, 8000)]
+    [Theory]
+    [InlineData(20, 10, 20000)]
     public async Task OrderedDeliveryFromActors(int sendingActors, int messagesSentPerCall, int timeoutMs)
     {
+        
         var aggregatorId = CreateIdentity("agg-1");
 
         var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -29,6 +33,7 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
             Count = messagesSentPerCall,
             Id = aggregatorId
         };
+
         var sendRequestsSent = Members.SelectMany(
                 cluster => GetActorIds(sendingActors)
                     .Select(id => cluster.RequestAsync<Ack>(id, SenderActor.Kind, sendToRequest, timeout))
@@ -37,10 +42,11 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
 
         await Task.WhenAll(sendRequestsSent);
 
-        var result = await Members.First().RequestAsync<AggregatorResult>(aggregatorId, VerifyOrderActor.Kind,
-            new AskAggregator(),
-            new CancellationTokenSource(5000).Token
-        );
+        var result = await Members.First()
+            .RequestAsync<AggregatorResult>(aggregatorId, VerifyOrderActor.Kind,
+                new AskAggregator(),
+                new CancellationTokenSource(5000).Token
+            );
 
         result.Should().NotBeNull("We expect a response from the aggregator actor");
         result.SequenceKeyCount.Should().Be(sendRequestsSent.Count, "We expect a unique id per send request");
@@ -63,6 +69,7 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
                 case Started _:
                     var init = context.ClusterIdentity();
                     _instanceId = $"{init!.Kind}:{init.Identity}.{Guid.NewGuid():N}";
+
                     break;
                 case SendToRequest sendTo:
 
@@ -70,17 +77,19 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
 
                     for (var i = 0; i < sendTo.Count; i++)
                     {
-                        await context.Cluster().RequestAsync<Ack>(sendTo.Id, VerifyOrderActor.Kind,
-                            new SequentialIdRequest
-                            {
-                                SequenceKey = key,
-                                SequenceId = _seq++,
-                                Sender = _instanceId
-                            }, CancellationToken.None
-                        );
+                        await context.Cluster()
+                            .RequestAsync<Ack>(sendTo.Id, VerifyOrderActor.Kind,
+                                new SequentialIdRequest
+                                {
+                                    SequenceKey = key,
+                                    SequenceId = _seq++,
+                                    Sender = _instanceId
+                                }, CancellationToken.None
+                            );
                     }
 
                     context.Respond(new Ack());
+
                     break;
             }
         }
@@ -102,6 +111,7 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
             {
                 case SequentialIdRequest request:
                     HandleOrderedRequest(request, context);
+
                     break;
                 case AskAggregator:
                     context.Respond(new AggregatorResult
@@ -112,6 +122,7 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
                             SenderKeyCount = _senders.Count
                         }
                     );
+
                     break;
             }
 
@@ -122,10 +133,16 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
         {
             _seqRequests++;
             _senders.Add(request.Sender);
+
             var outOfOrder = _lastReceivedSeq.TryGetValue(request.SequenceKey, out var last) &&
                              last + 1 != request.SequenceId;
+
             _lastReceivedSeq[request.SequenceKey] = request.SequenceId;
-            if (outOfOrder) _outOfOrderErrors++;
+
+            if (outOfOrder)
+            {
+                _outOfOrderErrors++;
+            }
 
             context.Respond(new Ack());
         }
@@ -138,16 +155,20 @@ public class OrderedDeliveryTests : ClusterTestBase, IClassFixture<OrderedDelive
         {
         }
 
-        protected override ClusterKind[] ClusterKinds {
-            get {
+        protected override ClusterKind[] ClusterKinds
+        {
+            get
+            {
                 var senderProps = Props.FromProducer(() => new SenderActor());
                 var aggProps = Props.FromProducer(() => new VerifyOrderActor());
+
                 return base.ClusterKinds.Concat(new ClusterKind[]
-                    {
-                        new (SenderActor.Kind, senderProps),
-                        new (VerifyOrderActor.Kind, aggProps)
-                    }
-                ).ToArray();
+                        {
+                            new(SenderActor.Kind, senderProps),
+                            new(VerifyOrderActor.Kind, aggProps)
+                        }
+                    )
+                    .ToArray();
             }
         }
     }

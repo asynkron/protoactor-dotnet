@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
 // <copyright file="IdentityStorageWorker.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -12,7 +13,7 @@ using Proto.Utils;
 
 namespace Proto.Cluster.Identity;
 
-class IdentityStorageWorker : IActor
+internal class IdentityStorageWorker : IActor
 {
     private const int MaxSpawnRetries = 3;
 
@@ -34,7 +35,7 @@ class IdentityStorageWorker : IActor
         _shouldThrottle = Throttle.Create(
             10,
             TimeSpan.FromSeconds(5),
-            i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs.", i)
+            i => _logger.LogInformation("Throttled {LogCount} IdentityStorageWorker logs", i)
         );
 
         _cluster = storageLookup.Cluster;
@@ -45,11 +46,15 @@ class IdentityStorageWorker : IActor
 
     public Task ReceiveAsync(IContext context)
     {
-        if (context.Message is not GetPid msg) return Task.CompletedTask;
+        if (context.Message is not GetPid msg)
+        {
+            return Task.CompletedTask;
+        }
 
         if (context.Sender == null)
         {
             _logger.LogCritical("No sender in GetPid request");
+
             return Task.CompletedTask;
         }
 
@@ -58,20 +63,21 @@ class IdentityStorageWorker : IActor
         if (_cluster.PidCache.TryGet(clusterIdentity, out var existing))
         {
             context.Respond(new PidResult(existing));
+
             return Task.CompletedTask;
         }
 
         if (!_inProgress.Contains(clusterIdentity))
         {
             _inProgress.Add(clusterIdentity);
-            context.ReenterAfter(GetWithGlobalLock(context.Sender!, clusterIdentity), task => {
+
+            context.ReenterAfter(GetWithGlobalLock(context.Sender!, clusterIdentity), async task =>
+                {
                     try
                     {
-                        var response = new PidResult(task.Result);
+                        var response = await task.ConfigureAwait(false);
                         context.Respond(response);
                         RespondToWaitingRequests(context, clusterIdentity, response);
-
-                        return Task.CompletedTask;
                     }
                     finally
                     {
@@ -82,8 +88,14 @@ class IdentityStorageWorker : IActor
         }
         else
         {
-            if (_waitingRequests.TryGetValue(clusterIdentity, out var senders)) senders.Add(context.Sender);
-            else _waitingRequests[clusterIdentity] = new List<PID> {context.Sender};
+            if (_waitingRequests.TryGetValue(clusterIdentity, out var senders))
+            {
+                senders.Add(context.Sender);
+            }
+            else
+            {
+                _waitingRequests[clusterIdentity] = new List<PID> { context.Sender };
+            }
         }
 
         return Task.CompletedTask;
@@ -91,7 +103,10 @@ class IdentityStorageWorker : IActor
 
     private void RespondToWaitingRequests(IContext context, ClusterIdentity clusterIdentity, PidResult response)
     {
-        if (!_waitingRequests.Remove(clusterIdentity, out var senders)) return;
+        if (!_waitingRequests.Remove(clusterIdentity, out var senders))
+        {
+            return;
+        }
 
         foreach (var sender in senders)
         {
@@ -99,80 +114,109 @@ class IdentityStorageWorker : IActor
         }
     }
 
-    private Task<PID?> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
+    private Task<PidResult> GetWithGlobalLock(PID sender, ClusterIdentity clusterIdentity)
     {
-        async Task<PID?> Inner()
+        async Task<PidResult> Inner()
         {
             var tries = 0;
-            PID? result = null;
+            PID? pid = null;
             SpawnLock? spawnLock = null;
 
-            while (result == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
+            while (pid == null && !_cluster.System.Shutdown.IsCancellationRequested && ++tries <= MaxSpawnRetries)
             {
                 try
                 {
                     using var tryGetCts = new CancellationTokenSource(_cluster.Config.ActorActivationTimeout);
-                    var activation = await _storage.TryGetExistingActivation(clusterIdentity, tryGetCts.Token);
+                    var activation = await _storage.TryGetExistingActivation(clusterIdentity, tryGetCts.Token).ConfigureAwait(false);
 
                     //we got an existing activation, use this
                     if (activation != null)
                     {
-                        var existingPid = await ValidateAndMapToPid(clusterIdentity, activation);
-                        if (existingPid != null) return existingPid;
+                        var existingPid = await ValidateAndMapToPid(clusterIdentity, activation).ConfigureAwait(false);
+
+                        if (existingPid != null)
+                        {
+                            return new PidResult(existingPid);
+                        }
                     }
 
                     //are there any members that can spawn this kind?
                     //if not, just bail out
 
-                    var activator = _memberList.GetActivator(clusterIdentity.Kind, sender.Address);
-                    if (activator == null) return null;
+                    var activator = _memberList.GetActivator(clusterIdentity, sender.Address);
+
+                    if (activator == null)
+                    {
+                        return null!;
+                    }
 
                     //try to acquire global lock
-                    spawnLock ??= await TryAcquireLock(clusterIdentity);
+                    spawnLock ??= await TryAcquireLock(clusterIdentity).ConfigureAwait(false);
 
                     //we didn't get the lock, wait for activation to complete
 
                     if (spawnLock == null)
                     {
                         using var cts = new CancellationTokenSource(_cluster.Config.ActorActivationTimeout);
-                        result = await WaitForActivation(clusterIdentity, cts.Token);
+                        pid = await WaitForActivation(clusterIdentity, cts.Token).ConfigureAwait(false);
                     }
                     else
                     {
                         using var cts = new CancellationTokenSource(_cluster.Config.ActorActivationTimeout);
                         //we have the lock, spawn and return
-                        (result, spawnLock) = await SpawnActivationAsync(activator, spawnLock, cts.Token);
+                        (var spawnResult, spawnLock) = await SpawnActivationAsync(activator, spawnLock, cts.Token).ConfigureAwait(false);
+
+                        if (spawnResult is not null)
+                        {
+                            return spawnResult;
+                        }
                     }
                 }
                 catch (OperationCanceledException e)
                 {
-                    if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+                    if (_cluster.System.Shutdown.IsCancellationRequested)
+                    {
+                        return null!;
+                    }
 
                     if (_shouldThrottle().IsOpen())
+                    {
                         _logger.LogWarning(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
+                    }
 
-                    await Task.Delay(tries * 20);
+                    // Exponential backoff before retrying activation retrieval
+                    await Task.Delay(tries * 20).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
-                    if (_cluster.System.Shutdown.IsCancellationRequested) return null;
+                    if (_cluster.System.Shutdown.IsCancellationRequested)
+                    {
+                        return null!;
+                    }
 
                     if (_shouldThrottle().IsOpen())
+                    {
                         _logger.LogError(e, "Failed to get PID for {ClusterIdentity}", clusterIdentity);
+                    }
 
-                    await Task.Delay(tries * 20);
+                    // Exponential backoff before retrying after failure
+                    await Task.Delay(tries * 20).ConfigureAwait(false);
                 }
             }
 
-            return result;
+            return new PidResult(pid);
         }
 
         if (!_cluster.System.Metrics.Enabled)
+        {
             return Inner();
+        }
 
         return IdentityMetrics.GetWithGlobalLockDuration.Observe(
             Inner,
-            new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+            new KeyValuePair<string, object?>("id", _cluster.System.Id),
+            new KeyValuePair<string, object?>("address", _cluster.System.Address),
+            new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind)
         );
     }
 
@@ -181,11 +225,15 @@ class IdentityStorageWorker : IActor
         Task<SpawnLock?> Inner() => _storage.TryAcquireLock(clusterIdentity, CancellationTokens.FromSeconds(5));
 
         if (!_cluster.System.Metrics.Enabled)
+        {
             return Inner();
+        }
 
         return IdentityMetrics.TryAcquireLockDuration.Observe(
             Inner,
-            new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+            new KeyValuePair<string, object?>("id", _cluster.System.Id),
+            new KeyValuePair<string, object?>("address", _cluster.System.Address),
+            new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind)
         );
     }
 
@@ -193,53 +241,81 @@ class IdentityStorageWorker : IActor
     {
         async Task<PID?> Inner()
         {
-            var activation = await _storage.WaitForActivation(clusterIdentity, ct);
+            var activation = await _storage.WaitForActivation(clusterIdentity, ct).ConfigureAwait(false);
+
             var res = await ValidateAndMapToPid(
                 clusterIdentity,
                 activation
-            );
+            ).ConfigureAwait(false);
+
             return res;
         }
 
         if (!_cluster.System.Metrics.Enabled)
+        {
             return Inner();
+        }
 
         return IdentityMetrics.WaitForActivationDuration
             .Observe(
                 Inner,
-                new("id", _cluster.System.Id), new("address", _cluster.System.Address), new("clusterkind", clusterIdentity.Kind)
+                new KeyValuePair<string, object?>("id", _cluster.System.Id),
+                new KeyValuePair<string, object?>("address", _cluster.System.Address),
+                new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind)
             );
     }
 
-    private async Task<(PID?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock, CancellationToken ct)
+    private async Task<(PidResult?, SpawnLock?)> SpawnActivationAsync(Member activator, SpawnLock spawnLock,
+        CancellationToken ct)
     {
         //we own the lock
-        if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", spawnLock.ClusterIdentity.Identity,
-            spawnLock.ClusterIdentity.Kind
-        );
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("Storing placement lookup for {Identity} {Kind}", spawnLock.ClusterIdentity.Identity,
+                spawnLock.ClusterIdentity.Kind
+            );
+        }
 
         var remotePid = _lookup.RemotePlacementActor(activator.Address);
+
         var req = new ActivationRequest
         {
             ClusterIdentity = spawnLock.ClusterIdentity,
             RequestId = spawnLock.LockId
         };
 
+        if (_cluster.System.Metrics.Enabled)
+        {
+            IdentityMetrics.ActivationRequestSentCount.Add(1,
+                new KeyValuePair<string, object?>("id", _cluster.System.Id),
+                new KeyValuePair<string, object?>("address", _cluster.System.Address),
+                new KeyValuePair<string, object?>("clusterkind", spawnLock.ClusterIdentity.Kind));
+        }
+
         try
         {
-            var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct);
+            var resp = await _cluster.System.Root.RequestAsync<ActivationResponse>(remotePid, req, ct).ConfigureAwait(false);
 
             if (resp.Pid != null)
             {
                 _cluster.PidCache.TryAdd(spawnLock.ClusterIdentity, resp.Pid!);
-                return (resp.Pid, null);
+
+                return (new PidResult(resp.Pid), null);
+            }
+
+            if (resp.InvalidIdentity)
+            {
+                return (PidResult.Blocked, null);
             }
         }
         //TODO: decide if we throw or return null
         catch (DeadLetterException)
         {
             if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen())
+            {
                 _logger.LogWarning("[SpawnActivationAsync] Member {Activator} unavailable", activator);
+            }
+
             return (null, spawnLock);
         }
         catch (TimeoutException)
@@ -248,21 +324,32 @@ class IdentityStorageWorker : IActor
         }
         catch (Exception e)
         {
-            if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen() && _memberList.ContainsMemberId(activator.Id))
-                _logger.LogError(e, "[SpawnActivationAsync] Error occured requesting remote PID {@Request}", req);
+            if (!_cluster.System.Shutdown.IsCancellationRequested && _shouldThrottle().IsOpen() &&
+                _memberList.ContainsMemberId(activator.Id))
+            {
+                _logger.LogError(e, "[SpawnActivationAsync] Error occurred requesting remote PID {@Request}", req);
+            }
         }
 
         //Clean up our mess..
-        await _storage.RemoveLock(spawnLock, ct);
+        await _storage.RemoveLock(spawnLock, ct).ConfigureAwait(false);
+
         return (null, null);
     }
 
     private async Task<PID?> ValidateAndMapToPid(ClusterIdentity clusterIdentity, StoredActivation? activation)
     {
-        if (activation?.Pid == null) return null;
+        if (activation?.Pid == null)
+        {
+            return null;
+        }
 
         var memberExists = _memberList.ContainsMemberId(activation.MemberId);
-        if (memberExists) return activation.Pid;
+
+        if (memberExists)
+        {
+            return activation.Pid;
+        }
 
         if (StaleMembers.TryAdd(activation.MemberId))
         {
@@ -273,7 +360,8 @@ class IdentityStorageWorker : IActor
         }
 
         //let all requests try to remove, but only log on the first occurrence
-        await _storage.RemoveMember(activation.MemberId, CancellationToken.None);
+        await _storage.RemoveMember(activation.MemberId, CancellationToken.None).ConfigureAwait(false);
+
         return null;
     }
 }

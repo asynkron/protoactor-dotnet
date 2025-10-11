@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <NoWarn>8981</NoWarn>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+    <PackageReference Include="Proto.Cluster.CodeGen" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="Protos.proto" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProtoGrain Include="Protos.proto" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Actors.proto" />
+  </ItemGroup>
+
+</Project>

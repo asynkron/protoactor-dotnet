@@ -1,0 +1,66 @@
+﻿@using MudBlazor.Utilities
+@inherits LayoutComponentBase
+
+<PageTitle>Proto.Cluster.Dashboard</PageTitle>
+<MudThemeProvider Theme="@MyCustomTheme" IsDarkMode="@_dark"/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<style>
+
+    .mud-drawer-mini {
+        border-right: 1px solid #ccccdc26;
+    }
+    .mud-nav-link.active {
+        border-left: 4px solid #0f1014;
+        /*border-left:4px solid #ff8833;*/
+    }
+    
+    .mud-nav-link.active::before {
+        position: absolute;
+        display: block;
+        width: 4px;
+        content: " ";        
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background-image: linear-gradient(0.01deg, rgb(245 62 62) 0.01%, rgb(255 220 51) 99.99%);
+    }
+    
+</style>
+
+<MudLayout>
+    <MudAppBar Elevation="0">
+        <h3>Proto.Actor Cluster Dashboard</h3>
+        <MudSpacer/>
+        <MudToggleIconButton @bind-Toggled="@_dark" Edge="Edge.End"
+                             Icon="@Icons.Material.Filled.DarkMode" Color="@Color.Info" Title="Dark"
+                             ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@Color.Warning" ToggledTitle="Light"/>
+    </MudAppBar>
+    <MudDrawer  ClipMode="DrawerClipMode.Never" Elevation="0" Variant="@DrawerVariant.Mini" OpenMiniOnHover="false">
+        <NavMenu/>
+    </MudDrawer>
+    <MudMainContent >
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code
+{
+    readonly MudTheme MyCustomTheme = new();
+
+    protected override void OnInitialized()
+    {
+        MyCustomTheme.PaletteDark.Background = new MudColor("#0f1014");
+        MyCustomTheme.PaletteDark.Surface = new MudColor("#181b1f");
+        MyCustomTheme.PaletteDark.AppbarBackground = new MudColor("#0f1014");
+        MyCustomTheme.PaletteDark.DrawerBackground = new MudColor("#181b1f");
+        MyCustomTheme.PaletteDark.LinesDefault = new MudColor("#ccccdc26");
+
+        base.OnInitialized();
+    }
+
+    bool _dark = true;
+
+
+}

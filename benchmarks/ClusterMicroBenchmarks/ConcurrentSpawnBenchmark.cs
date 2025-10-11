@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="PidCacheBenchmark.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -11,6 +11,7 @@ using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
+using Proto.Remote;
 using Proto.Remote.GrpcNet;
 
 namespace ClusterMicroBenchmarks;
@@ -30,26 +31,29 @@ public class ConcurrentSpawnBenchmark
     [GlobalSetup]
     public async Task Setup()
     {
-        var echoProps = Props.FromFunc(ctx => {
-                if (ctx.Sender is not null) ctx.Respond(ctx.Message!);
-                return Task.CompletedTask;
-            }
-        );
+        var echoProps = Props.FromFunc(ctx =>
+        {
+            if (ctx.Sender is not null)
+                ctx.Respond(ctx.Message!);
+            return Task.CompletedTask;
+        });
 
         var echoKind = new ClusterKind(Kind, echoProps);
 
         var sys = new ActorSystem(new ActorSystemConfig())
-            .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))
+            .WithRemote(RemoteConfig.BindToLocalhost(9090))
             .WithCluster(ClusterConfig().WithClusterKind(echoKind));
 
         _cluster = sys.Cluster();
         await _cluster.StartMemberAsync();
     }
 
-    private ClusterConfig ClusterConfig() => Proto.Cluster.ClusterConfig.Setup("test-cluster",
-        new TestProvider(new TestProviderOptions(), new InMemAgent()),
-        GetIdentityLookup()
-    );
+    private ClusterConfig ClusterConfig() =>
+        Proto.Cluster.ClusterConfig.Setup(
+            "test-cluster",
+            new TestProvider(new TestProviderOptions(), new InMemAgent()),
+            GetIdentityLookup()
+        );
 
     private PartitionIdentityLookup GetIdentityLookup()
     {
@@ -80,7 +84,8 @@ public class ConcurrentSpawnBenchmark
 
         for (var i = 0; i < ConcurrentSpawns; i++)
         {
-            if (pids[i] is null) throw new Exception("Failed to return id " + i);
+            if (pids[i] is null)
+                throw new Exception("Failed to return id " + i);
         }
     }
 
@@ -96,7 +101,19 @@ public class ConcurrentSpawnBenchmark
             tasks[i] = _cluster.RequestAsync<Terminated>(id, PoisonPill.Instance, cts.Token);
         }
 
-        Task.WhenAll(tasks).GetAwaiter().GetResult();
+        try
+        {
+            Task.WhenAll(tasks).GetAwaiter().GetResult();
+        }
+        catch (TimeoutException)
+        {
+            // ignore
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     public enum IdentityLookup

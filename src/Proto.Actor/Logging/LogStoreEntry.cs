@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
 // <copyright file="LogStoreEntry.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -28,6 +29,7 @@ public record LogStoreEntry(
     {
         var formatter = new LogValuesFormatter(Template);
         var str = formatter.Format(Args);
+
         return $"[{Timestamp:hh:mm:ss.fff}] [{Category}][{LogLevel}] {str} {Exception}";
     }
 }

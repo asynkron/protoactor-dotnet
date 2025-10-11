@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
 // <copyright file="EventProbe.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
@@ -27,14 +28,18 @@ public class EventProbe<T>
     private readonly ILogger _logger = Log.CreateLogger<EventProbe<T>>();
     private EventExpectation<T>? _currentExpectation;
 
-    public EventProbe(EventStream<T> eventStream) => _eventStreamSubscription = eventStream.Subscribe(e => {
-            lock (_lock)
+    public EventProbe(EventStream<T> eventStream)
+    {
+        _eventStreamSubscription = eventStream.Subscribe(e =>
             {
-                _events.Enqueue(e);
-                NotifyChanges();
+                lock (_lock)
+                {
+                    _events.Enqueue(e);
+                    NotifyChanges();
+                }
             }
-        }
-    );
+        );
+    }
 
     public Task Expect<TE>() where TE : T
     {
@@ -43,6 +48,7 @@ public class EventProbe<T>
             var expectation = new EventExpectation<T>(@event => @event is TE);
             _currentExpectation = expectation;
             NotifyChanges();
+
             return expectation.Task;
         }
     }
@@ -51,17 +57,20 @@ public class EventProbe<T>
     {
         lock (_lock)
         {
-            var expectation = new EventExpectation<T>(@event => {
+            var expectation = new EventExpectation<T>(@event =>
+                {
                     return @event switch
                     {
                         TE e when predicate(e) => true,
-                        _                      => false
+                        _ => false
                     };
                 }
             );
-            _logger.LogDebug("Setting expectation");
+
+            _logger.SettingExpectation();
             _currentExpectation = expectation;
             NotifyChanges();
+
             return expectation.Task;
         }
     }
@@ -82,12 +91,14 @@ public class EventProbe<T>
         {
             if (_currentExpectation.Evaluate(@event))
             {
-                _logger.LogDebug("Got expected event {@event} ", @event);
+                // The event stream never publishes null events; the null-forgiving operator communicates this to the compiler
+                _logger.GotExpectedEvent(@event!);
                 _currentExpectation = null;
+
                 return;
             }
 
-            _logger.LogDebug("Got unexpected {@event}, ignoring", @event);
+            _logger.GotUnexpectedEvent(@event!);
         }
     }
 }

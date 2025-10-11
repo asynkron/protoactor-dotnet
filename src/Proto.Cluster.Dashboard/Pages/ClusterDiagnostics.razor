@@ -1,0 +1,70 @@
+@page "/ClusterDiagnostics"
+@using Proto.Diagnostics
+@using System.Text.Json
+@inject ActorSystem System
+@inject IJSRuntime JS
+<PageTitle>Cluster Diagnostics</PageTitle>
+
+<div class="px-4">
+    <MudPaper Elevation="2" Outlined>
+    @if (_diagnostics is not null)
+    {
+        <MudTable T="DiagnosticsEntry" Items="_diagnostics.OrderBy(e => e.Module).ThenBy(e => e.Message)">
+            <HeaderContent>
+                <MudTh>Module</MudTh>
+                <MudTh>Message</MudTh>
+                <MudTh>Data</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Nr">@context.Module</MudTd>
+                <MudTd DataLabel="Sign">@context.Message</MudTd>
+                <MudTd DataLabel="Name">
+                    @if (context.Data is not null)
+                    {
+                        <pre>
+                        <code class="language-json">@AsJson(context.Data)</code>
+                    </pre>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+    </MudPaper>
+</div>
+
+@code {
+    private DiagnosticsEntry[]? _diagnostics;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync().ConfigureAwait(false);
+
+        _diagnostics = await System.Diagnostics.GetDiagnostics().ConfigureAwait(false);
+    }
+
+    private string AsJson(object? data)
+    {
+        if (data is null)
+        {
+            return "";
+        }
+        var res = JsonSerializer.Serialize(data, new JsonSerializerOptions()
+        {
+            WriteIndented = true 
+        });
+        return res;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender).ConfigureAwait(false);
+        await JS.InvokeAsync<string>("hljs.highlightAll").ConfigureAwait(false);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        
+    }
+
+}

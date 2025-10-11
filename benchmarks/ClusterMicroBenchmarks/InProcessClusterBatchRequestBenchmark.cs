@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="InProcessClusterBatchRequestBenchmark.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading;
@@ -10,6 +10,7 @@ using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
+using Proto.Remote;
 using Proto.Remote.GrpcNet;
 
 namespace ClusterMicroBenchmarks;
@@ -37,15 +38,16 @@ public class InProcessClusterBatchRequestBenchmark
     [GlobalSetup]
     public async Task Setup()
     {
-        var echoProps = Props.FromFunc(ctx => {
-                if (ctx.Sender is not null) ctx.Respond(ctx.Message!);
-                return Task.CompletedTask;
-            }
-        );
+        var echoProps = Props.FromFunc(ctx =>
+        {
+            if (ctx.Sender is not null)
+                ctx.Respond(ctx.Message!);
+            return Task.CompletedTask;
+        });
         var echoKind = new ClusterKind(Kind, echoProps);
 
         var sys = new ActorSystem(new ActorSystemConfig())
-            .WithRemote(GrpcNetRemoteConfig.BindToLocalhost(9090))
+            .WithRemote(RemoteConfig.BindToLocalhost(9090))
             .WithCluster(ClusterConfig().WithClusterKind(echoKind));
 
         _cluster = sys.Cluster();
@@ -66,14 +68,17 @@ public class InProcessClusterBatchRequestBenchmark
 
     private ClusterConfig ClusterConfig()
     {
-        var config = Proto.Cluster.ClusterConfig.Setup("testcluster",
+        var config = Proto.Cluster.ClusterConfig.Setup(
+            "testcluster",
             new TestProvider(new TestProviderOptions(), new InMemAgent()),
             new PartitionIdentityLookup()
         );
 
         if (ExperimentalContext)
         {
-            config = config.WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster));
+            config = config.WithClusterContextProducer(
+                cluster => new DefaultClusterContext(cluster)
+            );
         }
 
         return config;
@@ -117,7 +122,9 @@ public class InProcessClusterBatchRequestBenchmark
     [Benchmark]
     public async Task ClusterRequestAsyncBatchReuseIdentity()
     {
-        var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
+        var ct = PassCancellationToken
+            ? CancellationTokens.FromSeconds(10)
+            : CancellationToken.None;
         using var batch = _cluster.System.Root.CreateBatchContext(BatchSize, ct);
         var tasks = new Task[BatchSize];
 
@@ -129,12 +136,13 @@ public class InProcessClusterBatchRequestBenchmark
 
         await Task.WhenAll(tasks);
     }
-        
 
     [Benchmark]
     public async Task ClusterRequestAsyncReuseIdentity()
     {
-        var ct = PassCancellationToken ? CancellationTokens.FromSeconds(10) : CancellationToken.None;
+        var ct = PassCancellationToken
+            ? CancellationTokens.FromSeconds(10)
+            : CancellationToken.None;
 
         var tasks = new Task[BatchSize];
 

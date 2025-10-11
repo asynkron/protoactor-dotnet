@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Proto.Mailbox;
 using Xunit;
@@ -10,7 +11,8 @@ public class EventStreamTests
     [Fact]
     public async Task EventStream_CanSubscribeToSpecificEventTypes()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var eventStream = system.EventStream;
         var received = "";
 
@@ -22,7 +24,8 @@ public class EventStreamTests
     [Fact]
     public async Task EventStream_CanSubscribeToAllEventTypes()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var eventStream = system.EventStream;
         var receivedEvents = new List<object>();
 
@@ -36,7 +39,8 @@ public class EventStreamTests
     [Fact]
     public async Task EventStream_CanUnsubscribeFromEvents()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var eventStream = system.EventStream;
         var receivedEvents = new List<object>();
         var subscription = eventStream.Subscribe<string>(@event => receivedEvents.Add(@event));
@@ -49,7 +53,8 @@ public class EventStreamTests
     [Fact]
     public async Task EventStream_OnlyReceiveSubscribedToEventTypes()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var eventStream = system.EventStream;
 
         var eventsReceived = new List<object>();
@@ -61,15 +66,36 @@ public class EventStreamTests
     [Fact]
     public async Task EventStream_CanSubscribeToSpecificEventTypes_Async()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var eventStream = system.EventStream;
 
         string received;
-        eventStream.Subscribe<string>(theString => {
+
+        eventStream.Subscribe<string>(theString =>
+            {
                 received = theString;
                 Assert.Equal("hello", received);
             }, Dispatchers.DefaultDispatcher
         );
+
         eventStream.Publish("hello");
+    }
+
+    [Fact]
+    public async Task EventStream_CanSubscribeUsingChannel()
+    {
+        var system = new ActorSystem();
+        await using var _ = system;
+        var eventStream = system.EventStream;
+        
+        var channel = Channel.CreateUnbounded<string>();
+        eventStream.Subscribe(channel);
+        eventStream.Publish(123);
+        eventStream.Publish(false);
+        eventStream.Publish("hello");
+
+        var res = await channel.Reader.ReadAsync();
+        Assert.Equal("hello",res);
     }
 }

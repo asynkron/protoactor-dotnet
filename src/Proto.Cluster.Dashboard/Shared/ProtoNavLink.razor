@@ -1,0 +1,29 @@
+<div>
+    <MudMenu FullWidth="false" 
+             ActivationEvent="@MouseEvent.MouseOver" 
+             AnchorOrigin="Origin.CenterRight" 
+             TransformOrigin="Origin.CenterLeft" 
+             Variant="Variant.Filled"
+             Color="Color.Secondary"
+             >
+        <ActivatorContent>
+            <MudNavLink Href="@Href" Match="NavLinkMatch.Prefix" Icon="@Icon"></MudNavLink>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="@Href" Match="NavLinkMatch.Prefix">@ChildContent</MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+</div>
+
+@code {
+
+    [Parameter]
+    public string Href { get; set; }
+
+    [Parameter]
+    public string Icon { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+}

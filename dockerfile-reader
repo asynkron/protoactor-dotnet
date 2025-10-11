@@ -6,8 +6,8 @@ COPY ./benchmarks ./benchmarks/
 RUN ls -la /sourcecode/*
 
 WORKDIR /sourcecode/benchmarks/ClusterBenchmark
-RUN dotnet restore
-RUN dotnet build -c Release -o /app
+RUN dotnet restore \
+    && dotnet build -c Release -o /app
 
 FROM base AS publish
 

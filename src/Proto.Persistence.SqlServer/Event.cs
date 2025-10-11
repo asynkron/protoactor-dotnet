@@ -1,6 +1,6 @@
 ﻿namespace Proto.Persistence.SqlServer;
 
-class Event
+internal class Event
 {
     public Event(string actorName, long eventIndex, object eventData)
     {

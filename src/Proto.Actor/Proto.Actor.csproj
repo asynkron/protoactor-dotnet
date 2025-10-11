@@ -1,29 +1,25 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-  <PropertyGroup>
-    <RootNamespace>Proto</RootNamespace>
-    <Nullable>enable</Nullable>
-    <IsPackable>true</IsPackable>
-    <LangVersion>10</LangVersion>
-    <TargetFrameworks>net5.0;net6.0;netstandard2.1</TargetFrameworks>
-  </PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+    <PropertyGroup>
+        <NoWarn>8981</NoWarn>
+        <RootNamespace>Proto</RootNamespace>
+        <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+        <LangVersion>10</LangVersion>
+        <TargetFrameworks>net8.0</TargetFrameworks>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.19.4" />
-    <PackageReference Include="Grpc.Tools" Version="2.42.0" PrivateAssets="All" />
-    <PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-    <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0" />
-    <PackageReference Include="System.Threading.Channels" Version="6.0.0" />
-    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" />
+        <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="System.Collections.Immutable" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+        <PackageReference Include="System.Diagnostics.DiagnosticSource" />
+        <PackageReference Include="System.Text.Json" />
+        <PackageReference Include="System.Threading.Channels" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Protobuf Include="Protos.proto" GrpcServices="Server" />
-  </ItemGroup>
+    <ItemGroup>
+        <Protobuf Include="Protos.proto" GrpcServices="Server" />
+    </ItemGroup>
 </Project>

@@ -1,4 +1,3 @@
-
 ## "Hello World"
 
 ```csharp
@@ -19,17 +18,17 @@ await DynamoDBHelper.CheckCreateSnapshotsTable(client, options, 1, 1);
 var provider = new DynamoDBProvider(_client, options);
 ```
 
-
-## Want to manually create tables?  
+## Want to manually create tables?
 
 Events table must have:
+
 * `ActorName` field as hash key
 * `EventIndex` field as range key
 
 Snapshots table must have:
+
 * `ActorName` field as hash key
 * `SnapshotIndex` field as range key
-
 
 ## Serialization/Deserialization notes
 

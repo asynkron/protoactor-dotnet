@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>10</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj" />
+    <ProjectReference Include="..\..\..\src\Proto.Remote\Proto.Remote.csproj" />
+    <None Include="..\localhost.pfx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,33 +1,37 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="PartitionManager.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Proto.Cluster.Partition;
 
 //helper to interact with partition actors on this and other members
-class PartitionManager
+internal class PartitionManager
 {
-    private const string PartitionIdentityActorName = "partition-identity";
-    private const string PartitionPlacementActorName = "partition-activator";
+    private const string PartitionIdentityActorName = "$partition-identity";
+    private const string PartitionPlacementActorName = "$partition-activator";
     private readonly Cluster _cluster;
+    private readonly PartitionConfig _config;
     private readonly IRootContext _context;
     private readonly bool _isClient;
     private readonly ActorSystem _system;
-    private PID _partitionPlacementActor = null!;
+    private readonly Func<Props, Props>? _configurePlacementProps;
     private PID _partitionIdentityActor = null!;
-    private readonly PartitionConfig _config;
+    private PID _partitionPlacementActor = null!;
 
-    internal PartitionManager(Cluster cluster, bool isClient, PartitionConfig config)
+    internal PartitionManager(Cluster cluster, bool isClient, PartitionConfig config, Func<Props, Props>? configurePlacementProps = null)
     {
         _cluster = cluster;
         _system = cluster.System;
         _context = _system.Root;
         _isClient = isClient;
         _config = config;
+        _configurePlacementProps = configurePlacementProps;
     }
 
     internal PartitionMemberSelector Selector { get; } = new();
@@ -37,9 +41,14 @@ class PartitionManager
         if (_isClient)
         {
             var eventId = 0ul;
+
             //make sure selector is updated first
-            _system.EventStream.Subscribe<ClusterTopology>(e => {
-                    if (e.TopologyHash == eventId) return;
+            _system.EventStream.Subscribe<ClusterTopology>(e =>
+                {
+                    if (e.TopologyHash == eventId)
+                    {
+                        return;
+                    }
 
                     eventId = e.TopologyHash;
                     Selector.Update(e.Members.ToArray(), e.TopologyHash);
@@ -49,18 +58,29 @@ class PartitionManager
         else
         {
             var partitionActorProps = Props
-                .FromProducer(() => new PartitionIdentityActor(_cluster, _config))
-                .WithGuardianSupervisorStrategy(Supervision.AlwaysRestartStrategy);
-            _partitionIdentityActor = _context.SpawnNamed(partitionActorProps, PartitionIdentityActorName);
+                .FromProducer(() => new PartitionIdentityActor(_cluster, _config));
+
+            _partitionIdentityActor = _context.SpawnNamedSystem(partitionActorProps, PartitionIdentityActorName);
 
             var partitionActivatorProps = Props.FromProducer(() => new PartitionPlacementActor(_cluster, _config));
-            _partitionPlacementActor = _context.SpawnNamed(partitionActivatorProps, PartitionPlacementActorName);
+
+            if (_configurePlacementProps is not null)
+            {
+                partitionActivatorProps = _configurePlacementProps(partitionActivatorProps);
+            }
+
+            _partitionPlacementActor = _context.SpawnNamedSystem(partitionActivatorProps, PartitionPlacementActorName);
 
             //synchronous subscribe to keep accurate
             var topologyHash = 0ul;
+
             //make sure selector is updated first
-            _system.EventStream.Subscribe<ClusterTopology>(e => {
-                    if (e.TopologyHash == topologyHash) return;
+            _system.EventStream.Subscribe<ClusterTopology>(e =>
+                {
+                    if (e.TopologyHash == topologyHash)
+                    {
+                        return;
+                    }
 
                     topologyHash = e.TopologyHash;
 
@@ -73,15 +93,17 @@ class PartitionManager
         }
     }
 
-    public void Shutdown()
+    public async Task ShutdownAsync()
     {
         if (_isClient)
         {
         }
         else
         {
-            _context.Stop(_partitionIdentityActor);
-            _context.Stop(_partitionPlacementActor);
+            await Task.WhenAll(
+                _context.StopAsync(_partitionPlacementActor),
+                _context.StopAsync(_partitionIdentityActor)
+            ).ConfigureAwait(false);
         }
     }
 

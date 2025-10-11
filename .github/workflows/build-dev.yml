@@ -6,83 +6,161 @@ on:
       - dev
     tags:
       - "*"
-
+env:
+  DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
+  TERM: xterm
+  
 jobs:
-  test:
+  test-slow:  # slow tests that should run in parallel
     runs-on: ubuntu-latest
-
+    
     services:
       redis:
         image: redis
         ports:
           - 6379/tcp
         options: --entrypoint redis-server
-      mongodb:
-        image: mongo
-        ports:
-          - 27017/tcp
-
+    
     strategy:
       matrix:
         dotnet:
-          - net6.0
-          - net5.0
-#           - netcoreapp3.1
+          - net8.0
         test:
-          - "tests/Proto.Actor.Tests/*.csproj"
-          - "tests/Proto.Remote.Tests/*.csproj"
-          - "tests/Proto.Persistence.Tests/*.csproj"
-          - "tests/Proto.OpenTelemetry.Tests/*.csproj"
           - "tests/Proto.Cluster.Tests/*.csproj"
-          - "tests/Proto.Cluster.Identity.Tests/*.csproj"
-        #  - "tests/Proto.Cluster.MongoIdentity.Tests/*.csproj"
+          - "tests/Proto.Cluster.PartitionIdentity.Tests/*.csproj"
           - "tests/Proto.Cluster.RedisIdentity.Tests/*.csproj"
-          - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
-
+          - "tests/Proto.Cluster.PubSub.Tests/*.csproj"
+          
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/checkout@v3
         with:
-          dotnet-version: "6.0.x"
-          include-prerelease: true
-      - uses: actions/setup-dotnet@v1
+          fetch-depth: 1
+      - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "5.0.100"
-      - uses: actions/setup-dotnet@v1
+          dotnet-version: |
+            8.0.x
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+
+      - name: Restore bin/obj cache
+        id: cache
+        uses: actions/cache/restore@v3
         with:
-          dotnet-version: "3.1.x"
+          path: |
+            **/bin
+            **/obj
+          key: ${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+
+      - name: Restore dependencies
+        run: dotnet restore ProtoActor.sln
 
       - name: Run tests ${{ matrix.test }}
         timeout-minutes: 15
         env:
-          ConnectionStrings__MongoDB: mongodb://localhost:${{ job.services.mongodb.ports[27017] }}/ProtoMongo
           ConnectionStrings__Redis: localhost:${{ job.services.redis.ports[6379] }},syncTimeout=10000
         run: |
-          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }}
+          dotnet test ${{ matrix.test }} -c Release -f ${{ matrix.dotnet }} --logger GitHubActions
+
+      - name: Save bin/obj cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            **/bin
+            **/obj
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+          
+  test-fast:  # fast tests where setting up a parallel job run is more overhead than just running the tests side by side
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        test:
+          - "tests/Proto.Actor.Tests/*.csproj"
+          - "tests/Proto.Remote.Tests/*.csproj"
+          # "tests/Proto.Persistence.Tests/*.csproj"
+          - "tests/Proto.OpenTelemetry.Tests/*.csproj"
+          - "tests/Proto.Cluster.CodeGen.Tests/*.csproj"
+            
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+
+      - name: Restore bin/obj cache
+        id: cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            **/bin
+            **/obj
+          key: ${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+
+      - name: Restore dependencies
+        run: dotnet restore ProtoActor.sln
+      - name: Run tests ${{ matrix.test }}
+        timeout-minutes: 15
+        run: |
+          dotnet test ${{ matrix.test }} -c Release --logger GitHubActions
+
+      - name: Save bin/obj cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            **/bin
+            **/obj
+          key: ${{ steps.cache.outputs.cache-primary-key }}
 
   nuget:
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [test-slow, test-fast]
 
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/checkout@v3
         with:
-          dotnet-version: "6.0.x"
-          include-prerelease: true         
-      - uses: actions/setup-dotnet@v1
+          fetch-depth: 0 # Full history required for versioning
+      - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "5.0.x"
-      - uses: actions/setup-dotnet@v1
+          dotnet-version: |
+            8.0.x
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+
+      - name: Restore bin/obj cache
+        id: cache
+        uses: actions/cache/restore@v3
         with:
-          dotnet-version: "3.1.x"
-          source-url: https://nuget.pkg.github.com/asynkron/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}             
+          path: |
+            **/bin
+            **/obj
+          key: ${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+
+      - name: Restore dependencies
+        run: dotnet restore ProtoActor.sln
 
       - name: Create and push NuGet package
         run: |
-          dotnet pack ProtoActor.sln -c Release -o nuget -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+          dotnet pack ProtoActor.sln -c Release -o nuget -p:SymbolPackageFormat=snupkg -p:GenerateDocumentationFile=true -p:NoWarn=CS1591
           dotnet nuget push nuget/**/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-          # dotnet nuget push nuget/**/*.nupkg --api-key ${{secrets.GITHUB_TOKEN}} --skip-duplicate
-          
+
+      - name: Save bin/obj cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            **/bin
+            **/obj
+          key: ${{ steps.cache.outputs.cache-primary-key }}

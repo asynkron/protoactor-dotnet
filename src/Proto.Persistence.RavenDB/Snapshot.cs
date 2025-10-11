@@ -1,6 +1,6 @@
 ﻿namespace Proto.Persistence.RavenDB;
 
-class Snapshot
+internal class Snapshot
 {
     public Snapshot(string actorName, long index, object data)
     {

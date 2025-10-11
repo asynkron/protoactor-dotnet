@@ -1,6 +1,6 @@
 ﻿namespace Proto.Persistence.Marten;
 
-class Snapshot
+public class Snapshot
 {
     public Snapshot(string actorName, long index, object data)
     {

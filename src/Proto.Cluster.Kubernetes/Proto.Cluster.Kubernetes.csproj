@@ -2,21 +2,16 @@
 
     <PropertyGroup>
         <LangVersion>10</LangVersion>
-        <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net8.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="JsonPatch.Net" Version="1.1.2" />
-        <PackageReference Include="KubernetesClient" Version="7.0.12" />
-        <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
+        <PackageReference Include="JsonPatch.Net" />
+        <PackageReference Include="KubernetesClient" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
+        <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
     </ItemGroup>
 
 </Project>

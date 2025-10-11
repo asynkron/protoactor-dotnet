@@ -12,7 +12,7 @@ You access such actors by identity/name, if they do not already exist, the clust
 
 #### Grain
 
-Grains are a synomym with Virtual Actors, in Project Orleans, Grains live inside a Silo (a host).
+Grains are a synonym with Virtual Actors, in Project Orleans, Grains live inside a Silo (a host).
 
 #### Remote
 
@@ -21,7 +21,7 @@ It basically provides the actor system to resolve `PIDs` that point to another a
 
 #### Cluster
 
-Proto.Cluster, is a orechestration mechanism built ontop of Proto.Remote, it makes it possible to work with Virtual Actors. see above.
+Proto.Cluster, is an orchestration mechanism built on top of Proto.Remote, it makes it possible to work with Virtual Actors. see above.
 
 #### Router
 

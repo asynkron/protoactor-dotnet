@@ -1,12 +1,13 @@
 // -----------------------------------------------------------------------
 // <copyright file="EventStreamProcess.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
 
 using JetBrains.Annotations;
+using Proto.Mailbox;
 
 // ReSharper disable once CheckNamespace
 namespace Proto;
@@ -24,7 +25,7 @@ public class EventStreamProcess : Process
         System.EventStream.Publish(msg);
     }
 
-    protected internal override void SendSystemMessage(PID pid, object message)
+    protected internal override void SendSystemMessage(PID pid, SystemMessage message)
     {
         //pass
     }

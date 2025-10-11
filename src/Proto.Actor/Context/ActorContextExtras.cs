@@ -1,10 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // <copyright file="ActorContextExtras.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
 using Proto.Utils;
@@ -18,19 +18,34 @@ namespace Proto;
 //because most actors do not need any of this, it is extra state that comes at a cost
 //most actors are short lived, no children. no stash, no timers
 //therefore we only use this extra state when needed, to keep actors as lightweight as possible
-public sealed class ActorContextExtras: IDisposable
+public sealed class ActorContextExtras : IDisposable
 {
-    public ActorContextExtras(IContext context) => Context = context;
+    public ActorContextExtras(IContext context)
+    {
+        Context = context;
+    }
 
     public ImmutableHashSet<PID> Children { get; private set; } = ImmutableHashSet<PID>.Empty;
     public Timer? ReceiveTimeoutTimer { get; private set; }
     public RestartStatistics RestartStatistics { get; } = new(0, null);
-    public Stack<object> Stash { get; } = new();
     public ImmutableHashSet<PID> Watchers { get; private set; } = ImmutableHashSet<PID>.Empty;
     public IContext Context { get; }
     public CancellationTokenSource CancellationTokenSource { get; } = new();
 
-    public TypeDictionary<object, ActorContextExtras> Store { get; } = new(5, 1);
+    internal TypeDictionary<object, ActorContextExtras> Store { get; } = new(5, 1);
+
+    public void Dispose()
+    {
+        ReceiveTimeoutTimer?.Dispose();
+        ReceiveTimeoutTimer = null;
+
+        // NOTE: We don't dispose CancellationTokenSource here on purpose, doing so causes
+        // ActorSystem shutdown issues because of DefaultMailbox.PostSystemMessage doing
+        // a Cancel call on that CancellationTokenSource. This can occur in cases of stopping
+        // an actor twice. Given that we utilize this CancellationTokenSource only via the Cancel()
+        // call, doing a Dispose() call is not required. More info can be found here:
+        // https://github.com/asynkron/protoactor-dotnet/issues/1916
+    }
 
     public void InitReceiveTimeoutTimer(Timer timer) => ReceiveTimeoutTimer = timer;
 
@@ -51,10 +66,4 @@ public sealed class ActorContextExtras: IDisposable
     public void Watch(PID watcher) => Watchers = Watchers.Add(watcher);
 
     public void Unwatch(PID watcher) => Watchers = Watchers.Remove(watcher);
-
-    public void Dispose()
-    {
-        ReceiveTimeoutTimer?.Dispose();
-        CancellationTokenSource.Dispose();
-    }
 }

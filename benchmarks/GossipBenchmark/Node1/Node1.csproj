@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <LangVersion>10</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Proto.Cluster.Consul\Proto.Cluster.Consul.csproj" />
+    <ProjectReference Include="..\..\..\src\Proto.Cluster.SeedNode.Redis\Proto.Cluster.SeedNode.Redis.csproj" />
+    <ProjectReference Include="..\..\..\src\Proto.Cluster\Proto.Cluster.csproj" />
+    <ProjectReference Include="..\..\..\src\Proto.Remote\Proto.Remote.csproj" />
+    <ProjectReference Include="..\Messages\Messages.csproj" />
+  </ItemGroup>
+</Project>

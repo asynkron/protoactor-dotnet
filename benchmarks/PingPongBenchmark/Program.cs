@@ -12,12 +12,12 @@ class Program
     {
         const int messageCount = 1000000;
         const int batchSize = 100;
-        int[] clientCounts = {8, 16, 32};
-        var tps = new[] {50, 100, 200, 400, 800};
+        int[] clientCounts = { 8, 16, 32 };
+        var tps = new[] { 50, 100, 200, 400, 800 };
 
         foreach (var t in tps)
         {
-            var d = new ThreadPoolDispatcher {Throughput = t};
+            var d = new ThreadPoolDispatcher { Throughput = t };
 
             foreach (var clientCount in clientCounts)
             {
@@ -29,15 +29,9 @@ class Program
                 for (var i = 0; i < clientCount; i++)
                 {
                     pingActors[i] = sys.Root.Spawn(
-                        PingActor
-                            .Props(messageCount, batchSize)
-                            .WithDispatcher(d)
+                        PingActor.Props(messageCount, batchSize).WithDispatcher(d)
                     );
-                    pongActors[i] = sys.Root.Spawn(
-                        PongActor
-                            .Props
-                            .WithDispatcher(d)
-                    );
+                    pongActors[i] = sys.Root.Spawn(PongActor.Props.WithDispatcher(d));
                 }
 
                 Console.WriteLine("Actors created");
@@ -50,7 +44,10 @@ class Program
                     var pingActor = pingActors[i];
                     var pongActor = pongActors[i];
 
-                    tasks[i] = sys.Root.RequestAsync<bool>(pingActor, new PingActor.Start(pongActor));
+                    tasks[i] = sys.Root.RequestAsync<bool>(
+                        pingActor,
+                        new PingActor.Start(pongActor)
+                    );
                 }
 
                 Console.WriteLine("Waiting for actors");
@@ -58,7 +55,7 @@ class Program
                 sw.Stop();
 
                 var totalMessages = messageCount * 2 * clientCount;
-                var x = (int) (totalMessages / (double) sw.ElapsedMilliseconds * 1000.0d);
+                var x = (int)(totalMessages / (double)sw.ElapsedMilliseconds * 1000.0d);
                 Console.WriteLine();
                 Console.WriteLine($"{clientCount}\t\t{sw.ElapsedMilliseconds}\t\t{x:n0}");
             }

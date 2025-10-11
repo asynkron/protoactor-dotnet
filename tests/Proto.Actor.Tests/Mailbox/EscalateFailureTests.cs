@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
+using static Proto.TestKit.TestKit;
 
 namespace Proto.Mailbox.Tests;
 
@@ -19,7 +21,8 @@ public class EscalateFailureTests
         msg1.TaskCompletionSource.SetException(taskException);
 
         mailbox.PostUserMessage(msg1);
-        await mailboxHandler.HasFailures;
+        await AwaitConditionAsync(() => mailboxHandler.EscalatedFailures.Count == 1,
+            TimeSpan.FromMilliseconds(100));
 
         Assert.Single(mailboxHandler.EscalatedFailures);
         var e = Assert.IsType<Exception>(mailboxHandler.EscalatedFailures[0]);
@@ -38,7 +41,8 @@ public class EscalateFailureTests
         msg1.TaskCompletionSource.SetException(taskException);
 
         mailbox.PostSystemMessage(msg1);
-        await mailboxHandler.HasFailures;
+        await AwaitConditionAsync(() => mailboxHandler.EscalatedFailures.Count == 1,
+            TimeSpan.FromMilliseconds(100));
 
         Assert.Single(mailboxHandler.EscalatedFailures);
         var e = Assert.IsType<Exception>(mailboxHandler.EscalatedFailures[0]);
@@ -57,9 +61,10 @@ public class EscalateFailureTests
         mailbox.PostUserMessage(msg1);
         var taskException = new Exception();
 
-        await Task.Delay(10);
-        msg1.TaskCompletionSource.SetException(taskException);
-        await mailboxHandler.HasFailures;
+        _ = Task.Run(() => msg1.TaskCompletionSource.SetException(taskException));
+
+        await AwaitConditionAsync(() => mailboxHandler.EscalatedFailures.Count == 1,
+            TimeSpan.FromMilliseconds(100));
 
         Assert.Single(mailboxHandler.EscalatedFailures);
         var e = Assert.IsType<Exception>(mailboxHandler.EscalatedFailures[0]);
@@ -77,15 +82,12 @@ public class EscalateFailureTests
 
         mailbox.PostSystemMessage(msg1);
 
-        //make sure the message is being processed by the mailboxHandler
-        //e.g. await mailboxHandler.GotMessage()
-        await Task.Delay(10);
-
         //fail the current task being processed
         var taskException = new Exception();
-        msg1.TaskCompletionSource.SetException(taskException);
+        _ = Task.Run(() => msg1.TaskCompletionSource.SetException(taskException));
 
-        await mailboxHandler.HasFailures;
+        await AwaitConditionAsync(() => mailboxHandler.EscalatedFailures.Count == 1,
+            TimeSpan.FromMilliseconds(100));
 
         Assert.Single(mailboxHandler.EscalatedFailures);
         var e = Assert.IsType<Exception>(mailboxHandler.EscalatedFailures[0]);
@@ -103,7 +105,8 @@ public class EscalateFailureTests
         msg1.TaskCompletionSource.SetCanceled();
 
         mailbox.PostUserMessage(msg1);
-        await mailboxHandler.HasFailures;
+        await AwaitConditionAsync(() => mailboxHandler.EscalatedFailures.Count == 1,
+            TimeSpan.FromMilliseconds(100));
 
         Assert.Single(mailboxHandler.EscalatedFailures);
         Assert.IsType<TaskCanceledException>(mailboxHandler.EscalatedFailures[0]);
@@ -120,7 +123,8 @@ public class EscalateFailureTests
         msg1.TaskCompletionSource.SetCanceled();
 
         mailbox.PostSystemMessage(msg1);
-        await mailboxHandler.HasFailures;
+        await AwaitConditionAsync(() => mailboxHandler.EscalatedFailures.Count == 1,
+            TimeSpan.FromMilliseconds(100));
 
         Assert.Single(mailboxHandler.EscalatedFailures);
         Assert.IsType<TaskCanceledException>(mailboxHandler.EscalatedFailures[0]);
@@ -137,11 +141,12 @@ public class EscalateFailureTests
 
         mailbox.PostUserMessage(msg1);
 
-        //this is a async message
-        await Task.Delay(10);
+        _ = Task.Run(() => msg1.TaskCompletionSource.SetCanceled());
 
-        msg1.TaskCompletionSource.SetCanceled();
-        await mailboxHandler.HasFailures;
+        await AwaitConditionAsync(
+            () => mailboxHandler.EscalatedFailures.Count == 1,
+            // allow additional time for the asynchronous cancellation to propagate
+            TimeSpan.FromMilliseconds(500));
 
         Assert.Single(mailboxHandler.EscalatedFailures);
         Assert.IsType<TaskCanceledException>(mailboxHandler.EscalatedFailures[0]);
@@ -159,10 +164,10 @@ public class EscalateFailureTests
         //post the test message to the mailbox
         mailbox.PostSystemMessage(msg1);
 
-        //this is a async message
-        await Task.Delay(10);
-        msg1.TaskCompletionSource.SetCanceled();
-        await mailboxHandler.HasFailures;
+        _ = Task.Run(() => msg1.TaskCompletionSource.SetCanceled());
+
+        await AwaitConditionAsync(() => mailboxHandler.EscalatedFailures.Count == 1,
+            TimeSpan.FromMilliseconds(100));
 
         Assert.Single(mailboxHandler.EscalatedFailures);
         Assert.IsType<TaskCanceledException>(mailboxHandler.EscalatedFailures[0]);

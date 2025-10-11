@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -31,7 +31,6 @@ public static class Program
 
     public static async Task Main(string[] args)
     {
-        //AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         //    ThreadPool.SetMinThreads(500, 500);
         Request = new HelloRequest();
         Configuration.SetupLogger(LogLevel.Error);
@@ -39,13 +38,16 @@ public static class Program
         if (args.Length > 0)
         {
             // InteractiveOutput = args[0] == "1";
-                
+
             var l = typeof(Program).Assembly.Location;
             Console.WriteLine($"Worker running {l}");
             var worker = await Configuration.SpawnMember();
-            AppDomain.CurrentDomain.ProcessExit += (sender, args) => { worker.ShutdownAsync().Wait(); };
-            Thread.Sleep(Timeout.Infinite);
-                
+            AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+            {
+                worker.ShutdownAsync().Wait();
+            };
+            await Task.Delay(Timeout.InfiniteTimeSpan);
+
             return;
         }
 
@@ -71,7 +73,9 @@ public static class Program
         Console.WriteLine("2) Run single process");
         Console.WriteLine("3) Run multi process - graceful exit");
         Console.WriteLine("4) Run multi process");
-        Console.WriteLine("5) Run single process, single node, Batch(300), ProtoBuf, 10 actors, 60S");
+        Console.WriteLine(
+            "5) Run single process, single node, Batch(300), ProtoBuf, 10 actors, 60S"
+        );
 
         var memberRunStrategy = Console.ReadLine();
         var batchSize = 0;
@@ -107,21 +111,25 @@ public static class Program
             {
                 Console.WriteLine("Batch size? default is 50");
 
-                if (!int.TryParse(Console.ReadLine(), out batchSize)) batchSize = 50;
+                if (!int.TryParse(Console.ReadLine(), out batchSize))
+                    batchSize = 50;
 
                 Console.WriteLine($"Using batch size {batchSize}");
             }
 
             Console.WriteLine("Number of virtual actors? default 10000");
-            if (!int.TryParse(Console.ReadLine(), out actorCount)) actorCount = 10_000;
+            if (!int.TryParse(Console.ReadLine(), out actorCount))
+                actorCount = 10_000;
             Console.WriteLine($"Using {actorCount} actors");
 
             Console.WriteLine("Number of cluster members? default is 8");
-            if (!int.TryParse(Console.ReadLine(), out memberCount)) memberCount = 8;
+            if (!int.TryParse(Console.ReadLine(), out memberCount))
+                memberCount = 8;
             Console.WriteLine($"Using {memberCount} members");
 
             Console.WriteLine("Seconds to run before stopping members? default is 30");
-            if (!int.TryParse(Console.ReadLine(), out killTimeoutSeconds)) killTimeoutSeconds = 30;
+            if (!int.TryParse(Console.ReadLine(), out killTimeoutSeconds))
+                killTimeoutSeconds = 30;
             Console.WriteLine($"Using {killTimeoutSeconds} seconds");
         }
 
@@ -132,17 +140,19 @@ public static class Program
             "3" => () => RunFireForgetClient(),
             "4" => () => RunDebugClient(),
             "5" => () => RunNoopClient(),
-            _   => throw new ArgumentOutOfRangeException()
+            _ => throw new ArgumentOutOfRangeException()
         };
 
-        var elapsed = await (memberRunStrategy switch
-        {
-            "1" => RunWorkers(() => new RunMemberInProcGraceful(), run),
-            "2" => RunWorkers(() => new RunMemberInProc(), run),
-            "3" => RunWorkers(() => new RunMemberExternalProcGraceful(), run),
-            "4" => RunWorkers(() => new RunMemberExternalProc(), run),
-            _   => throw new ArgumentOutOfRangeException()
-        });
+        var elapsed = await (
+            memberRunStrategy switch
+            {
+                "1" => RunWorkers(() => new RunMemberInProcGraceful(), run),
+                "2" => RunWorkers(() => new RunMemberInProc(), run),
+                "3" => RunWorkers(() => new RunMemberExternalProcGraceful(), run),
+                "4" => RunWorkers(() => new RunMemberExternalProc(), run),
+                _ => throw new ArgumentOutOfRangeException()
+            }
+        );
 
         var tps = requestCount / elapsed.TotalMilliseconds * 1000;
         Console.WriteLine();
@@ -152,30 +162,35 @@ public static class Program
         Console.WriteLine($"Throughput:\t{tps:N0} requests/sec -> {(tps * 2):N0} msg/sec");
     }
 
-    private static void RunNoopClient()
-    {
-            
-    }
+    private static void RunNoopClient() { }
 
     private static void RunFireForgetClient()
     {
         var logger = Log.CreateLogger(nameof(Program));
 
-        _ = SafeTask.Run(async () => {
-                var semaphore = new AsyncSemaphore(50);
-                var cluster = await Configuration.SpawnClient();
-                // var rnd = new Random();
-                var i = 0;
-                while (true)
-                {
-                    var id = "myactor" + (i++ % actorCount);
-                    semaphore.Wait(() => SendRequest(cluster, id, CancellationTokens.FromSeconds(20)));
-                }
+        _ = SafeTask.Run(async () =>
+        {
+            var semaphore = new AsyncSemaphore(50);
+            var cluster = await Configuration.SpawnClient();
+            // var rnd = new Random();
+            var i = 0;
+
+            while (true)
+            {
+                var id = "myactor" + (i++ % actorCount);
+                await semaphore.WaitAsync(
+                    () => SendRequest(cluster, id, CancellationTokens.FromSeconds(20))
+                );
             }
-        );
+        });
     }
 
-    private static async Task SendRequest(Cluster cluster, ClusterIdentity id, CancellationToken cancellationToken, ISenderContext? context = null)
+    private static async Task SendRequest(
+        Cluster cluster,
+        ClusterIdentity id,
+        CancellationToken cancellationToken,
+        ISenderContext? context = null
+    )
     {
         Interlocked.Increment(ref requestCount);
 
@@ -186,10 +201,10 @@ public static class Program
 
         try
         {
-            var x = await cluster.RequestAsync<object>(id, Request, context, cancellationToken);
-
-            if (x != null)
+            try
             {
+                await cluster.RequestAsync<object>(id, Request, context, cancellationToken);
+
                 var res = Interlocked.Increment(ref successCount);
 
                 if (res % 10000 == 0)
@@ -200,6 +215,10 @@ public static class Program
                 }
 
                 return;
+            }
+            catch (TimeoutException)
+            {
+                // ignored
             }
 
             OnError();
@@ -218,8 +237,13 @@ public static class Program
             Console.ResetColor();
         }
     }
-        
-    private static async Task<bool> SendRequest(Cluster cluster, string id, CancellationToken cancellationToken, ISenderContext? context = null)
+
+    private static async Task<bool> SendRequest(
+        Cluster cluster,
+        string id,
+        CancellationToken cancellationToken,
+        ISenderContext? context = null
+    )
     {
         Interlocked.Increment(ref requestCount);
 
@@ -230,10 +254,16 @@ public static class Program
 
         try
         {
-            var x = await cluster.RequestAsync<object>(id, "hello", Request, context, cancellationToken);
-
-            if (x != null)
+            try
             {
+                await cluster.RequestAsync<object>(
+                    id,
+                    "hello",
+                    Request,
+                    context,
+                    cancellationToken
+                );
+
                 var res = Interlocked.Increment(ref successCount);
 
                 if (res % 10000 == 0)
@@ -244,6 +274,10 @@ public static class Program
                 }
 
                 return true;
+            }
+            catch (TimeoutException)
+            {
+                // ignored
             }
 
             OnError();
@@ -268,27 +302,29 @@ public static class Program
     private static void RunBatchClient(int batchSize)
     {
         var identities = new ClusterIdentity[actorCount];
+
         for (var i = 0; i < actorCount; i++)
         {
             var id = "myactor" + i;
-            identities[i] = ClusterIdentity.Create(id,"hello");
+            identities[i] = ClusterIdentity.Create(id, "hello");
         }
-            
+
         var logger = Log.CreateLogger(nameof(Program));
 
-        _ = SafeTask.Run(async () => {
-                var cluster = await Configuration.SpawnClient();
-                // var rnd = new Random();
-                var semaphore = new AsyncSemaphore(5);
-                var i = 0;
-                while (true)
-                {
-                    var b = i;
-                    semaphore.Wait(() => RunBatch(b, cluster));
-                    i = (i + batchSize) % actorCount;
-                }
+        _ = SafeTask.Run(async () =>
+        {
+            var cluster = await Configuration.SpawnClient();
+            // var rnd = new Random();
+            var semaphore = new AsyncSemaphore(5);
+            var i = 0;
+
+            while (true)
+            {
+                var b = i;
+                await semaphore.WaitAsync(() => RunBatch(b, cluster));
+                i = (i + batchSize) % actorCount;
             }
-        );
+        });
 
         async Task RunBatch(int startIndex, Cluster cluster)
         {
@@ -298,7 +334,8 @@ public static class Program
             {
                 var ct = CancellationTokens.FromSeconds(20);
 
-                var ctx = cluster.System.Root.CreateBatchContext(batchSize,ct);
+                var ctx = cluster.System.Root.CreateBatchContext(batchSize, ct);
+
                 for (var i = 0; i < batchSize; i++)
                 {
                     var id = identities[(startIndex + i) % identities.Length];
@@ -315,58 +352,64 @@ public static class Program
             }
         }
     }
-        
+
     private static void RunDebugClient()
     {
         var logger = Log.CreateLogger(nameof(Program));
 
-        _ = SafeTask.Run(async () => {
-                var cluster = await Configuration.SpawnClient();
-                var rnd = new Random();
+        _ = SafeTask.Run(async () =>
+        {
+            var cluster = await Configuration.SpawnClient();
+            var rnd = Random.Shared;
 
-                while (true)
+            while (true)
+            {
+                var id = "myactor" + rnd.Next(0, actorCount);
+                var ct = CancellationTokens.FromSeconds(20);
+                var res = await SendRequest(cluster, id, ct);
+
+                if (!res)
                 {
-                    var id = "myactor" + rnd.Next(0, actorCount);
-                    var ct = CancellationTokens.FromSeconds(20);
-                    var res = await SendRequest(cluster, id, ct);
+                    var pid = await cluster.GetAsync(
+                        ClusterIdentity.Create(id, "hello"),
+                        CancellationTokens.FromSeconds(10)
+                    );
 
-                    if (!res)
+                    if (pid != null)
                     {
-                        var pid = await cluster.GetAsync(ClusterIdentity.Create(id,"hello"),CancellationTokens.FromSeconds(10));
-
-                        if (pid != null)
-                        {
-                            logger.LogError("Failed call to {Id} - {Address}", id, pid.Address);
-                        }
-                        else
-                        {
-                            logger.LogError("Failed call to {Id} - Null PID", id);
-                        }
+                        logger.LogError("Failed call to {Id} - {Address}", id, pid.Address);
+                    }
+                    else
+                    {
+                        logger.LogError("Failed call to {Id} - Null PID", id);
                     }
                 }
             }
-        );
+        });
     }
 
     private static void RunClient()
     {
         var logger = Log.CreateLogger(nameof(Program));
 
-        _ = SafeTask.Run(async () => {
-                var cluster = await Configuration.SpawnClient();
-                var rnd = new Random();
+        _ = SafeTask.Run(async () =>
+        {
+            var cluster = await Configuration.SpawnClient();
+            var rnd = Random.Shared;
 
-                while (true)
-                {
-                    var id = "myactor" + rnd.Next(0, actorCount);
-                    var ct = CancellationTokens.FromSeconds(20);
-                    await SendRequest(cluster, id, ct);
-                }
+            while (true)
+            {
+                var id = "myactor" + rnd.Next(0, actorCount);
+                var ct = CancellationTokens.FromSeconds(20);
+                await SendRequest(cluster, id, ct);
             }
-        );
+        });
     }
 
-    private static async Task<TimeSpan> RunWorkers(Func<IRunMember> memberFactory, Action startClient)
+    private static async Task<TimeSpan> RunWorkers(
+        Func<IRunMember> memberFactory,
+        Action startClient
+    )
     {
         var followers = new List<IRunMember>();
 

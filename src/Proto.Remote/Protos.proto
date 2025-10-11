@@ -16,7 +16,7 @@ message RemoteMessage {
 
 message MessageBatch {
   repeated string type_names = 1;
-  repeated actor.PID targets = 2;
+  repeated string targets = 2;
   repeated MessageEnvelope envelopes = 3;
   repeated actor.PID senders = 4; 
 }
@@ -53,23 +53,26 @@ message ConnectRequest {
   }
 }
 
+message ConnectResponse {
+  string member_id = 2;
+  bool blocked = 3;
+}
+
 message DisconnectRequest {
 
 }
 
 message ClientConnection {
-  string SystemId = 1;
+  string member_id = 1;
 }
 
 message ServerConnection {
-  string SystemId = 1;
-  string Address = 2;
+  string member_id = 1;
+  string address = 2;
+  repeated string block_list = 3;
 }
 
-message ConnectResponse {
-  string member_id = 2;
-  bool blocked = 3;
-}
+
 
 service Remoting {
   rpc Receive (stream RemoteMessage) returns (stream RemoteMessage) {}

@@ -1,8 +1,9 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="BatchContext.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,10 +15,10 @@ namespace Proto.Context;
 public sealed class BatchContext : ISenderContext, IDisposable
 {
     private static readonly ILogger Logger = Log.CreateLogger<BatchContext>();
+    private readonly FutureBatchProcess _batchProcess;
 
     private readonly ISenderContext _context;
     private readonly CancellationToken _ct;
-    private readonly FutureBatchProcess _batchProcess;
 
     private int _futuresCreated;
 
@@ -28,25 +29,40 @@ public sealed class BatchContext : ISenderContext, IDisposable
         _batchProcess = new FutureBatchProcess(contextContext.System, batchSize, ct);
     }
 
+    public void Dispose()
+    {
+        if (_futuresCreated > 0)
+        {
+            Logger.BatchRequestGotAdditionalCalls(_futuresCreated);
+        }
+
+        _batchProcess.Dispose();
+    }
+
     public async Task<T> RequestAsync<T>(PID target, object message, CancellationToken ct)
     {
         using var future = GetFuture();
         ct.ThrowIfCancellationRequested();
         _context.Request(target, message, future.Pid);
         var task = ct == default || ct == _ct ? future.Task : future.GetTask(ct);
-        var result = await task;
+        var result = await task.ConfigureAwait(false);
 
         switch (result)
         {
             case DeadLetterResponse:
+                if (_context.System.Config.DeadLetterResponseLogging)
+                {
+                    Logger.BatchContextGotDeadLetter(_context.Self, target);
+                }
+
                 throw new DeadLetterException(target);
             case null:
             case T:
-                return (T) result!;
+                return (T)result!;
             default:
                 if (typeof(T) == typeof(MessageEnvelope))
                 {
-                    return (T) (object) MessageEnvelope.Wrap(result);
+                    return (T)(object)MessageEnvelope.Wrap(result);
                 }
 
                 throw new InvalidOperationException(
@@ -58,9 +74,14 @@ public sealed class BatchContext : ISenderContext, IDisposable
     public IFuture GetFuture()
     {
         var future = _batchProcess.TryGetFuture();
-        if (future is not null) return future;
+
+        if (future is not null)
+        {
+            return future;
+        }
 
         _futuresCreated++;
+
         return new FutureProcess(System);
     }
 
@@ -81,14 +102,4 @@ public sealed class BatchContext : ISenderContext, IDisposable
     public void Send(PID target, object message) => _context.Send(target, message);
 
     public void Request(PID target, object message, PID? sender) => _context.Request(target, message, sender);
-
-    public void Dispose()
-    {
-        if (_futuresCreated > 0)
-        {
-            Logger.LogWarning("Batch request got {AdditionalCalls} more calls than provisioned", _futuresCreated);
-        }
-
-        _batchProcess.Dispose();
-    }
 }

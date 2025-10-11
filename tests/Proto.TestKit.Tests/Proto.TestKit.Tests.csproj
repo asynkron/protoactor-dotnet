@@ -1,6 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;net5.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>9</LangVersion>
   </PropertyGroup>
   <ItemGroup>
@@ -9,6 +9,6 @@
   </ItemGroup>
   <ItemGroup>
 
-    <PackageReference Update="FluentAssertions" Version="6.1.0" />
+    
   </ItemGroup>
 </Project>

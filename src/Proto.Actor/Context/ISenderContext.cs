@@ -1,11 +1,13 @@
 // -----------------------------------------------------------------------
 // <copyright file="ISenderContext.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Proto.Context;
 using Proto.Future;
 
@@ -34,7 +36,7 @@ public interface ISenderContext : IInfoContext
     /// </summary>
     /// <param name="target">The target PID</param>
     /// <param name="message">The message to send</param>
-    /// <param name="sender">Message sender</param>
+    /// <param name="sender">Message sender that will receive the response</param>
     void Request(PID target, object message, PID? sender);
 
     /// <summary>
@@ -49,8 +51,8 @@ public interface ISenderContext : IInfoContext
     Task<T> RequestAsync<T>(PID target, object message, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Get a future handle, to be able to receive a response to requests.
-    /// Dispose when response is received
+    ///     Get a future handle, to be able to receive a response to requests.
+    ///     Dispose when response is received
     /// </summary>
     /// <returns></returns>
     IFuture GetFuture();
@@ -58,23 +60,27 @@ public interface ISenderContext : IInfoContext
 
 public static class SenderContextExtensions
 {
+    private static readonly ILogger Logger = Log.CreateLogger(nameof(SenderContextExtensions));
+
     /// <summary>
-    /// Creates a batch context for sending a set of requests from the same thread context.
-    /// This is useful if you have several messages which shares a cancellation scope (same cancellationToken).
-    /// It will pre-allocate the number of futures specified and is slightly more efficient on resources than default futures.
-    /// If more than the pre-allocated futures are used it will fall back to the default system futures.
-    /// Dispose to release the resources used.
+    ///     Creates a batch context for sending a set of requests from the same thread context.
+    ///     This is useful if you have several messages which shares a cancellation scope (same cancellationToken).
+    ///     It will pre-allocate the number of futures specified and is slightly more efficient on resources than default
+    ///     futures.
+    ///     If more than the pre-allocated futures are used it will fall back to the default system futures.
+    ///     Dispose to release the resources used.
     /// </summary>
     /// <param name="context"></param>
     /// <param name="size">The number of requests to send. The batch context will pre-allocate resources for this</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static BatchContext CreateBatchContext(this ISenderContext context, int size, CancellationToken ct) => new(context, size, ct);
+    public static BatchContext CreateBatchContext(this ISenderContext context, int size, CancellationToken ct) =>
+        new(context, size, ct);
 
     /// <summary>
-    ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender
+    ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
     /// </summary>
-    /// <param name="self">the context used to issue the request</param>
+    /// <param name="self">The context used to issue the request. Response will be sent back to self.Self.</param>
     /// <param name="target">The target PID</param>
     /// <param name="message">The message to send</param>
     public static void Request(this ISenderContext self, PID target, object message) =>
@@ -90,7 +96,7 @@ public static class SenderContextExtensions
     /// <typeparam name="T">Expected return message type</typeparam>
     /// <returns>A Task that completes once the Target Responds back to the Sender</returns>
     public static Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message) =>
-        self.RequestAsync<T>(target, message, self.System.Config.RequestAsyncTimeout);
+        self.RequestAsync<T>(target, message, self.System.Config.ActorRequestTimeout);
 
     /// <summary>
     ///     Sends a message together with a Sender PID, this allows the target to respond async to the Sender.
@@ -105,7 +111,8 @@ public static class SenderContextExtensions
     public static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, TimeSpan timeout)
     {
         using var cts = new CancellationTokenSource(timeout);
-        var res = await self.RequestAsync<T>(target, message, cts.Token);
+        var res = await self.RequestAsync<T>(target, message, cts.Token).ConfigureAwait(false);
+
         return res;
     }
 
@@ -116,10 +123,11 @@ public static class SenderContextExtensions
     /// <param name="self">the context used to issue the request</param>
     /// <param name="target">The target PID</param>
     /// <param name="message">The message to send</param>
-    /// <param name="callback"></param>
+    /// <param name="callback">Callback gets the request task passed in as a parameter</param>
     /// <param name="ct"></param>
     /// <typeparam name="T">Expected return message type</typeparam>
-    public static void RequestReenter<T>(this IContext self, PID target, object message, Func<Task<T>, Task> callback, CancellationToken ct)
+    public static void RequestReenter<T>(this IContext self, PID target, object message, Func<Task<T>, Task> callback,
+        CancellationToken ct)
     {
         var task = self.RequestAsync<T>(target, message, ct);
         self.ReenterAfter(task, callback);
@@ -145,7 +153,7 @@ public static class SenderContextExtensions
     )
     {
         var request = headers is null ? message : MessageEnvelope.Wrap(message, headers);
-        var result = await self.RequestAsync<MessageEnvelope>(target, request, cancellationToken);
+        var result = await self.RequestAsync<MessageEnvelope>(target, request, cancellationToken).ConfigureAwait(false);
 
         var messageResult = MessageEnvelope.UnwrapMessage(result);
 
@@ -153,7 +161,7 @@ public static class SenderContextExtensions
         {
             case null:
             case T:
-                return ((T) messageResult!, MessageEnvelope.UnwrapHeader(result));
+                return ((T)messageResult!, MessageEnvelope.UnwrapHeader(result));
             default:
                 throw new InvalidOperationException(
                     $"Unexpected message. Was type {messageResult.GetType()} but expected {typeof(T)}"
@@ -161,26 +169,41 @@ public static class SenderContextExtensions
         }
     }
 
-    internal static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message, CancellationToken cancellationToken)
+    internal static async Task<T> RequestAsync<T>(this ISenderContext self, PID target, object message,
+        CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            throw new ArgumentException("Cancellation token is already cancelled", nameof(cancellationToken));
+        }
+
         using var future = self.GetFuture();
-        var messageEnvelope = message is MessageEnvelope envelope ? envelope.WithSender(future.Pid) : new MessageEnvelope(message, future.Pid);
+
+        var messageEnvelope = message is MessageEnvelope envelope
+            ? envelope.WithSender(future.Pid)
+            : new MessageEnvelope(message, future.Pid);
+
         self.Send(target, messageEnvelope);
-        var result = await future.GetTask(cancellationToken);
+        var result = await future.GetTask(cancellationToken).ConfigureAwait(false);
 
         var messageResult = MessageEnvelope.UnwrapMessage(result);
 
         switch (messageResult)
         {
             case DeadLetterResponse:
+                if (self.System.Config.DeadLetterResponseLogging)
+                {
+                    Logger.ContextGotDeadLetterResponse(self.Self, target);
+                }
+
                 throw new DeadLetterException(target);
             case null:
             case T:
-                return (T) messageResult!;
+                return (T)messageResult!;
             default:
                 if (typeof(T) == typeof(MessageEnvelope))
                 {
-                    return (T) (object) MessageEnvelope.Wrap(result);
+                    return (T)(object)MessageEnvelope.Wrap(result);
                 }
 
                 throw new InvalidOperationException(

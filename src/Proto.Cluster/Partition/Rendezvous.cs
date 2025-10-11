@@ -1,8 +1,9 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Rendezvous.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace Proto.Cluster.Partition;
 public class Rendezvous
 {
     private MemberData[] _members = Array.Empty<MemberData>();
+    private Dictionary<string, MemberData[]> _membersByKind = new();
 
     public string GetOwnerMemberByIdentity(string identity)
     {
@@ -37,7 +39,10 @@ public class Rendezvous
             var hashBytes = member.Hash;
             var score = RdvHash(hashBytes, keyBytes);
 
-            if (score <= maxScore) continue;
+            if (score <= maxScore)
+            {
+                continue;
+            }
 
             maxScore = score;
             maxNode = member.Info;
@@ -47,14 +52,24 @@ public class Rendezvous
     }
 
     // ReSharper disable once ParameterTypeCanBeEnumerable.Global
-    public void UpdateMembers(IEnumerable<Member> members) => _members = members
-        .OrderBy(m => m.Address)
-        .Select(x => new MemberData(x))
-        .ToArray();
+    public void UpdateMembers(IEnumerable<Member> members)
+    {
+        _members = members
+            .OrderBy(m => m.Address)
+            .Select(x => new MemberData(x))
+            .ToArray();
+
+        // cache members by kind to avoid repeated filtering at lookup time
+        _membersByKind = _members
+            .SelectMany(m => m.Info.Kinds.Select(k => (Kind: k, Member: m)))
+            .GroupBy(x => x.Kind)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Member).ToArray());
+    }
 
     private static uint RdvHash(byte[] node, byte[] key)
     {
         var hashBytes = MergeBytes(key, node);
+
         return MurmurHash2.Hash(hashBytes);
     }
 
@@ -63,7 +78,45 @@ public class Rendezvous
         var combined = new byte[front.Length + back.Length];
         Array.Copy(front, combined, front.Length);
         Array.Copy(back, 0, combined, front.Length, back.Length);
+
         return combined;
+    }
+
+    public void Debug()
+    {
+        foreach (var m in _members)
+        {
+            Console.WriteLine(m.Info);
+        }
+    }
+
+    public string GetOwnerMemberByIdentity(ClusterIdentity ci)
+    {
+        if (!_membersByKind.TryGetValue(ci.Kind, out var members))
+        {
+            return "";
+        }
+
+        var keyBytes = Encoding.UTF8.GetBytes(ci.Identity);
+
+        uint maxScore = 0;
+        Member? maxNode = null;
+
+        foreach (var member in members)
+        {
+            var hashBytes = member.Hash;
+            var score = RdvHash(hashBytes, keyBytes);
+
+            if (score <= maxScore)
+            {
+                continue;
+            }
+
+            maxScore = score;
+            maxNode = member.Info;
+        }
+
+        return maxNode?.Address ?? "";
     }
 
     private readonly struct MemberData
@@ -76,37 +129,5 @@ public class Rendezvous
 
         public Member Info { get; }
         public byte[] Hash { get; }
-    }
-
-    public void Debug()
-    {
-        foreach (var m in _members)
-        {
-            Console.WriteLine(m.Info);
-        }
-    }
-        
-    public string GetOwnerMemberByIdentity(ClusterIdentity ci)
-    {
-        //TODO: memoize
-        var members = _members.Where(m => m.Info.Kinds.Contains(ci.Kind));
-
-        var keyBytes = Encoding.UTF8.GetBytes(ci.Identity);
-
-        uint maxScore = 0;
-        Member? maxNode = null;
-
-        foreach (var member in members)
-        {
-            var hashBytes = member.Hash;
-            var score = RdvHash(hashBytes, keyBytes);
-
-            if (score <= maxScore) continue;
-
-            maxScore = score;
-            maxNode = member.Info;
-        }
-
-        return maxNode?.Address ?? "";
     }
 }

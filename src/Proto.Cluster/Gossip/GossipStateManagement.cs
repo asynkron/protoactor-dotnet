@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
 // <copyright file="GossipState.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -13,13 +14,16 @@ using Proto.Logging;
 
 namespace Proto.Cluster.Gossip;
 
-static class GossipStateManagement
+internal static class GossipStateManagement
 {
     private static readonly ILogger Logger = Log.CreateLogger("GossipStateManagement");
 
     private static GossipKeyValue EnsureEntryExists(GossipState.Types.GossipMemberState memberState, string key)
     {
-        if (memberState.Values.TryGetValue(key, out var value)) return value;
+        if (memberState.Values.TryGetValue(key, out var value))
+        {
+            return value;
+        }
 
         value = new GossipKeyValue();
         memberState.Values.Add(key, value);
@@ -29,71 +33,88 @@ static class GossipStateManagement
 
     public static GossipState.Types.GossipMemberState EnsureMemberStateExists(GossipState state, string memberId)
     {
-        if (state.Members.TryGetValue(memberId, out var memberState)) return memberState;
+        if (state.Members.TryGetValue(memberId, out var memberState))
+        {
+            return memberState;
+        }
 
-        memberState = new GossipState.Types.GossipMemberState();
+        //ensure the member state exists
+        memberState = new GossipState.Types.GossipMemberState
+        {
+            Values =
+            {
+                {
+                    //make sure we have a heartbeat entry
+                    GossipKeys.Heartbeat, new GossipKeyValue
+                    {
+                        Value = Any.Pack(new MemberHeartbeat
+                        {
+                            ActorStatistics = new ActorStatistics()
+                        }),
+                        LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                    }
+                }
+            }
+        };
+
         state.Members.Add(memberId, memberState);
 
         return memberState;
     }
 
-    public static IReadOnlyCollection<GossipUpdate> MergeState(
+    // Merge two states and return the new state and associated updates without touching the inputs
+    public static (GossipState newState, IReadOnlyCollection<GossipUpdate> updates, HashSet<string> updatedKeys) MergeStates(
         GossipState localState,
-        GossipState remoteState,
-        out GossipState newState,
-        out HashSet<string> updatedKeys
+        GossipState remoteState
     )
     {
-        newState = localState.Clone();
+        var newState = localState.Clone();
         var updates = new List<GossipUpdate>();
-        updatedKeys = new HashSet<string>();
+        var updatedKeys = new HashSet<string>();
 
         foreach (var (memberId, remoteMemberState) in remoteState.Members)
         {
-            //this entry does not exist in newState, just copy all of it
-            if (!newState.Members.ContainsKey(memberId))
+            if (!newState.Members.TryGetValue(memberId, out var newMemberState))
             {
-                newState.Members.Add(memberId, remoteMemberState);
+                var clonedMemberState = remoteMemberState.Clone();
 
-                foreach (var entry in remoteMemberState.Values)
+                foreach (var (key, value) in clonedMemberState.Values)
                 {
-                    updates.Add(new GossipUpdate(memberId, entry.Key, entry.Value.Value, entry.Value.SequenceNumber));
-                    entry.Value.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    updatedKeys.Add(entry.Key);
+                    value.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    updates.Add(new GossipUpdate(memberId, key, value.Value, value.SequenceNumber));
+                    updatedKeys.Add(key);
                 }
 
+                newState.Members.Add(memberId, clonedMemberState);
                 continue;
             }
 
-            //this entry exists in both newState and remoteState, we should merge them
-            var newMemberState = newState.Members[memberId];
-
             foreach (var (key, remoteValue) in remoteMemberState.Values)
             {
-                //this entry does not exist in newMemberState, just copy all of it
-                if (!newMemberState.Values.ContainsKey(key))
+                if (!newMemberState.Values.TryGetValue(key, out var existingValue))
                 {
-                    newMemberState.Values.Add(key, remoteValue);
-                    updates.Add(new GossipUpdate(memberId, key, remoteValue.Value, remoteValue.SequenceNumber));
-                    remoteValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    var newValue = remoteValue.Clone();
+                    newValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    newMemberState.Values.Add(key, newValue);
+                    updates.Add(new GossipUpdate(memberId, key, newValue.Value, newValue.SequenceNumber));
                     updatedKeys.Add(key);
                     continue;
                 }
 
-                var newValue = newMemberState.Values[key];
+                if (remoteValue.SequenceNumber <= existingValue.SequenceNumber)
+                {
+                    continue;
+                }
 
-                //remote value is older, ignore
-                if (remoteValue.SequenceNumber <= newValue.SequenceNumber) continue;
-
-                //just replace the existing value
-                newMemberState.Values[key] = remoteValue;
-                updates.Add(new GossipUpdate(memberId, key, remoteValue.Value, remoteValue.SequenceNumber));
-                remoteValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var replacedValue = remoteValue.Clone();
+                replacedValue.LocalTimestampUnixMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                newMemberState.Values[key] = replacedValue;
+                updates.Add(new GossipUpdate(memberId, key, replacedValue.Value, replacedValue.SequenceNumber));
                 updatedKeys.Add(key);
             }
         }
 
-        return updates;
+        return (newState, updates, updatedKeys);
     }
 
     public static long SetKey(GossipState state, string key, IMessage value, string memberId, long sequenceNo)
@@ -107,6 +128,7 @@ static class GossipStateManagement
 
         entry.SequenceNumber = sequenceNo;
         entry.Value = Any.Pack(value);
+
         return sequenceNo;
     }
 
@@ -116,7 +138,8 @@ static class GossipStateManagement
         string myId,
         ImmutableHashSet<string> members,
         string valueKey
-    ) where T : IMessage, new() => CheckConsensus<T, T>(ctx, state, myId, members, valueKey, v => v);
+    ) where T : IMessage, new() =>
+        CheckConsensus<T, T>(ctx, state, myId, members, valueKey, v => v);
 
     public static (bool Consensus, TV value) CheckConsensus<T, TV>(
         IContext? ctx,
@@ -129,53 +152,55 @@ static class GossipStateManagement
     {
         var logger = ctx?.Logger()?.BeginMethodScope();
 
-        try
+        if (state.Members.Count == 0)
         {
-            if (state.Members.Count == 0)
-            {
-                logger?.LogDebug("No members found for consensus check");
-                return (false, default);
-            }
+            logger?.LogDebug("No members found for consensus check");
 
-            logger?.LogDebug("Checking consensus");
-
-            if (!state.Members.TryGetValue(myId, out var ownMemberState))
-            {
-                logger?.LogDebug("I can't find myself");
-                return (false, default);
-            }
-
-            var ownValue = GetConsensusValue(ownMemberState);
-
-            if (ownValue is null)
-            {
-                logger?.LogDebug("I don't have any value for {Key}", valueKey);
-                return (false, default);
-            }
-
-            foreach (var (memberId, memberState) in state.Members)
-            {
-                //skip blocked members
-                if (!members.Contains(memberId))
-                {
-                    logger?.LogDebug("Member is not part of cluster {MemberId}", memberId);
-                    continue;
-                }
-
-                var consensusValue = GetConsensusValue(memberState);
-
-                if (consensusValue is null || !ownValue.Equals(consensusValue)) return (false, default);
-            }
-
-            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("Reached Consensus {Key}:{Value} - {State}", valueKey, ownValue, state);
-            return (true, ownValue);
+            return (false, default!);
         }
-        catch (Exception x)
+
+        logger?.LogDebug("Checking consensus");
+
+        if (!state.Members.TryGetValue(myId, out var ownMemberState))
         {
-            logger?.LogError(x, "Check Consensus failed");
-            Logger.LogError(x, "Check Consensus failed");
-            return (false, default);
+            logger?.LogDebug("I can't find myself");
+
+            return (false, default!);
         }
+
+        var ownValue = GetConsensusValue(ownMemberState);
+
+        if (ownValue is null)
+        {
+            logger?.LogDebug("I don't have any value for {Key}", valueKey);
+
+            return (false, default!);
+        }
+
+        foreach (var (memberId, memberState) in state.Members)
+        {
+            //skip blocked members
+            if (!members.Contains(memberId))
+            {
+                logger?.LogDebug("Member is not part of cluster {MemberId}", memberId);
+
+                continue;
+            }
+
+            var consensusValue = GetConsensusValue(memberState);
+
+            if (consensusValue is null || !ownValue.Equals(consensusValue))
+            {
+                return (false, default!);
+            }
+        }
+
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.LogDebug("Reached Consensus {Key}:{Value} - {State}", valueKey, ownValue, state);
+        }
+
+        return (true, ownValue);
 
         TV? GetConsensusValue(GossipState.Types.GossipMemberState memberState)
         {
@@ -185,12 +210,16 @@ static class GossipStateManagement
         }
     }
 
-    private static T? GetMemberStateByKey<T>(this GossipState.Types.GossipMemberState memberState, string key) where T : IMessage, new()
+    private static T? GetMemberStateByKey<T>(this GossipState.Types.GossipMemberState memberState, string key)
+        where T : IMessage, new()
     {
         if (!memberState.Values.TryGetValue(key, out var entry))
+        {
             return default;
+        }
 
         var topology = entry.Value.Unpack<T>();
+
         return topology;
     }
 }

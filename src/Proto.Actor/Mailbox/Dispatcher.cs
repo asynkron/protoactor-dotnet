@@ -1,8 +1,9 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Dispatcher.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,44 +14,75 @@ public interface IMessageInvoker
 {
     CancellationTokenSource? CancellationTokenSource { get; }
 
-    ValueTask InvokeSystemMessageAsync(object msg);
+    Task InvokeSystemMessageAsync(SystemMessage msg);
 
-    ValueTask InvokeUserMessageAsync(object msg);
+    Task InvokeUserMessageAsync(object msg);
 
     void EscalateFailure(Exception reason, object? message);
 }
 
+/// <summary>
+///     An abstraction for running tasks
+/// </summary>
 public interface IDispatcher
 {
+    /// <summary>
+    ///     Used by mailbox to determine how many messages to process before yielding
+    /// </summary>
     int Throughput { get; }
 
+    /// <summary>
+    ///     Runs the task
+    /// </summary>
+    /// <param name="runner"></param>
     void Schedule(Func<Task> runner);
 }
 
 public static class Dispatchers
 {
+    /// <summary>
+    ///     Schedules the task on the <see cref="ThreadPool" />
+    /// </summary>
     public static ThreadPoolDispatcher DefaultDispatcher { get; } = new();
+
+    /// <summary>
+    ///     Runs and awaits the task
+    /// </summary>
     public static SynchronousDispatcher SynchronousDispatcher { get; } = new();
 }
 
+/// <summary>
+///     Runs and awaits the task
+/// </summary>
 public sealed class SynchronousDispatcher : IDispatcher
 {
     private const int DefaultThroughput = 300;
 
-    public SynchronousDispatcher(int throughput = DefaultThroughput) => Throughput = throughput;
+    public SynchronousDispatcher(int throughput = DefaultThroughput)
+    {
+        Throughput = throughput;
+    }
 
     public int Throughput { get; }
 
-    public void Schedule(Func<Task> runner) => runner().Wait();
+    // Surface original exceptions instead of wrapping in AggregateException
+    public void Schedule(Func<Task> runner) => runner().GetAwaiter().GetResult();
 }
 
+/// <summary>
+///     Schedules the task on the <see cref="ThreadPool" />
+/// </summary>
 public sealed class ThreadPoolDispatcher : IDispatcher
 {
     private const int DefaultThroughput = 300;
 
-    public ThreadPoolDispatcher(int throughput = DefaultThroughput) => Throughput = throughput;
+    public ThreadPoolDispatcher(int throughput = DefaultThroughput)
+    {
+        Throughput = throughput;
+    }
 
-    public void Schedule(Func<Task> runner) => Task.Factory.StartNew(runner, TaskCreationOptions.None);
+    // Run on the thread pool and intentionally ignore the returned Task
+    public void Schedule(Func<Task> runner) => _ = Task.Run(runner);
 
     public int Throughput { get; set; }
 }
@@ -71,12 +103,16 @@ public sealed class CurrentSynchronizationContextDispatcher : IDispatcher
     }
 
     public void Schedule(Func<Task> runner) =>
-        Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler);
+        // Use TaskScheduler for the current sync context and unwrap to avoid Task<Task>
+        _ = Task.Factory.StartNew(runner, CancellationToken.None, TaskCreationOptions.None, _scheduler).Unwrap();
 
     public int Throughput { get; }
 }
 
-class NoopDispatcher : IDispatcher
+/// <summary>
+///     Throws <see cref="NotImplementedException" /> instead of running the task
+/// </summary>
+internal class NoopDispatcher : IDispatcher
 {
     internal static readonly IDispatcher Instance = new NoopDispatcher();
     public int Throughput => 0;
@@ -84,15 +120,15 @@ class NoopDispatcher : IDispatcher
     public void Schedule(Func<Task> runner) => throw new NotImplementedException();
 }
 
-class NoopInvoker : IMessageInvoker
+internal class NoopInvoker : IMessageInvoker
 {
     internal static readonly IMessageInvoker Instance = new NoopInvoker();
 
     public CancellationTokenSource CancellationTokenSource => throw new NotImplementedException();
 
-    public ValueTask InvokeSystemMessageAsync(object msg) => throw new NotImplementedException();
+    public Task InvokeSystemMessageAsync(SystemMessage msg) => throw new NotImplementedException();
 
-    public ValueTask InvokeUserMessageAsync(object msg) => throw new NotImplementedException();
+    public Task InvokeUserMessageAsync(object msg) => throw new NotImplementedException();
 
     public void EscalateFailure(Exception reason, object? message) => throw new NotImplementedException();
 }

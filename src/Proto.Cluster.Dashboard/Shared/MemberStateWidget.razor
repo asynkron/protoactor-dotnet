@@ -1,0 +1,45 @@
+@using Proto.Cluster.Gossip
+<MudList Clickable Dense>
+    @foreach (var stateEntry in State.Values.OrderBy(v => v.Key))
+    {
+        <ExpanderButton Text="@($"State Key: {stateEntry.Key} - Version: {stateEntry.Value.SequenceNumber} - Updated: {stateEntry.Value.LocalTimestamp.ToString("yyyy-MM-dd hh:mm:ss")}")">
+
+            @if (stateEntry.Key == GossipKeys.Topology)
+            {
+                var topology = stateEntry.Value.Value.Unpack<ClusterTopology>();
+                <ClusterTopologyWidget State="topology"></ClusterTopologyWidget>
+            }
+            else if (stateEntry.Key == GossipKeys.Heartbeat)
+            {
+                var heartbeat = stateEntry.Value.Value.Unpack<MemberHeartbeat>();
+                <MemberHeartbeatWidget State="heartbeat"></MemberHeartbeatWidget>
+            }
+            else if (stateEntry.Key == "reb:ready")
+            {
+                var m = stateEntry.Value.Value.Unpack<ReadyForRebalance>();
+                <ReadyForRebalanceWidget State="m"></ReadyForRebalanceWidget>
+            }
+            else if (stateEntry.Key == "reb:done")
+            {
+                var m = stateEntry.Value.Value.Unpack<RebalanceCompleted>();
+                <RebalanceCompletedWidget State="m"></RebalanceCompletedWidget>
+            }
+            else
+            {
+                var any = stateEntry.Value.Value;
+                <AnyStateWidget State="any"></AnyStateWidget>
+            }
+        </ExpanderButton>
+    }
+</MudList>
+
+
+@code {
+
+    [Parameter]
+    public string MemberId { get; set; } = null!;
+
+    [Parameter]
+    public GossipState.Types.GossipMemberState State { get; set; } = null!;
+
+}

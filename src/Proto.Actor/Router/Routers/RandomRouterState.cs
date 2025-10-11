@@ -1,20 +1,22 @@
 // -----------------------------------------------------------------------
 // <copyright file="RandomRouterState.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 
 namespace Proto.Router.Routers;
 
-class RandomRouterState : RouterState
+internal class RandomRouterState : RouterState
 {
     private readonly Random _random;
     private readonly ISenderContext _senderContext;
 
     public RandomRouterState(ISenderContext senderContext, int? seed)
     {
-        _random = seed.HasValue ? new Random(seed.Value) : new Random();
+        // Use a single random source to avoid identical sequences across router states
+        _random = seed.HasValue ? new Random(seed.Value) : Random.Shared;
         _senderContext = senderContext;
     }
 

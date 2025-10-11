@@ -1,15 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-  <PropertyGroup>
-    <IsPackable>true</IsPackable>
-    <Nullable>enable</Nullable>
-    <LangVersion>10</LangVersion>
-    <TargetFrameworks>net5.0;net6.0;netstandard2.1</TargetFrameworks>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Roslynator.Analyzers" Version="4.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
-  </ItemGroup>
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <Nullable>enable</Nullable>
+        <LangVersion>10</LangVersion>
+        <TargetFrameworks>net8.0</TargetFrameworks>
+    </PropertyGroup>
+    <ItemGroup>
+    </ItemGroup>
 </Project>

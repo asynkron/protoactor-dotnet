@@ -1,15 +1,13 @@
 // -----------------------------------------------------------------------
 // <copyright file="Configuration.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
 using ClusterExperiment1.Messages;
-using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Compression;
-using k8s;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using OpenTelemetry.Resources;
@@ -22,6 +20,7 @@ using Proto.Cluster.Identity.MongoDb;
 using Proto.Cluster.Identity.Redis;
 using Proto.Cluster.Kubernetes;
 using Proto.Cluster.Partition;
+using Proto.Cluster.PartitionActivator;
 using Proto.OpenTelemetry;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
@@ -41,19 +40,20 @@ public static class Configuration
     private static TracerProvider? tracerProvider;
 
 #pragma warning disable CS0162
-// ReSharper disable once HeuristicUnreachableCode
+    // ReSharper disable once HeuristicUnreachableCode
     private static void InitTracing()
     {
-        if (!EnableTracing) return;
+        if (!EnableTracing)
+            return;
 
         lock (InitLock)
         {
-            if (tracerProvider is not null) return;
+            if (tracerProvider is not null)
+                return;
 
-            tracerProvider = OpenTelemetry.Sdk.CreateTracerProviderBuilder()
-                .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                    .AddService("ClusterBenchmark")
-                )
+            tracerProvider = OpenTelemetry.Sdk
+                .CreateTracerProviderBuilder()
+                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("ClusterBenchmark"))
                 .AddProtoActorInstrumentation()
                 .AddJaegerExporter(options => options.AgentHost = "localhost")
                 .Build();
@@ -69,22 +69,24 @@ public static class Configuration
         var helloProps = Props.FromProducer(() => new WorkerActor());
         return ClusterConfig
             .Setup("mycluster", clusterProvider, identityLookup)
-            .WithClusterContextProducer(cluster => new ExperimentalClusterContext(cluster))
+            .WithClusterContextProducer(cluster => new DefaultClusterContext(cluster))
             .WithClusterKind("hello", helloProps)
             .WithGossipFanOut(3);
     }
 
-    private static GrpcNetRemoteConfig GetRemoteConfig()
+    private static RemoteConfig GetRemoteConfig()
     {
-        var portStr = Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfigBase.AnyFreePort}";
+        var portStr =
+            Environment.GetEnvironmentVariable("PROTOPORT") ?? $"{RemoteConfig.AnyFreePort}";
         var port = int.Parse(portStr);
-        var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfigBase.Localhost;
+        var host = Environment.GetEnvironmentVariable("PROTOHOST") ?? RemoteConfig.Localhost;
         var advertisedHost = Environment.GetEnvironmentVariable("PROTOHOSTPUBLIC");
 
-        var remoteConfig = GrpcNetRemoteConfig
+        var remoteConfig = RemoteConfig
             .BindTo(host, port)
             .WithAdvertisedHost(advertisedHost)
-            .WithChannelOptions(new GrpcChannelOptions
+            .WithChannelOptions(
+                new GrpcChannelOptions
                 {
                     CompressionProviders = new[]
                     {
@@ -102,9 +104,8 @@ public static class Configuration
     {
         try
         {
-            var kubernetes = new Kubernetes(KubernetesClientConfiguration.InClusterConfig());
             Console.WriteLine("Running with Kubernetes Provider");
-            return new KubernetesProvider(kubernetes);
+            return new KubernetesProvider();
         }
         catch
         {
@@ -113,19 +114,25 @@ public static class Configuration
         }
     }
 
-    public static IIdentityLookup GetIdentityLookup() => new PartitionIdentityLookup(
-        new PartitionConfig
-        {
-            GetPidTimeout = TimeSpan.FromSeconds(5),
-            Mode = PartitionIdentityLookup.Mode.Push,
-            Send = PartitionIdentityLookup.Send.Delta
-        }
-    );
+    public static IIdentityLookup GetIdentityLookup() =>  new PartitionActivatorLookup();
+/*  PartitionIdentityLookup(
+            new PartitionConfig
+            {
+                GetPidTimeout = TimeSpan.FromSeconds(5),
+                Mode = PartitionIdentityLookup.Mode.Push,
+                Send = PartitionIdentityLookup.Send.Delta
+            }*
+        );
+        */
 
     private static IIdentityLookup GetRedisIdentityLookup()
     {
         var multiplexer = ConnectionMultiplexer.Connect("localhost:6379");
-        var redisIdentityStorage = new RedisIdentityStorage("mycluster", multiplexer, maxConcurrency: 50);
+        var redisIdentityStorage = new RedisIdentityStorage(
+            "mycluster",
+            multiplexer,
+            maxConcurrency: 50
+        );
 
         return new IdentityStorageLookup(redisIdentityStorage);
     }
@@ -158,24 +165,27 @@ public static class Configuration
     public static async Task<Cluster> SpawnMember()
     {
         InitTracing();
-        var system = new ActorSystem(GetMemberActorSystemConfig()
-        );
-        system.EventStream.Subscribe<ClusterTopology>(e => {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"M:{system.Id}-{system.Address}-ClusterTopology:{e.GetMembershipHashCode()}");
-                Console.ResetColor();
-            }
-        );
-        system.EventStream.Subscribe<LeaderElected>(e => {
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"M:{system.Id}-{system.Address}-Leader:{e.Leader.Id}");
-                Console.ResetColor();
-            }
-        );
+        var system = new ActorSystem(GetMemberActorSystemConfig());
+        system.EventStream.Subscribe<ClusterTopology>(e =>
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(
+                $"M:{system.Id}-{system.Address}-ClusterTopology:{e.GetMembershipHashCode()}"
+            );
+            Console.ResetColor();
+        });
+        system.EventStream.Subscribe<LeaderElected>(e =>
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"M:{system.Id}-{system.Address}-Leader:{e.Leader.Id}");
+            Console.ResetColor();
+        });
         var clusterProvider = ClusterProvider();
         var identity = GetIdentityLookup();
 
-        system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider, identity));
+        system
+            .WithRemote(GetRemoteConfig())
+            .WithCluster(GetClusterConfig(clusterProvider, identity));
         await system.Cluster().StartMemberAsync();
         return system.Cluster();
     }
@@ -183,10 +193,12 @@ public static class Configuration
     private static ActorSystemConfig GetMemberActorSystemConfig()
     {
         var config = new ActorSystemConfig()
-            // .WithSharedFutures()
+           // .WithSharedFutures()
             .WithDeadLetterThrottleCount(3)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
             .WithDeadLetterRequestLogging(false);
+
+        config = config with { SharedFutures = false };
         // .WithDeveloperSupervisionLogging(false)
         // .WithDeveloperReceiveLogging(TimeSpan.FromSeconds(1));
 
@@ -196,26 +208,36 @@ public static class Configuration
     public static async Task<Cluster> SpawnClient()
     {
         InitTracing();
-        var config = new ActorSystemConfig().WithDeadLetterThrottleCount(3)
-            .WithSharedFutures()
+        var config = new ActorSystemConfig()
+            .WithDeadLetterThrottleCount(3)
+           // .WithSharedFutures()
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
             .WithDeadLetterRequestLogging(false);
-        var system = new ActorSystem(EnableTracing ? config.WithConfigureProps(props => props.WithTracing()) : config);
-        system.EventStream.Subscribe<ClusterTopology>(e => {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"C:{system.Id}-{system.Address}-ClusterTopology:{e.GetMembershipHashCode()}");
-                Console.ResetColor();
-            }
+
+        config = config with { SharedFutures = false };
+        
+        var system = new ActorSystem(
+            EnableTracing ? config.WithConfigureProps(props => props.WithTracing()) : config
         );
-        system.EventStream.Subscribe<LeaderElected>(e => {
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"C:{system.Id}-{system.Address}-Leader:{e.Leader.Id}");
-                Console.ResetColor();
-            }
-        );
+        system.EventStream.Subscribe<ClusterTopology>(e =>
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(
+                $"C:{system.Id}-{system.Address}-ClusterTopology:{e.GetMembershipHashCode()}"
+            );
+            Console.ResetColor();
+        });
+        system.EventStream.Subscribe<LeaderElected>(e =>
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"C:{system.Id}-{system.Address}-Leader:{e.Leader.Id}");
+            Console.ResetColor();
+        });
         var clusterProvider = ClusterProvider();
         var identity = GetIdentityLookup();
-        system.WithRemote(GetRemoteConfig()).WithCluster(GetClusterConfig(clusterProvider, identity));
+        system
+            .WithRemote(GetRemoteConfig())
+            .WithCluster(GetClusterConfig(clusterProvider, identity));
 
         await system.Cluster().StartClientAsync();
         return system.Cluster();
@@ -223,13 +245,10 @@ public static class Configuration
 
     public static void SetupLogger(LogLevel loglevel)
     {
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console(LogEventLevel.Error)
-            .CreateLogger();
+        Log.Logger = new LoggerConfiguration().WriteTo.Console(LogEventLevel.Error).CreateLogger();
 
-        Proto.Log.SetLoggerFactory(LoggerFactory.Create(l =>
-                l.AddSerilog().SetMinimumLevel(loglevel)
-            )
+        Proto.Log.SetLoggerFactory(
+            LoggerFactory.Create(l => l.AddSerilog().SetMinimumLevel(loglevel))
         );
     }
 }

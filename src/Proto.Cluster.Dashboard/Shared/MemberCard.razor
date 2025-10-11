@@ -1,0 +1,48 @@
+<style scoped>
+    .member-card {
+        cursor: pointer;
+    }    
+</style>
+<MudCard Outlined="@Outlined" Elevation="@Elevation" Square="@Square" class="member-card">
+    <MudCardHeader Class="pa-4">
+        <CardHeaderAvatar>
+            <MudAvatar Color="Color.Success" Variant="Variant.Filled">
+                <MudIcon Icon="@Icons.Material.Filled.Hive"/>
+            </MudAvatar>
+        </CardHeaderAvatar>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h5" Color="Color.Info">Member @Member.Id</MudText>
+            <MudText Typo="Typo.body2">
+                <b>Address:</b> @Member.Address
+            </MudText>
+        </CardHeaderContent>
+        @* <CardHeaderActions> *@
+        @*     <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default"/> *@
+        @* </CardHeaderActions> *@
+    </MudCardHeader>
+    <MudDivider DividerType="DividerType.Middle"/>
+    <MudCardActions>
+        <MudChipSet>
+            @foreach (var kind in Member.Kinds)
+            {
+                <MudChip Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary">@kind</MudChip>
+            }
+        </MudChipSet>
+    </MudCardActions>
+</MudCard>
+
+@code {
+
+    [Parameter]
+    public Member Member { get; set; } = null!;
+
+    [Parameter]
+    public int Elevation { get; set; } = 0;
+
+    [Parameter]
+    public bool Outlined { get; set; } = true;
+
+    [Parameter]
+    public bool Square { get; set; } = false;
+
+}

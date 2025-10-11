@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Proto.Logging;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Proto.Cluster.Tests;
 
@@ -16,6 +19,11 @@ public abstract class ClusterTestBase
     {
         ClusterFixture = clusterFixture;
         _runId = Guid.NewGuid().ToString("N").Substring(0, 6);
+    }
+
+    protected Task Trace(Func<Task> test, ITestOutputHelper output, [CallerMemberName]string testName = "")
+    {
+        return ClusterFixture.Trace(test, testName);
     }
 
     protected LogStore LogStore => ClusterFixture.LogStore;

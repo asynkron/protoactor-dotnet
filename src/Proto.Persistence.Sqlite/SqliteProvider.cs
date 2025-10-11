@@ -9,8 +9,10 @@ namespace Proto.Persistence.Sqlite;
 
 public class SqliteProvider : IProvider
 {
-    private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
-    private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+    private static readonly JsonSerializerSettings
+        AutoTypeSettings = new() { TypeNameHandling = TypeNameHandling.Auto };
+
+    private static readonly JsonSerializerSettings AllTypeSettings = new() { TypeNameHandling = TypeNameHandling.All };
     private readonly SqliteConnectionStringBuilder _connectionStringBuilder;
 
     public SqliteProvider(SqliteConnectionStringBuilder connectionStringBuilder)
@@ -23,13 +25,16 @@ public class SqliteProvider : IProvider
 
         using var initEventsCommand = connection.CreateCommand();
 
-        initEventsCommand.CommandText = "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
+        initEventsCommand.CommandText =
+            "CREATE TABLE IF NOT EXISTS Events (Id TEXT, ActorName TEXT, EventIndex REAL, EventData TEXT)";
+
         initEventsCommand.ExecuteNonQuery();
 
         using var initSnapshotsCommand = connection.CreateCommand();
 
         initSnapshotsCommand.CommandText =
             "CREATE TABLE IF NOT EXISTS Snapshots (Id TEXT, ActorName TEXT, SnapshotIndex REAL, SnapshotData TEXT)";
+
         initSnapshotsCommand.ExecuteNonQuery();
     }
 
@@ -39,7 +44,7 @@ public class SqliteProvider : IProvider
     {
         using var connection = new SqliteConnection(ConnectionString);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         using var deleteCommand = CreateCommand(
             connection,
@@ -48,14 +53,14 @@ public class SqliteProvider : IProvider
             ("$inclusiveToIndex", inclusiveToIndex)
         );
 
-        await deleteCommand.ExecuteNonQueryAsync();
+        await deleteCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
 
     public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
     {
         using var connection = new SqliteConnection(ConnectionString);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         using var deleteCommand = CreateCommand(
             connection,
@@ -64,14 +69,14 @@ public class SqliteProvider : IProvider
             ("$inclusiveToIndex", inclusiveToIndex)
         );
 
-        await deleteCommand.ExecuteNonQueryAsync();
+        await deleteCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
         using var connection = new SqliteConnection(ConnectionString);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         using var selectCommand = CreateCommand(
             connection,
@@ -83,9 +88,9 @@ public class SqliteProvider : IProvider
 
         var indexes = new List<long>();
 
-        using var reader = await selectCommand.ExecuteReaderAsync();
+        using var reader = await selectCommand.ExecuteReaderAsync().ConfigureAwait(false);
 
-        while (await reader.ReadAsync())
+        while (await reader.ReadAsync().ConfigureAwait(false))
         {
             indexes.Add(Convert.ToInt64(reader["EventIndex"]));
 
@@ -102,7 +107,7 @@ public class SqliteProvider : IProvider
 
         using var connection = new SqliteConnection(ConnectionString);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         using var selectCommand = CreateCommand(
             connection,
@@ -110,9 +115,9 @@ public class SqliteProvider : IProvider
             ("$ActorName", actorName)
         );
 
-        using var reader = await selectCommand.ExecuteReaderAsync();
+        using var reader = await selectCommand.ExecuteReaderAsync().ConfigureAwait(false);
 
-        while (await reader.ReadAsync())
+        while (await reader.ReadAsync().ConfigureAwait(false))
         {
             snapshot = JsonConvert.DeserializeObject<object>(reader["SnapshotData"].ToString(), AutoTypeSettings);
             index = Convert.ToInt64(reader["SnapshotIndex"]);
@@ -129,7 +134,7 @@ public class SqliteProvider : IProvider
 
         using var connection = new SqliteConnection(ConnectionString);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         using var insertCommand = CreateCommand(
             connection,
@@ -140,7 +145,7 @@ public class SqliteProvider : IProvider
             ("$EventData", item.EventData)
         );
 
-        await insertCommand.ExecuteNonQueryAsync();
+        await insertCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
 
         return index++;
     }
@@ -153,7 +158,7 @@ public class SqliteProvider : IProvider
 
         using var connection = new SqliteConnection(ConnectionString);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         using var insertCommand = CreateCommand(
             connection,
@@ -164,14 +169,16 @@ public class SqliteProvider : IProvider
             ("$SnapshotData", item.SnapshotData)
         );
 
-        await insertCommand.ExecuteNonQueryAsync();
+        await insertCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
 
-    private static SqliteCommand CreateCommand(SqliteConnection connection, string command, params (string Name, object Value)[] parameters)
+    private static SqliteCommand CreateCommand(SqliteConnection connection, string command,
+        params (string Name, object Value)[] parameters)
     {
         var sqliteCommand = connection.CreateCommand();
         sqliteCommand.CommandText = command;
         sqliteCommand.Parameters.AddRange(parameters.Select(x => new SqliteParameter(x.Name, x.Value)));
+
         return sqliteCommand;
     }
 }

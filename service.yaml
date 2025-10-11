@@ -37,8 +37,6 @@ spec:
             value: "8080"
           - name: PROTOHOST
             value: "0.0.0.0"
-          - name: "MONGO"
-            value: "mongodb://mongo"
           - name: "PROTOHOSTPUBLIC"
             valueFrom:
               fieldRef:
@@ -70,8 +68,6 @@ spec:
             value: "8080"
           - name: PROTOHOST
             value: "0.0.0.0"
-          - name: "MONGO"
-            value: "mongodb://mongo"
           - name: "PROTOHOSTPUBLIC"
             valueFrom:
               fieldRef:

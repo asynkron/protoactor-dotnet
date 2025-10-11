@@ -8,7 +8,8 @@ public class BehaviorTests
     [Fact]
     public async Task can_change_states()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var testActorProps = Props.FromProducer(() => new LightBulb());
@@ -27,7 +28,8 @@ public class BehaviorTests
     [Fact]
     public async Task can_use_global_behaviour()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var __ = system;
         var context = system.Root;
 
         var testActorProps = Props.FromProducer(() => new LightBulb());
@@ -44,28 +46,33 @@ public class BehaviorTests
     [Fact]
     public async Task pop_behavior_should_restore_pushed_behavior()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
-        PID SpawnActorFromFunc(Receive receive) => context.Spawn(Props.FromFunc(receive));
-
         var behavior = new Behavior();
-        behavior.Become(ctx => {
+
+        behavior.Become(ctx =>
+            {
                 if (ctx.Message is string)
                 {
-                    behavior.BecomeStacked(ctx2 => {
+                    behavior.BecomeStacked(ctx2 =>
+                        {
                             ctx2.Respond(42);
                             behavior.UnbecomeStacked();
+
                             return Task.CompletedTask;
                         }
                     );
+
                     ctx.Respond(ctx.Message);
                 }
 
                 return Task.CompletedTask;
             }
         );
-        var pid = SpawnActorFromFunc(behavior.ReceiveAsync);
+
+        var pid = context.Spawn(Props.FromFunc(behavior.ReceiveAsync));
 
         var reply = await context.RequestAsync<string>(pid, "number");
         var replyAfterPush = await context.RequestAsync<int>(pid, null!);
@@ -94,12 +101,15 @@ public class LightBulb : IActor
             case HitWithHammer _:
                 context.Respond("Smashed!");
                 _smashed = true;
+
                 return Task.CompletedTask;
             case PressSwitch _ when _smashed:
                 context.Respond("Broken");
+
                 return Task.CompletedTask;
             case Touch _ when _smashed:
                 context.Respond("OW!");
+
                 return Task.CompletedTask;
         }
 
@@ -114,9 +124,11 @@ public class LightBulb : IActor
             case PressSwitch _:
                 context.Respond("Turning on");
                 _behavior.Become(On);
+
                 break;
             case Touch _:
                 context.Respond("Cold");
+
                 break;
         }
 
@@ -130,9 +142,11 @@ public class LightBulb : IActor
             case PressSwitch _:
                 context.Respond("Turning off");
                 _behavior.Become(Off);
+
                 break;
             case Touch _:
                 context.Respond("Hot!");
+
                 break;
         }
 

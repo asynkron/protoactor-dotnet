@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
 // <copyright file="LoggingExtensionTests.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Proto.Context;
@@ -16,7 +17,8 @@ public class LoggingExtensionTests
     [Fact]
     public async Task CanGetLoggingExtension()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         system.Extensions.Register(new InstanceLogger(LogLevel.Debug));
 
         var logger = system.Logger();
@@ -27,7 +29,8 @@ public class LoggingExtensionTests
     [Fact]
     public async Task CanLogToLogStore()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var logStore = new LogStore();
         system.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
@@ -42,7 +45,8 @@ public class LoggingExtensionTests
     [Fact]
     public async Task CanCompareEntriesInStore()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var logStore = new LogStore();
         system.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 
@@ -65,12 +69,15 @@ public class LoggingExtensionTests
     {
         // this is not really a logging test, its just to highlight that ?. really ignores the right-side if null
 
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         //instance logger is null
         var logger = system.Logger();
 
         var i = 0;
-        logger?.LogDebug("hello", ++i); //we can pass a lot of args, call ToString etc. if logger is not enabled, it will be free
+
+        logger?.LogDebug("hello",
+            ++i); //we can pass a lot of args, call ToString etc. if logger is not enabled, it will be free
 
         Assert.Equal(0, i);
     }
@@ -78,7 +85,8 @@ public class LoggingExtensionTests
     [Fact]
     public async Task CanLogByCategory()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var logStore = new LogStore();
         system.Extensions.Register(new InstanceLogger(LogLevel.Debug, logStore));
 

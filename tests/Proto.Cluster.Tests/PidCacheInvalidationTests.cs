@@ -1,25 +1,31 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="PidCacheInvalidationTests.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using static Proto.TestKit.TestKit;
 using Xunit;
 
 namespace Proto.Cluster.Tests;
 
+[Collection("ClusterTests")]
 public class PidCacheInvalidationTests : IClassFixture<InMemoryPidCacheInvalidationClusterFixture>
 {
+    public PidCacheInvalidationTests(InMemoryPidCacheInvalidationClusterFixture clusterFixture)
+    {
+        ClusterFixture = clusterFixture;
+    }
+
     private InMemoryPidCacheInvalidationClusterFixture ClusterFixture { get; }
 
     private IList<Cluster> Members => ClusterFixture.Members;
-
-    public PidCacheInvalidationTests(InMemoryPidCacheInvalidationClusterFixture clusterFixture) => ClusterFixture = clusterFixture;
 
     [Fact]
     public async Task PidCacheInvalidatesCorrectly()
@@ -32,7 +38,9 @@ public class PidCacheInvalidationTests : IClassFixture<InMemoryPidCacheInvalidat
         cachedPid.Should().NotBeNull();
         await remoteMember.RequestAsync<object>(id, EchoActor.Kind, new Die(), CancellationToken.None);
 
-        await Task.Delay(2000); // PidCache is asynchronously cleared, allow the system to purge it
+        await AwaitConditionAsync(
+            () => GetFromPidCache(remoteMember, id) is null,
+            TimeSpan.FromSeconds(5)); // Wait until the pid cache entry is purged
 
         var cachedPidAfterStopping = GetFromPidCache(remoteMember, id);
 
@@ -47,6 +55,7 @@ public class PidCacheInvalidationTests : IClassFixture<InMemoryPidCacheInvalidat
                 Kind = EchoActor.Kind
             }, out var activation
         );
+
         return activation;
     }
 
@@ -54,10 +63,14 @@ public class PidCacheInvalidationTests : IClassFixture<InMemoryPidCacheInvalidat
     {
         foreach (var member in Members)
         {
-            var response = await member.RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), CancellationToken.None);
+            var response =
+                await member.RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), CancellationToken.None);
 
             // Get the first member which does not have the activation local to it.
-            if (!response.Address.Equals(member.System.Address, StringComparison.OrdinalIgnoreCase)) return member;
+            if (!response.Address.Equals(member.System.Address, StringComparison.OrdinalIgnoreCase))
+            {
+                return member;
+            }
         }
 
         throw new Exception("Something wrong here..");

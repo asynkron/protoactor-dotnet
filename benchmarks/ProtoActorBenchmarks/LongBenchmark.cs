@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="LongBenchmark.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -32,14 +32,15 @@ public class LongBenchmark
     [Benchmark]
     public Task InProcessPingPong()
     {
-        var d = new ThreadPoolDispatcher {Throughput = Tps};
+        var d = new ThreadPoolDispatcher { Throughput = Tps };
 
         var clientCount = Environment.ProcessorCount * 1;
         var clients = new PID[clientCount];
         var echos = new PID[clientCount];
         var completions = new TaskCompletionSource<bool>[clientCount];
 
-        var echoProps = Props.FromProducer(() => new EchoActor())
+        var echoProps = Props
+            .FromProducer(() => new EchoActor())
             .WithDispatcher(d)
             .WithMailbox(() => BoundedMailbox.Create(2048));
 
@@ -48,7 +49,8 @@ public class LongBenchmark
             var tsc = new TaskCompletionSource<bool>();
             completions[i] = tsc;
 
-            var clientProps = Props.FromProducer(() => new PingActor(tsc, MessageCount, BatchSize))
+            var clientProps = Props
+                .FromProducer(() => new PingActor(tsc, MessageCount, BatchSize))
                 .WithDispatcher(d)
                 .WithMailbox(() => BoundedMailbox.Create(2048));
 

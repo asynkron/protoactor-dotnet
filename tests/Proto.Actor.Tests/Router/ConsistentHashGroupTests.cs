@@ -1,17 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Proto.Router.Messages;
 using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Router.Tests;
 
 public class ConsistentHashGroupTests
 {
-    private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
-        .WithMailbox(() => new TestMailbox());
-
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
     [Fact]
@@ -19,15 +16,17 @@ public class ConsistentHashGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
+        var (router, probe1, probe2, probe3) = CreateRouterWith3Routees(system);
 
         system.Root.Send(router, new Message("message1"));
+        await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
         system.Root.Send(router, new Message("message1"));
+        await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
         system.Root.Send(router, new Message("message1"));
+        await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
 
-        Assert.Equal(3, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee3, "received?", _timeout));
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
@@ -35,15 +34,17 @@ public class ConsistentHashGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system, x => x.ToString()!);
+        var (router, probe1, probe2, probe3) = CreateRouterWith3Routees(system, x => x.ToString()!);
 
         system.Root.Send(router, "message1");
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "message1");
         system.Root.Send(router, "message1");
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "message1");
         system.Root.Send(router, "message1");
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "message1");
 
-        Assert.Equal(3, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee3, "received?", _timeout));
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
@@ -51,15 +52,15 @@ public class ConsistentHashGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
+        var (router, probe1, probe2, probe3) = CreateRouterWith3Routees(system);
 
         system.Root.Send(router, new Message("message1"));
         system.Root.Send(router, new Message("message2"));
         system.Root.Send(router, new Message("message3"));
 
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
+        await probe2.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message2");
+        await probe3.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message3");
     }
 
     [Fact]
@@ -67,16 +68,19 @@ public class ConsistentHashGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
+        var (router, probe1, probe2, probe3) = CreateRouterWith3Routees(system);
 
         system.Root.Send(router, new Message("message1"));
-        var routee4 = system.Root.Spawn(MyActorProps);
+        await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
+
+        var (probe4, routee4) = CreateNamedTestProbe(system, "routee4");
         system.Root.Send(router, new RouterAddRoutee(routee4));
         system.Root.Send(router, new Message("message1"));
 
-        Assert.Equal(2, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
+        await probe4.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
@@ -86,12 +90,12 @@ public class ConsistentHashGroupTests
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
 
-        system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        system.Root.Send(router, new RouterRemoveRoutee(routee1.Self));
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        Assert.DoesNotContain(routee1, routees.Pids);
-        Assert.Contains(routee2, routees.Pids);
-        Assert.Contains(routee3, routees.Pids);
+        Assert.DoesNotContain(routee1.Self, routees.Pids);
+        Assert.Contains(routee2.Self, routees.Pids);
+        Assert.Contains(routee3.Self, routees.Pids);
     }
 
     [Fact]
@@ -100,13 +104,13 @@ public class ConsistentHashGroupTests
         await using var system = new ActorSystem();
 
         var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
-        var routee4 = system.Root.Spawn(MyActorProps);
+        var (probe4, routee4) = CreateNamedTestProbe(system, "routee4");
         system.Root.Send(router, new RouterAddRoutee(routee4));
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        Assert.Contains(routee1, routees.Pids);
-        Assert.Contains(routee2, routees.Pids);
-        Assert.Contains(routee3, routees.Pids);
+        Assert.Contains(routee1.Self, routees.Pids);
+        Assert.Contains(routee2.Self, routees.Pids);
+        Assert.Contains(routee3.Self, routees.Pids);
         Assert.Contains(routee4, routees.Pids);
     }
 
@@ -115,11 +119,12 @@ public class ConsistentHashGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, _, _) = CreateRouterWith3Routees(system);
+        var (router, probe1, _, _) = CreateRouterWith3Routees(system);
 
-        system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        system.Root.Send(router, new RouterRemoveRoutee(probe1.Self));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, new Message("message1"));
-        Assert.Equal(0, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
@@ -128,10 +133,11 @@ public class ConsistentHashGroupTests
         await using var system = new ActorSystem();
 
         var (router, _, _, _) = CreateRouterWith3Routees(system);
-        var routee4 = system.Root.Spawn(MyActorProps);
+        var (probe4, routee4) = CreateNamedTestProbe(system, "routee4");
         system.Root.Send(router, new RouterAddRoutee(routee4));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, new Message("message4"));
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee4, "received?", _timeout));
+        await probe4.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message4");
     }
 
     [Fact]
@@ -139,17 +145,16 @@ public class ConsistentHashGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, _) = CreateRouterWith3Routees(system);
+        var (router, probe1, probe2, _) = CreateRouterWith3Routees(system);
 
         system.Root.Send(router, new Message("message1"));
-        // routee1 handles "message1"
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        // remove receiver
-        system.Root.Send(router, new RouterRemoveRoutee(routee1));
-        // routee2 should now handle "message1"
+        await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
+        system.Root.Send(router, new RouterRemoveRoutee(probe1.Self));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, new Message("message1"));
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
 
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
+        await probe2.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "message1");
     }
 
     [Fact]
@@ -157,45 +162,87 @@ public class ConsistentHashGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateRouterWith3Routees(system);
+        var (router, probe1, probe2, probe3) = CreateRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterBroadcastMessage(new Message("hello")));
 
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee1, "received?", _timeout));
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee2, "received?", _timeout));
-        Assert.Equal(1, await system.Root.RequestAsync<int>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "hello");
+        await probe2.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "hello");
+        await probe3.ExpectNextUserMessageAsync<Message>(m => m.ToString() == "hello");
     }
-
-    private static (PID router, PID routee1, PID routee2, PID routee3) CreateRouterWith3Routees(
+    private static (PID router, TestProbe routee1, TestProbe routee2, TestProbe routee3) CreateRouterWith3Routees(
         ActorSystem system,
         Func<object, string>? messageHasher = null
     )
     {
-        // assign unique names for when tests run in parallel
-        var routee1 = system.Root.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee1");
-        var routee2 = system.Root.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee2");
-        var routee3 = system.Root.SpawnNamed(MyActorProps, Guid.NewGuid() + "routee3");
+        var (routee1, pid1) = CreateNamedTestProbe(system, "routee1");
+        var (routee2, pid2) = CreateNamedTestProbe(system, "routee2");
+        var (routee3, pid3) = CreateNamedTestProbe(system, "routee3");
 
-        var props = system.Root.NewConsistentHashGroup(SuperIntelligentDeterministicHash.Hash, 1, messageHasher,
-                routee1, routee2, routee3
-            )
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewConsistentHashGroup(
+            SuperIntelligentDeterministicHash.Hash,
+            1,
+            messageHasher,
+            pid1,
+            pid2,
+            pid3
+        );
+
         var router = system.Root.Spawn(props);
+
         return (router, routee1, routee2, routee3);
+    }
+
+    private static (TestProbe probe, PID pid) CreateNamedTestProbe(ActorSystem system, string name)
+    {
+        var probe = new TestProbe();
+        var pid = system.Root.SpawnNamed(Props.FromProducer(() => probe), Guid.NewGuid() + name);
+        return (probe, pid);
     }
 
     private static class SuperIntelligentDeterministicHash
     {
         public static uint Hash(string hashKey)
         {
-            if (hashKey.EndsWith("routee1")) return 10;
-            if (hashKey.EndsWith("routee2")) return 20;
-            if (hashKey.EndsWith("routee3")) return 30;
-            if (hashKey.EndsWith("routee4")) return 40;
-            if (hashKey.EndsWith("message1")) return 9;
-            if (hashKey.EndsWith("message2")) return 19;
-            if (hashKey.EndsWith("message3")) return 29;
-            if (hashKey.EndsWith("message4")) return 39;
+            if (hashKey.EndsWith("routee1"))
+            {
+                return 10;
+            }
+
+            if (hashKey.EndsWith("routee2"))
+            {
+                return 20;
+            }
+
+            if (hashKey.EndsWith("routee3"))
+            {
+                return 30;
+            }
+
+            if (hashKey.EndsWith("routee4"))
+            {
+                return 40;
+            }
+
+            if (hashKey.EndsWith("message1"))
+            {
+                return 9;
+            }
+
+            if (hashKey.EndsWith("message2"))
+            {
+                return 19;
+            }
+
+            if (hashKey.EndsWith("message3"))
+            {
+                return 29;
+            }
+
+            if (hashKey.EndsWith("message4"))
+            {
+                return 39;
+            }
 
             return 0;
         }
@@ -205,33 +252,14 @@ public class ConsistentHashGroupTests
     {
         private readonly string _value;
 
-        public Message(string value) => _value = value;
+        public Message(string value)
+        {
+            _value = value;
+        }
 
         public string HashBy() => _value;
 
         public override string ToString() => _value;
     }
 
-    internal class MyTestActor : IActor
-    {
-        private readonly List<string> _receivedMessages = new();
-
-        public Task ReceiveAsync(IContext context)
-        {
-            switch (context.Message)
-            {
-                case string msg when msg == "received?":
-                    context.Respond(_receivedMessages.Count);
-                    break;
-                case Message msg:
-                    _receivedMessages.Add(msg.ToString());
-                    break;
-                case string msg:
-                    _receivedMessages.Add(msg);
-                    break;
-            }
-
-            return Task.CompletedTask;
-        }
-    }
 }

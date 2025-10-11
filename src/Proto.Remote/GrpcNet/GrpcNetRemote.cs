@@ -10,58 +10,71 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Proto.Remote.Metrics;
+using Proto.Diagnostics;
 
 namespace Proto.Remote.GrpcNet;
 
 public class GrpcNetRemote : IRemote
 {
-    private readonly object _lock = new(); 
-    private readonly GrpcNetRemoteConfig _config;
+    private readonly RemoteConfig _config;
+    private readonly object _lock = new();
     private readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
     private EndpointManager _endpointManager = null!;
-    private EndpointReader _endpointReader = null!;
+    private RemotingGrpcService _remotingGrpcService = null!;
     private HealthServiceImpl _healthCheck = null!;
     private IWebHost? _host;
 
-    public GrpcNetRemote(ActorSystem system, GrpcNetRemoteConfig config)
+    public GrpcNetRemote(ActorSystem system, RemoteConfig config)
     {
         System = system;
+        BlockList = new BlockList(system);
         _config = config;
         System.Extensions.Register(this);
         System.Extensions.Register(config.Serialization);
     }
 
     public bool Started { get; private set; }
-        
-    public BlockList BlockList { get; } = new();
-        
-    public RemoteConfigBase Config => _config;
+
+    public BlockList BlockList { get; }
+
+    public RemoteConfig Config => _config;
     public ActorSystem System { get; }
+
+    public async Task<DiagnosticsEntry[]> GetDiagnostics()
+    {
+        var endpoints = await _endpointManager.GetDiagnostics().ConfigureAwait(false);
+
+        return endpoints;
+    }
 
     public Task StartAsync()
     {
         lock (_lock)
         {
             if (Started)
+            {
                 return Task.CompletedTask;
+            }
 
-            var channelProvider = new GrpcNetChannelProvider(_config);
-            _endpointManager = new EndpointManager(System, Config, channelProvider);
-            _endpointReader = new EndpointReader(System, _endpointManager);
+            _endpointManager = new EndpointManager(System, Config);
+            _remotingGrpcService = new RemotingGrpcService(System, _endpointManager);
             _healthCheck = new HealthServiceImpl();
 
             if (!IPAddress.TryParse(Config.Host, out var ipAddress))
+            {
                 ipAddress = IPAddress.Any;
+            }
+
             IServerAddressesFeature? serverAddressesFeature = null;
 
             _host = new WebHostBuilder()
                 .UseKestrel()
-                .ConfigureKestrel(serverOptions => {
+                .ConfigureKestrel(serverOptions =>
+                    {
                         if (_config.ConfigureKestrel == null)
                         {
                             serverOptions.Listen(ipAddress, Config.Port,
-                                listenOptions => listenOptions.Protocols = HttpProtocols.Http2
+                                listenOptions => { listenOptions.Protocols = HttpProtocols.Http2; }
                             );
                         }
                         else
@@ -72,20 +85,28 @@ public class GrpcNetRemote : IRemote
                         }
                     }
                 )
-                .ConfigureServices(serviceCollection => {
+                .ConfigureServices(serviceCollection =>
+                    {
                         serviceCollection.AddSingleton(Log.GetLoggerFactory());
-                        serviceCollection.AddGrpc(options => {
+
+                        serviceCollection.AddGrpc(options =>
+                            {
                                 options.MaxReceiveMessageSize = null;
                                 options.EnableDetailedErrors = true;
                             }
                         );
-                        serviceCollection.AddSingleton<Remoting.RemotingBase>(_endpointReader);
+
+                        serviceCollection.AddSingleton<Remoting.RemotingBase>(_remotingGrpcService);
                         serviceCollection.AddSingleton<Health.HealthBase>(_healthCheck);
                         serviceCollection.AddSingleton<IRemote>(this);
                     }
-                ).Configure(app => {
+                )
+                .Configure(app =>
+                    {
                         app.UseRouting();
-                        app.UseEndpoints(endpoints => {
+
+                        app.UseEndpoints(endpoints =>
+                            {
                                 endpoints.MapGrpcService<Remoting.RemotingBase>();
                                 endpoints.MapGrpcService<Health.HealthBase>();
                             }
@@ -95,14 +116,24 @@ public class GrpcNetRemote : IRemote
                     }
                 )
                 .Start();
+
             var uri = serverAddressesFeature!.Addresses.Select(address => new Uri(address)).First();
             var boundPort = uri.Port;
+
             System.SetAddress(Config.AdvertisedHost ?? Config.Host,
                 Config.AdvertisedPort ?? boundPort
             );
+
             _endpointManager.Start();
-            _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, Config.Port, System.Address);
+
+            _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, Config.Port,
+                System.Address);
+
             Started = true;
+            System.Diagnostics.RegisterEvent("Remote", "Started GrpcNet Successfully");
+            System.Diagnostics.RegisterObject("Remote", "Config", Config);
+            Config.Serialization.Init(System);
+
             return Task.CompletedTask;
         }
     }
@@ -112,7 +143,9 @@ public class GrpcNetRemote : IRemote
         lock (_lock)
         {
             if (!Started)
+            {
                 return;
+            }
 
             Started = false;
         }
@@ -123,9 +156,12 @@ public class GrpcNetRemote : IRemote
             {
                 if (graceful)
                 {
-                    _endpointManager.Stop();
+                    await _endpointManager.StopAsync();
+
                     if (_host is not null)
-                        await _host.StopAsync();
+                    {
+                        await _host.StopAsync().WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+                    }
                 }
             }
 
@@ -137,7 +173,7 @@ public class GrpcNetRemote : IRemote
         catch (Exception ex)
         {
             _logger.LogError(
-                ex, "Proto.Actor server stopped on {Address} with error: {Message}",
+                ex, "Proto.Actor server stopped on {Address} with error: {MessagePayload}",
                 System.Address, ex.Message
             );
         }

@@ -1,11 +1,3 @@
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-13-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
-| Status | History |
-| :---   | :---    |
-| ![Build status](https://ci.appveyor.com/api/projects/status/cmpnw19ur8j25xn4/branch/master?svg=true)|![Build history](https://buildstats.info/github/chart/asynkron/protoactor-dotnet)|
-
-
 ### [💬 Join our Slack channel](https://join.slack.com/t/asynkron/shared_invite/zt-ko824601-yGN1d3GHF9jzZX2VtONodQ)
 
 # Proto.Actor
@@ -15,6 +7,10 @@ Ultra-fast, distributed, cross-platform actors.
 ## Bootcamp Training
 
 [https://github.com/AsynkronIT/protoactor-bootcamp](https://github.com/AsynkronIT/protoactor-bootcamp)
+
+## Stats
+
+![Alt](https://repobeats.axiom.co/api/embed/c9c21a6a706eda331cc8a38e4f03a7a844ed95f3.svg "Repobeats analytics image")
 
 ## Installing
 
@@ -29,6 +25,65 @@ This is the .NET repository for Proto Actor.
 Other implementations:
 
 - Go: [https://github.com/AsynkronIT/protoactor-go](https://github.com/AsynkronIT/protoactor-go)
+
+## Documentation
+
+Additional root-level documents provide deeper insights into the project:
+
+- [CODEBASE_OVERVIEW.md](CODEBASE_OVERVIEW.md) – overview of the repository structure and key concepts.
+- [CLUSTER_MEMBERSHIP_GOSSIP.md](CLUSTER_MEMBERSHIP_GOSSIP.md) – explains how cluster membership is detected and propagated via gossip.
+- [EVENTSTREAM_EVENTS.md](EVENTSTREAM_EVENTS.md) – lists key EventStream events and their publishers/subscribers.
+- [SECURITY.md](SECURITY.md) – security policy and supported versions.
+- [Terminology.md](Terminology.md) – definitions of common Proto.Actor terms.
+
+## Test coverage
+
+You can capture code coverage directly when running the test projects. The .NET SDK ships an `XPlat Code Coverage` data collector that works across platforms, so you do not need any third-party tooling for the basic workflow.
+
+### Quick coverage run
+
+Run any test project with coverage enabled by passing the `CollectCoverage` property:
+
+```bash
+dotnet test /p:CollectCoverage=true
+```
+
+This uses the built-in collector and writes coverage data under the `TestResults` directory for the invocation.
+
+### Using coverlet.collector
+
+For richer reporting support you can opt into the `coverlet.collector` package. Add it to the test project you want to analyze:
+
+```bash
+dotnet add package coverlet.collector
+```
+
+Then request coverage when running the tests:
+
+```bash
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+This produces a `.coverage` file under `TestResults/...` that can be converted into other formats.
+
+### Alternative output formats
+
+You can ask the collector to emit other formats such as Cobertura, lcov, or OpenCover. For example, to produce an `lcov` report:
+
+```bash
+dotnet test --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=lcov
+```
+
+### HTML reports
+
+Feed the generated `lcov` or `cobertura` files into tools like [ReportGenerator](https://github.com/danielpalme/ReportGenerator) to build browsable HTML output. Install the global tool and point it at your coverage reports:
+
+```bash
+dotnet tool install -g dotnet-reportgenerator-globaltool
+reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coveragereport
+```
+
+Open the files in the `coveragereport` directory to inspect the results.
 
 ## Design principles
 
@@ -86,41 +141,22 @@ You should see the output `Hello Alex`.
 
 [https://github.com/asynkron/realtimemap-dotnet](https://github.com/asynkron/realtimemap-dotnet)
 
-## Sponsors
-Our awesome sponsors:
-
-<!-- sponsors --><a href="https://github.com/jhston02"><img src="https://github.com/jhston02.png" width="60px" alt="" /></a><a href="https://github.com/schafer14"><img src="https://github.com/schafer14.png" width="60px" alt="" /></a><a href="https://github.com/nbokovoy"><img src="https://github.com/nbokovoy.png" width="60px" alt="" /></a><!-- sponsors -->
-
 ## Contributors
 
-<a href="https://github.com/AsynkronIT/protoactor-dotnet/graphs/contributors">
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tr>
-    <td align="center"><a href="http://asynkron.se"><img src="https://avatars.githubusercontent.com/u/647031?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Roger Johansson</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=rogeralsing" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/mhelleborg"><img src="https://avatars.githubusercontent.com/u/13994978?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Magne Helleborg</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=mhelleborg" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/cpx86"><img src="https://avatars.githubusercontent.com/u/209890?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Christian Palmstierna</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=cpx86" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/potterdai"><img src="https://avatars.githubusercontent.com/u/3758951?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Potter Dai</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=potterdai" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/tomliversidge"><img src="https://avatars.githubusercontent.com/u/1437372?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tom Liversidge</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=tomliversidge" title="Code">💻</a></td>
-    <td align="center"><a href="http://www.zimarev.com"><img src="https://avatars.githubusercontent.com/u/2821205?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alexey Zimarev</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=alexeyzimarev" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/adamhathcock"><img src="https://avatars.githubusercontent.com/u/527620?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Adam Hathcock</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=adamhathcock" title="Code">💻</a></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="http://www.kompilera.se/"><img src="https://avatars.githubusercontent.com/u/5316125?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Söderberg</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=raskolnikoov" title="Code">💻</a></td>
-    <td align="center"><a href="https://www.eventuallyconsultant.com"><img src="https://avatars.githubusercontent.com/u/2705498?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jérôme Rouaix</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=jrouaix" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/Damian-P"><img src="https://avatars.githubusercontent.com/u/1333962?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Piechowicz Damian</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=Damian-P" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/alexpantyukhin"><img src="https://avatars.githubusercontent.com/u/6513121?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alexander Pantyukhin</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=alexpantyukhin" title="Code">💻</a></td>
-    <td align="center"><a href="http://www.lighthouselogic.com/"><img src="https://avatars.githubusercontent.com/u/1631623?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sudsy</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=sudsy" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/DenizPiri"><img src="https://avatars.githubusercontent.com/u/519796?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Deniz Piri</b></sub></a><br /><a href="https://github.com/asynkron/protoactor-dotnet/commits?author=DenizPiri" title="Code">💻</a></td>
-  </tr>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
+<a href="https://github.com/asynkron/protoactor-dotnet/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=asynkron/protoactor-dotnet" />
 </a>
 
-Made with [contributors-img](https://contributors-img.firebaseapp.com).
+Made with [contributors-img](https://contributors-img.web.app).
+
+## Partners, Sponsors, and Contributor Companies
+
+<!-- make pretty with logos etc -->
+
+| Name                                     | Role                                  |
+| ---------------------------------------- | ------------------------------------- |
+| [Asynkron AB](https://asynkron.se)       | Founder and owner of Proto.Actor      |
+| Helleborg AS                             | Core contributor team                 |
+| [Ubiquitous AS](https://ubiquitous.no/)  | Core contributor team                 |
+| [Ahoy Games](https://www.ahoygames.com/) | Core contributor team                 |
+| [Etteplan](https://www.etteplan.com/)    | Contributing tutorials, documentation |

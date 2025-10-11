@@ -1,14 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using Proto.Router.Messages;
-using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Router.Tests;
 
 public class BroadcastGroupTests
 {
-    private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor());
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
     [Fact]
@@ -16,13 +15,14 @@ public class BroadcastGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
+        var (router, routee1, routee2, routee3, probe1, probe2, probe3) =
+            CreateBroadcastGroupRouterWith3Routees(system);
 
         system.Root.Send(router, "hello");
 
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
     [Fact]
@@ -30,13 +30,14 @@ public class BroadcastGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
+        var (router, routee1, routee2, routee3, probe1, _, probe3) =
+            CreateBroadcastGroupRouterWith3Routees(system);
 
         await system.Root.StopAsync(routee2);
         system.Root.Send(router, "hello");
 
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
     [Fact]
@@ -44,13 +45,15 @@ public class BroadcastGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
+        var (router, routee1, routee2, routee3, probe1, probe2, probe3) =
+            CreateBroadcastGroupRouterWith3Routees(system,
+                p => Props.FromProducer(() => new SlowForwardActor(p)));
 
         system.Root.Send(routee2, "go slow");
         system.Root.Send(router, "hello");
 
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
     [Fact]
@@ -58,7 +61,7 @@ public class BroadcastGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
+        var (router, routee1, routee2, routee3, _, _, _) = CreateBroadcastGroupRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
 
@@ -73,8 +76,8 @@ public class BroadcastGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
-        var routee4 = system.Root.Spawn(MyActorProps);
+        var (router, routee1, routee2, routee3, _, _, _) = CreateBroadcastGroupRouterWith3Routees(system);
+        var (probe4, routee4) = system.CreateTestProbe();
         system.Root.Send(router, new RouterAddRoutee(routee4));
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
@@ -89,15 +92,20 @@ public class BroadcastGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
+        var (router, routee1, routee2, routee3, probe1, probe2, probe3) =
+            CreateBroadcastGroupRouterWith3Routees(system);
 
         system.Root.Send(router, "first message");
         system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, "second message");
 
-        Assert.Equal("first message", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("second message", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("second message", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "first message");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "first message");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "first message");
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "second message");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "second message");
     }
 
     [Fact]
@@ -105,15 +113,17 @@ public class BroadcastGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
-        var routee4 = system.Root.Spawn(MyActorProps);
+        var (router, routee1, routee2, routee3, probe1, probe2, probe3) =
+            CreateBroadcastGroupRouterWith3Routees(system);
+        var (probe4, routee4) = system.CreateTestProbe();
         system.Root.Send(router, new RouterAddRoutee(routee4));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, "a message");
 
-        Assert.Equal("a message", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("a message", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("a message", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
-        Assert.Equal("a message", await system.Root.RequestAsync<string>(routee4, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "a message");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "a message");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "a message");
+        await probe4.ExpectNextUserMessageAsync<string>(x => x == "a message");
     }
 
     [Fact]
@@ -121,45 +131,53 @@ public class BroadcastGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateBroadcastGroupRouterWith3Routees(system);
+        var (router, routee1, routee2, routee3, probe1, probe2, probe3) =
+            CreateBroadcastGroupRouterWith3Routees(system);
 
         system.Root.Send(router, new RouterBroadcastMessage("hello"));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
 
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
-    private static (PID router, PID routee1, PID routee2, PID routee3) CreateBroadcastGroupRouterWith3Routees(ActorSystem system)
+    private static (PID router, PID routee1, PID routee2, PID routee3, TestProbe probe1, TestProbe probe2,
+        TestProbe probe3) CreateBroadcastGroupRouterWith3Routees(ActorSystem system,
+        Func<TestProbe, Props>? routee2PropsFactory = null)
     {
-        var routee1 = system.Root.Spawn(MyActorProps);
-        var routee2 = system.Root.Spawn(MyActorProps);
-        var routee3 = system.Root.Spawn(MyActorProps);
+        var (probe1, routee1) = system.CreateTestProbe();
 
-        var props = system.Root.NewBroadcastGroup(routee1, routee2, routee3)
-            .WithMailbox(() => new TestMailbox());
+        var (probe2, probe2Pid) = system.CreateTestProbe();
+        var routee2 = routee2PropsFactory is null
+            ? probe2Pid
+            : system.Root.Spawn(routee2PropsFactory(probe2));
+
+        var (probe3, routee3) = system.CreateTestProbe();
+
+        var props = system.Root.NewBroadcastGroup(routee1, routee2, routee3);
+
         var router = system.Root.Spawn(props);
-        return (router, routee1, routee2, routee3);
+
+        return (router, routee1, routee2, routee3, probe1, probe2, probe3);
     }
 
-    private class MyTestActor : IActor
+    private class SlowForwardActor : IActor
     {
-        private string? _received;
+        private readonly TestProbe _probe;
+
+        public SlowForwardActor(TestProbe probe) => _probe = probe;
 
         public async Task ReceiveAsync(IContext context)
         {
-            switch (context.Message)
+            if (context.Message is string s && s == "go slow")
             {
-                case "received?":
-                    context.Respond(_received!);
-                    break;
-                case "go slow":
-                    await Task.Delay(5000);
-                    break;
-                case string msg:
-                    _received = msg;
-                    break;
+                // Simulate a slow routee for broadcast testing
+                await Task.Delay(5000);
+                return;
             }
+
+            context.Send(_probe.Self, context.Message);
         }
     }
 }

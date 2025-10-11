@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="DockerSupport.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ClusterExperiment1;
 
-public static  class DockerSupport
+public static class DockerSupport
 {
     public static async Task Run(Task done)
     {

@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //  <copyright file="DynamoDBHelper.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -31,8 +31,8 @@ public static class DynamoDBExtensions
         DynamoDBProviderOptions options,
         int initialReadCapacityUnits,
         int initialWriteCapacityUnits
-    )
-        => dynamoDB.CheckCreateTable(
+    ) =>
+        dynamoDB.CheckCreateTable(
             options.EventsTableName, options.EventsTableHashKey, options.EventsTableSortKey,
             initialReadCapacityUnits, initialWriteCapacityUnits
         );
@@ -53,8 +53,8 @@ public static class DynamoDBExtensions
         DynamoDBProviderOptions options,
         int initialReadCapacityUnits,
         int initialWriteCapacityUnits
-    )
-        => dynamoDB.CheckCreateTable(
+    ) =>
+        dynamoDB.CheckCreateTable(
             options.SnapshotsTableName, options.SnapshotsTableHashKey, options.SnapshotsTableSortKey,
             initialReadCapacityUnits, initialWriteCapacityUnits
         );
@@ -68,17 +68,22 @@ public static class DynamoDBExtensions
         int writeCapacityUnits
     )
     {
-        var existingTable = await dynamoDB.IsTableCreated(tableName, true);
+        var existingTable = await dynamoDB.IsTableCreated(tableName, true).ConfigureAwait(false);
 
-        if (existingTable.Created) CheckTableKeys(existingTable.TableDesc, partitionKey, sortKey);
+        if (existingTable.Created)
+        {
+            CheckTableKeys(existingTable.TableDesc, partitionKey, sortKey);
+        }
         else
         {
-            var res = await dynamoDB.CreateTable(tableName, partitionKey, sortKey, readCapacityUnits, writeCapacityUnits);
+            var res = await dynamoDB.CreateTable(tableName, partitionKey, sortKey, readCapacityUnits,
+                writeCapacityUnits).ConfigureAwait(false);
 
             if (res.TableStatus != "ACTIVE")
             {
-                await Task.Delay(2000);
-                await dynamoDB.IsTableCreated(tableName, false);
+                // Newly created table is not active yet; wait before verifying creation
+                await Task.Delay(2000).ConfigureAwait(false);
+                await dynamoDB.IsTableCreated(tableName, false).ConfigureAwait(false);
             }
         }
     }
@@ -93,12 +98,14 @@ public static class DynamoDBExtensions
 
         do
         {
-            var (created, tableDesc, shouldRetry) = await TryCheckTable();
+            var (created, tableDesc, shouldRetry) = await TryCheckTable().ConfigureAwait(false);
 
             if (!shouldRetry)
+            {
                 return (created, tableDesc);
+            }
 
-            await Task.Delay(2000); // Wait 2 seconds.
+            await Task.Delay(2000).ConfigureAwait(false); // Wait 2 seconds.
         } while (retry-- > 0);
 
         // We've been waiting for 20s already. Lets throw exception.
@@ -109,8 +116,8 @@ public static class DynamoDBExtensions
             try
             {
                 var res = await dynamoDB.DescribeTableAsync(
-                    new DescribeTableRequest {TableName = tableName}
-                );
+                    new DescribeTableRequest { TableName = tableName }
+                ).ConfigureAwait(false);
 
                 return res.Table.TableStatus.Value switch
                 {
@@ -121,7 +128,10 @@ public static class DynamoDBExtensions
             }
             catch (ResourceNotFoundException)
             {
-                if (falseAccepted) return (false, null, false);
+                if (falseAccepted)
+                {
+                    return (false, null, false);
+                }
             }
 
             return (false, null, true);
@@ -141,12 +151,12 @@ public static class DynamoDBExtensions
         {
             AttributeDefinitions = new List<AttributeDefinition>
             {
-                new AttributeDefinition
+                new()
                 {
                     AttributeName = partitionKey,
                     AttributeType = "S"
                 },
-                new AttributeDefinition
+                new()
                 {
                     AttributeName = sortKey,
                     AttributeType = "N"
@@ -154,12 +164,12 @@ public static class DynamoDBExtensions
             },
             KeySchema = new List<KeySchemaElement>
             {
-                new KeySchemaElement
+                new()
                 {
                     AttributeName = partitionKey,
                     KeyType = "HASH" //Partition key
                 },
-                new KeySchemaElement
+                new()
                 {
                     AttributeName = sortKey,
                     KeyType = "RANGE" //Sort key
@@ -173,7 +183,7 @@ public static class DynamoDBExtensions
             TableName = tableName
         };
 
-        var response = await dynamoDB.CreateTableAsync(request);
+        var response = await dynamoDB.CreateTableAsync(request).ConfigureAwait(false);
 
         return response.TableDescription;
     }

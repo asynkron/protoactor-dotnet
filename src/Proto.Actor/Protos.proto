@@ -8,7 +8,6 @@ message PID {
     uint32 request_id = 3;
 }
 
-//user messages
 message PoisonPill {
 }
 
@@ -16,7 +15,6 @@ message DeadLetterResponse {
     PID Target = 1;
 }
 
-//system messages
 message Watch {
     PID Watcher = 1;
 }

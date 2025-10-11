@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="CouchbaseProvider.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -16,7 +16,10 @@ public class CouchbaseProvider : IProvider
 {
     private readonly IBucket _bucket;
 
-    public CouchbaseProvider(IBucket bucket) => _bucket = bucket;
+    public CouchbaseProvider(IBucket bucket)
+    {
+        _bucket = bucket;
+    }
 
     public Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
@@ -34,7 +37,7 @@ public class CouchbaseProvider : IProvider
 
         req.ScanConsistency(ScanConsistency.RequestPlus);
 
-        var res = await _bucket.QueryAsync<Snapshot>(req);
+        var res = await _bucket.QueryAsync<Snapshot>(req).ConfigureAwait(false);
 
         ThrowOnError(res);
 
@@ -47,7 +50,7 @@ public class CouchbaseProvider : IProvider
     {
         var evnt = new Event(actorName, index, @event);
 
-        await _bucket.InsertAsync(evnt.Key, evnt);
+        await _bucket.InsertAsync(evnt.Key, evnt).ConfigureAwait(false);
 
         return index + 1;
     }
@@ -68,13 +71,13 @@ public class CouchbaseProvider : IProvider
 
         req.ScanConsistency(ScanConsistency.RequestPlus);
 
-        var res = await _bucket.QueryAsync<Event>(req);
+        var res = await _bucket.QueryAsync<Event>(req).ConfigureAwait(false);
 
         ThrowOnError(res);
 
         var envelopes = res.Rows;
 
-        await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key)));
+        await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key))).ConfigureAwait(false);
     }
 
     public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
@@ -86,21 +89,21 @@ public class CouchbaseProvider : IProvider
 
         req.ScanConsistency(ScanConsistency.RequestPlus);
 
-        var res = await _bucket.QueryAsync<Snapshot>(req);
+        var res = await _bucket.QueryAsync<Snapshot>(req).ConfigureAwait(false);
 
         ThrowOnError(res);
 
         var envelopes = res.Rows;
 
-        await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key)));
+        await Task.WhenAll(envelopes.Select(x => _bucket.RemoveAsync(x.Key))).ConfigureAwait(false);
     }
 
-    private string GenerateGetEventsQuery(string actorName, long indexStart, long indexEnd)
-        => $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' " +
-           "AND b.type = 'event' " +
-           $"AND b.eventIndex >= {indexStart} " +
-           $"AND b.eventIndex <= {indexEnd} " +
-           "ORDER BY b.eventIndex ASC";
+    private string GenerateGetEventsQuery(string actorName, long indexStart, long indexEnd) =>
+        $"SELECT b.* FROM `{_bucket.Name}` b WHERE b.actorName = '{actorName}' " +
+        "AND b.type = 'event' " +
+        $"AND b.eventIndex >= {indexStart} " +
+        $"AND b.eventIndex <= {indexEnd} " +
+        "ORDER BY b.eventIndex ASC";
 
     private async Task<long> ExecuteGetEventsQueryAsync(string query, Action<object> callback)
     {
@@ -108,7 +111,7 @@ public class CouchbaseProvider : IProvider
 
         req.ScanConsistency(ScanConsistency.RequestPlus);
 
-        var res = await _bucket.QueryAsync<Event>(req);
+        var res = await _bucket.QueryAsync<Event>(req).ConfigureAwait(false);
 
         ThrowOnError(res);
 
@@ -124,6 +127,9 @@ public class CouchbaseProvider : IProvider
 
     private static void ThrowOnError<T>(IQueryResult<T> res)
     {
-        if (!res.Success) throw new Exception($"Couchbase query failed: {res}");
+        if (!res.Success)
+        {
+            throw new Exception($"Couchbase query failed: {res}");
+        }
     }
 }

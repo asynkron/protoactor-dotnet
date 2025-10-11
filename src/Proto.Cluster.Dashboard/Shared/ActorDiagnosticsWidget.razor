@@ -1,0 +1,19 @@
+<MudPaper Class="pa-4 my-4" Elevation="2" Outlined>
+    <MudText Typo="Typo.h5">Diagnostics for PID: @PidId</MudText>
+
+    <pre style="white-space: pre-wrap;word-wrap: break-word;background-color: #00000020;" class="pa-4">
+        @Diagnostics
+    </pre>
+
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public string? PidId { get; set; }
+
+    [Parameter]
+    public string? Diagnostics { get; set; }
+
+
+}

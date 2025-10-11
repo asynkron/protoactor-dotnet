@@ -1,0 +1,5 @@
+apiVersion: v2
+name: protoactor-example-k8s-grains
+description: A hello world Proto.Actor Grains cluster in k8s
+type: application
+version: 0.1.0

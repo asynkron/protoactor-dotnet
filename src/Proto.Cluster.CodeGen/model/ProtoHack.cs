@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
 // <copyright file="ProtoHack.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Reflection;
 using Google.Protobuf.Reflection;
@@ -17,9 +18,19 @@ public static class ProtoHack
         {
             throw new ArgumentNullException(nameof(self));
         }
+
         var parentProp = typeof(DescriptorProto).GetProperty("Parent", BindingFlags.NonPublic | BindingFlags.Instance);
-        var parent = (FileDescriptorProto) parentProp!.GetValue(self);
+        if (parentProp is null)
+        {
+            throw new InvalidOperationException("Parent property not found");
+        }
+
+        var parent = parentProp.GetValue(self) as FileDescriptorProto;
+        if (parent is null)
+        {
+            throw new InvalidOperationException("Parent FileDescriptorProto not found");
+        }
+
         return parent;
     }
-
 }

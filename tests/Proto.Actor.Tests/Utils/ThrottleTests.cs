@@ -17,7 +17,10 @@ public class ThrottleTests
 
         for (var i = 0; i < 10000; i++)
         {
-            if (shouldThrottle().IsOpen()) triggered++;
+            if (shouldThrottle().IsOpen())
+            {
+                triggered++;
+            }
         }
 
         triggered.Should().Be(maxEvents);
@@ -32,16 +35,23 @@ public class ThrottleTests
 
         for (var i = 0; i < 100; i++)
         {
-            if (shouldThrottle().IsOpen()) triggered++;
+            if (shouldThrottle().IsOpen())
+            {
+                triggered++;
+            }
         }
 
         triggered.Should().Be(maxEvents);
 
+        // Wait for throttle window to elapse before sending more events
         await Task.Delay(2000);
 
         for (var i = 0; i < 100; i++)
         {
-            if (shouldThrottle().IsOpen()) triggered++;
+            if (shouldThrottle().IsOpen())
+            {
+                triggered++;
+            }
         }
 
         triggered.Should().Be(maxEvents * 2, "We expect the throttle to open after the timespan");
@@ -56,6 +66,7 @@ public class ThrottleTests
         shouldThrottle().Should().Be(Throttle.Valve.Open, "It accepts multiple event before closing");
         shouldThrottle().Should().Be(Throttle.Valve.Closing, "Last event before close");
         shouldThrottle().Should().Be(Throttle.Valve.Closed, "Anything over the limit is throttled");
+        // Wait for the throttle period before verifying it reopens
         await Task.Delay(1000);
         shouldThrottle().Should().Be(Throttle.Valve.Open, "After the period it should open again");
     }

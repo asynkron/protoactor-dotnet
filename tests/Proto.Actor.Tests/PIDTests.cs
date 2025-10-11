@@ -11,33 +11,40 @@ public class PidTests
     [Fact]
     public async Task Given_ActorNotDead_Ref_ShouldReturnIt()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
         var pid = context.Spawn(Props.FromFunc(EmptyReceive));
 
         var p = pid.Ref(system);
+        var p2 = pid.Ref(system);
 
         Assert.NotNull(p);
+        Assert.Same(p, p2);
     }
 
     [Fact]
     public async Task Given_ActorDied_Ref_ShouldNotReturnIt()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
-        var pid = context.Spawn(Props.FromFunc(EmptyReceive).WithMailbox(() => new TestMailbox()));
+        var pid = context.Spawn(Props.FromFunc(EmptyReceive));
         await context.StopAsync(pid);
 
         var p = pid.Ref(system);
+        var p2 = pid.Ref(system);
 
         Assert.Null(p);
+        Assert.Null(p2);
     }
 
     [Fact]
     public async Task Given_OtherProcess_Ref_ShouldReturnIt()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
         var id = Guid.NewGuid().ToString();
         var p = new TestProcess(system);
@@ -46,5 +53,6 @@ public class PidTests
         var p2 = pid.Ref(system);
 
         Assert.Same(p, p2);
+        Assert.Equal(id, pid.Id);
     }
 }

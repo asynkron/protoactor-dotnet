@@ -6,8 +6,12 @@ namespace Proto.Tests;
 
 public class DeadLetterResponseTests
 {
-    private static readonly Props EchoProps = Props.FromFunc(context => {
-            if (context.Message is string s) context.Respond(s);
+    private static readonly Props EchoProps = Props.FromFunc(context =>
+        {
+            if (context.Message is string s)
+            {
+                context.Respond(s);
+            }
 
             return Task.CompletedTask;
         }
@@ -16,7 +20,8 @@ public class DeadLetterResponseTests
     [Fact]
     public async Task ThrowsDeadLetterException()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var echoPid = system.Root.Spawn(EchoProps);
@@ -26,14 +31,16 @@ public class DeadLetterResponseTests
         response.Should().Be(message);
         await context.PoisonAsync(echoPid);
 
-        await context.Invoking(c => c.RequestAsync<string>(echoPid, message)).Should()
+        await context.Invoking(c => c.RequestAsync<string>(echoPid, message))
+            .Should()
             .ThrowExactlyAsync<DeadLetterException>();
     }
 
     [Fact]
     public async Task SendsDeadLetterResponse()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var validationActor = Props.FromProducer(() => new DeadLetterResponseValidationActor());
@@ -59,10 +66,13 @@ public class DeadLetterResponseTests
                     _deadLetterTarget = context.Spawn(EchoProps);
                     await context.PoisonAsync(_deadLetterTarget);
                     context.Request(_deadLetterTarget, "One dead letter please");
+
                     break;
-                case DeadLetterResponse response: {
+                case DeadLetterResponse response:
+                {
                     response.Target.Should().Be(_deadLetterTarget);
                     context.Send(_sender!, "Validated");
+
                     break;
                 }
             }

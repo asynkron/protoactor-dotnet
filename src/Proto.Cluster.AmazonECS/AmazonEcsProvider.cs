@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
 // <copyright file="AmazonEcsProvider.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -17,6 +18,9 @@ namespace Proto.Cluster.AmazonECS;
 public class AmazonEcsProvider : IClusterProvider
 {
     private static readonly ILogger Logger = Log.CreateLogger<AmazonEcsProvider>();
+    private readonly AmazonECSClient _client;
+    private readonly AmazonEcsProviderConfig _config;
+    private readonly string _ecsClusterName;
 
     private string _address;
     private Cluster _cluster;
@@ -25,13 +29,11 @@ public class AmazonEcsProvider : IClusterProvider
     private string _host;
     private string[] _kinds;
     private MemberList _memberList;
-    private string _taskArn;
     private int _port;
-    private readonly AmazonEcsProviderConfig _config;
-    private readonly AmazonECSClient _client;
-    private readonly string _ecsClusterName;
+    private string _taskArn;
 
-    public AmazonEcsProvider(AmazonECSClient client, string ecsClusterName, string taskArn, AmazonEcsProviderConfig config)
+    public AmazonEcsProvider(AmazonECSClient client, string ecsClusterName, string taskArn,
+        AmazonEcsProviderConfig config)
     {
         _ecsClusterName = ecsClusterName;
         _client = client;
@@ -51,9 +53,9 @@ public class AmazonEcsProvider : IClusterProvider
         _host = host;
         _port = port;
         _kinds = kinds;
-        _address = host + ":" + port;
+        _address = $"{host}:{port}";
         StartClusterMonitor();
-        await RegisterMemberAsync();
+        await RegisterMemberAsync().ConfigureAwait(false);
     }
 
     public Task StartClientAsync(Cluster cluster)
@@ -68,23 +70,26 @@ public class AmazonEcsProvider : IClusterProvider
         _port = port;
         _kinds = Array.Empty<string>();
         StartClusterMonitor();
+
         return Task.CompletedTask;
     }
 
-    public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync();
+    public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync().ConfigureAwait(false);
 
     public async Task RegisterMemberAsync()
     {
-        await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever);
+        await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever).ConfigureAwait(false);
 
-        static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to register service");
+        static void OnError(int attempt, Exception exception) =>
+            Logger.LogWarning(exception, "Failed to register service");
 
         static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to register service");
     }
 
     public async Task RegisterMemberInner()
     {
-        Logger.LogInformation("[Cluster][AmazonEcsProvider] Registering service {PodName} on {PodIp}", _taskArn, _address);
+        Logger.LogInformation("[Cluster][AmazonEcsProvider] Registering service {PodName} on {PodIp}", _taskArn,
+            _address);
 
         var tags = new Dictionary<string, string>
         {
@@ -101,7 +106,7 @@ public class AmazonEcsProvider : IClusterProvider
 
         try
         {
-            await _client.UpdateMetadata(_taskArn, tags);
+            await _client.UpdateMetadata(_taskArn, tags).ConfigureAwait(false);
         }
         catch (Exception x)
         {
@@ -109,18 +114,16 @@ public class AmazonEcsProvider : IClusterProvider
         }
     }
 
-    private void StartClusterMonitor()
-    {
-        _ = SafeTask.Run(async () => {
-
+    private void StartClusterMonitor() =>
+        _ = SafeTask.Run(async () =>
+            {
                 while (!_cluster.System.Shutdown.IsCancellationRequested)
                 {
                     Logger.Log(_config.DebugLogLevel, "Calling ECS API");
 
                     try
                     {
-                        var members = await _client.GetMembers(_ecsClusterName);
-
+                        var members = await _client.GetMembers(_ecsClusterName).ConfigureAwait(false);
 
                         if (members != null)
                         {
@@ -137,24 +140,27 @@ public class AmazonEcsProvider : IClusterProvider
                         Logger.LogError(x, "Failed to get members from ECS");
                     }
 
-                    await Task.Delay(_config.PollIntervalSeconds);
+                    // Wait before polling ECS again for cluster membership changes
+                    await Task.Delay(TimeSpan.FromSeconds(_config.PollIntervalSeconds)).ConfigureAwait(false);
                 }
             }
         );
-    }
 
     public async Task DeregisterMemberAsync()
     {
-        await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed);
+        await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
-        static void OnError(int attempt, Exception exception) => Logger.LogWarning(exception, "Failed to deregister service");
+        static void OnError(int attempt, Exception exception) =>
+            Logger.LogWarning(exception, "Failed to deregister service");
 
         static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to deregister service");
     }
 
     private async Task DeregisterMemberInner()
     {
-        Logger.LogInformation("[Cluster][AmazonEcsProvider] Unregistering service {PodName} on {PodIp}", _taskArn, _address);
-        await _client.UpdateMetadata(_taskArn, new Dictionary<string, string>());
+        Logger.LogInformation("[Cluster][AmazonEcsProvider] Unregistering service {PodName} on {PodIp}", _taskArn,
+            _address);
+
+        await _client.UpdateMetadata(_taskArn, new Dictionary<string, string>()).ConfigureAwait(false);
     }
 }

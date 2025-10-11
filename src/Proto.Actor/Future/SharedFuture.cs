@@ -1,47 +1,51 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Futures.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+// <copyright file="SharedFuture.cs" company="Asynkron AB">
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
+using Proto.Mailbox;
 using Proto.Metrics;
 
 namespace Proto.Future;
 
 public sealed class SharedFutureProcess : Process, IDisposable
 {
-    private readonly FutureHandle[] _slots;
-    private readonly ChannelWriter<FutureHandle> _completedFutures;
-    private readonly ChannelReader<FutureHandle> _availableFutures;
-
-    private long _createdRequests;
-    private long _completedRequests;
+    private readonly ConcurrentBag<FutureHandle> _futures = new();
 
     /// <summary>
-    /// Highest request-id allowed before it wraps around.
+    ///     Highest request-id allowed before it wraps around.
     /// </summary>
     private readonly int _maxRequestId;
 
     private readonly KeyValuePair<string, object?>[] _metricTags = Array.Empty<KeyValuePair<string, object?>>();
-    private readonly Action? _onTimeout;
     private readonly Action? _onStarted;
+    private readonly Action? _onTimeout;
+    private readonly FutureHandle[] _slots;
+    private long _completedRequests;
+
+    private long _createdRequests;
 
     internal SharedFutureProcess(ActorSystem system, int size) : base(system)
     {
         var name = System.ProcessRegistry.NextId();
         var (pid, absent) = System.ProcessRegistry.TryAdd(name, this);
 
-        if (!absent) throw new ProcessNameExistException(name, pid);
+        if (!absent)
+        {
+            throw new ProcessNameExistException(name, pid);
+        }
 
         Pid = pid;
 
         if (system.Metrics.Enabled)
         {
-            _metricTags = new KeyValuePair<string, object?>[] {new("id", System.Id), new("address", System.Address)};
+            _metricTags = new KeyValuePair<string, object?>[] { new("id", System.Id), new("address", System.Address) };
             _onTimeout = () => ActorMetrics.FuturesTimedOutCount.Add(1, _metricTags);
             _onStarted = () => ActorMetrics.FuturesStartedCount.Add(1, _metricTags);
         }
@@ -53,90 +57,29 @@ public sealed class SharedFutureProcess : Process, IDisposable
 
         _slots = new FutureHandle[size];
 
-        Channel<FutureHandle> channel = Channel.CreateUnbounded<FutureHandle>();
-        _availableFutures = channel.Reader;
-        _completedFutures = channel.Writer;
-
         for (var i = 0; i < _slots.Length; i++)
         {
             var requestSlot = new FutureHandle(this, ToRequestId(i));
             _slots[i] = requestSlot;
-            _completedFutures.TryWrite(requestSlot);
+            _futures.Add(requestSlot);
         }
 
-        _maxRequestId = (int.MaxValue - (int.MaxValue % size));
+        _maxRequestId = int.MaxValue - int.MaxValue % size;
     }
 
     private PID Pid { get; }
     public bool Stopping { get; private set; }
 
-    public int RequestsInFlight {
-        get {
+    public int RequestsInFlight
+    {
+        get
+        {
             // Read completedRequests first and createdRequests later so that we will
             // never read the 2 vars in an order that would result in completedRequests > createdRequests.
-            long completed = Interlocked.Read(ref _completedRequests);
-            long created = Interlocked.Read(ref _createdRequests);
-            return (int) (created - completed);
-        }
-    }
+            var completed = Interlocked.Read(ref _completedRequests);
+            var created = Interlocked.Read(ref _createdRequests);
 
-    public IFuture? TryCreateHandle()
-    {
-        if (Stopping || !_availableFutures.TryRead(out var requestSlot)) return default;
-
-        var pid = requestSlot.Init();
-        Interlocked.Increment(ref _createdRequests);
-        _onStarted?.Invoke();
-        return new SharedFutureHandle(this, pid, requestSlot.CompletionSource!);
-    }
-
-    protected internal override void SendUserMessage(PID pid, object message)
-    {
-        if (!TryGetRequestSlot(pid.RequestId, out var slot)) return;
-
-        try
-        {
-            slot.CompletionSource!.TrySetResult(message);
-        }
-        finally
-        {
-            Complete(pid.RequestId, slot);
-        }
-    }
-
-    protected internal override void SendSystemMessage(PID pid, object message)
-    {
-        if (message is Stop)
-        {
-            Dispose();
-            return;
-        }
-
-        if (!TryGetRequestSlot(pid.RequestId, out var slot)) return;
-
-        try
-        {
-            slot.CompletionSource!.TrySetResult(default!);
-        }
-        finally
-        {
-            Complete(pid.RequestId, slot);
-        }
-    }
-
-    private void Complete(uint requestId, FutureHandle slot)
-    {
-        if (slot.TryComplete((int) requestId))
-        {
-            _completedFutures.TryWrite(slot);
-
-            Interlocked.Increment(ref _completedRequests);
-
-            if (System.Metrics.Enabled)
-                ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
-
-            if (Stopping && RequestsInFlight == 0)
-                Stop(Pid);
+            return (int)(created - completed);
         }
     }
 
@@ -150,24 +93,95 @@ public sealed class SharedFutureProcess : Process, IDisposable
         }
     }
 
-    public void Stop()
+    public IFuture? TryCreateHandle()
     {
-        Stopping = true;
-        _completedFutures.TryComplete();
-
-        while (_availableFutures.TryRead(out _))
+        if (Stopping || !_futures.TryTake(out var requestSlot))
         {
+            return default;
         }
 
-        if (RequestsInFlight == 0)
+        var pid = requestSlot.Init();
+        Interlocked.Increment(ref _createdRequests);
+        _onStarted?.Invoke();
+
+        var cs = requestSlot.CompletionSource!;
+
+        // //TODO: can this happen?
+        // if (cs.Task.IsCanceled)
+        // {
+        //     throw new Exception("SharedFuture bug, Task is canceled");
+        // }
+
+        return new SharedFutureHandle(this, pid, cs);
+    }
+
+    protected internal override void SendUserMessage(PID pid, object message)
+    {
+        if (!TryGetRequestSlot(pid.RequestId, out var slot))
         {
-            Stop(Pid);
+            return;
+        }
+
+        try
+        {
+            slot.CompletionSource!.TrySetResult(message);
+        }
+        finally
+        {
+            Complete(pid.RequestId, slot);
+        }
+    }
+
+    protected internal override void SendSystemMessage(PID pid, SystemMessage message)
+    {
+        if (message is Stop)
+        {
+            Dispose();
+
+            return;
+        }
+
+        if (!TryGetRequestSlot(pid.RequestId, out var slot))
+        {
+            return;
+        }
+
+        try
+        {
+            slot.CompletionSource!.TrySetResult(default!);
+        }
+        finally
+        {
+            Complete(pid.RequestId, slot);
+        }
+    }
+
+    private void Complete(uint requestId, FutureHandle slot)
+    {
+        if (slot.TryComplete((int)requestId))
+        {
+            _futures.Add(slot);
+
+            Interlocked.Increment(ref _completedRequests);
+
+            if (System.Metrics.Enabled)
+            {
+                ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
+            }
+
+            if (Stopping && RequestsInFlight == 0)
+            {
+                Stop(Pid);
+            }
         }
     }
 
     private void Cancel(uint requestId)
     {
-        if (!TryGetRequestSlot(requestId, out var slot)) return;
+        if (!TryGetRequestSlot(requestId, out var slot))
+        {
+            return;
+        }
 
         try
         {
@@ -179,37 +193,39 @@ public sealed class SharedFutureProcess : Process, IDisposable
         }
     }
 
-    private int GetIndex(uint requestId) => (int) (requestId - 1) % _slots.Length;
+    private int GetIndex(uint requestId) => (int)(requestId - 1) % _slots.Length;
 
     private bool TryGetRequestSlot(uint requestId, out FutureHandle slot)
     {
         if (requestId == 0)
         {
             slot = default!;
+
             return false;
         }
 
         slot = _slots[GetIndex(requestId)];
+
         return slot.RequestId == requestId;
     }
 
-    private static uint ToRequestId(int index) => (uint) (index + 1);
+    private static uint ToRequestId(int index) => (uint)(index + 1);
 
     private sealed class SharedFutureHandle : IFuture
     {
         private readonly SharedFutureProcess _parent;
 
-        private readonly TaskCompletionSource<object> _tcs;
+        private readonly TaskCompletionSource<object> _completionSource;
 
-        public SharedFutureHandle(SharedFutureProcess parent, PID pid, TaskCompletionSource<object> tcs)
+        public SharedFutureHandle(SharedFutureProcess parent, PID pid, TaskCompletionSource<object> completionSource)
         {
             _parent = parent;
             Pid = pid;
-            _tcs = tcs;
+            _completionSource = completionSource;
         }
 
         public PID Pid { get; }
-        public Task<object> Task => _tcs.Task;
+        public Task<object> Task => _completionSource.Task;
 
         public async Task<object> GetTask(CancellationToken cancellationToken)
         {
@@ -217,18 +233,19 @@ public sealed class SharedFutureProcess : Process, IDisposable
             {
                 if (cancellationToken == default)
                 {
-                    return await _tcs.Task;
+                    return await _completionSource.Task.ConfigureAwait(false);
                 }
-                    
-                await using (cancellationToken.Register(() => _tcs.TrySetCanceled()))
+
+                await using (cancellationToken.Register(() => _completionSource.TrySetCanceled()).ConfigureAwait(false))
                 {
-                    return await _tcs.Task;
+                    return await _completionSource.Task.ConfigureAwait(false);
                 }
             }
             catch
             {
                 _parent.Cancel(Pid.RequestId);
                 _parent._onTimeout?.Invoke();
+
                 throw new TimeoutException("Request didn't receive any Response within the expected time.");
             }
         }
@@ -238,25 +255,29 @@ public sealed class SharedFutureProcess : Process, IDisposable
 
     private class FutureHandle
     {
-        public TaskCompletionSource<object>? CompletionSource { get; private set; }
-        private long _requestId;
-        public uint RequestId => (uint) Interlocked.Read(ref _requestId);
         private readonly SharedFutureProcess _parent;
+        private long _requestId;
 
         public FutureHandle(SharedFutureProcess parent, uint requestId)
         {
             _parent = parent;
-            _requestId = (int) requestId;
+            _requestId = (int)requestId;
         }
+
+        public TaskCompletionSource<object>? CompletionSource { get; private set; }
+        public uint RequestId => (uint)Interlocked.Read(ref _requestId);
 
         public bool TryComplete(int requestId)
         {
             var incBy = _parent._slots.Length;
-            var nextRequestId = (int) ((requestId + incBy) % _parent._maxRequestId);
+            var maxRequestId = _parent._maxRequestId;
+            // Keep the sequence within the inclusive range [1, maxRequestId] when wrapping.
+            var nextRequestId = (int)(((requestId - 1L + incBy) % maxRequestId) + 1L);
 
             if (requestId == Interlocked.CompareExchange(ref _requestId, nextRequestId, requestId))
             {
                 CompletionSource = null;
+
                 return true;
             }
 
@@ -266,6 +287,7 @@ public sealed class SharedFutureProcess : Process, IDisposable
         public PID Init()
         {
             CompletionSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+
             return _parent.Pid.WithRequestId(RequestId);
         }
     }

@@ -1,9 +1,13 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Extensions.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Mailbox;
 
@@ -19,9 +23,25 @@ public static class UtilExtensions
         }
     }
 
+    public static async Task StopMany(this IEnumerable<PID> self, IContext context)
+    {
+        foreach (var chunk in self.Chunk(20))
+        {
+            var tasks = chunk.Select(context.StopAsync);
+            try
+            {
+                await Task.WhenAll(tasks).WaitAsync(TimeSpan.FromSeconds(10));
+            }
+            catch (TimeoutException)
+            {
+                // ignore timeout and continue stopping remaining actors
+            }
+        }
+    }
+
     [UsedImplicitly]
     public static void Deconstruct<TKey, TValue>(
-        //DONT TOUCH THIS, it tries to deconstruct the deconstruct method...
+        //DON'T TOUCH THIS, it tries to deconstruct the deconstruct method...
         // ReSharper disable once UseDeconstructionOnParameter
         this KeyValuePair<TKey, TValue> self,
         out TKey key,
@@ -31,4 +51,24 @@ public static class UtilExtensions
         key = self.Key;
         value = self.Value;
     }
+
+    public static void CheckFailFast(this Exception? reason)
+    {
+        if (reason is not OutOfMemoryException)
+        {
+            return;
+        }
+
+        Console.WriteLine("[Fatal] Out of memory exception" + reason);
+        Environment.FailFast(reason.Message, reason);
+    }
+
+    public static Process Configure(this Process self)
+    {
+        var system = self.System;
+        return system.Config.ConfigureProcess(self);
+    }
+
+    public static Func<T, T> Wrap<T>(this Func<T, T> self, Func<T, T> outer) =>
+        x => outer(self(x));
 }

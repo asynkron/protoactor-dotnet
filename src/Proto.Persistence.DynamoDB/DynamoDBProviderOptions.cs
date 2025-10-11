@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 //  <copyright file="DynamoDBProvider.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -12,8 +12,15 @@ public class DynamoDBProviderOptions
 {
     public DynamoDBProviderOptions(string eventsTableName, string snapshotsTableName)
     {
-        if (string.IsNullOrEmpty(eventsTableName)) throw new ArgumentNullException(nameof(eventsTableName));
-        if (string.IsNullOrEmpty(snapshotsTableName)) throw new ArgumentNullException(nameof(snapshotsTableName));
+        if (string.IsNullOrEmpty(eventsTableName))
+        {
+            throw new ArgumentNullException(nameof(eventsTableName));
+        }
+
+        if (string.IsNullOrEmpty(snapshotsTableName))
+        {
+            throw new ArgumentNullException(nameof(snapshotsTableName));
+        }
 
         EventsTableName = eventsTableName;
         EventsTableHashKey = "ActorName";

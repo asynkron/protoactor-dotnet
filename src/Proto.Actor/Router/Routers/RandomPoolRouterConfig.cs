@@ -1,11 +1,12 @@
 // -----------------------------------------------------------------------
 // <copyright file="RandomPoolRouterConfig.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Router.Routers;
 
-record RandomPoolRouterConfig : PoolRouterConfig
+internal record RandomPoolRouterConfig : PoolRouterConfig
 {
     private readonly int? _seed;
     private readonly ISenderContext _senderContext;

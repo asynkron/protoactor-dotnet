@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="MongoDBProvider.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ public class MongoDBProvider : IProvider
         var events = await EventCollection
             .Find(e => e.ActorName == actorName && e.EventIndex >= indexStart && e.EventIndex <= indexEnd)
             .Sort(sort)
-            .ToListAsync();
+            .ToListAsync().ConfigureAwait(false);
 
         foreach (var @event in events)
         {
@@ -49,25 +49,26 @@ public class MongoDBProvider : IProvider
         var snapshot = await SnapshotCollection
             .Find(s => s.ActorName == actorName)
             .Sort(sort)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync().ConfigureAwait(false);
 
         return snapshot != null ? (snapshot.Data, snapshot.SnapshotIndex) : (null, 0);
     }
 
     public async Task<long> PersistEventAsync(string actorName, long index, object @event)
     {
-        await EventCollection.InsertOneAsync(new Event(actorName, index, @event));
+        await EventCollection.InsertOneAsync(new Event(actorName, index, @event)).ConfigureAwait(false);
+
         return index++;
     }
 
-    public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
-        => SnapshotCollection.InsertOneAsync(new Snapshot(actorName, index, snapshot));
+    public Task PersistSnapshotAsync(string actorName, long index, object snapshot) =>
+        SnapshotCollection.InsertOneAsync(new Snapshot(actorName, index, snapshot));
 
-    public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
-        => EventCollection.DeleteManyAsync(e => e.ActorName == actorName && e.EventIndex <= inclusiveToIndex);
+    public Task DeleteEventsAsync(string actorName, long inclusiveToIndex) =>
+        EventCollection.DeleteManyAsync(e => e.ActorName == actorName && e.EventIndex <= inclusiveToIndex);
 
-    public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-        => SnapshotCollection.DeleteManyAsync(s => s.ActorName == actorName && s.SnapshotIndex <= inclusiveToIndex);
+    public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex) =>
+        SnapshotCollection.DeleteManyAsync(s => s.ActorName == actorName && s.SnapshotIndex <= inclusiveToIndex);
 
     private void SetupIndexes()
     {

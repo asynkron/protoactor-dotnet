@@ -2,117 +2,130 @@ using System;
 using System.Threading.Tasks;
 using Proto.Router.Messages;
 using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Router.Tests;
 
 public class RoundRobinGroupTests
 {
-    private static readonly Props MyActorProps = Props.FromProducer(() => new MyTestActor())
-        .WithMailbox(() => new TestMailbox());
-
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(1000);
 
     [Fact]
     public async Task RoundRobinGroupRouter_RouteesReceiveMessagesInRoundRobinStyle()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
-        var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
+        var (router, probe1, probe2, probe3) = CreateRoundRobinRouterWith3Routees(system);
 
         system.Root.Send(router, "1");
-
-        // only routee1 has received the message
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Null(await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Null(await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "1");
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
 
         system.Root.Send(router, "2");
-        system.Root.Send(router, "3");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "2");
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
 
-        // routees 2 and 3 receive next messages
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("2", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        system.Root.Send(router, "3");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "3");
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
 
         system.Root.Send(router, "4");
-
-        // Round robin kicks in and routee1 receives next message
-        Assert.Equal("4", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("2", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "4");
+        await probe2.ExpectEmptyMailboxAsync(_timeout);
+        await probe3.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
     public async Task RoundRobinGroupRouter_RouteesCanBeRemoved()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
-        var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
+        var (router, probe1, probe2, probe3) = CreateRoundRobinRouterWith3Routees(system);
+        var initial = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        var pid1 = initial.Pids[0];
+        var pid2 = initial.Pids[1];
+        var pid3 = initial.Pids[2];
 
-        system.Root.Send(router, new RouterRemoveRoutee(routee1));
+        system.Root.Send(router, new RouterRemoveRoutee(pid1));
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        Assert.DoesNotContain(routee1, routees.Pids);
-        Assert.Contains(routee2, routees.Pids);
-        Assert.Contains(routee3, routees.Pids);
+        Assert.DoesNotContain(pid1, routees.Pids);
+        Assert.Contains(pid2, routees.Pids);
+        Assert.Contains(pid3, routees.Pids);
     }
 
     [Fact]
     public async Task RoundRobinGroupRouter_RouteesCanBeAdded()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
-        var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
-        var routee4 = system.Root.Spawn(MyActorProps);
+        var (router, probe1, probe2, probe3) = CreateRoundRobinRouterWith3Routees(system);
+        var initial = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
+        var pid1 = initial.Pids[0];
+        var pid2 = initial.Pids[1];
+        var pid3 = initial.Pids[2];
+        var (probe4, routee4) = system.CreateTestProbe();
         system.Root.Send(router, new RouterAddRoutee(routee4));
 
         var routees = await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
-        Assert.Contains(routee1, routees.Pids);
-        Assert.Contains(routee2, routees.Pids);
-        Assert.Contains(routee3, routees.Pids);
+        Assert.Contains(pid1, routees.Pids);
+        Assert.Contains(pid2, routees.Pids);
+        Assert.Contains(pid3, routees.Pids);
         Assert.Contains(routee4, routees.Pids);
     }
 
     [Fact]
     public async Task RoundRobinGroupRouter_RemovedRouteesNoLongerReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
-        var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
+        var (router, probe1, probe2, probe3) = CreateRoundRobinRouterWith3Routees(system);
 
         system.Root.Send(router, "0");
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "0");
         system.Root.Send(router, "0");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "0");
         system.Root.Send(router, "0");
-        system.Root.Send(router, new RouterRemoveRoutee(routee1));
-        // we should have 2 routees, so send 3 messages to ensure round robin happens
-        system.Root.Send(router, "3");
-        system.Root.Send(router, "3");
-        system.Root.Send(router, "3");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "0");
+        system.Root.Send(router, new RouterRemoveRoutee(probe1.Self));
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
 
-        Assert.Equal("0", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("3", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("3", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        system.Root.Send(router, "3");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "3");
+        system.Root.Send(router, "3");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "3");
+        system.Root.Send(router, "3");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "3");
+
+        await probe1.ExpectEmptyMailboxAsync(_timeout);
     }
 
     [Fact]
     public async Task RoundRobinGroupRouter_AddedRouteesReceiveMessages()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
 
-        var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
-        var routee4 = system.Root.Spawn(MyActorProps);
+        var (router, probe1, probe2, probe3) = CreateRoundRobinRouterWith3Routees(system);
+        var (probe4, routee4) = system.CreateTestProbe();
         system.Root.Send(router, new RouterAddRoutee(routee4));
-        // should now have 4 routees, so need to send 4 messages to ensure all get them
+        await system.Root.RequestAsync<Routees>(router, new RouterGetRoutees(), _timeout);
         system.Root.Send(router, "1");
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "1");
         system.Root.Send(router, "1");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "1");
         system.Root.Send(router, "1");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "1");
         system.Root.Send(router, "1");
-
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
-        Assert.Equal("1", await system.Root.RequestAsync<string>(routee4, "received?", _timeout));
+        await probe4.ExpectNextUserMessageAsync<string>(x => x == "1");
     }
 
     [Fact]
@@ -120,44 +133,29 @@ public class RoundRobinGroupTests
     {
         await using var system = new ActorSystem();
 
-        var (router, routee1, routee2, routee3) = CreateRoundRobinRouterWith3Routees(system);
+        var (probe1, routee1) = system.CreateTestProbe();
+        var (probe2, routee2) = system.CreateTestProbe();
+        var (probe3, routee3) = system.CreateTestProbe();
+
+        var props = system.Root.NewRoundRobinGroup(routee1, routee2, routee3);
+        var router = system.Root.Spawn(props);
 
         system.Root.Send(router, new RouterBroadcastMessage("hello"));
 
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee1, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee2, "received?", _timeout));
-        Assert.Equal("hello", await system.Root.RequestAsync<string>(routee3, "received?", _timeout));
+        await probe1.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe2.ExpectNextUserMessageAsync<string>(x => x == "hello");
+        await probe3.ExpectNextUserMessageAsync<string>(x => x == "hello");
     }
 
-    private (PID router, PID routee1, PID routee2, PID routee3) CreateRoundRobinRouterWith3Routees(ActorSystem system)
+    private (PID router, TestProbe routee1, TestProbe routee2, TestProbe routee3) CreateRoundRobinRouterWith3Routees(ActorSystem system)
     {
-        var routee1 = system.Root.Spawn(MyActorProps);
-        var routee2 = system.Root.Spawn(MyActorProps);
-        var routee3 = system.Root.Spawn(MyActorProps);
+        var (probe1, pid1) = system.CreateTestProbe();
+        var (probe2, pid2) = system.CreateTestProbe();
+        var (probe3, pid3) = system.CreateTestProbe();
 
-        var props = system.Root.NewRoundRobinGroup(routee1, routee2, routee3)
-            .WithMailbox(() => new TestMailbox());
+        var props = system.Root.NewRoundRobinGroup(pid1, pid2, pid3);
         var router = system.Root.Spawn(props);
-        return (router, routee1, routee2, routee3);
-    }
 
-    private class MyTestActor : IActor
-    {
-        private string? _received;
-
-        public Task ReceiveAsync(IContext context)
-        {
-            switch (context.Message)
-            {
-                case "received?":
-                    context.Respond(_received!);
-                    break;
-                case string msg:
-                    _received = msg;
-                    break;
-            }
-
-            return Task.CompletedTask;
-        }
+        return (router, probe1, probe2, probe3);
     }
 }

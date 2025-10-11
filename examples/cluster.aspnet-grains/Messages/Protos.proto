@@ -1,0 +1,12 @@
+﻿syntax = "proto3";
+package HelloHelloWorld;
+option csharp_namespace = "AspNetGrains.Messages";
+
+message HelloRequest {}
+message HelloResponse {
+    string Message=1;
+}
+
+service HelloGrain {
+	rpc SayHello(HelloRequest) returns (HelloResponse) {}
+}

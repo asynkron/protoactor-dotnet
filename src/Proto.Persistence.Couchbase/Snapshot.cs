@@ -2,7 +2,7 @@
 
 namespace Proto.Persistence.Couchbase;
 
-class Snapshot
+internal class Snapshot
 {
     public Snapshot(string actorName, long snapshotIndex, object data)
     {
@@ -18,6 +18,5 @@ class Snapshot
     public object Data { get; }
     public string Type { get; }
 
-    [JsonIgnore]
-    public string Key { get; }
+    [JsonIgnore] public string Key { get; }
 }

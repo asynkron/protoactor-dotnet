@@ -37,7 +37,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Identity.Redi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Cluster.Identity.Tests", "tests\Proto.Cluster.Identity.Tests\Proto.Cluster.Identity.Tests.csproj", "{24AA3B6A-54BA-4B87-BBAE-1B5D6FBF207E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Remote.GrpcNet", "src\Proto.Remote.GrpcNet\Proto.Remote.GrpcNet.csproj", "{AE486B56-98CC-4E9A-ADC7-B94358B68D43}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Remote", "src\Proto.Remote\Proto.Remote.csproj", "{AE486B56-98CC-4E9A-ADC7-B94358B68D43}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proto.Remote.GrpcCore", "src\Proto.Remote.GrpcCore\Proto.Remote.GrpcCore.csproj", "{4C38FFE1-705F-41FC-9411-C4EA878B41DB}"
 EndProject

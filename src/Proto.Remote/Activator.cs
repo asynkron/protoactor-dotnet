@@ -1,9 +1,10 @@
 ﻿// -----------------------------------------------------------------------
 //   <copyright file="Activator.cs" company="Asynkron AB">
-//       Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//       Copyright (C) 2015-2025 Asynkron AB All rights reserved
 //   </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Proto.Remote.Metrics;
 
@@ -11,10 +12,10 @@ namespace Proto.Remote;
 
 public class Activator : IActor
 {
-    private readonly RemoteConfigBase _remoteConfig;
+    private readonly RemoteConfig _remoteConfig;
     private readonly ActorSystem _system;
 
-    public Activator(RemoteConfigBase remoteConfig, ActorSystem system)
+    public Activator(RemoteConfig remoteConfig, ActorSystem system)
     {
         _remoteConfig = remoteConfig;
         _system = system;
@@ -27,7 +28,11 @@ public class Activator : IActor
             case ActorPidRequest msg:
                 var props = _remoteConfig.GetRemoteKind(msg.Kind);
                 var name = msg.Name;
-                if (string.IsNullOrEmpty(name)) name = _system.ProcessRegistry.NextId();
+
+                if (string.IsNullOrEmpty(name))
+                {
+                    name = _system.ProcessRegistry.NextId();
+                }
 
                 try
                 {
@@ -36,10 +41,12 @@ public class Activator : IActor
                     if (_system.Metrics.Enabled)
                     {
                         RemoteMetrics.RemoteActorSpawnCount
-                            .Add(1, new("id", _system.Id), new("address", _system.Address), new("kind", msg.Kind));
+                            .Add(1, new KeyValuePair<string, object?>("id", _system.Id),
+                                new KeyValuePair<string, object?>("address", _system.Address),
+                                new KeyValuePair<string, object?>("kind", msg.Kind));
                     }
 
-                    var response = new ActorPidResponse {Pid = pid};
+                    var response = new ActorPidResponse { Pid = pid };
                     context.Respond(response);
                 }
                 catch (ProcessNameExistException ex)
@@ -47,16 +54,18 @@ public class Activator : IActor
                     var response = new ActorPidResponse
                     {
                         Pid = ex.Pid,
-                        StatusCode = (int) ResponseStatusCode.ProcessNameAlreadyExist
+                        StatusCode = (int)ResponseStatusCode.ProcessNameAlreadyExist
                     };
+
                     context.Respond(response);
                 }
                 catch
                 {
                     var response = new ActorPidResponse
                     {
-                        StatusCode = (int) ResponseStatusCode.Error
+                        StatusCode = (int)ResponseStatusCode.Error
                     };
+
                     context.Respond(response);
 
                     throw;

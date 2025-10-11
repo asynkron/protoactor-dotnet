@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+    <PropertyGroup>
+        <LangVersion>10</LangVersion>
+        <TargetFrameworks>net8.0</TargetFrameworks>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Azure.Identity" />
+        <PackageReference Include="Azure.ResourceManager.AppContainers" />
+        <PackageReference Include="Azure.ResourceManager.Resources" />
+        <PackageReference Include="StackExchange.Redis" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Proto.Cluster\Proto.Cluster.csproj" />
+    </ItemGroup>
+</Project>

@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="ShortBenchmark.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System;
@@ -24,7 +24,8 @@ public class ShortBenchmark
     {
         _context = new RootContext(new ActorSystem());
 
-        _echoProps = Props.FromProducer(() => new EchoActor2())
+        _echoProps = Props
+            .FromProducer(() => new EchoActor2())
             .WithMailbox(() => BoundedMailbox.Create(2048));
         _echoActor = _context.Spawn(_echoProps);
         _timeout = TimeSpan.FromSeconds(5);

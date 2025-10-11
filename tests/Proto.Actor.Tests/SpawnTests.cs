@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="SpawnTests.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -16,12 +16,14 @@ public class SpawnTests
     [Fact]
     public async Task Given_PropsWithSpawner_SpawnShouldReturnPidCreatedBySpawner()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var __ = system;
         var context = system.Root;
 
         var spawnedPid = PID.FromAddress("test", "test");
+
         var props = Props.FromFunc(EmptyReceive)
-            .WithSpawner((s, id, p, parent) => spawnedPid);
+            .WithSpawner((s, id, p, parent, _) => spawnedPid);
 
         var pid = context.Spawn(props);
 
@@ -31,7 +33,8 @@ public class SpawnTests
     [Fact]
     public async Task Given_Existing_Name_SpawnNamedShouldThrow()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var props = Props.FromFunc(EmptyReceive);
@@ -40,12 +43,14 @@ public class SpawnTests
         context.SpawnNamed(props, uniqueName);
         var x = Assert.Throws<ProcessNameExistException>(() => { context.SpawnNamed(props, uniqueName); });
         Assert.Equal(uniqueName, x.Name);
+        Assert.Contains(uniqueName, x.Message);
     }
 
     [Fact]
     public async Task Given_Existing_Name_SpawnPrefixShouldReturnPID()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var props = Props.FromFunc(EmptyReceive);
@@ -53,5 +58,7 @@ public class SpawnTests
         context.SpawnNamed(props, "existing");
         var pid = context.SpawnPrefix(props, "existing");
         Assert.NotNull(pid);
+        Assert.StartsWith("existing", pid.Id);
+        Assert.NotEqual("existing", pid.Id);
     }
 }

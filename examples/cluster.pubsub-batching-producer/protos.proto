@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package cluster_pubsub_batching_producer;
+option csharp_namespace = "ClusterPubSubBatchingProducer";
+
+message PingMessage {
+  int32 data = 1;
+}

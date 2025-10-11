@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Proto.Mailbox;
-using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Tests;
@@ -18,17 +18,20 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is ResumeMailbox);
+        var childMailboxStats = new TestMailboxStats(msg => msg is ResumeMailbox);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Resume, 1, null);
+
         var childProps = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            .WithTestMailboxStats(childMailboxStats);
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
 
-        childMailboxStats.Reset.Wait(1000);
+        Assert.True(childMailboxStats.Reset.Wait(TimeSpan.FromSeconds(5)));
         Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Posted);
         Assert.Contains(ResumeMailbox.Instance, childMailboxStats.Received);
     }
@@ -39,17 +42,21 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        // wait specifically for the Stop system message to ensure assertions run
+        var childMailboxStats = new TestMailboxStats(msg => msg is Stop);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
+
         var childProps = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            .WithTestMailboxStats(childMailboxStats);
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
 
-        childMailboxStats.Reset.Wait(1000);
+        Assert.True(childMailboxStats.Reset.Wait(TimeSpan.FromSeconds(2)));
         Assert.Contains(Stop.Instance, childMailboxStats.Posted);
         Assert.Contains(Stop.Instance, childMailboxStats.Received);
     }
@@ -60,77 +67,90 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStats(msg => msg is Restart);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+
         var childProps = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            .WithTestMailboxStats(childMailboxStats);
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
 
-        childMailboxStats.Reset.Wait(1000);
+        Assert.True(childMailboxStats.Reset.Wait(TimeSpan.FromSeconds(2)));
         Assert.Contains(childMailboxStats.Posted, msg => msg is Restart);
         Assert.Contains(childMailboxStats.Received, msg => msg is Restart);
     }
 
     [Fact]
-    public async Task OneForOneStrategy_WhenRestartedLessThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldNotStopChild()
+    public async Task
+        OneForOneStrategy_WhenRestartedLessThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldNotStopChild()
     {
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStats(msg => msg is Stop);
+
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3,
-            TimeSpan.FromMilliseconds(100)
+            TimeSpan.FromSeconds(1)
         );
+
         var childProps = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            .WithTestMailboxStats(childMailboxStats);
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "1st restart");
         context.Send(parent, "2nd restart");
         context.Send(parent, "3rd restart");
 
-        // wait more than the time period 
-        Thread.Sleep(500);
-        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
-        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received);
+        // wait more than the time period
+        await Task.Delay(1100);
+        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted.ToArray());
+        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received.ToArray());
 
-        context.Send(parent, "4th restart");
-
-        childMailboxStats.Reset.Wait(500);
-        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted);
-        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received);
-    }
-
-    [Fact]
-    public async Task OneForOneStrategy_WhenRestartedMoreThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldStopChild()
-    {
-        await using var system = new ActorSystem();
-        var context = system.Root;
-
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
-        var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3,
-            TimeSpan.FromMilliseconds(100)
-        );
-        var childProps = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
-        var parentProps = Props.FromProducer(() => new ParentActor(childProps))
-            .WithChildSupervisorStrategy(strategy);
-        var parent = context.Spawn(parentProps);
-
-        context.Send(parent, "1st restart");
-        context.Send(parent, "2nd restart");
-        context.Send(parent, "3rd restart");
         context.Send(parent, "4th restart");
 
         childMailboxStats.Reset.Wait(1000);
-        Assert.Contains(Stop.Instance, childMailboxStats.Posted);
-        Assert.Contains(Stop.Instance, childMailboxStats.Received);
+        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Posted.ToArray());
+        Assert.DoesNotContain(Stop.Instance, childMailboxStats.Received.ToArray());
+    }
+
+    [Fact]
+    public async Task
+        OneForOneStrategy_WhenRestartedMoreThanMaximumAllowedRetriesWithinSpecifiedTimePeriod_ShouldStopChild()
+    {
+        await using var system = new ActorSystem();
+        var context = system.Root;
+
+        var childMailboxStats = new TestMailboxStats(msg => msg is Restart r && r.Reason == Exception);
+
+        var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 3,
+            TimeSpan.FromMilliseconds(100)
+        );
+
+        var childProps = Props.FromProducer(() => new ChildActor())
+            .WithTestMailboxStats(childMailboxStats);
+
+        var parentProps = Props.FromProducer(() => new ParentActor(childProps))
+            .WithChildSupervisorStrategy(strategy);
+
+        var parent = context.Spawn(parentProps);
+
+        context.Send(parent, "1st restart");
+        context.Send(parent, "2nd restart");
+        context.Send(parent, "3rd restart");
+        context.Send(parent, "4th restart");
+
+        Assert.True(SpinWait.SpinUntil(
+            () => childMailboxStats.Received.ToArray().Contains(Stop.Instance),
+            TimeSpan.FromSeconds(5)));
     }
 
     [Fact]
@@ -139,19 +159,24 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStats(msg => msg is Restart r && r.Reason == Exception);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+
         var childProps = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            .WithTestMailboxStats(childMailboxStats);
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
 
-        childMailboxStats.Reset.Wait(1000);
-        Assert.Contains(childMailboxStats.Posted, msg => msg is Restart r && r.Reason == Exception);
-        Assert.Contains(childMailboxStats.Received, msg => msg is Restart r && r.Reason == Exception);
+        Assert.True(SpinWait.SpinUntil(
+            () => childMailboxStats.Received.ToArray().Any(msg => msg is Restart r && r.Reason == Exception),
+            TimeSpan.FromSeconds(5)));
+        Assert.Contains(childMailboxStats.Posted.ToArray(), msg => msg is Restart r && r.Reason == Exception);
+        Assert.Contains(childMailboxStats.Received.ToArray(), msg => msg is Restart r && r.Reason == Exception);
     }
 
     [Fact]
@@ -160,12 +185,15 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1, null);
+
         var childProps = Props.FromProducer(() => new ChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            .WithTestMailboxStats(childMailboxStats);
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
@@ -182,12 +210,14 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var parentMailboxStats = new TestMailboxStats(msg => msg is Stopped);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
         var childProps = Props.FromProducer(() => new ThrowOnStartedChildActor());
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy)
-            .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
+            .WithTestMailboxStats(parentMailboxStats);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
@@ -201,9 +231,13 @@ public class SupervisionTestsOneForOne
         foreach (var failure in failures)
         {
             if (failure.Reason is AggregateException ae)
+            {
                 Assert.IsType<Exception>(ae.InnerException);
+            }
             else
+            {
                 Assert.IsType<Exception>(failure.Reason);
+            }
         }
     }
 
@@ -213,12 +247,14 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var parentMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var parentMailboxStats = new TestMailboxStats(msg => msg is Stopped);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 1, null);
         var childProps = Props.FromProducer(() => new ChildActor());
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy)
-            .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
+            .WithTestMailboxStats(parentMailboxStats);
+
         var parent = context.Spawn(parentProps);
 
         context.Send(parent, "hello");
@@ -234,12 +270,15 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var childMailboxStats = new TestMailboxStatistics(msg => msg is Stopped);
+        var childMailboxStats = new TestMailboxStats(msg => msg is Stopped);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Stop, 1, null);
+
         var childProps = Props.FromProducer(() => new ThrowOnStartedChildActor())
-            .WithMailbox(() => UnboundedMailbox.Create(childMailboxStats));
+            .WithTestMailboxStats(childMailboxStats);
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy);
+
         context.Spawn(parentProps);
 
         childMailboxStats.Reset.Wait(1000);
@@ -253,29 +292,41 @@ public class SupervisionTestsOneForOne
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var parentMailboxStats = new TestMailboxStatistics(msg => msg is Restart);
+        var parentMailboxStats = new TestMailboxStats(msg => msg is Restart);
         var strategy = new OneForOneStrategy((pid, reason) => SupervisorDirective.Escalate, 0, null);
         var childProps = Props.FromProducer(() => new ThrowOnStartedChildActor());
+
         var parentProps = Props.FromProducer(() => new ParentActor(childProps))
             .WithChildSupervisorStrategy(strategy)
-            .WithMailbox(() => UnboundedMailbox.Create(parentMailboxStats));
+            .WithTestMailboxStats(parentMailboxStats);
+
         var grandParentProps = Props.FromProducer(() => new ParentActor(parentProps))
             .WithChildSupervisorStrategy(new OneForOneStrategy((pid, reason) => SupervisorDirective.Restart, 1,
                     TimeSpan.FromSeconds(1)
                 )
             );
+
         context.Spawn(grandParentProps);
 
         parentMailboxStats.Reset.Wait(1000);
-        Thread.Sleep(1000); //parentMailboxStats.Received could still be modified without a wait here
-        Assert.Contains(parentMailboxStats.Received, msg => msg is Restart);
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(1);
+        while (!parentMailboxStats.Received.ToArray().Any(msg => msg is Restart) && DateTime.UtcNow < deadline)
+        {
+            // Poll for restart notification until timeout
+            await Task.Delay(10);
+        }
+
+        Assert.Contains(parentMailboxStats.Received.ToArray(), msg => msg is Restart);
     }
 
     private class ParentActor : IActor
     {
         private readonly Props _childProps;
 
-        public ParentActor(Props childProps) => _childProps = childProps;
+        public ParentActor(Props childProps)
+        {
+            _childProps = childProps;
+        }
 
         public PID? Child { get; set; }
 
@@ -285,9 +336,11 @@ public class SupervisionTestsOneForOne
             {
                 case Started _:
                     Child = context.Spawn(_childProps);
+
                     break;
                 case string _:
                     context.Forward(Child!);
+
                     break;
             }
 

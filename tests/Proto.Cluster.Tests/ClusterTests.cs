@@ -7,7 +7,9 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using ClusterTest.Messages;
 using FluentAssertions;
+using Proto;
 using Proto.Cluster.Gossip;
+using Proto.Cluster.Identity;
 using Proto.Utils;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,10 +18,13 @@ namespace Proto.Cluster.Tests;
 
 public abstract class ClusterTests : ClusterTestBase
 {
-    private readonly ITestOutputHelper _testOutputHelper;
+    protected readonly ITestOutputHelper _testOutputHelper;
 
     protected ClusterTests(ITestOutputHelper testOutputHelper, IClusterFixture clusterFixture)
-        : base(clusterFixture) => _testOutputHelper = testOutputHelper;
+        : base(clusterFixture)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
 
     [Fact]
     public void ClusterMembersMatch()
@@ -32,153 +37,272 @@ public abstract class ClusterTests : ClusterTestBase
     }
 
     [Fact]
+    public async Task CanSpawnASingleVirtualActor()
+    {
+        await Trace(async () =>
+        {
+            var timeout = CancellationTokens.FromSeconds(10);
+
+            var entryNode = Members[0];
+
+            var timer = Stopwatch.StartNew();
+            await PingPong(entryNode, "unicorn", timeout);
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Spawned 1 actor in {timer.Elapsed}");
+        }, _testOutputHelper);
+    }
+
+    [Fact]
+    public async Task ClientsCanCallCluster()
+    {
+        if (!ClusterFixture.SupportsClients)
+            return;
+
+        await Trace(async () =>
+        {
+            var timeout = CancellationTokens.FromSeconds(10);
+
+            var clientNode = await ClusterFixture.SpawnClient();
+
+            try
+            {
+                await clientNode.JoinedCluster.WaitAsync(timeout);
+                clientNode.JoinedCluster.IsCompletedSuccessfully.Should().BeTrue();
+
+                var timer = Stopwatch.StartNew();
+                await PingPong(clientNode, "client-unicorn", timeout);
+                timer.Stop();
+                _testOutputHelper.WriteLine($"Spawned 1 actor in {timer.Elapsed}");
+            }
+            catch
+            {
+                await ClusterFixture.RemoveNode(clientNode);
+                throw;
+            }
+        }, _testOutputHelper);
+    }
+
+    [Fact]
     public async Task TopologiesShouldHaveConsensus()
     {
-        var consensus = await Task.WhenAll(Members.Select(member => member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
-            .WaitUpTo(TimeSpan.FromSeconds(20)).ConfigureAwait(false);
+        await Trace(async () =>
+        {
+            var consensusCompleted = true;
+            try
+            {
+                await Task
+                    .WhenAll(Members.Select(member =>
+                        member.MemberList.TopologyConsensus(CancellationTokens.FromSeconds(20))))
+                    .WaitAsync(TimeSpan.FromSeconds(20));
+            }
+            catch (TimeoutException)
+            {
+                consensusCompleted = false;
+            }
 
-        _testOutputHelper.WriteLine(LogStore.ToFormattedString());
-        consensus.completed.Should().BeTrue("All members should have gotten consensus on the same topology hash");
+            _testOutputHelper.WriteLine(await Members.DumpClusterState());
+
+            consensusCompleted.Should().BeTrue("All members should have gotten consensus on the same topology hash");
+            _testOutputHelper.WriteLine(LogStore.ToFormattedString());
+        }, _testOutputHelper);
     }
 
     [Fact]
     public async Task HandlesSlowResponsesCorrectly()
     {
-        var timeout = new CancellationTokenSource(20000).Token;
+        await Trace(async () =>
+        {
+            var timeout = new CancellationTokenSource(20000).Token;
 
-        const string msg = "Hello-slow-world";
-        var response = await Members.First().RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
-            new SlowPing {Message = msg, DelayMs = 5000}, timeout
-        );
-        response.Should().NotBeNull();
-        response.Message.Should().Be(msg);
+            const string msg = "Hello-slow-world";
+
+            var response = await Members.First()
+                .RequestAsync<Pong>(CreateIdentity("slow-test"), EchoActor.Kind,
+                    new SlowPing { Message = msg, DelayMs = 5000 }, timeout
+                );
+
+            response.Should().NotBeNull();
+            response.Message.Should().Be(msg);
+        }, _testOutputHelper);
     }
-        
+
     [Fact]
     public async Task SupportsMessageEnvelopeResponses()
     {
-        var timeout = new CancellationTokenSource(20000).Token;
+        await Trace(async () =>
+        {
+            var timeout = new CancellationTokenSource(20000).Token;
 
-        const string msg = "Hello-message-envelope";
-        var response = await Members.First().RequestAsync<MessageEnvelope>(CreateIdentity("message-envelope"), EchoActor.Kind,
-            new Ping() {Message = msg, }, timeout
-        );
-        response.Should().NotBeNull();
-        response.Should().BeOfType<MessageEnvelope>();
-        response.Message.Should().BeOfType<Pong>();
+            const string msg = "Hello-message-envelope";
+
+            var response = await Members.First()
+                .RequestAsync<MessageEnvelope>(CreateIdentity("message-envelope"),
+                    EchoActor.Kind,
+                    new Ping { Message = msg }, timeout
+                );
+
+            response.Should().NotBeNull();
+            response.Should().BeOfType<MessageEnvelope>();
+            response.Message.Should().BeOfType<Pong>();
+        }, _testOutputHelper);
     }
 
     [Fact]
     public async Task StateIsReplicatedAcrossCluster()
     {
-        var sourceMember = Members.First();
-        var sourceMemberId = sourceMember.System.Id;
-        var targetMember = Members.Last();
-        var targetMemberId = targetMember.System.Id;
-
-        //make sure we somehow don't already have the expected value in the state of targetMember
-        var initialResponse = await targetMember.Gossip.GetState<PID>("some-state");
-        initialResponse.TryGetValue(sourceMemberId, out _).Should().BeFalse();
-
-        //make sure we are not comparing the same not to itself;
-        targetMemberId.Should().NotBe(sourceMemberId);
-
-        var stream = SubscribeToGossipUpdates(targetMember);
-
-        sourceMember.Gossip.SetState("some-state", new PID("abc", "def"));
-        //allow state to replicate            
-        await stream.FirstAsync(x => x.MemberId == sourceMemberId && x.Key == "some-state");
-
-        //get state from target member
-        //it should be noted that the response is a dict of member id for all members,
-        //to the state for the given key for each of those members
-        var response = await targetMember.Gossip.GetState<PID>("some-state");
-
-        //get the state for source member
-        response.TryGetValue(sourceMemberId, out var value).Should().BeTrue();
-
-        value!.Address.Should().Be("abc");
-        value.Id.Should().Be("def");
-
-        IAsyncEnumerable<GossipUpdate> SubscribeToGossipUpdates(Cluster member)
+        await Trace(async () =>
         {
-            var channel = Channel.CreateUnbounded<object>();
-            member.System.EventStream.Subscribe(channel);
-            var stream = channel.Reader.ReadAllAsync().OfType<GossipUpdate>();
-            return stream;
-        }
+            if (ClusterFixture.ClusterSize < 2)
+            {
+                _testOutputHelper.WriteLine("Skipped test, cluster size is less than 2");
+
+                return;
+            }
+
+            var sourceMember = Members.First();
+            var sourceMemberId = sourceMember.System.Id;
+            var targetMember = Members.Last();
+            var targetMemberId = targetMember.System.Id;
+
+            //make sure we somehow don't already have the expected value in the state of targetMember
+            var initialResponse = await targetMember.Gossip.GetState<PID>("some-state");
+            initialResponse.TryGetValue(sourceMemberId, out _).Should().BeFalse();
+
+            //make sure we are not comparing the same not to itself;
+            targetMemberId.Should().NotBe(sourceMemberId);
+
+            var stream = SubscribeToGossipUpdates(targetMember);
+
+            sourceMember.Gossip.SetState("some-state", new PID("abc", "def"));
+            //allow state to replicate            
+            await stream.FirstAsync(x => x.MemberId == sourceMemberId && x.Key == "some-state");
+
+            //get state from target member
+            //it should be noted that the response is a dict of member id for all members,
+            //to the state for the given key for each of those members
+            var response = await targetMember.Gossip.GetState<PID>("some-state");
+
+            //get the state for source member
+            response.TryGetValue(sourceMemberId, out var value).Should().BeTrue();
+
+            value!.Address.Should().Be("abc");
+            value.Id.Should().Be("def");
+
+            IAsyncEnumerable<GossipUpdate> SubscribeToGossipUpdates(Cluster member)
+            {
+                var channel = Channel.CreateUnbounded<object>();
+                member.System.EventStream.Subscribe(channel);
+                var stream = channel.Reader.ReadAllAsync().OfType<GossipUpdate>();
+
+                return stream;
+            }
+        }, _testOutputHelper);
     }
 
     [Fact]
     public async Task ReSpawnsClusterActorsFromDifferentNodes()
     {
-        var timeout = new CancellationTokenSource(10000).Token;
-        var id = CreateIdentity("1");
-        await PingPong(Members[0], id, timeout);
-        await PingPong(Members[1], id, timeout);
+        await Trace(async () =>
+        {
+            if (ClusterFixture.ClusterSize < 2)
+            {
+                _testOutputHelper.WriteLine("Skipped test, cluster size is less than 2");
 
-        //Retrieve the node the virtual actor was not spawned on
-        var nodeLocation = await Members[0].RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), timeout);
-        nodeLocation.Should().NotBeNull("We expect the actor to respond correctly");
-        var otherNode = Members.First(node => node.System.Address != nodeLocation.Address);
+                return;
+            }
 
-        //Kill it
-        await otherNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout);
+            var timeout = new CancellationTokenSource(10000).Token;
+            var id = CreateIdentity("1");
+            await PingPong(Members[0], id, timeout);
+            await PingPong(Members[1], id, timeout);
 
-        var timer = Stopwatch.StartNew();
-        // And force it to restart.
-        // DeadLetterResponse should be sent to requestAsync, enabling a quick initialization of the new virtual actor
-        await PingPong(otherNode, id, timeout);
-        timer.Stop();
+            //Retrieve the node the virtual actor was not spawned on
+            var nodeLocation = await Members[0].RequestAsync<HereIAm>(id, EchoActor.Kind, new WhereAreYou(), timeout);
+            nodeLocation.Should().NotBeNull("We expect the actor to respond correctly");
+            var otherNode = Members.First(node => node.System.Address != nodeLocation.Address);
 
-        _testOutputHelper.WriteLine("Respawned virtual actor in {0}", timer.Elapsed);
+            //Kill it
+            await otherNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout);
+
+            var timer = Stopwatch.StartNew();
+            // And force it to restart.
+            // DeadLetterResponse should be sent to requestAsync, enabling a quick initialization of the new virtual actor
+            await PingPong(otherNode, id, timeout);
+            timer.Stop();
+
+            _testOutputHelper.WriteLine("Respawned virtual actor in {0}", timer.Elapsed);
+        }, _testOutputHelper);
     }
 
     [Fact]
     public async Task HandlesLosingANode()
     {
-        var ids = Enumerable.Range(1, 10).Select(id => id.ToString()).ToList();
+        await Trace(async () =>
+        {
+            if (ClusterFixture.ClusterSize < 2)
+            {
+                _testOutputHelper.WriteLine("Skipped test, cluster size is less than 2");
 
-        await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
+                return;
+            }
 
-        var toBeRemoved = Members.Last();
-        _testOutputHelper.WriteLine("Removing node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
-        await ClusterFixture.RemoveNode(toBeRemoved);
-        _testOutputHelper.WriteLine("Removed node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
-        await ClusterFixture.SpawnNode();
+            var ids = Enumerable.Range(1, 10).Select(id => id.ToString()).ToList();
 
-        await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
+            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
 
-        _testOutputHelper.WriteLine("All responses OK. Terminating fixture");
+            var toBeRemoved = Members.Last();
+            _testOutputHelper.WriteLine("Removing node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
+            await ClusterFixture.RemoveNode(toBeRemoved);
+            _testOutputHelper.WriteLine("Removed node " + toBeRemoved.System.Id + " / " + toBeRemoved.System.Address);
+            await ClusterFixture.SpawnMember();
+
+            await CanGetResponseFromAllIdsOnAllNodes(ids, Members, 20000);
+
+            _testOutputHelper.WriteLine("All responses OK. Terminating fixture");
+        }, _testOutputHelper);
     }
 
     [Fact]
     public async Task HandlesLosingANodeWhileProcessing()
     {
-        var ingressNodes = new[] {Members[0], Members[1]};
-        var victim = Members[2];
-        var ids = Enumerable.Range(1, 20).Select(id => id.ToString()).ToList();
+        await Trace(async () =>
+        {
+            if (ClusterFixture.ClusterSize < 2)
+            {
+                _testOutputHelper.WriteLine("Skipped test, cluster size is less than 2");
 
-        var cts = new CancellationTokenSource();
-
-        var worker = Task.Run(async () => {
-                while (!cts.IsCancellationRequested)
-                {
-                    await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 20000);
-                }
+                return;
             }
-        );
-        await Task.Delay(200);
-        _testOutputHelper.WriteLine("Terminating node");
-        await ClusterFixture.RemoveNode(victim);
-        _testOutputHelper.WriteLine("Spawning node");
-        await ClusterFixture.SpawnNode();
-        await Task.Delay(1000);
-        cts.Cancel();
-        await worker;
+
+            var ingressNodes = new[] { Members[0], Members[1] };
+            var victim = Members[2];
+            var ids = Enumerable.Range(1, 3).Select(id => id.ToString()).ToList();
+
+            var cts = new CancellationTokenSource();
+
+            var worker = Task.Run(async () =>
+                {
+                    while (!cts.IsCancellationRequested)
+                    {
+                        await CanGetResponseFromAllIdsOnAllNodes(ids, ingressNodes, 20000);
+                    }
+                }
+            );
+
+            await ClusterFixture.WaitForMemberAsync(victim.System.Id, true);
+            _testOutputHelper.WriteLine("Terminating node");
+            await ClusterFixture.RemoveNode(victim);
+            await ClusterFixture.WaitForMemberAsync(victim.System.Id, false);
+            _testOutputHelper.WriteLine("Spawning node");
+            var newMember = await ClusterFixture.SpawnMember();
+            await ClusterFixture.WaitForMemberAsync(newMember.System.Id, true);
+            cts.Cancel();
+            await worker;
+        }, _testOutputHelper);
     }
 
-    private async Task CanGetResponseFromAllIdsOnAllNodes(IEnumerable<string> actorIds, IList<Cluster> nodes, int timeoutMs)
+    private async Task CanGetResponseFromAllIdsOnAllNodes(IEnumerable<string> actorIds, IList<Cluster> nodes,
+        int timeoutMs)
     {
         var timer = Stopwatch.StartNew();
         var timeout = new CancellationTokenSource(timeoutMs).Token;
@@ -186,249 +310,306 @@ public abstract class ClusterTests : ClusterTestBase
         _testOutputHelper.WriteLine("Got response from {0} nodes in {1}", nodes.Count(), timer.Elapsed);
     }
 
-    [Theory, InlineData(10, 10000)]
+    /// <summary>
+    /// Make sure we timeout if the target virtual actor is not joined the cluster
+    /// </summary>
+    [Fact]
+    public async Task TimeoutVirtualActorsNotJoined()
+    {
+        await Trace(async () =>
+        {
+            var tcs = new CancellationTokenSource();
+            var entryNode = Members.First();
+            var timer = Stopwatch.StartNew();
+            var task = entryNode.RequestAsync<Ping>("non-existing", "gen-actor", new Ping(), tcs.Token);
+            try
+            {
+                // Bound the waiting time in case the request never completes
+                await Task.WhenAny(task, Task.Delay(entryNode.Config.ActorRequestTimeout.Add(TimeSpan.FromSeconds(2)), CancellationToken.None));
+
+                if (task.IsFaulted)
+                {
+                    // This is what we are looking for, let's raise the Exception and see if it's a TimeoutException.
+                    await task;
+                }
+            }
+            catch (TimeoutException e)
+            {
+                _testOutputHelper.WriteLine("Got expected timeout after " + timer.ElapsedMilliseconds + "ms");
+                return;
+            }
+            
+            // If the task completed, then the test was not conclusive, as we ether need a time out or infinite delay.
+            if(task.IsCompletedSuccessfully)
+                throw new Exception("Should not get here");
+            
+            // If still running, then let's set our cancellation token to cancel the task, and it should then exit
+            _testOutputHelper.WriteLine("Canceling task via CancellationTokenSource");
+            tcs.Cancel();
+            try
+            {
+                await task;
+                throw new Exception("RequestAsync ran until cancellation, we expected a timeout");
+            }
+            catch (TimeoutException e)
+            {
+                throw new Exception("RequestAsync didn't timeout as expected");
+            }
+     
+        }, _testOutputHelper);
+    }
+    
+    [Theory]
+    [InlineData(10, 10000)]
     public async Task CanSpawnVirtualActorsSequentially(int actorCount, int timeoutMs)
     {
-        var timeout = new CancellationTokenSource(timeoutMs).Token;
-
-        var entryNode = Members.First();
-
-        var timer = Stopwatch.StartNew();
-
-        foreach (var id in GetActorIds(actorCount))
+        await Trace(async () =>
         {
-            await PingPong(entryNode, id, timeout);
-        }
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
 
-        timer.Stop();
-        _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
+            var entryNode = Members.First();
+
+            var timer = Stopwatch.StartNew();
+
+            foreach (var id in GetActorIds(actorCount))
+            {
+                await PingPong(entryNode, id, timeout);
+            }
+
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
+        }, _testOutputHelper);
     }
 
-    [Theory, InlineData(10, 10000)]
+    [Theory]
+    [InlineData(10, 10000)]
     public async Task ConcurrentActivationsOnSameIdWorks(int clientCount, int timeoutMs)
     {
-        var timeout = new CancellationTokenSource(timeoutMs).Token;
+        await Trace(async () =>
+        {
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
 
-        var entryNode = Members.First();
-        var timer = Stopwatch.StartNew();
+            var entryNode = Members.First();
+            var timer = Stopwatch.StartNew();
 
-        var id = GetActorIds(clientCount).First();
+            var id = GetActorIds(clientCount).First();
 
-        await Task.WhenAll(Enumerable.Range(0, clientCount).Select(_ => PingPong(entryNode, id, timeout)));
+            await Task.WhenAll(Enumerable.Range(0, clientCount).Select(_ => PingPong(entryNode, id, timeout)));
 
-        timer.Stop();
-        _testOutputHelper.WriteLine($"Spawned 1 actor from {clientCount} clients in {timer.Elapsed}");
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Spawned 1 actor from {clientCount} clients in {timer.Elapsed}");
+        }, _testOutputHelper);
     }
 
-    [Theory, InlineData(10, 10000)]
+    [Theory]
+    [InlineData(10, 10000)]
     public async Task CanSpawnVirtualActorsConcurrently(int actorCount, int timeoutMs)
     {
-        var timeout = new CancellationTokenSource(timeoutMs).Token;
+        await Trace(async () =>
+        {
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
 
-        var entryNode = Members.First();
+            var entryNode = Members.First();
 
-        var timer = Stopwatch.StartNew();
-        await Task.WhenAll(GetActorIds(actorCount).Select(id => PingPong(entryNode, id, timeout)));
-        timer.Stop();
-        _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
+            var timer = Stopwatch.StartNew();
+            await Task.WhenAll(GetActorIds(actorCount).Select(id => PingPong(entryNode, id, timeout)));
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
+        }, _testOutputHelper);
     }
 
-    [Theory, InlineData(10, 10000)]
+    [Theory]
+    [InlineData(10, 10000)]
     public async Task CanSpawnMultipleKindsWithSameIdentityConcurrently(int actorCount, int timeoutMs)
     {
-        using var cts = new CancellationTokenSource(timeoutMs);
-        var timeout = cts.Token;
+        await Trace(async () =>
+        {
+            using var cts = new CancellationTokenSource(timeoutMs);
+            var timeout = cts.Token;
 
-        var entryNode = Members.First();
+            var entryNode = Members.First();
 
-        var timer = Stopwatch.StartNew();
-        var actorIds = GetActorIds(actorCount);
-        await Task.WhenAll(actorIds.Select(id => Task.WhenAll(
-                    PingPong(entryNode, id, timeout),
-                    PingPong(entryNode, id, timeout, EchoActor.Kind2)
+            var timer = Stopwatch.StartNew();
+            var actorIds = GetActorIds(actorCount);
+
+            await Task.WhenAll(actorIds.Select(id => Task.WhenAll(
+                        PingPong(entryNode, id, timeout),
+                        PingPong(entryNode, id, timeout, EchoActor.Kind2)
+                    )
                 )
-            )
-        );
-        timer.Stop();
-        _testOutputHelper.WriteLine(
-            $"Spawned {actorCount * 2} actors across {Members.Count} nodes in {timer.Elapsed}"
-        );
+            );
+
+            timer.Stop();
+
+            _testOutputHelper.WriteLine(
+                $"Spawned {actorCount * 2} actors across {Members.Count} nodes in {timer.Elapsed}"
+            );
+        }, _testOutputHelper);
     }
 
-    [Theory, InlineData(10, 10000)]
-    public async Task CanSpawnVirtualActorsConcurrentlyOnAllNodes(int actorCount, int timeoutMs)
+    [Theory]
+    [InlineData(10, 10000)]
+    public async Task CanSpawnMultipleKindsWithSameIdentityConcurrentlyWhenUsingFilters(int actorCount, int timeoutMs)
     {
-        var timeout = new CancellationTokenSource(timeoutMs).Token;
+        await Trace(async () =>
+        {
+            using var cts = new CancellationTokenSource(timeoutMs);
+            var timeout = cts.Token;
 
-        var timer = Stopwatch.StartNew();
-        await Task.WhenAll(Members.SelectMany(member =>
-                GetActorIds(actorCount).Select(id => PingPong(member, id, timeout))
-            )
-        );
-        timer.Stop();
-        _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
+            var entryNode = Members.First();
+
+            var timer = Stopwatch.StartNew();
+            var actorIds = GetActorIds(actorCount);
+
+            await Task.WhenAll(actorIds.Select(id => Task.WhenAll(
+                        PingPong(entryNode, id, timeout, EchoActor.FilteredKind),
+                        PingPong(entryNode, id, timeout, EchoActor.AsyncFilteredKind)
+                    )
+                )
+            );
+
+            timer.Stop();
+
+            _testOutputHelper.WriteLine(
+                $"Spawned {actorCount * 2} actors across {Members.Count} nodes in {timer.Elapsed}"
+            );
+        }, _testOutputHelper);
     }
 
-    [Theory, InlineData(10, 20000)]
+    [Theory]
+    [InlineData(10, 10000, EchoActor.Kind)]
+    [InlineData(10, 10000, EchoActor.FilteredKind)]
+    [InlineData(10, 10000, EchoActor.AsyncFilteredKind)]
+    public async Task CanSpawnVirtualActorsConcurrentlyOnAllNodes(int actorCount, int timeoutMs, string kind)
+    {
+        await Trace(async () =>
+        {
+            var timeout = new CancellationTokenSource(timeoutMs).Token;
+
+            var timer = Stopwatch.StartNew();
+
+            var tasks = Members.SelectMany(member =>
+                GetActorIds(actorCount).Select(id => PingPong(member, id, timeout, kind))).ToList();
+
+            await Task.WhenAll(tasks);
+
+            timer.Stop();
+            _testOutputHelper.WriteLine($"Spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}");
+        }, _testOutputHelper);
+    }
+
+    [Theory]
+    [InlineData(10000, EchoActor.FilteredKind)]
+    [InlineData(10000, EchoActor.AsyncFilteredKind)]
+    public async Task CanFilterActivations(int timeoutMs, string filteredKind) =>
+        await Trace(async () =>
+            {
+                var timeout = new CancellationTokenSource(timeoutMs).Token;
+
+                var member = Members.First();
+
+                var invalidIdentity =
+                    ClusterIdentity.Create(Tests.ClusterFixture.InvalidIdentity, filteredKind);
+
+                var message = new Ping { Message = "Hello" };
+
+                await member.Invoking(async m => await m.RequestAsync<Pong>(invalidIdentity, message, timeout))
+                    .Should()
+                    .ThrowExactlyAsync<IdentityIsBlockedException>();
+            }, _testOutputHelper
+        );
+
+    [Theory]
+    [InlineData(10, 20000)]
     public async Task CanRespawnVirtualActors(int actorCount, int timeoutMs)
     {
-        using var cts = new CancellationTokenSource(timeoutMs);
-        var timeout = cts.Token;
+        await Trace(async () =>
+        {
+            using var cts = new CancellationTokenSource(timeoutMs);
+            var timeout = cts.Token;
 
-        var entryNode = Members.First();
+            var entryNode = Members.First();
 
-        var timer = Stopwatch.StartNew();
+            var timer = Stopwatch.StartNew();
 
-        var ids = GetActorIds(actorCount).ToList();
+            var ids = GetActorIds(actorCount).ToList();
 
-        await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
-        await Task.WhenAll(ids.Select(id =>
-                entryNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout)
-            )
-        );
-        await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
-        timer.Stop();
-        _testOutputHelper.WriteLine(
-            $"Spawned, killed and spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}"
-        );
-    }
+            await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
 
-    [Fact]
-    public async Task LocalAffinityMovesActivationsOnRemoteSender()
-    {
-        var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)).Token;
-        var firstNode = Members[0];
-        var secondNode = Members[1];
+            await Task.WhenAll(ids.Select(id =>
+                    entryNode.RequestAsync<Ack>(id, EchoActor.Kind, new Die(), timeout)
+                )
+            );
 
-        await PingAndVerifyLocality(firstNode, timeout, "1:1", firstNode.System.Address,
-            "Local affinity to sending node means that actors should spawn there"
-        );
-        LogProcessCounts();
-        await PingAndVerifyLocality(secondNode, timeout, "2:1", firstNode.System.Address,
-            "As the current instances exist on the 'wrong' node, these should respond before being moved"
-        );
-        LogProcessCounts();
+            await Task.WhenAll(ids.Select(id => PingPong(entryNode, id, timeout)));
+            timer.Stop();
 
-        _testOutputHelper.WriteLine("Allowing time for actors to respawn..");
-        await Task.Delay(200, timeout);
-        LogProcessCounts();
-
-        await PingAndVerifyLocality(secondNode, timeout, "2.2", secondNode.System.Address,
-            "Relocation should be triggered, and the actors should be respawned on the local node"
-        );
-        LogProcessCounts();
-
-        void LogProcessCounts() => _testOutputHelper.WriteLine(
-            $"Processes: {firstNode.System.Address}: {firstNode.System.ProcessRegistry.ProcessCount}, {secondNode.System.Address}: {secondNode.System.ProcessRegistry.ProcessCount}"
-        );
-    }
-
-    private async Task PingAndVerifyLocality(
-        Cluster cluster,
-        CancellationToken token,
-        string requestId,
-        string expectResponseFrom = null,
-        string because = null
-    )
-    {
-        _testOutputHelper.WriteLine("Sending requests from " + cluster.System.Address);
-
-        await Task.WhenAll(
-            Enumerable.Range(0, 100).Select(async i => {
-                    var response = await cluster.RequestAsync<HereIAm>(CreateIdentity(i.ToString()), EchoActor.LocalAffinityKind, new WhereAreYou
-                        {
-                            RequestId = requestId
-                        }, token
-                    );
-
-                    response.Should().NotBeNull();
-
-                    if (expectResponseFrom != null)
-                    {
-                        response.Address.Should().Be(expectResponseFrom, because);
-                    }
-                }
-            )
-        );
+            _testOutputHelper.WriteLine(
+                $"Spawned, killed and spawned {actorCount} actors across {Members.Count} nodes in {timer.Elapsed}"
+            );
+        }, _testOutputHelper);
     }
 
     private async Task PingPong(
         Cluster cluster,
         string id,
         CancellationToken token = default,
-        string kind = EchoActor.Kind
+        string kind = EchoActor.Kind,
+        ISenderContext context = null
     )
     {
         await Task.Yield();
 
-        var response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
-        var tries = 1;
+        Pong response = null;
 
-        while (response == null && !token.IsCancellationRequested)
+        do
         {
-            await Task.Delay(200, token);
-            _testOutputHelper.WriteLine($"Retrying ping {kind}/{id}, attempt {++tries}");
-            response = await cluster.Ping(id, id, new CancellationTokenSource(4000).Token, kind);
-        }
+            try
+            {
+                response = await cluster.Ping(id, id, CancellationTokens.FromSeconds(4), kind, context);
+            }
+            catch (TimeoutException)
+            {
+                // expected
+            }
+
+            if (response == null)
+            {
+                // Brief pause before retrying to avoid busy loop
+                await Task.Delay(200);
+            }
+        } while (response == null && !token.IsCancellationRequested);
 
         response.Should().NotBeNull($"We expect a response before timeout on {kind}/{id}");
 
-        response.Should().BeEquivalentTo(new Pong
-            {
-                Identity = id,
-                Kind = kind,
-                Message = id
-            }, "Echo should come from the correct virtual actor"
-        );
+        response.Should()
+            .BeEquivalentTo(new Pong
+                {
+                    Identity = id,
+                    Kind = kind,
+                    Message = id
+                }, "Echo should come from the correct virtual actor"
+            );
     }
 }
 
 // ReSharper disable once UnusedType.Global
-public class InMemoryClusterTests : ClusterTests, IClassFixture<InMemoryClusterFixture>
+public class InMemoryPartitionActivatorClusterTests : ClusterTests,
+    IClassFixture<InMemoryClusterFixtureWithPartitionActivator>
 {
-    // ReSharper disable once SuggestBaseTypeForParameter
-    public InMemoryClusterTests(ITestOutputHelper testOutputHelper, InMemoryClusterFixture clusterFixture) : base(
-        testOutputHelper, clusterFixture
-    )
+    // ReSharper disable once SuggestBaseTypeForParameterInConstructor
+    public InMemoryPartitionActivatorClusterTests(ITestOutputHelper testOutputHelper,
+        InMemoryClusterFixtureWithPartitionActivator clusterFixture)
+        : base(testOutputHelper, clusterFixture)
     {
     }
 }
 
-// ReSharper disable once UnusedType.Global
-public class InMemoryClusterTestsAlternativeClusterContext : ClusterTests, IClassFixture<InMemoryClusterFixtureAlternativeClusterContext>
+public class SingleNodeProviderClusterTests : ClusterTests, IClassFixture<SingleNodeProviderFixture>
 {
-    // ReSharper disable once SuggestBaseTypeForParameter
-    public InMemoryClusterTestsAlternativeClusterContext(
-        ITestOutputHelper testOutputHelper,
-        InMemoryClusterFixtureAlternativeClusterContext clusterFixture
-    ) : base(
-        testOutputHelper, clusterFixture
-    )
-    {
-    }
-}
-
-// ReSharper disable once UnusedType.Global
-public class InMemoryClusterTestsSharedFutures : ClusterTests, IClassFixture<InMemoryClusterFixtureSharedFutures>
-{
-    // ReSharper disable once SuggestBaseTypeForParameter
-    public InMemoryClusterTestsSharedFutures(ITestOutputHelper testOutputHelper, InMemoryClusterFixtureSharedFutures clusterFixture) : base(
-        testOutputHelper, clusterFixture
-    )
-    {
-    }
-}
-
-// ReSharper disable once UnusedType.Global
-public class InMemoryClusterTestsPidCacheInvalidation : ClusterTests, IClassFixture<InMemoryPidCacheInvalidationClusterFixture>
-{
-    // ReSharper disable once SuggestBaseTypeForParameter
-    public InMemoryClusterTestsPidCacheInvalidation(
-        ITestOutputHelper testOutputHelper,
-        InMemoryPidCacheInvalidationClusterFixture clusterFixture
-    ) : base(
-        testOutputHelper, clusterFixture
-    )
+    // ReSharper disable once SuggestBaseTypeForParameterInConstructor
+    public SingleNodeProviderClusterTests(ITestOutputHelper testOutputHelper, SingleNodeProviderFixture clusterFixture)
+        : base(testOutputHelper, clusterFixture)
     {
     }
 }

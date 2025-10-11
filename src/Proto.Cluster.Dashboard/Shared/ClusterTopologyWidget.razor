@@ -1,0 +1,19 @@
+<InfoBlock>
+    <div>
+        <b>Topology Hash: @State.TopologyHash</b>
+    </div>
+    <div>Blocked Members: @string.Join(", ", State.Blocked)</div>
+</InfoBlock>
+@foreach (var m in State.Members)
+{
+    <div class="py-2">
+        <MemberCard Member="m"></MemberCard>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public ClusterTopology State { get; set; } = null!;
+
+}

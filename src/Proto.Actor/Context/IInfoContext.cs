@@ -1,13 +1,14 @@
 // -----------------------------------------------------------------------
 // <copyright file="IInfoContext.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 
 // ReSharper disable once CheckNamespace
+
 namespace Proto;
 
-public interface IInfoContext: IContextStore, ISystemContext
+public interface IInfoContext : IContextStore, ISystemContext
 {
     /// <summary>
     ///     Gets the PID for the parent of the current actor.

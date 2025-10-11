@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.TestKit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -11,24 +12,33 @@ public class ReenterTests : ActorTestBase
 {
     private readonly ITestOutputHelper _output;
 
-    public ReenterTests(ITestOutputHelper output) => _output = output;
+    public ReenterTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
 
     [Fact]
     public async Task RequestReenterSelf()
     {
-        var props = Props.FromFunc(async ctx => {
+        var props = Props.FromFunc(async ctx =>
+            {
                 switch (ctx.Message)
                 {
                     case "reenter":
+                        // Simulate async processing before responding
                         await Task.Delay(500);
                         ctx.Respond("done");
+
                         break;
                     case "start":
-                        ctx.RequestReenter<string>(ctx.Self, "reenter", t => {
+                        ctx.RequestReenter<string>(ctx.Self, "reenter", t =>
+                            {
                                 ctx.Respond("response");
+
                                 return Task.CompletedTask;
                             }, CancellationToken.None
                         );
+
                         break;
                 }
             }
@@ -43,11 +53,16 @@ public class ReenterTests : ActorTestBase
     [Fact]
     public async Task ReenterAfterCompletedTask()
     {
-        var props = Props.FromFunc(ctx => {
+        var props = Props.FromFunc(ctx =>
+            {
                 if (ctx.Message is "reenter")
                 {
+                    // Simulate asynchronous work before reentering
                     var delay = Task.Delay(500);
-                    ctx.ReenterAfter(delay, () => { ctx.Respond("response"); });
+                    ctx.ReenterAfter(delay, () =>
+                    {
+                        ctx.Respond("response");
+                    });
                 }
 
                 return Task.CompletedTask;
@@ -61,6 +76,32 @@ public class ReenterTests : ActorTestBase
     }
 
     [Fact]
+    public async Task ReenterTaskWithResult()
+    {
+        const int expectedResult = 2;
+
+        var props = Props.FromFunc(ctx =>
+            {
+                if (ctx.Message is "reenter")
+                {
+                    var task = Task.FromResult(expectedResult);
+                    ctx.ReenterAfter(task, (int result) =>
+                    {
+                        ctx.Respond(result);
+                    });
+                }
+
+                return Task.CompletedTask;
+            }
+        );
+
+        var pid = Context.Spawn(props);
+
+        var res = await Context.RequestAsync<int>(pid, "reenter", TimeSpan.FromSeconds(5));
+        Assert.Equal(expectedResult, res);
+    }
+
+    [Fact]
     public async Task ReenterAfterTimerCancelledToken()
     {
         var props = Props.FromProducer(() => new ReenterAfterCancellationActor());
@@ -70,7 +111,9 @@ public class ReenterTests : ActorTestBase
         using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
         var request = new ReenterAfterCancellationActor.Request(cancellationTokenSource.Token);
 
-        var res = await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request, TimeSpan.FromSeconds(5));
+        var res = await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request,
+            TimeSpan.FromSeconds(5));
+
         res.Should().NotBeNull();
     }
 
@@ -85,7 +128,9 @@ public class ReenterTests : ActorTestBase
         cancellationTokenSource.Cancel();
         var request = new ReenterAfterCancellationActor.Request(cancellationTokenSource.Token);
 
-        var res = await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request, TimeSpan.FromSeconds(5));
+        var res = await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request,
+            TimeSpan.FromSeconds(5));
+
         res.Should().NotBeNull();
     }
 
@@ -99,23 +144,32 @@ public class ReenterTests : ActorTestBase
         var request = new ReenterAfterCancellationActor.Request(CancellationToken.None);
 
         await Context.Invoking(async ctx
-                => await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request, TimeSpan.FromMilliseconds(500))
-            ).Should()
+                => await Context.RequestAsync<ReenterAfterCancellationActor.Response>(pid, request,
+                    TimeSpan.FromMilliseconds(500))
+            )
+            .Should()
             .ThrowExactlyAsync<TimeoutException>();
     }
 
     [Fact]
     public async Task ReenterAfterFailedTask()
     {
-        var props = Props.FromFunc(ctx => {
+        var props = Props.FromFunc(ctx =>
+            {
                 if (ctx.Message is "reenter")
                 {
-                    var task = Task.Run(async () => {
-                            await Task.Delay(100);
-                            throw new Exception("Failed!");
-                        }
-                    );
-                    ctx.ReenterAfter(task, () => { ctx.Respond("response"); });
+                    var task = Task.Run(async () =>
+                    {
+                        // Delay before throwing to emulate work that fails
+                        await Task.Delay(100);
+
+                        throw new Exception("Failed!");
+                    });
+
+                    ctx.ReenterAfter(task, () =>
+                    {
+                        ctx.Respond("response");
+                    });
                 }
 
                 return Task.CompletedTask;
@@ -131,15 +185,17 @@ public class ReenterTests : ActorTestBase
     [Fact]
     public async Task ReenterAfterCancelledTask()
     {
-        var props = Props.FromFunc(ctx => {
+        var props = Props.FromFunc(ctx =>
+            {
                 if (ctx.Message is "reenter")
                 {
                     var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                    ctx.ReenterAfter(tcs.Task, _ => {
-                            ctx.Respond("response");
-                            return Task.CompletedTask;
-                        }
-                    );
+
+                    ctx.ReenterAfter(tcs.Task, () =>
+                    {
+                        ctx.Respond("response");
+                    });
+
                     tcs.TrySetCanceled();
                 }
 
@@ -159,20 +215,28 @@ public class ReenterTests : ActorTestBase
         var activeCount = 0;
         var correct = true;
         var counter = 0;
-        var props = Props.FromFunc(ctx => {
+
+        var props = Props.FromFunc(ctx =>
+            {
                 if (ctx.Message is string msg && msg == "reenter")
                 {
                     //use ++ on purpose, any race condition would make the counter go out of sync
                     counter++;
 
+                    // Immediate delay to schedule reenter continuation asynchronously
                     var task = Task.Delay(0);
-                    ctx.ReenterAfter(task, () => {
-                            var res = Interlocked.Increment(ref activeCount);
-                            if (res != 1) correct = false;
 
-                            Interlocked.Decrement(ref activeCount);
+                    ctx.ReenterAfter(task, () =>
+                    {
+                        var res = Interlocked.Increment(ref activeCount);
+
+                        if (res != 1)
+                        {
+                            correct = false;
                         }
-                    );
+
+                        Interlocked.Decrement(ref activeCount);
+                    });
                 }
 
                 return Task.CompletedTask;
@@ -195,38 +259,50 @@ public class ReenterTests : ActorTestBase
     [Fact]
     public async Task DropReenterContinuationAfterRestart()
     {
-        bool restarted = false;
-        bool completionExecuted = false;
-        var props = Props.FromFunc(async ctx => {
+        var restarted = false;
+        var completionExecuted = false;
+
+        var props = Props.FromFunc(async ctx =>
+            {
                 switch (ctx.Message)
                 {
                     case "start":
                         CancellationTokenSource cts = new();
+
                         ctx.ReenterAfter(
+                            // Wait indefinitely until cancellation triggered by restart
                             Task.Delay(-1, cts.Token),
-                            () => {
+                            () =>
+                            {
                                 completionExecuted = true;
                             });
+
                         ctx.Self.SendSystemMessage(ctx.System, new Restart(new Exception()));
                         // Release the cancellation token after restart gets processed.
                         cts.Cancel();
                         ctx.Respond(true);
+
                         break;
                     case Restarting:
                         restarted = true;
+
                         break;
                     case "waitstate":
                         // Wait a while to make sure that Completion really didn't execute.
-                        Task.Delay(50);
+                        await Task.Delay(50);
+
                         while (!ctx.CancellationToken.IsCancellationRequested)
                         {
                             await Task.Yield();
+
                             if (restarted && !completionExecuted)
                             {
                                 ctx.Respond(true);
+
                                 break;
                             }
                         }
+
                         break;
                 }
             }
@@ -238,6 +314,49 @@ public class ReenterTests : ActorTestBase
         var res = await Context.RequestAsync<bool>(pid, "waitstate", TimeSpan.FromSeconds(5));
         Assert.True(res);
     }
+    
+    [Fact]
+    public async Task DropReenterContinuationAfterStop()
+    {
+        var completionExecuted = false;
+        var stats = new TestMailboxStats(msg => msg is Stop); // track when the stop message is received
+        CancellationTokenSource cts = new();
+
+        var props = Props.FromFunc(async ctx =>
+            {
+                switch (ctx.Message)
+                {
+                    case "start":
+
+                        ctx.ReenterAfter(
+                            // Wait indefinitely until cancellation token triggers on actor stop
+                            Task.Delay(-1, cts.Token),
+                            () =>
+                            {
+                                completionExecuted = true;
+                            });
+
+                        ctx.Stop(ctx.Self);
+
+                        ctx.Respond(true);
+
+                        break;
+                }
+            }
+        ).WithTestMailboxStats(stats);
+
+        var pid = Context.Spawn(props);
+
+        await Context.RequestAsync<bool>(pid, "start", TimeSpan.FromSeconds(5));
+
+        // Wait for the actor to process the stop sequence
+        await stats.WaitForResetAsync(TimeSpan.FromSeconds(5));
+
+        // Trigger the reenter continuation after the actor has stopped
+        cts.Cancel();
+
+        Assert.False(completionExecuted);
+    }
 
     private class ReenterAfterCancellationActor : IActor
     {
@@ -247,6 +366,7 @@ public class ReenterTests : ActorTestBase
             {
                 case Request request:
                     context.ReenterAfterCancellation(request.Token, () => context.Respond(new Response()));
+
                     break;
             }
 

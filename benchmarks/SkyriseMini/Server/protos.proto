@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option csharp_namespace = "ProtoActorSut.Contracts";
+
+message PingMessage {
+  string name = 1;
+}
+
+message PongMessage {
+  string response = 1;
+}

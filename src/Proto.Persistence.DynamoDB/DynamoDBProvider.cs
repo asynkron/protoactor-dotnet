@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="DynamoDBProvider.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -22,20 +22,24 @@ public class DynamoDBProvider : IProvider, IDisposable
 
     public DynamoDBProvider(IAmazonDynamoDB dynamoDBClient, DynamoDBProviderOptions options)
     {
-        if (dynamoDBClient == null) throw new ArgumentNullException(nameof(dynamoDBClient));
+        if (dynamoDBClient == null)
+        {
+            throw new ArgumentNullException(nameof(dynamoDBClient));
+        }
 
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
         _dynamoDBContext = new DynamoDBContext(
-            dynamoDBClient, new DynamoDBContextConfig {Conversion = DynamoDBEntryConversion.V2, ConsistentRead = true}
+            dynamoDBClient, new DynamoDBContextConfig { Conversion = DynamoDBEntryConversion.V2, ConsistentRead = true }
         );
+
         _eventsTable = Table.LoadTable(dynamoDBClient, options.EventsTableName, DynamoDBEntryConversion.V2);
         _snapshotsTable = Table.LoadTable(dynamoDBClient, options.SnapshotsTableName, DynamoDBEntryConversion.V2);
     }
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
-        var config = new QueryOperationConfig {ConsistentRead = true};
+        var config = new QueryOperationConfig { ConsistentRead = true };
         config.Filter.AddCondition(_options.EventsTableHashKey, QueryOperator.Equal, actorName);
         config.Filter.AddCondition(_options.EventsTableSortKey, QueryOperator.Between, indexStart, indexEnd);
         var query = _eventsTable.Query(config);
@@ -44,7 +48,7 @@ public class DynamoDBProvider : IProvider, IDisposable
 
         while (true)
         {
-            var results = await query.GetNextSetAsync();
+            var results = await query.GetNextSetAsync().ConfigureAwait(false);
 
             foreach (var doc in results)
             {
@@ -52,7 +56,10 @@ public class DynamoDBProvider : IProvider, IDisposable
                 lastIndex++;
             }
 
-            if (query.IsDone) break;
+            if (query.IsDone)
+            {
+                break;
+            }
         }
 
         return lastIndex;
@@ -63,19 +70,23 @@ public class DynamoDBProvider : IProvider, IDisposable
             var dataE = doc.GetValueOrThrow(_options.EventsTableDataKey);
 
             var dataType = Type.GetType(dataTypeE.AsString());
+
             return _dynamoDBContext.FromDocumentDynamic(dataE.AsDocument(), dataType);
         }
     }
 
     public async Task<(object Snapshot, long Index)> GetSnapshotAsync(string actorName)
     {
-        var config = new QueryOperationConfig {ConsistentRead = true, BackwardSearch = true, Limit = 1};
+        var config = new QueryOperationConfig { ConsistentRead = true, BackwardSearch = true, Limit = 1 };
         config.Filter.AddCondition(_options.SnapshotsTableHashKey, QueryOperator.Equal, actorName);
         var query = _snapshotsTable.Query(config);
-        var results = await query.GetNextSetAsync();
+        var results = await query.GetNextSetAsync().ConfigureAwait(false);
         var doc = results.FirstOrDefault();
 
-        if (doc == null) return (null, 0);
+        if (doc == null)
+        {
+            return (null, 0);
+        }
 
         var snapshotIndexE = doc.GetValueOrThrow(_options.SnapshotsTableSortKey);
         var dataTypeE = doc.GetValueOrThrow(_options.SnapshotsTableDataTypeKey);
@@ -94,13 +105,13 @@ public class DynamoDBProvider : IProvider, IDisposable
 
         var doc = new Document
         {
-            {_options.EventsTableHashKey, actorName},
-            {_options.EventsTableSortKey, index},
-            {_options.EventsTableDataKey, data},
-            {_options.EventsTableDataTypeKey, dataType.AssemblyQualifiedNameSimple()}
+            { _options.EventsTableHashKey, actorName },
+            { _options.EventsTableSortKey, index },
+            { _options.EventsTableDataKey, data },
+            { _options.EventsTableDataTypeKey, dataType.AssemblyQualifiedNameSimple() }
         };
 
-        await _eventsTable.PutItemAsync(doc);
+        await _eventsTable.PutItemAsync(doc).ConfigureAwait(false);
 
         return index++;
     }
@@ -112,12 +123,13 @@ public class DynamoDBProvider : IProvider, IDisposable
 
         var doc = new Document
         {
-            {_options.SnapshotsTableHashKey, actorName},
-            {_options.SnapshotsTableSortKey, index},
-            {_options.SnapshotsTableDataKey, data},
-            {_options.SnapshotsTableDataTypeKey, dataType.AssemblyQualifiedNameSimple()}
+            { _options.SnapshotsTableHashKey, actorName },
+            { _options.SnapshotsTableSortKey, index },
+            { _options.SnapshotsTableDataKey, data },
+            { _options.SnapshotsTableDataTypeKey, dataType.AssemblyQualifiedNameSimple() }
         };
-        await _snapshotsTable.PutItemAsync(doc);
+
+        await _snapshotsTable.PutItemAsync(doc).ConfigureAwait(false);
     }
 
     public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
@@ -132,19 +144,22 @@ public class DynamoDBProvider : IProvider, IDisposable
 
             if (++writeCount >= 25) // 25 is max
             {
-                await write.ExecuteAsync();
+                await write.ExecuteAsync().ConfigureAwait(false);
                 write = _eventsTable.CreateBatchWrite();
                 writeCount = 0;
             }
         }
 
-        if (writeCount > 0) await write.ExecuteAsync();
+        if (writeCount > 0)
+        {
+            await write.ExecuteAsync().ConfigureAwait(false);
+        }
     }
 
     public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
     {
         // We do query before deletion because snapshots can be rare (just few indexes).
-        var config = new QueryOperationConfig {ConsistentRead = true};
+        var config = new QueryOperationConfig { ConsistentRead = true };
         config.Filter.AddCondition(_options.SnapshotsTableHashKey, QueryOperator.Equal, actorName);
         config.Filter.AddCondition(_options.SnapshotsTableSortKey, QueryOperator.LessThanOrEqual, inclusiveToIndex);
         var query = _snapshotsTable.Query(config);
@@ -154,7 +169,7 @@ public class DynamoDBProvider : IProvider, IDisposable
 
         while (true)
         {
-            var results = await query.GetNextSetAsync();
+            var results = await query.GetNextSetAsync().ConfigureAwait(false);
 
             foreach (var doc in results)
             {
@@ -162,16 +177,22 @@ public class DynamoDBProvider : IProvider, IDisposable
 
                 if (++writeCount >= 25) // 25 is max
                 {
-                    await write.ExecuteAsync();
+                    await write.ExecuteAsync().ConfigureAwait(false);
                     write = _snapshotsTable.CreateBatchWrite();
                     writeCount = 0;
                 }
             }
 
-            if (query.IsDone) break;
+            if (query.IsDone)
+            {
+                break;
+            }
         }
 
-        if (writeCount > 0) await write.ExecuteAsync();
+        if (writeCount > 0)
+        {
+            await write.ExecuteAsync().ConfigureAwait(false);
+        }
     }
 
     #region IDisposable Support
@@ -180,9 +201,15 @@ public class DynamoDBProvider : IProvider, IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (_disposedValue) return;
+        if (_disposedValue)
+        {
+            return;
+        }
 
-        if (disposing) _dynamoDBContext?.Dispose();
+        if (disposing)
+        {
+            _dynamoDBContext?.Dispose();
+        }
 
         _disposedValue = true;
     }

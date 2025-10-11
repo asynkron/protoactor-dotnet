@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 using static System.Data.SqlDbType;
 
@@ -9,8 +9,10 @@ namespace Proto.Persistence.SqlServer;
 
 public class SqlServerProvider : IProvider
 {
-    private static readonly JsonSerializerSettings AutoTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.Auto};
-    private static readonly JsonSerializerSettings AllTypeSettings = new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All};
+    private static readonly JsonSerializerSettings
+        AutoTypeSettings = new() { TypeNameHandling = TypeNameHandling.Auto };
+
+    private static readonly JsonSerializerSettings AllTypeSettings = new() { TypeNameHandling = TypeNameHandling.All };
     private readonly string _connectionString;
 
     private readonly string _sqlDeleteEvents;
@@ -37,21 +39,27 @@ public class SqlServerProvider : IProvider
 
         if (autoCreateTables)
         {
-            if (!_tableSchema.Equals("dbo", StringComparison.OrdinalIgnoreCase)) CreateCustomSchema();
+            if (!_tableSchema.Equals("dbo", StringComparison.OrdinalIgnoreCase))
+            {
+                CreateCustomSchema();
+            }
+
             CreateSnapshotTable();
             CreateEventTable();
         }
 
         // execute string interpolation once
-        _sqlDeleteEvents = $@"DELETE FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
+        _sqlDeleteEvents =
+            $@"DELETE FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex <= @EventIndex";
+
         _sqlDeleteSnapshots =
             $@"DELETE FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName AND SnapshotIndex <= @SnapshotIndex";
 
-        _sqlReadEvents =
-            $@"SELECT EventIndex, EventData FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex >= @IndexStart AND EventIndex <= @IndexEnd ORDER BY EventIndex ASC";
+        _sqlReadEvents = $@"SELECT EventIndex, EventData FROM [{_tableSchema}].[{_tableEvents}] WHERE ActorName = @ActorName AND EventIndex >= @IndexStart AND EventIndex <= @IndexEnd ORDER BY EventIndex ASC";
 
         _sqlReadSnapshot =
-            $@"SELECT TOP 1 SnapshotIndex, SnapshotData FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName ORDER BY SnapshotIndex DESC";
+            $@"SELECT SnapshotIndex, SnapshotData FROM [{_tableSchema}].[{_tableSnapshots}]
+               WHERE ActorName = @ActorName AND SnapshotIndex = (SELECT MAX(SnapshotIndex) FROM [{_tableSchema}].[{_tableSnapshots}] WHERE ActorName = @ActorName)";
 
         _sqlSaveEvents =
             $@"INSERT INTO [{_tableSchema}].[{_tableEvents}] (Id, ActorName, EventIndex, EventData) VALUES (@Id, @ActorName, @EventIndex, @EventData)";
@@ -60,15 +68,15 @@ public class SqlServerProvider : IProvider
             $@"INSERT INTO [{_tableSchema}].[{_tableSnapshots}] (Id, ActorName, SnapshotIndex, SnapshotData) VALUES (@Id, @ActorName, @SnapshotIndex, @SnapshotData)";
     }
 
-    public Task DeleteEventsAsync(string actorName, long inclusiveToIndex)
-        => ExecuteNonQueryAsync(
+    public async Task DeleteEventsAsync(string actorName, long inclusiveToIndex) =>
+        await ExecuteNonQueryAsync(
             _sqlDeleteEvents,
             CreateParameter("ActorName", NVarChar, actorName),
             CreateParameter("EventIndex", BigInt, inclusiveToIndex)
         );
 
-    public Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex)
-        => ExecuteNonQueryAsync(
+    public async Task DeleteSnapshotsAsync(string actorName, long inclusiveToIndex) =>
+        await ExecuteNonQueryAsync(
             _sqlDeleteSnapshots,
             CreateParameter("ActorName", NVarChar, actorName),
             CreateParameter("SnapshotIndex", BigInt, inclusiveToIndex)
@@ -76,11 +84,11 @@ public class SqlServerProvider : IProvider
 
     public async Task<long> GetEventsAsync(string actorName, long indexStart, long indexEnd, Action<object> callback)
     {
-        using var connection = new SqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
 
-        using var command = new SqlCommand(_sqlReadEvents, connection);
+        await using var command = new SqlCommand(_sqlReadEvents, connection);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         command.Parameters.AddRange(
             new[]
@@ -93,11 +101,11 @@ public class SqlServerProvider : IProvider
 
         long lastIndex = -1;
 
-        var eventReader = await command.ExecuteReaderAsync();
+        var eventReader = await command.ExecuteReaderAsync().ConfigureAwait(false);
 
-        while (await eventReader.ReadAsync())
+        while (await eventReader.ReadAsync().ConfigureAwait(false))
         {
-            lastIndex = (long) eventReader["EventIndex"];
+            lastIndex = (long)eventReader["EventIndex"];
 
             callback(JsonConvert.DeserializeObject<object>(eventReader["EventData"].ToString(), AutoTypeSettings));
         }
@@ -110,17 +118,17 @@ public class SqlServerProvider : IProvider
         long snapshotIndex = 0;
         object snapshotData = null;
 
-        using var connection = new SqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
 
-        using var command = new SqlCommand(_sqlReadSnapshot, connection);
+        await using var command = new SqlCommand(_sqlReadSnapshot, connection);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
         command.Parameters.Add(CreateParameter("ActorName", NVarChar, actorName));
 
-        var snapshotReader = await command.ExecuteReaderAsync();
+        var snapshotReader = await command.ExecuteReaderAsync().ConfigureAwait(false);
 
-        while (await snapshotReader.ReadAsync())
+        while (await snapshotReader.ReadAsync().ConfigureAwait(false))
         {
             snapshotIndex = Convert.ToInt64(snapshotReader["SnapshotIndex"]);
 
@@ -142,16 +150,16 @@ public class SqlServerProvider : IProvider
             CreateParameter("ActorName", NVarChar, item.ActorName),
             CreateParameter("EventIndex", BigInt, item.EventIndex),
             CreateParameter("EventData", NVarChar, JsonConvert.SerializeObject(item.EventData, AllTypeSettings))
-        );
+        ).ConfigureAwait(false);
 
-        return index++;
+        return index + 1;
     }
 
-    public Task PersistSnapshotAsync(string actorName, long index, object snapshot)
+    public async Task PersistSnapshotAsync(string actorName, long index, object snapshot)
     {
         var item = new Snapshot(actorName, index, snapshot);
 
-        return ExecuteNonQueryAsync(
+        await ExecuteNonQueryAsync(
             _sqlSaveSnapshot,
             CreateParameter("Id", NVarChar, item.Id),
             CreateParameter("ActorName", NVarChar, item.ActorName),
@@ -216,27 +224,30 @@ public class SqlServerProvider : IProvider
         ExecuteNonQuery(sql);
     }
 
-    private static SqlParameter CreateParameter(string name, SqlDbType type, object value)
-        => new SqlParameter(name, type)
+    private static SqlParameter CreateParameter(string name, SqlDbType type, object value) =>
+        new SqlParameter(name, type)
         {
             SqlValue = value
         };
 
     private async Task ExecuteNonQueryAsync(string sql, params SqlParameter[] parameters)
     {
-        using var connection = new SqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
 
-        using var command = new SqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync().ConfigureAwait(false);
 
-        using var tx = connection.BeginTransaction();
+        await using var tx = connection.BeginTransaction();
 
         command.Transaction = tx;
 
-        if (parameters.Length > 0) command.Parameters.AddRange(parameters);
+        if (parameters.Length > 0)
+        {
+            command.Parameters.AddRange(parameters);
+        }
 
-        await command.ExecuteNonQueryAsync();
+        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 
         tx.Commit();
     }

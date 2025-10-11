@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="MailboxBenchmark.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading.Tasks;
@@ -21,17 +21,18 @@ public class MailboxBenchmark
     {
         var context = new RootContext(new ActorSystem());
         const int n = 10 * 1000;
-        var props = Props.FromFunc(c => {
-                    switch (c.Message)
-                    {
-                        case string s:
-                            c.Respond("done");
-                            break;
-                    }
-
-                    return Task.CompletedTask;
+        var props = Props
+            .FromFunc(c =>
+            {
+                switch (c.Message)
+                {
+                    case string s:
+                        c.Respond("done");
+                        break;
                 }
-            )
+
+                return Task.CompletedTask;
+            })
             .WithMailbox(mailbox);
         var pid = context.Spawn(props);
 

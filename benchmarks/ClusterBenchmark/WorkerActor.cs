@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="HelloActor.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
 using System.Threading.Tasks;
@@ -30,7 +30,7 @@ public class WorkerActor : IActor
 
         // if (_rnd.Next(0, 1000) == 0)
         // {
-        //     
+        //
         //
         //     ctx.Stop(ctx.Self);
         // }

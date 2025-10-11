@@ -1,13 +1,13 @@
 // -----------------------------------------------------------------------
 // <copyright file="ClusterExtension.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Proto.Cluster.Metrics;
 using Proto.Deduplication;
 
 namespace Proto.Cluster;
@@ -15,22 +15,70 @@ namespace Proto.Cluster;
 [PublicAPI]
 public static class Extensions
 {
+    /// <summary>
+    ///     Adds the <see cref="Proto.Cluster.Cluster" /> extension to the given <see cref="ActorSystem" />
+    /// </summary>
+    /// <param name="system"></param>
+    /// <param name="config"></param>
+    /// <returns></returns>
     public static ActorSystem WithCluster(this ActorSystem system, ClusterConfig config)
     {
         _ = new Cluster(system, config);
+
         return system;
     }
 
-    public static Cluster Cluster(this ActorSystem system)
-        => system.Extensions.GetRequired<Cluster>("Cluster has not been configured");
+    /// <summary>
+    ///     Gets the <see cref="Proto.Cluster.Cluster" /> from the <see cref="ActorSystem" />
+    /// </summary>
+    /// <param name="system"></param>
+    /// <returns></returns>
+    public static Cluster Cluster(this ActorSystem system) =>
+        system.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
-    public static Cluster Cluster(this IContext context)
-        => context.System.Extensions.GetRequired<Cluster>("Cluster has not been configured");
+    /// <summary>
+    ///     Gets the <see cref="Proto.Cluster.Cluster" /> from the <see cref="IContext" />
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    public static Cluster Cluster(this IContext context) =>
+        context.System.Extensions.GetRequired<Cluster>("Cluster has not been configured");
 
-    public static Task<T> ClusterRequestAsync<T>(this IContext context, string identity, string kind, object message, CancellationToken ct) =>
+    /// <summary>
+    ///     Sends a request to a cluster identity
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="identity">Identity to send to</param>
+    /// <param name="kind">Cluster kind to sent to</param>
+    /// <param name="message">Message to send</param>
+    /// <param name="ct">Token to cancel the request</param>
+    /// <typeparam name="T">Type of the expected response</typeparam>
+    /// <returns>Response or null if timed out</returns>
+    public static Task<T> ClusterRequestAsync<T>(
+        this IContext context,
+        string identity,
+        string kind,
+        object message,
+        CancellationToken ct
+    ) =>
         //call cluster RequestAsync using actor context
         context.System.Cluster().RequestAsync<T>(identity, kind, message, context, ct);
 
+    /// <summary>
+    ///     Sends a request to a cluster identity and calls the provided callback when the response is received. The callback
+    ///     is executed within the
+    ///     actor's concurrency constraint.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="identity">Identity to send to</param>
+    /// <param name="kind">Cluster kind to sent to</param>
+    /// <param name="message">Message to send</param>
+    /// <param name="callback">
+    ///     Callback that will be called after request is finished. It receives the request task as a
+    ///     parameter.
+    /// </param>
+    /// <param name="ct">Token to cancel the request</param>
+    /// <typeparam name="T">Type of the expected response</typeparam>
     public static void ClusterRequestReenter<T>(
         this IContext context,
         string identity,
@@ -45,6 +93,20 @@ public static class Extensions
         context.ReenterAfter(task, callback);
     }
 
+    /// <summary>
+    ///     Sends a request to a cluster identity and calls the provided callback when the response is received. The callback
+    ///     is executed within the
+    ///     actor's concurrency constraint.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="clusterIdentity"><see cref="ClusterIdentity" /> to send to</param>
+    /// <param name="message">Message to send</param>
+    /// <param name="callback">
+    ///     Callback that will be called after request is finished. It receives the request task as a
+    ///     parameter.
+    /// </param>
+    /// <param name="ct">Token to cancel the request</param>
+    /// <typeparam name="T">Type of the expected response</typeparam>
     public static void ClusterRequestReenter<T>(
         this IContext context,
         ClusterIdentity clusterIdentity,
@@ -58,9 +120,6 @@ public static class Extensions
         context.ReenterAfter(task, callback);
     }
 
-    public static Props WithClusterIdentity(this Props props, ClusterIdentity clusterIdentity)
-        => props.WithOnInit(context => context.Set(clusterIdentity));
-
     internal static Props WithClusterKind(
         this Props props,
         ActivatedClusterKind clusterKind
@@ -69,31 +128,50 @@ public static class Extensions
         return props
             .WithReceiverMiddleware(
                 baseReceive =>
-                    (ctx, env) => {
+                    (ctx, env) =>
+                    {
                         return env.Message switch
                         {
-                            Started => HandleStart(baseReceive, ctx, env),
-                            Stopped => HandleStopped(baseReceive, ctx, env),
-                            _       => baseReceive(ctx, env)
+                            Started    => HandleStarted(baseReceive, ctx, env),
+                            Restarting => HandleRestarting(baseReceive, ctx, env),
+                            Stopped    => HandleStopped(baseReceive, ctx, env),
+                            _          => baseReceive(ctx, env)
                         };
                     }
             );
 
-        async Task HandleStart(
+        async Task HandleStarted(
             Receiver baseReceive,
             IReceiverContext ctx,
             MessageEnvelope startEnvelope
         )
         {
-            await baseReceive(ctx, startEnvelope);
-            var identity = ctx.Get<ClusterIdentity>();
-            var cluster = ctx.System.Cluster();
-#pragma warning disable 618
-            var grainInit = new ClusterInit(identity!, cluster);
-#pragma warning restore 618
-            var grainInitEnvelope = new MessageEnvelope(grainInit, null);
             clusterKind.Inc();
-            await baseReceive(ctx, grainInitEnvelope);
+            try
+            {
+                await baseReceive(ctx, startEnvelope).ConfigureAwait(false);
+            }
+            catch
+            {
+                //if start fails, we need to decrement the counter
+                clusterKind.Dec();
+                throw;
+            }
+        }
+
+        async Task HandleRestarting(
+            Receiver baseReceive,
+            IReceiverContext ctx,
+            MessageEnvelope restartingEnvelope
+        )
+        {
+            await baseReceive(ctx, restartingEnvelope).ConfigureAwait(false);
+
+            // at this point the counter has been incremented by the Starting handler
+            // Restarting means that the actor is currently stopping (but it won't get Stopping message)
+            // the counter needs to be decremented to prepare for the Started message that follows next
+            // (unless the base handler for Restarting throws, but then we don't reach the decrement line)
+            clusterKind.Dec();
         }
 
         async Task HandleStopped(
@@ -109,14 +187,16 @@ public static class Extensions
             if (identity is not null)
             {
                 ctx.System.EventStream.Publish(new ActivationTerminating
-                {
-                    Pid = ctx.Self,
-                    ClusterIdentity = identity,
-                });
+                    {
+                        Pid = ctx.Self,
+                        ClusterIdentity = identity
+                    }
+                );
+
                 cluster.PidCache.RemoveByVal(identity, ctx.Self);
             }
 
-            await baseReceive(ctx, stopEnvelope);
+            await baseReceive(ctx, stopEnvelope).ConfigureAwait(false);
         }
     }
 
@@ -129,12 +209,14 @@ public static class Extensions
     /// <param name="props"></param>
     /// <param name="deduplicationWindow"></param>
     /// <returns></returns>
-    public static Props WithClusterRequestDeduplication(this Props props, TimeSpan? deduplicationWindow = null)
-        => props.WithContextDecorator(context => {
+    public static Props WithClusterRequestDeduplication(this Props props, TimeSpan? deduplicationWindow = null) =>
+        props.WithContextDecorator(context =>
+            {
                 var cluster = context.System.Cluster();
                 var memberList = cluster.MemberList;
 
-                return new DeduplicationContext<PidRef>(context, deduplicationWindow ?? cluster.Config.ClusterRequestDeDuplicationWindow,
+                return new DeduplicationContext<PidRef>(context,
+                    deduplicationWindow ?? cluster.Config.ClusterRequestDeDuplicationWindow,
                     TryGetRef
                 );
 
@@ -146,10 +228,12 @@ public static class Extensions
                         memberList.TryGetMemberIndexByAddress(pid.Address, out var memberId))
                     {
                         pidRef = new PidRef(memberId, id, pid.RequestId);
+
                         return true;
                     }
 
                     pidRef = default;
+
                     return false;
                 }
             }
@@ -168,7 +252,8 @@ public static class Extensions
             RequestId = requestId;
         }
 
-        public bool Equals(PidRef other) => MemberId == other.MemberId && Id == other.Id && RequestId == other.RequestId;
+        public bool Equals(PidRef other) =>
+            MemberId == other.MemberId && Id == other.Id && RequestId == other.RequestId;
 
         public override bool Equals(object? obj) => obj is PidRef other && Equals(other);
 

@@ -15,4 +15,5 @@ message GrainResponse {
 
 message GrainErrorResponse {
   string err = 1;
+  string code = 2;
 }

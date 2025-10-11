@@ -1,28 +1,22 @@
 // -----------------------------------------------------------------------
 // <copyright file="IGossipInternal.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
-using Proto.Logging;
 
 namespace Proto.Cluster.Gossip;
 
-/// <summary>
-///     memberStateDelta is the delta state
-///     member is the target member
-///     logger is the instance logger
-/// </summary>
-public delegate void SendStateAction(MemberStateDelta memberStateDelta, Member member, InstanceLogger? logger);
-
-interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
+public interface IGossip : IGossipStateStore, IGossipConsensusChecker, IGossipCore
 {
 }
 
-interface IGossipCore
+public interface IGossipCore
 {
     Task UpdateClusterTopology(ClusterTopology clusterTopology);
 
@@ -34,22 +28,19 @@ interface IGossipCore
     ImmutableList<GossipUpdate> ReceiveState(GossipState remoteState);
 
     /// <summary>
-    ///     Sends the gossip to a random set of receiving members
+    ///     Produces the gossip state for a random set of receiving members
     /// </summary>
-    /// <param name="sendStateToMember"></param>
-    void SendState(SendStateAction sendStateToMember);
-
-    MemberStateDelta GetMemberStateDelta(string targetMemberId);
+    IEnumerable<(Member member, MemberStateDelta memberState)> SendState();
 }
 
-interface IGossipConsensusChecker
+public interface IGossipConsensusChecker
 {
     void AddConsensusCheck(string id, ConsensusCheck check);
 
     void RemoveConsensusCheck(string id);
 }
 
-interface IGossipStateStore
+public interface IGossipStateStore
 {
     GossipState GetStateSnapshot();
 

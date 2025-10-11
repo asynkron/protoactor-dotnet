@@ -1,14 +1,16 @@
+using JetBrains.Annotations;
 using MongoDB.Bson.Serialization.Attributes;
+
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace Proto.Cluster.Identity.MongoDb;
 
-[JetBrains.Annotations.UsedImplicitly]
+[UsedImplicitly]
 public class PidLookupEntity
 {
-    [BsonId]
-    public string Key { get; set; } = default!;
+    [BsonId] public string Key { get; set; } = default!;
+
     public string Identity { get; set; } = default!;
     public string? UniqueIdentity { get; set; } = default!;
     public string Kind { get; set; } = default!;

@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
 // <copyright file="AgentServiceRegistration.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 namespace Proto.Cluster.Testing;
 
 public class AgentServiceRegistration

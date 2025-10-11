@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
+using Proto;
 using Proto.TestFixtures;
+using Proto.TestKit;
 using Xunit;
 
 namespace Proto.Tests;
@@ -14,38 +15,30 @@ public class WatchTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        long counter = 0;
-        var childProps = Props.FromFunc(ctx => {
-                switch (ctx.Message)
-                {
-                    case Started _:
-                        ctx.Stop(ctx.Self);
-                        ctx.Stop(ctx.Self);
-                        break;
-                }
+        var (probe, probePid) = system.CreateTestProbe();
 
-                return Task.CompletedTask;
+        // child stops itself twice when receiving "stop"
+        var childProps = Props.FromFunc(ctx =>
+        {
+            if (ctx.Message is "stop")
+            {
+                ctx.Stop(ctx.Self);
+                ctx.Stop(ctx.Self);
             }
-        );
 
-        context.Spawn(Props.FromFunc(ctx => {
-                    switch (ctx.Message)
-                    {
-                        case Started _:
-                            ctx.Spawn(childProps);
-                            break;
-                        case Terminated _:
-                            Interlocked.Increment(ref counter);
-                            break;
-                    }
+            return Task.CompletedTask;
+        });
 
-                    return Task.CompletedTask;
-                }
-            )
-        );
+        var child = context.Spawn(childProps);
 
-        await Task.Delay(1000);
-        Assert.Equal(1, Interlocked.Read(ref counter));
+        // register probe as watcher for the child
+        child.SendSystemMessage(system, new Watch(probePid));
+
+        context.Send(child, "stop");
+
+        await probe.ExpectNextSystemMessageAsync<Terminated>(t => Equals(t.Who, child));
+        // ensure no additional messages are left in the probe
+        await probe.ExpectEmptyMailboxAsync();
     }
 
     [Fact]
@@ -54,41 +47,32 @@ public class WatchTests
         await using var system = new ActorSystem();
         var context = system.Root;
 
-        var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor())
-            .WithMailbox(() => new TestMailbox())
-        );
-        var watcher = context.Spawn(Props.FromProducer(() => new LocalActor(watchee))
-            .WithMailbox(() => new TestMailbox())
-        );
+        var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor()));
+
+        var (probe, probePid) = system.CreateTestProbe();
+
+        watchee.SendSystemMessage(system, new Watch(probePid));
 
         await context.StopAsync(watchee);
-        var terminatedMessageReceived = await context.RequestAsync<bool>(watcher, "?", TimeSpan.FromSeconds(5));
-        Assert.True(terminatedMessageReceived);
+
+        await probe.ExpectNextSystemMessageAsync<Terminated>(t => Equals(t.Who, watchee));
     }
 
-    public class LocalActor : IActor
+    [Fact]
+    public async Task UnwatchPreventsTerminatedMessage()
     {
-        private readonly PID _watchee;
-        private bool _terminateReceived;
+        await using var system = new ActorSystem();
+        var context = system.Root;
 
-        public LocalActor(PID watchee) => _watchee = watchee;
+        var watchee = context.Spawn(Props.FromProducer(() => new DoNothingActor()));
 
-        public Task ReceiveAsync(IContext ctx)
-        {
-            switch (ctx.Message)
-            {
-                case Started _:
-                    ctx.Watch(_watchee);
-                    break;
-                case string msg when msg == "?":
-                    ctx.Respond(_terminateReceived);
-                    break;
-                case Terminated _:
-                    _terminateReceived = true;
-                    break;
-            }
+        var (probe, probePid) = system.CreateTestProbe();
 
-            return Task.CompletedTask;
-        }
+        watchee.SendSystemMessage(system, new Watch(probePid));
+        watchee.SendSystemMessage(system, new Unwatch(probePid));
+
+        await context.StopAsync(watchee);
+
+        await probe.ExpectNoMessageAsync(TimeSpan.FromMilliseconds(100));
     }
 }

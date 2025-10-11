@@ -1,10 +1,12 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="BoundedMailboxQueue.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2025 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace Proto.Mailbox;
 
@@ -14,16 +16,19 @@ public class BoundedMailboxQueue : IMailboxQueue
     private volatile bool _hasMessages;
     private long _length;
 
-    public BoundedMailboxQueue(int size) => _messages = Channel.CreateBounded<object>(size);
+    public BoundedMailboxQueue(int size, BoundedChannelFullMode fullMode = BoundedChannelFullMode.Wait)
+    {
+        _messages = Channel.CreateBounded<object>(new BoundedChannelOptions(size)
+        {
+            FullMode = fullMode
+        });
+    }
 
     public int Length => (int)Interlocked.Read(ref _length);
 
     public void Push(object message)
     {
-        while (!_messages.Writer.TryWrite(message))
-        {
-            Thread.Sleep(50);
-        }
+        _messages.Writer.WriteAsync(message).AsTask().GetAwaiter().GetResult();
 
         Interlocked.Increment(ref _length);
     }
@@ -35,7 +40,10 @@ public class BoundedMailboxQueue : IMailboxQueue
             Interlocked.Decrement(ref _length);
             _hasMessages = true;
         }
-        else _hasMessages = false;
+        else
+        {
+            _hasMessages = false;
+        }
 
         return message;
     }

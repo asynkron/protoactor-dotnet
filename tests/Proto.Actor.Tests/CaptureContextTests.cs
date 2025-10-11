@@ -1,8 +1,9 @@
 // -----------------------------------------------------------------------
 // <copyright file="CaptureContextTests.cs" company="Asynkron AB">
-//      Copyright (C) 2015-2022 Asynkron AB All rights reserved
+//      Copyright (C) 2015-2024 Asynkron AB All rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -38,6 +39,7 @@ public class CaptureContextActor : IActor
         if (context.Message is Unstash unStash)
         {
             await ProcessStash(context, unStash);
+
             return;
         }
 
@@ -64,6 +66,7 @@ public class CaptureContextActor : IActor
     public Task RunningBehavior(IContext context)
     {
         _results.Enqueue(new UnstashResult(context.Message!, context.Sender!));
+
         return Task.CompletedTask;
     }
 }
@@ -73,7 +76,8 @@ public class CaptureContextTests
     [Fact]
     public async Task can_receive_captured_context()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var results = new Queue<UnstashResult>();
@@ -100,7 +104,8 @@ public class CaptureContextTests
     [Fact]
     public async Task can_continue_after_processing_capture()
     {
-        await using var system = new ActorSystem();
+        var system = new ActorSystem();
+        await using var _ = system;
         var context = system.Root;
 
         var results = new Queue<UnstashResult>();

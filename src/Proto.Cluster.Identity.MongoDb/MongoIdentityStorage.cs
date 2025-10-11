@@ -28,7 +28,8 @@ public sealed class MongoIdentityStorage : IIdentityStorage
     )
     {
         var requestId = Guid.NewGuid().ToString();
-        var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId, ct);
+        var hasLock = await TryAcquireLockAsync(clusterIdentity, requestId, ct).ConfigureAwait(false);
+
         return hasLock ? new SpawnLock(requestId, clusterIdentity) : null;
     }
 
@@ -38,19 +39,25 @@ public sealed class MongoIdentityStorage : IIdentityStorage
     )
     {
         var key = GetKey(clusterIdentity);
-        var pidLookupEntity = await LookupKey(key, ct);
+        var pidLookupEntity = await LookupKey(key, ct).ConfigureAwait(false);
         var lockId = pidLookupEntity?.LockedBy;
 
         if (lockId != null)
         {
-            //There is an active lock on the pid, spin wait
+            //There is an active lock on the pid, spin wait with incremental backoff
             var i = 0;
-            do await Task.Delay(20 * i, ct);
-            while ((pidLookupEntity = await LookupKey(key, ct))?.LockedBy == lockId && ++i < 10);
+
+            do
+            {
+                await Task.Delay(20 * i, ct).ConfigureAwait(false);
+            } while ((pidLookupEntity = await LookupKey(key, ct).ConfigureAwait(false))?.LockedBy == lockId && ++i < 10);
         }
 
         //the lookup entity was lost, stale lock maybe?
-        if (pidLookupEntity == null) return null;
+        if (pidLookupEntity == null)
+        {
+            return null;
+        }
 
         //lookup was unlocked, return this pid
         if (pidLookupEntity.LockedBy == null)
@@ -61,21 +68,26 @@ public sealed class MongoIdentityStorage : IIdentityStorage
         }
 
         //Still locked but not by the same request that originally locked it, so not stale
-        if (pidLookupEntity.LockedBy != lockId) return null;
+        if (pidLookupEntity.LockedBy != lockId)
+        {
+            return null;
+        }
 
         //Stale lock. just delete it and let cluster retry
         // _logger.LogDebug($"Stale lock: {pidLookupEntity.Key}");
-        await RemoveLock(new SpawnLock(lockId, clusterIdentity), CancellationToken.None);
+        await RemoveLock(new SpawnLock(lockId, clusterIdentity), CancellationToken.None).ConfigureAwait(false);
+
         return null;
     }
 
-    public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct)
-        => _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.LockedBy == spawnLock.LockId, ct));
+    public Task RemoveLock(SpawnLock spawnLock, CancellationToken ct) =>
+        _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.LockedBy == spawnLock.LockId, ct));
 
     public async Task StoreActivation(string memberId, SpawnLock spawnLock, PID pid, CancellationToken ct)
     {
         Logger.LogDebug("Storing activation: {@ActivatorId}, {@SpawnLock}, {@PID}", memberId, spawnLock, pid);
         var key = GetKey(spawnLock.ClusterIdentity);
+
         var res = await _asyncSemaphore.WaitAsync(() => _pids.UpdateOneAsync(
                 s => s.Key == key && s.LockedBy == spawnLock.LockId && s.Revision == 1,
                 Builders<PidLookupEntity>.Update
@@ -86,9 +98,12 @@ public sealed class MongoIdentityStorage : IIdentityStorage
                     .Unset(l => l.LockedBy)
                 , new UpdateOptions(), ct
             )
-        );
+        ).ConfigureAwait(false);
+
         if (res.MatchedCount != 1)
+        {
             throw new LockNotFoundException($"Failed to store activation of {pid}");
+        }
     }
 
     public async Task RemoveActivation(ClusterIdentity clusterIdentity, PID pid, CancellationToken ct)
@@ -96,18 +111,21 @@ public sealed class MongoIdentityStorage : IIdentityStorage
         Logger.LogDebug("Removing activation: {ClusterIdentity} {@PID}", clusterIdentity, pid);
 
         var key = GetKey(clusterIdentity);
-        await _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.Key == key && p.UniqueIdentity == pid.Id, ct));
+
+        await _asyncSemaphore.WaitAsync(
+            () => _pids.DeleteManyAsync(p => p.Key == key && p.UniqueIdentity == pid.Id, ct)).ConfigureAwait(false);
     }
 
-    public Task RemoveMember(string memberId, CancellationToken ct)
-        => _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.MemberId == memberId, ct));
+    public Task RemoveMember(string memberId, CancellationToken ct) =>
+        _asyncSemaphore.WaitAsync(() => _pids.DeleteManyAsync(p => p.MemberId == memberId, ct));
 
     public async Task<StoredActivation?> TryGetExistingActivation(
         ClusterIdentity clusterIdentity,
         CancellationToken ct
     )
     {
-        var pidLookup = await LookupKey(GetKey(clusterIdentity), ct);
+        var pidLookup = await LookupKey(GetKey(clusterIdentity), ct).ConfigureAwait(false);
+
         return pidLookup?.Address == null || pidLookup?.UniqueIdentity == null
             ? null
             : new StoredActivation(pidLookup.MemberId!,
@@ -128,6 +146,7 @@ public sealed class MongoIdentityStorage : IIdentityStorage
     )
     {
         var key = GetKey(clusterIdentity);
+
         var lockEntity = new PidLookupEntity
         {
             Address = null,
@@ -142,24 +161,29 @@ public sealed class MongoIdentityStorage : IIdentityStorage
         try
         {
             //be 100% sure own the lock here
-            await _asyncSemaphore.WaitAsync(() => _pids.InsertOneAsync(lockEntity, new InsertOneOptions(), ct));
+            await _asyncSemaphore.WaitAsync(() => _pids.InsertOneAsync(lockEntity, new InsertOneOptions(), ct)).ConfigureAwait(false);
             Logger.LogDebug("Got lock on first try for {ClusterIdentity}", clusterIdentity);
+
             return true;
         }
         catch (MongoWriteException)
         {
-            var l = await _asyncSemaphore.WaitAsync(() => _pids.ReplaceOneAsync(x => x.Key == key && x.LockedBy == null && x.Revision == 0,
+            var l = await _asyncSemaphore.WaitAsync(() => _pids.ReplaceOneAsync(
+                    x => x.Key == key && x.LockedBy == null && x.Revision == 0,
                     lockEntity,
                     new ReplaceOptions
                     {
                         IsUpsert = false
                     }, ct
                 )
-            );
+            ).ConfigureAwait(false);
 
             //if l.MatchCount == 1, then one document was updated by us, and we should own the lock, no?
             var gotLock = l.IsAcknowledged && l.ModifiedCount == 1;
-            Logger.LogDebug("Did {Got}get lock on second try for {ClusterIdentity}", gotLock ? "" : "not ", clusterIdentity);
+
+            Logger.LogDebug("Did {Got}get lock on second try for {ClusterIdentity}", gotLock ? "" : "not ",
+                clusterIdentity);
+
             return gotLock;
         }
     }
@@ -168,7 +192,9 @@ public sealed class MongoIdentityStorage : IIdentityStorage
     {
         try
         {
-            var res = await _asyncSemaphore.WaitAsync(() => _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct));
+            var res = await _asyncSemaphore.WaitAsync(() =>
+                _pids.Find(x => x.Key == key).Limit(1).SingleOrDefaultAsync(ct)).ConfigureAwait(false);
+
             return res;
         }
         catch (MongoConnectionException x)
@@ -176,7 +202,7 @@ public sealed class MongoIdentityStorage : IIdentityStorage
             Logger.LogWarning(x, "Mongo connection failure, retrying");
         }
 
-        throw new StorageFailure($"Failed to connect to MongoDB while looking up key {key}");
+        throw new StorageFailureException($"Failed to connect to MongoDB while looking up key {key}");
     }
 
     private string GetKey(ClusterIdentity clusterIdentity) => $"{_clusterName}/{clusterIdentity}";

@@ -1,0 +1,142 @@
+@page "/ActorDiagram"
+@using Proto.Remote
+@using Grpc.Net.Client
+@using Proto.Cluster.Dashboard.Shared
+@inject ActorSystem System
+@inject DashboardSettings Settings
+@inject IJSRuntime JsRuntime;
+<div class="px-4">
+    @if (_root != null)
+    {
+        <MudPaper Elevation="2" Outlined>
+            <MudTreeView
+
+                Height="300px"
+                MaxHeight="300px"
+                ServerData="LoadServerData"
+                Items="_root.Children"
+                MultiSelection="false"
+                Hover="true"
+                SelectedValueChanged="(TreeNode node) => SelectedValueChanged(node)">
+                <ItemTemplate>
+                    <MudTreeViewItem
+                        Icon="@(context.Pid == null ? Icons.Material.Filled.Computer : Icons.Material.Filled.Circle)"
+                        IconColor="Color.Success"
+                        Value="@context"
+                        LoadingIconColor="Color.Info"
+                        EndText="@context.Pid?.ToString()"
+                        EndTextTypo="Typo.caption"
+                        Text="@context.Name"/>
+                </ItemTemplate>
+            </MudTreeView>
+        </MudPaper>
+    }
+
+    @if (_selected?.Pid != null)
+    {
+        @if (Settings != null)
+        {
+            <MudPaper Elevation="2" class="my-4 pa-4" Outlined>
+                <MudButton Color="Color.Info" StartIcon="@Icons.Filled.TableRows" Variant="Variant.Filled" OnClick="OpenLogs">Logs for this actor</MudButton>
+                <MudButton Color="Color.Info" StartIcon="@Icons.Filled.AccountTree" Variant="Variant.Filled" OnClick="OpenTraces">Traces for this actor</MudButton>
+            </MudPaper>
+        }
+        <ActorDiagnosticsWidget PidId="@_selected.Pid.Id" Diagnostics="@_diagnostics"/>
+    }
+    else
+    {
+        <MudPaper Elevation="2" class="my-4 pa-4" Outlined>
+            <MudAlert Variant="Variant.Filled" Severity="Severity.Info">
+                No Selection
+            </MudAlert>
+        </MudPaper>
+    }
+</div>
+
+@code {
+    private TreeNode? _root;
+    private TreeNode? _selected;
+    private string? _diagnostics;
+
+    private void SelectedValueChanged(TreeNode? x)
+    {
+        _selected = x;
+        if (x?.Pid == null)
+        {
+            return;
+        }
+
+        _selected = x;
+        _ = GetDiagnostics(x.Pid);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync().ConfigureAwait(false);
+
+        var members = System.Cluster().MemberList.GetAllMembers();
+
+        var pids = new List<PID>();
+        foreach (var member in members)
+        {
+            var client = GetClient(member.Address);
+            var res = await client.ListProcessesAsync(new ListProcessesRequest
+            {
+                Pattern = ""
+            });
+            pids.AddRange(res.Pids);
+        }
+
+        var root = new TreeNode();
+        foreach (var pid in pids)
+        {
+    //ignore futures and internals
+            if (pid.Id.StartsWith("$")) continue;
+
+            var treeNode = root.GetChildFor(pid);
+        }
+        _root = root;
+        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+    }
+
+    private Remoting.RemotingClient GetClient(string address)
+    {
+        var channel = GrpcChannel.ForAddress($"http://{address}");
+        var client = new Remoting.RemotingClient(channel);
+        return client;
+    }
+
+    private async Task GetDiagnostics(PID pid)
+    {
+        _diagnostics = "";
+        var client = GetClient(pid.Address);
+        var res = await client.GetProcessDiagnosticsAsync(new GetProcessDiagnosticsRequest
+        {
+            Pid = pid
+        });
+        Console.WriteLine(res.DiagnosticsString);
+        _diagnostics = res.DiagnosticsString;
+        StateHasChanged();
+    }
+
+    private Task<HashSet<TreeNode>> LoadServerData(TreeNode parentNode) => Task.FromResult(parentNode.Children);
+
+    private async Task OpenLogs()
+    {
+        if (_selected?.Pid == null) return;
+
+        var pidStr = _selected.Pid.ToString();
+        var url = Settings.LogSearchPattern!.Replace("%PID%", pidStr);
+        await JsRuntime.InvokeAsync<object>("open", new object[] { url, "_blank" }).ConfigureAwait(false);
+    }
+
+    private async Task OpenTraces()
+    {
+        if (_selected?.Pid == null) return;
+
+        var pidStr = _selected.Pid.ToString();
+        var url = Settings.TraceSearchPattern!.Replace("%PID%", pidStr);
+        await JsRuntime.InvokeAsync<object>("open", new object[] { url, "_blank" }).ConfigureAwait(false);
+    }
+
+}
