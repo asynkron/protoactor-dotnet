@@ -48,15 +48,15 @@ public sealed class ActorContext : IMessageInvoker, IContext, ISupervisor
         Self = self;
 
         Actor = IncarnateActor();
-        using var publishActivity = ActorSystem.ActivitySource.StartActivity($"Spawn {Actor.GetType().Name}");
-        publishActivity?.AddTag(ProtoTags.ActorType, Actor.GetType().Name);
+        using var publishActivity = ActorSystem.ActivitySource.StartActivity($"Spawn {Actor.GetActorTypeName()}");
+        publishActivity?.AddTag(ProtoTags.ActorType, Actor.GetActorTypeName());
         publishActivity?.AddTag(ProtoTags.ActorPID, self);
         publishActivity?.AddTag(ProtoTags.ActionType, "Spawn");
 
         if (System.Metrics.Enabled)
         {
             _metricTags = new KeyValuePair<string, object?>[]
-                { new("id", System.Id), new("address", System.Address), new("actortype", Actor.GetType().Name) };
+                { new("id", System.Id), new("address", System.Address), new("actortype", Actor.GetActorTypeName()) };
 
             ActorMetrics.ActorSpawnCount.Add(1, _metricTags);
         }
@@ -315,9 +315,9 @@ public sealed class ActorContext : IMessageInvoker, IContext, ISupervisor
         if (System.Config.DeveloperSupervisionLogging)
         {
             Console.WriteLine(
-                $"[Supervision] Actor {Self} : {Actor.GetType().Name} failed with message:{message} exception:{reason}");
+                $"[Supervision] Actor {Self} : {Actor.GetActorTypeName()} failed with message:{message} exception:{reason}");
 
-            Logger.EscalateFailure(reason, Self, Actor.GetType().Name, message);
+            Logger.EscalateFailure(reason, Self, Actor.GetActorTypeName(), message);
         }
 
         ActorMetrics.ActorFailureCount.Add(1, _metricTags);
@@ -438,7 +438,7 @@ public sealed class ActorContext : IMessageInvoker, IContext, ISupervisor
 
     private Task HandleProcessDiagnosticsRequest(ProcessDiagnosticsRequest processDiagnosticsRequest)
     {
-        var diagnosticsString = "ActorType:" + Actor.GetType().Name + "\n";
+        var diagnosticsString = "ActorType:" + Actor.GetActorTypeName() + "\n";
 
         if (Actor is IActorDiagnostics diagnosticsActor)
         {
