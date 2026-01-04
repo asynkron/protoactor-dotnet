@@ -42,19 +42,7 @@ public class SeedNodeClusterProvider : IClusterProvider
         );
 
         cluster.System.EventStream.Subscribe<ClusterTopology>(cluster.System.Root, _pid);
-        var result = await cluster.System.Root
-            .RequestAsync<object>(_pid, new Connect(), _cts.Token)
-            .ConfigureAwait(false);
-
-        switch (result)
-        {
-            case Connected connected:
-                Logger.LogInformation("Connected to seed nodes");
-
-                break;
-            default:
-                throw new Exception("Failed to join any seed node");
-        }
+        await ConnectToSeedNodesAsync("seed nodes").ConfigureAwait(false);
 
         if (_options.Discovery != null)
         {
@@ -75,18 +63,22 @@ public class SeedNodeClusterProvider : IClusterProvider
         _cluster = cluster;
         var props = SeedClientNodeActor.Props(_options, Logger);
         _pid = cluster.System.Root.SpawnNamedSystem(props, SeedClientNodeActor.Name);
-        var result = await cluster.System.Root
-            .RequestAsync<object>(_pid, new Connect(), _cts.Token)
+        await ConnectToSeedNodesAsync("seed node").ConfigureAwait(false);
+    }
+
+    private async Task ConnectToSeedNodesAsync(string nodeDescription)
+    {
+        var result = await _cluster.System.Root
+            .RequestAsync<object>(_pid!, new Connect(), _cts.Token)
             .ConfigureAwait(false);
 
         switch (result)
         {
-            case Connected connected:
-                Logger.LogInformation("Connected to seed node");
-
+            case Connected:
+                Logger.LogInformation("Connected to {NodeDescription}", nodeDescription);
                 break;
             default:
-                throw new Exception("Failed to join any seed node");
+                throw new Exception($"Failed to join any {nodeDescription}");
         }
     }
 

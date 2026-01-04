@@ -15,22 +15,13 @@ using Proto.Utils;
 namespace Proto.Cluster.AmazonECS;
 
 [PublicAPI]
-public class AmazonEcsProvider : IClusterProvider
+public class AmazonEcsProvider : BaseClusterProvider
 {
-    private static readonly ILogger Logger = Log.CreateLogger<AmazonEcsProvider>();
+    private static readonly ILogger _logger = Log.CreateLogger<AmazonEcsProvider>();
     private readonly AmazonECSClient _client;
     private readonly AmazonEcsProviderConfig _config;
     private readonly string _ecsClusterName;
-
-    private string _address;
-    private Cluster _cluster;
-
-    private string _clusterName;
-    private string _host;
-    private string[] _kinds;
-    private MemberList _memberList;
-    private int _port;
-    private string _taskArn;
+    private readonly string _taskArn;
 
     public AmazonEcsProvider(AmazonECSClient client, string ecsClusterName, string taskArn,
         AmazonEcsProviderConfig config)
@@ -41,52 +32,11 @@ public class AmazonEcsProvider : IClusterProvider
         _taskArn = taskArn;
     }
 
-    public async Task StartMemberAsync(Cluster cluster)
-    {
-        var memberList = cluster.MemberList;
-        var clusterName = cluster.Config.ClusterName;
-        var (host, port) = cluster.System.GetAddress();
-        var kinds = cluster.GetClusterKinds();
-        _cluster = cluster;
-        _memberList = memberList;
-        _clusterName = clusterName;
-        _host = host;
-        _port = port;
-        _kinds = kinds;
-        _address = $"{host}:{port}";
-        StartClusterMonitor();
-        await RegisterMemberAsync().ConfigureAwait(false);
-    }
+    protected override ILogger Logger => _logger;
 
-    public Task StartClientAsync(Cluster cluster)
-    {
-        var memberList = cluster.MemberList;
-        var clusterName = cluster.Config.ClusterName;
-        var (host, port) = cluster.System.GetAddress();
-        _cluster = cluster;
-        _memberList = memberList;
-        _clusterName = clusterName;
-        _host = host;
-        _port = port;
-        _kinds = Array.Empty<string>();
-        StartClusterMonitor();
+    public override async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync().ConfigureAwait(false);
 
-        return Task.CompletedTask;
-    }
-
-    public async Task ShutdownAsync(bool graceful) => await DeregisterMemberAsync().ConfigureAwait(false);
-
-    public async Task RegisterMemberAsync()
-    {
-        await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever).ConfigureAwait(false);
-
-        static void OnError(int attempt, Exception exception) =>
-            Logger.LogWarning(exception, "Failed to register service");
-
-        static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to register service");
-    }
-
-    public async Task RegisterMemberInner()
+    protected override async Task RegisterMemberInner()
     {
         Logger.LogInformation("[Cluster][AmazonEcsProvider] Registering service {PodName} on {PodIp}", _taskArn,
             _address);
@@ -114,7 +64,7 @@ public class AmazonEcsProvider : IClusterProvider
         }
     }
 
-    private void StartClusterMonitor() =>
+    protected override void StartClusterMonitor() =>
         _ = SafeTask.Run(async () =>
             {
                 while (!_cluster.System.Shutdown.IsCancellationRequested)
@@ -146,14 +96,15 @@ public class AmazonEcsProvider : IClusterProvider
             }
         );
 
-    public async Task DeregisterMemberAsync()
+    private async Task DeregisterMemberAsync()
     {
+        var logger = Logger;
         await Retry.Try(DeregisterMemberInner, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
-        static void OnError(int attempt, Exception exception) =>
-            Logger.LogWarning(exception, "Failed to deregister service");
+        void OnError(int attempt, Exception exception) =>
+            logger.LogWarning(exception, "Failed to deregister service");
 
-        static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to deregister service");
+        void OnFailed(Exception exception) => logger.LogError(exception, "Failed to deregister service");
     }
 
     private async Task DeregisterMemberInner()

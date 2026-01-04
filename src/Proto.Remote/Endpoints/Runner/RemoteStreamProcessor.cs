@@ -1,6 +1,7 @@
 namespace Proto.Remote;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,39 +54,39 @@ internal static class RemoteStreamProcessor
         {
             while (endpoint.OutgoingStash.TryPop(out var messages))
             {
-                var batch = MessageBatchFactory.CreateBatch(system, remoteConfig, messages);
-                try
-                {
-                    var sw = Stopwatch.StartNew();
-                    await write(new RemoteMessage { MessageBatch = batch }, token).ConfigureAwait(false);
-                    sw.Stop();
-                    recordWriteDuration?.Invoke(sw.Elapsed.TotalSeconds);
-                }
-                catch (Exception)
-                {
-                    endpoint.OutgoingStash.Push(messages);
-                    cts.Cancel();
-                    throw;
-                }
+                await WriteBatchAsync(endpoint, system, remoteConfig, messages, write, token, cts, recordWriteDuration).ConfigureAwait(false);
             }
 
             await foreach (var messages in endpoint.Outgoing.Reader.ReadAllAsync(token).ConfigureAwait(false))
             {
-                var batch = MessageBatchFactory.CreateBatch(system, remoteConfig, messages);
-                try
-                {
-                    var sw = Stopwatch.StartNew();
-                    await write(new RemoteMessage { MessageBatch = batch }, token).ConfigureAwait(false);
-                    sw.Stop();
-                    recordWriteDuration?.Invoke(sw.Elapsed.TotalSeconds);
-                }
-                catch (Exception)
-                {
-                    endpoint.OutgoingStash.Push(messages);
-                    cts.Cancel();
-                    throw;
-                }
+                await WriteBatchAsync(endpoint, system, remoteConfig, messages, write, token, cts, recordWriteDuration).ConfigureAwait(false);
             }
+        }
+    }
+
+    private static async Task WriteBatchAsync(
+        IRemoteEndpoint endpoint,
+        ActorSystem system,
+        RemoteConfig remoteConfig,
+        RemoteDeliver[] messages,
+        Func<RemoteMessage, CancellationToken, Task> write,
+        CancellationToken token,
+        CancellationTokenSource cts,
+        Action<double>? recordWriteDuration)
+    {
+        var batch = MessageBatchFactory.CreateBatch(system, remoteConfig, messages);
+        try
+        {
+            var sw = Stopwatch.StartNew();
+            await write(new RemoteMessage { MessageBatch = batch }, token).ConfigureAwait(false);
+            sw.Stop();
+            recordWriteDuration?.Invoke(sw.Elapsed.TotalSeconds);
+        }
+        catch (Exception)
+        {
+            endpoint.OutgoingStash.Push(messages);
+            cts.Cancel();
+            throw;
         }
     }
 

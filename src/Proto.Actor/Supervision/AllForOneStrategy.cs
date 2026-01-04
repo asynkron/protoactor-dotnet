@@ -21,12 +21,9 @@ namespace Proto;
 ///     This strategy is appropriate when the children have a strong dependency, such that and any single one failing would
 ///     place them all into a potentially invalid state.
 /// </summary>
-public class AllForOneStrategy : ISupervisorStrategy
+public class AllForOneStrategy : BaseSupervisorStrategy
 {
     private static readonly ILogger Logger = Log.CreateLogger<AllForOneStrategy>();
-    private readonly Decider _decider;
-    private readonly int _maxNrOfRetries;
-    private readonly TimeSpan? _withinTimeSpan;
 
     /// <summary>
     ///     Creates a new instance of the <see cref="AllForOneStrategy" />
@@ -38,75 +35,13 @@ public class AllForOneStrategy : ISupervisorStrategy
     /// <param name="maxNrOfRetries">Number of restart retries before stopping the the children of the supervisor</param>
     /// <param name="withinTimeSpan">A time window to count <see cref="maxNrOfRetries" /> in</param>
     public AllForOneStrategy(Decider decider, int maxNrOfRetries, TimeSpan? withinTimeSpan)
+        : base(decider, maxNrOfRetries, withinTimeSpan)
     {
-        _decider = decider;
-        _maxNrOfRetries = maxNrOfRetries;
-        _withinTimeSpan = withinTimeSpan;
     }
 
-    public void HandleFailure(
-        ISupervisor supervisor,
-        PID child,
-        RestartStatistics rs,
-        Exception reason,
-        object? message
-    )
-    {
-        var directive = _decider(child, reason);
+    protected override PID[] GetTargetChildren(PID failingChild, ISupervisor supervisor)
+        => supervisor.Children.ToArray();
 
-        switch (directive)
-        {
-            case SupervisorDirective.Resume:
-                LogInfo("Resuming");
-                supervisor.ResumeChildren(child);
-
-                break;
-            case SupervisorDirective.Restart:
-                if (ShouldStop(rs))
-                {
-                    LogInfo("Stopping");
-                    supervisor.StopChildren(supervisor.Children.ToArray());
-                }
-                else
-                {
-                    LogInfo("Restarting");
-                    supervisor.RestartChildren(reason, supervisor.Children.ToArray());
-                }
-
-                break;
-            case SupervisorDirective.Stop:
-                LogInfo("Stopping");
-                supervisor.StopChildren(supervisor.Children.ToArray());
-
-                break;
-            case SupervisorDirective.Escalate:
-                supervisor.EscalateFailure(reason, message);
-
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-
-        void LogInfo(string action) =>
-            Logger.AllForOneStrategyAction(action, child, reason);
-    }
-
-    private bool ShouldStop(RestartStatistics rs)
-    {
-        if (_maxNrOfRetries == 0)
-        {
-            return true;
-        }
-
-        rs.Fail();
-
-        if (rs.NumberOfFailures(_withinTimeSpan) > _maxNrOfRetries)
-        {
-            rs.Reset();
-
-            return true;
-        }
-
-        return false;
-    }
+    protected override void LogAction(string action, PID child, Exception reason)
+        => Logger.AllForOneStrategyAction(action, child, reason);
 }

@@ -46,10 +46,7 @@ public class SingleNodeLookup : IIdentityLookup
 
         if (_cluster.System.Metrics.Enabled)
         {
-            IdentityMetrics.ActivationRequestSentCount.Add(1,
-                new KeyValuePair<string, object?>("id", _cluster.System.Id),
-                new KeyValuePair<string, object?>("address", _cluster.System.Address),
-                new KeyValuePair<string, object?>("clusterkind", clusterIdentity.Kind));
+            IdentityMetrics.RecordActivationRequestSent(_cluster.System, clusterIdentity.Kind);
         }
 
         try

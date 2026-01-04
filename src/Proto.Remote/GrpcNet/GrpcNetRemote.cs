@@ -14,31 +14,20 @@ using Proto.Diagnostics;
 
 namespace Proto.Remote.GrpcNet;
 
-public class GrpcNetRemote : IRemote
+public class GrpcNetRemote : BaseGrpcNetRemote
 {
-    private readonly RemoteConfig _config;
-    private readonly object _lock = new();
-    private readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
+    private static readonly ILogger _logger = Log.CreateLogger<GrpcNetRemote>();
     private EndpointManager _endpointManager = null!;
     private RemotingGrpcService _remotingGrpcService = null!;
     private HealthServiceImpl _healthCheck = null!;
     private IWebHost? _host;
 
-    public GrpcNetRemote(ActorSystem system, RemoteConfig config)
+    public GrpcNetRemote(ActorSystem system, RemoteConfig config) : base(system, config)
     {
-        System = system;
-        BlockList = new BlockList(system);
-        _config = config;
-        System.Extensions.Register(this);
-        System.Extensions.Register(config.Serialization);
     }
 
-    public bool Started { get; private set; }
-
-    public BlockList BlockList { get; }
-
-    public RemoteConfig Config => _config;
-    public ActorSystem System { get; }
+    protected override ILogger Logger => _logger;
+    protected override EndpointManager EndpointManager => _endpointManager;
 
     public async Task<DiagnosticsEntry[]> GetDiagnostics()
     {
@@ -47,7 +36,7 @@ public class GrpcNetRemote : IRemote
         return endpoints;
     }
 
-    public Task StartAsync()
+    public override Task StartAsync()
     {
         lock (_lock)
         {
@@ -129,53 +118,20 @@ public class GrpcNetRemote : IRemote
             _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", Config.Host, Config.Port,
                 System.Address);
 
-            Started = true;
-            System.Diagnostics.RegisterEvent("Remote", "Started GrpcNet Successfully");
-            System.Diagnostics.RegisterObject("Remote", "Config", Config);
-            Config.Serialization.Init(System);
+            CompleteStartup("Started GrpcNet Successfully");
 
             return Task.CompletedTask;
         }
     }
 
-    public async Task ShutdownAsync(bool graceful = true)
+    protected override async Task OnShutdownAsync(bool graceful)
     {
-        lock (_lock)
+        using (_host)
         {
-            if (!Started)
+            if (_host is not null && graceful)
             {
-                return;
+                await _host.StopAsync().WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
             }
-
-            Started = false;
-        }
-
-        try
-        {
-            using (_host)
-            {
-                if (graceful)
-                {
-                    await _endpointManager.StopAsync();
-
-                    if (_host is not null)
-                    {
-                        await _host.StopAsync().WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
-                    }
-                }
-            }
-
-            _logger.LogInformation(
-                "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",
-                System.Address, graceful
-            );
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(
-                ex, "Proto.Actor server stopped on {Address} with error: {MessagePayload}",
-                System.Address, ex.Message
-            );
         }
     }
 }
