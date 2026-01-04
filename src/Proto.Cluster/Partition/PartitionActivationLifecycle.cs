@@ -77,10 +77,7 @@ internal sealed class PartitionActivationLifecycle
     {
         if (context.System.Metrics.Enabled)
         {
-            IdentityMetrics.ActivationRequestReceivedCount.Add(1,
-                new KeyValuePair<string, object?>("id", context.System.Id),
-                new KeyValuePair<string, object?>("address", context.System.Address),
-                new KeyValuePair<string, object?>("clusterkind", msg.Kind));
+            IdentityMetrics.RecordActivationRequestReceived(context.System, msg.Kind);
         }
 
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
@@ -107,11 +104,7 @@ internal sealed class PartitionActivationLifecycle
         if (clusterKind is null)
         {
             Logger.LogError("Failed to spawn {Kind}/{Identity}, kind not found for member", msg.Kind, msg.Identity);
-            context.Respond(new ActivationResponse
-            {
-                Failed = true,
-                TopologyHash = msg.TopologyHash
-            });
+            RespondWithFailure(context, msg);
 
             return;
         }
@@ -133,12 +126,7 @@ internal sealed class PartitionActivationLifecycle
         if (_inFlightIdentityChecks.Contains(clusterIdentity))
         {
             Logger.LogError("[PartitionPlacementActor] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
-
-            context.Respond(new ActivationResponse
-            {
-                Failed = true,
-                TopologyHash = msg.TopologyHash
-            });
+            RespondWithFailure(context, msg);
 
             return;
         }
@@ -168,13 +156,7 @@ internal sealed class PartitionActivationLifecycle
                 else
                 {
                     Logger.LogError("[PartitionPlacementActor] Error when checking {ClusterIdentity}", clusterIdentity);
-
-                    context.Respond(new ActivationResponse
-                        {
-                            Failed = true,
-                            TopologyHash = msg.TopologyHash
-                        }
-                    );
+                    RespondWithFailure(context, msg);
                 }
             }
         );
@@ -202,11 +184,7 @@ internal sealed class PartitionActivationLifecycle
         {
             e.CheckFailFast();
             Logger.LogError(e, "[PartitionPlacementActor] Failed to spawn {Kind}/{Identity}", msg.Kind, msg.Identity);
-            context.Respond(new ActivationResponse
-            {
-                Failed = true,
-                TopologyHash = msg.TopologyHash
-            });
+            RespondWithFailure(context, msg);
         }
     }
 
@@ -219,13 +197,15 @@ internal sealed class PartitionActivationLifecycle
         }
         else
         {
-            context.Respond(new ActivationResponse
-                {
-                    Failed = true,
-                    InvalidIdentity = true,
-                    TopologyHash = msg.TopologyHash
-                }
-            );
+            RespondWithFailure(context, msg, invalidIdentity: true);
         }
     }
+
+    private static void RespondWithFailure(IContext context, ActivationRequest msg, bool invalidIdentity = false) =>
+        context.Respond(new ActivationResponse
+        {
+            Failed = true,
+            InvalidIdentity = invalidIdentity,
+            TopologyHash = msg.TopologyHash
+        });
 }

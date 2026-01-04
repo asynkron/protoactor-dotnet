@@ -108,14 +108,7 @@ public sealed class RemotingGrpcService : Remoting.RemotingBase
                 "[RemotingGrpcService][{SystemAddress}] Attempt to connect from a blocked endpoint was rejected",
                 _system.Address);
 
-            await responseStream.WriteAsync(new RemoteMessage
-            {
-                ConnectResponse = new ConnectResponse
-                {
-                    Blocked = true,
-                    MemberId = _system.Id
-                }
-            }).ConfigureAwait(false);
+            await WriteBlockedResponseAsync(responseStream).ConfigureAwait(false);
 
             return null;
         }
@@ -147,14 +140,7 @@ public sealed class RemotingGrpcService : Remoting.RemotingBase
                 _system.Address, serverConnection.MemberId,
                 serverConnection.Address);
 
-            await responseStream.WriteAsync(new RemoteMessage
-            {
-                ConnectResponse = new ConnectResponse
-                {
-                    Blocked = true,
-                    MemberId = _system.Id
-                }
-            }).ConfigureAwait(false);
+            await WriteBlockedResponseAsync(responseStream).ConfigureAwait(false);
 
             shouldExit = true;
         }
@@ -320,4 +306,14 @@ public sealed class RemotingGrpcService : Remoting.RemotingBase
             DiagnosticsString = res
         };
     }
+
+    private Task WriteBlockedResponseAsync(IServerStreamWriter<RemoteMessage> responseStream) =>
+        responseStream.WriteAsync(new RemoteMessage
+        {
+            ConnectResponse = new ConnectResponse
+            {
+                Blocked = true,
+                MemberId = _system.Id
+            }
+        });
 }

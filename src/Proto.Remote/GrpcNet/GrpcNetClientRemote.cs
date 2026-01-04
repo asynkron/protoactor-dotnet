@@ -4,18 +4,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote.GrpcNet;
 
-public class GrpcNetClientRemote : IRemote
+public class GrpcNetClientRemote : BaseGrpcNetRemote
 {
-    private readonly RemoteConfig _config;
+    private static readonly ILogger _logger = Log.CreateLogger<GrpcNetClientRemote>();
     private readonly EndpointManager _endpointManager;
-    private readonly object _lock = new();
-    private readonly ILogger _logger = Log.CreateLogger<GrpcNetClientRemote>();
 
-    public GrpcNetClientRemote(ActorSystem system, RemoteConfig config)
+    public GrpcNetClientRemote(ActorSystem system, RemoteConfig config) : base(system, config)
     {
-        System = system;
-        BlockList = new BlockList(system);
-
         if (config.AdvertisedHost is not null)
         {
             throw new ArgumentException("AdvertisedHost is not supported in client mode");
@@ -27,21 +22,25 @@ public class GrpcNetClientRemote : IRemote
         }
 
         System.SetClientAddress();
-        _config = config;
-        System.Extensions.Register(this);
-        System.Extensions.Register(config.Serialization);
         System.Diagnostics.RegisterObject("Remote", "Config", Config);
         config.Serialization.Init(system);
         _endpointManager = new EndpointManager(System, Config);
     }
 
-    public RemoteConfig Config => _config;
+    protected override ILogger Logger => _logger;
+    protected override EndpointManager EndpointManager => _endpointManager;
 
-    public ActorSystem System { get; }
-    public BlockList BlockList { get; }
-    public bool Started { get; private set; }
+    public override Task StartAsync()
+    {
+        _endpointManager.Start();
+        _logger.LogInformation("Starting Proto.Actor client ({Address})", System.Id);
+        Started = true;
+        System.Diagnostics.RegisterEvent("Remote", "Started GrpcNetClient Successfully");
+        System.Diagnostics.RegisterObject("Cluster", "Config", Config);
+        return Task.CompletedTask;
+    }
 
-    public async Task ShutdownAsync(bool graceful = true)
+    public override async Task ShutdownAsync(bool graceful = true)
     {
         lock (_lock)
         {
@@ -57,7 +56,7 @@ public class GrpcNetClientRemote : IRemote
         {
             if (graceful)
             {
-                await _endpointManager.StopAsync();
+                await _endpointManager.StopAsync().ConfigureAwait(false);
             }
 
             _logger.LogInformation(
@@ -72,15 +71,5 @@ public class GrpcNetClientRemote : IRemote
                 System.Id, ex.Message
             );
         }
-    }
-
-    public Task StartAsync()
-    {
-        _endpointManager.Start();
-        _logger.LogInformation("Starting Proto.Actor client ({Address})", System.Id);
-        Started = true;
-        System.Diagnostics.RegisterEvent("Remote", "Started GrpcNetClient Successfully");
-        System.Diagnostics.RegisterObject("Cluster", "Config", Config);
-        return Task.CompletedTask;
     }
 }

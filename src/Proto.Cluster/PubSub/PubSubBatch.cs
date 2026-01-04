@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
-using System.Linq;
 using Proto.Remote;
 
 namespace Proto.Cluster.PubSub;
@@ -25,31 +24,8 @@ public class PubSubBatch : IRootSerializable
 
     public IRootSerialized Serialize(ActorSystem system)
     {
-        var s = system.Serialization();
-
         var batch = new PubSubBatchTransport();
-
-        foreach (var message in Envelopes)
-        {
-            var (messageData, typeName, serializerId) = s.Serialize(message);
-            var typeIndex = batch.TypeNames.IndexOf(typeName);
-
-            if (typeIndex == -1)
-            {
-                batch.TypeNames.Add(typeName);
-                typeIndex = batch.TypeNames.Count - 1;
-            }
-
-            var envelope = new PubSubEnvelope
-            {
-                MessageData = messageData,
-                TypeId = typeIndex,
-                SerializerId = serializerId
-            };
-
-            batch.Envelopes.Add(envelope);
-        }
-
+        PubSubSerializationHelper.SerializeEnvelopes(system, Envelopes, batch.TypeNames, batch.Envelopes);
         return batch;
     }
 }
@@ -58,18 +34,9 @@ public partial class PubSubBatchTransport : IRootSerialized
 {
     public IRootSerializable Deserialize(ActorSystem system)
     {
-        var ser = system.Serialization();
-
-        //deserialize messages in the envelope
-        var messages = Envelopes
-            .Select(e => ser
-                .Deserialize(TypeNames[e.TypeId], e.MessageData, e.SerializerId)
-            )
-            .ToList();
-
+        var messages = PubSubSerializationHelper.DeserializeEnvelopes(system, TypeNames, Envelopes);
         var res = new PubSubBatch();
         res.Envelopes.AddRange(messages);
-
         return res;
     }
 }

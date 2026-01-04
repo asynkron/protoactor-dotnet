@@ -61,15 +61,8 @@ public class Persistence
     /// <exception cref="ArgumentNullException">Thrown when eventStore or applyEvent are null</exception>
     public static Persistence WithEventSourcing(IEventStore eventStore, string actorId, Action<Event> applyEvent)
     {
-        if (eventStore is null)
-        {
-            throw new ArgumentNullException(nameof(eventStore));
-        }
-
-        if (applyEvent is null)
-        {
-            throw new ArgumentNullException(nameof(applyEvent));
-        }
+        ArgumentNullException.ThrowIfNull(eventStore);
+        ArgumentNullException.ThrowIfNull(applyEvent);
 
         return new Persistence(eventStore, new NoSnapshotStore(), actorId, applyEvent);
     }
@@ -88,15 +81,8 @@ public class Persistence
         Action<Snapshot> applySnapshot
     )
     {
-        if (snapshotStore is null)
-        {
-            throw new ArgumentNullException(nameof(snapshotStore));
-        }
-
-        if (applySnapshot is null)
-        {
-            throw new ArgumentNullException(nameof(applySnapshot));
-        }
+        ArgumentNullException.ThrowIfNull(snapshotStore);
+        ArgumentNullException.ThrowIfNull(applySnapshot);
 
         return new Persistence(new NoEventStore(), snapshotStore, actorId, null, applySnapshot);
     }
@@ -122,25 +108,10 @@ public class Persistence
         Action<Snapshot> applySnapshot
     )
     {
-        if (eventStore is null)
-        {
-            throw new ArgumentNullException(nameof(eventStore));
-        }
-
-        if (snapshotStore is null)
-        {
-            throw new ArgumentNullException(nameof(snapshotStore));
-        }
-
-        if (applyEvent is null)
-        {
-            throw new ArgumentNullException(nameof(applyEvent));
-        }
-
-        if (applySnapshot is null)
-        {
-            throw new ArgumentNullException(nameof(applySnapshot));
-        }
+        ArgumentNullException.ThrowIfNull(eventStore);
+        ArgumentNullException.ThrowIfNull(snapshotStore);
+        ArgumentNullException.ThrowIfNull(applyEvent);
+        ArgumentNullException.ThrowIfNull(applySnapshot);
 
         return new Persistence(eventStore, snapshotStore, actorId, applyEvent, applySnapshot);
     }
@@ -174,35 +145,12 @@ public class Persistence
         Func<object> getSnapshot
     )
     {
-        if (eventStore is null)
-        {
-            throw new ArgumentNullException(nameof(eventStore));
-        }
-
-        if (snapshotStore is null)
-        {
-            throw new ArgumentNullException(nameof(snapshotStore));
-        }
-
-        if (applyEvent is null)
-        {
-            throw new ArgumentNullException(nameof(applyEvent));
-        }
-
-        if (applySnapshot is null)
-        {
-            throw new ArgumentNullException(nameof(applySnapshot));
-        }
-
-        if (snapshotStrategy is null)
-        {
-            throw new ArgumentNullException(nameof(snapshotStrategy));
-        }
-
-        if (getSnapshot is null)
-        {
-            throw new ArgumentNullException(nameof(getSnapshot));
-        }
+        ArgumentNullException.ThrowIfNull(eventStore);
+        ArgumentNullException.ThrowIfNull(snapshotStore);
+        ArgumentNullException.ThrowIfNull(applyEvent);
+        ArgumentNullException.ThrowIfNull(applySnapshot);
+        ArgumentNullException.ThrowIfNull(snapshotStrategy);
+        ArgumentNullException.ThrowIfNull(getSnapshot);
 
         return new Persistence(eventStore, snapshotStore, actorId, applyEvent, applySnapshot, snapshotStrategy,
             getSnapshot

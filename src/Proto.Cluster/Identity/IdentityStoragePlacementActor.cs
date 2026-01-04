@@ -108,10 +108,7 @@ internal class IdentityStoragePlacementActor : IActor
     {
         if (context.System.Metrics.Enabled)
         {
-            IdentityMetrics.ActivationRequestReceivedCount.Add(1,
-                new KeyValuePair<string, object?>("id", context.System.Id),
-                new KeyValuePair<string, object?>("address", context.System.Address),
-                new KeyValuePair<string, object?>("clusterkind", msg.Kind));
+            IdentityMetrics.RecordActivationRequestReceived(context.System, msg.Kind);
         }
 
         if (_actors.TryGetValue(msg.ClusterIdentity, out var existing))
@@ -143,76 +140,13 @@ internal class IdentityStoragePlacementActor : IActor
         }
     }
 
-    private async Task VerifyAndSpawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
-    {
-        var clusterIdentity = msg.ClusterIdentity;
-
-        if (_inFlightIdentityChecks.Contains(clusterIdentity))
-        {
-            Logger.LogError("[PartitionIdentity] Duplicate activation requests for {ClusterIdentity}", clusterIdentity);
-
-            context.Respond(new ActivationResponse
-                {
-                    Failed = true
-                }
-            );
-
-            return;
-        }
-
-        var canSpawn = clusterKind.CanSpawnIdentity!(msg.Identity,
-            CancellationTokens.FromSeconds(_cluster.Config.ActorSpawnVerificationTimeout));
-
-        if (canSpawn.IsCompleted)
-        {
-            var canSpawnIdentity = await canSpawn.AsTask().ConfigureAwait(false);
-            OnSpawnDecided(msg, context, clusterKind, canSpawnIdentity);
-
-            return;
-        }
-
-        _inFlightIdentityChecks.Add(clusterIdentity);
-
-        context.ReenterAfter(canSpawn.AsTask(), async task =>
-            {
-                _inFlightIdentityChecks.Remove(clusterIdentity);
-
-                if (task.IsCompletedSuccessfully)
-                {
-                    var canSpawnIdentity = await task.ConfigureAwait(false);
-                    OnSpawnDecided(msg, context, clusterKind, canSpawnIdentity);
-                }
-                else
-                {
-                    Logger.LogError("[PartitionIdentity] Error when checking {ClusterIdentity}", clusterIdentity);
-
-                    context.Respond(new ActivationResponse
-                        {
-                            Failed = true
-                        }
-                    );
-                }
-            }
-        );
-    }
+    private Task VerifyAndSpawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind) =>
+        SpawnVerificationHelper.VerifyAndSpawn(
+            msg, context, clusterKind, _cluster, _inFlightIdentityChecks, Spawn, Logger, "[PartitionIdentity]");
 
     private void OnSpawnDecided(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind,
-        bool canSpawnIdentity)
-    {
-        if (canSpawnIdentity)
-        {
-            Spawn(msg, context, clusterKind);
-        }
-        else
-        {
-            context.Respond(new ActivationResponse
-                {
-                    Failed = true,
-                    InvalidIdentity = true
-                }
-            );
-        }
-    }
+        bool canSpawnIdentity) =>
+        SpawnVerificationHelper.OnSpawnDecided(msg, context, clusterKind, canSpawnIdentity, Spawn);
 
     private void Spawn(ActivationRequest msg, IContext context, ActivatedClusterKind clusterKind)
     {

@@ -160,25 +160,8 @@ internal class KubernetesClusterMonitor : IActor
         var x = await GetListTask(_clusterName, false, 2);
         foreach (var eventPod in x.Body.Items)
         {
-            var podLabels = eventPod.Metadata.Labels;
-
-            if (!podLabels.TryGetValue(LabelCluster, out var podClusterName))
+            if (!IsValidClusterPod(eventPod))
             {
-                Logger.LogInformation(
-                    "[Cluster][KubernetesProvider] The pod {PodName} is not a Proto.Cluster node",
-                    eventPod.Metadata.Name
-                );
-
-                continue;
-            }
-
-            if (_clusterName != podClusterName)
-            {
-                Logger.LogInformation(
-                    "[Cluster][KubernetesProvider] The pod {PodName} is from another cluster {Cluster}",
-                    eventPod.Metadata.Name, _clusterName
-                );
-
                 continue;
             }
 
@@ -221,63 +204,28 @@ internal class KubernetesClusterMonitor : IActor
         _kubernetes = _config.ClientFactory();
     }
 
-    private void DisposeKubernetesClient()
-    {
-        try
-        {
-            _kubernetes.Dispose();
-        }
-        catch
-        {
-            //pass
-        }
-    }
+    private void DisposeKubernetesClient() => TrySafeDispose(_kubernetes);
 
-    private void DisposeWatcherTask()
-    {
-        try
-        {
-            _watcherTask?.Dispose();
-        }
-        catch
-        {
-            //pass
-        }
-    }
+    private void DisposeWatcherTask() => TrySafeDispose(_watcherTask);
 
-    private void DisposeWatcher()
+    private void DisposeWatcher() => TrySafeDispose(_watcher);
+
+    private static void TrySafeDispose(IDisposable disposable)
     {
         try
         {
-            _watcher?.Dispose();
+            disposable?.Dispose();
         }
         catch
         {
-            //pass
+            // Silently ignore dispose errors
         }
     }
 
     private void Watch(WatchEventType eventType, V1Pod eventPod)
     {
-        var podLabels = eventPod.Metadata.Labels;
-
-        if (!podLabels.TryGetValue(LabelCluster, out var podClusterName))
+        if (!IsValidClusterPod(eventPod))
         {
-            Logger.LogInformation(
-                "[Cluster][KubernetesProvider] The pod {PodName} is not a Proto.Cluster node",
-                eventPod.Metadata.Name
-            );
-
-            return;
-        }
-
-        if (_clusterName != podClusterName)
-        {
-            Logger.LogInformation(
-                "[Cluster][KubernetesProvider] The pod {PodName} is from another cluster {Cluster}",
-                eventPod.Metadata.Name, _clusterName
-            );
-
             return;
         }
 
@@ -292,6 +240,33 @@ internal class KubernetesClusterMonitor : IActor
         }
 
         UpdateTopology();
+    }
+
+    private bool IsValidClusterPod(V1Pod pod)
+    {
+        var podLabels = pod.Metadata.Labels;
+
+        if (!podLabels.TryGetValue(LabelCluster, out var podClusterName))
+        {
+            Logger.LogInformation(
+                "[Cluster][KubernetesProvider] The pod {PodName} is not a Proto.Cluster node",
+                pod.Metadata.Name
+            );
+
+            return false;
+        }
+
+        if (_clusterName != podClusterName)
+        {
+            Logger.LogInformation(
+                "[Cluster][KubernetesProvider] The pod {PodName} is from another cluster {Cluster}",
+                pod.Metadata.Name, _clusterName
+            );
+
+            return false;
+        }
+
+        return true;
     }
 
     private void UpdateTopology()

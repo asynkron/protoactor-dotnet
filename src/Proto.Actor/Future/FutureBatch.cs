@@ -103,18 +103,7 @@ public sealed class FutureBatchProcess : Process, IDisposable
             return;
         }
 
-        try
-        {
-            completionSource.TrySetResult(message);
-            _completionSources[index] = default;
-        }
-        finally
-        {
-            if (System.Metrics.Enabled)
-            {
-                ActorMetrics.FuturesCompletedCount.Add(1, _metricTags);
-            }
-        }
+        CompleteRequest(index, completionSource, message);
     }
 
     protected internal override void SendSystemMessage(PID pid, SystemMessage message)
@@ -131,9 +120,14 @@ public sealed class FutureBatchProcess : Process, IDisposable
             return;
         }
 
+        CompleteRequest(index, completionSource, default!);
+    }
+
+    private void CompleteRequest(int index, TaskCompletionSource<object> completionSource, object result)
+    {
         try
         {
-            completionSource.TrySetResult(default!);
+            completionSource.TrySetResult(result);
             _completionSources[index] = default;
         }
         finally

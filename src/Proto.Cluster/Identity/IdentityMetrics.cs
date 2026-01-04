@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using Proto.Metrics;
 
@@ -11,6 +12,22 @@ namespace Proto.Cluster.Identity;
 
 public static class IdentityMetrics
 {
+    public static void RecordActivationRequestSent(ActorSystem system, string kind)
+    {
+        ActivationRequestSentCount.Add(1,
+            new KeyValuePair<string, object?>("id", system.Id),
+            new KeyValuePair<string, object?>("address", system.Address),
+            new KeyValuePair<string, object?>("clusterkind", kind));
+    }
+
+    public static void RecordActivationRequestReceived(ActorSystem system, string kind)
+    {
+        ActivationRequestReceivedCount.Add(1,
+            new KeyValuePair<string, object?>("id", system.Id),
+            new KeyValuePair<string, object?>("address", system.Address),
+            new KeyValuePair<string, object?>("clusterkind", kind));
+    }
+
     public static readonly Histogram<double> WaitForActivationDuration = ProtoMetrics.Meter.CreateHistogram<double>(
         "protocluster_identity_wait_for_activation_duration", "seconds",
         "Time spent waiting for activation of cluster kind to complete"

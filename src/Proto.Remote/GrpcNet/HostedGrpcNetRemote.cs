@@ -6,11 +6,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Proto.Remote.GrpcNet;
 
-public class HostedGrpcNetRemote : IRemote
+public class HostedGrpcNetRemote : BaseGrpcNetRemote
 {
-    private readonly RemoteConfig _config;
     private readonly EndpointManager _endpointManager;
-    private readonly object _lock = new();
     private readonly ILogger _logger;
 
     public HostedGrpcNetRemote(
@@ -18,25 +16,18 @@ public class HostedGrpcNetRemote : IRemote
         RemoteConfig config,
         EndpointManager endpointManager,
         ILogger<HostedGrpcNetRemote> logger
-    )
+    ) : base(system, config)
     {
-        System = system;
-        BlockList = new BlockList(system);
-        _config = config;
         _endpointManager = endpointManager;
         _logger = logger;
-        System.Extensions.Register(this);
-        System.Extensions.Register(config.Serialization);
     }
 
+    protected override ILogger Logger => _logger;
+    protected override EndpointManager EndpointManager => _endpointManager;
+
     public IServerAddressesFeature? ServerAddressesFeature { get; set; }
-    public RemoteConfig Config => _config;
-    public ActorSystem System { get; }
-    public bool Started { get; private set; }
 
-    public BlockList BlockList { get; }
-
-    public Task StartAsync()
+    public override Task StartAsync()
     {
         lock (_lock)
         {
@@ -58,15 +49,12 @@ public class HostedGrpcNetRemote : IRemote
             _logger.LogInformation("Starting Proto.Actor server on {Host}:{Port} ({Address})", host, boundPort,
                 System.Address);
 
-            Started = true;
-            System.Diagnostics.RegisterEvent("Remote", "Started HostedGrpcNet Successfully");
-            System.Diagnostics.RegisterObject("Remote", "Config" , Config);
-            Config.Serialization.Init(System);
+            CompleteStartup("Started HostedGrpcNet Successfully");
             return Task.CompletedTask;
         }
     }
 
-    public async Task ShutdownAsync(bool graceful = true)
+    public override async Task ShutdownAsync(bool graceful = true)
     {
         lock (_lock)
         {
@@ -80,7 +68,7 @@ public class HostedGrpcNetRemote : IRemote
 
         try
         {
-            await _endpointManager.StopAsync();
+            await _endpointManager.StopAsync().ConfigureAwait(false);
 
             _logger.LogInformation(
                 "Proto.Actor server stopped on {Address}. Graceful: {Graceful}",

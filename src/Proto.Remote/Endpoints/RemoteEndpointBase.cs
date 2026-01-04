@@ -244,6 +244,21 @@ public abstract class RemoteEndpointBase : IRemoteEndpoint
         }
     }
 
+    private static bool TryReadAndAdd(
+        ChannelReader<RemoteDeliver> reader,
+        List<RemoteDeliver> messages,
+        ref bool didWrite,
+        int batchSize)
+    {
+        if (reader.TryRead(out var remoteDeliver))
+        {
+            messages.Add(remoteDeliver);
+            didWrite = true;
+        }
+
+        return messages.Count >= batchSize;
+    }
+
     private async Task RunAsync()
     {
         var waiter = new MultiTaskReuseWaiter<bool>(
@@ -260,33 +275,21 @@ public abstract class RemoteEndpointBase : IRemoteEndpoint
                     await waiter.WaitAnyAsync();
                     
                     var i = 0;
+                    var batchSize = RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize;
                     while (true)
                     {
                         var didWrite = false;
-                        RemoteDeliver? remoteDeliver;
-                        
+
                         //we don´t need complete priority, we need "enough" important messages to get over
                         if (i++ % 10 == 0)
                         {
-                            if (_remotePriorityDelivers.Reader.TryRead(out remoteDeliver))
-                            {
-                                messages.Add(remoteDeliver);
-                                didWrite = true;
-                            }
-
-                            if (messages.Count >= RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize)
+                            if (TryReadAndAdd(_remotePriorityDelivers.Reader, messages, ref didWrite, batchSize))
                             {
                                 break;
                             }
                         }
 
-                        if (_remoteDelivers.Reader.TryRead(out remoteDeliver))
-                        {
-                            messages.Add(remoteDeliver);
-                            didWrite = true;
-                        }
-
-                        if (messages.Count >= RemoteConfig.EndpointWriterOptions.EndpointWriterBatchSize)
+                        if (TryReadAndAdd(_remoteDelivers.Reader, messages, ref didWrite, batchSize))
                         {
                             break;
                         }

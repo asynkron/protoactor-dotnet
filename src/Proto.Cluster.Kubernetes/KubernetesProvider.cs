@@ -24,24 +24,19 @@ namespace Proto.Cluster.Kubernetes;
 ///     for Kubernetes deployments.
 /// </summary>
 [PublicAPI]
-public class KubernetesProvider : IClusterProvider
+public class KubernetesProvider : BaseClusterProvider
 {
-    private static readonly ILogger Logger = Log.CreateLogger<KubernetesProvider>();
+    private static readonly ILogger _logger = Log.CreateLogger<KubernetesProvider>();
     private readonly KubernetesProviderConfig _config;
-    private string _address;
-    private Cluster _cluster;
 
-    private PID _clusterMonitor;
-    private string _clusterName;
-    private string _host;
-    private string[] _kinds;
-    private MemberList _memberList;
-    private string _podName;
-    private int _port;
+    private PID _clusterMonitor = null!;
+    private string _podName = null!;
+
+    protected override ILogger Logger => _logger;
 
     internal KubernetesProviderConfig Config => _config;
-    
-    public async Task<DiagnosticsEntry[]> GetDiagnostics()
+
+    public override async Task<DiagnosticsEntry[]> GetDiagnostics()
     {
         try
         {
@@ -59,7 +54,7 @@ public class KubernetesProvider : IClusterProvider
         }
         catch (Exception x)
         {
-            return new[] { new DiagnosticsEntry("KubernetesProvider", "Exception", x.ToString() ) };
+            return new[] { new DiagnosticsEntry("KubernetesProvider", "Exception", x.ToString()) };
         }
     }
 
@@ -83,58 +78,26 @@ public class KubernetesProvider : IClusterProvider
     {
     }
 
-    public async Task StartMemberAsync(Cluster cluster)
+    public override async Task StartMemberAsync(Cluster cluster)
     {
-        var memberList = cluster.MemberList;
-        var clusterName = cluster.Config.ClusterName;
-        var (host, port) = cluster.System.GetAddress();
-        var kinds = cluster.GetClusterKinds();
-        _cluster = cluster;
-        _memberList = memberList;
-        _clusterName = clusterName;
-        _host = host;
-        _port = port;
-        _kinds = kinds;
-        _address = host + ":" + port;
-        StartClusterMonitor();
-        await RegisterMemberAsync().ConfigureAwait(false);
+        await base.StartMemberAsync(cluster).ConfigureAwait(false);
         MonitorMemberStatusChanges();
     }
 
-    public Task StartClientAsync(Cluster cluster)
+    public override Task StartClientAsync(Cluster cluster)
     {
-        var memberList = cluster.MemberList;
-        var clusterName = cluster.Config.ClusterName;
-        var (host, port) = cluster.System.GetAddress();
-        _cluster = cluster;
-        _memberList = memberList;
-        _clusterName = clusterName;
-        _host = host;
-        _port = port;
-        _kinds = Array.Empty<string>();
-        StartClusterMonitor();
+        base.StartClientAsync(cluster);
         MonitorMemberStatusChanges();
-
         return Task.CompletedTask;
     }
 
-    public async Task ShutdownAsync(bool graceful)
+    public override async Task ShutdownAsync(bool graceful)
     {
         await DeregisterMemberAsync(_cluster).ConfigureAwait(false);
         await _cluster.System.Root.StopAsync(_clusterMonitor).ConfigureAwait(false);
     }
 
-    public async Task RegisterMemberAsync()
-    {
-        await Retry.Try(RegisterMemberInner, onError: OnError, onFailed: OnFailed, retryCount: Retry.Forever).ConfigureAwait(false);
-
-        static void OnError(int attempt, Exception exception) =>
-            Logger.LogWarning(exception, "Failed to register service");
-
-        static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to register service");
-    }
-
-    public async Task RegisterMemberInner()
+    protected override async Task RegisterMemberInner()
     {
         var kubernetes = _config.ClientFactory();
 
@@ -151,7 +114,7 @@ public class KubernetesProvider : IClusterProvider
         Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes namespace: {Namespace}", pod.Namespace());
 
         Logger.LogInformation("[Cluster][KubernetesProvider] Using Kubernetes port: {Port}", _port);
-        
+
         var labels = new Dictionary<string, string>
         {
             [LabelCluster] = _clusterName,
@@ -233,7 +196,7 @@ public class KubernetesProvider : IClusterProvider
         }
     }
 
-    private void StartClusterMonitor()
+    protected override void StartClusterMonitor()
     {
         var props = Props
             .FromProducer(() => new KubernetesClusterMonitor(_cluster, _config))
@@ -255,14 +218,15 @@ public class KubernetesProvider : IClusterProvider
         );
     }
 
-    public async Task DeregisterMemberAsync(Cluster cluster)
+    private async Task DeregisterMemberAsync(Cluster cluster)
     {
+        var logger = Logger;
         await Retry.Try(() => DeregisterMemberInner(cluster), onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
 
-        static void OnError(int attempt, Exception exception) =>
-            Logger.LogWarning(exception, "Failed to deregister service");
+        void OnError(int attempt, Exception exception) =>
+            logger.LogWarning(exception, "Failed to deregister service");
 
-        static void OnFailed(Exception exception) => Logger.LogError(exception, "Failed to deregister service");
+        void OnFailed(Exception exception) => logger.LogError(exception, "Failed to deregister service");
     }
 
     private async Task DeregisterMemberInner(Cluster cluster)
@@ -289,6 +253,6 @@ public class KubernetesProvider : IClusterProvider
         cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
     }
 
-    public void MonitorMemberStatusChanges() =>
+    private void MonitorMemberStatusChanges() =>
         _cluster.System.Root.Send(_clusterMonitor, new StartWatchingCluster(_clusterName));
 }

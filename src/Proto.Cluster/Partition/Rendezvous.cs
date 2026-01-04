@@ -30,25 +30,7 @@ public class Rendezvous
         }
 
         var keyBytes = Encoding.UTF8.GetBytes(identity);
-
-        uint maxScore = 0;
-        Member? maxNode = null;
-
-        foreach (var member in _members)
-        {
-            var hashBytes = member.Hash;
-            var score = RdvHash(hashBytes, keyBytes);
-
-            if (score <= maxScore)
-            {
-                continue;
-            }
-
-            maxScore = score;
-            maxNode = member.Info;
-        }
-
-        return maxNode?.Address ?? "";
+        return FindMaxScoreMember(_members, keyBytes)?.Address ?? "";
     }
 
     // ReSharper disable once ParameterTypeCanBeEnumerable.Global
@@ -98,7 +80,11 @@ public class Rendezvous
         }
 
         var keyBytes = Encoding.UTF8.GetBytes(ci.Identity);
+        return FindMaxScoreMember(members, keyBytes)?.Address ?? "";
+    }
 
+    private static Member? FindMaxScoreMember(MemberData[] members, byte[] keyBytes)
+    {
         uint maxScore = 0;
         Member? maxNode = null;
 
@@ -116,7 +102,7 @@ public class Rendezvous
             maxNode = member.Info;
         }
 
-        return maxNode?.Address ?? "";
+        return maxNode;
     }
 
     private readonly struct MemberData
