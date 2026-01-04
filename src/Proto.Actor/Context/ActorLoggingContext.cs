@@ -37,7 +37,7 @@ public class ActorLoggingContext : ActorContextDecorator
         _exceptionLogLevel = exceptionLogLevel;
     }
 
-    private string ActorType => Actor?.GetType().Name ?? "None";
+    private string ActorType => Actor?.GetActorTypeName() ?? "None";
 
     public override async Task Receive(MessageEnvelope envelope)
     {
