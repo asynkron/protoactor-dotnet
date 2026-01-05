@@ -4,7 +4,7 @@
         <RootNamespace>Proto.Tests</RootNamespace>
         <LangVersion>10</LangVersion>
         <OutputType>Library</OutputType>
-        <TargetFrameworks>net8.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
@@ -15,7 +15,7 @@
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
       <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     </ItemGroup>
-    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0' Or '$(TargetFramework)' == 'net10.0'">
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     </ItemGroup>
 </Project>

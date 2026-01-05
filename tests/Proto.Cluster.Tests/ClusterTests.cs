@@ -175,7 +175,7 @@ public abstract class ClusterTests : ClusterTestBase
 
             sourceMember.Gossip.SetState("some-state", new PID("abc", "def"));
             //allow state to replicate            
-            await stream.FirstAsync(x => x.MemberId == sourceMemberId && x.Key == "some-state");
+            await System.Linq.AsyncEnumerable.FirstAsync(stream, x => x.MemberId == sourceMemberId && x.Key == "some-state");
 
             //get state from target member
             //it should be noted that the response is a dict of member id for all members,
@@ -192,7 +192,7 @@ public abstract class ClusterTests : ClusterTestBase
             {
                 var channel = Channel.CreateUnbounded<object>();
                 member.System.EventStream.Subscribe(channel);
-                var stream = channel.Reader.ReadAllAsync().OfType<GossipUpdate>();
+                var stream = System.Linq.AsyncEnumerable.OfType<GossipUpdate>(channel.Reader.ReadAllAsync());
 
                 return stream;
             }
