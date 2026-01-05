@@ -242,11 +242,11 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         var resourceGroupName = _resourceGroupName;
         var subscriptionId = _subscriptionId;
         var resourceGroup = await armClient.GetResourceGroupByNameAsync(resourceGroupName, subscriptionId, cancellationToken).ConfigureAwait(false);
-        return resourceGroup.GetContainerApps().Where(x => x.Data.EnvironmentId == environmentId);
+        return resourceGroup.GetContainerApps().AsEnumerable().Where(x => x.Data.EnvironmentId == environmentId);
     }
 
     private static IEnumerable<ContainerAppRevisionResource> GetActiveRevisionsWithTraffic(ContainerAppResource containerApp) =>
-        containerApp.GetContainerAppRevisions().Where(r => r.HasData && (r.Data.IsActive ?? false) && r.Data.TrafficWeight > 0);
+        containerApp.GetContainerAppRevisions().AsEnumerable().Where(r => r.HasData && (r.Data.IsActive ?? false) && r.Data.TrafficWeight > 0);
 
     private static string Serialize(TaggedMember taggedMember) => JsonSerializer.Serialize(taggedMember);
     private static TaggedMember Deserialize(string json) => JsonSerializer.Deserialize<TaggedMember>(json)!;

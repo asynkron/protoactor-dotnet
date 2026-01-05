@@ -9,7 +9,7 @@
         <VersionSuffix>build$([System.DateTime]::Now.ToString('yyyyMMdd-HHmm'))</VersionSuffix>
         <LangVersion>10</LangVersion>
         <!-- we're targeting .NET Standard 2.0 because Visual Studio uses MSBuild based on .NET Famework, which supports at most .NET Standard 2.0 -->
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
