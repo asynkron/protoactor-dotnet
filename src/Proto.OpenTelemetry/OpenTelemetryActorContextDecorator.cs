@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Proto.Extensions;
 
 namespace Proto.OpenTelemetry;
 
@@ -50,7 +51,7 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
         };
     }
 
-    private string Source => base.Actor?.GetType().Name ?? "<None>";
+    private string Source => base.Actor?.GetActorTypeName() ?? "<None>";
 
     public override void Send(PID target, object message) =>
         OpenTelemetryMethodsDecorators.Send(Source, target, message, _sendActivitySetup,
@@ -106,5 +107,5 @@ internal class OpenTelemetryActorContextDecorator : ActorContextDecorator
     }
 
     public override PID SpawnNamed(Props props, string name, Action<IContext>? callback = null) => 
-        OpenTelemetryMethodsDecorators.SpawnNamed(Source,_spawnActivitySetup, () => base.SpawnNamed(props, name, callback),name, Actor.GetType().Name);
+        OpenTelemetryMethodsDecorators.SpawnNamed(Source,_spawnActivitySetup, () => base.SpawnNamed(props, name, callback),name, Actor.GetActorTypeName());
 }
