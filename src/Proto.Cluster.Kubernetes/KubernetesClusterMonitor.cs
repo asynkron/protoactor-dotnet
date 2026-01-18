@@ -244,13 +244,13 @@ internal class KubernetesClusterMonitor : IActor
 
     private bool IsValidClusterPod(V1Pod pod)
     {
-        var podLabels = pod.Metadata.Labels;
+        var podLabels = pod.Metadata?.Labels;
 
-        if (!podLabels.TryGetValue(LabelCluster, out var podClusterName))
+        if (podLabels is null || !podLabels.TryGetValue(LabelCluster, out var podClusterName))
         {
             Logger.LogInformation(
                 "[Cluster][KubernetesProvider] The pod {PodName} is not a Proto.Cluster node",
-                pod.Metadata.Name
+                pod.Metadata?.Name
             );
 
             return false;

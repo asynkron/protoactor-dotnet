@@ -61,3 +61,11 @@ Proto.TestKit.TestKitException : Waited 1 seconds but failed to receive a messag
 
 ### Proto.Tests.SharedFutureTests.Should_wrap_request_ids_without_hitting_zero
 `Expected future.Pid.RequestId to be 8u, but found 1u.` observed when verifying request id wrap-around on .NET 8 after the upgrade; focused rerun and a full-suite retry passed.
+
+### Issue2151 KubernetesProvider.DeregisterMemberInner
+```
+System.ArgumentNullException: Value cannot be null. (Parameter 'source')
+   at System.Linq.ThrowHelper.ThrowArgumentNullException(ExceptionArgument argument)
+   at System.Linq.Enumerable.Where[TSource](IEnumerable`1 source, Func`2 predicate)
+   at Proto.Cluster.Kubernetes.KubernetesProvider.DeregisterMemberInner(Cluster cluster)
+```

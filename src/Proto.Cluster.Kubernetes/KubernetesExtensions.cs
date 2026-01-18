@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -63,30 +64,55 @@ internal static class KubernetesExtensions
     [CanBeNull]
     internal static MemberStatus GetMemberStatus(this V1Pod pod, KubernetesProviderConfig config)
     {
+        if (pod.Metadata?.DeletionTimestamp is not null)
+        {
+            return null;
+        }
+
         var isRunning = pod.Status is { Phase: "Running", PodIP: not null };
 
-        if (pod.Status?.ContainerStatuses is null)
+        var containerStatuses = pod.Status?.ContainerStatuses;
+        if (containerStatuses is null)
+        {
             return null;
+        }
 
-        if (pod.Metadata?.Labels is null)
+        var labels = pod.Metadata?.Labels;
+        if (labels is null)
+        {
             return null;
+        }
 
-        var kinds = pod
-            .Metadata
-            .Annotations
-            .Where(l => l.Key.StartsWith(AnnotationKinds))
-            .SelectMany(l => l.Value.Split(';'))
-            .ToArray();
+        if (!labels.TryGetValue(LabelPort, out var portLabel) ||
+            !int.TryParse(portLabel, NumberStyles.Integer, CultureInfo.InvariantCulture, out var port))
+        {
+            return null;
+        }
 
-        var host = pod.Status.PodIP ?? "";
-        if (pod.Metadata.Labels.TryGetValue(LabelHost, out var hostOverride))
+        if (!labels.TryGetValue(LabelMemberId, out var memberId))
+        {
+            return null;
+        }
+
+        var annotations = pod.Metadata.Annotations;
+        if (annotations is null || !annotations.TryGetValue(AnnotationKinds, out var kindsAnnotation))
+        {
+            return null;
+        }
+
+        var kinds = kindsAnnotation.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var host = pod.Status?.PodIP ?? "";
+        if (labels.TryGetValue(LabelHost, out var hostOverride) && !string.IsNullOrWhiteSpace(hostOverride))
+        {
             host = hostOverride;
-        else if (pod.Metadata.Labels.TryGetValue(LabelHostPrefix, out var hostPrefix))
+        }
+        else if (labels.TryGetValue(LabelHostPrefix, out var hostPrefix) && !string.IsNullOrWhiteSpace(hostPrefix))
         {
             var dnsPostfix = $".{pod.Namespace()}.svc.{config.ClusterDomain}";
 
             // If we have a subdomain, then we can add that to the dnsPostfix, as it will be known to the cluster
-            if (!string.IsNullOrEmpty(pod.Spec.Subdomain))
+            if (!string.IsNullOrEmpty(pod.Spec?.Subdomain))
             {
                 dnsPostfix = $".{pod.Spec.Subdomain}{dnsPostfix}";
             }
@@ -94,14 +120,12 @@ internal static class KubernetesExtensions
             host = hostPrefix + dnsPostfix;
         }
 
-        var port = Convert.ToInt32(pod.Metadata.Labels[LabelPort]);
-        var mid = pod.Metadata.Labels[LabelMemberId];
-        var alive = pod.Status.ContainerStatuses.All(x => x.Ready);
+        var alive = containerStatuses.All(x => x.Ready);
 
         return new MemberStatus(isRunning, alive,
             new Member
             {
-                Id = mid,
+                Id = memberId,
                 Host = host,
                 Port = port,
                 Kinds = { kinds }
