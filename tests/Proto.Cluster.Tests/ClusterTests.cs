@@ -83,6 +83,47 @@ public abstract class ClusterTests : ClusterTestBase
     }
 
     [Fact]
+    public async Task ClientRequestsFailFastAfterShutdownIsInitiated()
+    {
+        if (!ClusterFixture.SupportsClients)
+        {
+            return;
+        }
+
+        await Trace(async () =>
+        {
+            var timeout = CancellationTokens.FromSeconds(10);
+
+            var clientNode = await ClusterFixture.SpawnClient();
+
+            try
+            {
+                await clientNode.JoinedCluster.WaitAsync(timeout);
+                clientNode.JoinedCluster.IsCompletedSuccessfully.Should().BeTrue();
+
+                var identity = CreateIdentity("shutdown-client-request");
+                await PingPong(clientNode, identity, timeout);
+
+                var shutdownTask = clientNode.ShutdownAsync(true, "Test shutdown");
+
+                var timer = Stopwatch.StartNew();
+                await Assert.ThrowsAsync<TimeoutException>(() =>
+                    clientNode.Ping(identity, "after-shutdown", CancellationTokens.FromSeconds(10)));
+                timer.Stop();
+
+                timer.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(1),
+                    "requests should stop quickly once shutdown begins to avoid reconnect attempts");
+
+                await shutdownTask;
+            }
+            finally
+            {
+                await ClusterFixture.RemoveNode(clientNode);
+            }
+        }, _testOutputHelper);
+    }
+
+    [Fact]
     public async Task TopologiesShouldHaveConsensus()
     {
         await Trace(async () =>

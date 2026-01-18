@@ -71,7 +71,7 @@ public class DefaultClusterContext : IClusterContext
         {
             var lookupTimer = Stopwatch.StartNew();
                 
-            while (!ct.IsCancellationRequested && !context.System.Shutdown.IsCancellationRequested)
+            while (!ct.IsCancellationRequested && !context.System.Shutdown.IsCancellationRequested && !_cluster.MemberList.Stopping)
             {
                 i++;
                 
@@ -252,7 +252,7 @@ public class DefaultClusterContext : IClusterContext
                 }
             }
 
-            if (!context.System.Shutdown.IsCancellationRequested && _requestLogThrottle().IsOpen())
+            if (!context.System.Shutdown.IsCancellationRequested && !_cluster.MemberList.Stopping && _requestLogThrottle().IsOpen())
             {
                 Logger.LogWarning("RequestAsync retried but failed for {ClusterIdentity}", clusterIdentity);
             }
