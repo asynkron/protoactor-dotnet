@@ -124,10 +124,7 @@ public class KubernetesProvider : BaseClusterProvider
 
         AppendHostToPodLabels(pod, labels);
 
-        foreach (var existing in pod.Metadata.Labels)
-        {
-            labels.TryAdd(existing.Key, existing.Value);
-        }
+        KubernetesPodMetadata.TryAddNonClusterEntries(pod.Metadata.Labels, labels);
 
         var annotations = new Dictionary<string, string>
         {
@@ -136,10 +133,7 @@ public class KubernetesProvider : BaseClusterProvider
 
         if (pod.Metadata.Annotations is not null)
         {
-            foreach (var existing in pod.Metadata.Annotations)
-            {
-                annotations.TryAdd(existing.Key, existing.Value);
-            }
+            KubernetesPodMetadata.TryAddNonClusterEntries(pod.Metadata.Annotations, annotations);
         }
 
         try
@@ -240,13 +234,15 @@ public class KubernetesProvider : BaseClusterProvider
 
         var pod = await kubernetes.CoreV1.ReadNamespacedPodAsync(_podName, kubeNamespace).ConfigureAwait(false);
 
-        var labels = pod.Metadata.Labels
-            .Where(label => !label.Key.StartsWith(ProtoClusterPrefix, StringComparison.Ordinal))
-            .ToDictionary(label => label.Key, label => label.Value);
+        if (pod?.Metadata is null)
+        {
+            cluster.System.Root.Send(_clusterMonitor, new DeregisterMember());
+            return;
+        }
 
-        var annotations = pod.Metadata.Annotations
-            .Where(label => !label.Key.StartsWith(ProtoClusterPrefix, StringComparison.Ordinal))
-            .ToDictionary(label => label.Key, label => label.Value);
+        var labels = KubernetesPodMetadata.ToNonClusterDictionary(pod.Metadata.Labels);
+
+        var annotations = KubernetesPodMetadata.ToNonClusterDictionary(pod.Metadata.Annotations);
 
         await kubernetes.ReplacePodLabelsAndAnnotations(_podName, kubeNamespace, pod, labels, annotations).ConfigureAwait(false);
 
