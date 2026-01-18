@@ -62,10 +62,12 @@ public class SharedFutureTests : BaseFutureTests
             .GetField("_maxRequestId", BindingFlags.Instance | BindingFlags.NonPublic)!
             .SetValue(process, forcedMaxRequestId);
 
-        var reserved = new List<IFuture>();
+        var reserved = new List<IFuture>(slotCount - 1);
         IFuture? future = null;
 
-        while (future is null)
+        // SharedFutureProcess uses ConcurrentBag, so the initial slot order is not deterministic.
+        // Reserve all slots except the one we want to test, so TryCreateHandle is forced to reuse the same slot.
+        for (var i = 0; i < slotCount; i++)
         {
             var candidate = process.TryCreateHandle();
             candidate.Should().NotBeNull();
@@ -73,11 +75,14 @@ public class SharedFutureTests : BaseFutureTests
             if (candidate!.Pid.RequestId == slotCount)
             {
                 future = candidate;
-                break;
             }
-
-            reserved.Add(candidate);
+            else
+            {
+                reserved.Add(candidate);
+            }
         }
+
+        future.Should().NotBeNull();
 
         var echo = Context.Spawn(Props.FromFunc(ctx =>
                 {
