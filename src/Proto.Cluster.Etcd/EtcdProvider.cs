@@ -106,7 +106,7 @@ public class EtcdProvider : IClusterProvider
     {
         _ = SafeTask.Run(async () =>
         {
-            await _client.WatchRangeAsync(_config.MembersKeyPrefix, (WatchEvent[] _) =>
+            await _client.WatchRangeAsync(_config.MembersKeyPrefix, _ =>
             {
                 Logger.LogDebug("Cluster membership changed");
 

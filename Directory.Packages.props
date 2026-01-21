@@ -21,7 +21,7 @@
     <PackageVersion Include="Grpc.AspNetCore" Version="2.70.0" />
     <PackageVersion Include="Grpc.Core.Api" Version="2.70.0" />
     <PackageVersion Include="Grpc.HealthCheck" Version="2.70.0" />
-    <PackageVersion Include="dotnet-etcd" Version="7.2.0" />
+    <PackageVersion Include="dotnet-etcd" Version="8.1.0" />
     <PackageVersion Include="Grpc.Net.Common" Version="2.70.0" />
     <PackageVersion Include="Grpc.Tools" Version="2.71.0">
       <PrivateAssets>all</PrivateAssets>
@@ -42,7 +42,6 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.8" />
-
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.FileExtensions" Version="9.0.3" />
@@ -54,7 +53,6 @@
     <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.3" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.4.0" />
     <PackageVersion Include="Microsoft.NET.Build.Containers" Version="9.0.202" />
-
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <PackageVersion Include="MinVer" Version="6.0.0" />
