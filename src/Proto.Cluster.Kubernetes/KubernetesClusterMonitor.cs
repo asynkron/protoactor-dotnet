@@ -149,7 +149,7 @@ internal class KubernetesClusterMonitor : IActor
             DisposeWatcher();
             DisposeWatcherTask();
 
-            tcs.SetResult();
+            tcs.TrySetResult();
         }
 
         return tcs.Task;
