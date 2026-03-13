@@ -264,3 +264,10 @@ examples/Persistence/Persistence/states.db
 
 # Benchmark artifacts
 BenchmarkDotNet.Artifacts/
+
+# Claude Code
+.claude/
+.claude-plugin/
+
+# QuickDup
+.quickdup/
