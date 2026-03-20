@@ -6,17 +6,18 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
+using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Proto.Cluster.AmazonECS;
 
 [PublicAPI]
 public class AwsEcsContainerMetadataHttpClient
 {
+    private static readonly HttpClient HttpClient = new();
     private readonly ILogger _logger = Log.CreateLogger<AwsEcsContainerMetadataHttpClient>();
 
     public ContainerMetadata GetContainerMetadata()
@@ -27,12 +28,12 @@ public class AwsEcsContainerMetadataHttpClient
         {
             if (Uri.TryCreate(str, UriKind.Absolute, out var containerMetadataUri))
             {
-                var json = GetResponseString(containerMetadataUri);
+                var json = GetResponseString(HttpMethod.Get, containerMetadataUri);
 
                 _logger.LogInformation("[AwsEcsContainerMetadataHttpClient] got metadata for container {Metadata}",
                     json);
 
-                return JsonConvert.DeserializeObject<ContainerMetadata>(json);
+                return JsonSerializer.Deserialize<ContainerMetadata>(json);
             }
 
             _logger.LogError("[AwsEcsContainerMetadataHttpClient] failed to get Metadata {Url}", str);
@@ -53,10 +54,10 @@ public class AwsEcsContainerMetadataHttpClient
         {
             if (Uri.TryCreate(str, UriKind.Absolute, out var containerMetadataUri))
             {
-                var json = GetResponseString(containerMetadataUri);
+                var json = GetResponseString(HttpMethod.Get, containerMetadataUri);
                 _logger.LogInformation("[AwsEcsContainerMetadataHttpClient] got metadata for task {Metadata}", json);
 
-                return JsonConvert.DeserializeObject<TaskMetadata>(json);
+                return JsonSerializer.Deserialize<TaskMetadata>(json);
             }
 
             _logger.LogError("[AwsEcsContainerMetadataHttpClient] failed to get Metadata {Url}", str);
@@ -69,36 +70,63 @@ public class AwsEcsContainerMetadataHttpClient
         return null;
     }
 
-    //
-    // public string GetHostPrivateIPv4Address() => GetResponseString(new Uri("http://169.254.169.254/latest/meta-data/local-ipv4"));
-    //
-    // public string GetHostPublicIPv4Address() => GetResponseString(new Uri("http://169.254.169.254/latest/meta-data/public-ipv4"));
-
-    private string GetResponseString(Uri requestUri)
+    public string GetHostPrivateIPv4Address()
     {
         try
         {
-            var request = WebRequest.Create(requestUri);
+            var token = GetResponseString(HttpMethod.Put, new Uri("http://169.254.169.254/latest/api/token"), new Dictionary<string, string> { { "X-aws-ec2-metadata-token-ttl-seconds", "60" } });
+            return GetResponseString(HttpMethod.Get, new Uri("http://169.254.169.254/latest/meta-data/local-ipv4"), new Dictionary<string, string> { { "X-aws-ec2-metadata-token", token } });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AwsEcsContainerMetadataHttpClient] failed to get Host Private IPv4 Address");
+        }
 
-            using var response = (HttpWebResponse)request.GetResponse();
+        return null;
+    }
 
-            if (response.StatusCode != HttpStatusCode.OK)
+    public string GetHostPublicIPv4Address()
+    {
+        try
+        {
+            var token = GetResponseString(HttpMethod.Put, new Uri("http://169.254.169.254/latest/api/token"), new Dictionary<string, string> { { "X-aws-ec2-metadata-token-ttl-seconds", "60" } });
+            return GetResponseString(HttpMethod.Get, new Uri("http://169.254.169.254/latest/meta-data/public-ipv4"), new Dictionary<string, string> { { "X-aws-ec2-metadata-token", token } });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AwsEcsContainerMetadataHttpClient] failed to get Host Public IPv4 Address");
+        }
+
+        return null;
+    }
+
+    private string GetResponseString(HttpMethod method, Uri requestUri, Dictionary<String, String> headers = null)
+    {
+        try
+        {
+            var request = new HttpRequestMessage(method, requestUri);
+            if (headers != null)
             {
-                _logger.LogError("Failed to execute HTTP request. Request URI: {RequestUri}, Status code: {StatusCode}",
-                    requestUri, response.StatusCode);
+                foreach (var header in headers)
+                {
+                    request.Headers.Add(header.Key, header.Value);
+                }
+            }
+            using var response = HttpClient.SendAsync(request).GetAwaiter().GetResult();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Failed to execute HTTP request. Method: {Method}, Request URI: {RequestUri}, Status code: {StatusCode}",
+                    method, requestUri, response.StatusCode);
 
                 return default;
             }
 
-            using var stream = response.GetResponseStream();
-            using var reader = new StreamReader(stream!);
-
-            return reader.ReadToEnd();
+            return response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
         }
-        catch (WebException ex) when (ex.Status == WebExceptionStatus.UnknownError)
+        catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "Network is unreachable");
-            // Network is unreachable
+            _logger.LogError(ex, "Failed to get AWS metadata response");
         }
         catch (Exception ex)
         {
@@ -111,127 +139,140 @@ public class AwsEcsContainerMetadataHttpClient
 
 public class Limits
 {
-    [JsonProperty("CPU")] public int CPU { get; set; }
+    [JsonPropertyName("CPU")] public int CPU { get; set; }
 }
 
 public class Network
 {
-    [JsonProperty("NetworkMode")] public string NetworkMode { get; set; }
+    [JsonPropertyName("NetworkMode")] public string NetworkMode { get; set; }
 
-    [JsonProperty("IPv4Addresses")] public List<string> IPv4Addresses { get; set; }
+    [JsonPropertyName("IPv4Addresses")] public List<string> IPv4Addresses { get; set; }
 
-    [JsonProperty("AttachmentIndex")] public int AttachmentIndex { get; set; }
+    [JsonPropertyName("AttachmentIndex")] public int AttachmentIndex { get; set; }
 
-    [JsonProperty("MACAddress")] public string MACAddress { get; set; }
+    [JsonPropertyName("MACAddress")] public string MACAddress { get; set; }
 
-    [JsonProperty("IPv4SubnetCIDRBlock")] public string IPv4SubnetCIDRBlock { get; set; }
+    [JsonPropertyName("IPv4SubnetCIDRBlock")] public string IPv4SubnetCIDRBlock { get; set; }
 
-    [JsonProperty("DomainNameServers")] public List<string> DomainNameServers { get; set; }
+    [JsonPropertyName("DomainNameServers")] public List<string> DomainNameServers { get; set; }
 
-    [JsonProperty("DomainNameSearchList")] public List<string> DomainNameSearchList { get; set; }
+    [JsonPropertyName("DomainNameSearchList")] public List<string> DomainNameSearchList { get; set; }
 
-    [JsonProperty("PrivateDNSName")] public string PrivateDNSName { get; set; }
+    [JsonPropertyName("PrivateDNSName")] public string PrivateDNSName { get; set; }
 
-    [JsonProperty("SubnetGatewayIpv4Address")]
+    [JsonPropertyName("SubnetGatewayIpv4Address")]
     public string SubnetGatewayIpv4Address { get; set; }
 }
 
 public class LogOptions
 {
-    [JsonProperty("awslogs-group")] public string AwslogsGroup { get; set; }
+    [JsonPropertyName("awslogs-group")] public string AwslogsGroup { get; set; }
 
-    [JsonProperty("awslogs-region")] public string AwslogsRegion { get; set; }
+    [JsonPropertyName("awslogs-region")] public string AwslogsRegion { get; set; }
 
-    [JsonProperty("awslogs-stream")] public string AwslogsStream { get; set; }
+    [JsonPropertyName("awslogs-stream")] public string AwslogsStream { get; set; }
 }
 
 public class ContainerMetadata
 {
-    [JsonProperty("DockerId")] public string DockerId { get; set; }
+    [JsonPropertyName("DockerId")] public string DockerId { get; set; }
 
-    [JsonProperty("Name")] public string Name { get; set; }
+    [JsonPropertyName("Name")] public string Name { get; set; }
 
-    [JsonProperty("DockerName")] public string DockerName { get; set; }
+    [JsonPropertyName("DockerName")] public string DockerName { get; set; }
 
-    [JsonProperty("Image")] public string Image { get; set; }
+    [JsonPropertyName("Image")] public string Image { get; set; }
 
-    [JsonProperty("ImageID")] public string ImageID { get; set; }
+    [JsonPropertyName("ImageID")] public string ImageID { get; set; }
 
-    [JsonProperty("DesiredStatus")] public string DesiredStatus { get; set; }
+    [JsonPropertyName("DesiredStatus")] public string DesiredStatus { get; set; }
 
-    [JsonProperty("KnownStatus")] public string KnownStatus { get; set; }
+    [JsonPropertyName("KnownStatus")] public string KnownStatus { get; set; }
 
-    [JsonProperty("Limits")] public Limits Limits { get; set; }
+    [JsonPropertyName("Limits")] public Limits Limits { get; set; }
 
-    [JsonProperty("CreatedAt")] public string CreatedAt { get; set; }
+    [JsonPropertyName("CreatedAt")] public string CreatedAt { get; set; }
 
-    [JsonProperty("StartedAt")] public string StartedAt { get; set; }
+    [JsonPropertyName("StartedAt")] public string StartedAt { get; set; }
 
-    [JsonProperty("Type")] public string Type { get; set; }
+    [JsonPropertyName("Type")] public string Type { get; set; }
 
-    [JsonProperty("Networks")] public List<Network> Networks { get; set; }
+    [JsonPropertyName("Networks")] public List<Network> Networks { get; set; }
 
-    [JsonProperty("ContainerARN")] public string ContainerARN { get; set; }
+    [JsonPropertyName("ContainerARN")] public string ContainerARN { get; set; }
 
-    [JsonProperty("LogOptions")] public LogOptions LogOptions { get; set; }
+    [JsonPropertyName("LogOptions")] public LogOptions LogOptions { get; set; }
 
-    [JsonProperty("LogDriver")] public string LogDriver { get; set; }
+    [JsonPropertyName("LogDriver")] public string LogDriver { get; set; }
+}
+
+public class PortMapping
+{
+    [JsonPropertyName("ContainerPort")] public int ContainerPort { get; set; }
+
+    [JsonPropertyName("Protocol")] public string Protocol { get; set; }
+
+    [JsonPropertyName("HostPort")] public int HostPort { get; set; }
+
+    [JsonPropertyName("HostIp")] public string HostIP { get; set; }
 }
 
 public class Container
 {
-    [JsonProperty("DockerId")] public string DockerId { get; set; }
+    [JsonPropertyName("DockerId")] public string DockerId { get; set; }
 
-    [JsonProperty("Name")] public string Name { get; set; }
+    [JsonPropertyName("Name")] public string Name { get; set; }
 
-    [JsonProperty("DockerName")] public string DockerName { get; set; }
+    [JsonPropertyName("DockerName")] public string DockerName { get; set; }
 
-    [JsonProperty("Image")] public string Image { get; set; }
+    [JsonPropertyName("Image")] public string Image { get; set; }
 
-    [JsonProperty("ImageID")] public string ImageID { get; set; }
+    [JsonPropertyName("ImageID")] public string ImageID { get; set; }
 
-    [JsonProperty("DesiredStatus")] public string DesiredStatus { get; set; }
+    [JsonPropertyName("Ports")] public List<PortMapping> Ports { get; set; }
 
-    [JsonProperty("KnownStatus")] public string KnownStatus { get; set; }
+    [JsonPropertyName("DesiredStatus")] public string DesiredStatus { get; set; }
 
-    [JsonProperty("Limits")] public Limits Limits { get; set; }
+    [JsonPropertyName("KnownStatus")] public string KnownStatus { get; set; }
 
-    [JsonProperty("CreatedAt")] public string CreatedAt { get; set; }
+    [JsonPropertyName("Limits")] public Limits Limits { get; set; }
 
-    [JsonProperty("StartedAt")] public string StartedAt { get; set; }
+    [JsonPropertyName("CreatedAt")] public string CreatedAt { get; set; }
 
-    [JsonProperty("Type")] public string Type { get; set; }
+    [JsonPropertyName("StartedAt")] public string StartedAt { get; set; }
 
-    [JsonProperty("Networks")] public List<Network> Networks { get; set; }
+    [JsonPropertyName("Type")] public string Type { get; set; }
 
-    [JsonProperty("LogDriver")] public string LogDriver { get; set; }
+    [JsonPropertyName("Networks")] public List<Network> Networks { get; set; }
 
-    [JsonProperty("LogOptions")] public LogOptions LogOptions { get; set; }
+    [JsonPropertyName("LogDriver")] public string LogDriver { get; set; }
 
-    [JsonProperty("ContainerARN")] public string ContainerARN { get; set; }
+    [JsonPropertyName("LogOptions")] public LogOptions LogOptions { get; set; }
+
+    [JsonPropertyName("ContainerARN")] public string ContainerARN { get; set; }
 }
 
 public class TaskMetadata
 {
-    [JsonProperty("Cluster")] public string Cluster { get; set; }
+    [JsonPropertyName("Cluster")] public string Cluster { get; set; }
 
-    [JsonProperty("TaskARN")] public string TaskARN { get; set; }
+    [JsonPropertyName("TaskARN")] public string TaskARN { get; set; }
 
-    [JsonProperty("Family")] public string Family { get; set; }
+    [JsonPropertyName("Family")] public string Family { get; set; }
 
-    [JsonProperty("Revision")] public string Revision { get; set; }
+    [JsonPropertyName("Revision")] public string Revision { get; set; }
 
-    [JsonProperty("DesiredStatus")] public string DesiredStatus { get; set; }
+    [JsonPropertyName("DesiredStatus")] public string DesiredStatus { get; set; }
 
-    [JsonProperty("KnownStatus")] public string KnownStatus { get; set; }
+    [JsonPropertyName("KnownStatus")] public string KnownStatus { get; set; }
 
-    [JsonProperty("PullStartedAt")] public string PullStartedAt { get; set; }
+    [JsonPropertyName("PullStartedAt")] public string PullStartedAt { get; set; }
 
-    [JsonProperty("PullStoppedAt")] public string PullStoppedAt { get; set; }
+    [JsonPropertyName("PullStoppedAt")] public string PullStoppedAt { get; set; }
 
-    [JsonProperty("AvailabilityZone")] public string AvailabilityZone { get; set; }
+    [JsonPropertyName("AvailabilityZone")] public string AvailabilityZone { get; set; }
 
-    [JsonProperty("LaunchType")] public string LaunchType { get; set; }
+    [JsonPropertyName("LaunchType")] public string LaunchType { get; set; }
 
-    [JsonProperty("Containers")] public List<Container> Containers { get; set; }
+    [JsonPropertyName("Containers")] public List<Container> Containers { get; set; }
 }

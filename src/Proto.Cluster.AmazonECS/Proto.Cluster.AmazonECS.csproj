@@ -7,7 +7,6 @@
 
     <ItemGroup>
         <PackageReference Include="AWSSDK.ECS" />
-        <PackageReference Include="Microsoft.AspNetCore.JsonPatch" />
     </ItemGroup>
 
     <ItemGroup>
