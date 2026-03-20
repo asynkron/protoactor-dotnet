@@ -19,38 +19,44 @@ public static class EcsUtils
 {
     private static readonly ILogger Logger = Log.CreateLogger(nameof(EcsUtils));
 
-    public static async Task<Member[]> GetMembers(this AmazonECSClient c, string ecsClusterName)
+    public static async Task<Member[]> GetMembers(this IAmazonECS c, string ecsClusterName)
     {
         var allTasks = await c.ListTasksAsync(new ListTasksRequest
-            {
-                Cluster = ecsClusterName
-            }
+        {
+            Cluster = ecsClusterName
+        }
         ).ConfigureAwait(false);
 
-        var instanceArns = allTasks.TaskArns;
+        var instanceArns = allTasks.TaskArns ?? new List<string>();
 
-        if (!instanceArns.Any())
+        if (instanceArns.Count == 0)
         {
             return Array.Empty<Member>();
         }
 
         var describedTasks = await c.DescribeTasksAsync(new DescribeTasksRequest
-            {
-                Include = { "TAGS" },
-                Cluster = ecsClusterName,
-                Tasks = instanceArns
-            }
+        {
+            Include = new List<string> { "TAGS" },
+            Cluster = ecsClusterName,
+            Tasks = instanceArns
+        }
         ).ConfigureAwait(false);
 
         var members = new List<Member>();
 
-        foreach (var task in describedTasks.Tasks)
+        foreach (var task in describedTasks.Tasks ?? new List<Task>())
         {
+            if (task.DesiredStatus != DesiredStatus.RUNNING)
+            {
+                Logger.LogDebug("Skipping Task {Arn}, not in desired state", task.TaskArn);
+                continue;
+            }
+
             var metadata = task.GetMetadata();
 
             if (!metadata.ContainsKey(ProtoLabels.LabelMemberId))
             {
-                Logger.LogWarning("Skipping Task {Arn}, no Proto Tags found", task.TaskArn);
+                Logger.LogDebug("Skipping Task {Arn}, no Proto Tags found", task.TaskArn);
 
                 continue;
             }
@@ -59,12 +65,23 @@ public static class EcsUtils
                 .Where(kvp => kvp.Key.StartsWith(ProtoLabels.LabelKind))
                 .Select(kvp => kvp.Key[(ProtoLabels.LabelKind.Length + 1)..])
                 .ToArray();
+            var port = int.Parse(metadata[ProtoLabels.LabelPort]);
+            metadata.TryGetValue(ProtoLabels.LabelHost, out string host);
+
+            var container = task.Containers.First();
+            var @interface = container.NetworkInterfaces?.FirstOrDefault();
+
+            if (@interface == null && string.IsNullOrEmpty(host))
+            {
+                Logger.LogWarning("Skipping Task {Arn}, no network information found", task.TaskArn);
+                continue;
+            }
 
             var member = new Member
             {
                 Id = metadata[ProtoLabels.LabelMemberId],
-                Port = int.Parse(metadata[ProtoLabels.LabelPort]),
-                Host = task.Containers.First().NetworkInterfaces.First().PrivateIpv4Address,
+                Port = port,
+                Host = host ?? @interface?.PrivateIpv4Address,
                 Kinds = { kinds }
             };
 
@@ -75,16 +92,16 @@ public static class EcsUtils
     }
 
     public static IDictionary<string, string> GetMetadata(this Task task) =>
-        task.Tags.ToDictionary(t => t.Key, t => t.Value);
+        (task.Tags ?? new List<Tag>()).ToDictionary(t => t.Key, t => t.Value);
 
-    public static async System.Threading.Tasks.Task UpdateMetadata(this AmazonECSClient c, string resourceArn,
+    public static async System.Threading.Tasks.Task UpdateMetadata(this IAmazonECS c, string resourceArn,
         IDictionary<string, string> metadata)
     {
         var tags = metadata.Select(kvp => new Tag
-                {
-                    Key = kvp.Key,
-                    Value = kvp.Value
-                }
+        {
+            Key = kvp.Key,
+            Value = kvp.Value
+        }
             )
             .ToList();
 
@@ -92,6 +109,15 @@ public static class EcsUtils
         {
             ResourceArn = resourceArn,
             Tags = tags
+        }).ConfigureAwait(false);
+    }
+
+    public static async System.Threading.Tasks.Task ClearMetadata(this IAmazonECS c, string resourceArn)
+    {
+        await c.UntagResourceAsync(new UntagResourceRequest
+        {
+            ResourceArn = resourceArn,
+            TagKeys = new List<string>(ProtoLabels.AllLabels)
         }).ConfigureAwait(false);
     }
 }

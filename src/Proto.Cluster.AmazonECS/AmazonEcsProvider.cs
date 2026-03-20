@@ -18,18 +18,21 @@ namespace Proto.Cluster.AmazonECS;
 public class AmazonEcsProvider : BaseClusterProvider
 {
     private static readonly ILogger _logger = Log.CreateLogger<AmazonEcsProvider>();
-    private readonly AmazonECSClient _client;
+    private readonly IAmazonECS _client;
     private readonly AmazonEcsProviderConfig _config;
     private readonly string _ecsClusterName;
     private readonly string _taskArn;
+    private readonly int? _advertisedPort;
+    private readonly string _advertisedHost;
 
-    public AmazonEcsProvider(AmazonECSClient client, string ecsClusterName, string taskArn,
-        AmazonEcsProviderConfig config)
+    public AmazonEcsProvider(IAmazonECS client, string ecsClusterName, string taskArn, AmazonEcsProviderConfig config, int? advertisedPort, string advertisedHost)
     {
         _ecsClusterName = ecsClusterName;
         _client = client;
         _config = config;
         _taskArn = taskArn;
+        _advertisedPort = advertisedPort;
+        _advertisedHost = advertisedHost;
     }
 
     protected override ILogger Logger => _logger;
@@ -44,9 +47,14 @@ public class AmazonEcsProvider : BaseClusterProvider
         var tags = new Dictionary<string, string>
         {
             [ProtoLabels.LabelCluster] = _clusterName,
-            [ProtoLabels.LabelPort] = _port.ToString(),
-            [ProtoLabels.LabelMemberId] = _cluster.System.Id
+            [ProtoLabels.LabelPort] = (_advertisedPort ?? _port).ToString(),
+            [ProtoLabels.LabelMemberId] = _cluster.System.Id,
         };
+
+        if (!string.IsNullOrEmpty(_advertisedHost))
+        {
+            tags[ProtoLabels.LabelHost] = _advertisedHost;
+        }
 
         foreach (var kind in _kinds)
         {
@@ -112,6 +120,6 @@ public class AmazonEcsProvider : BaseClusterProvider
         Logger.LogInformation("[Cluster][AmazonEcsProvider] Unregistering service {PodName} on {PodIp}", _taskArn,
             _address);
 
-        await _client.UpdateMetadata(_taskArn, new Dictionary<string, string>()).ConfigureAwait(false);
+        await _client.ClearMetadata(_taskArn).ConfigureAwait(false);
     }
 }
