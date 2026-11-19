@@ -99,6 +99,18 @@ internal sealed class PartitionActivationLifecycle
             return;
         }
 
+        if (_cluster.MemberList.Stopping)
+        {
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.LogDebug("[PartitionPlacementActor] Not spawning {Kind}/{Identity}, this member is stopping", msg.Kind, msg.Identity);
+            }
+
+            RespondWithFailure(context, msg);
+
+            return;
+        }
+
         var clusterKind = _cluster.TryGetClusterKind(msg.Kind);
 
         if (clusterKind is null)

@@ -132,8 +132,9 @@ public sealed class RemotingGrpcService : Remoting.RemotingBase
     {
         var shouldExit = false;
         var blocked = serverConnection.BlockList.ToHashSet();
+        var remoteMemberIsBlocked = _system.Remote().BlockList.IsBlocked(serverConnection.MemberId);
 
-        if (_system.Remote().BlockList.IsBlocked(serverConnection.MemberId))
+        if (remoteMemberIsBlocked)
         {
             Logger.LogWarning(
                 "[RemotingGrpcService][{SystemAddress}] Connection Refused from remote member {MemberId} address {Address}, they are blocked",
@@ -155,7 +156,7 @@ public sealed class RemotingGrpcService : Remoting.RemotingBase
             shouldExit = true;
         }
 
-        if (blocked.Any())
+        if (blocked.Any() && !remoteMemberIsBlocked)
         {
             _system.Remote().BlockList.Block(blocked, "Blocked by remote member");
         }
