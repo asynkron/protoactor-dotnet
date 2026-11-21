@@ -134,6 +134,10 @@ public sealed class EndpointManager : IDiagnosticsProvider
                 Logger.EndpointAlreadyRemoved(_system.Address, evt.Address ?? evt.ActorSystemId);
             }
         }
+        catch (OperationCanceledException) when (CancellationToken.IsCancellationRequested)
+        {
+            // stopping cancels the wait after termination, nothing went wrong
+        }
         catch (Exception ex)
         {
             // since these async EventStream subscription handlers are fire and forget, we need to
@@ -165,6 +169,12 @@ public sealed class EndpointManager : IDiagnosticsProvider
         if (_serverEndpoints.TryGetValue(address, out var endpoint))
         {
             return endpoint;
+        }
+
+        // if we are blocked, don't try to open new connections
+        if (_system.Remote().BlockList.IsBlocked(_system.Id))
+        {
+            return _blockedEndpoint;
         }
 
         lock (_synLock)

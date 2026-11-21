@@ -141,19 +141,19 @@ public sealed class ConnectionRunner
             throw new Exception("Expected ConnectResponse");
         }
         var connectResponse = response.ConnectResponse;
+        var actorSystemId = connectResponse.MemberId;
         if (connectResponse.Blocked)
         {
-            _logger.ConnectionRefusedWeAreBlocked(new Exception("Blocked"), _system.Address, connectResponse.MemberId, _address);
+            _logger.ConnectionRefusedWeAreBlocked(new Exception("Blocked"), _system.Address, actorSystemId, _address);
             _system.Remote().BlockList.Block(new[] { _system.Id }, "Blocked by remote member");
-            var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
+            var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
             _system.EventStream.Publish(terminated);
-            return (connectResponse.MemberId, true);
+            return (actorSystemId, true);
         }
-        var actorSystemId = connectResponse.MemberId;
         if (_system.Remote().BlockList.IsBlocked(actorSystemId))
         {
-            _logger.ConnectionRefusedTheyAreBlocked(new Exception("Blocked"), _system.Address, connectResponse.MemberId, _address);
-            var terminated = new EndpointTerminatedEvent(false, _address, _system.Id);
+            _logger.ConnectionRefusedTheyAreBlocked(new Exception("Blocked"), _system.Address, actorSystemId, _address);
+            var terminated = new EndpointTerminatedEvent(true, _address, actorSystemId);
             _system.EventStream.Publish(terminated);
             return (actorSystemId, true);
         }

@@ -59,13 +59,20 @@ public abstract class BaseGrpcNetRemote : IRemote
             Started = false;
         }
 
-        try
+        if (graceful)
         {
-            if (graceful)
+            try
             {
                 await EndpointManager.StopAsync().ConfigureAwait(false);
             }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error stopping endpoints on {Address}", System.Address);
+            }
+        }
 
+        try
+        {
             await OnShutdownAsync(graceful).ConfigureAwait(false);
 
             Logger.LogInformation(

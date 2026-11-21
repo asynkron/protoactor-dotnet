@@ -110,7 +110,11 @@ public record MemberList : IMemberList
                     Logger.BlockingMemberDueToReason(b.MemberId, b.Reason);
                 }
 
-                UpdateClusterTopology(_activeMembers.Members);
+                // lock before reading members, so we don't block members that were added since we read
+                lock (_lock)
+                {
+                    UpdateClusterTopology(_activeMembers.Members);
+                }
             }, Dispatchers.DefaultDispatcher
         );
     }

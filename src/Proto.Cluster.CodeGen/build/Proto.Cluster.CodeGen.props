@@ -4,7 +4,10 @@
 -->
 <Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
     <PropertyGroup>
-        <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\net8.0\Proto.Cluster.CodeGen.dll</TaskAssembly>
+        <!-- The task runs inside MSBuild, so pick the build matching MSBuild's runtime: .NET 10 SDKs ship MSBuild 18 -->
+        <TaskFolder>net8.0</TaskFolder>
+        <TaskFolder Condition="'$(MSBuildRuntimeType)' == 'Core' and $([MSBuild]::VersionGreaterThanOrEquals('$(MSBuildVersion)', '18.0'))">net10.0</TaskFolder>
+        <TaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\Proto.Cluster.CodeGen.dll</TaskAssembly>
     </PropertyGroup>
 
     <UsingTask TaskName="Proto.Cluster.CodeGen.ProtoGenTask" AssemblyFile="$(TaskAssembly)"/>
