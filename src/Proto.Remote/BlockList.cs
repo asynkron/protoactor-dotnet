@@ -43,7 +43,7 @@ public class BlockList : IBlockList
     {
         lock (_lock)
         {
-            var newIds = memberIds.ToHashSet().Except(_blockedMembers.Keys.ToHashSet());
+            var newIds = memberIds.ToHashSet().Except(BlockedMembers);
           
             foreach (var member in newIds)
             {
