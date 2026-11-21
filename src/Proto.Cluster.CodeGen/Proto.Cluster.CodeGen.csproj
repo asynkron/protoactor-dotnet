@@ -15,7 +15,8 @@
 
     <ItemGroup>
         <Content Include="deps\*.dll">
-            <PackagePath>tasks\$(TargetFramework)</PackagePath>
+            <!-- Packing runs once for all target frameworks, so $(TargetFramework) is empty here: list each folder -->
+            <PackagePath>tasks\net8.0;tasks\net10.0</PackagePath>
             <Pack>true</Pack>
         </Content>
     </ItemGroup>
